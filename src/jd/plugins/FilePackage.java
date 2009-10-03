@@ -353,12 +353,15 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
         if (System.currentTimeMillis() - updateTime1 > UPDATE_INTERVAL) {
             updateTime1 = System.currentTimeMillis();
             boolean value = true;
+            long lastfinished = 0;
             if (linksFinished > 0) {
                 synchronized (downloadLinkList) {
                     for (DownloadLink lk : downloadLinkList) {
                         if (!lk.getLinkStatus().hasStatus(LinkStatus.FINISHED) && lk.isEnabled()) {
                             value = false;
                             break;
+                        } else {
+                            if (lk.getFinishedDate() != -1) lastfinished = lastfinished >= lk.getFinishedDate() ? lastfinished : lk.getFinishedDate();
                         }
                     }
                 }
@@ -368,7 +371,7 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
             isFinished = value;
             if (!isFinished) {
                 finishedDate = -1;
-            } else if (isFinished && finishedDate == -1) finishedDate = System.currentTimeMillis();
+            } else if (isFinished && finishedDate == -1) finishedDate = lastfinished;
         }
         return isFinished;
     }

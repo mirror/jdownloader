@@ -146,6 +146,7 @@ public class Odsiebiecom extends PluginForHost {
                         Browser.download(file, con);
                         break;
                     }
+                    con.disconnect();
                     continue;
                 }
                 // String adr =

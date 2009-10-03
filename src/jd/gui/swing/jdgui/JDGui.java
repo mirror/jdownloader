@@ -77,6 +77,7 @@ import jd.gui.swing.jdgui.views.sidebars.configuration.AddonConfig;
 import jd.gui.swing.jdgui.views.sidebars.configuration.ConfigSidebar;
 import jd.nutils.JDFlags;
 import jd.nutils.JDImage;
+import jd.nutils.OSDetector;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -403,7 +404,12 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
                     UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_COUNTDOWN | UserIO.NO_CANCEL_OPTION, JDL.L("sys.warning.noclose", "JDownloader will be minimized to tray!"));
                     return;
                 }
+
             }
+            /*
+             * without trayicon also dont close/exit for macos
+             */
+            if (OSDetector.isMac()) return;
             closeWindow();
         }
     }

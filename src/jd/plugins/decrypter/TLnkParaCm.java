@@ -23,8 +23,6 @@ import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tlinkpara.com" }, urls = { "http://[\\w\\.]*?tlinkpara\\.com/l/[a-zA-Z0-9]+=" }, flags = { 0 })
@@ -39,12 +37,11 @@ public class TLnkParaCm extends PluginForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        System.out.print(br.toString());
         String link = br.getRegex("value=\"(http.*?)\"").getMatch(0);
-        if (link == null){
+        if (link == null) {
             link = br.getRegex("(http://.*?)\\&amp").getMatch(0);
         }
-        if (link == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (link == null) return null;
         decryptedLinks.add(createDownloadlink(link));
 
         return decryptedLinks;

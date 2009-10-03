@@ -728,6 +728,12 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
             fp.addLinks(linkListHost);
             fpv2.setDownloadLinks(linkList);
         }
+        /* set same add date to package and files */
+        long curtime = System.currentTimeMillis();
+        fp.setCreated(curtime);
+        for (DownloadLink link : fp.getDownloadLinkList()) {
+            link.setCreated(curtime);
+        }
         if (!fpv2.isIgnored()) {
             if (GUIUtils.getConfig() != null && GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_INSERT_NEW_LINKS_AT, false)) {
                 JDUtilities.getDownloadController().addPackageAt(fp, index, 0);

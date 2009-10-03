@@ -290,6 +290,7 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
             guiFrame.removeWindowListener(this);
             guiFrame.removeWindowStateListener(this);
             if (!shutdown) miniIt(false);
+            guiFrame.setAlwaysOnTop(false);
         }
     }
 
@@ -335,10 +336,22 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
         new GuiRunnable<Object>() {
             @Override
             public Object runSave() {
+                /* set visible state */
                 guiFrame.setVisible(!minimize);
                 return null;
             }
         }.start();
+        if (minimize == false) {
+            /* workaround for : toFront() */
+            new GuiRunnable<Object>() {
+                @Override
+                public Object runSave() {
+                    guiFrame.setAlwaysOnTop(true);
+                    guiFrame.toFront();
+                    return null;
+                }
+            }.start();
+        }
     }
 
     /**
@@ -397,6 +410,8 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
     }
 
     public void windowDeactivated(WindowEvent e) {
+        /* workaround for : toFront() */
+        if (guiFrame != null) guiFrame.setAlwaysOnTop(false);
     }
 
     public void windowDeiconified(WindowEvent e) {
@@ -419,6 +434,15 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
                         return null;
                     }
                 }.start();
+                /* workaround for : toFront() */
+                new GuiRunnable<Object>() {
+                    @Override
+                    public Object runSave() {
+                        guiFrame.setAlwaysOnTop(true);
+                        guiFrame.toFront();
+                        return null;
+                    }
+                }.start();
             }
             if (iconified) {
                 /* restore normale state,if windows was iconified */
@@ -427,32 +451,6 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
                     public Object runSave() {
                         /* after this normal, its back to iconified */
                         guiFrame.setState(JFrame.NORMAL);
-                        guiFrame.toFront();
-                        /* after this normal,its finally normal */
-                        guiFrame.setState(JFrame.NORMAL);
-                        /*
-                         * workaround for vm that does not allow toFront() (eg
-                         * windows only blinking)
-                         */
-                        guiFrame.setAlwaysOnTop(true);
-                        guiFrame.toFront();
-                        guiFrame.setAlwaysOnTop(false);
-                        return null;
-                    }
-                }.start();
-            } else {
-                /* bring window to front */
-                new GuiRunnable<Object>() {
-                    @Override
-                    public Object runSave() {
-                        guiFrame.toFront();
-                        /*
-                         * workaround for vm that does not allow toFront() (eg
-                         * windows only blinking)
-                         */
-                        guiFrame.setAlwaysOnTop(true);
-                        guiFrame.toFront();
-                        guiFrame.setAlwaysOnTop(false);
                         return null;
                     }
                 }.start();

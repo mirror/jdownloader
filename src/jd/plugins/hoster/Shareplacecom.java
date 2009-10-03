@@ -87,7 +87,10 @@ public class Shareplacecom extends PluginForHost {
             dl = BrowserAdapter.openDownload(brc, downloadLink, link);
             if (dl.getConnection().isContentDisposition()) {
                 String fakename = Plugin.getFileNameFromHeader(dl.getConnection());
-                if (fakename.contains("README.TXT") || !fakename.equals(filename))continue;
+                if (fakename.contains("README.TXT")) {
+                    dl.getConnection().disconnect();
+                    continue;
+                }
                 found = true;
                 break;
             } else {
