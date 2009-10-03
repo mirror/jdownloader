@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import javax.swing.ImageIcon;
 
 import jd.config.container.JDLabelContainer;
-import jd.controlling.AccountController;
 import jd.nutils.Formatter;
 import jd.plugins.PluginForHost;
 
@@ -75,40 +74,27 @@ public class HostPluginWrapper extends PluginWrapper implements JDLabelContainer
 
         HostPluginWrapper plg = (HostPluginWrapper) pw;
         if (this.isLoaded() && plg.isLoaded()) {
-            if (this.isPremiumEnabled() && plg.isPremiumEnabled()) {
-                boolean a = AccountController.getInstance().hasAccounts(this.getHost());
-                boolean b = AccountController.getInstance().hasAccounts(plg.getHost());
-                if ((a && b) || (!a && !b)) {
-                    return this.getHost().compareToIgnoreCase(plg.getHost());
-                } else if (a && !b) {
-                    return -1;
-                } else {
-                    return 1;
-                }
-            } else if (!this.isPremiumEnabled() && !plg.isPremiumEnabled()) {
-                return this.getHost().compareToIgnoreCase(plg.getHost());
-            } else if (this.isPremiumEnabled() && !plg.isPremiumEnabled()) {
-                return -1;
-            } else {
-                return 1;
-            }
-        } else if (!this.isLoaded() && !plg.isLoaded()) {
-            return this.getHost().compareToIgnoreCase(plg.getHost());
-        } else if (this.isLoaded() && !plg.isLoaded()) {
-            return -1;
-        } else {
-            return 1;
+            if (this.isPremiumEnabled() && plg.isPremiumEnabled()) return this.getHost().compareToIgnoreCase(plg.getHost());
+            if (this.isPremiumEnabled() && !plg.isPremiumEnabled()) return -1;
+            if (!this.isPremiumEnabled() && plg.isPremiumEnabled()) return 1;
         }
+        if (this.isLoaded() && !plg.isLoaded()) {
+            if (this.isPremiumEnabled()) return -1;
+        }
+        if (!this.isLoaded() && !!plg.isLoaded()) {
+            if (plg.isPremiumEnabled()) return 1;
+        }
+        return this.getHost().compareToIgnoreCase(plg.getHost());
     }
-    
+
     @Override
     public String toString() {
         return getHost();
     }
 
     public static boolean hasPlugin(String s) {
-        for(HostPluginWrapper w:getHostWrapper()){
-            if(w.canHandle(s))return true;
+        for (HostPluginWrapper w : getHostWrapper()) {
+            if (w.canHandle(s)) return true;
         }
         return false;
     }

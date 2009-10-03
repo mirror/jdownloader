@@ -111,7 +111,7 @@ public class TrafficLeftColumn extends JDTableColumn {
             ((JDProgressBarRender) c).setForeground(COL_PROGRESS);
             /* check selected state */
             if (isSelected) {
-                ((JDProgressBarRender) c).setBackground(JDTableColumn.backgroundselected);
+                ((JDProgressBarRender) c).setBackground(JDTableColumn.background);
                 return;
             } else {
                 ((JDProgressBarRender) c).setBackground(JDTableColumn.background);

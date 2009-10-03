@@ -70,7 +70,7 @@ public class LookAndFeelController {
 
             if (clname.contains("Substance") && JDUtilities.getJavaVersion() >= 1.6) {
                 ret.add(new LookAndFeelWrapper(lafis[i]).setName(lafis[i].getName().replaceAll("([A-Z])", " $0").trim()));
-            } else if (clname.contains("Synthetica") && !clname.contains("SyntheticaStandard")) {
+            } else if (clname.contains("Synthetica")) {
                 ret.add(new LookAndFeelWrapper(lafis[i]).setName(lafis[i].getName().replaceAll("([A-Z])", " $0").trim()));
             } else if (clname.contains("goodie")) {
                 LookAndFeelWrapper lafm = new LookAndFeelWrapper(lafis[i]);
