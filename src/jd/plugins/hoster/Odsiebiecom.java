@@ -25,6 +25,7 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -130,14 +131,30 @@ public class Odsiebiecom extends PluginForHost {
             Form capform = br.getFormbyProperty("name", "wer");
             int i = 0;
             Browser brc = br.cloneBrowser();
-            URLConnectionAdapter fake = brc.openGetConnection("http://odsiebie.com/v_fake.php");
-            fake.disconnect();
             while (capform != null) {
-                String adr = br.getRegex("<img src=\"http://odsiebie.com/v_auth.php\" style=\"display: none;\"><img src=\"(.*?)\"  style=\"display:").getMatch(0);
-                if (adr == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-                URLConnectionAdapter con = brc.openGetConnection(adr);
-                File file = this.getLocalCaptchaFile();
-                Browser.download(file, con);
+                String pagepiece = br.getRegex("name=\"wer\"(.*?)</form>").getMatch(0);
+                if (pagepiece == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                String[] captchalinks = HTMLParser.getHttpLinks(pagepiece, "");
+                if (captchalinks == null || captchalinks.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                String adr = null;
+                File file = null;
+                for (String link : captchalinks) {
+                    URLConnectionAdapter con = brc.openGetConnection(link);
+                    if ((con.getContentType().contains("image"))) {
+                        adr = link;
+                        file = this.getLocalCaptchaFile();
+                        Browser.download(file, con);
+                        break;
+                    }
+                    continue;
+                }
+                // String adr =
+                // br.getRegex("<img src=\"http://odsiebie.com/v_auth.php\" style=\"display: none;\"><img src=\"(.*?)\"  style=\"display:").getMatch(0);
+                // adr = "http://odsiebie.com/v.php";
+                if (adr == null || file == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                // URLConnectionAdapter con = brc.openGetConnection(adr);
+                // File file = this.getLocalCaptchaFile();
+                // Browser.download(file, con);
                 String code = getCaptchaCode(file, downloadLink);
                 capform.getInputFieldByName("captcha").setValue(code);
                 br.submitForm(capform);
