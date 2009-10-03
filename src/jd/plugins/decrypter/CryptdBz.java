@@ -80,15 +80,15 @@ public class CryptdBz extends PluginForDecrypt {
             }
         }
         if (br.containsHTML("The captcha-code you have entered is wrong")) throw new DecrypterException(DecrypterException.CAPTCHA);
+        System.out.println("BROWSER: " + br.toString());
         String[] pageLinks = br.getRegex("<a href=\"(http://crypted\\.biz/folder\\.php\\?action=show.+?)\">[0-9]+</a>&nbsp;&nbsp;").getColumn(0);
-        //page 1 already loaded, loop starts at 1
-        for (int i = 1; i < pageLinks.length; i++) {
+        for (int i = 0; i < pageLinks.length; i++) {
+            br.getPage(pageLinks[i].replace("&amp;", "&"));
             String[] links = br.getRegex("window\\.open\\('(.*?)'\\)").getColumn(0);
             if (links == null || links.length == 0) return null;
             for (String link : links) {
                 linksList.add(link);
             }
-            br.getPage(pageLinks[i].replace("&amp;", "&"));
         }
         progress.setRange(linksList.size());
         for (String link : linksList) {
