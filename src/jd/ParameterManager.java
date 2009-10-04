@@ -176,7 +176,7 @@ public class ParameterManager {
 
                 logger.info("Add password: " + currentArg);
 
-                PasswordListController.getInstance().addPassword(currentArg);
+                PasswordListController.getInstance().addPassword(currentArg, false);
 
             } else if (currentArg.contains("http://") && !(currentArg.charAt(0) == '-')) {
 

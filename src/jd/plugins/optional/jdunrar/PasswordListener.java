@@ -30,6 +30,15 @@ public class PasswordListener implements ProcessListener {
 
     private int lastLinePosition = 0;
 
+    private boolean pwnotmatch = false;
+
+    /*
+     * failed to use the current pw
+     */
+    public boolean pwerror() {
+        return pwnotmatch;
+    }
+
     public PasswordListener(String pass) {
         this.password = pass;
     }
@@ -44,7 +53,15 @@ public class PasswordListener implements ProcessListener {
         }
 
         if (new Regex(lastLine, Pattern.compile(".*?password.{0,200}: $", Pattern.CASE_INSENSITIVE)).matches()) {
-            if (!new Regex(lastLine, Pattern.compile("CRC failed in")).matches()) exec.writetoOutputStream(this.password);
+            if (!new Regex(lastLine, Pattern.compile("CRC failed in")).matches()) {
+                exec.writetoOutputStream(this.password);
+            }
+        }
+        if (new Regex(lastLine, Pattern.compile(".*?ERROR: Passwords do not match", Pattern.CASE_INSENSITIVE)).matches()) {
+            /* unar binary cannot handle this password, so skip it */
+            pwnotmatch = true;
+            JDLogger.getLogger().severe("JDUnrar: cannot handle password \"" + password + "\"");
+            password = "";
         }
         if (new Regex(lastLine, Pattern.compile(".*?password incorrect", Pattern.CASE_INSENSITIVE)).matches()) {
             if (!new Regex(lastLine, Pattern.compile("CRC failed in")).matches()) exec.interrupt();

@@ -58,14 +58,25 @@ public class PasswordListController implements ActionListener, DownloadControlle
     }
 
     /* Warning: only use single passwords here, not multiple in one string */
-    public void addPassword(String pw) {
+    /*
+     * add pw to pwlist
+     * 
+     * optional: move pw to top (eg by jdunrar)
+     */
+    public void addPassword(String pw, boolean top) {
         if (pw == null || pw.trim().length() == 0) return;
         synchronized (LIST2) {
             if (LIST2.contains(pw)) {
-                LIST2.remove(pw);
-                LIST2.add(0, pw);
+                if (top) {
+                    LIST2.remove(pw);
+                    LIST2.add(0, pw);
+                }
             } else {
-                LIST2.add(pw);
+                if (top) {
+                    LIST2.add(0, pw);
+                } else {
+                    LIST2.add(pw);
+                }
             }
         }
         save();
@@ -136,7 +147,7 @@ public class PasswordListController implements ActionListener, DownloadControlle
         if (list == null || list.size() == 0) return;
         synchronized (LIST2) {
             for (String pw : list) {
-                addPassword(pw);
+                addPassword(pw, false);
             }
         }
     }
@@ -145,7 +156,7 @@ public class PasswordListController implements ActionListener, DownloadControlle
         if (list == null || list.length == 0) return;
         synchronized (LIST2) {
             for (String pw : list) {
-                addPassword(pw);
+                addPassword(pw, false);
             }
         }
     }
@@ -201,7 +212,7 @@ public class PasswordListController implements ActionListener, DownloadControlle
             this.addPasswords(((DownloadLink) event.getParameter()).getSourcePluginPasswordList());
             break;
         case DownloadControllerEvent.ADD_FILEPACKAGE:
-            this.addPassword(((FilePackage) event.getParameter()).getPassword());
+            this.addPassword(((FilePackage) event.getParameter()).getPassword(), false);
             break;
         default:
             break;

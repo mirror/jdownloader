@@ -336,13 +336,13 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         wrapper.setOverwrite(this.getPluginConfig().getBooleanProperty(JDUnrarConstants.CONFIG_KEY_OVERWRITE, true));
         wrapper.setUnrarCommand(getPluginConfig().getStringProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND));
         ArrayList<String> pwList = new ArrayList<String>();
-        if (link.getFilePackage().getPassword().length() > 0) pwList.add(link.getFilePackage().getPassword());
-        pwList.addAll(link.getFilePackage().getPasswordAuto());
-        pwList.addAll(PasswordListController.getInstance().getPasswordList());
+        pwList.add(link.getFilePackage().getPassword());
+        pwList.addAll((link.getFilePackage().getPasswordAuto()));
+        pwList.addAll((PasswordListController.getInstance().getPasswordList()));
         // Fügt den Archivnamen und dan dateinamen ans ende der passwortliste
         pwList.add(this.getArchiveName(link));
         pwList.add(new File(link.getFileOutput()).getName());
-        wrapper.setPasswordList(pwList.toArray(new String[] {}));
+        wrapper.setPasswordList(pwList);
 
         queue.add(wrapper);
         queue.start();
@@ -1060,7 +1060,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
     private void assignRealDownloadDir(UnrarWrapper wrapper) {
         // progress.get(wrapper).setStatusText(wrapper.getFile().getName() +
         // ": " + "Archive opened successfull");
-        PasswordListController.getInstance().addPassword(wrapper.getPassword());
+        PasswordListController.getInstance().addPassword(wrapper.getPassword(), true);
 
         int min = this.getPluginConfig().getIntegerProperty(JDUnrarConstants.CONFIG_KEY_SUBPATH_MINNUM, 0);
         if (min > 0) {
@@ -1338,7 +1338,6 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         if (wrapper.getProgressController() != null) {
             wrapper.getProgressController().doFinalize(8000);
         }
-
     }
 
     // @Override

@@ -100,7 +100,7 @@ public class UnrarWrapper extends Thread implements JDRunnable {
     private ArrayList<UnrarListener> listener = new ArrayList<UnrarListener>();
     private DownloadLink link;
     private String unrarCommand;
-    private String[] passwordList;
+    private ArrayList<String> passwordList;
     private File file;
     private int statusid;
     private String password;
@@ -179,11 +179,10 @@ public class UnrarWrapper extends Thread implements JDRunnable {
                         if (password == null) {
                             fireEvent(JDUnrarConstants.WRAPPER_PASSWORD_NEEDED_TO_CONTINUE);
                             if (password != null) {
-                                String[] tmp = passwordList;
-                                this.passwordList = new String[] { password };
+                                this.passwordList.clear();
+                                passwordList.add(password);
                                 password = null;
                                 crackPassword();
-                                passwordList = tmp;
                             }
                             if (password != null) {
                                 fireEvent(JDUnrarConstants.WRAPPER_PASSWORD_FOUND);
@@ -456,7 +455,7 @@ public class UnrarWrapper extends Thread implements JDRunnable {
             int c = 0;
 
             for (String pass : this.passwordList) {
-                crackProgress = ((c++) * 100) / passwordList.length;
+                crackProgress = ((c++) * 100) / passwordList.size();
                 fireEvent(JDUnrarConstants.WRAPPER_PASSWORT_CRACKING);
                 Executer exec = new Executer(unrarCommand);
                 exec.setCodepage(JDUnrar.CODEPAGE);
@@ -485,11 +484,12 @@ public class UnrarWrapper extends Thread implements JDRunnable {
                     }
 
                 }, Executer.LISTENER_STDSTREAM);
-                exec.addProcessListener(new PasswordListener(pass), Executer.LISTENER_ERRORSTREAM);
+                PasswordListener pwl = null;
+                exec.addProcessListener(pwl = new PasswordListener(pass), Executer.LISTENER_ERRORSTREAM);
                 exec.start();
                 exec.waitTimeout();
                 String res = exec.getOutputStream() + " \r\n " + exec.getErrorStream();
-                if (res.indexOf(" (password incorrect ?)") != -1 || res.contains("the file header is corrupt")) {
+                if (res.indexOf(" (password incorrect ?)") != -1 || res.contains("the file header is corrupt") || pwl.pwerror()) {
                     continue;
                 } else if (res.matches("(?s).*[\\s]+All OK[\\s].*")) {
                     this.password = pass;
@@ -504,7 +504,7 @@ public class UnrarWrapper extends Thread implements JDRunnable {
         } else {
             int c = 0;
             for (String pass : this.passwordList) {
-                crackProgress = ((c++) * 100) / passwordList.length;
+                crackProgress = ((c++) * 100) / passwordList.size();
 
                 fireEvent(JDUnrarConstants.WRAPPER_PASSWORT_CRACKING);
                 Executer exec = new Executer(unrarCommand);
@@ -627,7 +627,7 @@ public class UnrarWrapper extends Thread implements JDRunnable {
             exec.setCodepage(JDUnrar.CODEPAGE);
             exec.setDebug(DEBUG);
             if (i > 0) {
-                if (passwordList.length < i) {
+                if (passwordList.size() < i) {
 
                     fireEvent(JDUnrarConstants.WRAPPER_PASSWORD_NEEDED_TO_CONTINUE);
 
@@ -636,20 +636,20 @@ public class UnrarWrapper extends Thread implements JDRunnable {
                     password = null;
 
                 } else {
-                    pass = this.passwordList[i - 1];
+                    pass = this.passwordList.get(i - 1);
                 }
             }
 
             if (c > 0) {
-                crackProgress = ((c) * 100) / passwordList.length;
+                crackProgress = ((c) * 100) / passwordList.size();
                 fireEvent(JDUnrarConstants.WRAPPER_PASSWORT_CRACKING);
             }
             c++;
             i++;
             exec.addParameter("v");
             exec.addParameter("-p");
-
-            exec.addProcessListener(new PasswordListener(pass), Executer.LISTENER_ERRORSTREAM);
+            PasswordListener pwl = null;
+            exec.addProcessListener(pwl = new PasswordListener(pass), Executer.LISTENER_ERRORSTREAM);
             exec.addParameter("-v");
             exec.addParameter("-c-");
             exec.addParameter(file.getName());
@@ -689,7 +689,7 @@ public class UnrarWrapper extends Thread implements JDRunnable {
                 String message = new Regex(res, Pattern.compile("(^.*?is not RAR archive)", Pattern.MULTILINE)).getMatch(0);
                 throw new UnrarException(message);
             }
-            if (res.indexOf(" (password incorrect") != -1 || res.contains("the file header is corrupt")) {
+            if (res.indexOf(" (password incorrect") != -1 || res.contains("the file header is corrupt") || pwl.pwerror()) {
                 logger.finest("Password incorrect: " + file.getName() + " pw: " + pass);
                 continue;
             } else {
@@ -778,8 +778,8 @@ public class UnrarWrapper extends Thread implements JDRunnable {
         this.unrarCommand = file;
     }
 
-    public void setPasswordList(String[] passwordStringtoArray) {
-        this.passwordList = passwordStringtoArray;
+    public void setPasswordList(ArrayList<String> passwordList) {
+        this.passwordList = passwordList;
     }
 
     public int getCurrentVolume() {
