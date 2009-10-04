@@ -73,8 +73,8 @@ public class GetTheBitCom extends PluginForHost {
         br.getPage(redirectframe);
         for (int i = 0; i <= 5; i++) {
             Form captchaForm = br.getForm(1);
-            if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-            String captchaUrl = br.getRegex("><img src=\"(.*?)\"").getMatch(0);
+            String captchaUrl = br.getRegex("\"kcapcha\">.*?nbsp;</label><img src=\"(.*?)\"").getMatch(0);
+            if (captchaForm == null || captchaUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
             String code = getCaptchaCode(captchaUrl, downloadLink);
             captchaForm.put("kcapcha", code);
             br.submitForm(captchaForm);
