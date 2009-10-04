@@ -9,6 +9,8 @@ public class CreateHoster {
     {
         String jacInfoXml =getjacInfoXmlString(destination, user, lettersize, showLoadDialog);
         destination.file=new File(destination.file.getParentFile(), destination.getName().replaceAll("[^a-zA-Z0-9]", "").replaceAll("[AEIOUaeiou]", ""));
+        destination.file.mkdirs();
+
         File ji = destination.getJacinfoXml();
         if(ji.exists())ji.renameTo(new File(destination.file, "jacinfo_bak_" + System.currentTimeMillis() + ".xml"));
         JDIO.writeLocalFile(ji, jacInfoXml, false);
@@ -37,7 +39,6 @@ public class CreateHoster {
 
     }
     public static void create(EasyMethodFile ParentHost, EasyMethodFile destination, String user, int lettersize) {
-        destination.file.mkdir();
         createJacinfoXml(destination, user, lettersize, false);
         copyScriptJas(ParentHost,destination);
     }
