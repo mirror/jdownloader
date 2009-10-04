@@ -57,27 +57,33 @@ public class FreeFolderNet extends PluginForHost {
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        Regex reg = br.getRegex("<a href=\"http://freefolder\\.net/f/.*?\">(.*?)</a> \\|(.*?)</td>");
+        String filesize = reg.getMatch(1);
+        String filename1 = reg.getMatch(0);
         for (int i = 0; i <= 5; i++) {
-        br.getPage(downloadLink.getDownloadURL());
-        br.setFollowRedirects(false);
-        Form captchaForm = br.getFormbyKey("captcha");
-        if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        String captchaurl = br.getRegex("false\"><img src=\"(.*?)\"").getMatch(0);
-        if (captchaurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        String code = getCaptchaCode(captchaurl, downloadLink);
-        captchaForm.put("captcha", code);
-        captchaForm.put("btn_free.x", "0");
-        captchaForm.put("btn_free.y", "0");
-        br.submitForm(captchaForm);
-        String captchacheck = br.getRedirectLocation();
-        if (captchacheck != null) continue;
-        break;
+
+            br.getPage(downloadLink.getDownloadURL());
+            br.setFollowRedirects(false);
+            Form captchaForm = br.getFormbyKey("captcha");
+            if (captchaForm == null && filename1 != null && filesize != null) { throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium");
+            }
+            if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            String captchaurl = br.getRegex("false\"><img src=\"(.*?)\"").getMatch(0);
+            if (captchaurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            String code = getCaptchaCode(captchaurl, downloadLink);
+            captchaForm.put("captcha", code);
+            captchaForm.put("btn_free.x", "0");
+            captchaForm.put("btn_free.y", "0");
+            br.submitForm(captchaForm);
+            String captchacheck = br.getRedirectLocation();
+            if (captchacheck != null) continue;
+            break;
         }
         String captchacheck = br.getRedirectLocation();
         if (captchacheck != null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         String dlpage = br.getRegex("url: \"(.*?)\",").getMatch(0);
         if (dlpage == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        //waittime
+        // waittime
         int tt = Integer.parseInt(br.getRegex("var timeleft = (\\d+);").getMatch(0));
         sleep(tt * 1001l, downloadLink);
         br.getPage(dlpage);

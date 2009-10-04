@@ -28,8 +28,6 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "protectbox.in" }, urls = { "http://[\\w\\.]*?protectbox\\.in/.*" }, flags = { 0 })
@@ -49,7 +47,7 @@ public class PrtctBxn extends PluginForDecrypt {
         if (br.containsHTML("includes/captcha/")) {
             for (int i = 0; i <= 5; i++) {
                 Form captchaform = br.getForm(0);
-                if (captchaform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                if (captchaform == null) return null;
                 File file = this.getLocalCaptchaFile();
                 Browser.download(file, br.cloneBrowser().openGetConnection("http://www.protectbox.in/includes/captcha/imagecreate.php"));
                 int[] p = new jd.captcha.specials.GmdMscCm(file).getResult();
@@ -60,9 +58,11 @@ public class PrtctBxn extends PluginForDecrypt {
                 if (!br.containsHTML("/includes/captcha/")) break;
             }
         }
+        System.out.print(br.toString());
         /* Password handling */
-        String pass = br.getRegex("<b>Passwort:</b>.*?</td>.*?<td>(.*?)</td>").getMatch(0).trim();
-        String fpName = br.getRegex("<b>Ordnername:</b>.*?</td>.*?<td>(.*?)</td>").getMatch(0).trim();
+        String pass = br.getRegex("<b>Passwort:</b>.*?</td>.*?<td>(.*?)</td>").getMatch(0);
+        String fpName = br.getRegex("<b>Ordnername:</b>.*?</td>.*?<td>(.*?)</td>").getMatch(0);
+        if (fpName != null) fpName = fpName.trim();
         fp.setName(fpName);
         String[] links = br.getRegex("\"(out\\.php\\?id=.*?)\"").getColumn(0);
         if (links == null || links.length == 0) return null;
@@ -74,6 +74,7 @@ public class PrtctBxn extends PluginForDecrypt {
             if (finallink == null) throw new DecrypterException(DecrypterException.CAPTCHA);
             DownloadLink dl_link = createDownloadlink(finallink);
             if (pass != null && pass.length() != 0) {
+                pass = pass.trim();
                 dl_link.addSourcePluginPassword(pass);
             }
             decryptedLinks.add(dl_link);

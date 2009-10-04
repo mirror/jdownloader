@@ -27,12 +27,10 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {"crypted.biz"}, urls = {"http://[\\w\\.]*?crypted\\.biz/(folder\\.php\\?action=show\\&folder_id=|dl/|file/)[0-9a-z]+"}, flags = {0})
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "crypted.biz" }, urls = { "http://[\\w\\.]*?crypted\\.biz/(folder\\.php\\?action=show\\&folder_id=|dl/|file/)[0-9a-z]+" }, flags = { 0 })
 public class CryptdBz extends PluginForDecrypt {
 
     public CryptdBz(PluginWrapper wrapper) {
@@ -51,16 +49,16 @@ public class CryptdBz extends PluginForDecrypt {
         if (br.containsHTML("<b>Password:</b>")) {
             logger.warning("Wrong link");
             logger.warning(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-            return new ArrayList<DownloadLink>();
+            return null;
         }
 
         /* Single links handling */
         if (parameter.contains(".biz/file")) {
             String b64 = br.getRegex("var versch = '(.*?)';").getMatch(0);
-            if (b64 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (b64 == null) return null;
             b64 = Encoding.Base64Decode(b64);
             String finallink = new Regex(b64, "src=\"(.*?)\"").getMatch(0);
-            if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (finallink == null) return null;
             DownloadLink dl = createDownloadlink(finallink);
             decryptedLinks.add(dl);
             return decryptedLinks;
@@ -70,9 +68,8 @@ public class CryptdBz extends PluginForDecrypt {
         if (br.containsHTML("name=\"captcha")) {
             for (int i = 0; i <= 1; i++) {
                 Form captchaForm = br.getFormbyKey("captcha");
-                if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
                 String code = br.getRegex("name=\"captcha_2\" value=\"(.*?)\"").getMatch(0);
-                if (code == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                if (captchaForm == null || code == null) return null;
                 captchaForm.put("captcha", code);
                 br.submitForm(captchaForm);
                 if (br.containsHTML("The captcha-code you have entered is wrong")) continue;
@@ -94,10 +91,10 @@ public class CryptdBz extends PluginForDecrypt {
         for (String link : linksList) {
             br.getPage(link);
             String b64 = br.getRegex("var versch = '(.*?)';").getMatch(0);
-            if (b64 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (b64 == null) return null;
             b64 = Encoding.Base64Decode(b64);
             String finallink = new Regex(b64, "src=\"(.*?)\"").getMatch(0);
-            if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (finallink == null) return null;
             DownloadLink dl = createDownloadlink(finallink);
             decryptedLinks.add(dl);
             progress.increase(1);
