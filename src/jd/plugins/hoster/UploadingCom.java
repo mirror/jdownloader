@@ -141,6 +141,7 @@ public class UploadingCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.setCookie("http://www.uploading.com/", "language", "1");
         br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML("but due to abuse or through deletion by")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filesize = br.getRegex("File size: <b>(.*?)</b>").getMatch(0);
         String filename = br.getRegex(">Download(.*?)for free on uploading.com").getMatch(0).trim();
         if (filename == null) {

@@ -26,7 +26,7 @@ import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus; //import jd.plugins.Plugin;
+import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -46,12 +46,14 @@ public class ShareRapidCz extends PluginForHost {
     public void correctDownloadLink(DownloadLink link) throws Exception {
         // many domains are still missing/untested:
         // http://share-rapid.com/informace/
-        String downloadlinklink = link.getDownloadURL().replaceAll("(share-rapid\\.(com|info|cz|eu|info|net|sk)|((mediatack|rapidspool|e-stahuj|premium-rapidshare|qiuck|rapidshare-premium|share-credit|share-free)\\.cz)|((strelci|share-ms|)\\.net)|jirkasekyrka\\.com|((kadzet|universal-share)\\.com)|sharerapid\\.(biz|cz|net|org|sk)|stahuj-zdarma\\.eu)", "share-rapid\\.com");
+        String downloadlinklink = link.getDownloadURL();
+        if (downloadlinklink != null) downloadlinklink = downloadlinklink.replaceAll("(share-rapid\\.(com|info|cz|eu|info|net|sk)|((mediatack|rapidspool|e-stahuj|premium-rapidshare|qiuck|rapidshare-premium|share-credit|share-free)\\.cz)|((strelci|share-ms|)\\.net)|jirkasekyrka\\.com|((kadzet|universal-share)\\.com)|sharerapid\\.(biz|cz|net|org|sk)|stahuj-zdarma\\.eu)", "share-rapid\\.com");
         link.setUrlDownload(downloadlinklink);
     }
 
     public void login(Account account) throws Exception {
         this.setBrowserExclusive();
+        br.setCustomCharset("UTF-8");
         br.setFollowRedirects(true);
         br.getPage("http://share-rapid.com/prihlaseni/");
         Form form = br.getForm(0);
@@ -81,15 +83,12 @@ public class ShareRapidCz extends PluginForHost {
         login(account);
         br.getPage(downloadLink.getDownloadURL());
         String dllink = br.getRegex("\"(http://s[0-9]{1,2}\\.share-rapid\\.com/download.*?)\"").getMatch(0);
-        if (br.containsHTML("Již Vám došel kredit a vyčerpal jste free limit")){
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
-        }
+        if (br.containsHTML("Již Vám došel kredit a vyčerpal jste free limit")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l); }
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
-        if (!(dl.getConnection().isContentDisposition())){
+        if (!(dl.getConnection().isContentDisposition())) {
             br.followConnection();
-            System.out.print(br.toString());
             throw new PluginException(LinkStatus.ERROR_FATAL);
         }
         dl.startDownload();
@@ -128,10 +127,7 @@ public class ShareRapidCz extends PluginForHost {
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
-    
-    
-    
-    
+
     public void reset() {
     }
 

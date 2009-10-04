@@ -39,7 +39,6 @@ public class FileShareInUa extends PluginForHost {
         this.enablePremium("http://fileshare.in.ua/premium.aspx");
     }
 
-    // @Override
     public String getAGBLink() {
         return "http://fileshare.in.ua/about.aspx";
     }
@@ -73,7 +72,7 @@ public class FileShareInUa extends PluginForHost {
         expires = expires.trim();
         ai.setValidUntil(Regex.getMilliSeconds(expires, "dd.MM.yy", null));
         account.setValid(true);
-        ai.isUnlimitedTraffic();
+        ai.setUnlimitedTraffic();
         return ai;
     }
 
@@ -85,7 +84,7 @@ public class FileShareInUa extends PluginForHost {
         if (getlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         getlink = "http://fileshare.in.ua" + getlink;
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, getlink, true, 0);
-        if (!(dl.getConnection().isContentDisposition())){
+        if (!(dl.getConnection().isContentDisposition())) {
             br.followConnection();
             if (br.containsHTML("Воcстановление файла...")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_FATAL);
@@ -97,7 +96,6 @@ public class FileShareInUa extends PluginForHost {
         return 20;
     }
 
-    // @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         String freepage = link.getDownloadURL() + "?free";
@@ -112,7 +110,6 @@ public class FileShareInUa extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         String freepage = downloadLink.getDownloadURL() + "?free";
@@ -139,36 +136,25 @@ public class FileShareInUa extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         URLConnectionAdapter con = dl.getConnection();
         if (!con.isContentDisposition()) {
-            System.out.println("MUH");
             br.followConnection();
-            if (br.containsHTML("временно недоступен")) {
-                con.disconnect();
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-            }
+            if (br.containsHTML("временно недоступен")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             if (br.containsHTML("Воcстановление файла...")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_FATAL);
         }
         dl.startDownload();
     }
 
-    // @Override
     public void reset() {
     }
 
-    // @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    // @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 
-    /*
-     * public String getVersion() { return getVersion("$Revision$"); }
-     */
 }

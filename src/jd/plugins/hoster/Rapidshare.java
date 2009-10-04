@@ -134,6 +134,7 @@ public class Rapidshare extends PluginForHost {
      * @throws IOException
      */
     private String getCorrectedURL(String link) {
+        if (link == null) return null;
         if (link.contains("://ssl.") || !link.startsWith("http://rapidshare.com")) {
             link = "http://rapidshare.com" + link.substring(link.indexOf("rapidshare.com") + 14);
         }

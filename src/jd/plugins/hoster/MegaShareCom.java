@@ -137,8 +137,7 @@ public class MegaShareCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, true, -3);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
-            System.out.print(br.toString());
-            if (br.containsHTML("Invalid Captcha Value")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
+            if (br.containsHTML("Invalid Captcha Value")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             if (br.containsHTML("This file is password protected.")) {
                 logger.warning("Wrong password!");
                 downloadLink.setProperty("pass", null);

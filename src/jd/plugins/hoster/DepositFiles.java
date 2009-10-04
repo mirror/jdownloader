@@ -124,6 +124,11 @@ public class DepositFiles extends PluginForHost {
         /* unknown error, try again */
         String wait = br.getRegex("Bitte versuchen Sie noch mal nach(.*?)<\\/strong>").getMatch(0);
         if (wait != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Regex.getMilliSeconds(wait));
+        /* You have exceeded the 15 GB 24-hour limit */
+        if (br.containsHTML("GOLD users can download no more than")) {
+            logger.info("GOLD users can download no more than 15 GB for the last 24 hours");
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_TEMP_DISABLE);
+        }
     }
 
     public void login(Account account) throws Exception {
