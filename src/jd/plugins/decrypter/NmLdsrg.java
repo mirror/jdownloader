@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -48,13 +49,15 @@ public class NmLdsrg extends PluginForDecrypt {
             br.getPage(parameter);
             Thread.sleep(200);
             br.getPage(parameter);
-            String[] ids = br.getRegex("Weiterleitung.*?([0-9a-z]{32})").getColumn(0);
+            String[] calls = br.getRegex("<script type=\"text/javascript\">(ALZ437tbfb466\\(.*?\\);)</script>").getColumn(0);
 
-            if (ids.length == 0) { return null; }
+            if (calls.length == 0) { return null; }
 
-            for (String id : ids) {
-                String link = "http://www.anime-loads.org/Weiterleitung/?cryptid=" + id;
-                links.add(link);
+            for (String call : calls) {
+                String a = new Regex(call, "ALZ437tbfb466\\('(.*?)', '.*?','.*?'\\);").getMatch(0);
+                String b = new Regex(call, "ALZ437tbfb466\\('.*?', '(.*?)','.*?'\\);").getMatch(0);
+                String c = new Regex(call, "ALZ437tbfb466\\('.*?', '(.*?)','(.*?)'\\);").getMatch(0);
+                links.add(getLink(a, b, c));
             }
         }
 
@@ -71,6 +74,18 @@ public class NmLdsrg extends PluginForDecrypt {
         }
 
         return decryptedLinks;
+    }
+
+    /* Original algorithm unpacked (javascript): http://pastebin.com/f7120bfcc */
+    public String getLink(String a, String b, String c) {
+        String d = "";
+        for (int i = b.length() - 1; i >= 0; i--) {
+            d += b.charAt(i);
+        }
+        if (!c.isEmpty()) {
+            d = d + "&mirror=" + c;
+        }
+        return "http://anime-loads.org/Weiterleitung/?cryptid=" + d;
     }
 
     // @Override
