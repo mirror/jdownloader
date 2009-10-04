@@ -25,10 +25,10 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "forex-fileupload.co.cc", "r1one.co.cc" }, urls = { "http://[\\w\\.]*?forex-fileupload\\.co\\.cc/\\?\\w+", "http://[\\w\\.]*?r1one\\.co\\.cc/\\d+" }, flags = { 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "forex-fileupload.co.cc", "r1one.co.cc", "crazytr.com" }, urls = { "http://[\\w\\.]*?forex-fileupload\\.co\\.cc/\\?\\w+", "http://[\\w\\.]*?r1one\\.co\\.cc/\\d+", "http://[\\w\\.]*?crazytr\\.com/url/\\d+" }, flags = { 0, 0, 0 })
 public class HrfRdrctr extends PluginForDecrypt {
 
-    String[] regxps = { "<a href=\"(.*?)\"><img src=\".*?dwn_btn.gif\"></a>", "<a href=\"(.*?)\"><img src=\"http://r1one\\.co\\.cc/aa\\.png\"></a>" };
+    String[] regxps = { "<a href=\"(.*?)\"><img src=\".*?dwn_btn.gif\"></a>", "<a href=\"(.*?)\"><img src=\"http://.*?/aa\\.png\"></a>"};
 
     public HrfRdrctr(PluginWrapper wrapper) {
         super(wrapper);
