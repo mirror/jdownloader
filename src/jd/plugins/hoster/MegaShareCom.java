@@ -26,6 +26,7 @@ import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -121,14 +122,32 @@ public class MegaShareCom extends PluginForHost {
         form.remove("yesss");
         form.remove("yesss");
         form.remove("yesss");
-
+        String passCode = null;
+        if (br.containsHTML("This file is password protected.")) {
+            if (downloadLink.getStringProperty("pass", null) == null) {
+                passCode = Plugin.getUserInput("Password?", downloadLink);
+            } else {
+                /* gespeicherten PassCode holen */
+                passCode = downloadLink.getStringProperty("pass", null);
+            }
+            form.put("auth_nm", passCode);
+        }
         form.put("captcha_code", captchaCode);
         form.put("yesss", "Download");
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, true, -3);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
+            System.out.print(br.toString());
             if (br.containsHTML("Invalid Captcha Value")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
+            if (br.containsHTML("This file is password protected.")) {
+                logger.warning("Wrong password!");
+                downloadLink.setProperty("pass", null);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        }
+        if (passCode != null) {
+            downloadLink.setProperty("pass", passCode);
         }
         dl.startDownload();
     }
