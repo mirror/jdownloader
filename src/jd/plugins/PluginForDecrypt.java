@@ -221,15 +221,16 @@ public abstract class PluginForDecrypt extends Plugin {
         File captchaFile = this.getLocalCaptchaFile();
         Browser brc = br.cloneBrowser();
         try {
-            Browser.download(captchaFile, brc.openGetConnection(captchaAddress));
+            brc.getDownload(captchaFile, captchaAddress);
         } catch (Exception e) {
             logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
             throw new DecrypterException(DecrypterException.CAPTCHA);
         }
         // erst im Nachhinein das der Bilddownload nicht gestört wird
 
-        captchaFile.renameTo(getLocalCaptchaFile(br.getHttpConnection().getContentType()));
         String captchaCode = getCaptchaCode(method, captchaFile, param);
+        String ext = LoadImage.getFileType(captchaAddress, brc.getHttpConnection().getContentType());
+        captchaFile.renameTo(getLocalCaptchaFile(ext));
         return captchaCode;
     }
 
