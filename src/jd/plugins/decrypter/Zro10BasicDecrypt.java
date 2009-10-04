@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2008  JD-Team support@jdownloader.org
+//    Copyright (C) 2009  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -20,43 +20,40 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "h-link.us", "zero10.us" }, urls = { "http://[\\w\\.]*?h-link\\.us/\\d+", "http://[\\w\\.]*?zero10\\.us/\\d+" }, flags = { 0, 0 })
-public class Zr10s extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zero10.info" }, urls = { "http://[\\w\\.]*?(zero10\\.info|save-link\\.info|share-link\\.info|h-link\\.us|zero10\\.us|darkhorse\\.fi5\\.us)/[0-9]+" }, flags = { 0 })
+public class Zro10BasicDecrypt extends PluginForDecrypt {
 
-    public Zr10s(PluginWrapper wrapper) {
+    public Zro10BasicDecrypt(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        String linkid;
-        boolean hlink = false;
-        if (parameter.indexOf("h-link.us") != -1) {
-            hlink = true;
+        String Domain = new Regex(parameter, "((zero10\\.us|save-link\\.info|share-link\\.info|h-link\\.us|zero10\\.info|darkhorse.fi5.us))/").getMatch(0);
+        String ID = new Regex(parameter, "[0-9a-z.]+/([0-9]+)").getMatch(0);
+        String m1link = "http://www." + Domain + "/m1.php?id=" + ID;
+        br.getPage(m1link);
+        //little errorhandling
+        if (br.getRedirectLocation() != null) {
+            logger.warning("The requested document was not found on this server.");
+            logger.warning(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+            return new ArrayList<DownloadLink>();
         }
-        if (hlink == true) {
-            linkid = new Regex(parameter, ".*?h-link\\.us/([^/]*)").getMatch(0);
-            br.getPage("http://h-link.us/m1.php?id=" + linkid);
-
-        } else {
-            linkid = new Regex(parameter, ".*?zero10\\.us/([^/]*)").getMatch(0);
-            br.getPage("http://zero10.us/m1.php?id=" + linkid);
-        }
-        String declink = br.getRegex("onclick=\"NewWindow\\('(.*?)','name'").getMatch(0);
-        decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(declink)));
+        String finallink = br.getRegex("onclick=\"NewWindow\\('(.*?)','name'").getMatch(0);
+        if (finallink == null) return null;
+        decryptedLinks.add(createDownloadlink(finallink));
 
         return decryptedLinks;
-    }
 
     // @Override
 
+}
 }

@@ -99,12 +99,14 @@ public class UgotFileCom extends PluginForHost {
         this.setBrowserExclusive();
         br.clearCookies(link.getDownloadURL());
         br.getPage(link.getDownloadURL());
+        // IP:Blocked handling
         int sleep = Integer.parseInt(br.getRegex("seconds: (\\d+)").getMatch(0));
+        if (sleep > 130)throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, sleep * 1000);
         if (br.containsHTML("Your hourly traffic limit is exceeded.")) {
             int block = Integer.parseInt(br.getRegex("<div id='sessionCountDown' style='font-weight:bold; font-size:20px;'>(.*?)</div>").getMatch(0)) * 1000 + 1;
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, block);
         }
-        for (int i = 0; i <= 20; i++) {
+        for (int i = 0; i <= 30; i++) {
             String cUrl = "http://ugotfile.com" + br.getRegex("<td><img src=\"(.*?)\" onclick=\"captchaReload\\(\\);\"").getMatch(0);
             String Captcha = getCaptchaCode(cUrl, link);
             Browser br2 = br.cloneBrowser();
