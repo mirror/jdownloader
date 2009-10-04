@@ -22,6 +22,8 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -29,16 +31,70 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileshare.in.ua" }, urls = { "http://[\\w\\.]*?fileshare\\.in\\.ua/[0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileshare.in.ua" }, urls = { "http://[\\w\\.]*?fileshare\\.in\\.ua/[0-9]+" }, flags = { 2 })
 public class FileShareInUa extends PluginForHost {
 
     public FileShareInUa(PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium("http://fileshare.in.ua/premium.aspx");
     }
 
     // @Override
     public String getAGBLink() {
         return "http://fileshare.in.ua/about.aspx";
+    }
+
+    public void login(Account account) throws Exception {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(false);
+        br.getPage("http://fileshare.in.ua");
+        Form form = br.getFormbyKey("auto_login");
+        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        form.put("email", Encoding.urlEncode(account.getUser()));
+        form.put("password", Encoding.urlEncode(account.getPass()));
+        br.setFollowRedirects(true);
+        br.submitForm(form);
+        if (!br.containsHTML("\">Премиум</a> до") && !br.containsHTML("Тип премиума: <b style=\"color: black;\">обычный</b>")) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+    }
+
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        String expires = br.getRegex("Премиум</a> до(.*?)<br>").getMatch(0);
+        if (expires == null) {
+            account.setValid(false);
+            return ai;
+        }
+        expires = expires.trim();
+        ai.setValidUntil(Regex.getMilliSeconds(expires, "dd.MM.yy", null));
+        account.setValid(true);
+        ai.isUnlimitedTraffic();
+        return ai;
+    }
+
+    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+        requestFileInformation(downloadLink);
+        login(account);
+        br.getPage(downloadLink.getDownloadURL());
+        String getlink = br.getRegex("href=\"(/get/.*?)\"").getMatch(0);
+        if (getlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        getlink = "http://fileshare.in.ua" + getlink;
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, getlink, true, 0);
+        if (!(dl.getConnection().isContentDisposition())){
+            br.followConnection();
+            if (br.containsHTML("Воcстановление файла...")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_FATAL);
+        }
+        dl.startDownload();
+    }
+
+    public int getMaxSimultanPremiumDownloadNum() {
+        return 20;
     }
 
     // @Override
@@ -89,7 +145,8 @@ public class FileShareInUa extends PluginForHost {
                 con.disconnect();
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             }
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML("Воcстановление файла...")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_FATAL);
         }
         dl.startDownload();
     }
