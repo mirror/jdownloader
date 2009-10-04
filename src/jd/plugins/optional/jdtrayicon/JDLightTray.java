@@ -65,13 +65,15 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
 
     private static final String PROPERTY_START_MINIMIZED = "PROPERTY_START_MINIMIZED";
 
-    private static final String PROPERTY_MINIMIZE_TO_TRAY = "PROPERTY_MINIMIZE_TO_TRAY";
+    private static final String PROPERTY_CLOSE_TO_TRAY = "PROPERTY_CLOSE_TO_TRAY";
 
     private static final String PROPERTY_SINGLE_CLICK = "PROPERTY_SINGLE_CLICK";
 
     private static final String PROPERTY_TOOLTIP = "PROPERTY_TOOLTIP";
 
     private static final String PROPERTY_SHOW_ON_LINKGRAB = "PROPERTY_SHOW_ON_LINKGRAB";
+
+    private static final String PROPERTY_SHOW_ON_LINKGRAB2 = "PROPERTY_SHOW_ON_LINKGRAB2";
 
     private static final String PROPERTY_SHOW_INFO_IN_TITLE = "PROPERTY_SHOW_INFO_IN_TITLE";
 
@@ -141,13 +143,14 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
     }
 
     public void initConfig() {
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_MINIMIZE_TO_TRAY, JDL.L("plugins.optional.JDLightTray.minimizetotray", "Minimize to tray")).setDefaultValue(true));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_CLOSE_TO_TRAY, JDL.L("plugins.optional.JDLightTray.closetotray", "Close to tray")).setDefaultValue(true));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_START_MINIMIZED, JDL.L("plugins.optional.JDLightTray.startMinimized", "Start minimized")).setDefaultValue(false));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_SINGLE_CLICK, JDL.L("plugins.optional.JDLightTray.singleClick", "Toggle window status with single click")).setDefaultValue(false));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_TOOLTIP, JDL.L("plugins.optional.JDLightTray.tooltip", "Show Tooltip")).setDefaultValue(true));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_SHOW_ON_LINKGRAB, JDL.L("plugins.optional.JDLightTray.linkgrabber", "Show on Linkgrabbing")).setDefaultValue(true));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_SHOW_ON_LINKGRAB, JDL.L("plugins.optional.JDLightTray.linkgrabber.intray", "Show on Linkgrabbing (when minimized as trayicon)")).setDefaultValue(true));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_SHOW_ON_LINKGRAB2, JDL.L("plugins.optional.JDLightTray.linkgrabber.always", "Show on Linkgrabbing (always)")).setDefaultValue(false));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_SHOW_INFO_IN_TITLE, JDL.L("plugins.optional.JDLightTray.titleinfo", "Show info in TaskBar when minimized")).setDefaultValue(true));
     }
 
@@ -383,7 +386,7 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
     @Override
     public Object interact(String command, Object parameter) {
         if (command == null) return null;
-        if (command.equalsIgnoreCase("enabled")) return subConfig.getBooleanProperty(PROPERTY_MINIMIZE_TO_TRAY, true);
+        if (command.equalsIgnoreCase("enabled")) return subConfig.getBooleanProperty(PROPERTY_CLOSE_TO_TRAY, true);
         if (command.equalsIgnoreCase("refresh")) {
             new GuiRunnable<Object>() {
                 @Override
@@ -404,7 +407,7 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
     }
 
     public void windowClosing(WindowEvent e) {
-        if (subConfig.getBooleanProperty(PROPERTY_MINIMIZE_TO_TRAY, true)) {
+        if (subConfig.getBooleanProperty(PROPERTY_CLOSE_TO_TRAY, true)) {
             miniIt(true);
         }
     }
@@ -424,7 +427,7 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
     }
 
     public void onLinkGrabberControllerEvent(LinkGrabberControllerEvent event) {
-        if (event.getID() == LinkGrabberControllerEvent.NEW_LINKS && subConfig.getBooleanProperty(PROPERTY_SHOW_ON_LINKGRAB, true)) {
+        if (event.getID() == LinkGrabberControllerEvent.NEW_LINKS && ((subConfig.getBooleanProperty(PROPERTY_SHOW_ON_LINKGRAB, true) && !guiFrame.isVisible()) || subConfig.getBooleanProperty(PROPERTY_SHOW_ON_LINKGRAB2, false))) {
             if (!guiFrame.isVisible()) {
                 /* set visible */
                 new GuiRunnable<Object>() {
@@ -434,16 +437,16 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
                         return null;
                     }
                 }.start();
-                /* workaround for : toFront() */
-                new GuiRunnable<Object>() {
-                    @Override
-                    public Object runSave() {
-                        guiFrame.setAlwaysOnTop(true);
-                        guiFrame.toFront();
-                        return null;
-                    }
-                }.start();
             }
+            /* workaround for : toFront() */
+            new GuiRunnable<Object>() {
+                @Override
+                public Object runSave() {
+                    guiFrame.setAlwaysOnTop(true);
+                    guiFrame.toFront();
+                    return null;
+                }
+            }.start();
             if (iconified) {
                 /* restore normale state,if windows was iconified */
                 new GuiRunnable<Object>() {
