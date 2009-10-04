@@ -442,7 +442,6 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
             new GuiRunnable<Object>() {
                 @Override
                 public Object runSave() {
-                    guiFrame.setAlwaysOnTop(true);
                     guiFrame.toFront();
                     return null;
                 }
