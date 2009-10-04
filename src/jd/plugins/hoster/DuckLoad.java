@@ -48,9 +48,9 @@ public class DuckLoad extends PluginForHost {
             sleep(10 * 1000l, link);
         }
         Form form = br.getForm(0);
-        String capurl = "/design/Captcha" + br.getRegex("src=\"/design/Captcha\\d?(.*?\\.php\\?.*?key=.*?)\"").getMatch(0);
-        if (capurl == null) capurl = "/design/Captcha" + br.getRegex("src='/design/Captcha\\d?(.*?\\.php.*?key=.*?)'").getMatch(0);
-        String code = getCaptchaCode(null, capurl, link);
+        String capurl = "/design/Captcha2" + br.getRegex("src=\"/design/Captcha\\d?(.*?\\.php\\?.*?key=.*?)\"").getMatch(0);
+        if (capurl == null) capurl = "/design/Captcha2" + br.getRegex("src='/design/Captcha\\d?(.*?\\.php.*?key=.*?)'").getMatch(0);
+        String code = getCaptchaCode(capurl, link);
         if (form.containsHTML("appl_code")) {
             form = new Form();
             form.setAction(br.getForm(0).getAction());
