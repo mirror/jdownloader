@@ -143,7 +143,6 @@ public class Netloadin extends PluginForHost {
             dl.startDownload();
         } catch (IOException e) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30000);
-
         }
     }
 
@@ -375,14 +374,19 @@ public class Netloadin extends PluginForHost {
 
             String id = Netloadin.getID(downloadLink.getDownloadURL());
 
-            String page = br.getPage("http://netload.in/share/fileinfos2.php?bz=1&file_id=" + id);
-            for (int i = 0; i < 3 && page == null; i++) {
-
-                Thread.sleep(150);
-
-                page = br.getPage("http://netload.in/share/fileinfos2.php?bz=1&file_id=" + id);
+            String page = null;
+            IOException ex = null;
+            for (int i = 0; i < 5; i++) {
+                Thread.sleep(500 + (i * 200));
+                ex = null;
+                try {
+                    page = br.getPage("http://netload.in/share/fileinfos2.php?bz=1&file_id=" + id);
+                    break;
+                } catch (IOException e2) {
+                    ex = e2;
+                }
             }
-
+            if (page == null && ex != null) throw ex;
             if (page == null || Regex.matches(page, "unknown file_data") || Regex.matches(page, "unknown_file_data")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
             String[] entries = br.getRegex("(.*?);(.*?);(.*?);(.*?);(.*)").getRow(0);

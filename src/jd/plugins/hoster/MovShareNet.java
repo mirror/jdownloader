@@ -69,13 +69,10 @@ public class MovShareNet extends PluginForHost {
         }
         if (br.containsHTML("The file is beeing transfered to our other servers")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
         String dllink = br.getRegex(Pattern.compile("<embed src=\"(.*?)\" width")).getMatch(0);
-        if (dllink != null) {
-            dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, dllink, true, -20);
-        } else {
-            String dllink2 = br.getRegex(Pattern.compile("video/divx\" src=\"(.*?)\"  id=\"embedm")).getMatch(0);
-            dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, dllink2, true, -20);
-        }
-
+        if (dllink == null) dllink = br.getRegex(Pattern.compile("video/divx\" src=\"(.*?)\"  id=\"embedm")).getMatch(0);
+        if (dllink == null) dllink = br.getRegex(Pattern.compile("addVariable\\(\"file\",\"(http://.*?)\"")).getMatch(0);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         dl.startDownload();
     }
 

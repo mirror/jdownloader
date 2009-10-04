@@ -262,9 +262,12 @@ public class DistributeData extends Thread {
         foundPasswords.addAll(HTMLParser.findPasswords(data));
         if (ret != null && ret.size() == 1) {
             /* also check for disabled hosterplugin and filtering here */
-            if (!ret.get(0).getPlugin().getWrapper().usePlugin() || LinkGrabberController.isFiltered(ret.get(0))) ret.clear();
-            ret.get(0).addSourcePluginPasswordList(foundPasswords);
-            return ret;
+            if (!ret.get(0).getPlugin().getWrapper().usePlugin() || LinkGrabberController.isFiltered(ret.get(0))) {
+                ret.clear();
+            } else {
+                ret.get(0).addSourcePluginPasswordList(foundPasswords);
+                return ret;
+            }
         }
         data = HTMLEntities.unhtmlentities(data);
         data = data.replaceAll("jd://", "http://");
