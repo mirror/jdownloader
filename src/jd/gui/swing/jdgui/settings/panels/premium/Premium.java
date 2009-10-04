@@ -41,6 +41,7 @@ import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.components.AccountDialog;
 import jd.gui.swing.components.linkbutton.JLink;
+import jd.gui.swing.components.table.JDRowHighlighter;
 import jd.gui.swing.jdgui.actions.ThreadedAction;
 import jd.gui.swing.jdgui.settings.ConfigPanel;
 import jd.gui.swing.jdgui.settings.JDLabelListRenderer;
@@ -89,6 +90,14 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
 
     private void initPanel(JPanel panel) {
         internalTable = new PremiumTable(this);
+        internalTable.addJDRowHighlighter(new JDRowHighlighter(internalTable.getBackground().darker()) {
+
+            @Override
+            public boolean doHighlight(Object obj) {
+                return !(obj instanceof Account);
+            }
+
+        });
         scrollPane = new JScrollPane(internalTable);
         Update_Async = new Timer(250, this);
         Update_Async.setInitialDelay(250);

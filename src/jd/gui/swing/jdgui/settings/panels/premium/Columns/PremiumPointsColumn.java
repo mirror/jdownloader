@@ -66,13 +66,6 @@ public class PremiumPointsColumn extends JDTableColumn {
     }
 
     @Override
-    public void postprocessCell(Component c, JDTableModel table, Object value, boolean isSelected, int row, int column) {
-        if (!(value instanceof Account)) {
-            c.setBackground(table.getJDTable().getBackground().darker());
-        }
-    }
-
-    @Override
     public boolean isEditable(Object obj) {
         // TODO Auto-generated method stub
         return false;

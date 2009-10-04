@@ -77,6 +77,7 @@ class JDPasswordField extends JPasswordField implements ClipboardOwner {
 
 public class PassColumn extends JDTableColumn implements ActionListener {
 
+    private static final long serialVersionUID = -5291590062503352550L;
     private JDPasswordField passw;
     private JRendererLabel jlr;
 
@@ -87,44 +88,27 @@ public class PassColumn extends JDTableColumn implements ActionListener {
         jlr.setBorder(null);
     }
 
-    /**
-     * 
-     */
-    private static final long serialVersionUID = -5291590062503352550L;
-    private Component co;
-    private Component coedit;
-
     @Override
     public Component myTableCellEditorComponent(JDTableModel table, Object value, boolean isSelected, int row, int column) {
         passw.removeActionListener(this);
         passw.setText(((Account) value).getPass());
         passw.addActionListener(this);
-        coedit = passw;
-        return coedit;
+        return passw;
     }
 
     @Override
     public Component myTableCellRendererComponent(JDTableModel table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-        co = jlr;
         if (value instanceof Account) {
             jlr.setText("*****");
         } else {
             jlr.setText("");
         }
-        return co;
-    }
-
-    @Override
-    public void postprocessCell(Component c, JDTableModel table, Object value, boolean isSelected, int row, int column) {
-        if (!(value instanceof Account)) {
-            c.setBackground(table.getJDTable().getBackground().darker());
-        }
+        return jlr;
     }
 
     @Override
     public boolean isEditable(Object ob) {
-        if (ob != null && ob instanceof Account) return true;
-        return false;
+        return ob != null && ob instanceof Account;
     }
 
     @Override
@@ -134,8 +118,7 @@ public class PassColumn extends JDTableColumn implements ActionListener {
     }
 
     public Object getCellEditorValue() {
-        if (coedit == null) return null;
-        return new String(((JDPasswordField) coedit).getPassword());
+        return new String(passw.getPassword());
     }
 
     public void actionPerformed(ActionEvent e) {

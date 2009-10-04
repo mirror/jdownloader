@@ -42,35 +42,24 @@ public class UserColumn extends JDTableColumn implements ActionListener {
     }
 
     private static final long serialVersionUID = -5291590062503352550L;
-    private Component co;
-    private Component coedit;
 
     @Override
     public Component myTableCellEditorComponent(JDTableModel table, Object value, boolean isSelected, int row, int column) {
         user.removeActionListener(this);
         user.setText(((Account) value).getUser());
         user.addActionListener(this);
-        coedit = user;
-        return coedit;
+        return user;
     }
 
     @Override
     public Component myTableCellRendererComponent(JDTableModel table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-        co = jlr;
         if (value instanceof Account) {
             Account ac = (Account) value;
             jlr.setText(ac.getUser());
         } else {
             jlr.setText("");
         }
-        return co;
-    }
-
-    @Override
-    public void postprocessCell(Component c, JDTableModel table, Object value, boolean isSelected, int row, int column) {
-        if (!(value instanceof Account)) {
-            c.setBackground(table.getJDTable().getBackground().darker());
-        }
+        return jlr;
     }
 
     @Override
@@ -86,8 +75,7 @@ public class UserColumn extends JDTableColumn implements ActionListener {
     }
 
     public Object getCellEditorValue() {
-        if (coedit == null) return null;
-        return ((JTextField) coedit).getText();
+        return user.getText();
     }
 
     public void actionPerformed(ActionEvent e) {

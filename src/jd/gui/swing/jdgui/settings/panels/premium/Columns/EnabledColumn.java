@@ -34,8 +34,6 @@ import org.jdesktop.swingx.renderer.JRendererCheckBox;
 
 public class EnabledColumn extends JDTableColumn implements ActionListener {
     private static final long serialVersionUID = -1043261559739746995L;
-    private Component co;
-    private Component coedit;
     private JRendererCheckBox boolrend;
     private JCheckBox checkbox;
     boolean enabled = false;
@@ -62,13 +60,11 @@ public class EnabledColumn extends JDTableColumn implements ActionListener {
         checkbox.removeActionListener(this);
         checkbox.setSelected(enabled);
         checkbox.addActionListener(this);
-        coedit = checkbox;
-        return coedit;
+        return checkbox;
     }
 
     @Override
     public Component myTableCellRendererComponent(JDTableModel table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-        co = boolrend;
         if (value instanceof Account) {
             Account ac = (Account) value;
             boolrend.setSelected(ac.isEnabled());
@@ -76,14 +72,7 @@ public class EnabledColumn extends JDTableColumn implements ActionListener {
             HostAccounts ha = (HostAccounts) value;
             boolrend.setSelected(ha.isEnabled());
         }
-        return co;
-    }
-
-    @Override
-    public void postprocessCell(Component c, JDTableModel table, Object value, boolean isSelected, int row, int column) {
-        if (!(value instanceof Account)) {
-            c.setBackground(table.getJDTable().getBackground().darker());
-        }
+        return boolrend;
     }
 
     @Override
@@ -106,15 +95,12 @@ public class EnabledColumn extends JDTableColumn implements ActionListener {
     }
 
     public Object getCellEditorValue() {
-        if (coedit == null) return null;
-        return ((JCheckBox) coedit).isSelected();
-
+        return checkbox.isSelected();
     }
 
     public void actionPerformed(ActionEvent e) {
         checkbox.removeActionListener(this);
         this.fireEditingStopped();
-
     }
 
     @Override
