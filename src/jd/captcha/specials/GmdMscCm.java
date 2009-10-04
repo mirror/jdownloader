@@ -1,12 +1,15 @@
 package jd.captcha.specials;
-
-import java.awt.Color;
-import java.awt.image.BufferedImage;
+import java.awt.Image;
 import java.io.File;
-import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.Iterator;
 
-import javax.imageio.ImageIO;
-
+import jd.captcha.JAntiCaptcha;
+import jd.captcha.pixelgrid.Captcha;
+import jd.captcha.pixelgrid.Letter;
+import jd.captcha.pixelobject.PixelObject;
+import jd.captcha.utils.Utilities;
 import jd.nutils.Colors;
 
 /**
@@ -15,123 +18,96 @@ import jd.nutils.Colors;
  * @author JTB
  */
 public class GmdMscCm {
-    
-    private int max_x = 0;
-    private int max_y = 0;
-    private int min_x = 300;
-    private int min_y = 100;
-    private int[][] selected = new int[5001][2];
-    private BufferedImage pic = null;
-    private int pixel = 0;
-    private File file = null;
-    
-    public GmdMscCm(File file) {
-        this.file = file;
-    }
-    public int[] getResult() {
-        try {
-            pic = ImageIO.read(this.file);
-        } catch (IOException e) {
-            e.printStackTrace();
+    Comparator<Integer> isElementColor = new Comparator<Integer>() {
+
+        public int compare(Integer o1, Integer o2) {
+            int c = o1;
+            int c2 = o2;
+            if (c < 0 || c == 0xffffff) return 0;
+            int[] hsvC = Colors.rgb2hsv(c);
+            int[] hsvC2 = Colors.rgb2hsv(c2);
+            if(hsvC[0]==0&&hsvC2[0]==0&&hsvC[1]==0&&hsvC2[1]==0)return 1;
+            if(hsvC[0]==hsvC2[0]&&hsvC[2]==hsvC2[2])return 1;
+            return 0;
         }
-        
-        int x = 3;
-        int y = 3;
-        this.selected[0][0] = 1;
-        Color color;
-        int[] result = {0, 0};
-        
-        while(y+3 < pic.getHeight()) {
-            color = new Color(pic.getRGB(x, y));
-            
-            if (result[0] == 0 && colorCompare(color,new Color(0, 0, 0)) == false
-                    && colorCompare(color, new Color(255, 255, 255)) == false
-                    && ((colorCompare2(new Color(pic.getRGB(x, y - 1)), color)
-                            || colorCompare2(new Color(pic.getRGB(x, y + 1)), color))
-                    && (colorCompare2(new Color(pic.getRGB(x - 1, y)), color)
-                            || colorCompare2(new Color(pic.getRGB(x + 1, y)), color)))) {
-                
-                select(x, y, color);
-                
-                if(this.pixel > 4) {
-                    result[0] = (this.max_x - this.min_x) / 2 + this.min_x;
-                    result[1] = (this.max_y - this.min_y) / 2 + this.min_y;
+
+    };
+
+
+    public static void main(String[] args) {
+        File[] list = new File("/home/dwd/.jd_home/captchas/lnkcrptwsCircles").listFiles();
+       for (int i = 20; i < 30; i++) {
+        File file = list[i];
+        new GmdMscCm(file).getResult();
+
+    }
+    }
+    /**
+     * get objects with different color
+     * 
+     * @param grid
+     * @return
+     */
+    public ArrayList<PixelObject> getObjects(Captcha grid) {
+        ArrayList<PixelObject> ret = new ArrayList<PixelObject>();
+        ArrayList<PixelObject> merge;
+        for (int x = 0; x < grid.getWidth(); x++) {
+            for (int y = 0; y < grid.getHeight(); y++) {
+                int c = grid.getGrid()[x][y];
+                if (c < 0 || c == 0xffffff) continue;
+                PixelObject n = new PixelObject(grid);
+                n.add(x, y, c);
+                merge = new ArrayList<PixelObject>();
+                for (PixelObject o : ret) {
+                    if (o.isTouching(x, y, true, 26, 26) && isElementColor.compare(o.getMostcolor(), c)==1) {
+                        merge.add(o);
+                    }
+                }
+                if (merge.size() == 0) {
+                    ret.add(n);
+                } else if (merge.size() == 1) {
+                    merge.get(0).add(n);
                 } else {
-                    this.pixel = 0;
-                    this.max_x = 0;
-                    this.min_x = 0;
-                    this.max_y = 0;
-                    this.min_y = 0;
+                    for (PixelObject po : merge) {
+                        ret.remove(po);
+                        n.add(po);
+                    }
+                    ret.add(n);
                 }
             }
-            
-            x++;
-            
-            if (x+4 >= pic.getWidth()) {
-                x = 3;
-                y++;
-            }
         }
-        return result;
+        return ret;
     }
-
-    private boolean colorCompare(Color color1,Color color2) {
-      if(Colors.getColorDifference(color1.getRGB(), color2.getRGB())<70) {
-          return true;
-      } else {
-          return false;
-      }  
+    private File captchafile = null;
+    private JAntiCaptcha jac = new JAntiCaptcha("EasyCaptcha");
+    public GmdMscCm(File file) {
+        this.captchafile = file;
     }
-    
-    private boolean colorCompare2(Color color1, Color color2) {
-        if (color1.getRGB()!=0xffffff&&color1.getRGB()!=0x000000&&(Color.RGBtoHSB(color1.getRed(), color1.getGreen(), color1.getBlue(), null)[0] == Color.RGBtoHSB(color2.getRed(), color2.getGreen(), color2.getBlue(), null)[0] || colorCompare(color1, color2))
-                && !colorCompare(color1,new Color(255, 255, 255))
-                && !colorCompare(color1,new Color(0, 0, 0))) {
-            return true;
-        } else {
-            return false;
-        }  
-     }
+    public int[] getResult() {
+        
+        Image captchaImage = Utilities.loadImage(captchafile);
+        Captcha captcha = jac.createCaptcha(captchaImage);
+        captcha.setCaptchaFile(captchafile);
+        captcha.crop(2, 2, 2, 2);
+        ArrayList<PixelObject> ob = getObjects(captcha);
+//        merge(ob);
+        // delete the lines
 
-    private void select(int x, int y, Color color) {
-        boolean vorhanden = false;
-        
-        for(int i = 1; i < this.selected.length; i++){
-            if (this.selected[i][0] == x && this.selected[i][1] == y) {
-                vorhanden = true;
-            }   
+        for (Iterator<PixelObject> iterator = ob.iterator(); iterator.hasNext();) {
+            PixelObject pixelObject = (PixelObject) iterator.next();
+            int ratio = pixelObject.getHeight() * 100 / pixelObject.getWidth();
+            if (ratio > 115 || ratio < 85||pixelObject.getSize()<35) iterator.remove();
         }
-        
-        if (vorhanden == false) {
-            this.pixel++;
-            this.selected[this.selected[0][0]][0] = x;
-            this.selected[this.selected[0][0]][1] = y;
-            this.selected[0][0]++;
-            
-            if (x > this.max_x) {
-                this.max_x = x;
-            } else {
-                if (x < this.min_x) {
-                    this.min_x = x;
-                }   
-            }
-            
-            if (y > this.max_y) {
-                this.max_y = y;
-            } else {
-                if (y < this.min_y) {
-                    this.min_y = y; 
-                }    
-            }
-            
-            if(colorCompare2(new Color(this.pic.getRGB(x + 1, y)), color))
-                select(x + 1, y, color);
-            if(colorCompare(new Color(this.pic.getRGB(x, y + 1)), color))
-                select(x, y + 1, color);
-            if(colorCompare2(new Color(this.pic.getRGB(x - 1, y)), color))
-                select(x - 1, y, color);
-            if(colorCompare2(new Color(this.pic.getRGB(x, y -1 )), color))
-                select(x, y - 1, color); 
-        }
+        Circle circle = new Circle(captcha, ob);
+        circle.inBorder = 3;
+        circle.outBorder = 4;
+        circle.isElementColor = isElementColor;
+//         BasicWindow.showImage(captcha.getImage());
+//         BasicWindow.showImage(circle.getOpenCircle().getImage());
+        Letter openCircle = circle.getOpenCircle();
+        if (openCircle == null) return null;
+        int x = openCircle.getLocation()[0] + (openCircle.getWidth() / 2);
+        int y = openCircle.getLocation()[1] + (openCircle.getHeight() / 2);
+        return new int[] {x, y};
     }
 }
