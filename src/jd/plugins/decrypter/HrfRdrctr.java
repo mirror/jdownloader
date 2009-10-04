@@ -28,7 +28,8 @@ import jd.plugins.PluginForDecrypt;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "forex-fileupload.co.cc", "r1one.co.cc", "crazytr.com" }, urls = { "http://[\\w\\.]*?forex-fileupload\\.co\\.cc/\\?\\w+", "http://[\\w\\.]*?r1one\\.co\\.cc/\\d+", "http://[\\w\\.]*?crazytr\\.com/url/\\d+" }, flags = { 0, 0, 0 })
 public class HrfRdrctr extends PluginForDecrypt {
 
-    String[] regxps = { "<a href=\"(.*?)\"><img src=\".*?dwn_btn.gif\"></a>", "<a href=\"(.*?)\"><img src=\"http://.*?/aa\\.png\"></a>"};
+    /* Usage: {{regex, getMatch()-Index}, {..., ...}} */
+    Object[][] regxps = {{"<a href=\"(http://.*?)\"><img src=\".*?/(aa\\.png|dwn_btn\\.gif)\"></a>", 0}};
 
     public HrfRdrctr(PluginWrapper wrapper) {
         super(wrapper);
@@ -43,7 +44,7 @@ public class HrfRdrctr extends PluginForDecrypt {
 
         for (int i = 0; i < regxps.length; i++) {
             if (link == null) {
-                link = br.getRegex(regxps[i]).getMatch(0);
+                link = br.getRegex((String)regxps[i][0]).getMatch((Integer)regxps[i][1]);
             } else {
                 break;
             }
