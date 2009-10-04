@@ -1,5 +1,6 @@
 package jd.plugins.optional.customizer;
 
+import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -15,6 +16,7 @@ import javax.swing.JTextField;
 import jd.config.SubConfiguration;
 import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
+import jd.gui.swing.components.table.JDRowHighlighter;
 import jd.gui.swing.jdgui.actions.ThreadedAction;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.views.toolbar.ViewToolbar;
@@ -56,11 +58,19 @@ public class CustomizerGui extends SwitchPanel implements KeyListener, ActionLis
         vt.setList(new String[] { "action.customize.addsetting", "action.customize.removesetting" });
 
         this.add(vt, "dock north,gapleft 3");
-        this.add(new JScrollPane(table = new CustomizerTable(this, config.getGenericProperty(JDPackageCustomizer.PROPERTY_SETTINGS, new ArrayList<CustomizeSetting>()))), "growx,growy");
+        this.add(new JScrollPane(table = new CustomizerTable(config.getGenericProperty(JDPackageCustomizer.PROPERTY_SETTINGS, new ArrayList<CustomizeSetting>()))), "growx,growy");
         this.add(new JLabel(JDL.L(JDL_PREFIX + "tester", "Insert examplelinks here to highlight the matched setting:")), "split 3, h pref!");
         this.add(tester = new JTextField(), "growx, h pref!");
         this.add(reset = new JButton(JDTheme.II("gui.images.undo", 16, 16)), "h pref!");
 
+        table.addJDRowHighlighter(new JDRowHighlighter(new Color(204, 255, 170)) {
+
+            @Override
+            public boolean doHighlight(Object obj) {
+                return ((CustomizeSetting) obj).matches(tester.getText());
+            }
+
+        });
         tester.addKeyListener(this);
         reset.addActionListener(this);
     }
@@ -135,10 +145,6 @@ public class CustomizerGui extends SwitchPanel implements KeyListener, ActionLis
     protected void onShow() {
         table.getModel().setSettings(config.getGenericProperty(JDPackageCustomizer.PROPERTY_SETTINGS, new ArrayList<CustomizeSetting>()));
         table.getModel().refreshModel();
-    }
-
-    public String getTestText() {
-        return tester.getText();
     }
 
     public void keyPressed(KeyEvent e) {

@@ -127,7 +127,7 @@ public abstract class JDTableColumn extends AbstractCellEditor implements TableC
         return c;
     }
 
-    /*
+    /**
      * default function to handle Enabled State, overwrite to customize
      */
     public void handleEnabled(Component c, JDTableModel table, Object value, boolean isSelected, int row, int column) {
@@ -163,7 +163,7 @@ public abstract class JDTableColumn extends AbstractCellEditor implements TableC
         }
     }
 
-    /*
+    /**
      * default function to handle Selected State, overwrite to customize
      */
     public void handleSelected(Component c, JDTableModel table, Object value, boolean isSelected, int row, int column) {

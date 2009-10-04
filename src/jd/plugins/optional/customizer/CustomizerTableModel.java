@@ -42,12 +42,6 @@ public class CustomizerTableModel extends JDTableModel {
     }
 
     @Override
-    public CustomizerTable getJDTable() {
-        if (super.getJDTable() == null) return null;
-        return (CustomizerTable) super.getJDTable();
-    }
-
-    @Override
     public void refreshModel() {
         synchronized (list) {
             list.clear();
