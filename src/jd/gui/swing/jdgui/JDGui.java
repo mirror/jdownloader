@@ -126,7 +126,6 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         if (mainFrame.getRootPane().getUI().toString().contains("SyntheticaRootPaneUI")) {
             ((de.javasoft.plaf.synthetica.SyntheticaRootPaneUI) mainFrame.getRootPane().getUI()).setMaximizedBounds(mainFrame);
         }
-        mainFrame.setExtendedState(GUIUtils.getConfig().getIntegerProperty("MAXIMIZED_STATE_OF_" + mainFrame.getName(), JFrame.NORMAL));
         ClipboardHandler.getClipboard().setTempDisabled(false);
         LinkGrabberController.getInstance().setDistributer(this);
     }

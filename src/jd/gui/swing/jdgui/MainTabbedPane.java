@@ -18,6 +18,7 @@ package jd.gui.swing.jdgui;
 
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Rectangle;
 import java.awt.event.KeyEvent;
@@ -101,8 +102,8 @@ public class MainTabbedPane extends JTabbedPane implements MouseListener {
     }
 
     private MainTabbedPane() {
-
-        this.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
+        this.setMinimumSize(new Dimension(300, 100));
+        this.setTabLayoutPolicy(JTabbedPane.WRAP_TAB_LAYOUT);
         this.setOpaque(false);
         if (JDUtilities.getJavaVersion() < 1.6) {
             addMouseListener(this);
@@ -188,10 +189,10 @@ public class MainTabbedPane extends JTabbedPane implements MouseListener {
 
     public void mouseClicked(MouseEvent e) {
         try {
-        int tabNumber = getUI().tabForCoordinate(this, e.getX(), e.getY());
-        if (tabNumber < 0) return;
-        Rectangle rect = ((CloseTabIcon) getIconAt(tabNumber)).getBounds();
-       
+            int tabNumber = getUI().tabForCoordinate(this, e.getX(), e.getY());
+            if (tabNumber < 0) return;
+            Rectangle rect = ((CloseTabIcon) getIconAt(tabNumber)).getBounds();
+
             if (rect.contains(e.getX(), e.getY())) {
                 // the tab is being closed
                 ((ClosableView) this.getComponentAt(tabNumber)).getCloseAction().actionPerformed(null);

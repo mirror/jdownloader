@@ -732,7 +732,10 @@ public class JDUtilities {
         if (clURL != null) {
             try {
                 File f = new File(clURL.toURI());
-                if (mkdirs) f.mkdirs();
+                if (mkdirs) {
+                    File f2 = f.getParentFile();
+                    if (f2 != null) f2.mkdirs();
+                }
                 return f;
             } catch (URISyntaxException e) {
             }
