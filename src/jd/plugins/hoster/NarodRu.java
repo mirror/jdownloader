@@ -29,20 +29,30 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "narod.ru" }, urls = { "http://[\\w\\.]*?narod\\.ru/disk/\\d+/.*\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "narod.ru" }, urls = { "http://[\\w\\.]*?narod\\.ru/disk/(\\d+/.*|start/[0-9]+\\.[0-9a-z]+-narod\\.yandex\\.ru/[0-9]{6,15}/[0-9a-z]+/[a-zA-Z0-9%.]+)" }, flags = { 0 })
 public class NarodRu extends PluginForHost {
 
     public NarodRu(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    @Override
     public String getAGBLink() {
         setBrowserExclusive();
         return "http://narod.ru/agreement/";
     }
 
-    @Override
+    public void correctDownloadLink(DownloadLink link) {
+        // Correct added link because some guys are spreading narod direct links
+        // which only causes problems so correcting the link is the best
+        // solution here
+        if (link.getDownloadURL().contains("/start/")) {
+            String linkid = new Regex(link.getDownloadURL(), "/start/[0-9]+\\.[0-9a-z]+-narod\\.yandex\\.ru/([0-9]{6,15})/[0-9a-z]+/[a-zA-Z0-9%.]+").getMatch(0);
+            String filename = new Regex(link.getDownloadURL(), "/start/[0-9]+\\.[0-9a-z]+-narod\\.yandex\\.ru/[0-9]{6,15}/[0-9a-z]+/([a-zA-Z0-9%.]+)").getMatch(0);
+            String finallink = "http://narod.ru/disk/" + linkid + "/" + filename;
+            link.setUrlDownload(finallink);
+        }
+    }
+
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (compatible; MSIE 6.0; Windows NT 5.0; YB/3.5.2.0;. NET CLR 1.1.4322)");
@@ -65,7 +75,6 @@ public class NarodRu extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         for (int i = 1; i <= 10; i++) {

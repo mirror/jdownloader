@@ -27,50 +27,46 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filefront.com" }, urls = { "http://files.filefront\\.com/[^\\s]+/;\\d+(;/fileinfo.html|;)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filefront.com" }, urls = { "http://[\\w\\.]*?filefront\\.com/[0-9]+" }, flags = { 0 })
 public class FileFrontCom extends PluginForHost {
 
     public FileFrontCom(PluginWrapper wrapper) {
         super(wrapper);
-        // this.setStartIntervall(5000l);
     }
 
-    // @Override
     public String getAGBLink() {
         return "http://aup.legal.filefront.com/";
     }
 
-    // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
-        br.setDebug(true);
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("Error 404")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("Filename</th>\\s+<td[^>]*>(.*?)</td>").getMatch(0);
-        String filesize = br.getRegex("Size</th>\\s+<td[^>]*>(.*?)\\s\\(").getMatch(0);
+        br.setFollowRedirects(false);
+        if (br.containsHTML("Error 404") || br.containsHTML("<h1>File is Unavailable.</h1>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("File name: </td> <td> <div style=\"width:.*?;\">(.*?)</").getMatch(0);
+        String filesize = br.getRegex("File size: </td> <td>(.*?)</td>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        filesize = filesize.trim();
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
         return AvailableStatus.TRUE;
     }
 
-    // @Override
-    /*
-     * /* public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
-        String nextpageurl = br.getRegex("POST\\sDOWNLOAD\\sPAGE.\\s-->\\s+<a href=\"(.*?)\"").getMatch(0);
+        String nextpageurl = br.getRegex("\"(http://www\\.filefront\\.com/thankyou\\.php\\?f=.*?k=.*?)\"").getMatch(0);
+        nextpageurl = null;
+        if(nextpageurl == null){
+            nextpageurl = br.getRegex("age_gate_[0-9]\" style=\"\"><a href=\"(.*?)\"").getMatch(0);
+        }
         if (nextpageurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         br.getPage(nextpageurl);
-        String linkurl = br.getRegex("it\\sdoesn.t,\\s<a href=\"(.*?)\"").getMatch(0);
+        String linkurl = br.getRegex("Your download will begin.*?<a href=\"(.*?)\"").getMatch(0);
         if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, linkurl, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, true, 0);
         dl.startDownload();
 
     }
