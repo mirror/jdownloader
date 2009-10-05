@@ -317,7 +317,7 @@ public abstract class Request {
         headers.put("User-Agent", "Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.0.10) Gecko/2009042523 Ubuntu/9.04 (jaunty) Firefox/3.0.10");
         headers.put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
         headers.put("Accept-Language", "de, en-gb;q=0.9, en;q=0.8");
-        headers.put("Accept-Encoding", "gzip,deflate");
+        headers.put("Accept-Encoding", "gzip");
         headers.put("Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.7");
 
         headers.put("Cache-Control", "no-cache");
@@ -428,11 +428,13 @@ public abstract class Request {
             try {
                 isr = new InputStreamReader(is, cs);
             } catch (Exception e) {
-                //jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Could not Handle Charset " + cs, e);
+                // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,
+                // "Could not Handle Charset " + cs, e);
                 try {
                     isr = new InputStreamReader(is, cs.replace("-", ""));
                 } catch (Exception e2) {
-//                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Could not Handle Charset " + cs, e);
+                    // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,
+                    // "Could not Handle Charset " + cs, e);
                     isr = new InputStreamReader(is);
                 }
             }

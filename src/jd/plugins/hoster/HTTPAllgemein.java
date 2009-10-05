@@ -42,16 +42,12 @@ public class HTTPAllgemein extends PluginForHost {
         setConfigElements();
     }
 
-    // @Override
     public String getAGBLink() {
         return "";
     }
 
-    // @Override
     public String getFileInformationString(DownloadLink parameter) {
-
         return "(" + contentType + ")" + parameter.getName();
-
     }
 
     private String getBasicAuth(DownloadLink link) {
@@ -87,10 +83,10 @@ public class HTTPAllgemein extends PluginForHost {
         }
     }
 
-    // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException {
-
         this.setBrowserExclusive();
+        /* disable gzip, because current downloadsystem cannot handle it correct */
+        br.getHeaders().put("Accept-Encoding", "");
         String basicauth = HTACCESSController.getInstance().get(downloadLink.getDownloadURL());
         if (basicauth == null) {
             basicauth = downloadLink.getStringProperty("pass", null);
@@ -142,17 +138,11 @@ public class HTTPAllgemein extends PluginForHost {
 
     }
 
-    // @Override
-    /*
-     * public String getVersion() { return getVersion("$Revision$"); }
-     */
-
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replaceAll("httpviajd://", "http://").replaceAll("httpsviajd://", "https://"));
         BasicAuthfromURL(link);
     }
 
-    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
         requestFileInformation(downloadLink);
@@ -185,12 +175,10 @@ public class HTTPAllgemein extends PluginForHost {
 
     }
 
-    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    // @Override
     public void reset() {
     }
 
@@ -198,14 +186,11 @@ public class HTTPAllgemein extends PluginForHost {
 
     }
 
-    // @Override
     public void resetDownloadlink(DownloadLink link) {
         link.setProperty("nochunkload", false);
         link.setProperty("nochunk", false);
-        // link.setProperty("basicauth", null);
     }
 
-    // @Override
     public void resetPluginGlobals() {
     }
 

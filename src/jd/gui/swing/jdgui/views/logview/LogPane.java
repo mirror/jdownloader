@@ -47,7 +47,6 @@ import jd.nutils.JDFlags;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.io.JDIO;
 import jd.utils.JDUtilities;
-import jd.utils.Upload;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
@@ -118,12 +117,17 @@ public class LogPane extends SwitchPanel implements ActionListener, ControlListe
 
             if (question == null) return;
 
-            String url = Upload.toJDownloader(content, name + "\r\n\r\n" + question);
-
-            try {
-                JLink.openURL(url);
-            } catch (Exception e1) {
-                JDLogger.exception(e1);
+            // String url = Upload.toJDownloader(content, name + "\r\n\r\n" +
+            // question);
+            String url = null;
+            if (url != null) {
+                try {
+                    JLink.openURL(url);
+                } catch (Exception e1) {
+                    JDLogger.exception(e1);
+                }
+            } else {
+                UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_CANCEL_OPTION, JDL.L("sys.warning.loguploadfailed", "Upload of logfile failed!"));
             }
             append("\r\n\r\n-------------------------------------------------------------\r\n\r\n");
             if (url != null) {
@@ -134,7 +138,8 @@ public class LogPane extends SwitchPanel implements ActionListener, ControlListe
             }
             append("\r\n\r\n-------------------------------------------------------------\r\n\r\n");
             synchronized (LOCK) {
-                logField.setCaretPosition(logField.getText().length());
+                int pos = logField.getText().length();
+                logField.setCaretPosition(pos > 0 ? pos - 1 : 0);
             }
             break;
         }
@@ -185,7 +190,8 @@ public class LogPane extends SwitchPanel implements ActionListener, ControlListe
             }
             synchronized (LOCK) {
                 logField.setText(sb.toString());
-                logField.setCaretPosition(logField.getDocument().getEndPosition().getOffset() - 1);
+                int pos = logField.getText().length();
+                logField.setCaretPosition(pos > 0 ? pos - 1 : 0);
             }
         } catch (Exception e) {
             e.printStackTrace();

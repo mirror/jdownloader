@@ -165,7 +165,11 @@ class IRCListener implements IRCEventListener {
                     if (UserIO.RETURN_OK == UserIO.getInstance().requestConfirmDialog(0, JDL.LF("plugin.optional.jdchat.getlog", "%s needs a log to solve your problem. Do you agree to send him the Log?", user.name))) {
 
                         String url = Upload.toJDownloader(JDLogger.getLog(Level.ALL), "JDChatuser:\r\n\r\n" + owner.getNick());
-                        owner.sendMessage(user.name, url);
+                        if (url == null) {
+                            UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_CANCEL_OPTION, JDL.L("sys.warning.loguploadfailed", "Upload of logfile failed!"));
+                        } else {
+                            owner.sendMessage(user.name, url);
+                        }
                     } else {
                         owner.sendMessage(user.name, owner.getNick() + " gibt seine Log nicht her");
                     }

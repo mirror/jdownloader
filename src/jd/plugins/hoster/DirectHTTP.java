@@ -46,12 +46,10 @@ public class DirectHTTP extends PluginForHost {
         setConfigElements();
     }
 
-    // @Override
     public String getAGBLink() {
         return "";
     }
 
-    // @Override
     public String getFileInformationString(DownloadLink parameter) {
         return "(" + contentType + ")" + parameter.getName();
     }
@@ -101,9 +99,10 @@ public class DirectHTTP extends PluginForHost {
         return urlConnection;
     }
 
-    // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException {
         this.setBrowserExclusive();
+        /* disable gzip, because current downloadsystem cannot handle it correct */
+        br.getHeaders().put("Accept-Encoding", "");
         String basicauth = HTACCESSController.getInstance().get(downloadLink.getDownloadURL());
         if (basicauth == null) {
             basicauth = downloadLink.getStringProperty("pass", null);
@@ -157,7 +156,6 @@ public class DirectHTTP extends PluginForHost {
         BasicAuthfromURL(link);
     }
 
-    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
@@ -194,12 +192,10 @@ public class DirectHTTP extends PluginForHost {
         }
     }
 
-    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    // @Override
     public void reset() {
     }
 
@@ -207,13 +203,11 @@ public class DirectHTTP extends PluginForHost {
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_LISTCONTROLLED, HTACCESSController.getInstance(), JDL.L("plugins.http.htaccess", "List of all HTAccess passwords. Each line one password.")));
     }
 
-    // @Override
     public void resetDownloadlink(DownloadLink link) {
         link.setProperty("nochunkload", false);
         link.setProperty("nochunk", false);
     }
 
-    // @Override
     public void resetPluginGlobals() {
     }
 

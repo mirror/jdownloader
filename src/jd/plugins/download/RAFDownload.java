@@ -355,10 +355,11 @@ public class RAFDownload extends DownloadInterface {
      */
 
     public static DownloadInterface download(DownloadLink downloadLink, Request request, boolean b, int i) throws IOException, PluginException {
-
+        /* disable gzip, because current downloadsystem cannot handle it correct */
+        request.getHeaders().put("Accept-Encoding", "");
         DownloadInterface dl = new RAFDownload(downloadLink.getPlugin(), downloadLink, request);
         downloadLink.getPlugin().setDownloadInterface(dl);
-        dl.setResume(b);        
+        dl.setResume(b);
         if (i == 0) {
             dl.setChunkNum(SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
 
