@@ -108,9 +108,15 @@ public class RapidSharkPl extends PluginForHost {
         br.getPage("http://www.rapidshark.pl/?op=change_lang&lang=english");
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("No such file")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = Encoding.htmlDecode(br.getRegex("<h2>Download\\sFile\\s(.*?)</h2>").getMatch(0));
-        String filesize = br.getRegex("</font>\\s\\((.*?)\\)</font>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        
+        String filename = Encoding.htmlDecode(br.getRegex("<h2>Datei\\sherunterladen\\s(.*?)</h2>").getMatch(0));
+        if (filename == null || filename.length() < 3) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        logger.fine("Obtained file name is '" + filename + "'");
+        
+        String filesize = br.getRegex(filename + "</font>\\s\\((.*?)\\)</font>").getMatch(0);
+        if (filesize == null || filesize.length() < 5) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        logger.fine("Obtained file size is '" + filesize + "'");
+        
         downloadLink.setName(filename);
         downloadLink.setDownloadSize(Regex.getSize(filesize));
         return AvailableStatus.TRUE;
