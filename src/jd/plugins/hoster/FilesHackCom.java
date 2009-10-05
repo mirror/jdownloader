@@ -133,10 +133,13 @@ public class FilesHackCom extends PluginForHost {
             logger.warning("The configured server number [" + configuredServerNumber + "] is " + how + " the number of obtained server strings [" + numberOfObtainedServerStrings + "]");
 
             if (numberOfObtainedServerStrings > 1) {
+            	String identifier = DEFAULT_SERVER_NAME.replace("Public", "").replace("USA", "");
+            	identifier = identifier.toLowerCase().trim();
+            	
                 // verify if the configured default server was found in the page
                 int which = -1;
                 for (String server : serversList) {
-                    if (server.indexOf("europe") > 0) {
+                    if (server.indexOf(identifier) > 0) {
                         which = serversList.indexOf(server);
                         logger.info("Using default server [" + DEFAULT_SERVER_NAME + "]");
                         configuredServerNumber = which;
