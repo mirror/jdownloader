@@ -108,7 +108,6 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
         case ControlEvent.CONTROL_ON_FILEOUTPUT:
             addFileList((File[]) event.getParameter());
             break;
-
         case ControlEvent.CONTROL_LINKLIST_CONTEXT_MENU:
             ArrayList<MenuAction> items = (ArrayList<MenuAction>) event.getParameter();
             MenuAction m;
@@ -137,14 +136,11 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
     public ArrayList<MenuAction> createMenuitems() {
         ArrayList<MenuAction> menu = new ArrayList<MenuAction>();
         MenuAction m;
-
         menu.add(m = new MenuAction("optional.hjsplit.menu.toggle", 1));
         m.setActionListener(this);
         m.setSelected(this.getPluginConfig().getBooleanProperty("ACTIVATED", true));
-
         menu.add(m = new MenuAction("optional.hjsplit.menu.extract.singlefils", 21));
         m.setActionListener(this);
-
         return menu;
     }
 
@@ -196,7 +192,6 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
             break;
 
         case 1001:
-
             FilePackage fp = (FilePackage) source.getProperty("PACKAGE");
             ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
             for (DownloadLink l : fp.getDownloadLinkList()) {
@@ -210,7 +205,6 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
             if (links.size() <= 0) return;
             addFileList(links.toArray(new File[] {}));
             break;
-
         }
     }
 
@@ -244,12 +238,10 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
         queue.add(new JDRunnable() {
 
             public void go() {
-
-                final ProgressController progress = new ProgressController("Default HJMerge", 100);
-
-                JAxeJoiner join = JoinerFactory.getJoiner(new File(link.getFileOutput()));
                 final File output = getOutputFile(new File(link.getFileOutput()));
-
+                if (output == null) return;
+                final ProgressController progress = new ProgressController("Default HJMerge", 100);
+                JAxeJoiner join = JoinerFactory.getJoiner(new File(link.getFileOutput()));
                 join.setProgressEventListener(new ProgressEventListener() {
 
                     long last = System.currentTimeMillis() + 1000;
@@ -275,9 +267,11 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
                     join.run();
                     if (join.wasSuccessfull() && getPluginConfig().getBooleanProperty(CONFIG_KEY_REMOVE_MERGED, false)) {
                         ArrayList<File> list = getFileList(new File(link.getFileOutput()));
-                        for (File f : list) {
-                            f.delete();
-                            f.deleteOnExit();
+                        if (list != null) {
+                            for (File f : list) {
+                                f.delete();
+                                f.deleteOnExit();
+                            }
                         }
                     }
                 } catch (Exception e) {
@@ -363,6 +357,7 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
     private ArrayList<File> validateNormalType(File file) {
         final String matcher = file.getName().replaceAll("\\[|\\]|\\(|\\)|\\?", ".").replaceFirst("\\.[\\d]+($|\\.[^\\d]*$)", "\\\\.[\\\\d]+$1");
         ArrayList<DownloadLink> missing = JDUtilities.getController().getDownloadLinksByNamePattern(matcher);
+        if (missing == null) return null;
         for (DownloadLink miss : missing) {
             File par1 = new File(miss.getFileOutput()).getParentFile();
             File par2 = file.getParentFile();
@@ -383,13 +378,18 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
             String volume = Formatter.fillString(c + "", "0", "", 3);
             File newFile;
             if ((newFile = new File(file.getParentFile(), file.getName().replaceFirst("\\.[\\d]+($|\\.[^\\d]*$)", "\\." + volume + "$1"))).exists()) {
-
                 c++;
                 ret.add(newFile);
             } else {
                 return null;
             }
         }
+        /*
+         * securitycheck for missing file on disk but in downloadlist, will
+         * check for next possible filename
+         */
+        String volume = Formatter.fillString(c + "", "0", "", 3);
+        if (JDUtilities.getController().getDownloadLinkByFileOutput(new File(file.getParentFile(), file.getName().replaceFirst("\\.[\\d]+($|\\.[^\\d]*$)", "\\." + volume + "$1")), null) != null) return null;
         return ret;
     }
 
@@ -428,6 +428,7 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
 
         final String matcher = file.getName().replaceAll("\\[|\\]|\\(|\\)|\\?", ".").replaceFirst("\\.a.($|\\..*)", "\\\\.a.$1");
         ArrayList<DownloadLink> missing = JDUtilities.getController().getDownloadLinksByNamePattern(matcher);
+        if (missing == null) return null;
         for (DownloadLink miss : missing) {
             if (new File(miss.getFileOutput()).exists() && new File(miss.getFileOutput()).getParentFile().equals(file.getParentFile())) continue;
             return null;
@@ -440,9 +441,7 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
         });
         ArrayList<File> ret = new ArrayList<File>();
         char c = 'a';
-
         for (int i = 0; i < files.length; i++) {
-
             File newFile;
             if ((newFile = new File(file.getParentFile(), file.getName().replaceFirst("\\.a.($|\\..*)", "\\.a" + c + "$1"))).exists()) {
                 ret.add(newFile);
@@ -451,6 +450,11 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
                 return null;
             }
         }
+        /*
+         * securitycheck for missing file on disk but in downloadlist , will
+         * check for next possible filename
+         */
+        if (JDUtilities.getController().getDownloadLinkByFileOutput(new File(file.getParentFile(), file.getName().replaceFirst("\\.a.($|\\..*)", "\\.a" + c + "$1")), null) != null) return null;
         return ret;
     }
 
@@ -479,12 +483,8 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
      * @return
      */
     private boolean isStartVolume(File file) {
-        if (file.getName().matches("(?is).*\\.7z\\.[\\d]+$")) return false;
-
         if (file.getName().matches(".*\\.aa$")) return true;
-
         if (file.getName().matches(".*\\.001($|\\.[^\\d]*$)")) return true;
-
         return false;
     }
 
@@ -499,9 +499,7 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
         String name = file.getName();
         if (name.matches(".*\\.a.$")) return ARCHIVE_TYPE_UNIX;
         if (name.matches(".*\\.[\\d]+($|\\.[^\\d]*$)")) return ARCHIVE_TYPE_NORMAL;
-
         return ARCHIVE_TYPE_NONE;
-
     }
 
     /**

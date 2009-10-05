@@ -217,6 +217,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         pattern = pattern.replaceAll("\\.r\\d+$", "");
         pattern = "^" + Regex.escape(pattern) + ".*";
         ArrayList<DownloadLink> matches = JDUtilities.getController().getDownloadLinksByPathPattern(pattern);
+        if (matches == null) return false;
         for (DownloadLink l : matches) {
             if (!new File(l.getFileOutput()).exists()) return false;
             if (!l.getLinkStatus().hasStatus(LinkStatus.FINISHED) && l.isEnabled()) return false;

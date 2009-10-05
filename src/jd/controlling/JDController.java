@@ -763,10 +763,11 @@ public class JDController implements ControlListener {
 
                 }
             }
+            return ret;
         } catch (Exception e) {
             JDLogger.exception(e);
         }
-        return ret;
+        return null;
     }
 
     public ArrayList<DownloadLink> getDownloadLinksByPathPattern(String matcher) {
@@ -788,10 +789,11 @@ public class JDController implements ControlListener {
 
                 }
             }
+            return ret;
         } catch (Exception e) {
             JDLogger.exception(e);
         }
-        return ret;
+        return null;
     }
 
     public void distributeLinks(String data) {

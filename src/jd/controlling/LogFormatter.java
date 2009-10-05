@@ -74,13 +74,13 @@ public class LogFormatter extends SimpleFormatter {
 
             sb.append("-> ");
         } else {
-
+            sb.append(longTimestamp.format(dat));
+            sb.append(" - ");
             if (record.getSourceClassName() != null) {
                 sb.append(record.getSourceClassName().substring(record.getSourceClassName().lastIndexOf(".") + 1));
             } else {
                 sb.append(record.getLoggerName());
             }
-
             sb.append("-> ");
         }
         sb.append(message);
