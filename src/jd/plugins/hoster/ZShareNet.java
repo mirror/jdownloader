@@ -19,8 +19,11 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -28,15 +31,61 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zshare.net" }, urls = { "http://[\\w\\.]*?zshare\\.net/(download|video|image|audio|flash)/.*" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zshare.net" }, urls = { "http://[\\w\\.]*?zshare\\.net/(download|video|image|audio|flash)/.*" }, flags = { 2 })
 public class ZShareNet extends PluginForHost {
 
     public ZShareNet(PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium("http://www.zshare.net/overview.php");
     }
 
     public String getAGBLink() {
         return "http://www.zshare.net/TOS.html";
+    }
+
+    public void login(Account account) throws Exception {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.setDebug(true);
+        br.getPage("http://www.zshare.net/myzshare/login.php");
+        br.postPage("http://zshare.net/myzshare/process.php?loc=http://zshare.net/myzshare/login.php", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&submit=Login");
+        br.setFollowRedirects(false);
+        String cookiecheck = br.getCookie("http://www.zshare.net", "sid");
+        br.getPage("http://zshare.net/myzshare/my-uploads.php");
+        if (!br.containsHTML("Your premium account will expire in") || cookiecheck == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+    }
+
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        String hostedFiles = br.getRegex("<strong>Uploads found:</strong>.*?(\\d+).*?</p>").getMatch(0);
+        if (hostedFiles != null) ai.setFilesNum(Long.parseLong(hostedFiles));
+        String daysleft = br.getRegex("Your premium account will expire in.*?(\\d+).*?days <").getMatch(0);
+        if ((new Integer(daysleft)).toString() != null) {
+            ai.setValidUntil(System.currentTimeMillis() + (Long.parseLong(daysleft) * 24 * 60 * 60 * 1000));
+            account.setValid(true);
+        }
+        return ai;
+    }
+
+    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+        requestFileInformation(downloadLink);
+        login(account);
+        br.getPage(downloadLink.getDownloadURL());
+        String dllink = br.getRegex("var link_enc\\=new Array\\(\\'(.*?)\\'\\)").getMatch(0);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        dllink = dllink.replaceAll("\\'\\,\\'", "");
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dl.startDownload();
+    }
+
+    public int getMaxSimultanPremiumDownloadNum() {
+        return 20;
     }
 
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {

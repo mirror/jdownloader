@@ -211,7 +211,7 @@ public class UploadingCom extends PluginForHost {
     }
 
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return 1;
     }
 
     public int getTimegapBetweenConnections() {

@@ -17,11 +17,9 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -43,14 +41,18 @@ public class LdT extends PluginForDecrypt {
         br.setDebug(true);
         if (parameter.matches(patternSupported_Info)) {
             br.getPage(parameter);
-            String password = br.getRegex("Passwort:</td><td><input.*?value='(.*?)'").getMatch(0);
-            String links_page[] = br.getRegex(Pattern.compile("<div class='Link'>(.*?)target='_blank'.*?div class='Clicks'", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getColumn(0);
+            String links_page[] = br.getRegex("href=\"(/go/[0-9]+/)\"").getColumn(0);
             if (links_page == null) return null;
+            progress.setRange(links_page.length);
             for (String link : links_page) {
-                String dllink = new Regex(link, Pattern.compile("href='/go/(\\d+)/'", Pattern.CASE_INSENSITIVE)).getMatch(0);
-                DownloadLink dl_link = createDownloadlink("http://iload.to/go/" + dllink + "/");
-                dl_link.addSourcePluginPassword(password + "iload.to");
+                String golink = "http://iload.to/" + link;
+                br.getPage(golink);
+                String finallink = br.getRedirectLocation();
+                if (finallink == null) return null;
+                DownloadLink dl_link = createDownloadlink(finallink);
+                dl_link.addSourcePluginPassword("iload.to");
                 decryptedLinks.add(dl_link);
+                progress.increase(1);
             }
         } else {
             br.getPage(parameter);
