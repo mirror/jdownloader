@@ -148,6 +148,10 @@ public class ShareOnlineBiz extends PluginForHost {
         br.setFollowRedirects(true);
         /* Datei herunterladen */
         dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, url, true, 1);
+        if (!dl.getConnection().isContentDisposition()) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        }
         dl.startDownload();
     }
 
@@ -158,6 +162,7 @@ public class ShareOnlineBiz extends PluginForHost {
         if (br.containsHTML("Probleme mit einem Fileserver")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.shareonlinebiz.errors.servernotavailable", "Server temporarily down"), 15 * 60 * 1000l);
 
         if (br.containsHTML("Server Info: no slots available")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.shareonlinebiz.errors.servernotavailable3", "No free Free-User Slots! Get PremiumAccount or wait!"), 15 * 60 * 1000l);
+
         /* CaptchaCode holen */
         String captchaCode = getCaptchaCode("http://www.share-online.biz/captcha.php", downloadLink);
         Form form = br.getForm(1);
@@ -204,11 +209,15 @@ public class ShareOnlineBiz extends PluginForHost {
         br.setFollowRedirects(true);
         /* Datei herunterladen */
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url);
+        if (!dl.getConnection().isContentDisposition()) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        }
         dl.startDownload();
     }
 
     public int getMaxSimultanFreeDownloadNum() {
-        return 4;
+        return 1;
     }
 
     public void reset() {

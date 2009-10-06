@@ -126,7 +126,6 @@ public class Reconnecter {
                 break;
             default:
                 ipChangeSuccess = new HTTPLiveHeader().doReconnect();
-
             }
         } catch (Exception e) {
             logger.severe("ReconnectMethod failed!");
@@ -166,7 +165,6 @@ public class Reconnecter {
                 Reconnecter.resetAllLinks();
                 Interaction.handleInteraction(Interaction.INTERACTION_AFTER_RECONNECT, JDUtilities.getController());
             }
-
         } catch (Exception e) {
         }
         RECONNECT_IN_PROGRESS = false;
@@ -226,12 +224,13 @@ public class Reconnecter {
         return ret;
     }
 
+    /* reset ipblocked links */
     private static void resetAllLinks() {
         ArrayList<FilePackage> packages = JDUtilities.getController().getPackages();
         synchronized (packages) {
             for (FilePackage fp : packages) {
                 for (DownloadLink nextDownloadLink : fp.getDownloadLinkList()) {
-                    if (nextDownloadLink.getPlugin() != null && nextDownloadLink.getPlugin().getRemainingHosterWaittime() > 0) {
+                    if (nextDownloadLink.getPlugin() != null && (nextDownloadLink.getPlugin().getRemainingHosterWaittime() > 0 || nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.ERROR_IP_BLOCKED))) {
                         if (nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.ERROR_IP_BLOCKED)) {
                             nextDownloadLink.getLinkStatus().setStatus(LinkStatus.TODO);
                             nextDownloadLink.getLinkStatus().resetWaitTime();

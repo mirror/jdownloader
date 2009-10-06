@@ -573,7 +573,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                                         }
                                     }
                                     /* Link mit HosterWartezeit */
-                                    if (link.isEnabled() && link.getPlugin().getRemainingHosterWaittime() > 0 && !linkStatus.hasStatus(LinkStatus.PLUGIN_IN_PROGRESS)) {
+                                    if (link.isEnabled() && link.getPlugin().getRemainingHosterWaittime() > 0 && !linkStatus.hasStatus(LinkStatus.PLUGIN_IN_PROGRESS) && !link.getLinkStatus().isFinished()) {
                                         Reconnecter.setReconnectRequested(true);
                                         updates.add(link);
                                     }
