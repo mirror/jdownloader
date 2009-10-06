@@ -44,6 +44,7 @@ public class BackgroundFilterCreater {
      */
     @SuppressWarnings("unchecked")
     public static File create(File[] files, EasyMethodFile methode) {
+        boolean ignoreBlack = false;
         JAntiCaptcha jac = new JAntiCaptcha(methode.getName());
         Image image = Utilities.loadImage(files[0]);
         Captcha firstCaptcha = jac.createCaptcha(image);
@@ -70,10 +71,13 @@ public class BackgroundFilterCreater {
                 for (int y = 0; y < captcha.getHeight(); y++) {
                     HashMap<Integer, Integer> map = grid[x][y];
                     int val = captcha.getPixelValue(x, y);
+                    if(!ignoreBlack||val!=0x000000)
+                    {
                     if (map.containsKey(val)) {
                         map.put(val, map.get(val) + 1);
                     } else
                         map.put(val, 0);
+                    }
                 }
             }
         }

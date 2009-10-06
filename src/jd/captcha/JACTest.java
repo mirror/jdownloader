@@ -39,7 +39,7 @@ public class JACTest {
     }
 
     private void go() {
-        String hoster = "linkbase.biz";
+        String hoster = "lnkbs";
 
         JAntiCaptcha jac = new JAntiCaptcha(hoster);
 
@@ -71,14 +71,15 @@ public class JACTest {
         int id = (int) (Math.random() * (list.length - 1));
         // id=21;
         System.out.println("ID: " + id);
-        File f = new File("/home/dwd/.jd_home/captchas/linkbase.biz/400.png");
-
+//        File f = new File("/home/dwd/.jd_home/captchas/linkbase.biz/400.png");
+        File f = list[id];
         System.out.println(f + "");
+//        System.out.println(jac.checkCaptcha(f));
         jac.showPreparedCaptcha(f);
-        jac.displayLibrary();
-        if (JOptionPane.showConfirmDialog(null, "train") == JOptionPane.OK_OPTION) {
-            f.renameTo(new File("C:\\Users\\coalado\\Desktop\\caps\\" + f.getName()));
-        }
+//        jac.displayLibrary();
+//        if (JOptionPane.showConfirmDialog(null, "train") == JOptionPane.OK_OPTION) {
+//            f.renameTo(new File("C:\\Users\\coalado\\Desktop\\caps\\" + f.getName()));
+//        }
         // Utilities.getLogger().info(JAntiCaptcha.getCaptchaCode(Utilities.
         // loadImage(new
         // File(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath()

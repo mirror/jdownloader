@@ -28,17 +28,17 @@ param.cleftFaktor=0.6;
 param.LetterSearchLimitPerfectPercent=5;
 param.quickScanReliabilityLimit=3.0;
 param.quickScanValityLimit=5.0;
-param.preScanFilter=90;
+param.preScanFilter=70;
 param.preScanFaktor=3;
 param.autoLetterNum=true;
-
+param.easyCaptchaRemoveSmallObjects=false;
 ############################
 
 ############Parameter die die Freistellung beeinflussen
 
 
 param.useSpecialGetLetters=LinkbaseBiz.getLetters1;
-//param.useLetterFilter=LinkbaseBiz.letterFilter;
+param.useLetterFilter=EasyCaptcha.letterFilter;
 ############Parameter die die Bildbearbeitung beeinflussen
 param.backgroundsamplecleancontrast=0.11;
 param.alignAngleSteps=5;
