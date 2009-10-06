@@ -16,8 +16,6 @@
 
 package jd.plugins.hoster;
 
-import java.util.regex.Pattern;
-
 import jd.PluginWrapper;
 import jd.gui.swing.components.ConvertDialog.ConversionMode;
 import jd.http.Browser;
@@ -42,7 +40,6 @@ import jd.utils.locale.JDL;
 public class Youtube extends PluginForHost {
 
     private static final Object lock = new Object();
-    static private final Pattern patternswfArgs = Pattern.compile("(.*?swfArgs.*)", Pattern.CASE_INSENSITIVE);
     private boolean prem = false;
 
     public Youtube(PluginWrapper wrapper) {
@@ -68,8 +65,7 @@ public class Youtube extends PluginForHost {
             if (downloadLink.getStringProperty("videolink", null) == null) throw new PluginException(LinkStatus.ERROR_FATAL, "You have to add link again");
             String link = ((TbCm) plugin).getLink(downloadLink.getStringProperty("videolink", null), prem, this.br);
             if (link == null) {
-                if (br.containsHTML("verify_age")) throw new DecrypterException(DecrypterException.ACCOUNT);
-                if (br.getRegex(patternswfArgs).getMatch(0) == null) throw new DecrypterException("Video no longer available");
+                if (br.containsHTML("verify_age")) throw new PluginException(LinkStatus.ERROR_FATAL, DecrypterException.ACCOUNT);
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             downloadLink.setUrlDownload(link + downloadLink.getStringProperty("fmt", null));
