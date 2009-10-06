@@ -268,6 +268,7 @@ gui.config.jdshutdown.forceshutdown = Shutdown erzwingen (Nur einige OS)
 gui.config.jdshutdown.hibernate = Ruhezustand/Hibernate (Nur einige OS)
 gui.config.jdshutdown.standby = Standby (Nur einige OS)
 gui.config.linkgrabber.controlposition = Linksammler Buttons über Tabelle anzeigen
+gui.config.linkgrabber.infopanel.onlinkgrab = Infoanzeige im Linksammeler anzeigen
 gui.config.linkgrabber.iognorelist = Der Linkfilter kann verwendet werden, um Hoster oder Dateinamen über "Regular Expressions" auszuschließen.
 gui.config.linkgrabber.onlincheck = Linkstatus überprüfen
 gui.config.liveheader.autoconfig = Router automatisch erkennen
@@ -362,7 +363,7 @@ gui.fileinfopanel.packagetab.lbl.name = Paketname
 gui.fileinfopanel.packagetab.lbl.password = Archivpasswort
 gui.fileinfopanel.packagetab.lbl.password2 = Archivpasswort (automatisch)
 gui.fileinfopanel.packagetab.lbl.saveto = Speichern unter
-gui.installer.kikin.agree2 = <b><a href="http://jdownloader.org/kikin">What is Kikin?</a> <br/>Best Parts? kikin is free and works automatically.<br>Yes, I would like kikin and I agree to the <a href="http://www.kikin.com/terms-of-service">Terms of Service</a> and <a href="http://www.kikin.com/privacy-policy">Privacy Policy</a></b>
+gui.installer.kikin.agree2 = <b><a href="http://jdownloader.org/de/kikin">Was ist kikin?</a><br/>Das Beste? kikin ist kostenlos und funktioniert vollautomatisch.<br>Ja, ich will kikin und stimme den <a href="http://www.kikin.com/terms-of-service">Nutzungsbedingungen</a> und den <a href="http://www.kikin.com/privacy-policy">Datenschutzrichtlinien</a> zu. </b> 
 gui.installer.kikin.cancel = Abbrechen
 gui.installer.kikin.message = Kostenlos!  Personalisieren Sie Ihre Suchergebnisse mit kikin.
 gui.installer.kikin.ok = Weiter
