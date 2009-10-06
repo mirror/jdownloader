@@ -18,6 +18,7 @@ package jd.plugins.optional.schedule;
 
 import java.io.Serializable;
 
+import jd.controlling.JDLogger;
 import jd.plugins.optional.schedule.modules.SchedulerModuleInterface;
 
 public class Executions implements Serializable {
@@ -39,6 +40,11 @@ public class Executions implements Serializable {
     }
 
     public void exceute() {
-        module.execute(parameter);
+        try {
+            module.execute(parameter);
+        } catch (Exception e) {
+            JDLogger.exception(e);
+            /* catch exceptions here, so we do not kill our scheduler */
+        }
     }
 }

@@ -187,9 +187,7 @@ public class Schedule extends PluginOptional {
 
     public void startCheck() {
         if (sc == null) sc = new Schedulercheck();
-
         if (sc.isAlive() || !shouldStart()) return;
-
         logger.info("Starting scheduler");
         running = true;
         sc.start();
@@ -197,18 +195,15 @@ public class Schedule extends PluginOptional {
 
     public void stopCheck() {
         if (sc == null || !sc.isAlive() || shouldStart()) return;
-
         logger.info("Stoping scheduler");
         running = false;
     }
 
     private boolean shouldStart() {
         if (actions.size() == 0) return false;
-
         for (Actions a : actions) {
             if (a.isEnabled()) return true;
         }
-
         return false;
     }
 
@@ -219,29 +214,55 @@ public class Schedule extends PluginOptional {
             super("Schedulercheck");
         }
 
+        private boolean updateTimer(Actions a) {
+            /* update timer of the action */
+            if (a.getRepeat() == 0) {
+                /* we do not have to update timers for disabled repeats */
+            } else {
+                /* we have to update timer */
+                Long timestamp = a.getDate().getTime();
+                Long currenttime = System.currentTimeMillis();
+                /* remove secs and milisecs */
+                currenttime = (currenttime / (60 * 1000));
+                currenttime = currenttime * (60 * 1000);
+                if (timestamp <= currenttime) {
+                    long add = a.getRepeat() * 60 * 1000l;
+                    /* timestamp expired , set timestamp */
+                    while (timestamp <= currenttime) {
+                        timestamp += add;
+                    }
+                    Calendar newrepeat = Calendar.getInstance();
+                    newrepeat.setTimeInMillis(timestamp);
+                    a.setDate(newrepeat.getTime());
+                    return true;
+                }
+            }
+            return false;
+        }
+
         public void run() {
             while (running) {
                 logger.finest("Checking scheduler");
+                /* getting current date and time */
                 today = new Date(System.currentTimeMillis());
                 String todaydate = date.format(today);
                 String todaytime = time.format(today);
-
+                boolean savechanges = false;
+                /* check all scheduler actions */
                 for (Actions a : actions) {
+                    /* check if we have to start the scheduler action */
                     if (a.isEnabled() && todaydate.equals(date.format(a.getDate())) && todaytime.equals(time.format(a.getDate()))) {
+                        /* lets execute the action */
                         for (Executions e : a.getExecutions()) {
+                            logger.finest("Execute: " + e.getModule().getTranslation());
                             e.exceute();
                         }
-
-                        Calendar newrepeat = Calendar.getInstance();
-                        newrepeat.setTime(a.getDate());
-                        newrepeat.add(Calendar.MINUTE, a.getRepeat());
-
-                        a.setDate(newrepeat.getTime());
-
-                        save();
                     }
+                    /* update timer */
+                    if (updateTimer(a)) savechanges = true;
                 }
-
+                if (savechanges) save();
+                /* wait a minute and check again */
                 try {
                     Thread.sleep(60000);
                 } catch (InterruptedException e) {

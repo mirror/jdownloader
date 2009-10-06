@@ -83,8 +83,7 @@ public abstract class ReconnectMethod {
         while (System.currentTimeMillis() <= endTime && (afterIP.equals(preIp) || afterIP.equals("na"))) {
             logger.finer("IP before: " + preIp + " after: " + afterIP);
             try {
-                Thread.sleep(10 * 1000);
-                /* wait 10 secs between ipchecks to reduce serverload */
+                Thread.sleep(5 * 1000);
             } catch (InterruptedException e) {
             }
             afterIP = IPCheck.getIPAddress();
@@ -98,8 +97,7 @@ public abstract class ReconnectMethod {
             while (System.currentTimeMillis() <= endTime && (afterIP.equals(preIp) || afterIP.equals("na"))) {
                 logger.finer("IP before: " + preIp + " after: " + afterIP);
                 try {
-                    Thread.sleep(10 * 1000);
-                    /* wait 10 secs between ipchecks to reduce serverload */
+                    Thread.sleep(5 * 1000);
                 } catch (InterruptedException e) {
                 }
                 afterIP = IPCheck.getIPAddress();
