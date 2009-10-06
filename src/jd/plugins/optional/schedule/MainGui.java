@@ -61,6 +61,7 @@ public class MainGui extends SwitchPanel implements ActionListener, MouseListene
     private Date now = new Date();
 
     public MainGui(Schedule schedule) {
+        this.schedule = schedule;
         time = new SimpleDateFormat("HH:mm");
         date = new SimpleDateFormat("dd.MM.yyyy");
 
@@ -240,6 +241,7 @@ public class MainGui extends SwitchPanel implements ActionListener, MouseListene
             delete.setEnabled(false);
             edit.setEnabled(false);
         } else if (e.getSource() == edit) {
+            if (table.getSelectedRow() < 0) return;
             Actions a = schedule.getActions().get(table.getSelectedRow());
             tabs.addTab(a.getName(), new AddGui(schedule, this, a, true));
             tabs.setSelectedIndex(tabs.getTabCount() - 1);
