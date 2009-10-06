@@ -60,7 +60,6 @@ public class RepeatsColumn extends JDTableColumn {
             int hour = ((Actions) value).getRepeat() / 60;
             jlr.setText(JDL.LF("jd.plugins.optional.schedule.MainGui.MyTableModel.add.interval", "Interval: %sh %sm", hour, ((Actions) value).getRepeat() - (hour * 60)));
         }
-        jlr.setText(((Actions) value).getName());
         return jlr;
     }
 
