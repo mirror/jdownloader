@@ -47,6 +47,8 @@ import net.miginfocom.swing.MigLayout;
 
 public class AddGui extends JPanel implements ActionListener, ChangeListener, DocumentListener, MouseListener {
     private static final long serialVersionUID = 8080132393187788526L;
+    private MainGui gui;
+    private Schedule schedule;
     private MyTableModel tableModel;
     private JTable table;
     private Actions act;
@@ -74,7 +76,9 @@ public class AddGui extends JPanel implements ActionListener, ChangeListener, Do
     private JSpinner repeatminute;
     private boolean edit;
 
-    public AddGui(Actions act, boolean edit) {
+    public AddGui(Schedule schedule, MainGui gui, Actions act, boolean edit) {
+        this.schedule = schedule;
+        this.gui = gui;
         this.act = act;
 
         oldText = act.getName();
@@ -329,15 +333,15 @@ public class AddGui extends JPanel implements ActionListener, ChangeListener, Do
             }
 
             if (edit) {
-                MainGui.getInstance().updateAction(act);
+                gui.updateAction(act);
             } else {
-                Schedule.getInstance().addAction(act);
-                MainGui.getInstance().addAction(act);
+                schedule.addAction(act);
+                gui.addAction(act);
             }
 
             return;
         } else if (e.getSource() == cboActions) {
-            for (SchedulerModuleInterface smi : Schedule.getInstance().getModules()) {
+            for (SchedulerModuleInterface smi : schedule.getModules()) {
                 if (smi.getTranslation().equals(cboActions.getSelectedItem())) {
                     if (smi.needParameter())
                         parameter.setText("");
@@ -349,7 +353,7 @@ public class AddGui extends JPanel implements ActionListener, ChangeListener, Do
                 }
             }
         } else if (e.getSource() == add) {
-            for (SchedulerModuleInterface smi : Schedule.getInstance().getModules()) {
+            for (SchedulerModuleInterface smi : schedule.getModules()) {
                 if (smi.getTranslation().equals(cboActions.getSelectedItem())) {
                     if (smi.needParameter() && !smi.checkParameter(parameter.getText())) {
                         problems.setText(JDL.L("plugin.optional.scheduler.add.problem.badparameter", "No correct Parameter"));
@@ -370,20 +374,20 @@ public class AddGui extends JPanel implements ActionListener, ChangeListener, Do
             delete.setEnabled(false);
             fillComboBox();
         } else if (e.getSource() == cancel) {
-            MainGui.getInstance().removeTab(act);
+            gui.removeTab(act);
         }
     }
 
     private void fillComboBox() {
         cboActions.removeAllItems();
 
-        for (int i = 0; i < Schedule.getInstance().getModules().size(); i++) {
+        for (int i = 0; i < schedule.getModules().size(); i++) {
             boolean found = false;
             for (Executions e : act.getExecutions()) {
-                if (e.getModule().getTranslation().equals(Schedule.getInstance().getModules().get(i).getTranslation())) found = true;
+                if (e.getModule().getTranslation().equals(schedule.getModules().get(i).getTranslation())) found = true;
             }
 
-            if (!found) cboActions.addItem(Schedule.getInstance().getModules().get(i).getTranslation());
+            if (!found) cboActions.addItem(schedule.getModules().get(i).getTranslation());
         }
     }
 
@@ -393,7 +397,7 @@ public class AddGui extends JPanel implements ActionListener, ChangeListener, Do
     }
 
     public void changedUpdate(DocumentEvent e) {
-        MainGui.getInstance().changeTabText(oldText, name.getText());
+        gui.changeTabText(oldText, name.getText());
         oldText = name.getText();
     }
 

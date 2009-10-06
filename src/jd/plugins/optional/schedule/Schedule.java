@@ -45,10 +45,6 @@ import jd.plugins.optional.schedule.modules.UnPauseDownloads;
 
 @OptionalPlugin(rev = "$Revision$", id = "scheduler", hasGui = true, interfaceversion = 5)
 public class Schedule extends PluginOptional {
-    // private static final String JDL_PREFIX =
-    // "jd.plugins.optional.schedule.Schedule.";
-
-    private transient static Schedule instance = null;
 
     private ArrayList<Actions> actions;
 
@@ -68,8 +64,6 @@ public class Schedule extends PluginOptional {
 
     public Schedule(PluginWrapper wrapper) {
         super(wrapper);
-
-        instance = this;
 
         actions = this.getPluginConfig().getGenericProperty("Scheduler_Actions", new ArrayList<Actions>());
         if (actions == null) {
@@ -110,10 +104,6 @@ public class Schedule extends PluginOptional {
         return modules;
     }
 
-    public static Schedule getInstance() {
-        return instance;
-    }
-
     public ArrayList<Actions> getActions() {
         return actions;
     }
@@ -141,14 +131,11 @@ public class Schedule extends PluginOptional {
     }
 
     public void actionPerformed(ActionEvent e) {
-
-        if (e.getSource() instanceof MenuAction && ((MenuAction) e.getSource()).getActionID() == 0) {
-
+        if (e.getSource() == activateAction) {
             if (((MenuAction) e.getSource()).isSelected()) {
                 showGui();
             } else {
                 view.close();
-
             }
         }
     }
@@ -160,16 +147,11 @@ public class Schedule extends PluginOptional {
 
                 @Override
                 public void onPanelEvent(SwitchPanelEvent event) {
-                    switch (event.getID()) {
-                    case SwitchPanelEvent.ON_REMOVE:
-                        activateAction.setSelected(false);
-                        break;
-                    }
-
+                    if (event.getID() == SwitchPanelEvent.ON_REMOVE) activateAction.setSelected(false);
                 }
 
             });
-            view.setContent(new MainGui());
+            view.setContent(new MainGui(this));
 
         }
         activateAction.setSelected(true);
@@ -184,7 +166,7 @@ public class Schedule extends PluginOptional {
 
     public boolean initAddon() {
         logger.info("Schedule OK");
-        this.activateAction = new MenuAction(getWrapper().getID(), 0);
+        activateAction = new MenuAction(getWrapper().getID(), 0);
         activateAction.setActionListener(this);
         activateAction.setTitle(getHost());
         activateAction.setIcon(this.getIconKey());
@@ -194,15 +176,10 @@ public class Schedule extends PluginOptional {
 
     public void setGuiEnable(boolean b) {
         if (b) {
-
             showGui();
-
         } else {
-            if (view != null) {
-                view.close();
-            }
+            if (view != null) view.close();
         }
-
     }
 
     public void onExit() {

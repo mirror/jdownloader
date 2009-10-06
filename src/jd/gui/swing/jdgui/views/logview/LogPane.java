@@ -47,12 +47,10 @@ import jd.nutils.JDFlags;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.io.JDIO;
 import jd.utils.JDUtilities;
+import jd.utils.Upload;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
-/**
- * Ein Dialog, der Logger-Output anzeigen kann.
- */
 public class LogPane extends SwitchPanel implements ActionListener, ControlListener {
 
     private static final long serialVersionUID = -5753733398829409112L;
@@ -63,9 +61,6 @@ public class LogPane extends SwitchPanel implements ActionListener, ControlListe
      */
     private JTextPane logField;
 
-    /**
-     * Primary Constructor
-     */
     public LogPane() {
         this.setName("LOGDIALOG");
         this.setLayout(new MigLayout("ins 3", "[fill,grow]", "[fill,grow]"));
@@ -113,13 +108,11 @@ public class LogPane extends SwitchPanel implements ActionListener, ControlListe
 
             String name = UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN, JDL.L("userio.input.title", "Please enter!"), JDL.L("gui.askName", "Your name?"), null, null, null, null);
             if (name == null) return;
-            String question = UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN, JDL.L("userio.input.title", "Please enter!"), JDL.L("gui.logger.askQuestion", "Please describe your Problem/Bug/Question!"), null, null, null, null);
 
+            String question = UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN, JDL.L("userio.input.title", "Please enter!"), JDL.L("gui.logger.askQuestion", "Please describe your Problem/Bug/Question!"), null, null, null, null);
             if (question == null) return;
 
-            // String url = Upload.toJDownloader(content, name + "\r\n\r\n" +
-            // question);
-            String url = null;
+            String url = Upload.toJDownloader(content, name + "\r\n\r\n" + question);
             if (url != null) {
                 try {
                     JLink.openURL(url);
@@ -222,10 +215,8 @@ public class LogPane extends SwitchPanel implements ActionListener, ControlListe
             try {
                 editorkit.read(r, doc, doc.getEndPosition().getOffset() - 1);
             } catch (IOException e1) {
-                // TODO Auto-generated catch block
                 e1.printStackTrace();
             } catch (BadLocationException e1) {
-                // TODO Auto-generated catch block
                 e1.printStackTrace();
             }
         }
@@ -234,7 +225,6 @@ public class LogPane extends SwitchPanel implements ActionListener, ControlListe
     public void controlEvent(ControlEvent event) {
         if (event.getID() == ControlEvent.CONTROL_LOG_OCCURED) {
             append(format((LogRecord) event.getParameter(), (LogFormatter) JDLogHandler.getHandler().getFormatter()));
-
         }
     }
 

@@ -26,7 +26,6 @@ import java.util.Date;
 import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.JSeparator;
 import javax.swing.JTabbedPane;
 import javax.swing.table.AbstractTableModel;
 
@@ -40,6 +39,8 @@ public class MainGui extends SwitchPanel implements ActionListener, MouseListene
     private static final long serialVersionUID = 3439995751143746593L;
 
     private static final String JDL_PREFIX = "jd.plugins.optional.schedule.MainGui.";
+
+    private Schedule schedule;
 
     private MyTableModel tableModel;
 
@@ -57,20 +58,13 @@ public class MainGui extends SwitchPanel implements ActionListener, MouseListene
 
     private SimpleDateFormat date;
 
-    private static MainGui instance;
-
     private Date now = new Date();
 
-    public MainGui() {
-        instance = this;
-
+    public MainGui(Schedule schedule) {
         time = new SimpleDateFormat("HH:mm");
         date = new SimpleDateFormat("dd.MM.yyyy");
 
-        setLayout(new MigLayout("ins 5,wrap 1", "[fill,grow]", "[fill,grow][]"));
-
         tabs = new JTabbedPane();
-        JPanel p = new JPanel();
 
         tableModel = new MyTableModel();
         table = new JXTable(tableModel);
@@ -78,9 +72,6 @@ public class MainGui extends SwitchPanel implements ActionListener, MouseListene
         table.getTableHeader().setReorderingAllowed(false);
         table.addMouseListener(this);
         table.getColumnModel().getColumn(0).setMaxWidth(30);
-
-        p.setLayout(new MigLayout("ins 5,wrap 1", "[fill,grow]", "[fill,grow][]"));
-        p.add(new JScrollPane(table));
 
         add = new JButton("+");
         add.addActionListener(this);
@@ -98,28 +89,27 @@ public class MainGui extends SwitchPanel implements ActionListener, MouseListene
         buttons.add(delete);
         buttons.add(edit);
 
-        buttons.add(new JSeparator());
-
+        JPanel p = new JPanel(new MigLayout("ins 5,wrap 1", "[fill,grow]", "[fill,grow][]"));
+        p.add(new JScrollPane(table));
         p.add(buttons);
+
         tabs.addTab("Main", p);
+
+        this.setLayout(new MigLayout("ins 5,wrap 1", "[fill,grow]", "[fill,grow][]"));
         this.add(tabs);
 
-        tableModel.fireTableRowsInserted(0, Schedule.getInstance().getActions().size());
-    }
-
-    public static MainGui getInstance() {
-        return instance;
+        tableModel.fireTableRowsInserted(0, schedule.getActions().size());
     }
 
     public void addAction(Actions act) {
-        tableModel.fireTableRowsInserted(Schedule.getInstance().getActions().size(), Schedule.getInstance().getActions().size());
+        tableModel.fireTableRowsInserted(schedule.getActions().size(), schedule.getActions().size());
 
         removeTab(act);
     }
 
     public void updateAction(Actions act) {
-        tableModel.fireTableRowsUpdated(0, Schedule.getInstance().getActions().size());
-        Schedule.getInstance().save();
+        tableModel.fireTableRowsUpdated(0, schedule.getActions().size());
+        schedule.save();
         removeTab(act);
     }
 
@@ -160,10 +150,10 @@ public class MainGui extends SwitchPanel implements ActionListener, MouseListene
             if (col == 0) {
                 String name = (String) table.getValueAt(row, 1);
 
-                for (Actions a : Schedule.getInstance().getActions()) {
+                for (Actions a : schedule.getActions()) {
                     if (name.equals(a.getName())) {
                         a.setEnabled((Boolean) value);
-                        Schedule.getInstance().save();
+                        schedule.save();
                         return;
                     }
                 }
@@ -179,7 +169,7 @@ public class MainGui extends SwitchPanel implements ActionListener, MouseListene
         }
 
         public int getRowCount() {
-            return Schedule.getInstance().getActions().size();
+            return schedule.getActions().size();
         }
 
         public Class<?> getColumnClass(int columnIndex) {
@@ -206,19 +196,19 @@ public class MainGui extends SwitchPanel implements ActionListener, MouseListene
         public Object getValueAt(int rowIndex, int columnIndex) {
             switch (columnIndex) {
             case 0:
-                return Schedule.getInstance().getActions().get(rowIndex).isEnabled();
+                return schedule.getActions().get(rowIndex).isEnabled();
             case 1:
-                return Schedule.getInstance().getActions().get(rowIndex).getName();
+                return schedule.getActions().get(rowIndex).getName();
             case 2:
-                return date.format(Schedule.getInstance().getActions().get(rowIndex).getDate());
+                return date.format(schedule.getActions().get(rowIndex).getDate());
             case 3:
-                return time.format(Schedule.getInstance().getActions().get(rowIndex).getDate());
+                return time.format(schedule.getActions().get(rowIndex).getDate());
             case 4:
-                if (!Schedule.getInstance().getActions().get(rowIndex).isEnabled()) return JDL.L("jd.plugins.optional.schedule.disabled", "disabled");
-                now.setTime(Schedule.getInstance().getActions().get(rowIndex).getDate().getTime() - System.currentTimeMillis() - 3600000);
+                if (!schedule.getActions().get(rowIndex).isEnabled()) return JDL.L("jd.plugins.optional.schedule.disabled", "disabled");
+                now.setTime(schedule.getActions().get(rowIndex).getDate().getTime() - System.currentTimeMillis() - 3600000);
                 return time.format(now);
             case 5:
-                switch (Schedule.getInstance().getActions().get(rowIndex).getRepeat()) {
+                switch (schedule.getActions().get(rowIndex).getRepeat()) {
                 case 0:
                     return JDL.L("jd.plugins.optional.schedule.MainGui.MyTableModel.add.once", "Only once");
                 case 60:
@@ -228,11 +218,11 @@ public class MainGui extends SwitchPanel implements ActionListener, MouseListene
                 case 10080:
                     return JDL.L("jd.plugins.optional.schedule.MainGui.MyTableModel.add.weekly", "Weekly");
                 default:
-                    int hour = Schedule.getInstance().getActions().get(rowIndex).getRepeat() / 60;
-                    return JDL.LF("jd.plugins.optional.schedule.MainGui.MyTableModel.add.interval", "Interval: %sh %sm", hour, Schedule.getInstance().getActions().get(rowIndex).getRepeat() - (hour * 60));
+                    int hour = schedule.getActions().get(rowIndex).getRepeat() / 60;
+                    return JDL.LF("jd.plugins.optional.schedule.MainGui.MyTableModel.add.interval", "Interval: %sh %sm", hour, schedule.getActions().get(rowIndex).getRepeat() - (hour * 60));
                 }
             case 6:
-                return Schedule.getInstance().getActions().get(rowIndex).getExecutions().size();
+                return schedule.getActions().get(rowIndex).getExecutions().size();
             }
 
             return null;
@@ -241,16 +231,17 @@ public class MainGui extends SwitchPanel implements ActionListener, MouseListene
 
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == add) {
-            tabs.addTab("Schedule " + Integer.valueOf(Schedule.getInstance().getActions().size() + 1), new AddGui(new Actions("Schedule " + Integer.valueOf(Schedule.getInstance().getActions().size() + 1)), false));
+            tabs.addTab("Schedule " + Integer.valueOf(schedule.getActions().size() + 1), new AddGui(schedule, this, new Actions("Schedule " + Integer.valueOf(schedule.getActions().size() + 1)), false));
             tabs.setSelectedIndex(tabs.getTabCount() - 1);
         } else if (e.getSource() == delete) {
-            Schedule.getInstance().removeAction(table.getSelectedRow());
+            removeTab(schedule.getActions().get(table.getSelectedRow()));
+            schedule.removeAction(table.getSelectedRow());
             tableModel.fireTableRowsDeleted(table.getSelectedRow(), table.getSelectedRow());
             delete.setEnabled(false);
             edit.setEnabled(false);
         } else if (e.getSource() == edit) {
-            Actions a = Schedule.getInstance().getActions().get(table.getSelectedRow());
-            tabs.addTab(a.getName(), new AddGui(a, true));
+            Actions a = schedule.getActions().get(table.getSelectedRow());
+            tabs.addTab(a.getName(), new AddGui(schedule, this, a, true));
             tabs.setSelectedIndex(tabs.getTabCount() - 1);
         }
     }
