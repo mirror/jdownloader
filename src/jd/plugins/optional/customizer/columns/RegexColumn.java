@@ -79,6 +79,10 @@ public class RegexColumn extends JDTableColumn implements ActionListener {
 
     @Override
     public void postprocessCell(Component c, JDTableModel table, Object value, boolean isSelected, int row, int column) {
+        if (((CustomizeSetting) value).getRegex().equals("")) {
+            c.setBackground(new Color(221, 34, 34));
+            return;
+        }
         try {
             Pattern.compile(((CustomizeSetting) value).getRegex());
         } catch (Exception e) {

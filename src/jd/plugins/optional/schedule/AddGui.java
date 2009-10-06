@@ -268,6 +268,7 @@ public class AddGui extends JPanel implements ActionListener, ChangeListener, Do
     private class MyTableModel extends AbstractTableModel {
         private static final long serialVersionUID = -2404339596786592942L;
 
+        @Override
         public String getColumnName(int column) {
             switch (column) {
             case 0:

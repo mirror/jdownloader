@@ -32,14 +32,17 @@ public class SchedulerView extends ClosableView {
         init();
     }
 
+    @Override
     public Icon getIcon() {
         return JDTheme.II("gui.images.config.eventmanager", 16, 16);
     }
 
+    @Override
     public String getTitle() {
         return JDL.L(JDL_PREFIX + "title", "Scheduler");
     }
 
+    @Override
     public String getTooltip() {
         return JDL.L(JDL_PREFIX + "tooltip", "Schedule your downloads");
     }

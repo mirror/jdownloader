@@ -56,6 +56,8 @@ public class Schedule extends PluginOptional {
 
     private SchedulerView view;
 
+    private MainGui gui;
+
     private Schedulercheck sc;
 
     private boolean running = false;
@@ -68,7 +70,7 @@ public class Schedule extends PluginOptional {
         actions = this.getPluginConfig().getGenericProperty("Scheduler_Actions", new ArrayList<Actions>());
         if (actions == null) {
             actions = new ArrayList<Actions>();
-            save();
+            saveActions();
         }
 
         initModules();
@@ -77,11 +79,6 @@ public class Schedule extends PluginOptional {
         date = new SimpleDateFormat("dd.MM.yyyy");
 
         startCheck();
-    }
-
-    protected void save() {
-        this.getPluginConfig().setProperty("Scheduler_Actions", actions);
-        this.getPluginConfig().save();
     }
 
     private void initModules() {
@@ -121,15 +118,19 @@ public class Schedule extends PluginOptional {
         startCheck();
     }
 
-    private void saveActions() {
+    public void saveActions() {
         this.getPluginConfig().setProperty("Scheduler_Actions", actions);
         this.getPluginConfig().save();
+
+        if (gui != null) gui.updateTable();
     }
 
+    @Override
     public String getIconKey() {
         return "gui.images.config.eventmanager";
     }
 
+    @Override
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == activateAction) {
             if (((MenuAction) e.getSource()).isSelected()) {
@@ -151,29 +152,33 @@ public class Schedule extends PluginOptional {
                 }
 
             });
-            view.setContent(new MainGui(this));
+            view.setContent(gui = new MainGui(this));
 
         }
         activateAction.setSelected(true);
         JDGui.getInstance().setContent(view);
     }
 
+    @Override
     public ArrayList<MenuAction> createMenuitems() {
         ArrayList<MenuAction> menu = new ArrayList<MenuAction>();
         menu.add(activateAction);
         return menu;
     }
 
+    @Override
     public boolean initAddon() {
-        logger.info("Schedule OK");
         activateAction = new MenuAction(getWrapper().getID(), 0);
         activateAction.setActionListener(this);
         activateAction.setTitle(getHost());
         activateAction.setIcon(this.getIconKey());
         activateAction.setSelected(false);
+
+        logger.info("Schedule OK");
         return true;
     }
 
+    @Override
     public void setGuiEnable(boolean b) {
         if (b) {
             showGui();
@@ -182,6 +187,7 @@ public class Schedule extends PluginOptional {
         }
     }
 
+    @Override
     public void onExit() {
     }
 
@@ -200,7 +206,7 @@ public class Schedule extends PluginOptional {
     }
 
     private boolean shouldStart() {
-        if (actions.size() == 0) return false;
+        if (actions.isEmpty()) return false;
         for (Actions a : actions) {
             if (a.isEnabled()) return true;
         }
@@ -240,6 +246,7 @@ public class Schedule extends PluginOptional {
             return false;
         }
 
+        @Override
         public void run() {
             while (running) {
                 logger.finest("Checking scheduler");
@@ -261,7 +268,7 @@ public class Schedule extends PluginOptional {
                     /* update timer */
                     if (updateTimer(a)) savechanges = true;
                 }
-                if (savechanges) save();
+                if (savechanges) saveActions();
                 /* wait a minute and check again */
                 try {
                     Thread.sleep(60000);
