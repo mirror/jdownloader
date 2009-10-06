@@ -38,10 +38,12 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
+import jd.plugins.hoster.Youtube;
+import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youtube.com" }, urls = { "http://[\\w\\.]*?youtube\\.com/(watch\\?v=[a-z-_A-Z0-9]+|view_play_list\\?p=[a-z-_A-Z0-9]+(.*?page=\\d+)?)" }, flags = { 0 })
 public class TbCm extends PluginForDecrypt {
@@ -71,28 +73,17 @@ public class TbCm extends PluginForDecrypt {
 
     private boolean login(Account account) throws Exception {
         this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.setDebug(true);
-        br.getPage("http://www.youtube.com/");
-
-        br.getPage("https://www.google.com/accounts/ServiceLogin?uilel=3&service=youtube&passive=true&continue=http%3A%2F%2Fwww.youtube.com%2Fsignin%3Faction_handle_signin%3Dtrue%26nomobiletemp%3D1%26hl%3Den_US%26next%3D%252F&hl=en_US&ltmpl=sso");
-        br.setFollowRedirects(false);
-        String cook = br.getCookie("http://www.google.com", "GALX");
-        if (cook == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        br.postPage("https://www.google.com/accounts/ServiceLoginAuth?service=youtube", "ltmpl=sso&continue=http%3A%2F%2Fwww.youtube.com%2Fsignin%3Faction_handle_signin%3Dtrue%26nomobiletemp%3D1%26hl%3Den_US%26next%3D%252F&service=youtube&uilel=3&ltmpl=sso&hl=en_US&ltmpl=sso&GALX=" + cook + "&Email=" + Encoding.urlEncode(account.getUser()) + "&Passwd=" + Encoding.urlEncode(account.getPass()) + "&PersistentCookie=yes&rmShown=1&signIn=Sign+in&asts=");
-        if (br.getRedirectLocation() == null) {
+        PluginForHost plugin = JDUtilities.getPluginForHost("youtube.com");
+        try {
+            if (plugin != null) {
+                ((Youtube) plugin).login(account, br);
+            } else
+                return false;
+        } catch (PluginException e) {
             account.setEnabled(false);
             account.setValid(false);
             return false;
         }
-        br.setFollowRedirects(true);
-        br.getPage(br.getRedirectLocation());
-        if (br.getCookie("http://www.youtube.com", "LOGIN_INFO") == null) {
-            account.setEnabled(false);
-            account.setValid(false);
-            return false;
-        }
-        br.getPage("http://www.youtube.com/index?hl=en");
         return true;
     }
 
@@ -106,13 +97,12 @@ public class TbCm extends PluginForDecrypt {
     static class Info {
         public String link;
         public long size;
+        public String fmt;
         public String desc;
     }
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         possibleconverts = new HashMap<ConversionMode, ArrayList<Info>>();
-
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.setFollowRedirects(true);
@@ -132,7 +122,7 @@ public class TbCm extends PluginForDecrypt {
             boolean prem = false;
             ArrayList<Account> accounts = AccountController.getInstance().getAllAccounts("youtube.com");
             if (accounts != null && accounts.size() != 0) prem = login(accounts.get(0));
-            br.setFollowRedirects(true);
+
             try {
                 if (StreamingShareLink.matcher(parameter).matches()) {
                     // StreamingShareLink
@@ -151,70 +141,43 @@ public class TbCm extends PluginForDecrypt {
                     decryptedLinks.add(thislink);
                     return decryptedLinks;
                 }
-
-                br.getPage(parameter);
-                if (br.containsHTML("verify_age") && prem) {
-                    String session_token = br.getRegex("onLoadFunc.*?gXSRF_token = '(.*?)'").getMatch(0);
-                    String url = br.getURL();
-                    LinkedHashMap<String, String> p = Request.parseQuery(url);
-                    String next = p.get("next_url");
-                    Form form = new Form();
-                    form.setAction(url);
-                    form.setMethod(MethodType.POST);
-                    form.put("next_url", "%2F" + next.substring(1));
-                    form.put("action_confirm", "Confirm+Birth+Date");
-                    form.put("session_token", Encoding.urlEncode(session_token));
-                    br.submitForm(form);
-                    if (br.getCookie("http://www.youtube.com", "is_adult") == null) return null;
-                } else if (br.containsHTML("verify_age")) throw new DecrypterException(DecrypterException.ACCOUNT);
-                String video_id = "";
-                String t = "";
-                String match = br.getRegex(patternswfArgs).getMatch(0);
-                if (match == null) throw new DecrypterException("Video seems to be offline");
-
-                /* DownloadUrl holen */
-                String[] lineSub = match.split(",|:");
-                for (int i = 0; i < lineSub.length; i++) {
-                    String s = lineSub[i];
-                    if (s.indexOf(VIDEO_ID) > -1) {
-                        video_id = clean(lineSub[i + 1]);
-                    }
-                    if (s.indexOf(T) > -1) {
-                        t = clean(lineSub[i + 1]);
-                    }
+                String link = getLink(parameter, prem, this.br);
+                if (link == null) {
+                    if (br.containsHTML("verify_age")) throw new DecrypterException(DecrypterException.ACCOUNT);
+                    if (br.getRegex(patternswfArgs).getMatch(0) == null) throw new DecrypterException("Video no longer available");
+                    return null;
                 }
-                String link = "http://" + host + "/" + PLAYER + "?" + VIDEO_ID + "=" + video_id + "&" + "t=" + t;
                 String name = Encoding.htmlDecode(br.getRegex(YT_FILENAME).getMatch(0).trim());
                 /* Konvertierungsmöglichkeiten adden */
                 boolean tryall = false;
                 while (true) {
                     if (tryall || (ConvertDialog.getKeeped().contains(ConversionMode.VIDEOFLV) || ConvertDialog.getKeeped().contains(ConversionMode.AUDIOMP3) || ConvertDialog.getKeeped().contains(ConversionMode.AUDIOMP3_AND_VIDEOFLV))) {
                         if (br.openGetConnection(link).getResponseCode() == 200) {
-                            addtopos(ConversionMode.VIDEOFLV, link, br.getHttpConnection().getLongContentLength(), "");
-                            addtopos(ConversionMode.AUDIOMP3, link, br.getHttpConnection().getLongContentLength(), "");
-                            addtopos(ConversionMode.AUDIOMP3_AND_VIDEOFLV, link, br.getHttpConnection().getLongContentLength(), "");
+                            addtopos(ConversionMode.VIDEOFLV, link, br.getHttpConnection().getLongContentLength(), "", "");
+                            addtopos(ConversionMode.AUDIOMP3, link, br.getHttpConnection().getLongContentLength(), "", "");
+                            addtopos(ConversionMode.AUDIOMP3_AND_VIDEOFLV, link, br.getHttpConnection().getLongContentLength(), "", "");
                             br.getHttpConnection().disconnect();
                             if ((ConvertDialog.getKeeped().contains(ConversionMode.VIDEOFLV) || ConvertDialog.getKeeped().contains(ConversionMode.AUDIOMP3) || ConvertDialog.getKeeped().contains(ConversionMode.AUDIOMP3_AND_VIDEOFLV))) break;
                         }
                     }
                     if (tryall || ConvertDialog.getKeeped().contains(ConversionMode.VIDEOMP4)) {
                         if (br.openGetConnection(link + "&fmt=18").getResponseCode() == 200) {
-                            addtopos(ConversionMode.VIDEOMP4, link + "&fmt=18", br.getHttpConnection().getLongContentLength(), "(18)");
+                            addtopos(ConversionMode.VIDEOMP4, link + "&fmt=18", br.getHttpConnection().getLongContentLength(), "(18)", "&fmt=18");
                             br.getHttpConnection().disconnect();
                         }
                         if (br.openGetConnection(link + "&fmt=22").getResponseCode() == 200) {
-                            addtopos(ConversionMode.VIDEOMP4, link + "&fmt=22", br.getHttpConnection().getLongContentLength(), "(22)");
+                            addtopos(ConversionMode.VIDEOMP4, link + "&fmt=22", br.getHttpConnection().getLongContentLength(), "(22)", "&fmt=22");
                             br.getHttpConnection().disconnect();
                         }
                         if (br.openGetConnection(link + "&fmt=35").getResponseCode() == 200) {
-                            addtopos(ConversionMode.VIDEOMP4, link + "&fmt=35", br.getHttpConnection().getLongContentLength(), "(35)");
+                            addtopos(ConversionMode.VIDEOMP4, link + "&fmt=35", br.getHttpConnection().getLongContentLength(), "(35)", "&fmt=35");
                             br.getHttpConnection().disconnect();
                         }
                         if (ConvertDialog.getKeeped().contains(ConversionMode.VIDEOMP4)) break;
                     }
                     if (tryall) {
                         if (br.openGetConnection(link + "&fmt=13").getResponseCode() == 200) {
-                            addtopos(ConversionMode.VIDEO3GP, link + "&fmt=13", br.getHttpConnection().getLongContentLength(), "(13)");
+                            addtopos(ConversionMode.VIDEO3GP, link + "&fmt=13", br.getHttpConnection().getLongContentLength(), "(13)", "&fmt=13");
                             br.getHttpConnection().disconnect();
                         }
                     }
@@ -228,12 +191,16 @@ public class TbCm extends PluginForDecrypt {
                     thislink.setBrowserUrl(parameter);
                     thislink.setFinalFileName(name + info.desc + ".tmp");
                     thislink.setSourcePluginComment("Convert to " + convertTo.getText());
-                    thislink.setProperty("size", new Long(info.size));
+                    thislink.setProperty("size", Long.valueOf(info.size));
                     thislink.setProperty("name", name + info.desc + ".tmp");
                     thislink.setProperty("convertto", convertTo.name());
+                    thislink.setProperty("videolink", parameter);
+                    thislink.setProperty("valid", true);
+                    thislink.setProperty("fmt", info.fmt);
                     decryptedLinks.add(thislink);
                 }
             } catch (IOException e) {
+                br.getHttpConnection().disconnect();
                 logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
                 return null;
             }
@@ -241,12 +208,54 @@ public class TbCm extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private void addtopos(ConversionMode mode, String link, long size, String desc) {
+    public String getLink(String video, boolean prem, Browser br) throws Exception {
+        if (br == null) br = this.br;
+        br.setFollowRedirects(true);
+        br.getPage(video);
+        /* age verify with activated premium? */
+        if (br.containsHTML("verify_age") && prem) {
+            String session_token = br.getRegex("onLoadFunc.*?gXSRF_token = '(.*?)'").getMatch(0);
+            String url = br.getURL();
+            LinkedHashMap<String, String> p = Request.parseQuery(url);
+            String next = p.get("next_url");
+            Form form = new Form();
+            form.setAction(url);
+            form.setMethod(MethodType.POST);
+            form.put("next_url", "%2F" + next.substring(1));
+            form.put("action_confirm", "Confirm+Birth+Date");
+            form.put("session_token", Encoding.urlEncode(session_token));
+            br.submitForm(form);
+            if (br.getCookie("http://www.youtube.com", "is_adult") == null) return null;
+        } else if (br.containsHTML("verify_age")) {
+            /* no account used, cannot decrypt link */
+            return null;
+        }
+        String video_id = "";
+        String t = "";
+        String match = br.getRegex(patternswfArgs).getMatch(0);
+        if (match == null) return null;
+
+        /* DownloadUrl holen */
+        String[] lineSub = match.split(",|:");
+        for (int i = 0; i < lineSub.length; i++) {
+            String s = lineSub[i];
+            if (s.indexOf(VIDEO_ID) > -1) {
+                video_id = clean(lineSub[i + 1]);
+            }
+            if (s.indexOf(T) > -1) {
+                t = clean(lineSub[i + 1]);
+            }
+        }
+        return "http://" + host + "/" + PLAYER + "?" + VIDEO_ID + "=" + video_id + "&" + "t=" + t;
+    }
+
+    private void addtopos(ConversionMode mode, String link, long size, String desc, String fmt) {
         if (possibleconverts.containsKey(mode)) {
             Info tmp = new Info();
             tmp.link = link;
             tmp.size = size;
             tmp.desc = desc;
+            tmp.fmt = fmt;
             possibleconverts.get(mode).add(tmp);
         } else {
             ArrayList<Info> tmp2 = new ArrayList<Info>();
@@ -254,11 +263,10 @@ public class TbCm extends PluginForDecrypt {
             tmp.link = link;
             tmp.size = size;
             tmp.desc = desc;
+            tmp.fmt = fmt;
             tmp2.add(tmp);
             possibleconverts.put(mode, tmp2);
         }
     }
-
-    // @Override
 
 }

@@ -55,6 +55,7 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
 import jd.CPluginWrapper;
+import jd.DecryptPluginWrapper;
 import jd.HostPluginWrapper;
 import jd.JDClassLoader;
 import jd.OptionalPluginWrapper;
@@ -71,6 +72,7 @@ import jd.nutils.io.JDIO;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginsC;
 import jd.utils.locale.JDL;
@@ -545,6 +547,13 @@ public class JDUtilities {
      *            Der Host, von dem das Plugin runterladen kann
      * @return Ein passendes Plugin oder null
      */
+    public static PluginForDecrypt getPluginForDecrypt(String host) {
+        for (DecryptPluginWrapper pHost : DecryptPluginWrapper.getDecryptWrapper()) {
+            if (pHost.getHost().equals(host.toLowerCase())) return pHost.getPlugin();
+        }
+        return null;
+    }
+
     public static PluginForHost getPluginForHost(String host) {
         for (HostPluginWrapper pHost : JDUtilities.getPluginsForHost()) {
             if (pHost.getHost().equals(host.toLowerCase())) return pHost.getPlugin();

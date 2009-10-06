@@ -45,13 +45,11 @@ public class ZShareNet extends PluginForHost {
 
     public void login(Account account) throws Exception {
         this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.setDebug(true);
         br.getPage("http://www.zshare.net/myzshare/login.php");
         br.postPage("http://zshare.net/myzshare/process.php?loc=http://zshare.net/myzshare/login.php", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&submit=Login");
-        br.setFollowRedirects(false);
-        String cookiecheck = br.getCookie("http://www.zshare.net", "sid");
+        if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("unverified")) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
         br.getPage("http://zshare.net/myzshare/my-uploads.php");
+        String cookiecheck = br.getCookie("http://www.zshare.net", "sid");
         if (!br.containsHTML("Your premium account will expire in") || cookiecheck == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
     }
 
@@ -65,11 +63,11 @@ public class ZShareNet extends PluginForHost {
         }
         String hostedFiles = br.getRegex("<strong>Uploads found:</strong>.*?(\\d+).*?</p>").getMatch(0);
         if (hostedFiles != null) ai.setFilesNum(Long.parseLong(hostedFiles));
-        String daysleft = br.getRegex("Your premium account will expire in.*?(\\d+).*?days <").getMatch(0);
-        if ((new Integer(daysleft)).toString() != null) {
+        String daysleft = br.getRegex("Your premium account will expire in.*?(\\d+).*?days").getMatch(0);
+        if (daysleft != null) {
             ai.setValidUntil(System.currentTimeMillis() + (Long.parseLong(daysleft) * 24 * 60 * 60 * 1000));
-            account.setValid(true);
         }
+        account.setValid(true);
         return ai;
     }
 
