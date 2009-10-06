@@ -121,7 +121,10 @@ public class Schedule extends PluginOptional {
     public void saveActions() {
         this.getPluginConfig().setProperty("Scheduler_Actions", actions);
         this.getPluginConfig().save();
+        updateTable();
+    }
 
+    public void updateTable() {
         if (gui != null) gui.updateTable();
     }
 
@@ -268,7 +271,11 @@ public class Schedule extends PluginOptional {
                     /* update timer */
                     if (updateTimer(a)) savechanges = true;
                 }
-                if (savechanges) saveActions();
+                if (savechanges) {
+                    saveActions();
+                } else {
+                    updateTable();
+                }
                 /* wait a minute and check again */
                 try {
                     Thread.sleep(60000);

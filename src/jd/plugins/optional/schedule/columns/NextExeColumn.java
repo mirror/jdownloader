@@ -1,11 +1,10 @@
 package jd.plugins.optional.schedule.columns;
 
 import java.awt.Component;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 
 import jd.gui.swing.components.table.JDTableColumn;
 import jd.gui.swing.components.table.JDTableModel;
+import jd.nutils.Formatter;
 import jd.plugins.optional.schedule.Actions;
 import jd.utils.locale.JDL;
 
@@ -15,15 +14,12 @@ public class NextExeColumn extends JDTableColumn {
 
     private static final long serialVersionUID = -2945101320574207493L;
     private JRendererLabel jlr;
-    private SimpleDateFormat time;
-    private Date now;
+    private long nexttime = 0;
 
     public NextExeColumn(String name, JDTableModel table) {
         super(name, table);
         jlr = new JRendererLabel();
         jlr.setBorder(null);
-        time = new SimpleDateFormat("HH:mm");
-        now = new Date();
     }
 
     @Override
@@ -56,8 +52,16 @@ public class NextExeColumn extends JDTableColumn {
         if (!((Actions) value).isEnabled()) {
             jlr.setText(JDL.L("jd.plugins.optional.schedule.disabled", "disabled"));
         } else {
-            now.setTime(((Actions) value).getDate().getTime() - System.currentTimeMillis() - 3600000);
-            jlr.setText(time.format(now));
+            nexttime = ((Actions) value).getDate().getTime() - System.currentTimeMillis();
+            if (nexttime < 0) {
+                if (((Actions) value).getRepeat() == 0) {
+                    jlr.setText(JDL.L("jd.plugins.optional.schedule.expired", "expired"));
+                } else {
+                    jlr.setText(JDL.L("jd.plugins.optional.schedule.wait", "wait a moment"));
+                }
+            } else {
+                jlr.setText(Formatter.formatSeconds(nexttime / 1000, false));
+            }
         }
         return jlr;
     }

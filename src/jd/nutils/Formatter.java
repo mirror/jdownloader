@@ -39,15 +39,22 @@ public class Formatter {
      * @return formatierte Zeit
      */
     public static String formatSeconds(long eta) {
+        return formatSeconds(eta, true);
+    }
+
+    public static String formatSeconds(long eta, boolean showsec) {
         if (eta < 0) return "~";
+        long days = eta / (24 * 60 * 60);
+        eta -= days * 24 * 60 * 60;
         long hours = eta / (60 * 60);
         eta -= hours * 60 * 60;
         long minutes = eta / 60;
         long seconds = eta - minutes * 60;
         String ret = "";
+        if (days != 0) ret += days + "d:";
         if (hours != 0) ret += hours + "h:";
-        if (minutes != 0) ret += Formatter.fillInteger(minutes, 2, "0") + "m:";
-        ret += Formatter.fillInteger(seconds, 2, "0") + "s";
+        if (minutes != 0) ret += Formatter.fillInteger(minutes, 2, "0") + "m";
+        if (showsec) ret += ":" + Formatter.fillInteger(seconds, 2, "0") + "s";
         return ret;
     }
 

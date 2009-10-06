@@ -35,12 +35,10 @@ public class SharingMatrixCom extends PluginForHost {
         super(wrapper);
     }
 
-    // @Override
     public String getAGBLink() {
         return "http://sharingmatrix.com/contact";
     }
 
-    // @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
@@ -62,7 +60,6 @@ public class SharingMatrixCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         // System.out.print(br.toString());
@@ -117,23 +114,23 @@ public class SharingMatrixCom extends PluginForHost {
         // System.out.print(br2.toString());
         if (linkurl == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT); }
         dl = jd.plugins.BrowserAdapter.openDownload(br2, downloadLink, linkurl, true, 1);
+        if (!dl.getConnection().isContentDisposition()) {
+            br2.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        }
         dl.startDownload();
     }
 
-    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
-    // @Override
     public void reset() {
     }
 
-    // @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 }
