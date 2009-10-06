@@ -21,6 +21,7 @@ import java.awt.HeadlessException;
 import java.io.File;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.logging.Logger;
 
 import jd.DecryptPluginWrapper;
@@ -55,8 +56,6 @@ public class WebUpdate {
     private static boolean DYNAMIC_PLUGINS_FINISHED = false;
     // private static boolean LISTENER_ADDED = false;
     private static boolean UPDATE_IN_PROGRESS = false;
-
-
 
     public static void DynamicPluginsFinished() {
         DYNAMIC_PLUGINS_FINISHED = true;
@@ -219,7 +218,28 @@ public class WebUpdate {
             public void run() {
                 MessageListener messageListener = null;
                 if (files != null) {
+
                     updater.filterAvailableUpdates(files);
+
+                    boolean coreUp2Date = true;
+                    ArrayList<FileUpdate> tmpfiles = new ArrayList<FileUpdate>();
+                    for (FileUpdate f : files) {
+                        // check if jdownloader.jar is up2date
+                        if (f.getLocalFile().equals(JDUtilities.getResourceFile("JDownloader.jar"))) {
+                            coreUp2Date = false;
+                        }
+                        if (f.getLocalFile().getName().endsWith(".class")) {
+                            tmpfiles.add(f);
+                        }
+
+                    }
+                    if (coreUp2Date) {
+                        doPluginUpdate(updater, tmpfiles);
+
+                        for (FileUpdate f : tmpfiles) {
+                            if (f.equals()) files.remove(f);
+                        }
+                    }
                     JDUtilities.getController().setWaitingUpdates(files);
 
                     if (files.size() > 0) {
@@ -283,7 +303,7 @@ public class WebUpdate {
                         }
                     }
                     logger.severe("Webupdater offline or nothing to update");
-             
+
                     JDController.releaseDelayExit(id);
                     UPDATE_IN_PROGRESS = false;
                     return;
@@ -320,7 +340,9 @@ public class WebUpdate {
                         }
                     } else {
                         try {
-                            int answer = UserIO.getInstance().requestConfirmDialog(UserIO.STYLE_HTML, JDL.L("system.dialogs.update", "Updates available"), JDL.LF("jd.utils.webupdate.message2", "<font size=\"4\" face=\"Verdana, Arial, Helvetica, sans-serif\">%s update(s) available. Install now?</font>", files.size()), JDTheme.II("gui.splash.update", 32, 32), null, null);
+
+                            String html = JDL.L("jd.utils.webupdate.whatchangedlink", "<hr/><a href='http://jdownloader.org/latestchanges'>What has changed?</a>");
+                            int answer = UserIO.getInstance().requestConfirmDialog(UserIO.STYLE_HTML, JDL.L("system.dialogs.update", "Updates available"), JDL.LF("jd.utils.webupdate.message2", "<font size=\"4\" face=\"Verdana, Arial, Helvetica, sans-serif\">%s update(s) available. Install now?</font>", files.size()) + html, JDTheme.II("gui.splash.update", 32, 32), null, null);
 
                             if (JDFlags.hasAllFlags(answer, UserIO.RETURN_OK)) {
                                 doUpdate(updater, files);
@@ -340,6 +362,59 @@ public class WebUpdate {
                 JDController.releaseDelayExit(id);
             }
         }.start();
+    }
+
+    private static void doPluginUpdate(final WebUpdater updater, final ArrayList<FileUpdate> files) {
+
+        final ProgressController pc = new ProgressController("", files.size());
+
+        try {
+
+            MessageListener list;
+            updater.getBroadcaster().addListener(list = new MessageListener() {
+
+                public void onMessage(MessageEvent event) {
+                    pc.setStatusText(event.getSource().toString() + ": " + event.getMessage());
+
+                }
+
+            });
+
+            System.out.println("UPdate: " + files);
+
+            updater.updateFiles(files, pc);// copies plugins
+            
+            //please check:
+           boolean restart=false;
+            for (Iterator<FileUpdate> it = files.iterator(); it.hasNext();) {
+                FileUpdate f = it.next();
+             //try to rename NOW
+                if (!((!f.getLocalFile().exists()||f.getLocalFile().delete()) && (f.getLocalTmpFile().renameTo(f.getLocalFile())))) {
+                    restart=true;
+                    // has not been updated
+                   // it.remove();
+                } else {
+                    File parent = f.getLocalTmpFile().getParentFile();
+
+                    while (parent.listFiles() != null && parent.listFiles().length < 1) {
+                        parent.delete();
+                        parent = parent.getParentFile();
+                    }
+                }
+            }
+            if(restart){
+              
+                Balloon.show(JDL.L("jd.utils.WebUpdate.doPluginUpdate.title","Restart recommended"), null, JDL.L("jd.utils.WebUpdate.doPluginUpdate.message","Some Plugins have been updated\r\nYou should restart JDownloader."));
+            }
+
+        } catch (Exception e) {
+            System.err.println("EXCEPTION");
+            JDLogger.exception(e);
+            e.printStackTrace();
+
+        }
+        pc.doFinalize();
+
     }
 
     private void doUpdate(final WebUpdater updater, final ArrayList<FileUpdate> files) {

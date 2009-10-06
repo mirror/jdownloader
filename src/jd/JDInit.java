@@ -217,6 +217,8 @@ public class JDInit {
     }
 
     public void initPlugins() {
+
+        movePluginUpdates(JDUtilities.getResourceFile("update"));
         try {
             loadPluginForDecrypt();
             loadPluginForHost();
@@ -239,6 +241,50 @@ public class JDInit {
         } catch (Exception e) {
             JDLogger.exception(e);
         }
+    }
+
+    /**
+     * @param resourceFile
+     */
+    private void movePluginUpdates(File dir) {
+if(!JDUtilities.getResourceFile("update").exists())return;
+        if (!dir.isDirectory()) return;
+        main: for (File f : dir.listFiles()) {
+            if (f.isDirectory()) {
+                movePluginUpdates(f);
+            } else {
+                // Create relativ path
+                File update = JDUtilities.getResourceFile("update");
+                File root = update.getParentFile();
+                String n = JDUtilities.getResourceFile("update").getAbsolutePath();
+                n = f.getAbsolutePath().replace(n, "").substring(1);
+                File newFile =new File(root,n).getAbsoluteFile();
+                logger.info("./update -> real  " + n + " ->" + newFile.getAbsolutePath());
+                logger.info("Exists: " + newFile.exists());
+                if (!newFile.getParentFile().exists()) {
+                    logger.info("Parent Exists: false");
+
+                    if (newFile.getParentFile().mkdirs()) {
+                        logger.info("^^CREATED");
+                    } else {
+                        logger.info("^^CREATION FAILED");
+                    }
+                }
+
+                boolean d = newFile.delete();
+                boolean r = f.renameTo(newFile);
+                File parent = newFile.getParentFile();
+
+                while (parent.listFiles().length == 0) {
+                    parent.delete();
+                    parent = parent.getParentFile();
+                }
+            }
+        }
+        if (dir.list() != null) {
+            if (dir.list().length == 0) dir.delete();
+        }
+
     }
 
     public boolean installerWasVisible() {
