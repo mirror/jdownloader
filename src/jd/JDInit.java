@@ -217,8 +217,11 @@ public class JDInit {
     }
 
     public void initPlugins() {
-
-        movePluginUpdates(JDUtilities.getResourceFile("update"));
+        try {
+            movePluginUpdates(JDUtilities.getResourceFile("update"));
+        } catch (Throwable e) {
+            JDLogger.exception(e);
+        }
         try {
             loadPluginForDecrypt();
             loadPluginForHost();
@@ -238,7 +241,7 @@ public class JDInit {
                     }
                 }
             }
-        } catch (Exception e) {
+        } catch (Throwable e) {
             JDLogger.exception(e);
         }
     }
@@ -247,7 +250,7 @@ public class JDInit {
      * @param resourceFile
      */
     private void movePluginUpdates(File dir) {
-if(!JDUtilities.getResourceFile("update").exists())return;
+        if (!JDUtilities.getResourceFile("update").exists()) return;
         if (!dir.isDirectory()) return;
         main: for (File f : dir.listFiles()) {
             if (f.isDirectory()) {
@@ -258,7 +261,7 @@ if(!JDUtilities.getResourceFile("update").exists())return;
                 File root = update.getParentFile();
                 String n = JDUtilities.getResourceFile("update").getAbsolutePath();
                 n = f.getAbsolutePath().replace(n, "").substring(1);
-                File newFile =new File(root,n).getAbsoluteFile();
+                File newFile = new File(root, n).getAbsoluteFile();
                 logger.info("./update -> real  " + n + " ->" + newFile.getAbsolutePath());
                 logger.info("Exists: " + newFile.exists());
                 if (!newFile.getParentFile().exists()) {
