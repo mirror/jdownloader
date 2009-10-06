@@ -36,7 +36,6 @@ import jd.plugins.LinkGrabberFilePackage;
 import jd.plugins.LinkGrabberFilePackageEvent;
 import jd.plugins.LinkGrabberFilePackageListener;
 import jd.plugins.hoster.HTTPAllgemein;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 class LinkGrabberControllerBroadcaster extends JDBroadcaster<LinkGrabberControllerListener, LinkGrabberControllerEvent> {
@@ -520,7 +519,6 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
 
     public static String cleanFileName(String name) {
         /** remove rar extensions */
-
         name = getNameMatch(name, "(.*)(\\.|_|-)part[0]*[1].rar$");
         name = getNameMatch(name, "(.*)(\\.|_|-)part[0-9]+.rar$");
         name = getNameMatch(name, "(.*)\\.rar$");
@@ -528,20 +526,38 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
         name = getNameMatch(name, "(.*)(\\.|_|-)\\d+$");
 
         /**
-         * remove 7zip and hjmerge extensions
+         * remove 7zip/zip and hjmerge extensions
          */
-        /* remove zip extensions */
         name = getNameMatch(name, "(.*)\\.zip$");
         name = getNameMatch(name, "(.*)\\.z\\d+$");
-
         name = getNameMatch(name, "(?is).*\\.7z\\.[\\d]+$");
         name = getNameMatch(name, "(.*)\\.a.$");
 
-        /* FFSJ splitted files */
+        /**
+         * FFSJ splitted files
+         * 
+         * */
         name = getNameMatch(name, "(.*)\\.[_a-z]{3}(\\.|$)");
-
         name = getNameMatch(name, "(.*)(\\.|_|-)[\\d]+($|" + HTTPAllgemein.ENDINGS + "$)");
 
+        /**
+         * remove CDx
+         */
+        String match = new Regex(name, "(CD\\d+)").getMatch(0);
+        if (match != null) {
+            /* there should be at least 3 chars be left */
+            if (name.length() >= match.length() + 3) {
+                int firstpos = name.indexOf(match);
+                String tmp = name.substring(0, firstpos);
+                int lastpos = name.indexOf(match) + match.length();
+                if (!(lastpos > name.length())) tmp = tmp + name.substring(lastpos);
+                name = tmp;
+                /* remove seq. dots */
+                name = name.replaceAll("\\.{2,}", ".");
+                name = name.replaceAll("\\.{2,}", ".");
+            }
+        }
+        /* remove extension */
         int lastPoint = name.lastIndexOf(".");
         if (lastPoint <= 0) lastPoint = name.lastIndexOf("_");
         if (lastPoint > 0) {
@@ -550,7 +566,11 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
                 name = name.substring(0, lastPoint);
             }
         }
-        return JDUtilities.removeEndingPoints(name);
+        /* remove ending ., - , _ */
+        name = getNameMatch(name, "(.+)\\.+$");
+        name = getNameMatch(name, "(.+)-+$");
+        name = getNameMatch(name, "(.+)_+$");
+        return name;
     }
 
     private static String getNameMatch(String name, String pattern) {

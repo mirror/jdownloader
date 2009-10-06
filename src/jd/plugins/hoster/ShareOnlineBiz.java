@@ -91,7 +91,11 @@ public class ShareOnlineBiz extends PluginForHost {
         String points = br.getRegex(Pattern.compile("<b>Total Points:</b></td>.*?<td align=\"left\">(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
         if (points != null) ai.setPremiumPoints(points);
         String expire = br.getRegex(Pattern.compile("<b>Package Expire Date:</b></td>.*?<td align=\"left\">(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-        ai.setValidUntil(Regex.getMilliSeconds(expire, "MM/dd/yy", null));
+        if (expire != null && expire.contains("Never")) {
+            ai.setValidUntil(-1);
+        } else {
+            ai.setValidUntil(Regex.getMilliSeconds(expire, "MM/dd/yy", null));
+        }
         account.setValid(true);
         return ai;
     }
