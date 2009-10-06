@@ -50,12 +50,16 @@ public class RepeatsColumn extends JDTableColumn {
         switch (((Actions) value).getRepeat()) {
         case 0:
             jlr.setText(JDL.L("jd.plugins.optional.schedule.MainGui.MyTableModel.add.once", "Only once"));
+            break;
         case 60:
             jlr.setText(JDL.L("jd.plugins.optional.schedule.MainGui.MyTableModel.add.hourly", "Hourly"));
+            break;
         case 1440:
             jlr.setText(JDL.L("jd.plugins.optional.schedule.MainGui.MyTableModel.add.daily", "Daily"));
+            break;
         case 10080:
             jlr.setText(JDL.L("jd.plugins.optional.schedule.MainGui.MyTableModel.add.weekly", "Weekly"));
+            break;
         default:
             int hour = ((Actions) value).getRepeat() / 60;
             jlr.setText(JDL.LF("jd.plugins.optional.schedule.MainGui.MyTableModel.add.interval", "Interval: %sh %sm", hour, ((Actions) value).getRepeat() - (hour * 60)));
