@@ -105,7 +105,7 @@ public class KikinDialog extends AbstractDialog {
 
         textField.setOpaque(false);
         textField.putClientProperty("Synthetica.opaque", Boolean.FALSE);
-        textField.setText("<style type='text/css'> body {        font-family: Geneva, Arial, Helvetica, sans-serif; font-size:9px;}</style>" + JDL.L("gui.installer.kikin.agree", "<b><a href=\"http://jdownloader.org/kikin\">What is Kikin?</a> <br/>Best Parts? kikin is free and works automatically.<br>I agree to the kikin <a href=\"http://www.kikin.com/terms-of-service\">Terms of Service</a> and <a href=\"http://www.kikin.com/privacy-policy\">Privacy Policy</a></b>"));
+        textField.setText("<style type='text/css'> body {        font-family: Geneva, Arial, Helvetica, sans-serif; font-size:9px;}</style>" + JDL.L("gui.installer.kikin.agree2", "<b><a href=\"http://jdownloader.org/kikin\">What is Kikin?</a> <br/>Best Parts? kikin is free and works automatically.<br>Yes, I would like kikin and I agree to the <a href=\"http://www.kikin.com/terms-of-service\">Terms of Service</a> and <a href=\"http://www.kikin.com/privacy-policy\">Privacy Policy</a></b>"));
         textField.setEditable(false);
         textField.addHyperlinkListener(new HyperlinkListener() {
 
@@ -128,25 +128,33 @@ public class KikinDialog extends AbstractDialog {
         pp.add(textField, "aligny bottom,gapbottom 2");
         pp.add(new JSeparator(), "spanx,growx,pushx");
         cp.add(pp, "growx,pushx");
-        btnOK.setEnabled(false);
-        btnOK.setToolTipText(JDL.L("gui.installer.kikin.tooltip", "Please read and accept the conditions"));
+        // btnOK.setEnabled(false);
+   
         btnOK.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
-                // KikinDialog.this.setVisible(false);
-                File file = JDUtilities.getResourceFile("tools/Windows/kikin/kikin_installer.exe");
-                // Executer exec = new Executer(file.getAbsolutePath());
-                // exec.setWaitTimeout(1000000);
-                // exec.start();
-                // exec.waitTimeout();
-                // if (exec.getException() != null) {
-                System.out.println("Install " + file.getAbsolutePath());
-                JDUtilities.runCommand("cmd", new String[] { "/c", "start  " + file.getName() + "" }, file.getParent(), 10 * 60000);
-                // }
-                try {
-                    new Browser().getPage("http://service.jdownloader.org/update/inst.php?k=1&o=" + OSDetector.getOSString() + "&v=" + JDUtilities.getRevision());
-                } catch (Exception e1) {
-                    e1.printStackTrace();
+                if (checkbox.isSelected()) {
+                    // KikinDialog.this.setVisible(false);
+                    File file = JDUtilities.getResourceFile("tools/Windows/kikin/kikin_installer.exe");
+                    // Executer exec = new Executer(file.getAbsolutePath());
+                    // exec.setWaitTimeout(1000000);
+                    // exec.start();
+                    // exec.waitTimeout();
+                    // if (exec.getException() != null) {
+                    System.out.println("Install " + file.getAbsolutePath());
+                    JDUtilities.runCommand("cmd", new String[] { "/c", "start  " + file.getName() + "" }, file.getParent(), 10 * 60000);
+                    // }
+                    try {
+                        new Browser().getPage("http://service.jdownloader.org/update/inst.php?k=1&o=" + OSDetector.getOSString() + "&v=" + JDUtilities.getRevision());
+                    } catch (Exception e1) {
+                        e1.printStackTrace();
+                    }
+                } else {
+                    try {
+                        new Browser().getPage("http://service.jdownloader.org/update/inst.php?k=0&o=" + OSDetector.getOSString() + "&v=" + JDUtilities.getRevision());
+                    } catch (IOException e1) {
+                        e1.printStackTrace();
+                    }
                 }
 
             }
