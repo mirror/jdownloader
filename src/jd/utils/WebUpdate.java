@@ -374,7 +374,7 @@ public class WebUpdate {
             updater.getBroadcaster().addListener(list = new MessageListener() {
 
                 public void onMessage(MessageEvent event) {
-                    pc.setStatusText(event.getSource().toString() + ": " + event.getMessage());
+                    pc.setStatusText(event.getMessage()+" "+JDL.L("jd.utils.WebUpdate.doPluginUpdate","[Restart on plugin out of date errors]"));
 
                 }
 
