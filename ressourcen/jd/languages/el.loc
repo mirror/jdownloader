@@ -1423,6 +1423,7 @@ sys.ask.rlyclose = Είστε βέβαιοι ότι θέλετε να κλείσ
 sys.ask.rlyrestart = Είστε σίγουροι ότι θέλετε να γίνει επανεκκίνηση του JDownloader;
 sys.ask.rlyrestore = Το JDownloader θα επανεκκινηθεί και θα γίνει ΠΛΗΡΗΣ Ενημέρωση. Συνέχεια;
 sys.dlc.success = Κρυπτογράφηση DLC επιτυχής. Εκτέλεση του Testdecrypt τώρα;
+sys.warning.loguploadfailed = Η αποστολή του Αρχείου Σφαλμάτων απέτυχε!
 sys.warning.noclose = Το JDownloader θα ελαχιστοποιηθεί στην Περιοχή Ειδοποιήσεων!
 system.dialogs.update = Ενημερώσεις διαθέσιμες
 system.download.docrc2 = Γίνεται έλεγχος CRC (%s)
