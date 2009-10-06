@@ -50,12 +50,21 @@ public class Formatter {
         eta -= hours * 60 * 60;
         long minutes = eta / 60;
         long seconds = eta - minutes * 60;
-        String ret = "";
-        if (days != 0) ret += days + "d:";
-        if (hours != 0) ret += hours + "h:";
-        if (minutes != 0) ret += Formatter.fillInteger(minutes, 2, "0") + "m";
-        if (showsec) ret += ":" + Formatter.fillInteger(seconds, 2, "0") + "s";
-        return ret;
+        StringBuilder ret = new StringBuilder();
+        if (days != 0) ret.append(days).append('d');
+        if (hours != 0 || ret.length() != 0) {
+            if (ret.length() != 0) ret.append(':');
+            ret.append(hours).append('h');
+        }
+        if (minutes != 0 || ret.length() != 0) {
+            if (ret.length() != 0) ret.append(':');
+            ret.append(Formatter.fillInteger(minutes, 2, "0")).append('m');
+        }
+        if (showsec || ret.length() != 0) {
+            if (ret.length() != 0) ret.append(':');
+            ret.append(Formatter.fillInteger(seconds, 2, "0")).append('s');
+        }
+        return ret.toString();
     }
 
     /**

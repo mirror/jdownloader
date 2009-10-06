@@ -22,7 +22,6 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
-
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
