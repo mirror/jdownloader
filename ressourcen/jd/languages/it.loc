@@ -367,7 +367,7 @@ gui.fileinfopanel.packagetab.lbl.name = Nome pacchetto
 gui.fileinfopanel.packagetab.lbl.password = Archivio Password
 gui.fileinfopanel.packagetab.lbl.password2 = Password archivio (auto)
 gui.fileinfopanel.packagetab.lbl.saveto = Salva in
-gui.installer.kikin.agree = <b><a href="http://jdownloader.org/kikin">cosa è Kikin?</a> <br/>I ,igliori pregi? kikin è gratis e funziona automaticamente.<br>Io aderisco <a href="http://www.kikin.com/terms-of-service">Termini di servizio</a>e alla<a href="http://www.kikin.com/privacy-policy">Privacy Policy di Kikin</a></b>
+gui.installer.kikin.agree2 = <b><a href="http://jdownloader.org/kikin">Che cos'è Kikin?</ a><br/>Migliori Parti? Kikin è gratuito e funziona automaticamente.<br>Si,vorrei Kikin e sono d'accordo ai <a href="http://www.kikin.com/terms-of-service"> Termini di servizio </ a> e <a href="http://www.kikin.com/privacy-policy"> sulla privacy</ a></ b>
 gui.installer.kikin.cancel = Annulla
 gui.installer.kikin.message = Gratis! Personalizza la tua esperienza di ricerca
 gui.installer.kikin.ok = Continua
@@ -1045,21 +1045,23 @@ jd.plugins.optional.langfileeditor.lfeview.title = Editor linguaggi
 jd.plugins.optional.langfileeditor.lfeview.tooltip = Modifica un file del linguaggio
 jd.plugins.optional.langfileeditor.srcparser = Analisi sorgente
 jd.plugins.optional.schedule.disabled = Disabilitato
+jd.plugins.optional.schedule.expired = scaduto
 jd.plugins.optional.schedule.maingui.edit = Modifica
 jd.plugins.optional.schedule.maingui.mytablemodel.add.daily = Giornaliero
 jd.plugins.optional.schedule.maingui.mytablemodel.add.hourly = Oraria
 jd.plugins.optional.schedule.maingui.mytablemodel.add.interval = Intervallo: %sh %sm
 jd.plugins.optional.schedule.maingui.mytablemodel.add.once = Solo una volta
 jd.plugins.optional.schedule.maingui.mytablemodel.add.weekly = Settimanale
-jd.plugins.optional.schedule.maingui.mytablemodel.date = Data
-jd.plugins.optional.schedule.maingui.mytablemodel.name = Nome
-jd.plugins.optional.schedule.maingui.mytablemodel.nextexecution = Prossima esecuzione
-jd.plugins.optional.schedule.maingui.mytablemodel.number = # di azioni
-jd.plugins.optional.schedule.maingui.mytablemodel.repeats = Ripeti
-jd.plugins.optional.schedule.maingui.mytablemodel.time = Tempo
 jd.plugins.optional.schedule.schedule = Pianificatore
+jd.plugins.optional.schedule.schedulertablemodel.date = Data
+jd.plugins.optional.schedule.schedulertablemodel.name = Nome
+jd.plugins.optional.schedule.schedulertablemodel.nextexecution = Prossima Esecuzione
+jd.plugins.optional.schedule.schedulertablemodel.number = # di azioni
+jd.plugins.optional.schedule.schedulertablemodel.repeats = Ripeti
+jd.plugins.optional.schedule.schedulertablemodel.time = Tempo
 jd.plugins.optional.schedule.schedulerview.title = Pianificatore
 jd.plugins.optional.schedule.schedulerview.tooltip = Pianifica i download
+jd.plugins.optional.schedule.wait = aspetta un momento
 jd.plugins.optional.webinterface.jdwebinterface = Interfaccia Web JD
 jd.plugins.plugin.aborted = Decodifica annullata!
 jd.plugins.pluginutils.askpassword = Inserire la password per %s
@@ -1074,10 +1076,14 @@ jd.update.main.error.title = Si è verificato un errore
 jd.update.main.error.title.old = Aggiornamenti trovati!
 jd.utils.webupdate.ballon.message.updateinprogress = Un aggiornamento è già in esecuzione.
 jd.utils.webupdate.ballon.title = Aggiorna
+jd.utils.webupdate.dopluginupdate = [Riavviare il plugin di errori data]
+jd.utils.webupdate.dopluginupdate.message = Alcuni plugin sono stati aggiornati\r\nDovresti riavviare JDownloader.
+jd.utils.webupdate.dopluginupdate.title = Riavvio raccomandato
 jd.utils.webupdate.doupdatecheck.noupdates = Nessun aggiornamento disponibile
 jd.utils.webupdate.message = <font size="2" face="Verdana, Arial, Helvetica, sans-serif">%s aggiornamenti  disponibili. Installare ora?</font>
 jd.utils.webupdate.message2 = <font size="4" face="Verdana, Arial, Helvetica, sans-serif">%s aggiornamento(i) avviabili. Installare adesso?</font>
 jd.utils.webupdate.progresscontroller.text = Aggiornamento in esecuzione
+jd.utils.webupdate.whatchangedlink = <hr/><a href='http://jdownloader.org/latestchanges'>Che cosa è cambiato?</a>
 linkgrabber.onlinestatus.offline = offline
 linkgrabber.onlinestatus.online = online
 linkgrabber.onlinestatus.uncheckable = Temporaneamente non verificabile
