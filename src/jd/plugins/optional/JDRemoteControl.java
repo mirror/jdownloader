@@ -27,7 +27,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Vector;
 import java.util.Map.Entry;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -41,6 +40,7 @@ import jd.controlling.reconnect.Reconnecter;
 import jd.event.ControlListener;
 import jd.gui.UserIO;
 import jd.gui.swing.jdgui.menu.MenuAction;
+import jd.http.Browser;
 import jd.nrouter.IPCheck;
 import jd.nutils.Formatter;
 import jd.nutils.encoding.Encoding;
@@ -57,7 +57,6 @@ import jd.plugins.PluginOptional;
 import jd.utils.JDUtilities;
 import jd.utils.WebUpdate;
 import jd.utils.locale.JDL;
-
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -172,11 +171,11 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                 commandvec.add("/action/set/download/max/%X%");
                 infovector.add("Set max sim. Downloads %X%");
 
-                commandvec.add("/action/add/links/grabber(0|1)/%X%");
-                infovector.add("Add Links %X% to Grabber<br />" + "Options:<br />" + "grabber(0|1): Show/Hide LinkGrabber<br />" + "Sample:<br />" + "/action/add/links/grabber0/start1/http://tinyurl.com/6o73eq http://tinyurl.com/4khvhn<br />" + "Don't forget Space between Links!");
+                commandvec.add("/action/add/links/grabber(0|1)/start(0|1)/%X%");
+                infovector.add("Add Links %X% to Grabber<br />" + "<p><span class=\"underline\">Optional:</span><br />" + "grabber(0|1): Hide/Show LinkGrabber<br />" + "grabber(0|1)/start(0|1): Hide/Show LinkGrabber and start/don't start downloads afterwards<br /></p>" + "<p><span class=\"underline\">Sample:</span><br />" + "/action/add/links/grabber0/start1/http://tinyurl.com/6o73eq http://tinyurl.com/4khvhn<br />" + "Don't forget Space between Links!</p>");
 
-                commandvec.add("/action/add/container/%X%");
-                infovector.add("Add Container %X%<br />" + "Sample:<br />" + "/action/add/container/C:\\container.dlc");
+                commandvec.add("/action/add/container/grabber(0|1)/start(0|1)/%X%");
+                infovector.add("Add Container %X%<br />" + "<p><span class=\"underline\">Optional:</span><br />" + "grabber(0|1): Hide/Show LinkGrabber<br />" + "grabber(0|1)/start(0|1): Hide/Show LinkGrabber and start/don't start downloads afterwards<br /></p>" + "<p><span class=\"underline\">Sample:</span><br />" + "/action/add/container/grabber0/start1/C:\\container.dlc</p>");
 
                 commandvec.add("/action/save/container/%X%");
                 infovector.add("Save DLC-Container with all Links to %X%<br /> " + "Sample see /action/add/container/%X%");
@@ -187,11 +186,12 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                 commandvec.add("/action/set/premiumenabled/(true|false)");
                 infovector.add("Set Use Premium enabled or not");
 
-                response.addContent("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\"\"http://www.w3.org/TR/html4/strict.dtd\"><html><head><title>JDRemoteControl Help</title><style type=\"text/css\">a {    font-size: 14px;    text-decoration: none;    background: none;    color: #599ad6;}a:hover {    text-decoration: underline;    color:#333333;}body {    color: #333333;    background:#f0f0f0;    font-family: Verdana, Arial, Helvetica, sans-serif;    font-size: 14px;    vertical-align: top;  }</style></head><body><p><br /><b>JDRemoteControl " + getVersion() + "<br /><br />Usage:</b><br />&nbsp;<br />1)Replace %X% with your value<br />Sample: /action/save/container/C:\\backup.dlc <br />2)Replace (true|false) with true or false<br /><table border=\"0\" cellspacing=\"5\">");
+                response.addContent("<?xml version=\"1.0\" encoding=\"UTF-8\"?><!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" lang=\"en\"><head><title>JDRemoteControl Help</title><style type=\"text/css\">a {    font-size: 14px;    text-decoration: none;    background: none;    color: #599ad6;}a:hover {    text-decoration: underline;    color:#333333;}body {    color: #333333;    background:#f0f0f0;    font-family: Verdana, Arial, Helvetica, sans-serif;    font-size: 14px;    vertical-align: top;  }.underline{    text-decoration:underline;  }</style></head><body><br /><b>JDRemoteControl " + getVersion()
+                        + "<br /><br />Usage:</b><br />&nbsp;<br />1)Replace %X% with your value<br />Sample: /action/save/container/C:\\backup.dlc <br />2)Replace (true|false) with true or false<br /><table border=\"0\" cellspacing=\"5\">");
                 for (int commandcount = 0; commandcount < commandvec.size(); commandcount++) {
                     response.addContent("\r\n<tr><td valign=\"top\"><a href=\"" + commandvec.get(commandcount) + "\">" + commandvec.get(commandcount) + "</a></td><td valign=\"top\">" + infovector.get(commandcount) + "</td></tr>");
                 }
-                response.addContent("\r\n</table><br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;</p></body></html>");
+                response.addContent("\r\n</table><br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;</body></html>");
             } else if (request.getRequestUrl().equals("/get/ip")) {
                 // Get IP
                 response.addContent(IPCheck.getIPAddress());
@@ -368,9 +368,10 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                 SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, newsimdl.toString());
                 SubConfiguration.getConfig("DOWNLOAD").save();
                 response.addContent("newmax=" + newsimdl);
-            } else if (request.getRequestUrl().matches("(?is).*/action/add/links/grabber[01]{1}/start[01]{1}/[\\s\\S]+")) {
+            } else if (request.getRequestUrl().matches("(?is).*/action/add/links/((grabber[01]{1}/)?|(start[01]{1}/grabber[01]{1}/)?)?[\\s\\S]+")) {
                 // Add Link(s)
-                String link = new Regex(request.getRequestUrl(), "[\\s\\S]*?/action/add/links/grabber[01]{1}/start[01]{1}/(.*)").getMatch(0);
+                String link = new Regex(request.getRequestUrl(), "[\\s\\S]*?/action/add/links/((grabber[01]{1}/)?|(start[01]{1}/grabber[01]{1}/)?)?([\\s\\S]+)").getMatch(3);
+
                 if (request.getParameters().size() > 0) {
                     link += "?";
                     Iterator<String> it = request.getParameters().keySet().iterator();
@@ -383,31 +384,87 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                         if (it.hasNext()) link += "&";
                     }
                 }
-                // response.addContent(link);
-                Integer showgrab = Integer.parseInt(new Regex(request.getRequestUrl(), "[\\s\\S]*?/action/add/links/grabber([01]{1})/start[01]{1}/[\\s\\S]+").getMatch(0));
+
+                Integer showgrab = null;
+                Integer start = null;
                 Boolean hidegrabber = false;
-                if (showgrab == 0) {
+
+                // try to parseInt
+                try {
+                    showgrab = Integer.parseInt(new Regex(request.getRequestUrl(), ".+grabber([01]{1}).+").getMatch(0));
+                    start = Integer.parseInt(new Regex(request.getRequestUrl(), ".+start([01]{1}).+").getMatch(0));
+                } catch (Exception e) {
+                    JDLogger.exception(e);
+                }
+
+                if ((showgrab != null) && (showgrab == 0)) {
                     hidegrabber = true;
                 }
 
-                // response.addContent(startdl.toString());
-                // link = Encoding.htmlDecode(link);
-                // wegen leerzeichen etc, die ja in urls verändert werden...
-
                 new DistributeData(link, hidegrabber).start();
+
+                // will start downloads in list if parameter is set
+                if ((start != null) && start == 1) {
+                    DownloadWatchDog.getInstance().startDownloads();
+                }
+
                 response.addContent("Link(s) added. (" + link + ")");
-            } else if (request.getRequestUrl().matches("(?is).*/action/add/container/[\\s\\S]+")) {
-                // Open DLC Container
-                String dlcfilestr = new Regex(request.getRequestUrl(), "[\\s\\S]*/action/add/container/([\\s\\S]+)").getMatch(0);
+            } else if (request.getRequestUrl().matches("(?is).*/action/add/container/((grabber[01]{1}/)?|(start[01]{1}/grabber[01]{1}/)?)?[\\s\\S]+")) {
+                // Open DLC Container (from web or local)
+                String dlcfilestr = new Regex(request.getRequestUrl(), "[\\s\\S]*/action/add/container/((grabber[01]{1}/)?|(start[01]{1}/grabber[01]{1}/)?)?([\\s\\S]+)").getMatch(3);
+                // decoding of percent-encoding reserved characters in URLs like
+                // %20 for space
                 dlcfilestr = Encoding.htmlDecode(dlcfilestr);
-                // wegen leerzeichen etc, die ja in urls verändert werden...
-                JDUtilities.getController().loadContainerFile(new File(dlcfilestr));
+
+                Integer showgrab = null;
+                Integer start = null;
+                Boolean hidegrabber = false;
+                Boolean startdl = false;
+
+                // try to parseInt
+                try {
+                    showgrab = Integer.parseInt(new Regex(request.getRequestUrl(), ".+grabber([01]{1}).+").getMatch(0));
+                    start = Integer.parseInt(new Regex(request.getRequestUrl(), ".+start([01]{1}).+").getMatch(0));
+                } catch (Exception e) {
+                    JDLogger.exception(e);
+                }
+
+                if ((showgrab != null) && (showgrab == 0)) {
+                    hidegrabber = true;
+                }
+
+                if ((start != null) && start == 1) {
+                    startdl = true;
+                }
+
+                if (dlcfilestr.matches("http://.*?\\.(dlc|ccf|rsdf)")) {
+                    String containerFormat = new Regex(dlcfilestr, ".+\\.((dlc|ccf|rsdf))").getMatch(0);
+                    File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + "." + containerFormat);
+
+                    try {
+                        Browser.download(container, dlcfilestr);
+                        JDUtilities.getController().loadContainerFile(container, hidegrabber, startdl);
+                        try {
+                            Thread.sleep(1000);
+                        } catch (Exception e) {
+                            JDLogger.exception(e);
+                        }
+                        container.delete();
+                    } catch (Exception e) {
+                        JDLogger.exception(e);
+                    }
+
+                } else {
+                    JDUtilities.getController().loadContainerFile(new File(dlcfilestr), hidegrabber, startdl);
+                }
+
                 response.addContent("Container opened. (" + dlcfilestr + ")");
             } else if (request.getRequestUrl().matches("(?is).*/action/save/container/[\\s\\S]+")) {
                 // Save Linklist as DLC Container
                 String dlcfilestr = new Regex(request.getRequestUrl(), "[\\s\\S]*/action/save/container/([\\s\\S]+)").getMatch(0);
+                // decoding of percent-encoding reserved characters in URLs like
+                // %20 for space
                 dlcfilestr = Encoding.htmlDecode(dlcfilestr);
-                // wegen leerzeichen etc, die ja in urls verändert werden...
                 JDUtilities.getController().saveDLC(new File(dlcfilestr), JDUtilities.getDownloadController().getAllDownloadLinks());
                 response.addContent("Container saved. (" + dlcfilestr + ")");
             } else if (request.getRequestUrl().matches("(?is).*/action/set/reconnectenabled/.*")) {
@@ -436,7 +493,6 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                 } else {
                     response.addContent("newprem=" + newuseprem + " (CHANGED=false)");
                 }
-
             } else {
                 response.addContent("JDRemoteControl - Malformed Request. use /help");
             }
@@ -471,13 +527,13 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
     }
 
     private DecimalFormat f = new DecimalFormat("#0.00");
-
     private HttpServer server;
     private MenuAction activate;
 
     @Override
     public void actionPerformed(ActionEvent e) {
         try {
+
             subConfig.setProperty(PARAM_ENABLED, activate.isSelected());
             subConfig.save();
 
@@ -494,14 +550,13 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
         }
     }
 
-    @Override
     public ArrayList<MenuAction> createMenuitems() {
         ArrayList<MenuAction> menu = new ArrayList<MenuAction>();
 
         if (activate == null) {
             activate = new MenuAction(getWrapper().getID(), 0);
             activate.setActionListener(this);
-            activate.setSelected(subConfig.getBooleanProperty(PARAM_ENABLED, true));
+            activate.setSelected(false);
             activate.setTitle(getHost());
         }
         menu.add(activate);
@@ -509,7 +564,6 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
         return menu;
     }
 
-    @Override
     public boolean initAddon() {
         logger.info("RemoteControl OK");
         initRemoteControl();
@@ -534,8 +588,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
         }
     }
 
-    @Override
     public void onExit() {
-    }
 
+    }
 }
