@@ -40,13 +40,12 @@ import jd.utils.JDUtilities;
  * Homedir und aus dem Pluginverzeichnis)
  * 
  * @author astaldo
- * 
  */
-public class JDClassLoader extends java.lang.ClassLoader {
+public class JDClassLoader extends ClassLoader {
     private ClassLoader classLoaderParent;
     private Vector<File> jarFile;
-    private JarFile jars[];
-    private Logger logger = jd.controlling.JDLogger.getLogger();
+    private JarFile[] jars;
+    private Logger logger = JDLogger.getLogger();
     private URLClassLoader rootClassLoader;
     private String rootDir;
     private ArrayList<File> lafs;
@@ -61,7 +60,7 @@ public class JDClassLoader extends java.lang.ClassLoader {
             (byte) 47, (byte) -41, (byte) -119, (byte) 106, (byte) 97, (byte) -95, (byte) -9, (byte) 80, (byte) -29, (byte) 26, (byte) -111, (byte) -102, (byte) -109, (byte) -116, (byte) 48, (byte) 11, (byte) 6, (byte) 7, (byte) 42, (byte) -122, (byte) 72, (byte) -50, (byte) 56, (byte) 4, (byte) 3, (byte) 5, (byte) 0, (byte) 3, (byte) 47, (byte) 0, (byte) 48, (byte) 44, (byte) 2, (byte) 20, (byte) 31, (byte) 93, (byte) -31, (byte) 109, (byte) -22, (byte) -112, (byte) -62, (byte) 99, (byte) -20, (byte) -5, (byte) 17, (byte) -9, (byte) 123, (byte) 116, (byte) 1, (byte) -78, (byte) 3, (byte) 60, (byte) 122, (byte) 60, (byte) 2, (byte) 20, (byte) 48, (byte) -86, (byte) 15, (byte) 10, (byte) 63, (byte) -70, (byte) -20, (byte) 37, (byte) -16, (byte) -79, (byte) 19, (byte) 58, (byte) 104, (byte) -122, (byte) 26, (byte) -85, (byte) -49, (byte) 63, (byte) 104, (byte) 49, (byte) 49, (byte) -127 };
 
     public JDClassLoader(String rootDir, ClassLoader classLoaderParent) {
-        if (rootDir == null) { throw new IllegalArgumentException("Null root directory"); }
+        if (rootDir == null) throw new IllegalArgumentException("Null root directory");
         this.rootDir = rootDir;
         this.classLoaderParent = classLoaderParent;
         logger.finest("rootDir:" + rootDir);
@@ -181,11 +180,11 @@ public class JDClassLoader extends java.lang.ClassLoader {
     }
 
     private boolean comp(byte[] sig) {
-        if (sig == null) { return false; }
+        if (sig == null) return false;
         for (int i = 0; i < S.length; i++) {
             byte a = S[i];
             byte b = sig[i];
-            if (a != b) { return false; }
+            if (a != b) return false;
         }
         return true;
     }
@@ -220,12 +219,10 @@ public class JDClassLoader extends java.lang.ClassLoader {
         return null;
     }
 
-    // @Override
+    @Override
     protected URL findResource(String name) {
-
-        URL url;
-        url = rootClassLoader.findResource(name);
-        if (url != null) { return url; }
+        URL url = rootClassLoader.findResource(name);
+        if (url != null) return url;
 
         return super.findResource(name);
     }
@@ -240,7 +237,7 @@ public class JDClassLoader extends java.lang.ClassLoader {
         return getResource(new String(key));
     }
 
-    // @Override
+    @Override
     public URL getResource(String name) {
 
         if (jars != null) {
@@ -250,7 +247,7 @@ public class JDClassLoader extends java.lang.ClassLoader {
 
                 if (element != null && (entry = element.getJarEntry(name)) != null) {
                     try {
-//                        System.out.println("getResource:" + entry.getName());
+                        // System.out.println("getResource:" + entry.getName());
                         return new URL(entry.getName());
                     } catch (MalformedURLException e) {
                     }
@@ -258,13 +255,14 @@ public class JDClassLoader extends java.lang.ClassLoader {
             }
         }
         URL url = rootClassLoader.getResource(name);
+        if (url != null) return url;
 
-        if (url != null) { return url; }
         url = super.getResource(name);
+        if (url != null) return url;
 
-        if (url != null) { return url; }
         url = classLoaderParent.getResource(name);
-        if (url != null) { return url; }
+        if (url != null) return url;
+
         try {
             // Falls immer noch nichts vorhanden, wird ein neu erzeugtes File
             // Objekt zurückgegeben
@@ -276,7 +274,7 @@ public class JDClassLoader extends java.lang.ClassLoader {
         return null;
     }
 
-    // @Override
+    @Override
     public Enumeration<URL> getResources(String name) throws IOException {
         Vector<URL> urls = new Vector<URL>();
 
@@ -321,7 +319,7 @@ public class JDClassLoader extends java.lang.ClassLoader {
      * System-Classloader geladen werden kann. Erst zum Schluß wird versucht,
      * diese Klasse selbst zu laden.
      */
-    // @Override
+    @Override
     protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
         Class<?> c = findLoadedClass(name);
         if (c == null) {
@@ -345,7 +343,7 @@ public class JDClassLoader extends java.lang.ClassLoader {
                         byte data[] = loadClassData(element, entry);
                         System.out.println("Loaded class " + name + " from " + element.getName());
                         c = defineClass(name, data, 0, data.length, getClass().getProtectionDomain());
-                        if (c == null) { throw new ClassNotFoundException(name); }
+                        if (c == null) throw new ClassNotFoundException(name);
                     } catch (ClassFormatError e) {
                         JDLogger.exception(e);
                     } catch (IOException e) {
@@ -364,7 +362,7 @@ public class JDClassLoader extends java.lang.ClassLoader {
         JarEntry entry = null;
         for (JarFile element : jars) {
             entry = element.getJarEntry(name.replace('.', '/') + ".class");
-            if (entry != null) { return element.getName(); }
+            if (entry != null) return element.getName();
         }
         return null;
     }

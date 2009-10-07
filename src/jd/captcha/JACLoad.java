@@ -19,10 +19,8 @@ package jd.captcha;
 import java.io.File;
 import java.io.IOException;
 
-import jd.controlling.JDLogger;
 import jd.http.Browser;
 import jd.http.JDProxy;
-import jd.nutils.JDHash;
 
 /**
  * JAC Tester
@@ -80,36 +78,40 @@ public class JACLoad {
 
     }
 
-    private void loadMegaUpload() {
-        final String dir = "/home/dwd/.jd_home/captchas/gtthbtcm/";
-        final Browser fbr = new Browser();
-        try {
-            fbr.setCookie("getthebit.com", "gb_guest_sid", "c79803a2c3656a0a36ebed436a19348f");
-            // fbr.getPage("http://narod.ru/disk/3192829000/Vol.55%20-%20Wilhelm%20Kempff%20I%20(Flac).rar.html");
-        } catch (IOException e1) {
-            // TODO Auto-generated catch block
-            e1.printStackTrace();
-        }
-        for (int i = 0; i < 500; i++) {
-            final int b = i;
-            new Thread(new Runnable() {
-                public void run() {
-                    Browser br = fbr.cloneBrowser();
-                    try {
-                        br.setCookie("getthebit.com", "gb_guest_sid", "c79803a2c3656a0a36ebed436a19348f");
-                        // br.getPage();
-                        // String cid =
-                        // br.getRegex("url=\"([^\"]+)\"").getMatch(0);
-                        // System.out.println(cid);
-                        System.out.println(dir + b + ".jpg");
-                        File file = new File(dir + b + ".jpg");
-                        br.getDownload(file, "http://st2.srv.getthebit.com/plain.php?s=files&ev=kcapcha");
-                        file.renameTo(new File(dir, JDHash.getMD5(file) + ".jpg"));
-                    } catch (IOException e) {
-                        JDLogger.exception(e);
-                    }
-                }
-            }).start();
-        }
-    }
+    // private void loadMegaUpload() {
+    // final String dir = "/home/dwd/.jd_home/captchas/gtthbtcm/";
+    // final Browser fbr = new Browser();
+    // try {
+    // fbr.setCookie("getthebit.com", "gb_guest_sid",
+    // "c79803a2c3656a0a36ebed436a19348f");
+    // //
+    // fbr.getPage("http://narod.ru/disk/3192829000/Vol.55%20-%20Wilhelm%20Kempff%20I%20(Flac).rar.html");
+    // } catch (IOException e1) {
+    // // TODO Auto-generated catch block
+    // e1.printStackTrace();
+    // }
+    // for (int i = 0; i < 500; i++) {
+    // final int b = i;
+    // new Thread(new Runnable() {
+    // public void run() {
+    // Browser br = fbr.cloneBrowser();
+    // try {
+    // br.setCookie("getthebit.com", "gb_guest_sid",
+    // "c79803a2c3656a0a36ebed436a19348f");
+    // // br.getPage();
+    // // String cid =
+    // // br.getRegex("url=\"([^\"]+)\"").getMatch(0);
+    // // System.out.println(cid);
+    // System.out.println(dir + b + ".jpg");
+    // File file = new File(dir + b + ".jpg");
+    // br.getDownload(file,
+    // "http://st2.srv.getthebit.com/plain.php?s=files&ev=kcapcha");
+    // file.renameTo(new File(dir, JDHash.getMD5(file) + ".jpg"));
+    // } catch (IOException e) {
+    // JDLogger.exception(e);
+    // }
+    // }
+    // }).start();
+    // }
+    // }
 }

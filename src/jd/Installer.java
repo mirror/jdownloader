@@ -111,7 +111,8 @@ public class Installer {
     }
 
     public static void askInstallFlashgot() {
-        if (SubConfiguration.getConfig("FLASHGOT").getBooleanProperty("ASKED_TO_INSTALL_FLASHGOT", false)) { return; }
+        final SubConfiguration config = SubConfiguration.getConfig("FLASHGOT");
+        if (config.getBooleanProperty("ASKED_TO_INSTALL_FLASHGOT", false)) return;
         int answer = new GuiRunnable<Integer>() {
 
             @Override
@@ -143,13 +144,17 @@ public class Installer {
                     protected void packed() {
                         this.setSize(550, 400);
                     }
+
+                    @Override
+                    protected void setReturnValue(boolean b) {
+                        config.setProperty("ASKED_TO_INSTALL_FLASHGOT", true);
+                        config.save();
+                    }
                 }.getReturnValue();
             }
 
         }.getReturnValue();
-        SubConfiguration.getConfig("FLASHGOT").setProperty("ASKED_TO_INSTALL_FLASHGOT", true);
-        SubConfiguration.getConfig("FLASHGOT").save();
-        if (JDFlags.hasAllFlags(answer, UserIO.RETURN_OK)) installFirefoxaddon();
+        if (JDFlags.hasAllFlags(answer, UserIO.RETURN_OK)) installFirefoxAddon();
     }
 
     private void showConfig() {
@@ -177,7 +182,7 @@ public class Installer {
                     }
                 }
                 if (def == null) def = "en";
-                JDLocale sel = (JDLocale) SubConfiguration.getConfig(JDL.CONFIG).getProperty(JDL.LOCALE_PARAM_ID, JDL.getInstance(def));
+                JDLocale sel = SubConfiguration.getConfig(JDL.CONFIG).getGenericProperty(JDL.LOCALE_PARAM_ID, JDL.getInstance(def));
 
                 JDL.setLocale(sel);
 
@@ -191,9 +196,7 @@ public class Installer {
                     private ArrayList<JDLocale> ids;
 
                     private ArrayList<JDLocale> getIds() {
-                        if (ids == null) {
-                            ids = JDL.getLocaleIDs();
-                        }
+                        if (ids == null) ids = JDL.getLocaleIDs();
 
                         return ids;
                     }
@@ -263,21 +266,10 @@ public class Installer {
         }.waitForEDT();
     }
 
-    public static void installFirefoxaddon() {
-        File file = getFlashGotFile();
+    public static void installFirefoxAddon() {
+        File file = JDUtilities.getResourceFile("tools/flashgot.xpi");
 
         LocalBrowser.openinFirefox(file.getAbsolutePath());
-
-    }
-
-    /**
-     * Calls a webupdate to get the latest XPI
-     * 
-     * @return
-     */
-    public static File getFlashGotFile() {
-
-        return JDUtilities.getResourceFile("tools/flashgot.xpi");
     }
 
     public JPanel getInstallerPanel() {

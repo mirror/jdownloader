@@ -81,7 +81,7 @@ public class JDExternInterface extends PluginOptional {
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
-                Installer.installFirefoxaddon();
+                Installer.installFirefoxAddon();
             }
 
         }, JDL.L("jd.plugins.optional.interfaces.JDExternInterface.flashgot", "Install"), JDL.L("jd.plugins.optional.interfaces.JDExternInterface.flashgot.long", "Install Firefox integration"), null));
@@ -131,8 +131,8 @@ public class JDExternInterface extends PluginOptional {
                     String branch = request.getParameters().get("branch");
                     String ref = request.getHeader("referer");
 
-                    if (!ref.equalsIgnoreCase("http://jdownloader.org/beta")&&!ref.equalsIgnoreCase("http://jdownloader.net:8081/beta")) return;
-                    new GuiRunnable<Object>(){
+                    if (!ref.equalsIgnoreCase("http://jdownloader.org/beta") && !ref.equalsIgnoreCase("http://jdownloader.net:8081/beta")) return;
+                    new GuiRunnable<Object>() {
 
                         @Override
                         public Object runSave() {
@@ -140,10 +140,10 @@ public class JDExternInterface extends PluginOptional {
                             SwingGui.getInstance().getMainFrame().setExtendedState(JFrame.MAXIMIZED_BOTH);
                             return null;
                         }
-                        
+
                     }.waitForEDT();
-             
-                    if (UserIO.isOK(UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN|UserIO.DONT_SHOW_AGAIN, JDL.L("updater.beta.rlyupdate.title", "Update to beta now?"), JDL.LF("updater.beta.rlyupdate.message", "Do you want to update to JD-%s", branch)))) {
+
+                    if (UserIO.isOK(UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN | UserIO.DONT_SHOW_AGAIN, JDL.L("updater.beta.rlyupdate.title", "Update to beta now?"), JDL.LF("updater.beta.rlyupdate.message", "Do you want to update to JD-%s", branch)))) {
                         WebUpdater.getConfig("WEBUPDATE").setProperty(WebUpdater.PARAM_BRANCH, branch);
                         WebUpdater.getConfig("WEBUPDATE").setProperty(WebUpdater.BRANCHINUSE, branch);
                         WebUpdater.getConfig("WEBUPDATE").save();

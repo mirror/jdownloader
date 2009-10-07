@@ -69,9 +69,9 @@ public class LookAndFeelController {
             String clname = lafis[i].getClassName();
 
             if (clname.contains("Substance") && JDUtilities.getJavaVersion() >= 1.6) {
-                ret.add(new LookAndFeelWrapper(lafis[i]).setName(lafis[i].getName().replaceAll("([A-Z])", " $0").trim()));
+                ret.add(new LookAndFeelWrapper(lafis[i]).setName(lafis[i].getName().replaceAll("([A-Z0-9]\\d*)", " $0").trim()));
             } else if (clname.contains("Synthetica")) {
-                ret.add(new LookAndFeelWrapper(lafis[i]).setName(lafis[i].getName().replaceAll("([A-Z])", " $0").trim()));
+                ret.add(new LookAndFeelWrapper(lafis[i]).setName(lafis[i].getName().replaceAll("([A-Z0-9]\\d*)", " $0").trim()));
             } else if (clname.contains("goodie")) {
                 LookAndFeelWrapper lafm = new LookAndFeelWrapper(lafis[i]);
                 lafm.setName(lafis[i].getName());
@@ -98,7 +98,7 @@ public class LookAndFeelController {
                 ret.add(lafm);
             } else if (JDInitFlags.SWITCH_DEBUG) {
                 LookAndFeelWrapper lafm = new LookAndFeelWrapper(lafis[i]);
-                lafm.setName(lafis[i].getName() + "(debug)");
+                lafm.setName(lafis[i].getName() + " [Debug]");
                 ret.add(lafm);
             }
 
@@ -154,51 +154,8 @@ public class LookAndFeelController {
      * @return
      */
     private static LookAndFeelWrapper getDefaultLAFM() {
-        // de.javasoft.plaf.synthetica.SyntheticaSkyMetallicLookAndFeel
-
         return new LookAndFeelWrapper("de.javasoft.plaf.synthetica.SyntheticaSimple2DLookAndFeel");
-        // return new
-        // LookAndFeelWrapper("de.javasoft.plaf.synthetica.SyntheticaBlackStarLookAndFeel");
-
-        // LookAndFeelWrapper[] sup = getSupportedLookAndFeels();
-        // if (sup.length == 0) return new
-        // LookAndFeelWrapper(UIManager.getSystemLookAndFeelClassName());
-        // if (MAC_DEFAULT != null) return MAC_DEFAULT;
-        // return sup[0];
-
     }
-
-    //
-    // /**
-    // * INstalls all Substance LookAndFeels
-    // */
-    // public static void installSubstance() {
-    //
-    // String pkg = "org/jvnet/substance/skin/";
-    // URL res = JDUtilities.getJDClassLoader().getResource(pkg);
-    // String url = new Regex(res, "(.*)\\!.*").getMatch(0);
-    // url = url.substring(4);
-    // try {
-    // File file = new File(new URL(url).toURI());
-    //
-    // JarInputStream jarFile = new JarInputStream(new FileInputStream(file));
-    // JarEntry e;
-    // while ((e = jarFile.getNextJarEntry()) != null) {
-    // if (e.getName().startsWith(pkg)) {
-    // String laf = new Regex(e.getName(),
-    // "org/jvnet/substance/skin/(.*?)LookAndFeel\\.class").getMatch(0);
-    // if (laf != null) {
-    // UIManager.installLookAndFeel(laf, "org.jvnet.substance.skin." + laf +
-    // "LookAndFeel");
-    // }
-    // }
-    //
-    // }
-    //
-    // } catch (Exception e) {
-    // JDLogger.exception(e);
-    // }
-    // }
 
     /**
      * setups the correct Look and Feel
@@ -394,8 +351,8 @@ public class LookAndFeelController {
 
     }
 
-    /*
-     * Execvutes LAF dependen commands BEFORE initializing the LAF
+    /**
+     * Executes LAF dependend commands BEFORE initializing the LAF
      */
     private static void preSetup(String className) {
         Boolean windowDeco = GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.DECORATION_ENABLED, true);
@@ -422,9 +379,5 @@ public class LookAndFeelController {
     public static boolean isSynthetica() {
         return UIManager.getLookAndFeel().getName().toLowerCase().contains("synthetica");
     }
-
-    // public static void setDefaultFont(String font) {
-    //
-    // }
 
 }

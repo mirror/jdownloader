@@ -252,7 +252,7 @@ public class JDInit {
     private void movePluginUpdates(File dir) {
         if (!JDUtilities.getResourceFile("update").exists()) return;
         if (!dir.isDirectory()) return;
-        main: for (File f : dir.listFiles()) {
+        for (File f : dir.listFiles()) {
             if (f.isDirectory()) {
                 movePluginUpdates(f);
             } else {
@@ -274,8 +274,8 @@ public class JDInit {
                     }
                 }
 
-                boolean d = newFile.delete();
-                boolean r = f.renameTo(newFile);
+                newFile.delete();
+                f.renameTo(newFile);
                 File parent = newFile.getParentFile();
 
                 while (parent.listFiles().length == 0) {

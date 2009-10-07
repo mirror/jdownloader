@@ -43,7 +43,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-import javax.swing.text.PlainDocument;
+import javax.swing.text.Document;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -68,9 +68,8 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
     private ConfigEntry configEntry;
 
     /**
-     * Die input Komponente
+     * Die input Komponenten
      */
-
     private JComponent[] input;
 
     private JComponent decoration;
@@ -116,7 +115,7 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
 
             input[0] = new JPasswordField();
 
-            PlainDocument doc = (PlainDocument) ((JPasswordField) input[0]).getDocument();
+            Document doc = ((JPasswordField) input[0]).getDocument();
             doc.addDocumentListener(this);
 
             input[0].setEnabled(configEntry.isEnabled());
@@ -130,7 +129,7 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
             // decoration.setName(((JLabel)decoration).getText());
             input[0] = new JDTextField();
 
-            doc = (PlainDocument) ((JDTextField) input[0]).getDocument();
+            doc = ((JDTextField) input[0]).getDocument();
             doc.addDocumentListener(this);
             input[0].setEnabled(configEntry.isEnabled());
             ((JDTextField) input[0]).setHorizontalAlignment(SwingConstants.RIGHT);
@@ -146,7 +145,7 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
             // Dimension dim = input[0].getPreferredSize();
             // dim.height = 20;
             // input[0].setPreferredSize(new Dimension(-1,20));
-            doc = (PlainDocument) ((JDTextArea) input[0]).getDocument();
+            doc = ((JDTextArea) input[0]).getDocument();
             doc.addDocumentListener(this);
 
             break;

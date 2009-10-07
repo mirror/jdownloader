@@ -95,7 +95,7 @@ public class ConfigPanelGeneral extends ConfigPanel {
         addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
-                Installer.installFirefoxaddon();
+                Installer.installFirefoxAddon();
 
             }
         }, JDL.L("jd.plugins.optional.interfaces.JDExternInterface.flashgot", "Install"), JDL.L("jd.plugins.optional.interfaces.JDExternInterface.flashgot.long", "Install Firefox integration"), null).setGroup(cnl)));
