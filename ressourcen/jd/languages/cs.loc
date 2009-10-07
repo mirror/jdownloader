@@ -1079,8 +1079,15 @@ jd.plugins.optional.schedule.maingui.mytablemodel.number = Počet akcí
 jd.plugins.optional.schedule.maingui.mytablemodel.repeats = Opakování
 jd.plugins.optional.schedule.maingui.mytablemodel.time = Čas
 jd.plugins.optional.schedule.schedule = Plánovač
+jd.plugins.optional.schedule.schedulertablemodel.date = Datum
+jd.plugins.optional.schedule.schedulertablemodel.name = Jméno
+jd.plugins.optional.schedule.schedulertablemodel.nextexecution = Další spuštění
+jd.plugins.optional.schedule.schedulertablemodel.number = Počet akcí
+jd.plugins.optional.schedule.schedulertablemodel.repeats = Opakování
+jd.plugins.optional.schedule.schedulertablemodel.time = Čas
 jd.plugins.optional.schedule.schedulerview.title = Plánovač
 jd.plugins.optional.schedule.schedulerview.tooltip = Naplánujte si svá stahování
+jd.plugins.optional.schedule.wait = chvíli počkejte
 jd.plugins.optional.webinterface.jdwebinterface = JDWebinterface
 jd.plugins.plugin.aborted = Dekódování zrušeno!
 jd.plugins.pluginforhost.enable_premium = Aktivovat
@@ -1097,6 +1104,7 @@ jd.update.main.error.title = Vyskytly se chyby!
 jd.update.main.error.title.old = Nalezeny aktualizace!
 jd.utils.webupdate.ballon.message.updateinprogress = Aktualizace už probíhá
 jd.utils.webupdate.ballon.title = Aktualizace
+jd.utils.webupdate.dopluginupdate.title = Doporučován restart
 jd.utils.webupdate.doupdatecheck.noupdates = Žádné aktualizace nejsou dostupné
 jd.utils.webupdate.message = <font size="2" face="Verdana, Arial, Helvetica, sans-serif">%s dostupných aktualizací. Instalovat teď?</font>
 jd.utils.webupdate.message2 = <font size="4" face="Verdana, Arial, Helvetica, sans-serif">%s dostupných aktualizací. Instalovat teď?</font>
