@@ -367,7 +367,7 @@ gui.fileinfopanel.packagetab.lbl.name = Όνομα Πακέτου
 gui.fileinfopanel.packagetab.lbl.password = Κωδικός τόμου
 gui.fileinfopanel.packagetab.lbl.password2 = Κωδικός τόμου (αυτόματα)
 gui.fileinfopanel.packagetab.lbl.saveto = Αποθήκευση σε
-gui.installer.kikin.agree = <b><a href=\"http://jdownloader.org/kikin\">Τι είναι το Kikin;</a> <br/>Το καλύτερο; Το kikin είναι δωρεάν και δουλεύει αυτόματα.<br>Συμφωνώ με το kikin <a href=\"http://www.kikin.com/terms-of-service\">Όροι υπηρεσίας</a> and <a href=\"http://www.kikin.com/privacy-policy\">Privacy Policy</a></b>
+gui.installer.kikin.agree2 = <b><a href=\"http://jdownloader.org/kikin\">Τι είναι το Kikin;</a> <br/>Το καλύτερο; Το kikin είναι δωρεάν και δουλεύει αυτόματα.<br>Συμφωνώ με το kikin <a href=\"http://www.kikin.com/terms-of-service\">Όροι υπηρεσίας</a> και <a href=\"http://www.kikin.com/privacy-policy\">Privacy Policy</a></b>
 gui.installer.kikin.cancel = Άκυρο
 gui.installer.kikin.message = Ελεύθερα! Εξατομικεύστε την εμπειρία αναζήτησης
 gui.installer.kikin.ok = Συνέχεια
@@ -1047,21 +1047,23 @@ jd.plugins.optional.langfileeditor.lfeview.title = Επεξεργασία Μετ
 jd.plugins.optional.langfileeditor.lfeview.tooltip = Επεξεργασία ενός αρχείου γλώσσας
 jd.plugins.optional.langfileeditor.srcparser = Κατατμητής Πηγής
 jd.plugins.optional.schedule.disabled = Απενεργοποιημένο
+jd.plugins.optional.schedule.expired = Έληξε
 jd.plugins.optional.schedule.maingui.edit = Τροποποίηση
 jd.plugins.optional.schedule.maingui.mytablemodel.add.daily = Καθημερινά
 jd.plugins.optional.schedule.maingui.mytablemodel.add.hourly = Ωριαία
 jd.plugins.optional.schedule.maingui.mytablemodel.add.interval = Περίοδος: %sω %sλ
 jd.plugins.optional.schedule.maingui.mytablemodel.add.once = Μόνο μια φορά
 jd.plugins.optional.schedule.maingui.mytablemodel.add.weekly = Εβδομαδιαία
-jd.plugins.optional.schedule.maingui.mytablemodel.date = Ημερομηνία
-jd.plugins.optional.schedule.maingui.mytablemodel.name = Όνομα
-jd.plugins.optional.schedule.maingui.mytablemodel.nextexecution = Επόμενη εκτέλεση
-jd.plugins.optional.schedule.maingui.mytablemodel.number = Πλήθος ενεργειών
-jd.plugins.optional.schedule.maingui.mytablemodel.repeats = Επαναλήψεις
-jd.plugins.optional.schedule.maingui.mytablemodel.time = Ώρα
 jd.plugins.optional.schedule.schedule = Πρόγραμμα (Schedule)
+jd.plugins.optional.schedule.schedulertablemodel.date = Ημερομηνία
+jd.plugins.optional.schedule.schedulertablemodel.name = Όνομα
+jd.plugins.optional.schedule.schedulertablemodel.nextexecution = Επόμενη εκτέλεση
+jd.plugins.optional.schedule.schedulertablemodel.number = Πλήθος ενεργειών
+jd.plugins.optional.schedule.schedulertablemodel.repeats = Επαναλήψεις
+jd.plugins.optional.schedule.schedulertablemodel.time = Ώρα
 jd.plugins.optional.schedule.schedulerview.title = Πρόγραμμα
 jd.plugins.optional.schedule.schedulerview.tooltip = Πρoγραμματισμός λήψεων
+jd.plugins.optional.schedule.wait = Παρακαλώ περιμένετε
 jd.plugins.optional.webinterface.jdwebinterface = JDWebinterface
 jd.plugins.plugin.aborted = Η αποκρυπτογράφηση ακυρώθηκε!
 jd.plugins.pluginutils.askpassword = Παρακαλώ εισάγετε τον κδικό για το %s
@@ -1076,10 +1078,14 @@ jd.update.main.error.title = Προέκυψαν σφάλματα
 jd.update.main.error.title.old = Βρέθηκαν ενημερώσεις!
 jd.utils.webupdate.ballon.message.updateinprogress = Υπάρχει ήδη ενημέρωση σε εξέλιξη.
 jd.utils.webupdate.ballon.title = Ενημέρωση
+jd.utils.webupdate.dopluginupdate = [Επανεκκίνηση του plugin επειδή έχει λήξει]
+jd.utils.webupdate.dopluginupdate.message = Μερικά plugins έχουν ενημερωθεί.\r\nΘα πρέπει να επανεκκινήσετε το JDownloader.
+jd.utils.webupdate.dopluginupdate.title = Προτείνεται επανεκκίνηση
 jd.utils.webupdate.doupdatecheck.noupdates = Δεν υπάρχουν διαθέσιμες Ενημερώσεις
 jd.utils.webupdate.message = <font size="2" face="Verdana, Arial, Helvetica, sans-serif">%s ενημερώσεις διαθέσιμες. Εγκατάσταση τώρα;</font>
 jd.utils.webupdate.message2 = <font size="4" face="Verdana, Arial, Helvetica, sans-serif">%s ενημερώσεις διαθέσιμες. Εγκατάσταση τώρα;</font>
 jd.utils.webupdate.progresscontroller.text = Ενημέρωση σε εξέλιξη
+jd.utils.webupdate.whatchangedlink = <hr/><a href='http://jdownloader.org/latestchanges'>Τί έχει αλλάξει;</a>
 linkgrabber.onlinestatus.offline = Μη διαθέσιμο
 linkgrabber.onlinestatus.online = Διαθέσιμο
 linkgrabber.onlinestatus.uncheckable = Προσωρινά χωρίς έλεγχο
