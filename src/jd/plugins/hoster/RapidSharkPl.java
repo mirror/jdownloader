@@ -37,11 +37,10 @@ public class RapidSharkPl extends PluginForHost {
         super(wrapper);
     }
 
-    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
-        
+
         Form form = br.getForm(0);
         form.setAction(downloadLink.getDownloadURL());
         form.remove("method_premium");
@@ -58,28 +57,28 @@ public class RapidSharkPl extends PluginForHost {
             int waittime = ((3600 * hours) + (60 * minutes) + seconds + 1) * 1000;
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
         }
-        
+
         int ticketwait = Integer.parseInt(br.getRegex("id=\"countdown\">(.*?)</span>").getMatch(0));
         this.sleep(ticketwait * 1001, downloadLink);
-        
+
         Form dlform = br.getFormbyProperty("name", "F1");
         if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        
+
         String captchaurl = br.getRegex("(http://www.rapidshark.pl/captchas.*?)\"").getMatch(0);
         if (captchaurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        
+
         String code = getCaptchaCode(captchaurl, downloadLink);
         logger.finest("Obtained captcha code is '" + code + "'");
         dlform.put("code", code);
-        
+
         dlform.remove("method_premium");
         br.submitForm(dlform);
-        
+
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
-        	URLConnectionAdapter con2 = br.getHttpConnection();
+            URLConnectionAdapter con2 = br.getHttpConnection();
             logger.finest("Connection type is '" + con2.getContentType() + "'");
-            
+
             if (con2.getContentType().contains("html")) {
                 String error = br.getRegex("class=\"err\">(.*?)</font>").getMatch(0);
                 if (error != null) {
@@ -91,70 +90,56 @@ public class RapidSharkPl extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, error, 10000);
                     }
                 }
-                
+
                 if (br.containsHTML("Download Link Generated")) {
-                	dllink = br.getRegex("padding:7px;\">\\s+<a\\s+href=\"(.*?)\">").getMatch(0);
+                    dllink = br.getRegex("padding:7px;\">\\s+<a\\s+href=\"(.*?)\">").getMatch(0);
                 }
             }
-            
+
             con2.disconnect();
         }
-        
+
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         logger.fine("Obtained download link is '" + dllink + "'");
-        
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink);
+
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         dl.startDownload();
     }
 
-    // @Override
-    // TODO: AntiCaptcha Method would allow simultanous connections
-    // if user is quick; he can enter captchas one-by-one and then server allow
-    // him simulatanous downloads
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
-    // @Override
     public String getAGBLink() {
         return "http://rapidshark.pl/tos.html";
     }
 
-    // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage("http://www.rapidshark.pl/?op=change_lang&lang=english");
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("No such file")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        
+
         String filename = Encoding.htmlDecode(br.getRegex("<h2>Datei\\sherunterladen\\s(.*?)</h2>").getMatch(0));
         if (filename == null || filename.length() < 3) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         logger.fine("Obtained file name is '" + filename + "'");
-        
+
         String filesize = br.getRegex(filename + "</font>\\s\\((.*?)\\)</font>").getMatch(0);
         if (filesize == null || filesize.length() < 5) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         logger.fine("Obtained file size is '" + filesize + "'");
-        
+
         downloadLink.setName(filename);
         downloadLink.setDownloadSize(Regex.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
-    // @Override
-    /*
-     * public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    // @Override
     public void reset() {
     }
 
-    // @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 
