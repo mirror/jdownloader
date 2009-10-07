@@ -410,6 +410,7 @@ gui.linkgrabberv2.lg.addselected = Seçilen Paketleri Kabul Et
 gui.linkgrabberv2.lg.addselectedlinks = Seçilen Linkleri Kabul Et
 gui.linkgrabberv2.lg.clear = Listeyi Temizle
 gui.linkgrabberv2.lg.clear.ask = Link yakalayıcı listesini temizle?
+gui.linkgrabberv2.lg.rmdups = Zaten Listede Olanları Kaldır
 gui.linkgrabberv2.lg.rmoffline = Çevrimdışı Olanları Kaldır
 gui.linkgrabberv2.onlyselectedhoster = Sadece bu Barındırıcı Kalsın
 gui.linkgrabberv2.splithoster = Barındırıcıya Göre Böl
