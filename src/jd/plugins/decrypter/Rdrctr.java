@@ -45,7 +45,7 @@ public class Rdrctr extends PluginForDecrypt {
     public static String[] getAnnotationUrls() {
         StringBuilder completePattern = new StringBuilder();
         String[] list = { "http://[\\w\\.]*?readthis\\.ca(/[a-zA-Z0-9]+)?", "http://[\\w\\.]*?redirects\\.ca(/[a-zA-Z0-9]+)?", "http://[\\w\\.]*?goshrink\\.com(/[a-zA-Z0-9]+)?", "http://[\\w\\.]*?clickthru\\.ca(/[a-zA-Z0-9]+)?", "http://[\\w\\.]*?atu\\.ca(/[a-zA-Z0-9]+)?", "http://[\\w\\.]*?easyurl\\.net(/[a-zA-Z0-9]+)?", "http://[\\w\\.]*?fyad\\.org(/[a-zA-Z0-9]+)?", "http://[\\w\\.]*?is\\.gd(/[a-zA-Z0-9]+)?", "http://[\\w\\.]*?redirect\\.wayaround\\.org/[a-zA-Z0-9]+/(.*)", "http://[\\w\\.]*?rurl\\.org(/[a-zA-Z0-9]+)?", "http://[\\w\\.]*?tinyurl\\.com/[a-zA-Z0-9\\-]+", "http://[\\w\\.]*?smarturl\\.eu/\\?[a-zA-Z0-9]+", "http://[\\w\\.]*?linkmize\\.com(/[a-zA-Z0-9]+)?", "http://go2\\.u6e\\.de/[a-zA-Z0-9]+", "http://[\\w\\.]*?shrinkify\\.com/[a-zA-Z0-9]+", "http://[\\w\\.]*?s7y\\.com/[a-zA-Z0-9]+", "http://[\\w\\.]*?rln\\.me/[0-9a-zA-Z]+", "http://[\\w\\.]*?sp2\\.ro/[0-9a-zA-Z]+",
-                "http://[\\w\\.]*?s7y.us/[a-zA-Z0-9]+", "http://[\\w\\.]*?ow\\.ly/[\\w]+", "http://[\\w\\.]*?bit\\.ly/[\\w]+", "http://[\\w\\.]*?ponyurl\\.com/[\\w]+", "http://skracaj\\.org/[\\w]+", "http://l-x\\.pl/[\\w]+", "http://[\\w\\.]*?budurl\\.com/[a-zA-Z0-9]+", "http://[\\w\\.]*?yep\\.it/.+", "http://[\\w\\.]*?urlite\\.com/[\\d]+", "http://[\\w\\.]*?urlcini\\.com/[\\w]+", "http://[\\w\\.]*?dwarfurl\\.com/.*", "http://[\\w\\.]*?tra\\.kz/[\\w_\\-,()*:]+", "http://[\\w\\.]*?tiny\\.pl/[\\w]+", "http://[\\w\\.]*?tiny\\.cc/[0-9a-zA-Z]+", "http://[\\w\\.]*?clop\\.in/[a-zA-Z0-9]+", "http://[\\w\\.]*?linkth\\.at/[a-z]+" };
+                "http://[\\w\\.]*?s7y.us/[a-zA-Z0-9]+", "http://[\\w\\.]*?ow\\.ly/[\\w]+", "http://[\\w\\.]*?bit\\.ly/[\\w]+", "http://[\\w\\.]*?ponyurl\\.com/[\\w]+", "http://skracaj\\.org/[\\w]+", "http://l-x\\.pl/[\\w]+", "http://[\\w\\.]*?budurl\\.com/[a-zA-Z0-9]+", "http://[\\w\\.]*?yep\\.it/.+", "http://[\\w\\.]*?urlite\\.com/[\\d]+", "http://[\\w\\.]*?urlcini\\.com/[\\w]+", "http://[\\w\\.]*?dwarfurl\\.com/.*", "http://[\\w\\.]*?tra\\.kz/[\\w_\\-,()*:]+", "http://[\\w\\.]*?tiny\\.pl/[\\w]+", "http://[\\w\\.]*?tiny\\.cc/[0-9a-zA-Z]+", "http://[\\w\\.]*?clop\\.in/[a-zA-Z0-9]+", "http://[\\w\\.]*?linkth\\.at/[a-z]+", "http://[\\w\\.]*?adf\\.ly/[0-9a-zA-Z]+" };
         for (String pattern : list) {
             if (completePattern.length() > 0) {
                 completePattern.append("|");
@@ -80,6 +80,8 @@ public class Rdrctr extends PluginForDecrypt {
         // Workaround for ponyurl.com Links
         parameter = parameter.replace("ponyurl.com/", "ponyurl.com/forward.php?");
         br.getPage(parameter);
+        String redirectcheck = br.getRedirectLocation();
+        String declink2 = null;
 
         // Password input for skracaj.org/l-x.pl redirector
         if (br.containsHTML("<b>Podaj has.?o dost.?pu:</b><br />")) {
@@ -88,9 +90,19 @@ public class Rdrctr extends PluginForDecrypt {
             passForm.put("shortcut_password", password);
             br.submitForm(passForm);
         }
+        if (parameter.contains("adf.ly/") && redirectcheck == null && br.containsHTML("\"frame1\"")) {
+            String framelink = br.getRegex("\"frame1\" src=\"(/.*?)\"").getMatch(0);
+            if (framelink == null) return null;
+            framelink = "http://adf.ly" + framelink;
+            br.getPage(framelink);
+            declink2 = br.getRegex("\"skip_button\" href=\"(.*?)\"").getMatch(0);
+        }
 
-        declink = br.getRedirectLocation();
+        declink = redirectcheck;
         if (declink == null) declink = br.getRegex("<iframe frameborder=\"0\"  src=\"(.*?)\"").getMatch(0);
+        if (declink == null) {
+            declink = declink2;
+        }
         if (declink == null) return null;
         decryptedLinks.add(createDownloadlink(declink));
         return decryptedLinks;
