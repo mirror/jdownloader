@@ -1257,6 +1257,7 @@ plugins.optional.jdlighttray.linkgrabber.intray = Link yakalarken göster ( teps
 plugins.optional.jdlighttray.minimizetotray = Sistem tepsisine küçült
 plugins.optional.jdlighttray.singleclick = Pencere durumuna tek tıklamalı geçiş
 plugins.optional.jdlighttray.startminimized = Simge durumunda başlat
+plugins.optional.jdlighttray.titleinfo = Minimize edildiğine görev çubuğunda bilgi göster
 plugins.optional.jdlighttray.tooltip = Araç ipucunu göster
 plugins.optional.jdunrar.askforpassword = %s için Parola?
 plugins.optional.jdunrar.config.advanced = Gelişmiş Ayarlar
