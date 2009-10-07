@@ -25,6 +25,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filefactory.com" }, urls = { "http://[\\w\\.]*?filefactory\\.com(/|//)f/[\\w]+" }, flags = { 0 })
 public class FlFctrFldr extends PluginForDecrypt {
@@ -38,6 +39,13 @@ public class FlFctrFldr extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
+        /* Error handling */
+        if (br.containsHTML("No Files found in this folder")) {
+            logger.warning("The requested document was not found on this server.");
+            logger.warning(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+            return new ArrayList<DownloadLink>();
+        }
+
         String pages[] = br.getRegex(Pattern.compile("<a href=\"\\?page=(\\d+)\">", Pattern.CASE_INSENSITIVE)).getColumn(0);
         progress.setRange(0);
         add(decryptedLinks, progress);
@@ -51,7 +59,7 @@ public class FlFctrFldr extends PluginForDecrypt {
     }
 
     private void add(ArrayList<DownloadLink> declinks, ProgressController progress) {
-        String links[] = br.getRegex(Pattern.compile("<td class=\"name\"><a href=\"(/file/.*?)\"", Pattern.CASE_INSENSITIVE)).getColumn(0);
+        String links[] = br.getRegex(Pattern.compile("<td class=\"name\"><a href=\".*?(/file/.*?)\"", Pattern.CASE_INSENSITIVE)).getColumn(0);
         progress.increase(links.length);
         for (String element : links) {
             declinks.add(createDownloadlink("http://www.filefactory.com" + element));
