@@ -41,6 +41,7 @@ public class RapidSharkPl extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
+        
         Form form = br.getForm(0);
         form.setAction(downloadLink.getDownloadURL());
         form.remove("method_premium");
@@ -57,34 +58,52 @@ public class RapidSharkPl extends PluginForHost {
             int waittime = ((3600 * hours) + (60 * minutes) + seconds + 1) * 1000;
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
         }
-        Form dlform = br.getFormbyProperty("name", "F1");
-        if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        String captchaurl = br.getRegex("(http://www.rapidshark.pl/captchas.*?)\"").getMatch(0);
-        if (captchaurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        String code = getCaptchaCode(captchaurl, downloadLink);
-        form.put("code", code);
-        // Ticket Time
+        
         int ticketwait = Integer.parseInt(br.getRegex("id=\"countdown\">(.*?)</span>").getMatch(0));
         this.sleep(ticketwait * 1001, downloadLink);
+        
+        Form dlform = br.getFormbyProperty("name", "F1");
+        if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        
+        String captchaurl = br.getRegex("(http://www.rapidshark.pl/captchas.*?)\"").getMatch(0);
+        if (captchaurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        
+        String code = getCaptchaCode(captchaurl, downloadLink);
+        logger.finest("Obtained captcha code is '" + code + "'");
+        dlform.put("code", code);
+        
+        dlform.remove("method_premium");
         br.submitForm(dlform);
-        System.out.print(br.toString());
-        URLConnectionAdapter con2 = br.getHttpConnection();
+        
         String dllink = br.getRedirectLocation();
-        if (con2.getContentType().contains("html")) {
-            String error = br.getRegex("class=\"err\">(.*?)</font>").getMatch(0);
-            if (error != null) {
-                logger.warning(error);
-                con2.disconnect();
-                if (error.equalsIgnoreCase("Wrong captcha") || error.equalsIgnoreCase("Expired session")) {
-                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, error, 10000);
+        if (dllink == null) {
+        	URLConnectionAdapter con2 = br.getHttpConnection();
+            logger.finest("Connection type is '" + con2.getContentType() + "'");
+            
+            if (con2.getContentType().contains("html")) {
+                String error = br.getRegex("class=\"err\">(.*?)</font>").getMatch(0);
+                if (error != null) {
+                    logger.warning(error);
+                    con2.disconnect();
+                    if (error.equalsIgnoreCase("Wrong captcha") || error.equalsIgnoreCase("Expired session")) {
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, error, 10000);
+                    }
+                }
+                
+                if (br.containsHTML("Download Link Generated")) {
+                	dllink = br.getRegex("padding:7px;\">\\s+<a\\s+href=\"(.*?)\">").getMatch(0);
                 }
             }
-            if (br.containsHTML("Download Link Generated")) dllink = br.getRegex("padding:7px;\">\\s+<a\\s+href=\"(.*?)\">").getMatch(0);
+            
+            con2.disconnect();
         }
+        
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        logger.fine("Obtained download link is '" + dllink + "'");
+        
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink);
         dl.startDownload();
     }
 
