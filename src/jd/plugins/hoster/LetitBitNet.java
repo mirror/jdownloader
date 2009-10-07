@@ -41,6 +41,7 @@ public class LetitBitNet extends PluginForHost {
     public LetitBitNet(PluginWrapper wrapper) {
         super(wrapper);
         this.setAccountwithoutUsername(true);
+        this.setStartIntervall(4000l);
         enablePremium("http://letitbit.net/");
     }
 
@@ -131,7 +132,7 @@ public class LetitBitNet extends PluginForHost {
     }
 
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return 20;
     }
 
     public void reset() {

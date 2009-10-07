@@ -16,6 +16,7 @@
 
 package jd.plugins.hoster;
 
+import java.io.File;
 import java.io.IOException;
 
 import jd.PluginWrapper;
@@ -29,6 +30,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.pluginUtils.Recaptcha;
 
 //oron by pspzockerscene
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "oron.com" }, urls = { "http://[\\w\\.]*?oron\\.com/[a-z|0-9]+/.+" }, flags = { 0 })
@@ -80,25 +82,26 @@ public class OronCom extends PluginForHost {
             int waittime = ((3600 * hours) + (60 * minutes) + seconds + 1) * 1000;
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
         } else {
-            Form DLForm1 = br.getFormbyProperty("name", "F1");
-            if (DLForm1 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
             String passCode = null;
-            if (br.containsHTML("Password:")) {
+            Recaptcha rc = new Recaptcha(br);
+            rc.parse();
+            rc.load();
+            File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+            String c = getCaptchaCode(cf, downloadLink);
+            if (br.containsHTML("name=\"password\"")) {
                 if (downloadLink.getStringProperty("pass", null) == null) {
                     passCode = Plugin.getUserInput("Password?", downloadLink);
                 } else {
                     /* gespeicherten PassCode holen */
                     passCode = downloadLink.getStringProperty("pass", null);
                 }
-                DLForm1.put("password", passCode);
+                rc.getForm().put("password", passCode);
             }
-            int tt = Integer.parseInt(br.getRegex("countdown\">(\\d+)</span>").getMatch(0));
-            sleep(tt * 1001, downloadLink);
-            br.submitForm(DLForm1);
-            if (br.containsHTML("Wrong password")) {
-                logger.warning("Wrong password!");
+            rc.setCode(c);
+            if (br.containsHTML("Wrong password")||br.containsHTML("Wrong captcha")) {
+                logger.warning("Wrong password or wrong captcha");
                 downloadLink.setProperty("pass", null);
-                throw new PluginException(LinkStatus.ERROR_RETRY);
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
             if (passCode != null) {
                 downloadLink.setProperty("pass", passCode);
