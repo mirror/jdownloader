@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zero10.info" }, urls = { "http://[\\w\\.]*?(zero10\\.info|save-link\\.info|share-link\\.info|h-link\\.us|zero10\\.us|darkhorse\\.fi5\\.us)/[0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zero10.info" }, urls = { "http://[\\w\\.]*?(zero10\\.info|save-link\\.info|share-link\\.info|h-link\\.us|zero10\\.us|darkhorse\\.fi5\\.us|arbforce\\.com/short)/[0-9]+" }, flags = { 0 })
 public class Zro10BasicDecrypt extends PluginForDecrypt {
 
     public Zro10BasicDecrypt(PluginWrapper wrapper) {
@@ -37,11 +37,25 @@ public class Zro10BasicDecrypt extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        //workaround for arbforce links, couls later also be used for other unusual zero10 crypters!
+        if (parameter.contains("arbforce.com/short")) {
+            String ID = new Regex(parameter, "arbforce\\.com/short/([0-9]+)").getMatch(0);
+            String redirectlink = "http://www.arbforce.com/short/2.php?" + ID;
+            br.getPage(redirectlink);
+            String finallink = br.getRedirectLocation();
+            if (br.getRedirectLocation() == null) {
+                logger.warning("The requested document was not found on this server.");
+                logger.warning(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+                return new ArrayList<DownloadLink>();
+            }
+            decryptedLinks.add(createDownloadlink(finallink));
+            return decryptedLinks;
+        }
         String Domain = new Regex(parameter, "((zero10\\.us|save-link\\.info|share-link\\.info|h-link\\.us|zero10\\.info|darkhorse.fi5.us))/").getMatch(0);
         String ID = new Regex(parameter, "[0-9a-z.]+/([0-9]+)").getMatch(0);
         String m1link = "http://www." + Domain + "/m1.php?id=" + ID;
         br.getPage(m1link);
-        //little errorhandling
+        // little errorhandling
         if (br.getRedirectLocation() != null) {
             logger.warning("The requested document was not found on this server.");
             logger.warning(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
@@ -53,7 +67,7 @@ public class Zro10BasicDecrypt extends PluginForDecrypt {
 
         return decryptedLinks;
 
-    // @Override
+        // @Override
 
-}
+    }
 }
