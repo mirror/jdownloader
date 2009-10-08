@@ -1,0 +1,112 @@
+package jd.controlling;
+
+import java.util.regex.Pattern;
+
+import jd.parser.Regex;
+import jd.plugins.hoster.HTTPAllgemein;
+
+public class LinkGrabberPackager {
+
+    public static final Pattern pat1 = Pattern.compile("(.*)(\\.|_|-)part[0]*[1].rar$", Pattern.CASE_INSENSITIVE);
+    public static final Pattern pat2 = Pattern.compile("(.*)(\\.|_|-)part[0-9]+.rar$", Pattern.CASE_INSENSITIVE);
+    public static final Pattern pat3 = Pattern.compile("(.*)\\.rar$", Pattern.CASE_INSENSITIVE);
+    public static final Pattern pat4 = Pattern.compile("(.*)\\.r\\d+$", Pattern.CASE_INSENSITIVE);
+    public static final Pattern pat5 = Pattern.compile("(.*)(\\.|_|-)\\d+$", Pattern.CASE_INSENSITIVE);
+
+    public static final Pattern pat6 = Pattern.compile("(.*)\\.zip$", Pattern.CASE_INSENSITIVE);
+    public static final Pattern pat7 = Pattern.compile("(.*)\\.z\\d+$", Pattern.CASE_INSENSITIVE);
+    public static final Pattern pat8 = Pattern.compile("(?is).*\\.7z\\.[\\d]+$", Pattern.CASE_INSENSITIVE);
+    public static final Pattern pat9 = Pattern.compile("(.*)\\.a.$", Pattern.CASE_INSENSITIVE);
+
+    public static final Pattern pat10 = Pattern.compile("(.*)\\.[_a-z]{3}(\\.|$)");
+    public static final Pattern pat11 = Pattern.compile("(.*)(\\.|_|-)[\\d]+($|" + HTTPAllgemein.ENDINGS + "$)", Pattern.CASE_INSENSITIVE);
+
+    public static final Pattern pat12 = Pattern.compile("(CD\\d+)", Pattern.CASE_INSENSITIVE);
+    public static final Pattern pat13 = Pattern.compile("(part\\d+)", Pattern.CASE_INSENSITIVE);
+
+    public static final Pattern pat14 = Pattern.compile("(.+)\\.+$");
+    public static final Pattern pat15 = Pattern.compile("(.+)-+$");
+    public static final Pattern pat16 = Pattern.compile("(.+)_+$");
+
+    public static String cleanFileName(String name) {
+        /** remove rar extensions */
+        name = getNameMatch(name, pat1);
+        name = getNameMatch(name, pat2);
+        name = getNameMatch(name, pat3);
+        name = getNameMatch(name, pat4);
+        name = getNameMatch(name, pat5);
+
+        /**
+         * remove 7zip/zip and hjmerge extensions
+         */
+        name = getNameMatch(name, pat6);
+        name = getNameMatch(name, pat7);
+        name = getNameMatch(name, pat8);
+        name = getNameMatch(name, pat9);
+
+        /**
+         * FFSJ splitted files
+         * 
+         * */
+        name = getNameMatch(name, pat10);
+        name = getNameMatch(name, pat11);
+
+        /**
+         * remove CDx,Partx
+         */
+        String tmpname = cutNameMatch(name, pat12);
+        if (tmpname.length() > 3) name = tmpname;
+        tmpname = cutNameMatch(name, pat13);
+        if (tmpname.length() > 3) name = tmpname;
+
+        /* remove extension */
+        int lastPoint = name.lastIndexOf(".");
+        if (lastPoint <= 0) lastPoint = name.lastIndexOf("_");
+        if (lastPoint > 0) {
+            if ((name.length() - lastPoint + 1) <= 3) {
+                name = name.substring(0, lastPoint);
+            }
+        }
+        /* remove ending ., - , _ */
+        name = getNameMatch(name, pat14);
+        name = getNameMatch(name, pat15);
+        name = getNameMatch(name, pat16);
+        return name;
+    }
+
+    private static String getNameMatch(String name, Pattern pattern) {
+        String match = new Regex(name, pattern).getMatch(0);
+        if (match != null) return match;
+        return name;
+    }
+
+    public static int comparepackages(String a, String b) {
+        int c = 0;
+        String aa = a.toLowerCase();
+        String bb = b.toLowerCase();
+        for (int i = 0; i < Math.min(aa.length(), bb.length()); i++) {
+            if (aa.charAt(i) == bb.charAt(i)) {
+                c++;
+            }
+        }
+        if (Math.min(aa.length(), bb.length()) == 0) { return 0; }
+        return c * 100 / Math.max(aa.length(), bb.length());
+    }
+
+    private static String cutNameMatch(String name, Pattern pattern) {
+        if (name == null) return null;
+        String match = new Regex(name, pattern).getMatch(0);
+        if (match != null) {
+            int firstpos = name.indexOf(match);
+            String tmp = name.substring(0, firstpos);
+            int lastpos = name.indexOf(match) + match.length();
+            if (!(lastpos > name.length())) tmp = tmp + name.substring(lastpos);
+            name = tmp;
+            /* remove seq. dots */
+            name = name.replaceAll("\\.{2,}", ".");
+            name = name.replaceAll("\\.{2,}", ".");
+        }
+        return name;
+    }
+
+}

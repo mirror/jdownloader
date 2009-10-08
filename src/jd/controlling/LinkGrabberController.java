@@ -35,7 +35,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkGrabberFilePackage;
 import jd.plugins.LinkGrabberFilePackageEvent;
 import jd.plugins.LinkGrabberFilePackageListener;
-import jd.plugins.hoster.HTTPAllgemein;
 import jd.utils.locale.JDL;
 
 class LinkGrabberControllerBroadcaster extends JDBroadcaster<LinkGrabberControllerListener, LinkGrabberControllerEvent> {
@@ -473,19 +472,19 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
                 if (link.getFilePackage().getStringProperty(DONTFORCEPACKAGENAME, null) != null) {
                     /* enable autopackaging even if filepackage is set */
                     autoPackage = true;
-                    packageName = cleanFileName(link.getName());
+                    packageName = LinkGrabberPackager.cleanFileName(link.getName());
                 } else {
                     packageName = link.getFilePackage().getName();
                 }
             } else {
                 autoPackage = true;
-                packageName = cleanFileName(link.getName());
+                packageName = LinkGrabberPackager.cleanFileName(link.getName());
             }
             int bestSim = 0;
             LinkGrabberFilePackage bestp = null;
             synchronized (packages) {
                 for (int i = 0; i < packages.size(); i++) {
-                    int sim = comparepackages(packages.get(i).getName(), packageName);
+                    int sim = LinkGrabberPackager.comparepackages(packages.get(i).getName(), packageName);
                     if (sim > bestSim) {
                         bestSim = sim;
                         bestp = packages.get(i);
@@ -515,81 +514,6 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
             }
         }
         return ret.toString();
-    }
-
-    public static String cleanFileName(String name) {
-        /** remove rar extensions */
-        name = getNameMatch(name, "(.*)(\\.|_|-)part[0]*[1].rar$");
-        name = getNameMatch(name, "(.*)(\\.|_|-)part[0-9]+.rar$");
-        name = getNameMatch(name, "(.*)\\.rar$");
-        name = getNameMatch(name, "(.*)\\.r\\d+$");
-        name = getNameMatch(name, "(.*)(\\.|_|-)\\d+$");
-
-        /**
-         * remove 7zip/zip and hjmerge extensions
-         */
-        name = getNameMatch(name, "(.*)\\.zip$");
-        name = getNameMatch(name, "(.*)\\.z\\d+$");
-        name = getNameMatch(name, "(?is).*\\.7z\\.[\\d]+$");
-        name = getNameMatch(name, "(.*)\\.a.$");
-
-        /**
-         * FFSJ splitted files
-         * 
-         * */
-        name = getNameMatch(name, "(.*)\\.[_a-z]{3}(\\.|$)");
-        name = getNameMatch(name, "(.*)(\\.|_|-)[\\d]+($|" + HTTPAllgemein.ENDINGS + "$)");
-
-        /**
-         * remove CDx
-         */
-        String match = new Regex(name, "(CD\\d+)").getMatch(0);
-        if (match != null) {
-            /* there should be at least 3 chars be left */
-            if (name.length() >= match.length() + 3) {
-                int firstpos = name.indexOf(match);
-                String tmp = name.substring(0, firstpos);
-                int lastpos = name.indexOf(match) + match.length();
-                if (!(lastpos > name.length())) tmp = tmp + name.substring(lastpos);
-                name = tmp;
-                /* remove seq. dots */
-                name = name.replaceAll("\\.{2,}", ".");
-                name = name.replaceAll("\\.{2,}", ".");
-            }
-        }
-        /* remove extension */
-        int lastPoint = name.lastIndexOf(".");
-        if (lastPoint <= 0) lastPoint = name.lastIndexOf("_");
-        if (lastPoint > 0) {
-            String extension = name.substring(name.length() - lastPoint + 1);
-            if (extension.length() < 3) {
-                name = name.substring(0, lastPoint);
-            }
-        }
-        /* remove ending ., - , _ */
-        name = getNameMatch(name, "(.+)\\.+$");
-        name = getNameMatch(name, "(.+)-+$");
-        name = getNameMatch(name, "(.+)_+$");
-        return name;
-    }
-
-    private static String getNameMatch(String name, String pattern) {
-        String match = new Regex(name, pattern).getMatch(0);
-        if (match != null) return match;
-        return name;
-    }
-
-    private static int comparepackages(String a, String b) {
-        int c = 0;
-        String aa = a.toLowerCase();
-        String bb = b.toLowerCase();
-        for (int i = 0; i < Math.min(aa.length(), bb.length()); i++) {
-            if (aa.charAt(i) == bb.charAt(i)) {
-                c++;
-            }
-        }
-        if (Math.min(aa.length(), bb.length()) == 0) { return 0; }
-        return c * 100 / Math.max(aa.length(), bb.length());
     }
 
     public void handle_LinkGrabberFilePackageEvent(LinkGrabberFilePackageEvent event) {

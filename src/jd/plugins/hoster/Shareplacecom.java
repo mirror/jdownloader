@@ -73,6 +73,7 @@ public class Shareplacecom extends PluginForHost {
         filename = filename.replace("(", "%2528");
         filename = filename.replace(")", "%2529");
         filename = filename.replace("'", "%27");
+        filename = filename.replace(" ", "%2520");
         String page = Encoding.urlDecode(br.toString(), true);
         String[] links = HTMLParser.getHttpLinks(page, null);
         boolean found = false;
@@ -100,7 +101,7 @@ public class Shareplacecom extends PluginForHost {
         if (!found) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         /* Workaround für fehlerhaften Filename Header */
         String name = Plugin.getFileNameFromHeader(dl.getConnection());
-        if (name != null) downloadLink.setFinalFileName(Encoding.urlDecode(name, false));
+        if (name != null) downloadLink.setFinalFileName(Encoding.deepHtmlDecode(name));
         dl.startDownload();
     }
 

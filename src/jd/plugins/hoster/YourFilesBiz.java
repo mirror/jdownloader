@@ -93,6 +93,9 @@ public class YourFilesBiz extends PluginForHost {
             }
         }
         if (!found) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        /* Workaround für fehlerhaften Filename Header */
+        String name = Plugin.getFileNameFromHeader(dl.getConnection());
+        if (name != null) downloadLink.setFinalFileName(Encoding.deepHtmlDecode(name));
         dl.startDownload();
     }
 
