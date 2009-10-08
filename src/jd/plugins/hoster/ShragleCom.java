@@ -107,7 +107,7 @@ public class ShragleCom extends PluginForHost {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, true, 0);
         }
         URLConnectionAdapter con = dl.getConnection();
-        if (!con.isContentDisposition()) {
+        if (con.getContentType() != null && con.getContentType().contains("html")) {
             con.disconnect();
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 60 * 60 * 1000l);
         }
@@ -158,7 +158,7 @@ public class ShragleCom extends PluginForHost {
         form.setAction(form.getAction() + "?jd=1");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, true, 1);
         URLConnectionAdapter con = dl.getConnection();
-        if (!con.isContentDisposition()) {
+        if (con.getContentType() != null && con.getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 60 * 60 * 1000l);
         }
