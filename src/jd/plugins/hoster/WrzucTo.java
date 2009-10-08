@@ -60,7 +60,7 @@ public class WrzucTo extends PluginForHost {
 
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        String dllink = br.getRegex(("\"(http://www.wrzuc.to/pobierz/.*?)\"")).getMatch(0);
+        String dllink = br.getRegex(("\"(http://(wrzuc\\.to|[0-9a-z]+\\.wrzuc\\.to)/pobierz/.*?)\"")).getMatch(0);
         if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT); }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         dl.startDownload();
