@@ -73,11 +73,12 @@ public class Netloadin extends PluginForHost {
         this.enablePremium("http://netload.in/index.php?refer_id=134847&id=39");
     }
 
+    @Override
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload("http://netload.in/datei" + Netloadin.getID(link.getDownloadURL()) + ".htm");
     }
 
-    // @Override
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         try {
             requestFileInformation(downloadLink);
@@ -252,16 +253,17 @@ public class Netloadin extends PluginForHost {
         br.getPage("http://netload.in/index.php");
         br.postPage("http://netload.in/index.php", "txtuser=" + Encoding.urlEncode(account.getUser()) + "&txtpass=" + Encoding.urlEncode(account.getPass()) + "&txtcheck=login&txtlogin=");
         String cookie = br.getCookie("http://netload.in/", "cookie_user");
-        if (cookie == null) { throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE); }
-        if (br.getRedirectLocation() == null || !br.getRedirectLocation().trim().equalsIgnoreCase("http://netload.in/index.php")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE); }
+        if (cookie == null) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
+        if (br.getRedirectLocation() == null || !br.getRedirectLocation().trim().equalsIgnoreCase("http://netload.in/index.php")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
     }
 
     private void isExpired(Account account) throws IOException, PluginException {
         br.getPage("http://netload.in/index.php?id=2");
         String validUntil = br.getRegex("Verbleibender Zeitraum</div>.*?<div style=.*?><span style=.*?>(.*?)</span></div>").getMatch(0);
-        if (validUntil != null && new Regex(validUntil.trim(), "kein").matches()) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        if (validUntil != null && new Regex(validUntil.trim(), "kein").matches()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
+    @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         try {
@@ -288,10 +290,12 @@ public class Netloadin extends PluginForHost {
         return ai;
     }
 
+    @Override
     public int getTimegapBetweenConnections() {
         return 800;
     }
 
+    @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         requestFileInformation(downloadLink);
         login(account);
@@ -354,6 +358,7 @@ public class Netloadin extends PluginForHost {
         }
     }
 
+    @Override
     public void resetDownloadlink(DownloadLink link) {
         link.setProperty("nochunk", false);
     }
@@ -363,10 +368,12 @@ public class Netloadin extends PluginForHost {
         if (br.containsHTML(FILE_DAMAGED)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.netloadin.errors.fileondmgserver", "File on damaged server"), 20 * 60 * 1000l);
     }
 
+    @Override
     public String getAGBLink() {
         return AGB_LINK;
     }
 
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException {
         try {
             this.setBrowserExclusive();
@@ -422,17 +429,21 @@ public class Netloadin extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
+    @Override
     public String getFileInformationString(DownloadLink downloadLink) {
         return downloadLink.getName() + " (" + fileStatusText + ")";
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
+    @Override
     public void reset() {
     }
 
+    @Override
     public void resetPluginGlobals() {
 
     }

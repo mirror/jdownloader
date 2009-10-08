@@ -49,7 +49,7 @@ public class FilerNet extends PluginForHost {
         this.enablePremium("https://filer.net/premium");
     }
 
-    // @Override
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         int maxCaptchaTries = 5;
@@ -106,12 +106,12 @@ public class FilerNet extends PluginForHost {
         Thread.sleep(500);
         String cookie = br.getCookie("http://filer.net", "filer_net");
         if (cookie == null) {
-            if (br.containsHTML("Mit diesem Usernamen ist bereits ein Benutzer eingelogged")) throw new PluginException(LinkStatus.ERROR_PREMIUM, "Fraud Detection. This Username is currently used by someone else.", LinkStatus.VALUE_ID_PREMIUM_TEMP_DISABLE);
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+            if (br.containsHTML("Mit diesem Usernamen ist bereits ein Benutzer eingelogged")) throw new PluginException(LinkStatus.ERROR_PREMIUM, "Fraud Detection. This Username is currently used by someone else.", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
     }
 
-    // @Override
+    @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         this.setBrowserExclusive();
@@ -134,7 +134,7 @@ public class FilerNet extends PluginForHost {
         return ai;
     }
 
-    // @Override
+    @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         setBrowserExclusive();
         login(account);
@@ -148,16 +148,16 @@ public class FilerNet extends PluginForHost {
         if (url == null) throw new PluginException(LinkStatus.ERROR_FATAL);
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 0);
-        if (dl.getConnection().getContentType().contains("text")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_TEMP_DISABLE); }
+        if (dl.getConnection().getContentType().contains("text")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE); }
         dl.startDownload();
     }
 
-    // @Override
+    @Override
     public String getAGBLink() {
         return "http://www.filer.net/faq";
     }
 
-    // @Override
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) {
         if (downloadLink.getDownloadURL().contains("filer.net/dl/")) {
             downloadLink.setDownloadSize(0);
@@ -222,30 +222,25 @@ public class FilerNet extends PluginForHost {
         return AvailableStatus.FALSE;
     }
 
-    // @Override
-    /*
-     * /* public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
-    // @Override
+    @Override
     public void reset() {
     }
 
-    // @Override
+    @Override
     public int getTimegapBetweenConnections() {
         return 500;
     }
 
-    // @Override
+    @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 }

@@ -86,7 +86,7 @@ public class MegaPornCom extends PluginForHost {
         return true;
     }
 
-    // @Override
+    @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         this.setBrowserExclusive();
@@ -122,7 +122,7 @@ public class MegaPornCom extends PluginForHost {
         return Request.parseQuery(link.getDownloadURL()).get("d").toUpperCase();
     }
 
-    // @Override
+    @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         requestFileInformation(link);
         br.setDebug(true);
@@ -220,7 +220,7 @@ public class MegaPornCom extends PluginForHost {
         }
     }
 
-    // @Override
+    @Override
     public String getAGBLink() {
         return "http://megaporn.com/terms/";
     }
@@ -241,10 +241,10 @@ public class MegaPornCom extends PluginForHost {
         user = br.getCookie("http://megaporn.com", "user");
         br.setCookie("http://megaporn.com", "user", user);
         br.setCookie("http://www.megaporn.com", "user", user);
-        if (user == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        if (user == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
-    // @Override
+    @Override
     public boolean checkLinks(DownloadLink[] urls) {
         if (urls == null) return false;
 
@@ -332,17 +332,12 @@ public class MegaPornCom extends PluginForHost {
         return true;
     }
 
-    // @Override
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         downloadLink.setAvailable(this.checkLinks(new DownloadLink[] { downloadLink }));
         if (!downloadLink.isAvailable()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         return downloadLink.getAvailableStatus();
     }
-
-    // @Override
-    /*
-     * public String getVersion() { return getVersion("$Revision$"); }
-     */
 
     public void handleFree1(DownloadLink link, Account account) throws Exception {
         this.setBrowserExclusive();
@@ -527,7 +522,7 @@ public class MegaPornCom extends PluginForHost {
         br.getHeaders().setDominant(false);
     }
 
-    // @Override
+    @Override
     public void handleFree(DownloadLink parameter) throws Exception {
         user = null;
         br.setCookie("http://megaporn.com", "l", "en");
@@ -535,25 +530,25 @@ public class MegaPornCom extends PluginForHost {
         handleFree0(parameter, null);
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return FREE;
     }
 
-    // @Override
+    @Override
     public void reset() {
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return simultanpremium;
     }
 
-    // @Override
+    @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 

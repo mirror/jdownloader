@@ -55,9 +55,10 @@ public class MegaShareGr extends PluginForHost {
         form.put("pass", Encoding.urlEncode(account.getPass()));
         br.setFollowRedirects(true);
         br.submitForm(form);
-        if (!br.containsHTML("\\(this, 'package_info'\\)\"><b>Premium</b") || br.containsHTML("can not be found in our database")) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        if (!br.containsHTML("\\(this, 'package_info'\\)\"><b>Premium</b") || br.containsHTML("can not be found in our database")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
+    @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         try {
@@ -77,6 +78,7 @@ public class MegaShareGr extends PluginForHost {
         return ai;
     }
 
+    @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         requestFileInformation(downloadLink);
         login(account);
@@ -85,6 +87,7 @@ public class MegaShareGr extends PluginForHost {
         dl.startDownload();
     }
 
+    @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return 20;
     }
@@ -109,10 +112,12 @@ public class MegaShareGr extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @Override
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL() + "?setlang=en");
     }
 
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         Form captchaForm = br.getForm(0);
@@ -143,7 +148,7 @@ public class MegaShareGr extends PluginForHost {
     public void reset() {
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }

@@ -44,7 +44,7 @@ public class CZShareCom extends PluginForHost {
         enablePremium("http://czshare.com/create_user.php");
     }
 
-    // @Override
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         if (!br.containsHTML("value=\"FREE download\"")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.CZShareCom.nofreeslots", "No free slots available"), 60 * 1000);
@@ -74,7 +74,7 @@ public class CZShareCom extends PluginForHost {
         dl.startDownload();
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
@@ -89,10 +89,10 @@ public class CZShareCom extends PluginForHost {
         login.put("heslo", Encoding.urlEncode(account.getPass()));
         login.put("trvale", "0");
         br.submitForm(login);
-        if (!br.containsHTML("odhl.sit")) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        if (!br.containsHTML("odhl.sit")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
-    // @Override
+    @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         try {
@@ -117,12 +117,12 @@ public class CZShareCom extends PluginForHost {
         return ai;
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return simultanpremium;
     }
 
-    // @Override
+    @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         br.setFollowRedirects(true);
         String linkurl = null;
@@ -140,17 +140,17 @@ public class CZShareCom extends PluginForHost {
         // find premium links
         String[] links = br.getRegex("<td class=\"table2-black\"><a href=\"(.*?)\"").getColumn(0);
         // choose link with proper ID
-        for (int i = 0; i < links.length; i++) {
-            if (links[i].contains("=" + id + "&")) {
-                linkurl = links[i];
+        for (String link : links) {
+            if (link.contains("=" + id + "&")) {
+                linkurl = link;
                 break;
             }
-            if (links[i].contains("/" + id + "/")) {
+            if (link.contains("/" + id + "/")) {
                 linkurl = null;
                 br.setFollowRedirects(false);
-                br.getPage(links[i]);
+                br.getPage(link);
                 linkurl = br.getRedirectLocation();
-                if (linkurl == null) linkurl = links[i];
+                if (linkurl == null) linkurl = link;
                 br.setFollowRedirects(true);
                 break;
             }
@@ -175,12 +175,12 @@ public class CZShareCom extends PluginForHost {
 
     }
 
-    // @Override
+    @Override
     public String getAGBLink() {
         return "http://www.czshare.com/pravidla.html";
     }
 
-    // @Override
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
@@ -193,20 +193,15 @@ public class CZShareCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    // @Override
-    /*
-     * /* public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    // @Override
+    @Override
     public void reset() {
     }
 
-    // @Override
+    @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 

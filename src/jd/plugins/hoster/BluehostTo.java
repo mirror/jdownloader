@@ -40,6 +40,7 @@ public class BluehostTo extends PluginForHost {
         this.enablePremium("http://bluehost.to/premium.php");
     }
 
+    @Override
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replaceFirst("\\?dl=", "dl="));
     }
@@ -49,11 +50,11 @@ public class BluehostTo extends PluginForHost {
         br.setFollowRedirects(false);
         br.setCookie("http://bluehost.to", "bluehost_lang", "DE");
         br.postPage("http://bluehost.to/premiumlogin.php", "loginname=" + Encoding.urlEncode(account.getUser()) + "&loginpass=" + Encoding.urlEncode(account.getPass()));
-        if (br.getCookie("http://bluehost.to", "bluehost_premium_points") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        if (br.getCookie("http://bluehost.to", "bluehost_premium_points") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
 
     }
 
-    // @Override
+    @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         try {
@@ -70,7 +71,7 @@ public class BluehostTo extends PluginForHost {
         return ai;
     }
 
-    // @Override
+    @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         this.setBrowserExclusive();
         br.setDebug(true);
@@ -79,24 +80,24 @@ public class BluehostTo extends PluginForHost {
         br.setFollowRedirects(true);
         if (br.getCookie("http://bluehost.to", "bluehost_premium_auth") == null) {
             logger.info("Not enough Traffic left for PremiumDownload");
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
         }
         if (Long.parseLong(br.getCookie("http://bluehost.to", "bluehost_traffic_check")) < downloadLink.getDownloadSize()) {
             logger.info("Not enough Traffic left for PremiumDownload");
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, 0);
         if (dl.getConnection().getContentType().contains("text")) {
             dl.getConnection().disconnect();
             login(account);
             String trafficLeft = br.getCookie("http://bluehost.to", "bluehost_traffic_check");
-            if (trafficLeft != null && trafficLeft.trim().equalsIgnoreCase("0")) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            if (trafficLeft != null && trafficLeft.trim().equalsIgnoreCase("0")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         }
         dl.startDownload();
     }
 
-    // @Override
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         requestFileInformation(downloadLink);
@@ -119,12 +120,12 @@ public class BluehostTo extends PluginForHost {
         dl.startDownload();
     }
 
-    // @Override
+    @Override
     public String getAGBLink() {
         return "http://bluehost.to/agb.php";
     }
 
-    // @Override
+    @Override
     public boolean checkLinks(DownloadLink[] urls) {
         if (urls == null) return false;
 
@@ -164,7 +165,7 @@ public class BluehostTo extends PluginForHost {
         return true;
     }
 
-    // @Override
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         // dateiname, dateihash, dateisize, dateidownloads, zeit bis HH
         this.setBrowserExclusive();
@@ -182,25 +183,20 @@ public class BluehostTo extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    // @Override
-    /*
-     * /* public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
-    // @Override
+    @Override
     public void reset() {
     }
 
-    // @Override
+    @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
+    @Override
     public void resetDownloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 

@@ -38,6 +38,7 @@ public class UgotFileCom extends PluginForHost {
         this.enablePremium("http://ugotfile.com/user/register");
     }
 
+    @Override
     public String getAGBLink() {
         return "http://ugotfile.com/doc/terms/";
     }
@@ -51,9 +52,10 @@ public class UgotFileCom extends PluginForHost {
         form.put(form.getBestVariable("password"), Encoding.urlEncode(account.getPass()));
         br.submitForm(form);
         br.getPage("http://ugotfile.com/my/profile/");
-        if (!br.containsHTML("Your premium membership is expired")) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        if (!br.containsHTML("Your premium membership is expired")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
+    @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         this.setBrowserExclusive();
@@ -79,6 +81,7 @@ public class UgotFileCom extends PluginForHost {
         return ai;
     }
 
+    @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         requestFileInformation(downloadLink);
         login(account);
@@ -95,13 +98,14 @@ public class UgotFileCom extends PluginForHost {
         dl.startDownload();
     }
 
+    @Override
     public void handleFree(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.clearCookies(link.getDownloadURL());
         br.getPage(link.getDownloadURL());
         // IP:Blocked handling
         int sleep = Integer.parseInt(br.getRegex("seconds: (\\d+)").getMatch(0));
-        if (sleep > 130)throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, sleep * 1000);
+        if (sleep > 130) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, sleep * 1000);
         if (br.containsHTML("Your hourly traffic limit is exceeded.")) {
             int block = Integer.parseInt(br.getRegex("<div id='sessionCountDown' style='font-weight:bold; font-size:20px;'>(.*?)</div>").getMatch(0)) * 1000 + 1;
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, block);
@@ -124,6 +128,7 @@ public class UgotFileCom extends PluginForHost {
         dl.startDownload();
     }
 
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
         br.getPage(parameter.getDownloadURL());
@@ -138,12 +143,15 @@ public class UgotFileCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @Override
     public void reset() {
     }
 
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }

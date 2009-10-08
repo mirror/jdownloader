@@ -41,7 +41,7 @@ public class Freaksharenet extends PluginForHost {
         this.enablePremium("http://freakshare.net/shop.html");
     }
 
-    // @Override
+    @Override
     public String getAGBLink() {
         return "http://freakshare.net/?x=faq";
     }
@@ -57,11 +57,12 @@ public class Freaksharenet extends PluginForHost {
                                                            */
         br.getPage("http://freakshare.net/login.html");
         br.postPage("http://freakshare.net/login.html", "user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&submit=Login");
-        if (br.getCookie("http://freakshare.net", "login") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        if (br.getCookie("http://freakshare.net", "login") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         br.getPage("http://freakshare.net/");
-        if (!br.containsHTML("<td><b>Member \\(premium\\)</b></td>")) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        if (!br.containsHTML("<td><b>Member \\(premium\\)</b></td>")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
+    @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         this.setBrowserExclusive();
@@ -83,6 +84,7 @@ public class Freaksharenet extends PluginForHost {
         return ai;
     }
 
+    @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         requestFileInformation(downloadLink);
         login(account);
@@ -91,7 +93,7 @@ public class Freaksharenet extends PluginForHost {
         if (br.getRedirectLocation() == null) {
             Form form = br.getForm(0);
             if (form == null) {
-                if (br.containsHTML("Sorry, your Traffic is used up for today")) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                if (br.containsHTML("Sorry, your Traffic is used up for today")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
             }
             br.submitForm(form);
@@ -104,7 +106,7 @@ public class Freaksharenet extends PluginForHost {
         dl.startDownload();
     }
 
-    // @Override
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
@@ -123,12 +125,7 @@ public class Freaksharenet extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    // @Override
-    /*
-     * /* public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    // @Override
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         if (br.containsHTML("You can Download only 1 File in")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1001);
@@ -147,20 +144,20 @@ public class Freaksharenet extends PluginForHost {
         dl.startDownload();
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
-    // @Override
+    @Override
     public void reset() {
     }
 
-    // @Override
+    @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
+    @Override
     public void resetDownloadlink(DownloadLink link) {
 
     }

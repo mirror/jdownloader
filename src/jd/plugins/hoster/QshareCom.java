@@ -41,7 +41,7 @@ public class QshareCom extends PluginForHost {
         this.enablePremium("http://s1.qshare.com/index.php?sysm=sys_page&sysf=site&site=buy");
     }
 
-    // @Override
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         setBrowserExclusive();
         br.setFollowRedirects(false);
@@ -61,7 +61,7 @@ public class QshareCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    // @Override
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
@@ -101,7 +101,7 @@ public class QshareCom extends PluginForHost {
 
     }
 
-    // @Override
+    @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         requestFileInformation(downloadLink);
         login(account);
@@ -158,10 +158,10 @@ public class QshareCom extends PluginForHost {
         br.submitForm(form);
 
         String premiumError = br.getRegex("[Following error occured|Folgender Fehler ist aufgetreten]: (.*?)[\\.|<]").getMatch(0);
-        if (premiumError != null) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        if (premiumError != null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
-    // @Override
+    @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         HashMap<String, Long> apiMap = new HashMap<String, Long>();
@@ -197,30 +197,25 @@ public class QshareCom extends PluginForHost {
         return ai;
     }
 
-    // @Override
+    @Override
     public String getAGBLink() {
         return "http://s1.qshare.com/index.php?sysm=sys_page&sysf=site&site=terms";
     }
 
-    // @Override
-    /*
-     * public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
-    // @Override
+    @Override
     public void reset() {
     }
 
-    // @Override
+    @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
+    @Override
     public void resetDownloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 

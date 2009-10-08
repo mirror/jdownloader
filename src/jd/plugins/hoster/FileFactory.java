@@ -53,10 +53,12 @@ public class FileFactory extends PluginForHost {
         this.enablePremium("http://www.filefactory.com/info/premium.php");
     }
 
+    @Override
     public int getTimegapBetweenConnections() {
         return 200;
     }
 
+    @Override
     public void handleFree(DownloadLink parameter) throws Exception {
         requestFileInformation(parameter);
         try {
@@ -119,6 +121,7 @@ public class FileFactory extends PluginForHost {
         }
     }
 
+    @Override
     public int getMaxRetries() {
         return 20;
     }
@@ -131,9 +134,10 @@ public class FileFactory extends PluginForHost {
         login.put("email", account.getUser());
         login.put("password", account.getPass());
         br.submitForm(login);
-        if (br.containsHTML(LOGIN_ERROR)) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        if (br.containsHTML(LOGIN_ERROR)) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
+    @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         try {
@@ -160,6 +164,7 @@ public class FileFactory extends PluginForHost {
         return ai;
     }
 
+    @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         requestFileInformation(downloadLink);
         login(account);
@@ -185,15 +190,18 @@ public class FileFactory extends PluginForHost {
         dl.startDownload();
     }
 
+    @Override
     public String getAGBLink() {
         return "http://www.filefactory.com/info/terms.php";
     }
 
+    @Override
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replaceAll(".com//", ".com/"));
         link.setUrlDownload(link.getDownloadURL().replaceAll("http://filefactory", "http://www.filefactory"));
     }
 
+    @Override
     public boolean checkLinks(DownloadLink[] urls) {
         if (urls == null || urls.length == 0) { return false; }
         try {
@@ -236,6 +244,7 @@ public class FileFactory extends PluginForHost {
         return true;
     }
 
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -274,19 +283,24 @@ public class FileFactory extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @Override
     public void init() {
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
+    @Override
     public void reset() {
     }
 
+    @Override
     public void resetPluginGlobals() {
     }
 
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 

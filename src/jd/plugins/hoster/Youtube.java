@@ -47,10 +47,12 @@ public class Youtube extends PluginForHost {
         enablePremium("http://www.youtube.com/login?next=/index");
     }
 
+    @Override
     public String getAGBLink() {
         return "http://youtube.com/t/terms";
     }
 
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         if (downloadLink.getBooleanProperty("valid", true)) {
             downloadLink.setFinalFileName(downloadLink.getStringProperty("name", "video.tmp"));
@@ -74,6 +76,7 @@ public class Youtube extends PluginForHost {
 
     }
 
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         prem = false;
@@ -89,6 +92,7 @@ public class Youtube extends PluginForHost {
         }
     }
 
+    @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         synchronized (lock) {
             login(account, br);
@@ -119,13 +123,16 @@ public class Youtube extends PluginForHost {
         }
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
+    @Override
     public void reset() {
     }
 
+    @Override
     public void resetPluginGlobals() {
     }
 
@@ -143,15 +150,16 @@ public class Youtube extends PluginForHost {
         if (br.getRedirectLocation() == null) {
             String page = Encoding.htmlDecode(br.toString());
             String red = new Regex(page, "url='(http://.*?)'").getMatch(0);
-            if (red == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+            if (red == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             br.getPage(red);
         }
         br.setFollowRedirects(true);
         br.getPage(br.getRedirectLocation());
-        if (br.getCookie("http://www.youtube.com", "LOGIN_INFO") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        if (br.getCookie("http://www.youtube.com", "LOGIN_INFO") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         br.getPage("http://www.youtube.com/index?hl=en");
     }
 
+    @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         try {
@@ -166,6 +174,7 @@ public class Youtube extends PluginForHost {
         return ai;
     }
 
+    @Override
     public void resetDownloadlink(DownloadLink downloadLink) {
         downloadLink.setFinalFileName(downloadLink.getStringProperty("name", "video.tmp"));
         downloadLink.setDownloadSize((Long) downloadLink.getProperty("size", Long.valueOf(0l)));

@@ -48,10 +48,10 @@ public class StorageTo extends PluginForHost {
         br.getPage("http://www.storage.to/login?language=en");
         br.postPage("http://storage.to/login", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&=Login");
         br.getPage("http://www.storage.to/account");
-        if (!br.containsHTML("Status:</span> premium")) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        if (!br.containsHTML("Status:</span> premium")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
-    // @Override
+    @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         this.setBrowserExclusive();
@@ -70,6 +70,7 @@ public class StorageTo extends PluginForHost {
         return ai;
     }
 
+    @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         requestFileInformation(link);
         login(account);
@@ -143,6 +144,7 @@ public class StorageTo extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }

@@ -45,10 +45,12 @@ public class ShareOnlineBiz extends PluginForHost {
         this.enablePremium("http://www.share-online.biz/service.php?p=31353834353B4A44616363");
     }
 
+    @Override
     public String getAGBLink() {
         return "http://share-online.biz/rules.php";
     }
 
+    @Override
     public void correctDownloadLink(DownloadLink link) throws Exception {
         String id = new Regex(link.getDownloadURL(), "id\\=([a-zA-Z0-9]+)").getMatch(0);
         link.setUrlDownload("http://www.share-online.biz/download.php?id=" + id + "&?setlang=en");
@@ -58,10 +60,10 @@ public class ShareOnlineBiz extends PluginForHost {
         br.setCookie("http://www.share-online.biz", "king_mylang", "en");
         br.postPage("http://www.share-online.biz/login.php", "act=login&location=service.php&dieseid=&user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&login=Log+me+in&folder_autologin=1");
         String cookie = br.getCookie("http://www.share-online.biz", "king_passhash");
-        if (cookie == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        if (cookie == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         br.getPage("http://www.share-online.biz/members.php");
         String expired = br.getRegex(Pattern.compile("<b>Expired\\?</b></td>.*?<td align=\"left\">(.*?)<a", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-        if (expired == null || !expired.trim().equalsIgnoreCase("no")) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        if (expired == null || !expired.trim().equalsIgnoreCase("no")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
     private boolean isPremium() throws IOException {
@@ -73,6 +75,7 @@ public class ShareOnlineBiz extends PluginForHost {
         return false;
     }
 
+    @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         setBrowserExclusive();
@@ -100,6 +103,7 @@ public class ShareOnlineBiz extends PluginForHost {
         return ai;
     }
 
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setCookie("http://www.share-online.biz", "king_mylang", "en");
@@ -120,10 +124,11 @@ public class ShareOnlineBiz extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @Override
     public void handlePremium(DownloadLink parameter, Account account) throws Exception {
         requestFileInformation(parameter);
         login(account);
-        if (!this.isPremium()) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        if (!this.isPremium()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         br.getPage(parameter.getDownloadURL());
         Form form = br.getForm(0);
         if (form.containsHTML("name=downloadpw")) {
@@ -159,6 +164,7 @@ public class ShareOnlineBiz extends PluginForHost {
         dl.startDownload();
     }
 
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
@@ -220,16 +226,20 @@ public class ShareOnlineBiz extends PluginForHost {
         dl.startDownload();
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
+    @Override
     public void reset() {
     }
 
+    @Override
     public void resetPluginGlobals() {
     }
 
+    @Override
     public void resetDownloadlink(DownloadLink link) {
 
     }

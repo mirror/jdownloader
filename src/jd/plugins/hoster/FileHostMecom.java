@@ -42,7 +42,7 @@ public class FileHostMecom extends PluginForHost {
         this.enablePremium("http://www.filehostme.com/premium.html");
     }
 
-    // @Override
+    @Override
     public String getAGBLink() {
         return "http://www.filehostme.com/tos.html";
     }
@@ -50,7 +50,7 @@ public class FileHostMecom extends PluginForHost {
     public void login(Account account) throws IOException, PluginException {
         br.postPage("http://www.filehostme.com/", "op=login&redirect=&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&x=48&y=5");
         String cookie = br.getCookie("http://www.filehostme.com/", "xfss");
-        if (cookie == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        if (cookie == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
     public boolean isPremium() throws IOException {
@@ -61,7 +61,7 @@ public class FileHostMecom extends PluginForHost {
         return false;
     }
 
-    // @Override
+    @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         setBrowserExclusive();
@@ -85,7 +85,7 @@ public class FileHostMecom extends PluginForHost {
         return ai;
     }
 
-    // @Override
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
@@ -97,16 +97,11 @@ public class FileHostMecom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    // @Override
-    /*
-     * /* public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    // @Override
+    @Override
     public void handlePremium(DownloadLink parameter, Account account) throws Exception {
         requestFileInformation(parameter);
         login(account);
-        if (!this.isPremium()) { throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE); }
+        if (!this.isPremium()) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
         br.setFollowRedirects(false);
         br.getPage(parameter.getDownloadURL());
         String url = null;
@@ -158,7 +153,7 @@ public class FileHostMecom extends PluginForHost {
         return retcap;
     }
 
-    // @Override
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.getPage(downloadLink.getDownloadURL());
@@ -195,20 +190,20 @@ public class FileHostMecom extends PluginForHost {
         dl.startDownload();
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    // @Override
+    @Override
     public void reset() {
     }
 
-    // @Override
+    @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
+    @Override
     public void resetDownloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 

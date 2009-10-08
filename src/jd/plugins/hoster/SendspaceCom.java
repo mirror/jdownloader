@@ -48,6 +48,7 @@ public class SendspaceCom extends PluginForHost {
         setStartIntervall(5000l);
     }
 
+    @Override
     public String getAGBLink() {
         return "http://www.sendspace.com/terms.html";
     }
@@ -56,8 +57,8 @@ public class SendspaceCom extends PluginForHost {
         this.setBrowserExclusive();
         br.getPage("http://www.sendspace.com/login.html");
         br.postPage("http://www.sendspace.com/login.html", "action=login&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember=1&submit=login&openid_url=&action_type=login");
-        if (br.getCookie("http://www.sendspace.com", "ssal") == null || br.getCookie("http://www.sendspace.com", "ssal").equalsIgnoreCase("deleted")) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
-        if (!isPremium()) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        if (br.getCookie("http://www.sendspace.com", "ssal") == null || br.getCookie("http://www.sendspace.com", "ssal").equalsIgnoreCase("deleted")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (!isPremium()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
     public boolean isPremium() throws IOException {
@@ -66,6 +67,7 @@ public class SendspaceCom extends PluginForHost {
         return false;
     }
 
+    @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         this.setBrowserExclusive();
@@ -94,6 +96,7 @@ public class SendspaceCom extends PluginForHost {
         return ai;
     }
 
+    @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         requestFileInformation(link);
         login(account);
@@ -105,6 +108,7 @@ public class SendspaceCom extends PluginForHost {
         dl.startDownload();
     }
 
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
@@ -122,6 +126,7 @@ public class SendspaceCom extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
         requestFileInformation(downloadLink);
@@ -167,16 +172,20 @@ public class SendspaceCom extends PluginForHost {
         dl.startDownload();
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 2;
     }
 
+    @Override
     public void reset() {
     }
 
+    @Override
     public void resetPluginGlobals() {
     }
 
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 

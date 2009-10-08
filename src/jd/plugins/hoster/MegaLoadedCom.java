@@ -41,6 +41,7 @@ public class MegaLoadedCom extends PluginForHost {
         this.enablePremium("http://megaloaded.com/premium.html");
     }
 
+    @Override
     public String getAGBLink() {
         return "http://megaloaded.com/tos.html";
     }
@@ -56,11 +57,12 @@ public class MegaLoadedCom extends PluginForHost {
         form.put("password", Encoding.urlEncode(account.getPass()));
         br.submitForm(form);
         br.setFollowRedirects(false);
-        if (!br.containsHTML(">Renew premium</a>")) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        if (!br.containsHTML(">Renew premium</a>")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         br.getPage("http://megaloaded.com/?op=my_account");
-        if (!br.containsHTML("Premium-Account expire")) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        if (!br.containsHTML("Premium-Account expire")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
+    @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         this.setBrowserExclusive();
@@ -82,6 +84,7 @@ public class MegaLoadedCom extends PluginForHost {
         return ai;
     }
 
+    @Override
     public void handlePremium(DownloadLink parameter, Account account) throws Exception {
         requestFileInformation(parameter);
         login(account);
@@ -116,10 +119,12 @@ public class MegaLoadedCom extends PluginForHost {
         dl.startDownload();
     }
 
+    @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return 20;
     }
 
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setCookie("http://www.megaloaded.com", "lang", "english");
@@ -135,6 +140,7 @@ public class MegaLoadedCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
@@ -184,13 +190,16 @@ public class MegaLoadedCom extends PluginForHost {
         }
     }
 
+    @Override
     public void reset() {
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 

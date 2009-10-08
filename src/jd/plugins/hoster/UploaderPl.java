@@ -43,7 +43,7 @@ public class UploaderPl extends PluginForHost {
         enablePremium("http://uploader.pl/register.php");
     }
 
-    // @Override
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         String linkurl = br.getRegex("downloadurl'\\);\">(.*?)</textarea>").getMatch(0);
@@ -55,7 +55,7 @@ public class UploaderPl extends PluginForHost {
         dl.startDownload();
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 10;
     }
@@ -81,7 +81,7 @@ public class UploaderPl extends PluginForHost {
         login.put("autologin", "0");
         br.submitForm(login);
         String cookie1 = br.getCookie("http://uploader.pl/", "yab_uid");
-        if (cookie1 == null || cookie1.equalsIgnoreCase("0")) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        if (cookie1 == null || cookie1.equalsIgnoreCase("0")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
     private boolean isPremium() throws IOException {
@@ -90,7 +90,7 @@ public class UploaderPl extends PluginForHost {
         return true;
     }
 
-    // @Override
+    @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         try {
@@ -116,12 +116,12 @@ public class UploaderPl extends PluginForHost {
         return ai;
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return simultanpremium;
     }
 
-    // @Override
+    @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         requestFileInformation(downloadLink);
         login(account);
@@ -145,12 +145,12 @@ public class UploaderPl extends PluginForHost {
         dl.startDownload();
     }
 
-    // @Override
+    @Override
     public String getAGBLink() {
         return "http://uploader.pl/rules.php";
     }
 
-    // @Override
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage("http://uploader.pl/en");
@@ -164,20 +164,15 @@ public class UploaderPl extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    // @Override
-    /*
-     * public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    // @Override
+    @Override
     public void reset() {
     }
 
-    // @Override
+    @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
+    @Override
     public void resetDownloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 

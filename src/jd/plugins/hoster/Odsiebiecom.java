@@ -44,7 +44,7 @@ public class Odsiebiecom extends PluginForHost {
         this.enablePremium();
     }
 
-    // @Override
+    @Override
     public String getAGBLink() {
         return "http://odsiebie.com/tresc/faq.html";
     }
@@ -53,11 +53,11 @@ public class Odsiebiecom extends PluginForHost {
         this.setBrowserExclusive();
         br.getPage("http://odsiebie.com/logowanie.html");
         br.postPage("http://odsiebie.com/logowanie.html?login", "luser=" + Encoding.urlEncode(account.getUser()) + "&lpass=" + Encoding.urlEncode(account.getPass()) + "&sub=Zaloguj+mnie");
-        if (br.getCookie("http://odsiebie.com/", "gb_col") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
-        if (br.getCookie("http://odsiebie.com/", "gg_info") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        if (br.getCookie("http://odsiebie.com/", "gb_col") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (br.getCookie("http://odsiebie.com/", "gg_info") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
-    // @Override
+    @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         this.setBrowserExclusive();
@@ -72,7 +72,7 @@ public class Odsiebiecom extends PluginForHost {
         return ai;
     }
 
-    // @Override
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -87,7 +87,7 @@ public class Odsiebiecom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    // @Override
+    @Override
     /*
      * public String getVersion() { return getVersion("$Revision$"); }
      */
@@ -96,6 +96,7 @@ public class Odsiebiecom extends PluginForHost {
         return getMaxSimultanDownloadNum();
     }
 
+    @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         /* Nochmals das File überprüfen */
         String finalfn = downloadLink.getName();
@@ -191,25 +192,25 @@ public class Odsiebiecom extends PluginForHost {
         dl.startDownload();
     }
 
-    // @Override
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         this.handlePremium(downloadLink, null);
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return getMaxSimultanDownloadNum();
     }
 
-    // @Override
+    @Override
     public void reset() {
     }
 
-    // @Override
+    @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 

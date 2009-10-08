@@ -63,6 +63,7 @@ public class MegaVideo extends PluginForHost {
         return ret.toUpperCase();
     }
 
+    @Override
     public void correctDownloadLink(DownloadLink link) throws Exception {
         link.setUrlDownload("http://www.megavideo.com/?v=" + getDownloadID(link));
     }
@@ -73,11 +74,12 @@ public class MegaVideo extends PluginForHost {
         br.setCookie("http://www.megavideo.com", "l", "en");
         br.getPage("http://www.megavideo.com/?s=signup");
         br.postPage("http://www.megavideo.com/?s=signup", "action=login&nickname=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-        if (br.getCookie("http://www.megavideo.com", "user") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        if (br.getCookie("http://www.megavideo.com", "user") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         br.getPage("http://www.megavideo.com/xml/player_login.php?u=" + br.getCookie("http://www.megavideo.com", "user"));
-        if (!br.containsHTML("type=\"premium\"")) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        if (!br.containsHTML("type=\"premium\"")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
+    @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         this.setBrowserExclusive();
@@ -91,6 +93,7 @@ public class MegaVideo extends PluginForHost {
         return ai;
     }
 
+    @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         requestFileInformation(downloadLink);
         login(account);
@@ -360,6 +363,7 @@ public class MegaVideo extends PluginForHost {
         return out;
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return this.getMaxSimultanDownloadNum();
     }

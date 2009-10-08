@@ -46,9 +46,10 @@ public class RapidShareDe extends PluginForHost {
         this.setBrowserExclusive();
         br.getPage("https://ssl.rapidshare.de/cgi-bin/premiumzone.cgi");
         br.postPage("https://ssl.rapidshare.de/cgi-bin/premiumzone.cgi", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&german=on");
-        if (br.getCookie("http://rapidshare.de", "user") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        if (br.getCookie("http://rapidshare.de", "user") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
+    @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         this.setBrowserExclusive();
@@ -71,6 +72,7 @@ public class RapidShareDe extends PluginForHost {
         return ai;
     }
 
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
 
@@ -117,6 +119,7 @@ public class RapidShareDe extends PluginForHost {
         }
     }
 
+    @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         requestFileInformation(downloadLink);
         login(account);
@@ -137,10 +140,12 @@ public class RapidShareDe extends PluginForHost {
         dl.startDownload();
     }
 
+    @Override
     public String getAGBLink() {
         return "http://rapidshare.de/de/faq.html";
     }
 
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException {
         try {
             br.setCookiesExclusive(true);
@@ -161,16 +166,20 @@ public class RapidShareDe extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
+    @Override
     public void reset() {
     }
 
+    @Override
     public void resetPluginGlobals() {
     }
 
+    @Override
     public void resetDownloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 

@@ -54,9 +54,10 @@ public class HellShareCom extends PluginForHost {
         form.put("lgnp7_psw", Encoding.urlEncode(account.getPass()));
         br.setFollowRedirects(true);
         br.submitForm(form);
-        if (!br.containsHTML("Your credit for downloads") || br.containsHTML("Špatně zadaný login nebo heslo uživatele")) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        if (!br.containsHTML("Your credit for downloads") || br.containsHTML("Špatně zadaný login nebo heslo uživatele")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
+    @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         try {
@@ -75,6 +76,7 @@ public class HellShareCom extends PluginForHost {
         return ai;
     }
 
+    @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         requestFileInformation(downloadLink);
         login(account);
@@ -85,13 +87,14 @@ public class HellShareCom extends PluginForHost {
         }
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
-         if (!(dl.getConnection().isContentDisposition())) {
+        if (!(dl.getConnection().isContentDisposition())) {
             br.followConnection();
             System.out.print(br.toString());
         }
         dl.startDownload();
     }
 
+    @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return 20;
     }
@@ -131,6 +134,7 @@ public class HellShareCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         if (br.containsHTML("Current load 100%, take advantage of unlimited")) {
@@ -145,7 +149,7 @@ public class HellShareCom extends PluginForHost {
     public void reset() {
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }

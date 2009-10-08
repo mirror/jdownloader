@@ -38,6 +38,7 @@ public class UpMusicIn extends PluginForHost {
         // enablePremium("http://www.upmusic.in/?op=registration");
     }
 
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         String linkurl = null;
         String previousLink = null;
@@ -94,6 +95,7 @@ public class UpMusicIn extends PluginForHost {
         dl.startDownload();
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 7;
     }
@@ -121,7 +123,7 @@ public class UpMusicIn extends PluginForHost {
      * br.getCookie("http://uploader.pl/", "yab_uid"); if (cookie1 == null ||
      * cookie1.equalsIgnoreCase("0")) throw new
      * PluginException(LinkStatus.ERROR_PREMIUM,
-     * LinkStatus.VALUE_ID_PREMIUM_DISABLE); }
+     * PluginException.VALUE_ID_PREMIUM_DISABLE); }
      * 
      * private boolean isPremium() throws IOException {
      * br.getPage("http://uploader.pl/en/members.php?overview=1"); if
@@ -161,10 +163,12 @@ public class UpMusicIn extends PluginForHost {
      * jd.plugins.BrowserAdapter.openDownload(br,downloadLink, linkurl);
      * dl.startDownload(); }
      */
+    @Override
     public String getAGBLink() {
         return "http://www.upmusic.in/tos.html";
     }
 
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -180,12 +184,15 @@ public class UpMusicIn extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @Override
     public void reset() {
     }
 
+    @Override
     public void resetPluginGlobals() {
     }
 
+    @Override
     public void resetDownloadlink(DownloadLink link) {
         link.setProperty("directLink", null);
     }

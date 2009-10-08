@@ -511,11 +511,11 @@ public abstract class PluginForHost extends Plugin {
             }
             if (throwupdate) AccountController.getInstance().throwUpdateEvent(this, account);
             if (downloadLink.getLinkStatus().hasStatus(LinkStatus.ERROR_PREMIUM)) {
-                if (downloadLink.getLinkStatus().getValue() == LinkStatus.VALUE_ID_PREMIUM_TEMP_DISABLE) {
+                if (downloadLink.getLinkStatus().getValue() == PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE) {
                     logger.severe("Premium Account " + account.getUser() + ": Traffic Limit reached");
                     account.setTempDisabled(true);
                     if (account.getAccountInfo() != null) account.getAccountInfo().setStatus(downloadLink.getLinkStatus().getErrorMessage());
-                } else if (downloadLink.getLinkStatus().getValue() == LinkStatus.VALUE_ID_PREMIUM_DISABLE) {
+                } else if (downloadLink.getLinkStatus().getValue() == PluginException.VALUE_ID_PREMIUM_DISABLE) {
                     account.setEnabled(false);
                     if (account.getAccountInfo() != null) account.getAccountInfo().setStatus(downloadLink.getLinkStatus().getErrorMessage());
                     logger.severe("Premium Account " + account.getUser() + ": expired:" + downloadLink.getLinkStatus().getLongErrorMessage());

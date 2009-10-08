@@ -55,10 +55,10 @@ public class MegasharesCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage("http://d01.megashares.com/");
         br.postPage("http://d01.megashares.com/", "lc_email=" + Encoding.urlEncode(account.getUser()) + "&lc_pin=" + Encoding.urlEncode(account.getPass()) + "&lc_signin=Sign-In");
-        if (br.getCookie("http://megashares.com", "linkcard") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        if (br.getCookie("http://megashares.com", "linkcard") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
-    // @Override
+    @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         try {
@@ -91,6 +91,7 @@ public class MegasharesCom extends PluginForHost {
         br.setFollowRedirects(tmp);
     }
 
+    @Override
     public void correctDownloadLink(DownloadLink link) throws IOException {
         Browser brt = new Browser();
         brt.setFollowRedirects(false);
@@ -100,7 +101,7 @@ public class MegasharesCom extends PluginForHost {
         }
     }
 
-    // @Override
+    @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         requestFileInformation(downloadLink);
         login(account);
@@ -119,7 +120,7 @@ public class MegasharesCom extends PluginForHost {
         dl.startDownload();
     }
 
-    // @Override
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         LinkStatus linkStatus = downloadLink.getLinkStatus();
@@ -208,12 +209,12 @@ public class MegasharesCom extends PluginForHost {
         return true;
     }
 
-    // @Override
+    @Override
     public String getAGBLink() {
         return "http://d01.megashares.com/tos.php";
     }
 
-    // @Override
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         setBrowserExclusive();
         loadpage(downloadLink.getDownloadURL());
@@ -248,31 +249,26 @@ public class MegasharesCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    // @Override
-    /*
-     * public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
-    // @Override
+    @Override
     public int getTimegapBetweenConnections() {
         return 2000;
     }
 
-    // @Override
+    @Override
     public void reset() {
     }
 
-    // @Override
+    @Override
     public void resetPluginGlobals() {
 
     }
 
-    // @Override
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 

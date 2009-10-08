@@ -41,12 +41,12 @@ public class DataHu extends PluginForHost {
         this.enablePremium("http://data.hu/premium.php");
     }
 
-    // @Override
+    @Override
     public String getAGBLink() {
         return "http://data.hu/adatvedelem.php";
     }
 
-    // @Override
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException {
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
@@ -58,11 +58,6 @@ public class DataHu extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    // @Override
-    /*
-     * /* public String getVersion() { return getVersion("$Revision$"); }
-     */
-
     public void login(Account account) throws Exception {
         this.setBrowserExclusive();
         br.getPage("http://data.hu/");
@@ -72,8 +67,8 @@ public class DataHu extends PluginForHost {
         form.put("remember", "on");
         br.submitForm(form);
         br.getPage("http://data.hu/index.php");
-        if (br.getCookie("http://data.hu/", "datapremiumseccode") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
-        if (!isPremium()) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        if (br.getCookie("http://data.hu/", "datapremiumseccode") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (!isPremium()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
     public boolean isPremium() throws IOException {
@@ -82,7 +77,7 @@ public class DataHu extends PluginForHost {
         return false;
     }
 
-    // @Override
+    @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         this.setBrowserExclusive();
@@ -107,7 +102,7 @@ public class DataHu extends PluginForHost {
         return ai;
     }
 
-    // @Override
+    @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         requestFileInformation(downloadLink);
         login(account);
@@ -119,7 +114,7 @@ public class DataHu extends PluginForHost {
         dl.startDownload();
     }
 
-    // @Override
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         br.setFollowRedirects(true);
         requestFileInformation(downloadLink);
@@ -134,30 +129,30 @@ public class DataHu extends PluginForHost {
 
     }
 
-    // @Override
+    @Override
     public int getTimegapBetweenConnections() {
         return 500;
     }
 
-    // @Override
+    @Override
     public int getMaxConnections() {
         return 1;
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
-    // @Override
+    @Override
     public void reset() {
     }
 
-    // @Override
+    @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
+    @Override
     public void resetDownloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 

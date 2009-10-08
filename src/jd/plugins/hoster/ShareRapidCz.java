@@ -39,10 +39,12 @@ public class ShareRapidCz extends PluginForHost {
         this.enablePremium("http://share-rapid.com/dobiti/?zeme=1");
     }
 
+    @Override
     public String getAGBLink() {
         return "http://share-rapid.com/informace/";
     }
 
+    @Override
     public void correctDownloadLink(DownloadLink link) throws Exception {
         // many domains are still missing/untested:
         // http://share-rapid.com/informace/
@@ -61,9 +63,10 @@ public class ShareRapidCz extends PluginForHost {
         form.put("login", Encoding.urlEncode(account.getUser()));
         form.put("pass1", Encoding.urlEncode(account.getPass()));
         br.submitForm(form);
-        if (!br.containsHTML("Kredit:</td>")) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        if (!br.containsHTML("Kredit:</td>")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
+    @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         try {
@@ -78,6 +81,7 @@ public class ShareRapidCz extends PluginForHost {
         return ai;
     }
 
+    @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         requestFileInformation(downloadLink);
         login(account);
@@ -94,10 +98,12 @@ public class ShareRapidCz extends PluginForHost {
         dl.startDownload();
     }
 
+    @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return 1;
     }
 
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setCustomCharset("UTF-8");
@@ -114,6 +120,7 @@ public class ShareRapidCz extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         String dllink = br.getRegex("class=\"important\" href=\"(.*?)\">Click to download! <").getMatch(0);
@@ -124,13 +131,16 @@ public class ShareRapidCz extends PluginForHost {
         dl.startDownload();
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
+    @Override
     public void reset() {
     }
 
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 }

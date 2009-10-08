@@ -69,6 +69,7 @@ public class Megauploadcom extends PluginForHost {
         setConfigElements();
     }
 
+    @Override
     public void correctDownloadLink(DownloadLink link) throws Exception {
         link.setUrlDownload("http://www.megaupload.com/?d=" + getDownloadID(link));
     }
@@ -114,7 +115,7 @@ public class Megauploadcom extends PluginForHost {
         return true;
     }
 
-    // @Override
+    @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         checkWWWWorkaround();
         AccountInfo ai = new AccountInfo();
@@ -152,7 +153,7 @@ public class Megauploadcom extends PluginForHost {
         return p.get("d").toUpperCase();
     }
 
-    // @Override
+    @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         requestFileInformation(link);
         br = new Browser();
@@ -261,7 +262,7 @@ public class Megauploadcom extends PluginForHost {
         }
     }
 
-    // @Override
+    @Override
     public String getAGBLink() {
         return "http://www.megaupload.com/terms/";
     }
@@ -280,9 +281,10 @@ public class Megauploadcom extends PluginForHost {
         }
         user = br.getCookie("http://" + wwwWorkaround + "megaupload.com", "user");
         br.setCookie("http://" + wwwWorkaround + "megaupload.com", "user", user);
-        if (user == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        if (user == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
+    @Override
     public boolean checkLinks(DownloadLink urls[]) {
         if (urls == null || urls.length == 0) return false;
         checkWWWWorkaround();
@@ -448,7 +450,7 @@ public class Megauploadcom extends PluginForHost {
         }
     }
 
-    // @Override
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         onlyapi = false;
         checkWWWWorkaround();
@@ -470,11 +472,6 @@ public class Megauploadcom extends PluginForHost {
         if (downloadLink.getAvailableStatus() == AvailableStatus.FALSE) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         return downloadLink.getAvailableStatus();
     }
-
-    // @Override
-    /*
-     * public String getVersion() { return getVersion("$Revision$"); }
-     */
 
     public void handleFree1(DownloadLink link, Account account) throws Exception {
         this.setBrowserExclusive();
@@ -624,7 +621,7 @@ public class Megauploadcom extends PluginForHost {
         br.getHeaders().setDominant(false);
     }
 
-    // @Override
+    @Override
     public void handleFree(DownloadLink parameter) throws Exception {
         user = null;
         br.setCookie("http://" + wwwWorkaround + "megaupload.com", "l", "en");
@@ -632,25 +629,25 @@ public class Megauploadcom extends PluginForHost {
         handleFree0(parameter, null);
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return this.getPluginConfig().getIntegerProperty("MAX_FREE_PARALELL_DOWNLOADS", 1);
     }
 
-    // @Override
+    @Override
     public void reset() {
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return simultanpremium;
     }
 
-    // @Override
+    @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
+    @Override
     public void resetDownloadlink(DownloadLink link) {
         link.setProperty("waitworkaround", false);
     }

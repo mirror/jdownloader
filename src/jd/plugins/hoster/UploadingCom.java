@@ -44,6 +44,7 @@ public class UploadingCom extends PluginForHost {
         this.enablePremium("http://www.uploading.com/premium/");
     }
 
+    @Override
     public String getAGBLink() {
         return "http://uploading.com/terms/";
     }
@@ -64,9 +65,10 @@ public class UploadingCom extends PluginForHost {
         br.setCookie("http://www.uploading.com/", "language", "1");
         br.getPage("http://www.uploading.com/");
         br.postPage("http://uploading.com/general/login_form/", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember=on");
-        if (br.getCookie("http://www.uploading.com/", "remembered_user") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        if (br.getCookie("http://www.uploading.com/", "remembered_user") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
+    @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         this.setBrowserExclusive();
@@ -86,6 +88,7 @@ public class UploadingCom extends PluginForHost {
         return ai;
     }
 
+    @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         requestFileInformation(link);
         login(account);
@@ -135,6 +138,7 @@ public class UploadingCom extends PluginForHost {
         dl.startDownload();
     }
 
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
@@ -164,6 +168,7 @@ public class UploadingCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
@@ -210,25 +215,31 @@ public class UploadingCom extends PluginForHost {
         return redirect;
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
+    @Override
     public int getTimegapBetweenConnections() {
         return 100;
     }
 
+    @Override
     public void reset() {
     }
 
+    @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return simultanpremium;
     }
 
+    @Override
     public void resetPluginGlobals() {
 
     }
 
+    @Override
     public void resetDownloadlink(DownloadLink link) {
 
     }

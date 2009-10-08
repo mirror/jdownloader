@@ -39,7 +39,7 @@ public class HotFileCom extends PluginForHost {
         this.enablePremium("http://hotfile.com/register.html?reff=274657");
     }
 
-    // @Override
+    @Override
     public String getAGBLink() {
         return "http://hotfile.com/terms-of-service.html";
     }
@@ -51,13 +51,13 @@ public class HotFileCom extends PluginForHost {
         br.getPage("http://hotfile.com/");
         br.postPage("http://hotfile.com/login.php", "returnto=%2F&user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
         Form form = br.getForm(0);
-        if (form != null && form.containsHTML("<td>Username:")) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
-        if (br.getCookie("http://hotfile.com/", "auth") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
-        if (!br.containsHTML("<b>Premium Membership</b>")) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        if (form != null && form.containsHTML("<td>Username:")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (br.getCookie("http://hotfile.com/", "auth") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (!br.containsHTML("<b>Premium Membership</b>")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         br.setFollowRedirects(false);
     }
 
-    // @Override
+    @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         this.setBrowserExclusive();
@@ -77,6 +77,7 @@ public class HotFileCom extends PluginForHost {
         return ai;
     }
 
+    @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         requestFileInformation(downloadLink);
         login(account);
@@ -93,7 +94,7 @@ public class HotFileCom extends PluginForHost {
         dl.startDownload();
     }
 
-    // @Override
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
         br.getPage(parameter.getDownloadURL());
@@ -105,7 +106,7 @@ public class HotFileCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    // @Override
+    @Override
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
 
@@ -149,18 +150,13 @@ public class HotFileCom extends PluginForHost {
         dl.startDownload();
     }
 
-    // @Override
+    @Override
     public void reset() {
         // TODO Auto-generated method stub
 
     }
 
-    // @Override
-    /*
-     * public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    // @Override
+    @Override
     public void resetDownloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 

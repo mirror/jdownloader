@@ -48,11 +48,12 @@ public class EgoshareCom extends PluginForHost {
         this.enablePremium("http://www.egoshare.com/service.php");
     }
 
-    // @Override
+    @Override
     public String getAGBLink() {
         return "http://www.egoshare.com/faq.php";
     }
 
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setCookie("http://www.egoshare.com/", "king_mylang", "en");
@@ -70,14 +71,15 @@ public class EgoshareCom extends PluginForHost {
         br.setCookie("http://www.egoshare.com/", "king_mylang", "en");
         br.getPage("http://www.egoshare.com/");
         br.postPage("http://www.egoshare.com/login.php", "act=login&user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&login=LOGIN");
-        if (br.getRedirectLocation() == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
-        if (br.getCookie("http://www.egoshare.com/", "king_passhash") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        if (br.getRedirectLocation() == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (br.getCookie("http://www.egoshare.com/", "king_passhash") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         br.getPage(br.getRedirectLocation());
-        if (!br.getRegex("<td align=\"left\">.*?Premium Account.*?</td>").matches()) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        if (!br.getRegex("<td align=\"left\">.*?Premium Account.*?</td>").matches()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         String expired = br.getRegex("<b>Expired\\?</b></td>.*?<td align=.*?>(.*?)<").getMatch(0);
-        if (expired == null || !expired.trim().equalsIgnoreCase("no")) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        if (expired == null || !expired.trim().equalsIgnoreCase("no")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
+    @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         requestFileInformation(downloadLink);
         login(account);
@@ -90,6 +92,7 @@ public class EgoshareCom extends PluginForHost {
         dl.startDownload();
     }
 
+    @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         this.setBrowserExclusive();
@@ -111,6 +114,7 @@ public class EgoshareCom extends PluginForHost {
         return ai;
     }
 
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         url = downloadLink.getDownloadURL();
         /* Nochmals das File überprüfen */
@@ -167,16 +171,20 @@ public class EgoshareCom extends PluginForHost {
         dl.startDownload();
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
+    @Override
     public void reset() {
     }
 
+    @Override
     public void resetPluginGlobals() {
     }
 
+    @Override
     public void resetDownloadlink(DownloadLink link) {
 
     }

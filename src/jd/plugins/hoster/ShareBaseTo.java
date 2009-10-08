@@ -43,16 +43,17 @@ public class ShareBaseTo extends PluginForHost {
         this.enablePremium("http://sharebase.to/premium/");
     }
 
-    // @Override
+    @Override
     public String getAGBLink() {
         return "http://sharebase.to/terms/";
     }
 
+    @Override
     public void correctDownloadLink(DownloadLink link) throws MalformedURLException {
         link.setUrlDownload(link.getDownloadURL().replaceAll("sharebase\\.de", "sharebase\\.to"));
     }
 
-    // @Override
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         /* damit neue links mit .de als .to in die liste kommen */
         setBrowserExclusive();
@@ -74,10 +75,10 @@ public class ShareBaseTo extends PluginForHost {
         br.getPage("http://sharebase.to/members/");
         String points = br.getRegex(Pattern.compile("<td>Premiumpunkte:</td>.*?<td><input.*cleanform.*value=\"([\\d\\.]+) Punkte\"></td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
         String expire = br.getRegex(Pattern.compile("<td>Premium bis:</td>.*?<td><input.*?cleanform.*? value=\"(.*?)\"></td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-        if (points == null || expire == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        if (points == null || expire == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
-    // @Override
+    @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         try {
@@ -93,12 +94,7 @@ public class ShareBaseTo extends PluginForHost {
         return ai;
     }
 
-    // @Override
-    /*
-     * public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    // @Override
+    @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         requestFileInformation(downloadLink);
         login(account);
@@ -111,7 +107,7 @@ public class ShareBaseTo extends PluginForHost {
 
         if (!br.containsHTML("favorite")) {
             logger.severe("ShareBaseTo Error: Premium account expired");
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
 
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.getForm(1));
@@ -122,7 +118,7 @@ public class ShareBaseTo extends PluginForHost {
         dl.startDownload();
     }
 
-    // @Override
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         /* für links welche noch mit .de in der liste stehen */
@@ -158,20 +154,20 @@ public class ShareBaseTo extends PluginForHost {
         dl.startDownload();
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 2;
     }
 
-    // @Override
+    @Override
     public void reset() {
     }
 
-    // @Override
+    @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
+    @Override
     public void resetDownloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 

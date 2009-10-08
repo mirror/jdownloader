@@ -57,6 +57,7 @@ public class DepositFiles extends PluginForHost {
         this.enablePremium("http://depositfiles.com/signup.php?ref=down1");
     }
 
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
         requestFileInformation(downloadLink);
@@ -127,7 +128,7 @@ public class DepositFiles extends PluginForHost {
         /* You have exceeded the 15 GB 24-hour limit */
         if (br.containsHTML("GOLD users can download no more than")) {
             logger.info("GOLD users can download no more than 15 GB for the last 24 hours");
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
         }
     }
 
@@ -141,7 +142,7 @@ public class DepositFiles extends PluginForHost {
         br.submitForm(login);
         br.setFollowRedirects(false);
         String cookie = br.getCookie("http://depositfiles.com", "autologin");
-        if (cookie == null || br.containsHTML("Benutzername-Passwort-Kombination")) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        if (cookie == null || br.containsHTML("Benutzername-Passwort-Kombination")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
     public void setLangtoGer() throws IOException {
@@ -157,6 +158,7 @@ public class DepositFiles extends PluginForHost {
         return true;
     }
 
+    @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         setBrowserExclusive();
@@ -192,6 +194,7 @@ public class DepositFiles extends PluginForHost {
         return ai;
     }
 
+    @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         requestFileInformation(downloadLink);
         login(account);
@@ -231,14 +234,17 @@ public class DepositFiles extends PluginForHost {
         dl.startDownload();
     }
 
+    @Override
     public String getAGBLink() {
         return "http://depositfiles.com/en/agreem.html";
     }
 
+    @Override
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replaceAll("\\.com(/.*?)?/files", ".com/de/files"));
     }
 
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         setBrowserExclusive();
         String link = downloadLink.getDownloadURL();
@@ -261,25 +267,30 @@ public class DepositFiles extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
+    @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return simultanpremium;
     }
 
+    @Override
     public void reset() {
     }
 
+    @Override
     public void resetPluginGlobals() {
     }
 
+    @Override
     public int getTimegapBetweenConnections() {
         return 800;
     }
 
-    // @Override
+    @Override
     public void resetDownloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 

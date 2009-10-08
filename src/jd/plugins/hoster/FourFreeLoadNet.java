@@ -44,12 +44,12 @@ public class FourFreeLoadNet extends PluginForHost {
         enablePremium("http://4freeload.net/register.php");
     }
 
-    // @Override
+    @Override
     public String getAGBLink() {
         return "http://4freeload.net/rules.php";
     }
 
-    // @Override
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setCookie("http://4freeload.net", "yab_mylang", "de");
@@ -63,12 +63,7 @@ public class FourFreeLoadNet extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    // @Override
-    /*
-     * /* public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    // @Override
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
         requestFileInformation(downloadLink);
@@ -109,8 +104,8 @@ public class FourFreeLoadNet extends PluginForHost {
         finalurl = br.getRegex("document\\.location=\"(.*?)\"").getMatch(0);
         if (finalurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
 
-        //waittime not needed right now
-//        sleep(20000, downloadLink);
+        // waittime not needed right now
+        // sleep(20000, downloadLink);
         br.setFollowRedirects(true);
         /* Datei herunterladen */
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalurl, false, 1);
@@ -121,7 +116,7 @@ public class FourFreeLoadNet extends PluginForHost {
         dl.startDownload();
     }
 
-    // @Override
+    @Override
     public void handlePremium(DownloadLink parameter, Account account) throws Exception {
         requestFileInformation(parameter);
         login(account);
@@ -142,10 +137,10 @@ public class FourFreeLoadNet extends PluginForHost {
         form.put("autologin", "0");
         br.submitForm(form);
 
-        if (br.getCookie("http://www.4freeload.net", "yab_passhash") == null || br.getCookie("http://www.4freeload.net", "yab_uid").equals("0")) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        if (br.getCookie("http://www.4freeload.net", "yab_passhash") == null || br.getCookie("http://www.4freeload.net", "yab_uid").equals("0")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
-    // @Override
+    @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         try {
@@ -204,30 +199,30 @@ public class FourFreeLoadNet extends PluginForHost {
     public boolean isPremium() throws PluginException, IOException {
         br.getPage("http://4freeload.net/members.php");
         if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("login.php")) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         } else if (br.containsHTML("Du bist eingeloggt")) return true;
         return false;
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 2;
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return 20;
     }
 
-    // @Override
+    @Override
     public void reset() {
     }
 
-    // @Override
+    @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
+    @Override
     public void resetDownloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 

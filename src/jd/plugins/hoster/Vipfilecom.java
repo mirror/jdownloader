@@ -41,12 +41,12 @@ public class Vipfilecom extends PluginForHost {
         enablePremium("http://vip-file.com/tmpl/premium_en.php");
     }
 
-    // @Override
+    @Override
     public String getAGBLink() {
         return "http://vip-file.com/tmpl/terms.php";
     }
 
-    // @Override
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
         String downloadURL = downloadLink.getDownloadURL();
         this.setBrowserExclusive();
@@ -65,12 +65,7 @@ public class Vipfilecom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    // @Override
-    /*
-     * public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    // @Override
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         /* DownloadLink holen, 2x der Location folgen */
@@ -84,35 +79,35 @@ public class Vipfilecom extends PluginForHost {
         if (!link.contains("vip-file.com")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.vipfilecom.errors.nofreedownloadlink", "No free download link for this file"));
         // link = link.replaceAll("file.com.*?/", "file.com:8080/");
         br.setFollowRedirects(true);
-        jd.plugins.BrowserAdapter.openDownload(br,downloadLink, link, true, 1).startDownload();
+        jd.plugins.BrowserAdapter.openDownload(br, downloadLink, link, true, 1).startDownload();
     }
 
-    // @Override
+    @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         requestFileInformation(downloadLink);
         Form form = br.getForm(1);
         form.put("pass", Encoding.urlEncode(account.getPass()));
         br.submitForm(form);
         String url = Encoding.htmlDecode(br.getRegex(Pattern.compile("<a href=\"(.*?vip-file\\.com.*?)\">", Pattern.CASE_INSENSITIVE)).getMatch(0));
-        if (url == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, url, true, 0);
+        if (url == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 0);
         dl.startDownload();
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    // @Override
+    @Override
     public void reset() {
     }
 
-    // @Override
+    @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
+    @Override
     public void resetDownloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 

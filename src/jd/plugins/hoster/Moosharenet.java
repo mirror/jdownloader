@@ -54,7 +54,7 @@ public class Moosharenet extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage("http://mooshare.net/index.php?section=premium");
         br.postPage("http://mooshare.net/index.php?section=premium", "user=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&submit=Login");
-        if (br.getCookie("http://mooshare.net", "premiumlogin") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        if (br.getCookie("http://mooshare.net", "premiumlogin") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
     @Override

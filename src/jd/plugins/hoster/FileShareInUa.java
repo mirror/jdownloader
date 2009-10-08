@@ -39,6 +39,7 @@ public class FileShareInUa extends PluginForHost {
         this.enablePremium("http://fileshare.in.ua/premium.aspx");
     }
 
+    @Override
     public String getAGBLink() {
         return "http://fileshare.in.ua/about.aspx";
     }
@@ -53,9 +54,10 @@ public class FileShareInUa extends PluginForHost {
         form.put("password", Encoding.urlEncode(account.getPass()));
         br.setFollowRedirects(true);
         br.submitForm(form);
-        if (!br.containsHTML("\">Премиум</a> до") && !br.containsHTML("Тип премиума: <b style=\"color: black;\">обычный</b>")) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        if (!br.containsHTML("\">Премиум</a> до") && !br.containsHTML("Тип премиума: <b style=\"color: black;\">обычный</b>")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
+    @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         try {
@@ -76,6 +78,7 @@ public class FileShareInUa extends PluginForHost {
         return ai;
     }
 
+    @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         requestFileInformation(downloadLink);
         login(account);
@@ -92,10 +95,12 @@ public class FileShareInUa extends PluginForHost {
         dl.startDownload();
     }
 
+    @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return 20;
     }
 
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         String freepage = link.getDownloadURL() + "?free";
@@ -110,6 +115,7 @@ public class FileShareInUa extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         String freepage = downloadLink.getDownloadURL() + "?free";
@@ -144,16 +150,20 @@ public class FileShareInUa extends PluginForHost {
         dl.startDownload();
     }
 
+    @Override
     public void reset() {
     }
 
+    @Override
     public void resetPluginGlobals() {
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 

@@ -42,10 +42,12 @@ public class MyShareAt extends PluginForHost {
         this.enablePremium("http://my-share.at/premium.html");
     }
 
+    @Override
     public String getAGBLink() {
         return "http://my-share.at/tos.html";
     }
 
+    @Override
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
         Form form = br.getForm(1);
@@ -96,6 +98,7 @@ public class MyShareAt extends PluginForHost {
         dl.startDownload();
     }
 
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
         br.setCookie("http://my-share.at/", "lang", "english");
@@ -120,12 +123,13 @@ public class MyShareAt extends PluginForHost {
         br.setCookie("http://my-share.at/", "lang", "english");
         br.getPage("http://my-share.at/login.html");
         br.postPage("http://my-share.at/", "op=login&redirect=&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&x=22&y=13");
-        if (br.getCookie("http://my-share.at/", "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
-        if (br.getCookie("http://my-share.at/", "login") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        if (br.getCookie("http://my-share.at/", "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (br.getCookie("http://my-share.at/", "login") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         br.getPage("http://my-share.at/?op=my_account");
-        if (!br.containsHTML("Premium-Account expire")) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        if (!br.containsHTML("Premium-Account expire")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
+    @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         this.setBrowserExclusive();
@@ -148,6 +152,7 @@ public class MyShareAt extends PluginForHost {
         return ai;
     }
 
+    @Override
     public void handlePremium(DownloadLink parameter, Account account) throws Exception {
         requestFileInformation(parameter);
         login(account);
@@ -182,9 +187,11 @@ public class MyShareAt extends PluginForHost {
         dl.startDownload();
     }
 
+    @Override
     public void reset() {
     }
 
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 

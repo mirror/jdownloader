@@ -39,10 +39,12 @@ public class UploadBoxCom extends PluginForHost {
         this.enablePremium("http://uploadbox.com/en/premium/");
     }
 
+    @Override
     public String getAGBLink() {
         return "http://uploadbox.com/en/terms/";
     }
 
+    @Override
     public void correctDownloadLink(DownloadLink parameter) {
         String id = new Regex(parameter.getDownloadURL(), "files/([0-9a-zA-Z]+)").getMatch(0);
         parameter.setUrlDownload("http://www.uploadbox.com/en/files/" + id);
@@ -53,11 +55,12 @@ public class UploadBoxCom extends PluginForHost {
         br.getPage("http://uploadbox.com/en/premium/?ac=lang&lang_new=en");
         br.getPage("http://uploadbox.com/en/premium/");
         br.postPage("http://uploadbox.com/en", "login=" + Encoding.urlEncode(account.getUser()) + "&passwd=" + Encoding.urlEncode(account.getPass()) + "&ac=auth&back=");
-        if (br.containsHTML("You enter wrong user name or password")) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        if (br.containsHTML("You enter wrong user name or password")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         br.getPage("http://uploadbox.com/en/");
-        if (br.containsHTML("Your account type:</strong> FREE")) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        if (br.containsHTML("Your account type:</strong> FREE")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
+    @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         this.setBrowserExclusive();
@@ -75,6 +78,7 @@ public class UploadBoxCom extends PluginForHost {
         return ai;
     }
 
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
         br.getPage(parameter.getDownloadURL());
@@ -97,6 +101,7 @@ public class UploadBoxCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @Override
     public void handlePremium(DownloadLink parameter, Account account) throws Exception {
         requestFileInformation(parameter);
         login(account);
@@ -108,6 +113,7 @@ public class UploadBoxCom extends PluginForHost {
         dl.startDownload();
     }
 
+    @Override
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
         Form form = br.getFormbyProperty("id", "free");
@@ -132,13 +138,16 @@ public class UploadBoxCom extends PluginForHost {
         dl.startDownload();
     }
 
+    @Override
     public void reset() {
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 

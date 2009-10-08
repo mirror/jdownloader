@@ -19,6 +19,10 @@ package jd.plugins;
 public class PluginException extends Exception {
 
     private static final long serialVersionUID = -413339039711789194L;
+
+    public static final int VALUE_ID_PREMIUM_TEMP_DISABLE = 0;
+    public static final int VALUE_ID_PREMIUM_DISABLE = 1;
+
     private int linkStatus = -1;
     private String errorMessage = null;
     private long value = -1;
