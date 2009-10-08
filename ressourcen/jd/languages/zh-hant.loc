@@ -1010,6 +1010,7 @@ jd.plugins.optional.customizer.customizertablemodel.matchcount = 啟用時開始
 jd.plugins.optional.customizer.customizertablemodel.name = 名稱
 jd.plugins.optional.customizer.customizertablemodel.packagename = 任務名稱
 jd.plugins.optional.customizer.customizertablemodel.password = 密碼
+jd.plugins.optional.customizer.customizertablemodel.regex = 正規表示式
 jd.plugins.optional.customizer.customizertablemodel.subdirectory = 使用子目錄
 jd.plugins.optional.customizer.customizerview.title = 自訂任務
 jd.plugins.optional.customizer.customizerview.tooltip = 自訂您的任務
