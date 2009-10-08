@@ -103,6 +103,8 @@ public class ToolbarController extends ConfigPanel {
         WHITELIST.add("action.restart");
         WHITELIST.add("action.exit");
 
+        WHITELIST.add("gui.jdshutdown.toggle");
+
     }
     private static final long serialVersionUID = -7024581410075950497L;
 

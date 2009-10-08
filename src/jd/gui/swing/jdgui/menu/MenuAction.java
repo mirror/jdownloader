@@ -13,6 +13,10 @@ public class MenuAction extends ToolBarAction {
         super(pluginID, i);
     }
 
+    public MenuAction(String pluginID, String icon) {
+        super(pluginID, icon);
+    }
+
     public MenuAction(Types separator) {
         super();
         this.setType(separator);

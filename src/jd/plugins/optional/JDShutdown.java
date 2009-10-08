@@ -16,7 +16,8 @@
 
 package jd.plugins.optional;
 
-import java.awt.event.ActionEvent;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -32,6 +33,7 @@ import jd.controlling.interaction.Interaction;
 import jd.controlling.interaction.InteractionTrigger;
 import jd.event.ControlEvent;
 import jd.gui.UserIO;
+import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.nutils.JDFlags;
 import jd.nutils.OSDetector;
@@ -48,29 +50,17 @@ public class JDShutdown extends PluginOptional {
     private static final String CONFIG_HIBERNATE = "HIBERNATE";
     private static final String CONFIG_FORCESHUTDOWN = "FORCE";
     private static Thread shutdown = null;
-
-    private MenuAction menuItem;
+    private static boolean shutdownenabled = false;
+    private static MenuAction menuAction = null;
 
     public JDShutdown(PluginWrapper wrapper) {
         super(wrapper);
         initConfig();
     }
 
-    // @Override
-    public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == menuItem) {
-            if (menuItem.isSelected()) {
-                UserIO.getInstance().requestMessageDialog(JDL.L("addons.jdshutdown.statusmessage.enabled", "Das System wird nach dem Download heruntergefahren."));
-            } else {
-                UserIO.getInstance().requestMessageDialog(JDL.L("addons.jdshutdown.statusmessage.disabled", "Das System wird nach dem Download NICHT heruntergefahren."));
-            }
-        }
-    }
-
-    // @Override
     public void controlEvent(ControlEvent event) {
         super.controlEvent(event);
-        if (menuItem != null && menuItem.isSelected()) {
+        if (shutdownenabled) {
             if (event.getID() == ControlEvent.CONTROL_INTERACTION_CALL) {
                 if ((InteractionTrigger) event.getSource() == Interaction.INTERACTION_AFTER_DOWNLOAD_AND_INTERACTIONS) {
                     if (shutdown != null) {
@@ -87,29 +77,45 @@ public class JDShutdown extends PluginOptional {
         }
     }
 
-    // @Override
     public ArrayList<MenuAction> createMenuitems() {
         ArrayList<MenuAction> menu = new ArrayList<MenuAction>();
-        if (menuItem == null) {
-            menuItem = new MenuAction(getWrapper().getID(), 0);
-            menuItem.setTitle(getHost());
-            menuItem.setSelected(false);
-
-            menuItem.setActionListener(this);
-        }
-        menu.add(menuItem);
+        menu.add(menuAction);
         return menu;
     }
 
-    // @Override
     public boolean initAddon() {
+        if (menuAction == null) menuAction = new MenuAction("gui.jdshutdown.toggle", "gui.images.logout") {
+            private static final long serialVersionUID = 4359802245569811800L;
 
+            @Override
+            public void initDefaults() {
+                setPriority(800);
+                this.setToolTipText(JDL.L("gui.jdshutdown.toggle.tooltip", "Enable/Disable Shutdown after Downloads"));
+                this.setEnabled(true);
+                setType(ToolBarAction.Types.TOGGLE);
+                this.setSelected(false);
+                this.setIcon("gui.images.logout");
+                this.addPropertyChangeListener(new PropertyChangeListener() {
+                    public void propertyChange(PropertyChangeEvent evt) {
+                        if (evt.getPropertyName() == SELECTED_KEY) {
+                            shutdownenabled = isSelected();
+                            if (shutdownenabled) {
+                                UserIO.getInstance().requestMessageDialog(JDL.L("addons.jdshutdown.statusmessage.enabled", "Das System wird nach dem Download heruntergefahren."));
+                            } else {
+                                UserIO.getInstance().requestMessageDialog(JDL.L("addons.jdshutdown.statusmessage.disabled", "Das System wird nach dem Download NICHT heruntergefahren."));
+                            }
+                        }
+                    }
+                });
+            }
+
+        };
+        menuAction.setSelected(false);
         JDUtilities.getController().addControlListener(this);
         logger.info("Shutdown OK");
         return true;
     }
 
-    // @Override
     public void onExit() {
         JDUtilities.getController().removeControlListener(this);
     }
@@ -283,7 +289,6 @@ public class JDShutdown extends PluginOptional {
     }
 
     public String getIconKey() {
-
         return "gui.images.logout";
     }
 
