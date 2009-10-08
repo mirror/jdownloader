@@ -89,7 +89,6 @@ public class WebUpdater implements Serializable {
     }
 
     public static HashMap<String, FileUpdate> getPluginList() {
-        // TODO Auto-generated method stub
         if (PLUGIN_LIST == null && JDUtilities.getResourceFile("tmp/hashlist.lst").exists()) {
             PLUGIN_LIST = new HashMap<String, FileUpdate>();
             WebUpdater updater = new WebUpdater();
@@ -290,7 +289,6 @@ public class WebUpdater implements Serializable {
     }
 
     public static boolean isBetaBranch(String string) {
-        // TODO Auto-generated method stub
         return string.trim().startsWith("beta_");
     }
 
@@ -570,7 +568,6 @@ public class WebUpdater implements Serializable {
             broadcaster.fireEvent(new MessageEvent(this, DO_UPDATE_FAILED, "Server Busy. Wait 10 Seconds"));
             Thread.sleep(10000);
         } catch (InterruptedException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
 
@@ -654,7 +651,6 @@ public class WebUpdater implements Serializable {
                     efiles = u.extract();
                     broadcaster.fireEvent(new MessageEvent(this, DO_UPDATE_SUCCESS, "Extracted " + file.getLocalTmpFile().getName() + ": " + efiles.length + " files"));
                 } catch (Exception e) {
-                    // TODO Auto-generated catch block
                     broadcaster.fireEvent(new MessageEvent(this, DO_UPDATE_FAILED, e.getLocalizedMessage()));
                     broadcaster.fireEvent(new MessageEvent(this, DO_UPDATE_FAILED, "Extracting " + file.getLocalTmpFile().getAbsolutePath() + " failed"));
                     e.printStackTrace();
@@ -672,8 +668,6 @@ public class WebUpdater implements Serializable {
     }
 
     public void cleanUp() {
-        // TODO Auto-generated method stub
-
     }
 
 }

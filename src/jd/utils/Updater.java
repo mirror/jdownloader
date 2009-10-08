@@ -173,7 +173,6 @@ public class Updater {
 	}
 
 	private boolean ask(String string) {
-		// TODO Auto-generated method stub
 		return JOptionPane.showConfirmDialog(frame, string) == JOptionPane.OK_OPTION;
 	}
 
@@ -313,7 +312,6 @@ public class Updater {
 		try {
 			return zip.zip();
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return null;
@@ -360,7 +358,6 @@ public class Updater {
 		try {
 			zip.zip();
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		JDIO.writeLocalFile(new File(BRANCH + "_update.md5"), JDHash
@@ -603,11 +600,12 @@ public class Updater {
 	 * 
 	 * @throws Exception
 	 */
+	@SuppressWarnings("unused")
 	private void removeFileOverhead() throws Exception {
 		ArrayList<File> localFiles = getLocalFileList(workingDir, false);
 		StringBuilder sb = new StringBuilder();
 		ArrayList<String> remRequested = new ArrayList<String>();
-		// clear folders in updaedir
+		// clear folders in update dir
 		File tmp = new File(this.updateDir, "/tmp/");
 		JDIO.removeDirectoryOrFile(tmp);
 		tmp.mkdirs();
@@ -631,7 +629,7 @@ public class Updater {
 		tmp = new File(this.workingDir, "/backup/");
 		JDIO.removeDirectoryOrFile(tmp);
 		tmp.mkdirs();
-		int i = 0;
+		//int i = 0;
 		// for (File f : localFiles) {
 		// if (!f.isDirectory()
 		// && !containsFile(f)
@@ -745,7 +743,8 @@ public class Updater {
 
 	}
 
-	/** checks if file f is oart of the hashlist */
+	/*
+	** checks if file f is oart of the hashlist *
 	private boolean containsFile(File f) {
 		if (remoteFileList == null)
 			return true;
@@ -769,6 +768,7 @@ public class Updater {
 		}
 		return false;
 	}
+	*/
 
 	/**
 	 * Scans a folder rec. filters addons.lst, src and update_doif folder.
@@ -810,17 +810,14 @@ public class Updater {
 		}
 
 		public String getPass() {
-			// TODO Auto-generated method stub
 			return getCFG(this + "ftp_pass3");
 		}
 
 		public String getUser() {
-			// TODO Auto-generated method stub
 			return getCFG(this + "_ftp_user3");
 		}
 
 		public String getFTPPath() {
-			// TODO Auto-generated method stub
 			return ftpPath;
 		}
 

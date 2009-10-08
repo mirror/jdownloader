@@ -88,7 +88,6 @@ public abstract class PluginOptional extends Plugin implements ControlListener {
      * @return
      */
     public String getID() {
-        // TODO Auto-generated method stub
         return getHost();
     }
 }

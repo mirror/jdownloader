@@ -85,12 +85,10 @@ abstract public class LocalBrowser implements Serializable {
 
         if (OSDetector.isMac()) {
             ret.add(new LocalBrowser("MAC Default") {
-                /**
-                 * 
-                 */
                 private static final long serialVersionUID = 914161109428877932L;
 
-                @Override
+                @SuppressWarnings("deprecation")
+				@Override
                 public void openURL(URL url) throws IOException {
                     if (url == null) return;
                     com.apple.eio.FileManager.openURL(url.toString());

@@ -47,9 +47,7 @@ public class AccountMenuItemSyncer implements AccountControllerListener {
     }
 
     public void map(Account a, MenuAction m) {
-
         map.put(a, m);
-
     }
 
     public void onAccountControllerEvent(final AccountControllerEvent event) {
@@ -68,15 +66,11 @@ public class AccountMenuItemSyncer implements AccountControllerListener {
     }
 
     public boolean vetoAccountGetEvent(String host, Account account) {
-        // TODO Auto-generated method stub
         return false;
     }
 
     public MenuAction get(Account a) {
-        // TODO Auto-generated method stub
         return map.get(a);
     }
-
-    // 
 
 }

@@ -189,7 +189,6 @@ public class Threader {
         }
 
         public boolean isRunnableAlive() {
-            // TODO Auto-generated method stub
             return runnableAlive;
         }
 

@@ -92,7 +92,6 @@ public class JDFileChooser extends JFileChooser {
 
                 @Override
                 public String getDescription() {
-                    // TODO Auto-generated method stub
                     return null;
                 }
             });

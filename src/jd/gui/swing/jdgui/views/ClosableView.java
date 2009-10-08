@@ -93,8 +93,6 @@ abstract public class ClosableView extends View {
      * @param menubar
      */
     protected void initMenu(JMenuBar menubar) {
-        // TODO Auto-generated method stub
-
     }
 
     /**

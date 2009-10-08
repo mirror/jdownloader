@@ -18,7 +18,6 @@ public class PixelObjectColor implements Comparable<PixelObjectColor> {
     }
     @Override
     public String toString() {
-        // TODO Auto-generated method stub
         return "color:#"+Integer.toHexString(color)+" count:"+count;
     }
 }

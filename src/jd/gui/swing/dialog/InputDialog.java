@@ -50,9 +50,6 @@ public class InputDialog extends AbstractDialog implements KeyListener, MouseLis
         init();
     }
 
-    /**
-     * 
-     */
     private static final long serialVersionUID = 9206575398715006581L;
 
     @Override
@@ -98,6 +95,7 @@ public class InputDialog extends AbstractDialog implements KeyListener, MouseLis
             }
             contentpane.add(input, "pushy,growy, width n:n:450");
         }
+        
         return contentpane;
     }
 
@@ -126,27 +124,18 @@ public class InputDialog extends AbstractDialog implements KeyListener, MouseLis
 
     public void mouseClicked(MouseEvent e) {
         this.interrupt();
-
     }
 
     public void mouseEntered(MouseEvent e) {
-        // TODO Auto-generated method stub
-
     }
 
     public void mouseExited(MouseEvent e) {
-        // TODO Auto-generated method stub
-
     }
 
     public void mousePressed(MouseEvent e) {
-        // TODO Auto-generated method stub
-
     }
 
     public void mouseReleased(MouseEvent e) {
-        // TODO Auto-generated method stub
-
     }
 
 }

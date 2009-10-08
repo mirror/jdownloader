@@ -41,7 +41,6 @@ public class ExpireDateColumn extends JDTableColumn {
 
     @Override
     public Component myTableCellEditorComponent(JDTableModel table, Object value, boolean isSelected, int row, int column) {
-        // TODO Auto-generated method stub
         return null;
     }
 
@@ -71,31 +70,24 @@ public class ExpireDateColumn extends JDTableColumn {
 
     @Override
     public boolean isEditable(Object obj) {
-        // TODO Auto-generated method stub
         return false;
     }
 
     @Override
     public void setValue(Object value, Object object) {
-        // TODO Auto-generated method stub
-
     }
 
     public Object getCellEditorValue() {
-        // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public boolean isSortable(Object obj) {
-        // TODO Auto-generated method stub
         return false;
     }
 
     @Override
     public void sort(Object obj, boolean sortingToggle) {
-        // TODO Auto-generated method stub
-
     }
 
     @Override

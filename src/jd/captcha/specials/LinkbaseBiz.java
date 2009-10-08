@@ -18,7 +18,6 @@ package jd.captcha.specials;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 import java.util.Vector;
 
 import jd.captcha.easy.BackGroundImageManager;
@@ -57,6 +56,8 @@ public class LinkbaseBiz {
         }
 
     }
+    
+    /*
     private static Object[] getNexTOS(PixelObject aos, List<PixelObject> os) {
         int i = 0;
         PixelObject nextos;
@@ -121,6 +122,7 @@ public class LinkbaseBiz {
         merge(os);
         }
     }
+    */
 
     static boolean isRgb(int color)
     {

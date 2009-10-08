@@ -119,12 +119,9 @@ public class Dataupde extends PluginForHost {
 
     // @Override
     public void resetPluginGlobals() {
-
     }
 
     // @Override
     public void resetDownloadlink(DownloadLink link) {
-        // TODO Auto-generated method stub
-
     }
 }

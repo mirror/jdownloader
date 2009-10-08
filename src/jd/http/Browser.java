@@ -651,7 +651,6 @@ public class Browser {
     }
 
     private JDProxy selectProxy() {
-        // TODO Auto-generated method stub
         if (proxy != null) {
             if (proxy == JDProxy.NO_PROXY) { return null; }
             return proxy;
@@ -720,9 +719,7 @@ public class Browser {
                     }
 
                 } catch (MalformedURLException e1) {
-                    // TODO Auto-generated catch block
                     e1.printStackTrace();
-
                 }
             } else {
                 string = base + string;
@@ -1255,8 +1252,6 @@ public class Browser {
     }
 
     public Request createRequest(String downloadURL) throws Exception {
-
-        // TODO Auto-generated method stub
         return createGetRequest(downloadURL);
     }
 

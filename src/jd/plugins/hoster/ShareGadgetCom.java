@@ -89,7 +89,5 @@ public class ShareGadgetCom extends PluginForHost {
 
     // @Override
     public void resetDownloadlink(DownloadLink link) {
-        // TODO Auto-generated method stub
-
     }
 }

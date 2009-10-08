@@ -56,13 +56,9 @@ public class MyuploadDK extends PluginForHost {
     }
 
     public void reset() {
-        // TODO Auto-generated method stub
-
     }
 
     public void resetDownloadlink(DownloadLink link) {
-        // TODO Auto-generated method stub
-
     }
 
     /*

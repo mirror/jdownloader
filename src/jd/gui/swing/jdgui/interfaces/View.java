@@ -232,7 +232,6 @@ public abstract class View extends SwitchPanel {
      * @return
      */
     public static Icon getDefaultIcon() {
-        // TODO Auto-generated method stub
         return JDTheme.II("gui.images.add_package", 16, 16);
     }
 

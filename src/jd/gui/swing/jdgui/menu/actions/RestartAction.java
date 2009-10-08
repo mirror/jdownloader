@@ -40,14 +40,10 @@ public class RestartAction extends ToolBarAction {
 
     @Override
     public void init() {
-        // TODO Auto-generated method stub
-
     }
 
     @Override
     public void initDefaults() {
-        // TODO Auto-generated method stub
-
     }
 
 }

@@ -61,14 +61,10 @@ public class AddonsMenu extends JStartMenu {
 
             @Override
             public void init() {
-                // TODO Auto-generated method stub
-
             }
 
             @Override
             public void initDefaults() {
-                // TODO Auto-generated method stub
-
             }
         };
         cfg.setIcon(JDTheme.II("gui.images.config.packagemanager", 16, 16));

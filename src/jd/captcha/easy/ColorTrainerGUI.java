@@ -200,15 +200,10 @@ public class ColorTrainerGUI {
                 MouseMotionListener mml = new MouseMotionListener() {
 
                     public void mouseDragged(MouseEvent e) {
-
-                        // TODO Auto-generated method stub
-
                     }
 
                     public void mouseMoved(MouseEvent e) {
-
                         setStatus(e.getX(), e.getY());
-
                     }
 
                 };
@@ -456,7 +451,6 @@ public class ColorTrainerGUI {
                 try {
                     cc.wait();
                 } catch (InterruptedException e) {
-                    // TODO Auto-generated catch block
                     e.printStackTrace();
                 }
             }

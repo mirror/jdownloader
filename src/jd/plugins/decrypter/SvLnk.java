@@ -121,8 +121,6 @@ public class SvLnk extends PluginForDecrypt {
     }
 
     private ArrayList<DownloadLink> followLink(String linktitle) throws BrowserException {
-        // TODO Auto-generated method stub
-
         String follow = br.getRegex("<a.*?href=\"([^\"]*)\"[^>]*>\\s*" + linktitle + "\\s*<").getMatch(0);
         follow = br.getURL(follow);
 

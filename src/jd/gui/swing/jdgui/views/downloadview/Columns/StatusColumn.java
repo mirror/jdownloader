@@ -188,8 +188,6 @@ public class StatusColumn extends JDTableColumn {
 
     @Override
     public void sort(Object obj, boolean sortingToggle) {
-        // TODO Auto-generated method stub
-
     }
 
     private void clearSB() {

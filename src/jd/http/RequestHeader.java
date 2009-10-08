@@ -28,7 +28,7 @@ public class RequestHeader {
 
     /**
      * if a header is dominant, it will not get merged with existing headers. It
-     * will replace it completly
+     * will replace it completely
      * 
      * @param dominant
      */
@@ -59,17 +59,14 @@ public class RequestHeader {
     }
 
     public String getKey(int i) {
-        // TODO Auto-generated method stub
         return keys.get(i);
     }
 
     public String getValue(int i) {
-        // TODO Auto-generated method stub
         return values.get(i);
     }
 
     public int size() {
-        // TODO Auto-generated method stub
         return keys.size();
     }
 
@@ -128,7 +125,6 @@ public class RequestHeader {
     }
 
     public boolean contains(String string) {
-        // TODO Auto-generated method stub
         return keys.contains(string);
     }
 
@@ -150,7 +146,6 @@ public class RequestHeader {
     }
 
     public boolean isDominant() {
-        // TODO Auto-generated method stub
         return dominant;
     }
 

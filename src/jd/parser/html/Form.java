@@ -513,7 +513,6 @@ public class Form extends Property {
     }
 
     public boolean hasInputFieldByName(String name) {
-        // TODO Auto-generated method stub
         return this.getInputFieldByName(name) != null;
     }
 

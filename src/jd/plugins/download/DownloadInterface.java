@@ -2015,12 +2015,10 @@ abstract public class DownloadInterface {
     }
 
     public URLConnectionAdapter getConnection() {
-        // TODO Auto-generated method stub
         return this.connection;
     }
 
     public Request getRequest() {
-        // TODO Auto-generated method stub
         return this.request;
     }
 

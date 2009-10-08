@@ -78,7 +78,6 @@ public abstract class PluginForDecrypt extends Plugin {
 
     @Override
     public String getVersion() {
-        // TODO Auto-generated method stub
         return this.getWrapper().getVersion();
     }
 

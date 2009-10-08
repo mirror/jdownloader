@@ -87,17 +87,14 @@ public class BackgroundFilterCreater {
                 Entry<Integer, Integer> best = new Entry<Integer, Integer>() {
 
                     public Integer getKey() {
-                        // TODO Auto-generated method stub
                         return -1;
                     }
 
                     public Integer getValue() {
-                        // TODO Auto-generated method stub
                         return -1;
                     }
 
                     public Integer setValue(Integer value) {
-                        // TODO Auto-generated method stub
                         return -1;
                     }
                 };

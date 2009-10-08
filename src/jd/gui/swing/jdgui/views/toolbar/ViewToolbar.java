@@ -222,8 +222,6 @@ public class ViewToolbar extends JPanel implements ActionControllerListener {
      * @param ab
      */
     public void setDefaults(int i, AbstractButton ab) {
-        // TODO Auto-generated method stub
-
     }
 
     /**
@@ -234,13 +232,11 @@ public class ViewToolbar extends JPanel implements ActionControllerListener {
      * @return
      */
     public String getButtonConstraint(int i, ToolBarAction action) {
-        // TODO Auto-generated method stub
         if (halign == EAST) { return BUTTON_CONSTRAINTS + ", alignx right"; }
         return BUTTON_CONSTRAINTS;
     }
 
     public synchronized void onActionControlEvent(ActionControlEvent event) {
-    
     }
 
     /**

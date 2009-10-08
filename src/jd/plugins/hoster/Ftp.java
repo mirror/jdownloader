@@ -139,7 +139,5 @@ public class Ftp extends PluginForHost {
     }
 
     public void resetDownloadlink(DownloadLink link) {
-        // TODO Auto-generated method stub
-
     }
 }

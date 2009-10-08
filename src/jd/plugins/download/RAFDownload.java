@@ -373,8 +373,6 @@ public class RAFDownload extends DownloadInterface {
     }
 
     public static DownloadInterface download(DownloadLink downloadLink, Request request) throws Exception {
-
-        // TODO Auto-generated method stub
         return download(downloadLink, request, false, 1);
     }
 }

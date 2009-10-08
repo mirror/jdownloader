@@ -295,25 +295,16 @@ public class Subversion implements ISVNEventHandler {
             public void handleInfo(SVNInfo info) {
                 File file = info.getConflictWrkFile();
                 if (file != null) {
-
                     try {
-
                         resolveConflictedFile(info, info.getFile(), handler);
                         getWCClient().doResolve(info.getFile(), SVNDepth.INFINITY, null);
                         System.out.println(file);
-
                     } catch (Exception e) {
-                        // TODO Auto-generated catch block
                         e.printStackTrace();
                     }
                 }
-
             }
-
         });
-
-        //       
-
     }
 
     /**
@@ -334,7 +325,6 @@ public class Subversion implements ISVNEventHandler {
 
             });
         } catch (SVNException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
         return ret;
@@ -650,8 +640,6 @@ public class Subversion implements ISVNEventHandler {
      * WCClient
      */
     public void checkCancelled() throws SVNCancelException {
-        // TODO Auto-generated method stub
-
     }
 
     /**

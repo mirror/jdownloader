@@ -497,7 +497,6 @@ public class Rapidshare extends PluginForHost {
 
     @Override
     public HosterInfo getHosterInfo() {
-        // TODO Auto-generated method stub
         HosterInfo ret = new HosterInfo(this.getHost());
         ret.setFreeMaxWaittime(60 * 2 * 1000);
         ret.setFreeIPBlockWaittime(15 * 60 * 1000);

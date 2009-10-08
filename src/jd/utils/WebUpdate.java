@@ -370,7 +370,8 @@ public class WebUpdate {
 
         try {
 
-            MessageListener list;
+            @SuppressWarnings("unused")
+			MessageListener list;
             updater.getBroadcaster().addListener(list = new MessageListener() {
 
                 public void onMessage(MessageEvent event) {

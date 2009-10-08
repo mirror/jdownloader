@@ -67,14 +67,10 @@ public class Usershare extends PluginForHost {
 
     @Override
     public void reset() {
-        // TODO Auto-generated method stub
-
     }
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
-        // TODO Auto-generated method stub
-
     }
 
     /*

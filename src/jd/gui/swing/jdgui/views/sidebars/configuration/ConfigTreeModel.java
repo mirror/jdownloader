@@ -169,8 +169,6 @@ public class ConfigTreeModel implements TreeModel {
     }
 
     public void valueForPathChanged(TreePath path, Object newValue) {
-        // TODO Auto-generated method stub
-
     }
 
     static class TreeEntry {
@@ -185,7 +183,6 @@ public class ConfigTreeModel implements TreeModel {
         }
 
         public TreeEntry setIcon(String string) {
-            // TODO Auto-generated method stub
             iconKey = string;
             icon = JDTheme.II(string, 20, 20);
             return this;
@@ -268,7 +265,6 @@ public class ConfigTreeModel implements TreeModel {
             this.title = l;
             this.entries = new ArrayList<TreeEntry>();
             PANELS.put(class1, this);
-
         }
 
         public SingletonPanel getPanel() {
@@ -284,12 +280,10 @@ public class ConfigTreeModel implements TreeModel {
         }
 
         public int indexOf(Object child) {
-
             return entries.indexOf(child);
         }
 
         public int size() {
-
             return entries.size();
         }
 
@@ -300,7 +294,6 @@ public class ConfigTreeModel implements TreeModel {
 
         public void add(TreeEntry treeEntry) {
             entries.add(treeEntry);
-
         }
 
         public TreeEntry(String l) {
@@ -317,9 +310,7 @@ public class ConfigTreeModel implements TreeModel {
             this.panel = new SingletonPanel(panel);
             this.title = host;
             this.entries = new ArrayList<TreeEntry>();
-
         }
-
     }
 
     private void fireTreeStructureChanged(TreePath path) {

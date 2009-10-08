@@ -136,10 +136,8 @@ public class HTTPDownload extends DownloadInterface {
                             // th.interrupt();
 
                         } catch (Exception e) {
-                            // TODO Auto-generated catch block
                             JDLogger.exception(e);
                         }
-
                     }
                 }.start();
                 dl.start();
@@ -158,7 +156,6 @@ public class HTTPDownload extends DownloadInterface {
                 }
             }
         } catch (Exception e) {
-            // TODO Auto-generated catch block
             JDLogger.exception(e);
         }
     }
@@ -183,7 +180,6 @@ public class HTTPDownload extends DownloadInterface {
      * @throws InterruptedException
      */
     private void updateChunks() throws BrowserException, InterruptedException {
-        // TODO Auto-generated method stub
         if (chunks == null || !chunks.isHasStarted()) return;
         int num = getActiveChunks();
         if (num == desiredChunkNum) return;
@@ -300,10 +296,8 @@ public class HTTPDownload extends DownloadInterface {
     // try {
     // writeWaitingChunk();
     // } catch (InterruptedException e) {
-    // // TODO Auto-generated catch block
     // JDLogger.exception(e);
     // } catch (IOException e) {
-    // // TODO Auto-generated catch block
     // JDLogger.exception(e);
     // }
     //
@@ -467,10 +461,8 @@ public class HTTPDownload extends DownloadInterface {
 
                     updateChunks();
                 } catch (BrowserException e) {
-                    // TODO Auto-generated catch block
                     JDLogger.exception(e);
                 } catch (InterruptedException e) {
-                    // TODO Auto-generated catch block
                     JDLogger.exception(e);
                 }
                 updateSpeedMeters();
@@ -481,7 +473,6 @@ public class HTTPDownload extends DownloadInterface {
                 for (int i = 0; i < chunks.size(); i++) {
                     ((DownloadChunk) chunks.get(i)).resetSpeedMeter();
                 }
-
             }
 
             // @Override
@@ -492,13 +483,10 @@ public class HTTPDownload extends DownloadInterface {
                 try {
                     updateChunks();
                 } catch (BrowserException e) {
-                    // TODO Auto-generated catch block
                     JDLogger.exception(e);
                 } catch (InterruptedException e) {
-                    // TODO Auto-generated catch block
                     JDLogger.exception(e);
                 }
-
             }
 
         });
@@ -543,9 +531,7 @@ public class HTTPDownload extends DownloadInterface {
      * Liest die file.name.jdp (J_dD_ownloadP_rogress) Datei ein.
      */
     private boolean importResumeInfos() {
-        // TODO Auto-generated method stub
         return false;
-
     }
 
     //
@@ -661,7 +647,6 @@ public class HTTPDownload extends DownloadInterface {
 
     // @Override
     public long getBandwidthLimit() {
-        // TODO Auto-generated method stub
         return this.bandwidthLimit;
     }
 

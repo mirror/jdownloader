@@ -398,12 +398,9 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
     @Override
     public void onClosed() {
         DownloadView.getInstance().setInfoPanel(null);
-
     }
 
     public void focusGained(FocusEvent e) {
-        // TODO Auto-generated method stub
-
     }
 
     public void focusLost(FocusEvent e) {
