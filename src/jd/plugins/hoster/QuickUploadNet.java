@@ -21,6 +21,7 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 
 import jd.PluginWrapper;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -65,7 +66,7 @@ public class QuickUploadNet extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        br.setFollowRedirects(true);
+        br.setFollowRedirects(false);
         // Form um auf free zu "klicken"
         Form DLForm0 = br.getForm(0);
         if (DLForm0 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
@@ -99,19 +100,35 @@ public class QuickUploadNet extends PluginForHost {
         int tt = Integer.parseInt(br.getRegex("countdown\">(\\d+)</span>").getMatch(0));
         sleep(tt * 1001, downloadLink);
         br.submitForm(DLForm);
-        if (br.containsHTML("Wrong password")) {
-            logger.warning("Wrong password!");
-            downloadLink.setProperty("pass", null);
-            throw new PluginException(LinkStatus.ERROR_RETRY);
+        String dllink = br.getRedirectLocation();
+        URLConnectionAdapter con2 = br.getHttpConnection();
+        if (con2.getContentType().contains("html")) {
+            String error = br.getRegex("class=\"err\">(.*?)</font>").getMatch(0);
+            if (error != null) {
+                logger.warning(error);
+                con2.disconnect();
+                if (error.equalsIgnoreCase("Wrong captcha") || error.equalsIgnoreCase("Expired session")) {
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, error, 10000);
+                }
+            }
+            if (br.containsHTML("Wrong password")) {
+                logger.warning("Wrong password!");
+                downloadLink.setProperty("pass", null);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+            if (br.containsHTML("Wrong captcha")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (br.containsHTML("Download Link Generated")) {
+                dllink = br.getRegex("dotted #bbb;padding:7px;\">.*?<a href=\"(.*?)\">.*?</a>.*?</span>.*?<br><br><br>").getMatch(0);
+            }
         }
         if (passCode != null) {
             downloadLink.setProperty("pass", passCode);
         }
 
-        if (br.containsHTML("Wrong captcha")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        String dllink = br.getRegex("dotted #bbb;padding:7px;\">.*?<a href=\"(.*?)\">.*?</a>.*?</span>.*?<br><br><br>").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         dl.startDownload();
     }
 
