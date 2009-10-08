@@ -34,7 +34,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megavideo.com" }, urls = { "http://[\\w\\.]*?megavideo\\.com/.*?v=[a-zA-Z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megavideo.com" }, urls = { "http://[\\w\\.]*?megavideo\\.com/.*?(v|d)=[a-zA-Z0-9]+" }, flags = { 2 })
 public class MegaVideo extends PluginForHost {
 
     public MegaVideo(PluginWrapper wrapper) {
@@ -49,7 +49,18 @@ public class MegaVideo extends PluginForHost {
 
     public String getDownloadID(DownloadLink link) throws MalformedURLException {
         HashMap<String, String> p = Request.parseQuery(link.getDownloadURL());
-        return p.get("v").toUpperCase();
+        String ret = p.get("v");
+        if (ret == null) {
+            try {
+                Browser br = new Browser();
+                br.setCookie("http://www.megavideo.com", "l", "en");
+                br.getPage(link.getDownloadURL());
+                ret = br.getRegex("previewplayer/\\?v=(.*?)&width").getMatch(0);
+            } catch (Exception e) {
+            }
+        }
+        if (ret == null) ret = "";
+        return ret.toUpperCase();
     }
 
     public void correctDownloadLink(DownloadLink link) throws Exception {

@@ -36,7 +36,6 @@ import jd.gui.swing.jdgui.settings.panels.premium.Columns.UsedSpaceColumn;
 import jd.gui.swing.jdgui.settings.panels.premium.Columns.UserColumn;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 public class PremiumJTableModel extends JDTableModel {
@@ -53,7 +52,7 @@ public class PremiumJTableModel extends JDTableModel {
 
     public PremiumJTableModel(String configname) {
         super(configname);
-        plugins = JDUtilities.getPluginsForHost();
+        plugins = HostPluginWrapper.getHostWrapper();
         hosts = new TreeMap<String, HostAccounts>();
         this.addColumn(new HosterColumn(JDL.L(IDENT_PREFIX + "hoster", "Hoster"), this));
         this.addColumn(new EnabledColumn(JDL.L(IDENT_PREFIX + "enabled", "Enabled"), this));

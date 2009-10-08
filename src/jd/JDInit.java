@@ -223,12 +223,8 @@ public class JDInit {
             JDLogger.exception(e);
         }
         try {
-            loadPluginForDecrypt();
-            loadPluginForHost();
             loadCPlugins();
-
             loadPluginOptional();
-
             for (final OptionalPluginWrapper plg : OptionalPluginWrapper.getOptionalWrapper()) {
                 if (plg.isLoaded()) {
                     try {
@@ -413,8 +409,7 @@ public class JDInit {
         }
     }
 
-    public void loadPluginForDecrypt() {
-
+    public static void loadPluginForDecrypt() {
         try {
             for (Class<?> c : ClassFinder.getClasses("jd.plugins.decrypter", getPluginClassLoader())) {
                 try {
@@ -463,14 +458,12 @@ public class JDInit {
                         }
                     }
                 } catch (Throwable e) {
-
                     JDLogger.exception(e);
                 }
             }
         } catch (Throwable e) {
             JDLogger.exception(e);
         }
-
     }
 
     /**
@@ -495,7 +488,7 @@ public class JDInit {
         return CL;
     }
 
-    public void loadPluginForHost() {
+    public static void loadPluginForHost() {
         try {
             for (Class<?> c : ClassFinder.getClasses("jd.plugins.hoster", getPluginClassLoader())) {
                 try {

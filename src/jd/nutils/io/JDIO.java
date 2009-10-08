@@ -322,61 +322,46 @@ public class JDIO {
     }
 
     /**
-     * Zum Kopieren von einem Ort zum anderen
+     * copy one file to another, using channels
      * 
      * @param in
      * @param out
-     * @throws IOException
+     * @returns boolean whether its succeessfull or not
      */
     public static boolean copyFile(File in, File out) {
+        if (!in.exists()) return false;
         FileChannel inChannel = null;
-
         FileChannel outChannel = null;
+        boolean success = false;
         try {
-            if (!out.exists()) {
-                out.getParentFile().mkdirs();
-                out.createNewFile();
+            try {
+                inChannel = new FileInputStream(in).getChannel();
+                outChannel = new FileOutputStream(out).getChannel();
+            } catch (Exception e1) {
+                return false;
             }
-            inChannel = new FileInputStream(in).getChannel();
-
-            outChannel = new FileOutputStream(out).getChannel();
-
-            inChannel.transferTo(0, inChannel.size(), outChannel);
-
-            return true;
-        } catch (FileNotFoundException e1) {
-
-            JDLogger.exception(e1);
-            if (inChannel != null) {
-                try {
-                    inChannel.close();
-
-                    if (outChannel != null) {
-                        outChannel.close();
-                    }
-                } catch (IOException e) {
-
-                    JDLogger.exception(e);
-                    return false;
+            try {
+                // magic number for Windows, 64Mb - 32Kb), we use 16Mb here
+                int maxCount = (16 * 1024 * 1024) - (32 * 1024);
+                long size = inChannel.size();
+                long position = 0;
+                while (position < size) {
+                    position += inChannel.transferTo(position, maxCount, outChannel);
                 }
+                success = true;
+            } catch (Exception e) {
             }
-            return false;
-        } catch (IOException e) {
-            JDLogger.exception(e);
-        }
-        try {
-            if (inChannel != null) {
+        } finally {
+            if (inChannel != null) try {
                 inChannel.close();
+            } catch (Exception e) {
             }
-
-            if (outChannel != null) {
+            if (outChannel != null) try {
                 outChannel.close();
+            } catch (Exception e) {
             }
-        } catch (IOException e) {
-            JDLogger.exception(e);
-            return false;
         }
-        return true;
+        return success;
     }
 
     public static boolean removeDirectoryOrFile(File dir) {

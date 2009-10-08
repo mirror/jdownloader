@@ -38,7 +38,6 @@ import jd.plugins.HosterInfo;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
-import jd.utils.JDUtilities;
 
 import org.junit.After;
 import org.junit.Before;
@@ -53,8 +52,8 @@ public class SingleHoster {
     public void setUp() {
 
         TestUtils.mainInit();
-        //TestUtils.initGUI();
-      
+        // TestUtils.initGUI();
+
         UserIO.setInstance(UserIOGui.getInstance());
         TestUtils.initDecrypter();
         TestUtils.initContainer();
@@ -84,7 +83,7 @@ public class SingleHoster {
                 main: for (String l : links) {
                     try {
                         if (l.toLowerCase().contains(d.toLowerCase()) && new URL(l).getHost().toLowerCase().contains(d.toLowerCase())) {
-                            for (HostPluginWrapper pw : JDUtilities.getPluginsForHost()) {
+                            for (HostPluginWrapper pw : HostPluginWrapper.getHostWrapper()) {
 
                                 if (pw.canHandle(l)) {
 

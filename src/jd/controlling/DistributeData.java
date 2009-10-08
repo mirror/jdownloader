@@ -40,7 +40,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDTheme;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 /**
@@ -127,14 +126,14 @@ public class DistributeData extends Thread {
         for (DecryptPluginWrapper pDecrypt : DecryptPluginWrapper.getDecryptWrapper()) {
             if (pDecrypt.usePlugin() && pDecrypt.canHandle(data)) return true;
         }
-        for (HostPluginWrapper pHost : JDUtilities.getPluginsForHost()) {
+        for (HostPluginWrapper pHost : HostPluginWrapper.getHostWrapper()) {
             if (pHost.usePlugin() && pHost.canHandle(data)) return true;
         }
         data = Encoding.urlDecode(data, true);
         for (DecryptPluginWrapper pDecrypt : DecryptPluginWrapper.getDecryptWrapper()) {
             if (pDecrypt.usePlugin() && pDecrypt.canHandle(data)) return true;
         }
-        for (HostPluginWrapper pHost : JDUtilities.getPluginsForHost()) {
+        for (HostPluginWrapper pHost : HostPluginWrapper.getHostWrapper()) {
             if (pHost.usePlugin() && pHost.canHandle(data)) return true;
         }
         if (!filterNormalHTTP) {
@@ -143,7 +142,7 @@ public class DistributeData extends Thread {
             for (DecryptPluginWrapper pDecrypt : DecryptPluginWrapper.getDecryptWrapper()) {
                 if (pDecrypt.usePlugin() && pDecrypt.canHandle(data)) return true;
             }
-            for (HostPluginWrapper pHost : JDUtilities.getPluginsForHost()) {
+            for (HostPluginWrapper pHost : HostPluginWrapper.getHostWrapper()) {
                 if (pHost.usePlugin() && pHost.canHandle(data)) return true;
             }
         }
@@ -299,7 +298,7 @@ public class DistributeData extends Thread {
          * multiple links without new line
          */
         if (new Regex(data, " http").count() > 1) return null;
-        for (HostPluginWrapper pw : JDUtilities.getPluginsForHost()) {
+        for (HostPluginWrapper pw : HostPluginWrapper.getHostWrapper()) {
             Pattern pattern = pw.getPattern();
 
             if (lowercasedata.contains(pw.getHost().toLowerCase())) {
@@ -319,8 +318,8 @@ public class DistributeData extends Thread {
     private ArrayList<DownloadLink> findLinksIntern() {
 
         ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
-        if (JDUtilities.getPluginsForHost() == null) return new ArrayList<DownloadLink>();
-
+        ArrayList<HostPluginWrapper> pHostAll = HostPluginWrapper.getHostWrapper();
+        if (pHostAll.size() == 0) return new ArrayList<DownloadLink>();
         this.orgData = data;
         reformDataString();
         // es werden die entschlüsselten Links (soweit überhaupt
@@ -330,7 +329,7 @@ public class DistributeData extends Thread {
         // Edit Coa:
         // Hier werden auch die SourcePLugins in die Downloadlinks gesetzt
         ArrayList<DownloadLink> alldecrypted = handleDecryptPlugins();
-        ArrayList<HostPluginWrapper> pHostAll = JDUtilities.getPluginsForHost();
+
         for (DownloadLink decrypted : alldecrypted) {
             if (!checkdecrypted(pHostAll, links, decrypted)) {
                 if (decrypted.getDownloadURL() != null) {
@@ -382,7 +381,7 @@ public class DistributeData extends Thread {
     }
 
     private void useHoster(ArrayList<DownloadLink> links) {
-        for (HostPluginWrapper pHost : JDUtilities.getPluginsForHost()) {
+        for (HostPluginWrapper pHost : HostPluginWrapper.getHostWrapper()) {
             if (pHost.canHandle(pHost.isAcceptOnlyURIs() ? data : orgData)) {
                 ArrayList<DownloadLink> dl = pHost.getPlugin().getDownloadLinks(pHost.isAcceptOnlyURIs() ? data : orgData, null);
                 if (pHost.isAcceptOnlyURIs()) {
@@ -480,7 +479,11 @@ public class DistributeData extends Thread {
 
     // @Override
     public void run() {
-
+        /*
+         * check if there are any links (we need at least a domain and
+         * protocoll)
+         */
+        if (data == null || data.length() == 0 || !data.matches(".*?://.*?\\..+")) return;
         ArrayList<DownloadLink> links = findLinks();
 
         if (links.size() == 0 && !disableDeepEmergencyScan) {

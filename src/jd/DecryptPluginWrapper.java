@@ -18,14 +18,27 @@ package jd;
 
 import java.util.ArrayList;
 
+import jd.controlling.JDLogger;
 import jd.nutils.Formatter;
 import jd.plugins.PluginForDecrypt;
 
 public class DecryptPluginWrapper extends PluginWrapper {
     private static final ArrayList<DecryptPluginWrapper> DECRYPT_WRAPPER = new ArrayList<DecryptPluginWrapper>();
+    private static volatile boolean uninitialized = true;
+    public static Object LOCK = new Object();
 
     public static ArrayList<DecryptPluginWrapper> getDecryptWrapper() {
-        return DECRYPT_WRAPPER;
+        synchronized (LOCK) {
+            if (uninitialized) {
+                try {
+                    JDInit.loadPluginForDecrypt();
+                } catch (Throwable e) {
+                    JDLogger.exception(e);
+                }
+                uninitialized = false;
+            }
+            return DECRYPT_WRAPPER;
+        }
     }
 
     private String revision;
@@ -33,7 +46,9 @@ public class DecryptPluginWrapper extends PluginWrapper {
     public DecryptPluginWrapper(String host, String classNamePrefix, String className, String patternSupported, int flags, String revision) {
         super(host, classNamePrefix, className, patternSupported, flags);
         this.revision = Formatter.getRevision(revision);
-        DECRYPT_WRAPPER.add(this);
+        synchronized (LOCK) {
+            DECRYPT_WRAPPER.add(this);
+        }
     }
 
     // public DecryptPluginWrapper(String host, String className, String

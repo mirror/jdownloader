@@ -36,8 +36,10 @@ public class CaptchaController {
     private File captchafile;
     private String explain;
     private String suggest;
+    private String host;
 
-    public CaptchaController(String method, File file, String suggest, String explain) {
+    public CaptchaController(String host, String method, File file, String suggest, String explain) {
+        this.host = host != null ? host : "unknown";
         this.methodname = method;
         this.captchafile = file;
         this.explain = explain;
@@ -55,10 +57,10 @@ public class CaptchaController {
 
     public String getCode(int flag) {
 
-        if ((flag & UserIO.NO_JAC) > 0) return UserIO.getInstance().requestCaptchaDialog(flag, methodname, captchafile, suggest, explain);
+        if ((flag & UserIO.NO_JAC) > 0) return UserIO.getInstance().requestCaptchaDialog(flag, host, methodname, captchafile, suggest, explain);
         if (!isMethodEnabled()) {
             if ((flag & UserIO.NO_USER_INTERACTION) > 0) return null;
-            return UserIO.getInstance().requestCaptchaDialog(flag | UserIO.NO_JAC, methodname, captchafile, suggest, explain);
+            return UserIO.getInstance().requestCaptchaDialog(flag | UserIO.NO_JAC, host, methodname, captchafile, suggest, explain);
         }
 
         JAntiCaptcha jac = new JAntiCaptcha(methodname);
@@ -70,7 +72,7 @@ public class CaptchaController {
             if (jac.isExtern()) {
                 if ((flag & UserIO.NO_USER_INTERACTION) == 0 && captchaCode == null || captchaCode.trim().length() == 0) {
 
-                    captchaCode = UserIO.getInstance().requestCaptchaDialog(flag | UserIO.NO_JAC, methodname, captchafile, suggest, explain);
+                    captchaCode = UserIO.getInstance().requestCaptchaDialog(flag | UserIO.NO_JAC, host, methodname, captchafile, suggest, explain);
                 }
                 return captchaCode;
 
@@ -94,7 +96,7 @@ public class CaptchaController {
 
             if (vp > SubConfiguration.getConfig("JAC").getIntegerProperty(Configuration.AUTOTRAIN_ERROR_LEVEL, 95)) {
                 if ((flag & UserIO.NO_USER_INTERACTION) > 0) return captchaCode;
-                return UserIO.getInstance().requestCaptchaDialog(flag | UserIO.NO_JAC, methodname, captchafile, captchaCode, explain);
+                return UserIO.getInstance().requestCaptchaDialog(flag | UserIO.NO_JAC, host, methodname, captchafile, captchaCode, explain);
             } else {
                 return captchaCode;
             }

@@ -289,7 +289,7 @@ public abstract class PluginsC extends Plugin {
      * @return Das gefundene Plugin oder null
      */
     protected PluginForHost findHostPlugin(String data) {
-        for (HostPluginWrapper pHost : JDUtilities.getPluginsForHost()) {
+        for (HostPluginWrapper pHost : HostPluginWrapper.getHostWrapper()) {
             if (pHost.canHandle(data)) return pHost.getPlugin();
         }
         return null;

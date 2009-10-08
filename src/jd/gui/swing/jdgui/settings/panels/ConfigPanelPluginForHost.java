@@ -41,7 +41,6 @@ import jd.gui.swing.dialog.AgbDialog;
 import jd.gui.swing.jdgui.menu.PremiumMenu;
 import jd.gui.swing.jdgui.settings.ConfigPanel;
 import jd.utils.JDTheme;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
@@ -146,7 +145,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
 
     public ConfigPanelPluginForHost(Configuration configuration) {
         super();
-        pluginsForHost = JDUtilities.getPluginsForHost();
+        pluginsForHost = new ArrayList<HostPluginWrapper>(HostPluginWrapper.getHostWrapper());
         Collections.sort(pluginsForHost);
         initPanel();
         load();

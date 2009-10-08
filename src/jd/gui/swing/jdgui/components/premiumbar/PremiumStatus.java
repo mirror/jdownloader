@@ -73,12 +73,10 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
     private Timer updateIntervalTimer;
     private boolean updateinprogress = false;
     private JPopupMenu popup;
-    private ArrayList<HostPluginWrapper> hosterplugins;
     private boolean guiInitComplete = false;
 
     public PremiumStatus() {
         super();
-        hosterplugins = JDUtilities.getPluginsForHost();
         bars = new TinyProgressBar[BARCOUNT];
         lbl = new JLabel(JDL.L("gui.statusbar.premiumloadlabel", "< Add Accounts"));
         setName(JDL.L("quickhelp.premiumstatusbar", "Premium statusbar"));
@@ -184,7 +182,7 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
     private synchronized void updatePremium() {
         updating = true;
         String id = JDController.requestDelayExit("updatePremium");
-        for (HostPluginWrapper wrapper : hosterplugins) {
+        for (HostPluginWrapper wrapper : HostPluginWrapper.getHostWrapper()) {
             String host = wrapper.getHost();
             if (wrapper.isLoaded() && wrapper.usePlugin()) {
                 ArrayList<Account> accs = AccountController.getInstance().getAllAccounts(host);
@@ -210,7 +208,7 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
                         bars[i].setVisible(false);
                     }
                     boolean enabled = false;
-                    for (HostPluginWrapper wrapper : hosterplugins) {
+                    for (HostPluginWrapper wrapper : HostPluginWrapper.getHostWrapper()) {
                         String host = wrapper.getHost();
                         if (wrapper.isLoaded() && wrapper.usePlugin()) {
                             ArrayList<Account> accs = AccountController.getInstance().getAllAccounts(host);

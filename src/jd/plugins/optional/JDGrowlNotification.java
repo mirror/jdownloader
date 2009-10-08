@@ -27,6 +27,7 @@ import jd.event.ControlEvent;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.nutils.Executer;
 import jd.nutils.OSDetector;
+import jd.nutils.io.JDIO;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.OptionalPlugin;
@@ -47,9 +48,17 @@ public class JDGrowlNotification extends PluginOptional {
     @Override
     public boolean initAddon() {
         JDUtilities.getController().addControlListener(this);
-        logger.info("Growl OK");
-
-        return true;
+        /*
+         * because something blocks file after first usage, we copy it to temp
+         * one, so updater can update it if needed
+         */
+        if (!JDIO.copyFile(JDUtilities.getResourceFile("jd/osx/growlNotification.scpt"), JDUtilities.getResourceFile("tmp/growlNotification.scpt", true))) {
+            logger.info("Growl Failed");
+            return false;
+        } else {
+            logger.info("Growl OK");
+            return true;
+        }
     }
 
     @Override
@@ -83,7 +92,7 @@ public class JDGrowlNotification extends PluginOptional {
     private void growlNotification(String headline, String message, String title) {
         if (OSDetector.isMac()) {
             Executer exec = new Executer("/usr/bin/osascript");
-            exec.addParameter(JDUtilities.getResourceFile("jd/osx/growlNotification.scpt").getAbsolutePath());
+            exec.addParameter(JDUtilities.getResourceFile("tmp/growlNotification.scpt").getAbsolutePath());
             exec.addParameter(headline);
             exec.addParameter(message);
             exec.addParameter(title);

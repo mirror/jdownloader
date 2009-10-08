@@ -223,18 +223,18 @@ public class Schedule extends PluginOptional {
             super("Schedulercheck");
         }
 
-        private boolean updateTimer(Actions a) {
+        private boolean updateTimer(Actions a, long curtime) {
             /* update timer of the action */
             if (a.getRepeat() == 0) {
                 /* we do not have to update timers for disabled repeats */
             } else {
                 /* we have to update timer */
-                Long timestamp = a.getDate().getTime();
-                Long currenttime = System.currentTimeMillis();
-                /* remove secs and milisecs */
-                currenttime = (currenttime / (60 * 1000));
-                currenttime = currenttime * (60 * 1000);
+                long timestamp = a.getDate().getTime();
+                long currenttime = curtime;
                 if (timestamp <= currenttime) {
+                    /* remove secs and milisecs */
+                    currenttime = (currenttime / (60 * 1000));
+                    currenttime = currenttime * (60 * 1000);
                     long add = a.getRepeat() * 60 * 1000l;
                     /* timestamp expired , set timestamp */
                     while (timestamp <= currenttime) {
@@ -254,7 +254,8 @@ public class Schedule extends PluginOptional {
             while (running) {
                 logger.finest("Checking scheduler");
                 /* getting current date and time */
-                today = new Date(System.currentTimeMillis());
+                long currenttime = System.currentTimeMillis();
+                today = new Date(currenttime);
                 String todaydate = date.format(today);
                 String todaytime = time.format(today);
                 boolean savechanges = false;
@@ -269,7 +270,7 @@ public class Schedule extends PluginOptional {
                         }
                     }
                     /* update timer */
-                    if (updateTimer(a)) savechanges = true;
+                    if (updateTimer(a, currenttime)) savechanges = true;
                 }
                 if (savechanges) {
                     saveActions();

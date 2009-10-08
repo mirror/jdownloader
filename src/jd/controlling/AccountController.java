@@ -151,7 +151,7 @@ public class AccountController extends SubConfiguration implements ActionListene
         asyncSaveIntervalTimer.setInitialDelay(2000);
         asyncSaveIntervalTimer.setRepeats(false);
         hosteraccounts = loadAccounts();
-        importOld();        
+        importOld();
         broadcaster.addListener(this);
     }
 
@@ -291,7 +291,7 @@ public class AccountController extends SubConfiguration implements ActionListene
 
     private void importOldAccounts() {
         if (getBooleanProperty("oldimported21", false)) return;
-        for (HostPluginWrapper wrapper : JDUtilities.getPluginsForHost()) {
+        for (HostPluginWrapper wrapper : HostPluginWrapper.getHostWrapper()) {
             ArrayList<Account> list = wrapper.getPluginConfig().getGenericProperty("PREMIUM", new ArrayList<Account>());
             for (Account acc : list) {
                 addAccount(wrapper.getHost(), acc);
@@ -304,7 +304,7 @@ public class AccountController extends SubConfiguration implements ActionListene
     private void importOldAccounts2() {
         if (getBooleanProperty("oldimported22", false)) return;
         SubConfiguration sub = SubConfiguration.getConfig("AccountManager");
-        for (HostPluginWrapper wrapper : JDUtilities.getPluginsForHost()) {
+        for (HostPluginWrapper wrapper : HostPluginWrapper.getHostWrapper()) {
             ArrayList<Account> list = sub.getGenericProperty(wrapper.getHost(), new ArrayList<Account>());
             for (Account acc : list) {
                 addAccount(wrapper.getHost(), acc);

@@ -23,6 +23,7 @@ import java.util.logging.Level;
 import javax.swing.JFrame;
 
 import jd.DecryptPluginWrapper;
+import jd.HostPluginWrapper;
 import jd.JDInit;
 import jd.Main;
 import jd.OptionalPluginWrapper;
@@ -201,13 +202,11 @@ public abstract class TestUtils {
     public static void initDecrypter() {
         if (DecryptPluginWrapper.getDecryptWrapper().size() > 0) return;
 
-        jdi.loadPluginForDecrypt();
     }
 
     public static void initHosts() {
-        if (JDUtilities.getPluginsForHost().size() > 0) return;
+        if (HostPluginWrapper.getHostWrapper().size() > 0) return;
 
-        jdi.loadPluginForHost();
     }
 
     public static void initOptionalPlugins() {

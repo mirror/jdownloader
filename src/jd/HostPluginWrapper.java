@@ -21,14 +21,27 @@ import java.util.ArrayList;
 import javax.swing.ImageIcon;
 
 import jd.config.container.JDLabelContainer;
+import jd.controlling.JDLogger;
 import jd.nutils.Formatter;
 import jd.plugins.PluginForHost;
 
 public class HostPluginWrapper extends PluginWrapper implements JDLabelContainer {
     private static final ArrayList<HostPluginWrapper> HOST_WRAPPER = new ArrayList<HostPluginWrapper>();
+    private static boolean uninitialized = true;
+    public static Object LOCK = new Object();
 
     public static ArrayList<HostPluginWrapper> getHostWrapper() {
-        return HOST_WRAPPER;
+        synchronized (LOCK) {
+            if (uninitialized) {
+                try {
+                    JDInit.loadPluginForHost();
+                } catch (Throwable e) {
+                    JDLogger.exception(e);
+                }
+                uninitialized = false;
+            }
+            return HOST_WRAPPER;
+        }
     }
 
     private static final String AGB_CHECKED = "AGB_CHECKED";
@@ -37,7 +50,9 @@ public class HostPluginWrapper extends PluginWrapper implements JDLabelContainer
     public HostPluginWrapper(String host, String classNamePrefix, String className, String patternSupported, int flags, String revision) {
         super(host, classNamePrefix, className, patternSupported, flags);
         this.revision = Formatter.getRevision(revision);
-        HOST_WRAPPER.add(this);
+        synchronized (LOCK) {
+            HOST_WRAPPER.add(this);
+        }
     }
 
     public HostPluginWrapper(String host, String simpleName, String pattern, int i, String revision) {

@@ -24,7 +24,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.logging.Logger;
 
-import jd.DecryptPluginWrapper;
+import jd.HostPluginWrapper;
 import jd.JDInitFlags;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
@@ -266,7 +266,7 @@ public class WebUpdate {
                 }
 
                 // only ignore updaterequest of all plugins are present
-                if (DecryptPluginWrapper.getDecryptWrapper().size() > 50 && !JDInitFlags.SWITCH_RETURNED_FROM_UPDATE && !forceguiCall && SubConfiguration.getConfig("WEBUPDATE").getBooleanProperty(Configuration.PARAM_WEBUPDATE_DISABLE, false)) {
+                if (HostPluginWrapper.getHostWrapper().size() > 50 && !JDInitFlags.SWITCH_RETURNED_FROM_UPDATE && !forceguiCall && SubConfiguration.getConfig("WEBUPDATE").getBooleanProperty(Configuration.PARAM_WEBUPDATE_DISABLE, false)) {
                     logger.severe("Webupdater disabled");
                     JDController.releaseDelayExit(id);
                     UPDATE_IN_PROGRESS = false;
@@ -374,7 +374,7 @@ public class WebUpdate {
             updater.getBroadcaster().addListener(list = new MessageListener() {
 
                 public void onMessage(MessageEvent event) {
-                    pc.setStatusText(event.getMessage()+" "+JDL.L("jd.utils.WebUpdate.doPluginUpdate","[Restart on plugin out of date errors]"));
+                    pc.setStatusText(event.getMessage() + " " + JDL.L("jd.utils.WebUpdate.doPluginUpdate", "[Restart on plugin out of date errors]"));
 
                 }
 
@@ -383,16 +383,16 @@ public class WebUpdate {
             System.out.println("UPdate: " + files);
 
             updater.updateFiles(files, pc);// copies plugins
-            
-            //please check:
-           boolean restart=false;
+
+            // please check:
+            boolean restart = false;
             for (Iterator<FileUpdate> it = files.iterator(); it.hasNext();) {
                 FileUpdate f = it.next();
-             //try to rename NOW
-                if (!((!f.getLocalFile().exists()||f.getLocalFile().delete()) && (f.getLocalTmpFile().renameTo(f.getLocalFile())))) {
-                    restart=true;
+                // try to rename NOW
+                if (!((!f.getLocalFile().exists() || f.getLocalFile().delete()) && (f.getLocalTmpFile().renameTo(f.getLocalFile())))) {
+                    restart = true;
                     // has not been updated
-                   // it.remove();
+                    // it.remove();
                 } else {
                     File parent = f.getLocalTmpFile().getParentFile();
 
@@ -402,9 +402,9 @@ public class WebUpdate {
                     }
                 }
             }
-            if(restart){
-              
-                Balloon.show(JDL.L("jd.utils.WebUpdate.doPluginUpdate.title","Restart recommended"), null, JDL.L("jd.utils.WebUpdate.doPluginUpdate.message","Some Plugins have been updated\r\nYou should restart JDownloader."));
+            if (restart) {
+
+                Balloon.show(JDL.L("jd.utils.WebUpdate.doPluginUpdate.title", "Restart recommended"), null, JDL.L("jd.utils.WebUpdate.doPluginUpdate.message", "Some Plugins have been updated\r\nYou should restart JDownloader."));
             }
 
         } catch (Exception e) {

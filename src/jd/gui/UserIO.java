@@ -116,13 +116,13 @@ public abstract class UserIO {
         INSTANCE = instance;
     }
 
-    public String requestCaptchaDialog(int flag, String methodname, File captchafile, String suggestion, String explain) {
+    public String requestCaptchaDialog(int flag, String host, String methodname, File captchafile, String suggestion, String explain) {
         synchronized (INSTANCE) {
-            return showCaptchaDialog(flag, methodname, captchafile, suggestion, explain);
+            return showCaptchaDialog(flag, host, methodname, captchafile, suggestion, explain);
         }
     }
 
-    abstract protected String showCaptchaDialog(int flag, String methodname, File captchafile, String suggestion, String explain);
+    abstract protected String showCaptchaDialog(int flag, String host, String methodname, File captchafile, String suggestion, String explain);
 
     public Point requestClickPositionDialog(File imagefile, String title, String explain) {
         synchronized (INSTANCE) {

@@ -32,7 +32,6 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -69,10 +68,10 @@ public class TestLink {
             for (String l : links) {
                 try {
                     if (l.toLowerCase().contains(d.toLowerCase()) && new URL(l).getHost().toLowerCase().contains(d.toLowerCase())) {
-                        for (HostPluginWrapper pw : JDUtilities.getPluginsForHost()) {
+                        for (HostPluginWrapper pw : HostPluginWrapper.getHostWrapper()) {
 
                             if (pw.canHandle(l)) {
-                               // TestUtils.log(Encoding.urlDecode(l, true));
+                                // TestUtils.log(Encoding.urlDecode(l, true));
                                 DownloadLink dl = new DownloadLink((PluginForHost) pw.getNewPluginInstance(), null, pw.getHost(), Encoding.urlDecode(l, true), true);
                                 dl.isAvailable();
                                 if (dl.isAvailable()) {

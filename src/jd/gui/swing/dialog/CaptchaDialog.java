@@ -73,9 +73,12 @@ public class CaptchaDialog extends JCountdownDialog implements ActionListener, K
 
     private transient SwingWorker<Object, Object> jacWorker;
 
-    public CaptchaDialog(int flag, String methodname, File captchafile, String suggestion, String explain) {
+    private String host;
+
+    public CaptchaDialog(int flag, String host, String methodname, File captchafile, String suggestion, String explain) {
         super(SwingGui.getInstance().getMainFrame());
         this.flag = flag;
+        this.host = host;
         this.method = methodname;
         this.imagefile = captchafile;
         this.defaultValue = suggestion;
@@ -99,7 +102,7 @@ public class CaptchaDialog extends JCountdownDialog implements ActionListener, K
 
         textField = new JTextField(10);
         textField.addKeyListener(this);
-
+        setTitle(host);
         textField.setText(this.defaultValue);
         btnOK = new JButton(JDL.L("gui.btn_ok", "OK"));
         btnOK.addActionListener(this);
@@ -154,7 +157,7 @@ public class CaptchaDialog extends JCountdownDialog implements ActionListener, K
 
             // @Override
             protected Object doInBackground() throws Exception {
-                CaptchaController cc = new CaptchaController(method, imagefile, null, null);
+                CaptchaController cc = new CaptchaController(host, method, imagefile, null, null);
                 this.code = cc.getCode(flag | UserIO.NO_USER_INTERACTION);
                 return null;
             }
@@ -198,7 +201,7 @@ public class CaptchaDialog extends JCountdownDialog implements ActionListener, K
             jacWorker.cancel(true);
             jacWorker = null;
         }
-        setTitle(JDL.L("gui.captchaWindow.askForInput", "Please enter..."));
+        setTitle(host + ":" + JDL.L("gui.captchaWindow.askForInput", "Please enter..."));
     }
 
     public void keyReleased(KeyEvent e) {

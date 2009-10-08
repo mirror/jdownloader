@@ -29,7 +29,6 @@ import jd.HostPluginWrapper;
 import jd.controlling.AccountController;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 public class HosterMenu extends Menu {
@@ -39,7 +38,7 @@ public class HosterMenu extends Menu {
         PluginForHost plugin;
         JMenu pluginPopup;
         JMenuItem mi;
-        ArrayList<HostPluginWrapper> hosts = JDUtilities.getPluginsForHost();
+        ArrayList<HostPluginWrapper> hosts = new ArrayList<HostPluginWrapper>(HostPluginWrapper.getHostWrapper());
         Collections.sort(hosts, new Comparator<HostPluginWrapper>() {
 
             public int compare(HostPluginWrapper o1, HostPluginWrapper o2) {

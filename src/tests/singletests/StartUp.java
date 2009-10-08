@@ -19,6 +19,7 @@ package tests.singletests;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import jd.DecryptPluginWrapper;
+import jd.HostPluginWrapper;
 import jd.JDInit;
 import jd.OptionalPluginWrapper;
 import jd.controlling.AccountController;
@@ -105,16 +106,14 @@ public class StartUp {
 
     @Test
     public void Decrypter() {
-        jdi.loadPluginForDecrypt();
 
         assertTrue(DecryptPluginWrapper.getDecryptWrapper().size() > 0);
     }
 
     @Test
     public void Host() {
-        jdi.loadPluginForHost();
 
-        assertTrue(JDUtilities.getPluginsForHost().size() > 0);
+        assertTrue(HostPluginWrapper.getHostWrapper().size() > 0);
     }
 
     @Test

@@ -555,14 +555,14 @@ public class JDUtilities {
     }
 
     public static PluginForHost getPluginForHost(String host) {
-        for (HostPluginWrapper pHost : JDUtilities.getPluginsForHost()) {
+        for (HostPluginWrapper pHost : HostPluginWrapper.getHostWrapper()) {
             if (pHost.getHost().equals(host.toLowerCase())) return pHost.getPlugin();
         }
         return null;
     }
 
     public static PluginForHost getNewPluginForHostInstance(String host) {
-        for (HostPluginWrapper pHost : JDUtilities.getPluginsForHost()) {
+        for (HostPluginWrapper pHost : HostPluginWrapper.getHostWrapper()) {
             if (pHost.getHost().equals(host.toLowerCase())) return (PluginForHost) pHost.getNewPluginInstance();
         }
         return null;
@@ -575,17 +575,8 @@ public class JDUtilities {
         return null;
     }
 
-    /**
-     * Liefert alle Plugins zum Downloaden von einem Anbieter zurück.
-     * 
-     * @return Plugins zum Downloaden von einem Anbieter
-     */
-    public static ArrayList<HostPluginWrapper> getPluginsForHost() {
-        return new ArrayList<HostPluginWrapper>(HostPluginWrapper.getHostWrapper());
-    }
-
     public static ArrayList<HostPluginWrapper> getPremiumPluginsForHost() {
-        ArrayList<HostPluginWrapper> plugins = getPluginsForHost();
+        ArrayList<HostPluginWrapper> plugins = new ArrayList<HostPluginWrapper>(HostPluginWrapper.getHostWrapper());
         for (int i = plugins.size() - 1; i >= 0; --i) {
             if (!plugins.get(i).isPremiumEnabled()) plugins.remove(i);
         }
@@ -955,6 +946,12 @@ public class JDUtilities {
 
     public static String getDefaultDownloadDirectory() {
         return JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY, JDUtilities.getResourceFile("downloads").getAbsolutePath());
+    }
+
+    @Deprecated
+    /* only here so we have a fallback for old plugins */
+    public static ArrayList<HostPluginWrapper> getPluginsForHost() {
+        return HostPluginWrapper.getHostWrapper();
     }
 
 }
