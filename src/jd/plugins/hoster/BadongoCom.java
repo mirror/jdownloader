@@ -86,8 +86,9 @@ public class BadongoCom extends PluginForHost {
         }
         String filesize = br.getRegex(Pattern.compile("<div class=\"ffileinfo\">Ansichten.*?\\| Dateig.*?:(.*?)</div>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
         String filename = br.getRegex("<div class=\"finfo\">(.*?)</div>").getMatch(0);
-        long bytes = Regex.getSize(filesize);
+        
         if (filesize == null || filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        
         if (downloadLink.getStringProperty("type", "single").equalsIgnoreCase("single")) {
             downloadLink.setName(filename.trim());
             downloadLink.setDownloadSize(Regex.getSize(filesize.trim()));
@@ -95,6 +96,7 @@ public class BadongoCom extends PluginForHost {
             String parts = Formatter.fillString(downloadLink.getIntegerProperty("part", 1) + "", "0", "", 3);
             downloadLink.setName(filename.trim() + "." + parts);
             if (downloadLink.getIntegerProperty("part", 1) == downloadLink.getIntegerProperty("parts", 1)) {
+            	long bytes = Regex.getSize(filesize);
                 downloadLink.setDownloadSize(bytes - (downloadLink.getIntegerProperty("parts", 1) - 1) * 102400000l);
             } else {
                 downloadLink.setDownloadSize(102400000);
