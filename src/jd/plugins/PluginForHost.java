@@ -75,6 +75,7 @@ public abstract class PluginForHost extends Plugin {
         return getCaptchaCode(getHost(), captchaAddress, downloadLink);
     }
 
+    @Override
     public String getVersion() {
         return wrapper.getVersion();
     }
@@ -115,7 +116,7 @@ public abstract class PluginForHost extends Plugin {
                 e.printStackTrace();
             }
             DownloadController.getInstance().fireDownloadLinkUpdate(link);
-            String cc = new CaptchaController(link.getHost(), method, file, defaultValue, explain).getCode(flag);
+            String cc = new CaptchaController(getHost(), method, file, defaultValue, explain).getCode(flag);
 
             if (cc == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             return cc;
@@ -155,7 +156,7 @@ public abstract class PluginForHost extends Plugin {
         return false;
     }
 
-    // @Override
+    @Override
     public void clean() {
         dl = null;
         super.clean();
@@ -177,7 +178,7 @@ public abstract class PluginForHost extends Plugin {
         br.clearCookies(getHost());
     }
 
-    // @Override
+    @Override
     public void actionPerformed(ActionEvent e) {
         if (e.getID() == 1) {
             UserIF.getInstance().requestPanel(UserIF.Panels.CONFIGPANEL, config);
@@ -229,7 +230,7 @@ public abstract class PluginForHost extends Plugin {
         accountWithoutUsername = b;
     }
 
-    // @Override
+    @Override
     public ArrayList<MenuAction> createMenuitems() {
 
         if (!enablePremium) return null;

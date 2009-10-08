@@ -39,7 +39,7 @@ public class CaptchaController {
     private String host;
 
     public CaptchaController(String host, String method, File file, String suggest, String explain) {
-        this.host = host != null ? host : "unknown";
+        this.host = host;
         this.methodname = method;
         this.captchafile = file;
         this.explain = explain;

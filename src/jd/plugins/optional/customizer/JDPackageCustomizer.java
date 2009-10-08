@@ -122,7 +122,7 @@ public class JDPackageCustomizer extends PluginOptional implements LinkGrabberPa
         if (enableAction.isSelected()) {
             ArrayList<CustomizeSetting> settings = getPluginConfig().getGenericProperty(PROPERTY_SETTINGS, new ArrayList<CustomizeSetting>());
             for (CustomizeSetting setting : settings) {
-                if (setting.matches(link.getName())) {
+                if (setting.isEnabled() && setting.matches(link.getName())) {
                     logger.info("Customizer: Using customization of FilePackage for Link " + link.getName());
                     if (ctrl.isExtensionFiltered(link)) {
                         ctrl.getFilterPackage().add(link);

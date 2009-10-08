@@ -102,8 +102,8 @@ public class CaptchaDialog extends JCountdownDialog implements ActionListener, K
 
         textField = new JTextField(10);
         textField.addKeyListener(this);
-        setTitle(host);
         textField.setText(this.defaultValue);
+
         btnOK = new JButton(JDL.L("gui.btn_ok", "OK"));
         btnOK.addActionListener(this);
 
@@ -128,6 +128,7 @@ public class CaptchaDialog extends JCountdownDialog implements ActionListener, K
         add(btnBAD, "alignx right");
         this.setMinimumSize(new Dimension(300, -1));
         this.pack();
+        this.setTitle((host != null ? (host + ": ") : "") + JDL.L("gui.captchaWindow.askForInput", "Please enter..."));
         this.setResizable(false);
         if (SwingGui.getInstance() == null || SwingGui.getInstance().getMainFrame().getExtendedState() == JFrame.ICONIFIED || !SwingGui.getInstance().getMainFrame().isVisible() || !SwingGui.getInstance().getMainFrame().isActive()) {
             this.setLocation(Screen.getDockBottomRight(this));
@@ -150,18 +151,19 @@ public class CaptchaDialog extends JCountdownDialog implements ActionListener, K
 
     private void startJAC() {
         final String title = getTitle();
-        this.setTitle(title + "-JAntiCaptcha");
+        this.setTitle(title + " [JAntiCaptcha]");
         jacWorker = new SwingWorker<Object, Object>() {
 
             private String code;
 
-            // @Override
+            @Override
             protected Object doInBackground() throws Exception {
                 CaptchaController cc = new CaptchaController(host, method, imagefile, null, null);
                 this.code = cc.getCode(flag | UserIO.NO_USER_INTERACTION);
                 return null;
             }
 
+            @Override
             public void done() {
                 setTitle(title);
                 if (!this.isCancelled() && code != null) textField.setText(code);
@@ -195,13 +197,12 @@ public class CaptchaDialog extends JCountdownDialog implements ActionListener, K
     }
 
     public void keyPressed(KeyEvent e) {
-
         this.interrupt();
         if (jacWorker != null) {
             jacWorker.cancel(true);
             jacWorker = null;
+            setTitle((host != null ? (host + ": ") : "") + JDL.L("gui.captchaWindow.askForInput", "Please enter..."));
         }
-        setTitle(host + ":" + JDL.L("gui.captchaWindow.askForInput", "Please enter..."));
     }
 
     public void keyReleased(KeyEvent e) {
@@ -210,7 +211,7 @@ public class CaptchaDialog extends JCountdownDialog implements ActionListener, K
     public void keyTyped(KeyEvent e) {
     }
 
-    // @Override
+    @Override
     protected void onCountdown() {
         this.captchaText = textField.getText();
         this.dispose();

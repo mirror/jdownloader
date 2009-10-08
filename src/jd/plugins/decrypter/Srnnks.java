@@ -65,7 +65,7 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "Srnnks.org" }, urls = { "http://[\\w\\.]*?serienjunkies\\.org.*(rc[_-]|rs[_-]|nl[_-]|u[tl][_-]|ff[_-]|p=[\\d]+|cat=[\\d]+).*" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "serienjunkies.org" }, urls = { "http://[\\w\\.]*?serienjunkies\\.org.*(rc[_-]|rs[_-]|nl[_-]|u[tl][_-]|ff[_-]|p=[\\d]+|cat=[\\d]+).*" }, flags = { 0 })
 public class Srnnks extends PluginForDecrypt {
 
     private static String lastHtmlCode = "";
@@ -1108,6 +1108,7 @@ public class Srnnks extends PluginForDecrypt {
             init();
         }
 
+        @Override
         public JComponent contentInit() {
             SrnnksMeth[] meths = new SrnnksMeth[3];
             meths[0] = new SrnnksMeth(JDL.L("plugins.SerienJunkies.CatDialog.sCatNoThing", "Kategorie nicht hinzufügen"), sCatNoThing);
@@ -1212,6 +1213,7 @@ public class Srnnks extends PluginForDecrypt {
             buttonBar.add(btnDelete, "alignx left,sizegroup confirms");
         }
 
+        @Override
         public JComponent contentInit() {
             JLabel m_title = new JLabel(JDL.L("plugin.serienjunkies.manager.dllinks", "Unerwünschte Links einfach löschen"));
             m_title.setIcon(new ImageIcon(JDImage.getImage(JDTheme.V("gui.images.config.addons"))));
