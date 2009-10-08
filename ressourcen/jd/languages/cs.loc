@@ -611,6 +611,7 @@ gui.menu.addonsmenu.configuration.accel = -
 gui.menu.addonsmenu.configuration.mnem = S
 gui.menu.addonsmenu.configuration.name = Správce rozšíření
 gui.menu.addurl.action.mnem = U
+gui.menu.gui.jdshutdown.toggle.accel = -
 gui.menu.optional.hjsplit.menu.extract.singlefils.accel = -
 gui.menu.optional.hjsplit.menu.extract.singlefils.mnem = L
 gui.menu.optional.hjsplit.menu.extract.singlefils.name = Sloučit archivy
