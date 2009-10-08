@@ -25,6 +25,8 @@ public class CustomizeSetting implements Serializable {
 
     private boolean useSubDirectory = false;
 
+    private int priority = 0;
+
     private transient int matchCount = 0;
 
     public CustomizeSetting(String name) {
@@ -102,6 +104,14 @@ public class CustomizeSetting implements Serializable {
 
     public void setUseSubDirectory(boolean useSubDirectory) {
         this.useSubDirectory = useSubDirectory;
+    }
+
+    public int getPriority() {
+        return priority;
+    }
+
+    public void setPriority(int priority) {
+        this.priority = priority;
     }
 
     public String getMatchCount() {

@@ -123,7 +123,7 @@ public class JDPackageCustomizer extends PluginOptional implements LinkGrabberPa
             ArrayList<CustomizeSetting> settings = getPluginConfig().getGenericProperty(PROPERTY_SETTINGS, new ArrayList<CustomizeSetting>());
             for (CustomizeSetting setting : settings) {
                 if (setting.isEnabled() && setting.matches(link.getName())) {
-                    logger.info("Customizer: Using customization of FilePackage for Link " + link.getName());
+                    logger.info("Customizer: Using customization of filepackage for link " + link.getName());
                     if (ctrl.isExtensionFiltered(link)) {
                         ctrl.getFilterPackage().add(link);
                         return;
@@ -138,6 +138,7 @@ public class JDPackageCustomizer extends PluginOptional implements LinkGrabberPa
                     fp.setUseSubDir(setting.isUseSubDirectory());
                     fp.setPassword(setting.getPassword());
                     fp.add(link);
+                    link.setPriority(setting.getPriority());
 
                     setting.incMatchCount();
                     return;

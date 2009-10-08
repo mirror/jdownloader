@@ -26,7 +26,6 @@ import java.util.HashMap;
 import java.util.Set;
 import java.util.logging.Logger;
 
-import javax.swing.AbstractButton;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JMenuItem;
 import javax.swing.JScrollPane;
@@ -102,8 +101,6 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
 
     private ViewToolbar toolbar;
 
-    public AbstractButton confirmButton;
-
     private boolean notvisible = true;
 
     public static synchronized LinkGrabberPanel getLinkGrabber() {
@@ -140,14 +137,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
         LGINSTANCE.addListener(this);
         initActions();
         if (!SubConfiguration.getConfig(LinkGrabberController.CONFIG).getBooleanProperty(LinkGrabberController.PARAM_CONTROLPOSITION, false)) {
-            toolbar = new LinkGrabberToolbar() {
-                private static final long serialVersionUID = -1982323901452009881L;
-
-                @Override
-                public void setDefaults(int i, AbstractButton ab) {
-                    if (i == 2) confirmButton = ab;
-                }
-            };
+            toolbar = new LinkGrabberToolbar();
 
             this.add(toolbar, "gapbottom 3,DOCK SOUTH");
         }
@@ -170,6 +160,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
             public void init() {
             }
 
+            @Override
             public void threadedActionPerformed(ActionEvent e) {
                 if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_COUNTDOWN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, JDL.L("gui.linkgrabberv2.lg.clear.ask", "Clear linkgrabber list?")), UserIO.RETURN_OK)) {
                     synchronized (LinkGrabberController.ControllerLock) {
@@ -203,6 +194,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
             public void init() {
             }
 
+            @Override
             public void threadedActionPerformed(ActionEvent e) {
                 synchronized (LinkGrabberController.ControllerLock) {
                     synchronized (LGINSTANCE.getPackages()) {
@@ -223,7 +215,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
     public void showFilePackageInfo(LinkGrabberFilePackage fp) {
         filePackageInfo.setPackage(fp);
         new GuiRunnable<Object>() {
-            // @Override
+            @Override
             public Object runSave() {
                 LinkgrabberView.getInstance().setInfoPanel(filePackageInfo);
                 return null;
@@ -233,7 +225,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
 
     public void hideFilePackageInfo() {
         new GuiRunnable<Object>() {
-            // @Override
+            @Override
             public Object runSave() {
                 LinkgrabberView.getInstance().setInfoPanel(null);
                 return null;
@@ -270,7 +262,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
         }
     }
 
-    // @Override
+    @Override
     public void onHide() {
         notvisible = true;
         LGINSTANCE.removeListener(this);
@@ -280,6 +272,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
     public void addLinks(final ArrayList<DownloadLink> linkList) {
         addinginprogress = true;
         new Thread() {
+            @Override
             public void run() {
                 Balloon.showIfHidden(JDL.L("gui.config.gui.linkgrabber", "LinkGrabber"), JDTheme.II("gui.images.add", 32, 32), JDL.LF("gui.linkgrabber.adding", "Adding %s link(s) to LinkGrabber", "" + linkList.size()));
                 for (DownloadLink element : linkList) {
@@ -340,6 +333,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
     private void startLinkGatherer() {
         if (gatherer != null && gatherer.isAlive()) { return; }
         gatherer = new Thread() {
+            @Override
             public void run() {
                 setName("LinkGrabber");
                 gatherer_running = true;
@@ -392,7 +386,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
         Update_Async.restart();
     }
 
-    // @Override
+    @Override
     public void onShow() {
         notvisible = false;
         LGINSTANCE.addListener(this);
@@ -412,6 +406,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
     @SuppressWarnings("unchecked")
     public void actionPerformed(final ActionEvent arg0) {
         new Thread() {
+            @Override
             public void run() {
                 this.setName("LinkGrabberPanel: actionPerformed");
                 if (arg0.getSource() == INSTANCE.Update_Async) {
@@ -549,7 +544,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
                         case LinkGrabberTableAction.EDIT_DIR:
                             final ArrayList<LinkGrabberFilePackage> selected_packages3 = new ArrayList<LinkGrabberFilePackage>(selected_packages);
                             new GuiRunnable<Object>() {
-                                // @Override
+                                @Override
                                 public Object runSave() {
                                     JDFileChooser fc = new JDFileChooser();
                                     fc.setApproveButtonText(JDL.L("gui.btn_ok", "OK"));
@@ -593,7 +588,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
                             break;
                         case LinkGrabberTableAction.SAVE_DLC:
                             GuiRunnable<File> temp = new GuiRunnable<File>() {
-                                // @Override
+                                @Override
                                 public File runSave() {
                                     JDFileChooser fc = new JDFileChooser("_LOADSAVEDLC");
                                     fc.setFileFilter(new JDFileFilter(null, ".dlc", true));
@@ -698,9 +693,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
                 }
             }
         }
-        int files = 0;
         if (host == null) {
-            files = linkList.size();
             fp.addLinks(linkList);
             for (DownloadLink link : linkList) {
                 boolean avail = true;
@@ -711,6 +704,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
             }
             fpv2.setDownloadLinks(new ArrayList<DownloadLink>());
         } else {
+            int files = 0;
             ArrayList<DownloadLink> linkListHost = new ArrayList<DownloadLink>();
             for (int i = fpv2.getDownloadLinks().size() - 1; i >= 0; --i) {
                 if (linkList.get(i).getHost().compareTo(host) == 0) {

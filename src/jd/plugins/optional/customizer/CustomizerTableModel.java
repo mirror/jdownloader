@@ -10,6 +10,7 @@ import jd.plugins.optional.customizer.columns.MatchCountColumn;
 import jd.plugins.optional.customizer.columns.NameColumn;
 import jd.plugins.optional.customizer.columns.PackageNameColumn;
 import jd.plugins.optional.customizer.columns.PasswordColumn;
+import jd.plugins.optional.customizer.columns.PriorityColumn;
 import jd.plugins.optional.customizer.columns.RegexColumn;
 import jd.plugins.optional.customizer.columns.SubDirectoryColumn;
 import jd.utils.locale.JDL;
@@ -38,6 +39,7 @@ public class CustomizerTableModel extends JDTableModel {
         this.addColumn(new SubDirectoryColumn(JDL.L(JDL_PREFIX + "subDirectory", "Use SubDirectory"), this));
         this.addColumn(new ExtractColumn(JDL.L(JDL_PREFIX + "extract", "Extract"), this));
         this.addColumn(new PasswordColumn(JDL.L(JDL_PREFIX + "password", "Password"), this));
+        this.addColumn(new PriorityColumn(JDL.L(JDL_PREFIX + "priority", "Priority"), this));
         this.addColumn(new MatchCountColumn(JDL.L(JDL_PREFIX + "matchCount", "Match count from Start"), this));
     }
 

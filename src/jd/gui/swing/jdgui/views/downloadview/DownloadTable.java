@@ -92,7 +92,7 @@ public class DownloadTable extends JDTable implements MouseListener, MouseMotion
 
     private DownloadLinksPanel panel;
 
-    private String[] prioDescs;
+    public static String[] prioDescs;
 
     private PropMenuItem propItem;
 
