@@ -550,13 +550,14 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
         }
     }
 
+    @Override
     public ArrayList<MenuAction> createMenuitems() {
         ArrayList<MenuAction> menu = new ArrayList<MenuAction>();
 
         if (activate == null) {
             activate = new MenuAction(getWrapper().getID(), 0);
             activate.setActionListener(this);
-            activate.setSelected(false);
+            activate.setSelected(subConfig.getBooleanProperty(PARAM_ENABLED, true));
             activate.setTitle(getHost());
         }
         menu.add(activate);
@@ -564,6 +565,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
         return menu;
     }
 
+    @Override
     public boolean initAddon() {
         logger.info("RemoteControl OK");
         initRemoteControl();
@@ -587,7 +589,8 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
             }
         }
     }
-
+    
+    @Override
     public void onExit() {
 
     }
