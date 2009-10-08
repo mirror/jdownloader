@@ -18,10 +18,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -35,7 +33,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharebase.to" }, urls = { "http://[\\w\\.]*?sharebase\\.(de|to)/files/[\\w]+\\.html" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharebase.to" }, urls = { "http://[\\w\\.]*?sharebase\\.(de|to)/(files/|1,)[\\w]+\\.html" }, flags = { 2 })
 public class ShareBaseTo extends PluginForHost {
 
     public ShareBaseTo(PluginWrapper wrapper) {
@@ -50,32 +48,28 @@ public class ShareBaseTo extends PluginForHost {
 
     @Override
     public void correctDownloadLink(DownloadLink link) throws MalformedURLException {
+        /* damit neue links mit .de als .to in die liste kommen */
         link.setUrlDownload(link.getDownloadURL().replaceAll("sharebase\\.de", "sharebase\\.to"));
     }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        /* damit neue links mit .de als .to in die liste kommen */
         setBrowserExclusive();
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("Der Download existiert nicht")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        if (br.containsHTML("Der erforderliche Download-Server ist derzeit nicht verf.*bar")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE); }
-        String downloadName = br.getRegex("<title>(.*) @ ShareBase\\.to</title><meta").getMatch(0);
-        String downloadSize = br.getRegex("</span>\\((.*?)\\)</td>").getMatch(0);
-        if (downloadName == null || downloadSize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        downloadLink.setName(downloadName.trim());
-        downloadLink.setDownloadSize(Regex.getSize(downloadSize.trim()));
+        br.getPage("http://sharebase.to/apito/jd.php?f=" + downloadLink.getDownloadURL());
+        String[] info = Regex.getLines(br.toString());
+        if (info.length != 3 || info[0].matches("NONE")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        downloadLink.setFinalFileName(info[0]);
+        downloadLink.setDownloadSize(Regex.getSize(info[1]));
+        if (info[2].matches("OFFLINE")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (!info[2].matches("ONLINE")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
         return AvailableStatus.TRUE;
     }
 
     public void login(Account account) throws IOException, PluginException {
         setBrowserExclusive();
-        br.setCookie("http://" + getHost(), "memm", Encoding.urlEncode(account.getUser()));
-        br.setCookie("http://" + getHost(), "memp", JDHash.getMD5(account.getPass()));
-        br.getPage("http://sharebase.to/members/");
-        String points = br.getRegex(Pattern.compile("<td>Premiumpunkte:</td>.*?<td><input.*cleanform.*value=\"([\\d\\.]+) Punkte\"></td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-        String expire = br.getRegex(Pattern.compile("<td>Premium bis:</td>.*?<td><input.*?cleanform.*? value=\"(.*?)\"></td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-        if (points == null || expire == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        br.getPage("http://sharebase.to/apito/jd.php?u=" + Encoding.urlEncode(account.getUser()) + "&p=" + Encoding.urlEncode(account.getPass()));
+        String[] info = Regex.getLines(br.toString());
+        if (info.length != 3 || info[0].matches("FALSE") || !info[0].matches("PREMIUM")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
     @Override
@@ -87,10 +81,9 @@ public class ShareBaseTo extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        String points = br.getRegex(Pattern.compile("<td>Premiumpunkte:</td>.*?<td><input.*cleanform.*value=\"([\\d\\.]+) Punkte\"></td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-        String expire = br.getRegex(Pattern.compile("<td>Premium bis:</td>.*?<td><input.*?cleanform.*? value=\"(.*?)\"></td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-        ai.setValidUntil(Regex.getMilliSeconds(expire, "dd.MM.yy / hh:mm", null));
-        ai.setPremiumPoints(Long.parseLong(points.replaceAll("\\.", "")));
+        String[] info = Regex.getLines(br.toString());
+        ai.setValidUntil(Long.parseLong(info[1]) * 1000l);
+        ai.setPremiumPoints(Long.parseLong(info[2]));
         return ai;
     }
 
@@ -98,22 +91,22 @@ public class ShareBaseTo extends PluginForHost {
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         requestFileInformation(downloadLink);
         login(account);
-
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("werden derzeit Wartungsarbeiten vorgenommen")) {
-            logger.severe("ShareBaseTo Error: Maintenance");
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.sharebaseto.errors.maintenance", "Maintenance works in progress"), 30 * 60 * 1000l);
+        String id = new Regex(downloadLink.getDownloadURL(), "/files/([\\w]+\\.html)").getMatch(0);
+        if (id != null) {
+            br.getPage("http://sharebase.to/files/" + id + "," + Encoding.urlEncode(account.getUser() + "," + Encoding.urlEncode(account.getPass())));
+        } else {
+            id = new Regex(downloadLink.getDownloadURL(), "/1,([\\w]+\\.html)").getMatch(0);
+            if (id == null) throw new PluginException(LinkStatus.ERROR_FATAL);
+            br.getPage("http://sharebase.to/1," + id + "," + Encoding.urlEncode(account.getUser() + "," + Encoding.urlEncode(account.getPass())));
         }
-
-        if (!br.containsHTML("favorite")) {
-            logger.severe("ShareBaseTo Error: Premium account expired");
+        String dlUrl = br.getRedirectLocation();
+        if (dlUrl == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlUrl, true, 0);
+        br.setFollowRedirects(true);
+        if (dl.getConnection() == null || dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            logger.severe("PremiumError: " + br.toString());
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        }
-
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.getForm(1));
-        if (dl.getConnection() == null) {
-            logger.severe("ServerError");
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.sharebaseto.errors.servicenotavailable", "Service not available"), 10 * 60 * 1000l);
         }
         dl.startDownload();
     }
@@ -169,8 +162,6 @@ public class ShareBaseTo extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
-        // TODO Auto-generated method stub
-
     }
 
 }
