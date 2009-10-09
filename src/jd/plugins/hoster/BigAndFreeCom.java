@@ -13,9 +13,11 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
+import jd.http.RandomUserAgent;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
@@ -29,39 +31,46 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bigandfree.com" }, urls = { "http://[\\w\\.]*?(megaftp|bigandfree)\\.com/[0-9]+" }, flags = { 0 })
 public class BigAndFreeCom extends PluginForHost {
 
+    public static final Object LOCK = new Object();
+
     public BigAndFreeCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    // @Override
     public String getAGBLink() {
         return "http://www.bigandfree.com/tos";
     }
 
-    
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replaceAll("(megaftp|bigandfree)", "bigandfree"));
     }
-    
-    
-    
-    // @Override
+
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception, PluginException, InterruptedException {
+        synchronized (LOCK) {
+            if (this.isAborted(downloadLink)) return AvailableStatus.TRUE;
+            /* wait 3 seconds between filechecks */
+            Thread.sleep(3000);
+        }
         this.setBrowserExclusive();
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("The file you requested has been removed")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-
         String filename = br.getRegex("File Name: </font><font class=.*?>(.*?)</font>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("addthis_open\\(this, '', 'http://.*?', '(.*?)'\\)").getMatch(0);
+        }
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
         br.setFollowRedirects(false);
         return AvailableStatus.TRUE;
     }
 
-    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        synchronized (LOCK) {
+            if (this.isAborted(downloadLink)) return;
+        }
         Form freeform = br.getFormbyProperty("name", "chosen");
         if (freeform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         freeform.setAction(downloadLink.getDownloadURL());
@@ -80,12 +89,10 @@ public class BigAndFreeCom extends PluginForHost {
                 /* gespeicherten PassCode holen */
                 passCode = link.getStringProperty("pass", null);
             }
-
             /* Passwort übergeben */
             form.put("psw", passCode);
             form.setAction(downloadLink.getDownloadURL());
             br.submitForm(form);
-
             form = br.getFormbyProperty("name", "pswcheck");
             if (form != null && br.containsHTML("Invalid Password")) {
                 link.setProperty("pass", null);
@@ -94,6 +101,7 @@ public class BigAndFreeCom extends PluginForHost {
                 link.setProperty("pass", passCode);
             }
         }
+
         // often they only change this form
         Form downloadForm = br.getForm(1);
         if (downloadForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
@@ -114,15 +122,15 @@ public class BigAndFreeCom extends PluginForHost {
         dl.startDownload();
     }
 
-    // @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return 10;
     }
 
-    // @Override
     public void reset() {
     }
 
     public void resetDownloadlink(DownloadLink link) {
+
     }
+
 }

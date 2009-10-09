@@ -96,7 +96,6 @@ public class QuickUploadNet extends PluginForHost {
             code.append(value);
         }
         DLForm.put("code", code.toString());
-
         int tt = Integer.parseInt(br.getRegex("countdown\">(\\d+)</span>").getMatch(0));
         sleep(tt * 1001, downloadLink);
         br.submitForm(DLForm);
@@ -126,7 +125,6 @@ public class QuickUploadNet extends PluginForHost {
         if (passCode != null) {
             downloadLink.setProperty("pass", passCode);
         }
-
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         dl.startDownload();

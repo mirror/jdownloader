@@ -559,6 +559,7 @@ public class Megauploadcom extends PluginForHost {
     private void getRedirect(String url, DownloadLink downloadLink) throws PluginException, InterruptedException {
         try {
             br.getPage(url);
+            if (br.getRequest().getHttpConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } catch (IOException e) {
             try {
                 String passCode;
@@ -569,6 +570,7 @@ public class Megauploadcom extends PluginForHost {
                     passCode = downloadLink.getStringProperty("pass", null);
                 }
                 br.getPage(url + "&p=" + passCode);
+                if (br.getRequest().getHttpConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 downloadLink.setProperty("pass", passCode);
                 return;
             } catch (IOException e2) {

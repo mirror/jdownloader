@@ -997,7 +997,6 @@ public class Browser {
                 checkContentLengthLimit(request);
                 con = request.getHttpConnection();
                 ret = request.read();
-
             } else {
                 ret = Request.read(con);
             }

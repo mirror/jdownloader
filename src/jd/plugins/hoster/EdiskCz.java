@@ -58,7 +58,11 @@ public class EdiskCz extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
+        br.setDebug(true);
+        String posturl = br.getRegex("Naposledy stáhnut.*?action=\"(http://.*?)\"").getMatch(0);
         Form captchaForm = br.getForm(0);
+        if (captchaForm == null || posturl == null) throw new PluginException(LinkStatus.ERROR_FATAL);
+        captchaForm.setAction(posturl);
         String code = "";
         for (int i = 0; i < 5; i++) {
             if (!br.containsHTML("Opište text z obrázku")) break;
@@ -72,9 +76,9 @@ public class EdiskCz extends PluginForHost {
         }
 
         if (br.containsHTML("Opište text z obrázku")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        String[] countDownInfo = br.getRegex("countDown\\('([^']*)',\\s*'([^']*)'").getRow(0);
+        String[] countDownInfo = br.getRegex("countDown\\(.*?'(.*?)'.*?,.*?'(.*?)'.*?,.*?'(.*?)'.*?,(.*?)").getRow(0);
         // you dont have to wait
-        // sleep(25001l, downloadLink);
+        // (25001l, downloadLink);
         // make sure the form have cookies
         Form dlform = br.getForm(0);
         dlform.getInputFields().clear();
@@ -87,7 +91,6 @@ public class EdiskCz extends PluginForHost {
         // String dllink =
         // br.getRegex("captchaImgWrapper.*?src=\"(.*?)\"").getMatch(0);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.toString().trim(), true, 0);
-
         dl.startDownload();
     }
 

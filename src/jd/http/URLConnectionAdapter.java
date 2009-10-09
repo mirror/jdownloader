@@ -24,7 +24,6 @@ import java.net.URL;
 import java.util.List;
 import java.util.Map;
 
-
 public interface URLConnectionAdapter {
 
     @SuppressWarnings("unchecked")
@@ -47,6 +46,8 @@ public interface URLConnectionAdapter {
     void setRequestProperty(String key, String string);
 
     InputStream getInputStream() throws IOException;
+
+    InputStream getErrorStream();
 
     void setRequestMethod(String string) throws ProtocolException;
 

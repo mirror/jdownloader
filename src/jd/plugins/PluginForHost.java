@@ -646,6 +646,10 @@ public abstract class PluginForHost extends Plugin {
         downloadLink.getLinkStatus().setStatusText(null);
     }
 
+    public boolean isAborted(DownloadLink downloadLink) {
+        return (downloadLink.getDownloadLinkController() != null && downloadLink.getDownloadLinkController().isAborted());
+    }
+
     /**
      * wird vom controlling (watchdog) beim stoppen aufgerufen. Damit werdend ie
      * hostercontrollvariablen zurückgesetzt.

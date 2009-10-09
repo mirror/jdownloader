@@ -87,13 +87,16 @@ public class HTTPConnection extends sun.net.www.protocol.http.HttpURLConnection 
     }
 
     public InputStream getInputStream() throws IOException {
-
         // DO NOT CALL getResponseCode() here!
         if (responseCode != 404) {
             return super.getInputStream();
         } else {
             return super.getErrorStream();
         }
+    }
+
+    public InputStream getErrorStream() {
+        return super.getErrorStream();
     }
 
     public Map<String, List<String>> getRequestProperties() {

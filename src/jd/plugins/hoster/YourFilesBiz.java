@@ -69,6 +69,8 @@ public class YourFilesBiz extends PluginForHost {
         filename = filename.replace(")", "%2529");
         filename = filename.replace("'", "%27");
         filename = filename.replace(" ", "%20");
+        filename = filename.replace("[", "%5B");
+        filename = filename.replace("]", "%5D");
         String page = Encoding.urlDecode(br.toString(), true);
         String[] links = HTMLParser.getHttpLinks(page, null);
         if (br.containsHTML("var timeout=")) {

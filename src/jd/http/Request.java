@@ -407,18 +407,19 @@ public abstract class Request {
         httpConnection.setCharset(this.customCharset);
         this.htmlCode = read(httpConnection);
         readTime = System.currentTimeMillis() - tima;
-        return htmlCode.toString();
+        return htmlCode != null ? htmlCode.toString() : null;
     }
 
     public static String read(URLConnectionAdapter con) throws IOException {
         BufferedReader rd;
         InputStreamReader isr;
-        InputStream is;
+        InputStream is = null;
         if (con.getHeaderField("Content-Encoding") != null && con.getHeaderField("Content-Encoding").equalsIgnoreCase("gzip")) {
-            is = new GZIPInputStream(con.getInputStream());
+            if (con.getInputStream() != null) is = new GZIPInputStream(con.getInputStream());
         } else {
-            is = con.getInputStream();
+            if (con.getInputStream() != null) is = con.getInputStream();
         }
+        if (is == null) return null;
         String cs = con.getCharset();
         if (cs == null) {
             /* default encoding ist ISO-8859-1, falls nicht anders angegeben */

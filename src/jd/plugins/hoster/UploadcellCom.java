@@ -43,7 +43,7 @@ public class UploadcellCom extends PluginForHost {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
         br.setDebug(true);
-        Form form = br.getForm(0);
+        Form form = br.getFormBySubmitvalue("Free+Download");
         form.setAction(downloadLink.getDownloadURL());
         form.remove("method_premium");
         br.submitForm(form);

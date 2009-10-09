@@ -58,15 +58,17 @@ public class MilleDriveCom extends PluginForHost {
         if (!firstlink.contains("/files/")) // for videos & music links
         {
             filename = br.getRegex("down.direct\"\\s+href=\"http://.*?milledrive.com/files/\\w+/\\d+/(.*?)\"").getMatch(0);
-            filesize = br.getRegex("Size:</span>\\s(.*?)\\s</span>").getMatch(0);
-            filesize = filesize.replaceFirst("bytes", "B");
             if (filename == null) filename = br.getRegex("<title>(.*?) - Milledrive</title>").getMatch(0);
+            if (filename == null) filename = br.getRegex("<title>Milledrive - (.*?)</title>").getMatch(0);
+            filesize = br.getRegex("Size:</span>\\s(.*?)\\s</span>").getMatch(0);
+            if (filesize == null) filesize = br.getRegex("Size:</b>\\s(.*?)\\s</").getMatch(0);
         } else {
             filename = br.getRegex("id=\"free-down\" action=\".*milledrive.com/files/\\d+/(.*?)\"").getMatch(0);
             filesize = br.getRegex("\\|\\s+<span style=[^>]*>(.*?)</span>").getMatch(0);
         }
         // System.out.println(filename+" "+filesize);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        filesize = filesize.replaceFirst("bytes", "B");
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
         return AvailableStatus.TRUE;
@@ -82,6 +84,7 @@ public class MilleDriveCom extends PluginForHost {
         requestFileInformation(downloadLink);
         if (br.containsHTML("/wait_encode.png") || br.containsHTML("This video is still being encoded")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugin.hoster.milledrive.com.stillencoding", "This video is still being encoded"), 15 * 60 * 1000);
         String directlink = br.getRegex("file:\"(.*?)\"").getMatch(0);
+        if (directlink == null) directlink = br.getRegex("url:'(.*?)'").getMatch(0);
         if (directlink == null) {
             String firstlink = downloadLink.getDownloadURL();
             if (!firstlink.contains("/files/")) {
@@ -95,12 +98,22 @@ public class MilleDriveCom extends PluginForHost {
             br.submitForm(down1);
             if (br.containsHTML("currently in use")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED); }
             String url = br.getRegex("<a href=\"(http://cache[^\"]+)").getMatch(0);
+            if (url == null) throw new PluginException(LinkStatus.ERROR_FATAL);
             if (br.containsHTML("The requested URL does not exist")) throw new PluginException(LinkStatus.ERROR_RETRY);
+            br.setFollowRedirects(true);
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 1);
-
+            if (dl.getConnection().getContentType().contains("html")) {
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
+            }
         } else {
             String finalfilename = downloadLink.getName();
+            br.setFollowRedirects(true);
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, directlink, true, 1);
+            if (dl.getConnection().getContentType().contains("html")) {
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
+            }
             downloadLink.setFinalFileName(finalfilename);
         }
         dl.startDownload();
