@@ -111,22 +111,18 @@ public class LogPane extends SwitchPanel implements ActionListener, ControlListe
 
             String question = UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN, JDL.L("userio.input.title", "Please enter!"), JDL.L("gui.logger.askQuestion", "Please describe your Problem/Bug/Question!"), null, null, null, null);
             if (question == null) return;
-
+            append("\r\n\r\n-------------------------------------------------------------\r\n\r\n");
             String url = Upload.toJDownloader(content, name + "\r\n\r\n" + question);
             if (url != null) {
                 try {
                     JLink.openURL(url);
+                    append(JDL.L("gui.logupload.message", "Please send this loglink to your supporter") + "\r\n");
+                    append(url);
                 } catch (Exception e1) {
                     JDLogger.exception(e1);
                 }
             } else {
                 UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_CANCEL_OPTION, JDL.L("sys.warning.loguploadfailed", "Upload of logfile failed!"));
-            }
-            append("\r\n\r\n-------------------------------------------------------------\r\n\r\n");
-            if (url != null) {
-                append(JDL.L("gui.logupload.message", "Please send this loglink to your supporter") + "\r\n");
-                append(url);
-            } else {
                 append(JDL.L("gui.logDialog.warning.uploadFailed", "Upload failed"));
             }
             append("\r\n\r\n-------------------------------------------------------------\r\n\r\n");

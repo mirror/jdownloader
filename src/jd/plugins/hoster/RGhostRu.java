@@ -20,9 +20,11 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -62,14 +64,32 @@ public class RGhostRu extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    // @Override
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
         br.setFollowRedirects(false);
         String dllink = br.getRegex("<h1 class=\"header_link\">.*?<a href=\"(.*?)\" class=\"hea").getMatch(0);
-
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -20);
+        if (dllink == null) dllink = br.getRegex("<a href=\"(/download/.*?)\"").getMatch(0);
+        String passCode = null;
+        if (dllink == null) {
+            Form pwform = br.getForm(2);
+            if (pwform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (link.getStringProperty("pass", null) == null) {
+                passCode = Plugin.getUserInput("Password?", link);
+            } else {
+                /* gespeicherten PassCode holen */
+                passCode = link.getStringProperty("pass", null);
+            }
+            pwform.put("password", passCode);
+            br.submitForm(pwform);
+            dllink = br.getRegex("<h1 class=\"header_link\">.*?<a href=\"(.*?)\" class=\"hea").getMatch(0);
+            if (dllink == null) dllink = br.getRegex("<a href=\"(/download/.*?)\"").getMatch(0);
+            if (dllink == null) {
+                link.setProperty("pass", null);
+                logger.info("DownloadPW wrong!");
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (!(dl.getConnection().isContentDisposition())) {
             br.followConnection();
             if (br.containsHTML(">409</div>")) {
@@ -78,6 +98,7 @@ public class RGhostRu extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_FATAL);
         }
+        if (passCode != null) link.setProperty("pass", passCode);
         dl.startDownload();
     }
 

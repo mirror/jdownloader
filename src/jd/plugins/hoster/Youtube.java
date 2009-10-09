@@ -140,7 +140,6 @@ public class Youtube extends PluginForHost {
         if (br == null) br = this.br;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.setDebug(true);
         br.getPage("http://www.youtube.com/");
         br.getPage("https://www.google.com/accounts/ServiceLogin?uilel=3&service=youtube&passive=true&continue=http%3A%2F%2Fwww.youtube.com%2Fsignin%3Faction_handle_signin%3Dtrue%26nomobiletemp%3D1%26hl%3Den_US%26next%3D%252Findex&hl=en_US&ltmpl=sso");
         br.setFollowRedirects(false);

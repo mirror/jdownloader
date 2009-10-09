@@ -25,6 +25,7 @@ import jd.parser.html.InputField;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -67,7 +68,7 @@ public class IfolderRu extends PluginForHost {
         boolean do_download = false;
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
-
+        String passCode = null;
         String watchAd = br.getRegex("http://ints\\.ifolder\\.ru/ints/\\?(.*?)\"").getMatch(0);
         if (watchAd != null) {
             downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.ifolderru.errors.ticketwait", "Waiting for ticket"));
@@ -126,7 +127,27 @@ public class IfolderRu extends PluginForHost {
                 br.submitForm(captchaForm);
             }
             String directLink = br.getRegex("id=\"download_file_href\".*?href=\"(.*?)\"").getMatch(0);
+            if (directLink == null) {
+                Form pwform = br.getForm(2);
+                if (pwform != null) {
+                    if (downloadLink.getStringProperty("pass", null) == null) {
+                        passCode = Plugin.getUserInput("Password?", downloadLink);
+                    } else {
+                        /* gespeicherten PassCode holen */
+                        passCode = downloadLink.getStringProperty("pass", null);
+                    }
+                    pwform.put("pswd", passCode);
+                    br.submitForm(pwform);
+                    directLink = br.getRegex("id=\"download_file_href\".*?href=\"(.*?)\"").getMatch(0);
+                    if (directLink == null) {
+                        downloadLink.setProperty("pass", null);
+                        logger.info("DownloadPW wrong!");
+                        throw new PluginException(LinkStatus.ERROR_RETRY);
+                    }
+                }
+            }
             if (directLink != null) {
+                if (passCode != null) downloadLink.setProperty("pass", passCode);
                 dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, directLink, true, -2);
                 do_download = true;
                 break;
