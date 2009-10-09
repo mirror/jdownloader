@@ -24,6 +24,7 @@ import jd.config.ConfigContainer;
 import jd.config.Configuration;
 import jd.config.Property;
 import jd.config.SubConfiguration;
+import jd.controlling.JDLogger;
 import jd.event.ControlEvent;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
@@ -51,7 +52,9 @@ public abstract class Interaction extends Property implements Serializable {
 
     private static Integer interactionsRunning = 0;
 
-    protected static Logger logger = jd.controlling.JDLogger.getLogger();
+    private static final String CONFIG_INTERACTIONS = "EVENTS";
+
+    protected static Logger logger = JDLogger.getLogger();
 
     private transient static final long serialVersionUID = -5609631258725998799L;
 
@@ -62,7 +65,7 @@ public abstract class Interaction extends Property implements Serializable {
      * @return Liste mit allen Interactionen
      */
     public static Interaction[] getInteractionList() {
-        return new Interaction[] { new SimpleExecute(), new ExternExecute(), new JDExit(), new ResetLink() };
+        return new Interaction[] {};
     }
 
     public static void initTriggers() {
@@ -82,7 +85,13 @@ public abstract class Interaction extends Property implements Serializable {
     }
 
     public static Vector<Interaction> getSavedInteractions() {
-        return SubConfiguration.getConfig(Configuration.CONFIG_INTERACTIONS).getGenericProperty(Configuration.PARAM_INTERACTIONS, new Vector<Interaction>());
+        SubConfiguration config = SubConfiguration.getConfig(CONFIG_INTERACTIONS);
+        if (config.hasProperty(Configuration.PARAM_INTERACTIONS)) {
+            logger.finer("delete old saved interactions");
+            config.setProperty(Configuration.PARAM_INTERACTIONS, Property.NULL);
+            config.save();
+        }
+        return new Vector<Interaction>();
     }
 
     /**
@@ -234,7 +243,7 @@ public abstract class Interaction extends Property implements Serializable {
         this.trigger = trigger;
     }
 
-    // @Override
+    @Override
     public abstract String toString();
 
 }

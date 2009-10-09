@@ -30,10 +30,8 @@ import edu.stanford.ejalbert.BrowserLauncher;
 import edu.stanford.ejalbert.exception.BrowserLaunchingInitializingException;
 import edu.stanford.ejalbert.exception.UnsupportedOperatingSystemException;
 
-abstract public class LocalBrowser implements Serializable {
-    /**
-     * 
-     */
+public abstract class LocalBrowser implements Serializable {
+
     private static final long serialVersionUID = 7153058016440180347L;
     private static LocalBrowser[] BROWSERLIST = null;
     private String name;
@@ -42,6 +40,7 @@ abstract public class LocalBrowser implements Serializable {
         return name;
     }
 
+    @Override
     public String toString() {
         return name;
     }
@@ -63,9 +62,6 @@ abstract public class LocalBrowser implements Serializable {
 
             for (Object o : launcher.getBrowserList()) {
                 ret.add(new LocalBrowser(o.toString()) {
-                    /**
-                     * 
-                     */
                     private static final long serialVersionUID = 7078868188658406674L;
 
                     @Override
@@ -87,8 +83,7 @@ abstract public class LocalBrowser implements Serializable {
             ret.add(new LocalBrowser("MAC Default") {
                 private static final long serialVersionUID = 914161109428877932L;
 
-                @SuppressWarnings("deprecation")
-				@Override
+                @Override
                 public void openURL(URL url) throws IOException {
                     if (url == null) return;
                     com.apple.eio.FileManager.openURL(url.toString());
@@ -98,9 +93,6 @@ abstract public class LocalBrowser implements Serializable {
 
             if (new File("/Applications/Firefox.app").exists()) {
                 ret.add(new LocalBrowser("Firefox") {
-                    /**
-                     * 
-                     */
                     private static final long serialVersionUID = 2089733398098794579L;
 
                     @Override
@@ -119,9 +111,6 @@ abstract public class LocalBrowser implements Serializable {
             } else {
 
                 ret.add(new LocalBrowser("Firefox") {
-                    /**
-                     * 
-                     */
                     private static final long serialVersionUID = -558662621604100570L;
 
                     @Override
@@ -147,9 +136,6 @@ abstract public class LocalBrowser implements Serializable {
             exec.waitTimeout();
             if (exec.getException() == null) {
                 ret.add(new LocalBrowser("Firefox") {
-                    /**
-                     * 
-                     */
                     private static final long serialVersionUID = 6186304252605346654L;
 
                     @Override
@@ -171,9 +157,6 @@ abstract public class LocalBrowser implements Serializable {
 
         if (OSDetector.isWindows()) {
             ret.add(new LocalBrowser("Win Default") {
-                /**
-                 * 
-                 */
                 private static final long serialVersionUID = 6862234646985946728L;
 
                 @Override
@@ -194,9 +177,6 @@ abstract public class LocalBrowser implements Serializable {
         if (ret.size() == 0) {
 
             ret.add(new LocalBrowser("Java Browser") {
-                /**
-                 * 
-                 */
                 private static final long serialVersionUID = 1L;
 
                 @Override
@@ -249,7 +229,9 @@ abstract public class LocalBrowser implements Serializable {
         browsers[0].openURL(url);
     }
 
-    /* can be used to e.g. install a firefox addon */
+    /**
+     * can be used to e.g. install a firefox addon
+     **/
     public static void openinFirefox(String url) {
         String path = null;
         if (OSDetector.isWindows()) {
