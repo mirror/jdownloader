@@ -52,7 +52,6 @@ public class SharingMatrixCom extends PluginForHost {
         String validornot = br.toString();
         validornot = validornot.replaceAll("(\n|\r)", "");
         if (!validornot.equals("1")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        br.getPage("http://sharingmatrix.com/ajax_scripts/personal.php?query=homepage");
     }
 
     @Override
@@ -64,6 +63,7 @@ public class SharingMatrixCom extends PluginForHost {
             account.setValid(false);
             return ai;
         }
+        br.getPage("http://sharingmatrix.com/ajax_scripts/personal.php?query=homepage");
         String expiredate = br.getRegex("([0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2})").getMatch(0);
         String daysleft = br.getRegex(",.*?([0-9]{1,3}).*?day\\(s\\) left").getMatch(0);
         if (expiredate != null) {
@@ -89,6 +89,7 @@ public class SharingMatrixCom extends PluginForHost {
         requestFileInformation(downloadLink);
         login(account);
         String dllink = downloadLink.getDownloadURL();
+        br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         dl.startDownload();
     }
@@ -105,6 +106,7 @@ public class SharingMatrixCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
+        br.setCookie("http://sharingmatrix.com", "lang", "en");
         br.getPage(parameter.getDownloadURL());
         if (br.containsHTML("File not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("Filename:.*?<td>(.*?)</td>").getMatch(0);
@@ -129,9 +131,7 @@ public class SharingMatrixCom extends PluginForHost {
         // if
         // (br.containsHTML("You have got max allowed bandwidth size per hour"))
         // { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED); }
-        if (br.containsHTML("no available free download slots left")) {
-
-        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No free slots available for this file"); }
+        if (br.containsHTML("no available free download slots left")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No free slots available for this file");
         String linkid = br.getRegex("link_id = '(\\d+)';").getMatch(0);
         if (linkid == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT); }
         String freepage = "http://sharingmatrix.com/ajax_scripts/download.php?type_membership=free&link_id=" + linkid;
@@ -175,7 +175,7 @@ public class SharingMatrixCom extends PluginForHost {
         // + dl_id);
         // System.out.println(br2.getCookies("http://sharingmatrix.com"));
         // System.out.print(br2.toString());
-        if (linkurl == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT); }
+        if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         dl = jd.plugins.BrowserAdapter.openDownload(br2, downloadLink, linkurl, true, 1);
         if (!dl.getConnection().isContentDisposition()) {
             br2.followConnection();

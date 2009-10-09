@@ -403,12 +403,21 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
                     UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_COUNTDOWN | UserIO.NO_CANCEL_OPTION, JDL.L("sys.warning.noclose", "JDownloader will be minimized to tray!"));
                     return;
                 }
-
             }
             /*
              * without trayicon also dont close/exit for macos
              */
-            if (OSDetector.isMac()) return;
+            if (OSDetector.isMac()) {
+                new GuiRunnable<Object>() {
+                    @Override
+                    public Object runSave() {
+                        /* set visible state */
+                        getMainFrame().setVisible(false);
+                        return null;
+                    }
+                }.start();
+                return;
+            }
             closeWindow();
         }
     }
