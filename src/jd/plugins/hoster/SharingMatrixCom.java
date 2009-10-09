@@ -20,7 +20,10 @@ import java.io.File;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -33,10 +36,70 @@ public class SharingMatrixCom extends PluginForHost {
 
     public SharingMatrixCom(PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium("http://sharingmatrix.com/premium");
     }
 
     public String getAGBLink() {
         return "http://sharingmatrix.com/contact";
+    }
+
+    public void login(Account account) throws Exception {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(false);
+        br.setCookie("http://sharingmatrix.com", "lang", "en");
+        br.getPage("http://sharingmatrix.com/login");
+        br.getPage("http://sharingmatrix.com/ajax_scripts/login.php?email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+        String validornot = br.toString();
+        validornot = validornot.replaceAll("(\n|\r)", "");
+        if (!validornot.equals("1")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        br.getPage("http://sharingmatrix.com/ajax_scripts/personal.php?query=homepage");
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        String expiredate = br.getRegex("([0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2})").getMatch(0);
+        String daysleft = br.getRegex(",.*?([0-9]{1,3}).*?day\\(s\\) left").getMatch(0);
+        if (expiredate != null) {
+            ai.setValidUntil(Regex.getMilliSeconds(expiredate, "yyyy-MM-dd HH:mm:ss", null));
+            account.setValid(true);
+            return ai;
+        }
+        if (daysleft != null) {
+            ai.setValidUntil(System.currentTimeMillis() + (Long.parseLong(daysleft) * 24 * 60 * 60 * 1000));
+            account.setValid(true);
+            return ai;
+        }
+        if (expiredate == null && daysleft == null) {
+            account.setValid(false);
+            return ai;
+        }
+        account.setValid(false);
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+        requestFileInformation(downloadLink);
+        login(account);
+        String dllink = downloadLink.getDownloadURL();
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        dl.startDownload();
+    }
+
+    // The hoster allows only 10 simultan connections so eighter 10 chunks or 10
+    // simultan downloads. If the controller is extented one time we could make
+    // this dynamically but right now i just set it to 10 max downloads because
+    // many people might now know what chunks are and then they wonder that only
+    // 1 download starts^^
+    public int getMaxSimultanPremiumDownloadNum() {
+        return 10;
     }
 
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {

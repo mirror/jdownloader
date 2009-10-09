@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zero10.info" }, urls = { "http://[\\w\\.]*?(zero10\\.info|save-link\\.info|share-link\\.info|h-link\\.us|zero10\\.us|darkhorse\\.fi5\\.us|arbforce\\.com/short)/[0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zero10.info" }, urls = { "http://[\\w\\.]*?((zero10\\.info|save-link\\.info|share-link\\.info|h-link\\.us|zero10\\.us|darkhorse\\.fi5\\.us|arbforce\\.com/short)/[0-9]+|url-2\\.com/[A-Z]+/)" }, flags = { 0 })
 public class Zro10BasicDecrypt extends PluginForDecrypt {
 
     public Zro10BasicDecrypt(PluginWrapper wrapper) {
@@ -37,31 +37,47 @@ public class Zro10BasicDecrypt extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        //workaround for arbforce links, couls later also be used for other unusual zero10 crypters!
-        if (parameter.contains("arbforce.com/short")) {
+        br.setFollowRedirects(false);
+        // finallink2 is used for unusual zero10 crypters like arbforce and
+        // url-2
+        String finallink2 = null;
+        String finallink = null;
+        if (parameter.contains("url-2.com/")) {
+            br.getPage(parameter);
+            finallink2 = br.getRegex("language='javascript'>.*?\\('(.*?)'\\)").getMatch(0);
+            //Errorhandling
+            if (finallink2 == null && br.containsHTML("Turn this long URL") && !br.containsHTML("Click here to go")) {
+                logger.warning("The requested document was not found on this server.");
+                logger.warning(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+                return new ArrayList<DownloadLink>();
+            }
+        } else if (parameter.contains("arbforce.com/short")) {
             String ID = new Regex(parameter, "arbforce\\.com/short/([0-9]+)").getMatch(0);
             String redirectlink = "http://www.arbforce.com/short/2.php?" + ID;
             br.getPage(redirectlink);
-            String finallink = br.getRedirectLocation();
+            finallink2 = br.getRedirectLocation();
+            //Errorhandling
             if (br.getRedirectLocation() == null) {
                 logger.warning("The requested document was not found on this server.");
                 logger.warning(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
                 return new ArrayList<DownloadLink>();
             }
-            decryptedLinks.add(createDownloadlink(finallink));
-            return decryptedLinks;
+        } else {
+            String Domain = new Regex(parameter, "((zero10\\.us|save-link\\.info|share-link\\.info|h-link\\.us|zero10\\.info|darkhorse.fi5.us))/").getMatch(0);
+            String ID = new Regex(parameter, "[0-9a-z.]+/([0-9]+)").getMatch(0);
+            String m1link = "http://www." + Domain + "/m1.php?id=" + ID;
+            br.getPage(m1link);
+            // little errorhandling
+            if (br.getRedirectLocation() != null) {
+                logger.warning("The requested document was not found on this server.");
+                logger.warning(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+                return new ArrayList<DownloadLink>();
+            }
+            finallink = br.getRegex("onclick=\"NewWindow\\('(.*?)','name'").getMatch(0);
         }
-        String Domain = new Regex(parameter, "((zero10\\.us|save-link\\.info|share-link\\.info|h-link\\.us|zero10\\.info|darkhorse.fi5.us))/").getMatch(0);
-        String ID = new Regex(parameter, "[0-9a-z.]+/([0-9]+)").getMatch(0);
-        String m1link = "http://www." + Domain + "/m1.php?id=" + ID;
-        br.getPage(m1link);
-        // little errorhandling
-        if (br.getRedirectLocation() != null) {
-            logger.warning("The requested document was not found on this server.");
-            logger.warning(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-            return new ArrayList<DownloadLink>();
+        if (finallink == null) {
+            finallink = finallink2;
         }
-        String finallink = br.getRegex("onclick=\"NewWindow\\('(.*?)','name'").getMatch(0);
         if (finallink == null) return null;
         decryptedLinks.add(createDownloadlink(finallink));
 
