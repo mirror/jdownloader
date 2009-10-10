@@ -201,84 +201,80 @@ public class JDShutdown extends PluginOptional {
             if (JDFlags.hasSomeFlags(ret, UserIO.RETURN_OK, UserIO.RETURN_COUNTDOWN_TIMEOUT)) {
                 logger.info("Prepare Shutdown");
                 JDUtilities.getController().prepareShutdown(false);
-                try {
-                    switch (OSDetector.getOSID()) {
-                    case OSDetector.OS_WINDOWS_2003:
-                    case OSDetector.OS_WINDOWS_VISTA:
-                    case OSDetector.OS_WINDOWS_XP:
-                    case OSDetector.OS_WINDOWS_7:
-                        shutDownWin();
-                        break;
-                    case OSDetector.OS_WINDOWS_2000:
-                    case OSDetector.OS_WINDOWS_NT:
-                        shutDownWin();
+                switch (OSDetector.getOSID()) {
+                case OSDetector.OS_WINDOWS_2003:
+                case OSDetector.OS_WINDOWS_VISTA:
+                case OSDetector.OS_WINDOWS_XP:
+                case OSDetector.OS_WINDOWS_7:
+                    shutDownWin();
+                    break;
+                case OSDetector.OS_WINDOWS_2000:
+                case OSDetector.OS_WINDOWS_NT:
+                    shutDownWin();
+                    try {
+                        FileWriter fw = null;
+                        BufferedWriter bw = null;
                         try {
-                            FileWriter fw = null;
-                            BufferedWriter bw = null;
-                            try {
-                                fw = new FileWriter(JDUtilities.getResourceFile("jd/shutdown.vbs"));
-                                bw = new BufferedWriter(fw);
+                            fw = new FileWriter(JDUtilities.getResourceFile("jd/shutdown.vbs"));
+                            bw = new BufferedWriter(fw);
 
-                                bw.write("set WshShell = CreateObject(\"WScript.Shell\")\r\nWshShell.SendKeys \"^{ESC}^{ESC}^{ESC}{UP}{ENTER}{ENTER}\"\r\n");
+                            bw.write("set WshShell = CreateObject(\"WScript.Shell\")\r\nWshShell.SendKeys \"^{ESC}^{ESC}^{ESC}{UP}{ENTER}{ENTER}\"\r\n");
 
-                                bw.flush();
-                                bw.close();
+                            bw.flush();
+                            bw.close();
 
-                                JDUtilities.runCommand("cmd", new String[] { "/c", "start", "/min", "cscript", JDUtilities.getResourceFile("jd/shutdown.vbs").getAbsolutePath() }, null, 0);
+                            JDUtilities.runCommand("cmd", new String[] { "/c", "start", "/min", "cscript", JDUtilities.getResourceFile("jd/shutdown.vbs").getAbsolutePath() }, null, 0);
 
-                            } catch (IOException e) {
-                            }
-                        } catch (Exception e) {
+                        } catch (IOException e) {
                         }
-                        break;
-                    case OSDetector.OS_WINDOWS_OTHER:
-                        try {
-                            JDUtilities.runCommand("RUNDLL32.EXE", new String[] { "user,ExitWindows" }, null, 0);
-                        } catch (Exception e) {
-                        }
-                        try {
-                            JDUtilities.runCommand("RUNDLL32.EXE", new String[] { "Shell32,SHExitWindowsEx", "1" }, null, 0);
-                        } catch (Exception e) {
-                        }
-                        break;
-                    case OSDetector.OS_MAC_OTHER:
-                        try {
-                            if (getPluginConfig().getBooleanProperty(CONFIG_HIBERNATE, false)) {
-                                JDUtilities.runCommand("/usr/bin/osascript", new String[] { JDUtilities.getResourceFile("jd/osx/osxhibernate.scpt").getAbsolutePath() }, null, 0);
-                            } else {
-                                JDUtilities.runCommand("/usr/bin/osascript", new String[] { JDUtilities.getResourceFile("jd/osx/osxshutdown.scpt").getAbsolutePath() }, null, 0);
-                            }
-                        } catch (Exception e) {
-                        }
-                    default:
-                        if (getPluginConfig().getBooleanProperty(CONFIG_HIBERNATE, false)) {
-                            try {
-                                dbusPowerState("Hibernate");
-                            } catch (Exception e) {
-                            }
-                        } else if (getPluginConfig().getBooleanProperty(CONFIG_STANDBY, false)) {
-                            try {
-                                dbusPowerState("Suspend");
-                            } catch (Exception e) {
-                            }
-                        } else {
-                            try {
-                                dbusPowerState("Shutdown");
-                            } catch (Exception e) {
-                            }
-                            try {
-                                JDUtilities.runCommand("dcop", new String[] { "--all-sessions", "--all-users", "ksmserver", "ksmserver", "logout", "0", "2", "0" }, null, 0);
-                            } catch (Exception e) {
-                            }
-                            try {
-                                JDUtilities.runCommand("sudo", new String[] { "shutdown", "-h", "now" }, null, 0);
-                            } catch (Exception e) {
-                            }
-                        }
-                        break;
+                    } catch (Exception e) {
                     }
-                } finally {
-                    System.exit(0);
+                    break;
+                case OSDetector.OS_WINDOWS_OTHER:
+                    try {
+                        JDUtilities.runCommand("RUNDLL32.EXE", new String[] { "user,ExitWindows" }, null, 0);
+                    } catch (Exception e) {
+                    }
+                    try {
+                        JDUtilities.runCommand("RUNDLL32.EXE", new String[] { "Shell32,SHExitWindowsEx", "1" }, null, 0);
+                    } catch (Exception e) {
+                    }
+                    break;
+                case OSDetector.OS_MAC_OTHER:
+                    try {
+                        if (getPluginConfig().getBooleanProperty(CONFIG_HIBERNATE, false)) {
+                            JDUtilities.runCommand("/usr/bin/osascript", new String[] { JDUtilities.getResourceFile("jd/osx/osxhibernate.scpt").getAbsolutePath() }, null, 0);
+                        } else {
+                            JDUtilities.runCommand("/usr/bin/osascript", new String[] { JDUtilities.getResourceFile("jd/osx/osxshutdown.scpt").getAbsolutePath() }, null, 0);
+                        }
+                    } catch (Exception e) {
+                    }
+                default:
+                    if (getPluginConfig().getBooleanProperty(CONFIG_HIBERNATE, false)) {
+                        try {
+                            dbusPowerState("Hibernate");
+                        } catch (Exception e) {
+                        }
+                    } else if (getPluginConfig().getBooleanProperty(CONFIG_STANDBY, false)) {
+                        try {
+                            dbusPowerState("Suspend");
+                        } catch (Exception e) {
+                        }
+                    } else {
+                        try {
+                            dbusPowerState("Shutdown");
+                        } catch (Exception e) {
+                        }
+                        try {
+                            JDUtilities.runCommand("dcop", new String[] { "--all-sessions", "--all-users", "ksmserver", "ksmserver", "logout", "0", "2", "0" }, null, 0);
+                        } catch (Exception e) {
+                        }
+                        try {
+                            JDUtilities.runCommand("sudo", new String[] { "shutdown", "-h", "now" }, null, 0);
+                        } catch (Exception e) {
+                        }
+                    }
+                    break;
                 }
             }
         }

@@ -70,22 +70,25 @@ public class Shareplacecom extends PluginForHost {
         requestFileInformation(downloadLink);
         String filename = Encoding.htmlDecode(br.getRegex(Pattern.compile("File name: </b>(.*?)<b>", Pattern.CASE_INSENSITIVE)).getMatch(0));
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        filename = filename.replace("(", "%2528");
-        filename = filename.replace(")", "%2529");
-        filename = filename.replace("'", "%27");
-        filename = filename.replace(" ", "%20");
-        filename = filename.replace("[", "%5B");
-        filename = filename.replace("]", "%5D");
+        filename = Encoding.deepHtmlDecode(filename);
         String page = Encoding.urlDecode(br.toString(), true);
         String[] links = HTMLParser.getHttpLinks(page, null);
         boolean found = false;
         // waittime
         if (br.containsHTML("iptime =")) {
-            int tt = Integer.parseInt(br.getRegex("iptime = (\\d+);").getMatch(0));
+            String time = br.getRegex("Download Link:.*?wait.*?script(.*?)</script>").getMatch(0);
+            String[] times = new Regex(time, "var.*?=.*?(\\d+)").getColumn(0);
+            int tt = 30;
+            if (times.length > 0) {
+                for (String t : times) {
+                    if (Integer.parseInt(t) > 10 && Integer.parseInt(t) < tt) tt = Integer.parseInt(t);
+                }
+            }
             sleep(tt * 1001l, downloadLink);
         }
         for (String link : links) {
-            if (!link.contains(filename)) continue;
+            String fakelink = Encoding.deepHtmlDecode(link);
+            if (!fakelink.contains(filename)) continue;
             Browser brc = br.cloneBrowser();
             dl = BrowserAdapter.openDownload(brc, downloadLink, link);
             if (dl.getConnection().isContentDisposition()) {

@@ -239,7 +239,8 @@ public class Megauploadcom extends PluginForHost {
 
             }
             if (!dl.getConnection().isContentDisposition()) {
-                dl.getConnection().disconnect();
+                br.followConnection();
+                logger.info("MegaUpload Unknown Error: " + br.toString());
                 if (link.getBooleanProperty("waitworkaround", false)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
                 link.setProperty("waitworkaround", true);
                 throw new PluginException(LinkStatus.ERROR_RETRY);

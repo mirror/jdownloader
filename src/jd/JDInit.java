@@ -213,6 +213,7 @@ public class JDInit {
                 } else {
                     System.out.println("ShutDownHook: unexpected shutdown event, hurry up and save database!");
                     JDController.getInstance().prepareShutdown(true);
+                    System.exit(0);
                 }
             }
         });

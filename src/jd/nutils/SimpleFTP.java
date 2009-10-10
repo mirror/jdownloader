@@ -64,6 +64,7 @@ import jd.parser.Regex;
  */
 public class SimpleFTP {
     private static final int TIMEOUT = 10 * 1000;
+    private boolean binarymode = false;
     private static boolean DEBUG = true;
     private BufferedReader reader = null;
     private Socket socket = null;
@@ -103,7 +104,9 @@ public class SimpleFTP {
     public synchronized boolean ascii() throws IOException {
         sendLine("TYPE A");
         String response = readLine();
-        return response.startsWith("200 ");
+        boolean b = response.startsWith("200 ");
+        if (binarymode && b) binarymode = false;
+        return b;
     }
 
     /**
@@ -112,7 +115,9 @@ public class SimpleFTP {
     public synchronized boolean bin() throws IOException {
         sendLine("TYPE I");
         String response = readLine();
-        return response.startsWith("200 ");
+        boolean b = response.startsWith("200 ");
+        if (!binarymode && b) binarymode = true;
+        return b;
     }
 
     /**
@@ -569,7 +574,7 @@ public class SimpleFTP {
     }
 
     public void download(String filename, File file) throws IOException {
-
+        if (!binarymode) System.out.println("Warning: Download in ASCII mode may fail!");
         InetSocketAddress pasv = pasv();
 
         sendLine("RETR " + filename);
@@ -610,7 +615,7 @@ public class SimpleFTP {
                     throw new InterruptedIOException();
                 }
                 counter += bytesRead;
-                out.write(buffer, 0, bytesRead);
+                if (bytesRead > 0) out.write(buffer, 0, bytesRead);
                 broadcaster.fireEvent(new FtpEvent(this, FtpEvent.DOWNLOAD_PROGRESS, counter));
             }
             /* max 10 seks wait for buggy servers */
