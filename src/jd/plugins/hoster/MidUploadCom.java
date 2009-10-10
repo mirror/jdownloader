@@ -46,6 +46,7 @@ public class MidUploadCom extends PluginForHost {
         requestFileInformation(link);
         br.getPage(link.getDownloadURL());
         Form form = br.getFormBySubmitvalue("Kostenloser+Download");
+        if (form == null) form = br.getFormBySubmitvalue("Free+Download");
         if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         form.remove("method_premium");
         br.submitForm(form);
@@ -70,6 +71,7 @@ public class MidUploadCom extends PluginForHost {
         int tt = Integer.parseInt(br.getRegex("countdown\">(\\d+)</span>").getMatch(0));
         sleep(tt * 1001l, link);
         String captcha = br.getRegex(Pattern.compile("Bitte Code eingeben:</b></td></tr>.*<tr><td align=right>.*<img src=\"(.*?)\">.*class=\"captcha_code\">", Pattern.DOTALL)).getMatch(0);
+        if (captcha == null) captcha = br.getRegex(Pattern.compile("Enter code below:</b></td></tr>.*<tr><td align=right>.*<img src=\"(.*?)\">.*class=\"captcha_code\">", Pattern.DOTALL)).getMatch(0);
         if (captcha == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         String code = getCaptchaCode(captcha, link);
         form.put("code", code);

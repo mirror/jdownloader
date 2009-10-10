@@ -75,14 +75,23 @@ public class Zippysharecom extends PluginForHost {
         int index = -1;
         while (true) {
             index++;
-            String page = Encoding.urlDecode(br.toString(), true).replaceAll("/xxx", "/www").replaceAll("/unh", "/d");
+            String allreplaces = br.getRegex("ziptime.*?unescape(.*?)function").getMatch(0);
+            String[][] replaces = new Regex(allreplaces, "replace\\((.*?),.*?\"(.*?)\"").getMatches();
+            String page = Encoding.urlDecode(br.toString(), true);
+            for (String[] replace : replaces) {
+                replace[0] = replace[0].substring(1);
+                if (replace[0].endsWith("/")) replace[0] = replace[0].substring(0, replace[0].length() - 1);
+                if (replace[0].endsWith("/g")) replace[0] = replace[0].substring(0, replace[0].length() - 2);
+                if (replace[0].endsWith("/i")) replace[0] = replace[0].substring(0, replace[0].length() - 2);
+                page = page.replace(replace[0], replace[1]);
+            }
             String[] links = HTMLParser.getHttpLinks(page, null);
             if (index > links.length - 1) break;
             String curlink = links[index];
             if (!new Regex(curlink, ".*?www\\d*\\.zippyshare\\.com/[^\\?]*\\..{1,4}$").matches()) {
                 continue;
             }
-            // sleep(10000l, downloadLink);
+            sleep(10000l, downloadLink);
             Browser brc = br.cloneBrowser();
             brc.getCookies(getHost()).remove(brc.getCookies(getHost()).get("zippop"));
             dl = BrowserAdapter.openDownload(brc, downloadLink, curlink);
