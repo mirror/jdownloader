@@ -110,13 +110,14 @@ public class FileFactory extends PluginForHost {
         } else {
             br.followConnection();
             if (br.containsHTML("have exceeded the download limit")) {
-                waittime = 0;
+                waittime = 10 * 60 * 1000l;
                 try {
                     waittime = Long.parseLong(br.getRegex("Please wait (\\d+) minutes to download more files").getMatch(0)) * 1000l;
                 } catch (Exception e) {
                 }
                 if (waittime > 0) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waittime);
             }
+            if (br.containsHTML("You are currently downloading too many files at once")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         }
     }
