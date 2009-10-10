@@ -23,6 +23,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.util.ArrayList;
 
 import javax.swing.AbstractButton;
 import javax.swing.Action;
@@ -43,11 +44,8 @@ import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.DownloadWatchDog;
 import jd.gui.swing.GuiRunnable;
-import jd.gui.swing.components.JDUnderlinedText;
 import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
-import jd.gui.swing.jdgui.actions.ToolBarAction.Types;
-import jd.gui.swing.laf.LookAndFeelController;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
@@ -63,6 +61,9 @@ public class TrayIconPopup extends JWindow implements MouseListener, ChangeListe
     private JSpinner spMaxDls;
     private JSpinner spMaxChunks;
 
+    private JPanel exitPanel;
+    private ArrayList<Component> resizecomps = new ArrayList<Component>();
+
     public TrayIconPopup() {
         setVisible(false);
         setLayout(new MigLayout("ins 0", "[grow,fill]", "[grow,fill]"));
@@ -70,6 +71,7 @@ public class TrayIconPopup extends JWindow implements MouseListener, ChangeListe
 
         initEntryPanel();
         initBottomPanel();
+        initExitPanel();
         JPanel content = new JPanel(new MigLayout("ins 5, wrap 1", "[]", "[]5[]5[]5[]5[]"));
         add(content);
         content.add(new JLabel("<html><b>" + JDUtilities.getJDTitle() + "</b></html>"), "align center");
@@ -78,9 +80,11 @@ public class TrayIconPopup extends JWindow implements MouseListener, ChangeListe
 
         content.add(new JSeparator(), "growx, spanx");
         content.add(bottomPanel);
+        content.add(new JSeparator(), "growx, spanx");
+        content.add(exitPanel);
         content.setBorder(BorderFactory.createLineBorder(content.getBackground().darker()));
-        Dimension size = new Dimension(this.getPreferredSize().width, entryPanel.getComponent(0).getPreferredSize().height);
-        for (Component c : entryPanel.getComponents()) {
+        Dimension size = new Dimension(getPreferredSize().width, resizecomps.get(0).getPreferredSize().height);
+        for (Component c : resizecomps) {
             c.setPreferredSize(size);
             c.setMinimumSize(size);
             c.setMaximumSize(size);
@@ -113,30 +117,33 @@ public class TrayIconPopup extends JWindow implements MouseListener, ChangeListe
 
     private void initEntryPanel() {
         entryPanel = new JPanel(new MigLayout("ins 0, wrap 1", "[]", "[]0[]0[]0[]0[]0[]0[]0[]0[]0[]"));
-
         switch (DownloadWatchDog.getInstance().getDownloadStatus()) {
         case NOT_RUNNING:
-            addMenuEntry("toolbar.control.start", true);
-            addMenuEntry("toolbar.control.stop", false);
+            addMenuEntry("toolbar.control.start");
+            addMenuEntry("toolbar.control.stop");
             break;
         case RUNNING:
-            addMenuEntry("toolbar.control.stop", true);
-            addMenuEntry("toolbar.control.pause", true);
+            addMenuEntry("toolbar.control.stop");
+            addMenuEntry("toolbar.control.pause");
             break;
         default:
-            addMenuEntry("toolbar.control.start", false);
-            addMenuEntry("toolbar.control.pause", false);
+            addMenuEntry("toolbar.control.start");
+            addMenuEntry("toolbar.control.pause");
         }
 
-        addMenuEntry("action.addurl", true);
-        addMenuEntry("action.load", true);
-        addMenuEntry("toolbar.interaction.update", true);
-        addMenuEntry("toolbar.interaction.reconnect", true);
-        addMenuEntry("premiumMenu.toggle", true);
-        addMenuEntry("toolbar.quickconfig.clipboardoberserver", true);
-        addMenuEntry("toolbar.quickconfig.reconnecttoggle", true);
-        addMenuEntry("action.opendlfolder", true);
-        addMenuEntry("action.exit", true);
+        addMenuEntry("action.addurl");
+        addMenuEntry("action.load");
+        addMenuEntry("toolbar.interaction.update");
+        addMenuEntry("toolbar.interaction.reconnect");
+        addMenuEntry("premiumMenu.toggle");
+        addMenuEntry("toolbar.quickconfig.clipboardoberserver");
+        addMenuEntry("toolbar.quickconfig.reconnecttoggle");
+        addMenuEntry("action.opendlfolder");
+    }
+
+    private void initExitPanel() {
+        exitPanel = new JPanel(new MigLayout("ins 0, wrap 1", "[]", "[]0[]0[]0[]0[]0[]0[]0[]0[]0[]"));
+        exitPanel.add(getMenuEntry("action.exit"), "growx,pushx");
     }
 
     private void initBottomPanel() {
@@ -165,17 +172,25 @@ public class TrayIconPopup extends JWindow implements MouseListener, ChangeListe
         bottomPanel.add(spMaxChunks, "width 60!,h 20!");
     }
 
-    private void addMenuEntry(String actionId, boolean enabled) {
+    private void addMenuEntry(String actionId) {
         final ToolBarAction action = ActionController.getToolBarAction(actionId);
         AbstractButton b = createButton(action);
-        entryPanel.add(b, action.getType() == Types.TOGGLE ? (LookAndFeelController.isSynthetica() ? "gapleft 10,growx,pushx" : "growx,pushx") : "");
+        resizecomps.add(b);
+        entryPanel.add(b, "growx,pushx");
+    }
+
+    private AbstractButton getMenuEntry(String actionId) {
+        final ToolBarAction action = ActionController.getToolBarAction(actionId);
+        AbstractButton b = createButton(action);
+        resizecomps.add(b);
+        return b;
     }
 
     private AbstractButton createButton(final ToolBarAction action) {
         action.init();
-        final AbstractButton bt = (action.getType() == Types.TOGGLE) ? new JToggleButton(action) : new JButton(action);
-        bt.setContentAreaFilled(false);
-        bt.setBorderPainted(false);
+        final AbstractButton bt = new JToggleButton(action);
+        bt.setContentAreaFilled(true);
+        bt.setBorderPainted(true);
         bt.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
@@ -183,7 +198,7 @@ public class TrayIconPopup extends JWindow implements MouseListener, ChangeListe
             }
 
         });
-        bt.setOpaque(false);
+        bt.setOpaque(true);
         bt.setIcon((Icon) action.getValue(Action.SMALL_ICON));
 
         bt.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
@@ -191,7 +206,6 @@ public class TrayIconPopup extends JWindow implements MouseListener, ChangeListe
 
         bt.setHorizontalAlignment(JButton.LEFT);
         bt.setIconTextGap(5);
-        bt.addMouseListener(new JDUnderlinedText(bt));
         return bt;
     }
 
