@@ -27,6 +27,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import jd.config.Configuration;
+import jd.config.DatabaseConnector;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.controlling.ByteBufferController;
@@ -204,7 +205,17 @@ public class JDInit {
         DownloadController.getInstance().addListener(PasswordListController.getInstance());
         AccountController.getInstance();
         ByteBufferController.getInstance();
-        // LinkGrabberController.getInstance();
+        /* add ShutdownHook so we have chance to save database properly */
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+            public void run() {
+                if (DatabaseConnector.isDatabaseShutdown()) {
+                    System.out.println("ShutDownHook: normal shutdown event, nothing to do.");
+                } else {
+                    System.out.println("ShutDownHook: unexpected shutdown event, hurry up and save database!");
+                    JDController.getInstance().prepareShutdown(true);
+                }
+            }
+        });
     }
 
     public void initGUI(JDController controller) {

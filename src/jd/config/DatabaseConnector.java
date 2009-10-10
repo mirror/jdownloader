@@ -47,7 +47,9 @@ public class DatabaseConnector implements Serializable {
 
     private HashMap<String, Object> dbdata = new HashMap<String, Object>();
 
-    private static Object LOCK = new Object();
+    public static final Object LOCK = new Object();
+
+    private static boolean dbshutdown = false;
 
     private static Connection con = null;
 
@@ -63,6 +65,15 @@ public class DatabaseConnector implements Serializable {
             e.printStackTrace();
         }
 
+    }
+
+    /**
+     * return if Database is still open
+     * 
+     * @return
+     */
+    public static boolean isDatabaseShutdown() {
+        return dbshutdown;
     }
 
     /**
@@ -211,8 +222,9 @@ public class DatabaseConnector implements Serializable {
      * Returns a CONFIGURATION
      */
     public synchronized Object getData(String name) {
-        Object ret = null;
         synchronized (LOCK) {
+            if (isDatabaseShutdown()) return null;
+            Object ret = null;
             ret = dbdata.get(name);
             try {
                 if (ret == null) {
@@ -225,13 +237,11 @@ public class DatabaseConnector implements Serializable {
 
                 }
             } catch (Exception e) {
-
                 JDLogger.getLogger().warning("Database not available. Create new one: " + name);
                 JDLogger.exception(Level.FINEST, e);
-
             }
+            return ret;
         }
-        return ret;
     }
 
     /**
@@ -240,9 +250,10 @@ public class DatabaseConnector implements Serializable {
      * @return
      */
     public ArrayList<SubConfiguration> getSubConfigurationKeys() {
-        ArrayList<SubConfiguration> ret = new ArrayList<SubConfiguration>();
-        ResultSet rs;
         synchronized (LOCK) {
+            if (isDatabaseShutdown()) return null;
+            ArrayList<SubConfiguration> ret = new ArrayList<SubConfiguration>();
+            ResultSet rs;
             try {
                 rs = con.createStatement().executeQuery("SELECT * FROM config");
 
@@ -258,20 +269,20 @@ public class DatabaseConnector implements Serializable {
                     }
                 }
             } catch (SQLException e) {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
             }
+            return ret;
         }
-        return ret;
     }
 
     /**
      * Saves a CONFIGURATION into the database
      */
     public void saveConfiguration(String name, Object data) {
-        synchronized (LOCK) {
-            dbdata.put(name, data);
 
+        synchronized (LOCK) {
+            if (isDatabaseShutdown()) return;
+            dbdata.put(name, data);
             try {
                 ResultSet rs = con.createStatement().executeQuery("SELECT COUNT(name) FROM config WHERE name = '" + name + "'");
                 rs.next();
@@ -306,7 +317,9 @@ public class DatabaseConnector implements Serializable {
      */
     public void shutdownDatabase() {
         synchronized (LOCK) {
+            if (isDatabaseShutdown()) return;
             try {
+                dbshutdown = true;
                 con.close();
             } catch (SQLException e) {
                 JDLogger.exception(e);
@@ -319,6 +332,7 @@ public class DatabaseConnector implements Serializable {
      */
     public Object getLinks() {
         synchronized (LOCK) {
+            if (isDatabaseShutdown()) return null;
             try {
                 ResultSet rs = con.createStatement().executeQuery("SELECT * FROM links");
                 rs.next();
@@ -336,6 +350,7 @@ public class DatabaseConnector implements Serializable {
      */
     public void saveLinks(Object obj) {
         synchronized (LOCK) {
+            if (isDatabaseShutdown()) return;
             try {
                 if (getLinks() == null) {
                     PreparedStatement pst = con.prepareStatement("INSERT INTO links VALUES (?,?)");

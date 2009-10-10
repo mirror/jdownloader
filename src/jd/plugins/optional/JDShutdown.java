@@ -200,7 +200,7 @@ public class JDShutdown extends PluginOptional {
             logger.info("Return code: " + ret);
             if (JDFlags.hasSomeFlags(ret, UserIO.RETURN_OK, UserIO.RETURN_COUNTDOWN_TIMEOUT)) {
                 logger.info("Prepare Shutdown");
-                JDUtilities.getController().prepareShutdown();
+                JDUtilities.getController().prepareShutdown(false);
                 try {
                     switch (OSDetector.getOSID()) {
                     case OSDetector.OS_WINDOWS_2003:

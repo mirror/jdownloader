@@ -635,7 +635,7 @@ public class JDUtilities {
     public static void restartJD(final boolean tinybypass) {
         new Thread(new Runnable() {
             public void run() {
-                if (JDUtilities.getController() != null) JDUtilities.getController().prepareShutdown();
+                if (JDUtilities.getController() != null) JDUtilities.getController().prepareShutdown(false);
 
                 List<String> lst = ManagementFactory.getRuntimeMXBean().getInputArguments();
                 ArrayList<String> jargs = new ArrayList<String>();

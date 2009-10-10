@@ -25,6 +25,7 @@ import java.util.regex.Pattern;
 
 import jd.CPluginWrapper;
 import jd.config.Configuration;
+import jd.config.DatabaseConnector;
 import jd.config.SubConfiguration;
 import jd.controlling.interaction.Interaction;
 import jd.event.ControlEvent;
@@ -187,6 +188,8 @@ public class JDController implements ControlListener {
     private static ArrayList<String> delayMap = new ArrayList<String>();
     private static JDController INSTANCE;
 
+    private static final Object SHUTDOWNLOCK = new Object();
+
     public JDController() {
         eventSender = getEventSender();
         JDUtilities.setController(this);
@@ -320,32 +323,51 @@ public class JDController implements ControlListener {
     public void exit() {
         new Thread(new Runnable() {
             public void run() {
-                prepareShutdown();
+                prepareShutdown(false);
                 System.exit(0);
             }
         }).start();
     }
 
-    public void prepareShutdown() {
-        logger.info("Stop all running downloads");
-        DownloadWatchDog.getInstance().stopDownloads();
-        logger.info("Call Exit event");
-        fireControlEventDirect(new ControlEvent(this, ControlEvent.CONTROL_SYSTEM_EXIT, this));
-        logger.info("Save Downloadlist");
-        JDUtilities.getDownloadController().saveDownloadLinksSyncnonThread();
-        logger.info("Save Accountlist");
-        AccountController.getInstance().saveSyncnonThread();
-        logger.info("Save Passwordlist");
-        PasswordListController.getInstance().saveSync();
-        logger.info("Save HTACCESSlist");
-        HTACCESSController.getInstance().saveSync();
-        logger.info("Call Exit interactions");
-        Interaction.handleInteraction(Interaction.INTERACTION_EXIT, null);
-        logger.info("Wait for delayExit");
-        waitDelayExit();
-        logger.info("Shutdown Database");
-        JDUtilities.getDatabaseConnector().shutdownDatabase();
-        fireControlEventDirect(new ControlEvent(this, ControlEvent.CONTROL_SYSTEM_SHUTDOWN_PREPARED, this));
+    /**
+     * quickmode to choose between normal shutdown or quick one
+     * 
+     * quickmode: no events are thrown
+     * 
+     * (eg shutdown by os)
+     * 
+     * we maybe dont have enough time to wait for all addons/plugins to finish,
+     * saving the database is the most important thing to do
+     * 
+     * @param quickmode
+     */
+    public void prepareShutdown(boolean quickmode) {
+        synchronized (SHUTDOWNLOCK) {
+            if (DatabaseConnector.isDatabaseShutdown()) return;
+            logger.info("Stop all running downloads");
+            DownloadWatchDog.getInstance().stopDownloads();
+            if (!quickmode) {
+                logger.info("Call Exit event");
+                fireControlEventDirect(new ControlEvent(this, ControlEvent.CONTROL_SYSTEM_EXIT, this));
+            }
+            logger.info("Save Downloadlist");
+            JDUtilities.getDownloadController().saveDownloadLinksSyncnonThread();
+            logger.info("Save Accountlist");
+            AccountController.getInstance().saveSyncnonThread();
+            logger.info("Save Passwordlist");
+            PasswordListController.getInstance().saveSync();
+            logger.info("Save HTACCESSlist");
+            HTACCESSController.getInstance().saveSync();
+            if (!quickmode) {
+                logger.info("Call Exit interactions");
+                Interaction.handleInteraction(Interaction.INTERACTION_EXIT, null);
+                logger.info("Wait for delayExit");
+                waitDelayExit();
+            }
+            logger.info("Shutdown Database");
+            JDUtilities.getDatabaseConnector().shutdownDatabase();
+            fireControlEventDirect(new ControlEvent(this, ControlEvent.CONTROL_SYSTEM_SHUTDOWN_PREPARED, this));
+        }
     }
 
     /**
