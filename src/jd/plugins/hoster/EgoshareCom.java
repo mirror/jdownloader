@@ -58,7 +58,7 @@ public class EgoshareCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setCookie("http://www.egoshare.com/", "king_mylang", "en");
         br.getPage(downloadLink.getDownloadURL());
-        String filename = br.getRegex(Pattern.compile("File.name.*?</b>.*?<b>(.*?)</b>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
+        String filename = br.getRegex(Pattern.compile("<title>.*?Your Data Recovery Solution -(.*?)</title>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
         String filesize = br.getRegex(Pattern.compile("You have requested <font.*?</font>(.*?).</b>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (filename == null || filesize == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         downloadLink.setName(filename.trim());
@@ -165,8 +165,8 @@ public class EgoshareCom extends PluginForHost {
         /* Datei herunterladen */
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url);
         if (!dl.getConnection().isContentDisposition()) {
-            dl.getConnection().disconnect();
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_FATAL);
         }
         dl.startDownload();
     }

@@ -52,7 +52,9 @@ public class UgotFileCom extends PluginForHost {
         form.put(form.getBestVariable("password"), Encoding.urlEncode(account.getPass()));
         br.submitForm(form);
         br.getPage("http://ugotfile.com/my/profile/");
-        if (!br.containsHTML("Your premium membership is expired")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (!br.containsHTML("Your premium membership is expired")) {
+            if (!br.containsHTML("he subscription will auto renew on the")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
     }
 
     @Override
@@ -65,10 +67,11 @@ public class UgotFileCom extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-
-        String validUntil = br.getRegex("<h3>Your premium membership is expired on (.*?).</h3>").getMatch(0);
+        String validUntil = br.getRegex("Your premium membership is expired on (.*?).<").getMatch(0);
+        if (validUntil == null) validUntil = br.getRegex("he subscription will auto renew on the (.*?).<").getMatch(0);
         if (validUntil == null) {
             account.setValid(false);
+            return ai;
         } else {
             ai.setValidUntil(Regex.getMilliSeconds(validUntil, "yyyy-MM-dd", null));
             account.setValid(true);

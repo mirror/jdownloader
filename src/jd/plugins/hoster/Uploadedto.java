@@ -284,7 +284,6 @@ public class Uploadedto extends PluginForHost {
         } else {
             String dlLink = br.getRedirectLocation();
             if (dlLink == null) {
-
                 logger.severe("Fatal error 1\r\n" + br);
                 throw new PluginException(LinkStatus.ERROR_FATAL);
             }
@@ -298,6 +297,7 @@ public class Uploadedto extends PluginForHost {
         dl.fakeContentRangeHeader(false);
         dl.setFileSizeVerified(true);
         if (dl.getConnection().getLongContentLength() == 0) {
+            dl.getConnection().disconnect();
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             linkStatus.setValue(10 * 60 * 1000l);
             return;
