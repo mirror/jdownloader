@@ -50,25 +50,22 @@ public class TeraDepotCom extends PluginForHost {
         if (br.containsHTML("No such file with this filename")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("No such user exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("File not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<h2>Download File (.*?)</h2>").getMatch(0);
-        String filesize = br.getRegex("You have requested <b><font color=\"#6aa622\">.*?</font></b> \\((.*?)\\)</font>").getMatch(0);
+        String filename = br.getRegex("Filename.*?:.*?<td>(.*?)</").getMatch(0);
+        String filesize = br.getRegex("Size.*?:.*?small.*?\\(.*?(\\d+)").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         parameter.setName(filename.trim());
-        parameter.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
+        parameter.setDownloadSize(Regex.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(DownloadLink link) throws Exception {
-        this.setBrowserExclusive();
-        br.getPage(link.getDownloadURL());
+        requestFileInformation(link);
         Form form = br.getForm(1);
         if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         form.remove("method_premium");
         br.submitForm(form);
-        if (br.containsHTML("reached the download-limit")) {                
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 120 * 60 * 1001l);
-        }
+        if (br.containsHTML("reached the download-limit")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 120 * 60 * 1001l); }
         if (br.containsHTML("You have to wait")) {
             if (br.containsHTML("minute")) {
                 int minute = Integer.parseInt(br.getRegex("You have to wait (\\d+) minute, (\\d+) seconds till next download").getMatch(0));
@@ -91,10 +88,13 @@ public class TeraDepotCom extends PluginForHost {
             }
             captchaForm.put("password", passCode);
         }
-        String captchaurl = br.getRegex("Bitte Code eingeben:</b>.*?<img src=\"(.*?)\">").getMatch(0);
-        String code = getCaptchaCode(captchaurl, link);        // Captcha Usereingabe in die Form einfügen
+        String captchaurl = br.getRegex("Enter code below:</b>.*?<img src=\"(.*?)\">").getMatch(0);
+        String code = getCaptchaCode(captchaurl, link); // Captcha Usereingabe
+        // in die Form einfügen
         captchaForm.put("code", code);
-        BrowserAdapter.openDownload(br, link, captchaForm, false, 1);
+        String wait = br.getRegex("Wait.*?countdown\">(\\d+)<").getMatch(0);
+        if (wait != null) sleep(Integer.parseInt(wait.trim()) * 1001l, link);
+        dl = BrowserAdapter.openDownload(br, link, captchaForm, false, 1);
         if (!(dl.getConnection().isContentDisposition())) {
             br.followConnection();
             if (br.containsHTML("Wrong password")) {
@@ -102,7 +102,7 @@ public class TeraDepotCom extends PluginForHost {
                 link.setProperty("pass", null);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
-            if (br.containsHTML("Wrong captcha")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            if (br.containsHTML("Wrong captcha") || br.containsHTML("Skipped countdown")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         }
         if (passCode != null) {
