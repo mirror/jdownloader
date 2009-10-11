@@ -16,7 +16,6 @@
 
 package jd.plugins.optional.jdtrayicon;
 
-import java.awt.Component;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
@@ -25,7 +24,6 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.util.ArrayList;
 
-import javax.swing.AbstractButton;
 import javax.swing.Action;
 import javax.swing.BorderFactory;
 import javax.swing.Icon;
@@ -54,6 +52,7 @@ public class TrayIconPopup extends JWindow implements MouseListener, ChangeListe
 
     private static final long serialVersionUID = 2623190748929934409L;
 
+    private SubConfiguration config;
     private JPanel entryPanel;
     private JPanel bottomPanel;
     private boolean enteredPopup;
@@ -62,9 +61,12 @@ public class TrayIconPopup extends JWindow implements MouseListener, ChangeListe
     private JSpinner spMaxChunks;
 
     private JPanel exitPanel;
-    private ArrayList<Component> resizecomps = new ArrayList<Component>();
+    private ArrayList<JToggleButton> resizecomps;
 
     public TrayIconPopup() {
+        config = SubConfiguration.getConfig("DOWNLOAD");
+        resizecomps = new ArrayList<JToggleButton>();
+
         setVisible(false);
         setLayout(new MigLayout("ins 0", "[grow,fill]", "[grow,fill]"));
         addMouseListener(this);
@@ -84,7 +86,7 @@ public class TrayIconPopup extends JWindow implements MouseListener, ChangeListe
         content.add(exitPanel);
         content.setBorder(BorderFactory.createLineBorder(content.getBackground().darker()));
         Dimension size = new Dimension(getPreferredSize().width, resizecomps.get(0).getPreferredSize().height);
-        for (Component c : resizecomps) {
+        for (JToggleButton c : resizecomps) {
             c.setPreferredSize(size);
             c.setMinimumSize(size);
             c.setMaximumSize(size);
@@ -142,23 +144,23 @@ public class TrayIconPopup extends JWindow implements MouseListener, ChangeListe
     }
 
     private void initExitPanel() {
-        exitPanel = new JPanel(new MigLayout("ins 0, wrap 1", "[]", "[]0[]0[]0[]0[]0[]0[]0[]0[]0[]"));
+        exitPanel = new JPanel(new MigLayout("ins 0, wrap 1", "[]", "[]"));
         exitPanel.add(getMenuEntry("action.exit"), "growx,pushx");
     }
 
     private void initBottomPanel() {
         spMaxSpeed = new JSpinner();
-        spMaxSpeed.setModel(new SpinnerNumberModel(SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0), 0, Integer.MAX_VALUE, 50));
+        spMaxSpeed.setModel(new SpinnerNumberModel(config.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0), 0, Integer.MAX_VALUE, 50));
         spMaxSpeed.setToolTipText(JDL.L("gui.tooltip.statusbar.speedlimiter", "Geschwindigkeitsbegrenzung festlegen (KB/s) [0:unendlich]"));
         spMaxSpeed.addChangeListener(this);
 
         spMaxDls = new JSpinner();
-        spMaxDls.setModel(new SpinnerNumberModel(SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2), 1, 20, 1));
+        spMaxDls.setModel(new SpinnerNumberModel(config.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2), 1, 20, 1));
         spMaxDls.setToolTipText(JDL.L("gui.tooltip.statusbar.simultan_downloads", "Max. gleichzeitige Downloads"));
         spMaxDls.addChangeListener(this);
 
         spMaxChunks = new JSpinner();
-        spMaxChunks.setModel(new SpinnerNumberModel(SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2), 1, 20, 1));
+        spMaxChunks.setModel(new SpinnerNumberModel(config.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2), 1, 20, 1));
         spMaxChunks.setToolTipText(JDL.L("gui.tooltip.statusbar.max_chunks", "Max. Connections/File"));
         spMaxChunks.addChangeListener(this);
 
@@ -173,22 +175,20 @@ public class TrayIconPopup extends JWindow implements MouseListener, ChangeListe
     }
 
     private void addMenuEntry(String actionId) {
-        final ToolBarAction action = ActionController.getToolBarAction(actionId);
-        AbstractButton b = createButton(action);
-        resizecomps.add(b);
+        JToggleButton b = getMenuEntry(actionId);
         entryPanel.add(b, "growx,pushx");
     }
 
-    private AbstractButton getMenuEntry(String actionId) {
+    private JToggleButton getMenuEntry(String actionId) {
         final ToolBarAction action = ActionController.getToolBarAction(actionId);
-        AbstractButton b = createButton(action);
+        JToggleButton b = createButton(action);
         resizecomps.add(b);
         return b;
     }
 
-    private AbstractButton createButton(final ToolBarAction action) {
+    private JToggleButton createButton(final ToolBarAction action) {
         action.init();
-        final AbstractButton bt = new JToggleButton(action);
+        final JToggleButton bt = new JToggleButton(action);
         bt.setContentAreaFilled(true);
         bt.setBorderPainted(true);
         bt.addActionListener(new ActionListener() {
@@ -232,23 +232,23 @@ public class TrayIconPopup extends JWindow implements MouseListener, ChangeListe
         if (e.getSource() == spMaxSpeed) {
             int value = (Integer) spMaxSpeed.getValue();
 
-            if (value != SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0)) {
-                SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, value);
-                SubConfiguration.getConfig("DOWNLOAD").save();
+            if (value != config.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0)) {
+                config.setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, value);
+                config.save();
             }
         } else if (e.getSource() == spMaxDls) {
             int value = (Integer) spMaxDls.getValue();
 
-            if (value != SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2)) {
-                SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, value);
-                SubConfiguration.getConfig("DOWNLOAD").save();
+            if (value != config.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2)) {
+                config.setProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, value);
+                config.save();
             }
         } else if (e.getSource() == spMaxChunks) {
             int value = (Integer) spMaxChunks.getValue();
 
-            if (value != SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2)) {
-                SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, value);
-                SubConfiguration.getConfig("DOWNLOAD").save();
+            if (value != config.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2)) {
+                config.setProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, value);
+                config.save();
             }
         }
     }
