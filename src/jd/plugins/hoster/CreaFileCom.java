@@ -70,14 +70,13 @@ public class CreaFileCom extends PluginForHost {
         br.setFollowRedirects(true);
         String hash = new Regex(downloadLink.getDownloadURL(), "/download/(.*)").getMatch(0);
         Form DLForm = br.getForm(1);
-        DLForm.setAction("http://creafile.com/handlers.php?h=godownl");
+        DLForm.setAction("http://creafile.com/handlers.php?h=loadiframe");
         if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         DLForm.put("hash", hash);
         br.submitForm(DLForm);
-        br.getPage(downloadLink.getDownloadURL());
-        String dllink = br.getRegex("load_adv_ajax\\('(.*?)\'").getMatch(0);
+        br.getPage("http://creafile.com/handlers.php?h=getdownloadarea");
+        String dllink = br.getRegex("href=\"(http://creafile.com/d/.*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        dllink = "http://creafile.com/d/" + dllink;
         jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         dl.startDownload();
     }

@@ -46,14 +46,16 @@ public class EditAndShareCom extends PluginForHost {
         if (br.containsHTML("/strong> does not exists.</center>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<p>(.*?)</p>").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("/files/5613/(.*?)';").getMatch(0);
+            filename = br.getRegex("/files/[0-9]+/(.*?)';").getMatch(0);
         }
         String filesize = br.getRegex("Size:(.*?)<br").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filename == null ) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         filename = filename.replaceAll("(\r|\n)", "");
-        filesize = filesize.trim();
         link.setName(filename);
-        link.setDownloadSize(Regex.getSize(filesize));
+        if (filesize != null) {
+            filesize = filesize.trim();
+            link.setDownloadSize(Regex.getSize(filesize));
+        }
         return AvailableStatus.TRUE;
     }
 

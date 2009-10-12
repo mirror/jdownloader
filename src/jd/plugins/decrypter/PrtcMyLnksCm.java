@@ -72,7 +72,7 @@ public class PrtcMyLnksCm extends PluginForDecrypt {
             if (br.containsHTML("Captcha is not valid") || br.containsHTML("Password is not valid")) continue;
             break;
         }
-        if (br.containsHTML("Sicherheitscode ist falsch")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        if (br.containsHTML("Captcha is not valid")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         String fpName = br.getRegex("h1 class=\"pmclass\">(.*?)</h1></td>").getMatch(0).trim();
         fp.setName(fpName);
         String[] links = br.getRegex("><a href='(.*?)'").getColumn(0);
