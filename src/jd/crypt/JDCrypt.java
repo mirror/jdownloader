@@ -30,12 +30,21 @@ import sun.security.pkcs.PKCS7;
 public class JDCrypt {
 
     public static byte[] encrypt(String string) {
+        return encrypt(string,sign());
+     
+    }
+
+    public static String decrypt(byte[] b) {
+        return decrypt(b,sign());
+      
+    }
+    public static byte[] encrypt(String string,byte[] key) {
         Cipher cipher;
         try {
             cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
 
-            IvParameterSpec ivSpec = new IvParameterSpec(sign());
-            SecretKeySpec skeySpec = new SecretKeySpec(sign(), "AES");
+            IvParameterSpec ivSpec = new IvParameterSpec(key);
+            SecretKeySpec skeySpec = new SecretKeySpec(key, "AES");
             cipher.init(Cipher.ENCRYPT_MODE, skeySpec, ivSpec);
             return cipher.doFinal(string.getBytes());
 
@@ -46,11 +55,11 @@ public class JDCrypt {
         return null;
     }
 
-    public static String decrypt(byte[] b) {
+    public static String decrypt(byte[] b,byte[] key) {
         Cipher cipher;
         try {
-            IvParameterSpec ivSpec = new IvParameterSpec(sign());
-            SecretKeySpec skeySpec = new SecretKeySpec(sign(), "AES");
+            IvParameterSpec ivSpec = new IvParameterSpec(key);
+            SecretKeySpec skeySpec = new SecretKeySpec(key, "AES");
 
             cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
             cipher.init(Cipher.DECRYPT_MODE, skeySpec, ivSpec);
@@ -61,7 +70,6 @@ public class JDCrypt {
         }
         return null;
     }
-
     private static byte[] sign() {
         InputStream in = null;
         byte[] buf = new byte[12 * 1024];

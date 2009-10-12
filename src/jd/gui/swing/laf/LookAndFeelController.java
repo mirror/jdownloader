@@ -39,9 +39,11 @@ import javax.swing.plaf.FontUIResource;
 import jd.JDInitFlags;
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
+import jd.crypt.JDCrypt;
 import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.jdgui.JDGuiConstants;
 import jd.nutils.OSDetector;
+import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import jd.utils.locale.JDLEvent;
@@ -359,6 +361,16 @@ public class LookAndFeelController {
         UIManager.put("Synthetica.window.decoration", windowDeco);
         JFrame.setDefaultLookAndFeelDecorated(windowDeco);
         JDialog.setDefaultLookAndFeelDecorated(windowDeco);
+        /*
+         * NOTE: This Licensee Information may only be used by AppWork UG. If
+         * you like to create derived creation based on this sourcecode, you
+         * have to remove this license key. Instead you may use the FREE Version
+         * of synthetica found on javasoft.de
+         */
+        String[] li = { "Licensee=AppWork UG", "LicenseRegistrationNumber=289416475", "Product=Synthetica", "LicenseType=Small Business License", "ExpireDate=--.--.----", "MaxVersion=2.999.999" };
+        UIManager.put("Synthetica.license.info", li);
+        UIManager.put("Synthetica.license.key", JDCrypt.decrypt(JDHexUtils.getByteArray("4a94286634a203ada63b87c54662227252490d6f10e421b7239c610138c53e4c51fc7c0a2a8a18a0a2c0a40191b1186f"), new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 11, 12, 13, 14, 15, 16 }));
+
         // if
         // (className.equalsIgnoreCase("de.javasoft.plaf.synthetica.SyntheticaStandardLookAndFeel"))
         // {
