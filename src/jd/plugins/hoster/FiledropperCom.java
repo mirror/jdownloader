@@ -22,7 +22,6 @@ import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.parser.html.Form;
-import jd.plugins.DecrypterException;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -86,7 +85,7 @@ public class FiledropperCom extends PluginForHost {
             }
         }
 
-        if (valid == false) throw new DecrypterException(DecrypterException.CAPTCHA);
+        if (valid == false) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
 
         if (con.getResponseCode() != 200 && con.getResponseCode() != 206) {
             con.disconnect();

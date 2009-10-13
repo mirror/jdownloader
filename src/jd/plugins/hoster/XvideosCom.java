@@ -41,15 +41,15 @@ public class XvideosCom extends PluginForHost {
         br.getPage(parameter.getDownloadURL());
         if (br.containsHTML("This video has been deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("Page not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>XVIDEOS.COM Free Porn  -(.*?)- XVIDEOS</title>").getMatch(0).trim();
+        String filename = br.getRegex("<title>(.*?)- XVIDEOS.COM</title>").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("description content=\"XVIDEOS  -(.*?)\"").getMatch(0).trim();
+            filename = br.getRegex("description content=\"XVIDEOS  -(.*?)\"").getMatch(0);
             if (filename == null) {
-                filename = br.getRegex("font-size: [0-9]+px;\">.*?<strong>(.*?)</strong>").getMatch(0).trim();
+                filename = br.getRegex("font-size: [0-9]+px;\">.*?<strong>(.*?)</strong>").getMatch(0);
             }
         }
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        filename = filename + ".flv";
+        filename = filename.trim() + ".flv";
         parameter.setName(filename.trim());
         return AvailableStatus.TRUE;
     }
