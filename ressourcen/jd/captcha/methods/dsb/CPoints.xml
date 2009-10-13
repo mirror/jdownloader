@@ -6,8 +6,11 @@
     <void property="color">
      <int>14412529</int>
     </void>
+    <void property="colorDistanceMode">
+     <byte>3</byte>
+    </void>
     <void property="distance">
-     <int>25</int>
+     <int>1</int>
     </void>
     <void property="foreground">
      <boolean>false</boolean>
@@ -17,10 +20,13 @@
   <void method="add">
    <object class="jd.captcha.easy.CPoint">
     <void property="color">
-     <int>8421631</int>
+     <int>33023</int>
+    </void>
+    <void property="colorDistanceMode">
+     <byte>3</byte>
     </void>
     <void property="distance">
-     <int>25</int>
+     <int>1</int>
     </void>
     <void property="foreground">
      <boolean>false</boolean>
@@ -30,10 +36,13 @@
   <void method="add">
    <object class="jd.captcha.easy.CPoint">
     <void property="color">
-     <int>16711680</int>
+     <int>10567417</int>
+    </void>
+    <void property="colorDistanceMode">
+     <byte>5</byte>
     </void>
     <void property="distance">
-     <int>25</int>
+     <int>171</int>
     </void>
    </object>
   </void>

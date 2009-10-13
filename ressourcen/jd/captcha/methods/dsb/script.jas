@@ -40,3 +40,5 @@ param.autoLetterNum=true;
 param.easyCaptchaRemoveSmallObjects=false;
 param.useSpecialGetLetters=EasyCaptcha.getLetters;
 param.useLetterFilter=EasyCaptcha.letterFilter;
+letter.prepare.autoAlign();
+letter.prepare.resizetoHeight(25);
