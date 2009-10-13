@@ -66,12 +66,10 @@ public class Przeslijnet extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
         requestFileInformation(downloadLink);
-
-        /* Zwangswarten, 15seks */
-        sleep(15000, downloadLink);
-
+        String dllink = Encoding.htmlDecode(br.getRegex("onClick=\"window\\.location=\\\\\'(.*?)\\\\\'").getMatch(0));
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         /* Datei herunterladen */
-        jd.plugins.BrowserAdapter.openDownload(br,downloadLink, Encoding.htmlDecode(br.getRegex("onClick=\"window\\.location=\\\\\'(.*?)\\\\\'").getMatch(0))).startDownload();
+        jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink).startDownload();
     }
 
     // @Override

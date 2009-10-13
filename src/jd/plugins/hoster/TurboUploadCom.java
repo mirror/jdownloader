@@ -33,7 +33,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
 //turboupload by pspzockerscene
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "turboupload.com" }, urls = { "http://[\\w\\.]*?turboupload\\.com/[a-z|0-9]+/.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "turboupload.com" }, urls = { "http://[\\w\\.]*?turboupload\\.com/[a-z0-9]+" }, flags = { 0 })
 public class TurboUploadCom extends PluginForHost {
 
     public TurboUploadCom(PluginWrapper wrapper) {
