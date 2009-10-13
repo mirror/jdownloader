@@ -26,11 +26,9 @@ public class CustomizerTableModel extends JDTableModel {
         super(configname);
 
         this.settings = settings;
-
-        initColumns();
     }
 
-    private void initColumns() {
+    protected void initColumns() {
         this.addColumn(new NameColumn(JDL.L(JDL_PREFIX + "name", "Name"), this));
         this.addColumn(new EnabledColumn(JDL.L(JDL_PREFIX + "enabled", "Enabled"), this));
         this.addColumn(new RegexColumn(JDL.L(JDL_PREFIX + "regex", "Regex"), this));

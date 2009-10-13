@@ -21,11 +21,9 @@ public class SchedulerTableModel extends JDTableModel {
         super(configname);
 
         this.schedule = schedule;
-
-        initColumns();
     }
 
-    private void initColumns() {
+    protected void initColumns() {
         this.addColumn(new EnabledColumn("", this, schedule));
         this.addColumn(new NameColumn(JDL.L(JDL_PREFIX + "name", "Name"), this));
         this.addColumn(new DateColumn(JDL.L(JDL_PREFIX + "date", "Date"), this));

@@ -824,18 +824,8 @@ public class JDUtilities {
         JDUtilities.getConfiguration().save();
     }
 
-    public static boolean sleep(int i) {
-        try {
-            Thread.sleep(i);
-            return true;
-        } catch (InterruptedException e) {
-            return false;
-        }
-
-    }
-
     public static String removeEndingPoints(String name) {
-        if (name == null) { return null; }
+        if (name == null) return null;
         String ret = name.trim();
         while (true) {
             if (ret.endsWith(".")) {

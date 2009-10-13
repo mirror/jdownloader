@@ -17,7 +17,6 @@
 package jd.gui.swing.components.pieapi;
 
 
-
 public class PieChartAPI extends ChartAPI {
     private static final long serialVersionUID = 7576517180813229367L;
 
@@ -25,39 +24,34 @@ public class PieChartAPI extends ChartAPI {
         super(caption, width, height);
     }
 
+    @Override
     public String createDataString() {
-        String data = "";
+        StringBuilder data = new StringBuilder();
         for (ChartAPIEntity tmp : super.getHashMap().values()) {
-            data += getRelativeValue(tmp.getData()) + ",";
+            if (data.length() > 0) data.append(',');
+            data.append(getRelativeValue(tmp.getData()));
         }
-        if (data.endsWith(",")) {
-            return data.substring(0, data.length() - 1);
-        } else {
-            return data;
-        }
+        return data.toString();
     }
 
     public String createColorString() {
-        String data = "";
+        StringBuilder data = new StringBuilder();
         for (ChartAPIEntity tmp : super.getHashMap().values()) {
-            if (tmp.getColor() != null) data += String.format("%02X%02X%02X", tmp.getColor().getRed(), tmp.getColor().getGreen(), tmp.getColor().getBlue()) + ",";
+            if (tmp.getColor() != null) {
+                if (data.length() > 0) data.append(',');
+                data.append(String.format("%02X%02X%02X", tmp.getColor().getRed(), tmp.getColor().getGreen(), tmp.getColor().getBlue()));
+            }
         }
-        if (data.endsWith(",")) {
-            return data.substring(0, data.length() - 1);
-        } else {
-            return data;
-        }
+        return data.toString();
     }
 
+    @Override
     public String getUrl() {
-        return "http://" + getServerAdress() + "/chart?cht=p3&chd=t:" + createDataString() + "&chco=" + createColorString() + "&chs=" + getWidth() + "x" + getHeight() + "&chl=" + createCaptionString() + "&chf=bg,s," + String.format("%02X%02X%02X%02X", getBackgroundColor().getRed(), getBackgroundColor().getGreen(), getBackgroundColor().getBlue(), getBackgroundColor().getAlpha());
+        return new StringBuilder("http://chart.apis.google.com/chart?cht=p3&chd=t:").append(createDataString()).append("&chco=").append(createColorString()).append("&chs=").append(getWidth()).append("x").append(getHeight()).append("&chl=").append(createCaptionString()).append("&chf=bg,s,00000000").toString();
     }
 
     public void fetchImage() {
         super.downloadImage(getUrl());
     }
-
-  
-    
 
 }

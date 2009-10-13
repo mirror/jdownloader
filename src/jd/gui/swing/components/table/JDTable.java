@@ -79,9 +79,6 @@ class SortMenuItem extends JMenuItem implements ActionListener {
 
 public class JDTable extends JXTable {
 
-    /**
-     * 
-     */
     private static final long serialVersionUID = -6631229711568284941L;
     private JDTableModel model;
     private SubConfiguration tableconfig;

@@ -20,12 +20,7 @@ import java.io.Serializable;
 
 public class LngEntry implements Serializable {
 
-
-    /**
-     * 
-     */
     private static final long serialVersionUID = -4522709262578144738L;
-
 
     private String value;
 
@@ -33,7 +28,7 @@ public class LngEntry implements Serializable {
 
     public LngEntry(String key, String value) {
         this.key = key.toLowerCase();
-         this.value = value.replace("\\\"", "\"");
+        this.value = value.replace("\\\"", "\"");
     }
 
     public String getKey() {
@@ -52,11 +47,10 @@ public class LngEntry implements Serializable {
         this.value = value;
     }
 
+    @Override
     public boolean equals(Object e) {
         if (!(e instanceof LngEntry)) return false;
-
         return ((LngEntry) e).getKey().equalsIgnoreCase(getKey());
-
     }
 
     @Override

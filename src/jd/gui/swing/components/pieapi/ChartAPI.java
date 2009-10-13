@@ -16,7 +16,6 @@
 
 package jd.gui.swing.components.pieapi;
 
-import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics;
@@ -51,7 +50,7 @@ public abstract class ChartAPI extends JComponent {
             this.path = path;
         }
 
-        // @Override
+        @Override
         public void run() {
             BufferedImage image = null;
             try {
@@ -64,12 +63,10 @@ public abstract class ChartAPI extends JComponent {
         }
     }
 
-    private static final String serverAdress = "chart.apis.google.com";
     private Logger logger = JDLogger.getLogger();
     private HashMap<String, ChartAPIEntity> collData = new HashMap<String, ChartAPIEntity>();
     private int width;
     private int height;
-    private Color backgroundColor;
     protected Image image;
     private PictureLoader loader;
     private String caption;
@@ -78,7 +75,6 @@ public abstract class ChartAPI extends JComponent {
         this.caption = caption;
         this.width = width;
         this.height = height;
-        this.backgroundColor = new Color(0.0f, 0.0f, 0.0f, 0.0f);
         setPreferredSize(new Dimension(width, height));
     }
 
@@ -106,6 +102,7 @@ public abstract class ChartAPI extends JComponent {
         return collData;
     }
 
+    @Override
     public int getWidth() {
         return width;
     }
@@ -114,6 +111,7 @@ public abstract class ChartAPI extends JComponent {
         this.width = width;
     }
 
+    @Override
     public int getHeight() {
         return height;
     }
@@ -122,24 +120,13 @@ public abstract class ChartAPI extends JComponent {
         this.height = height;
     }
 
-    public Color getBackgroundColor() {
-        return backgroundColor;
-    }
-
-    // public void setBackgroundColor(Color backgroundColor) {
-    // this.backgroundColor = backgroundColor;
-    // }
-
-    public String getServerAdress() {
-        return serverAdress;
-    }
-
     public String createCaptionString() {
-        String data = "";
+        StringBuilder data = new StringBuilder();
         for (ChartAPIEntity tmp : collData.values()) {
-            data += Encoding.urlEncode(tmp.getCaption()) + "|";
+            if (data.length() > 0) data.append('|');
+            data.append(Encoding.urlEncode(tmp.getCaption()));
         }
-        return data;
+        return data.toString();
     }
 
     public long getMaxValue() {
@@ -165,31 +152,8 @@ public abstract class ChartAPI extends JComponent {
         loader.start();
     }
 
-    // public class TransparentFilter extends RGBImageFilter {
-    // private final int transparentRGB;
-    //
-    // public TransparentFilter(Color color) {
-    // this.transparentRGB = color.getRGB();
-    // }
-    //
-    // //@Override
-    // public int filterRGB(int x, int y, int rgb) {
-    //
-    // if (Colors.getColorDifference(rgb, transparentRGB) > 40.0) return rgb |
-    // 0x44000000;
-    // return rgb & 0xffffff;
-    // }
-    // }
-
     public void setImage(Image image) {
-
-        // TransparentFilter filter = new
-        // TransparentFilter(this.backgroundColor);
-        //
-        // FilteredImageSource filteredSrc = new
-        // FilteredImageSource(image.getSource(), filter);
-
-        this.image = image;// Toolkit.getDefaultToolkit().createImage(filteredSrc);
+        this.image = image;
 
         Dimension d = new Dimension(image.getWidth(null), image.getHeight(null));
         setPreferredSize(d);
@@ -197,6 +161,7 @@ public abstract class ChartAPI extends JComponent {
         repaint();
     }
 
+    @Override
     public void paintComponent(Graphics g) {
         g.setFont(new Font("Arial", Font.BOLD, 12));
         if (image != null) {

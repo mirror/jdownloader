@@ -22,7 +22,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.logging.Logger;
 
-import jd.OptionalPluginWrapper;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.DistributeData;
@@ -331,19 +330,12 @@ public class JDSimpleWebserverRequestHandler {
         if (requestParameter.containsKey("passwd")) {
             if (requestParameter.get("passwd").compareToIgnoreCase("save") == 0) {
                 if (requestParameter.containsKey("password_list")) {
-
                     String passwordList = Encoding.htmlDecode(requestParameter.get("password_list"));
-                    for (OptionalPluginWrapper wrapper : OptionalPluginWrapper.getOptionalWrapper()) {
-                        if (wrapper.isEnabled() && wrapper.getPlugin().getClass().getName().endsWith("JDUnrar")) {
-                            ArrayList<String> pws = new ArrayList<String>();
-                            for (String pw : Regex.getLines(passwordList)) {
-                                pws.add(0, pw);
-                            }
-                            PasswordListController.getInstance().setPasswordList(pws);
-                            break;
-                        }
+                    ArrayList<String> pws = new ArrayList<String>();
+                    for (String pw : Regex.getLines(passwordList)) {
+                        pws.add(0, pw);
                     }
-
+                    PasswordListController.getInstance().setPasswordList(pws);
                 }
             }
         }

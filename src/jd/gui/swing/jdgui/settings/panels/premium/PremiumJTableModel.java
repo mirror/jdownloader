@@ -40,9 +40,6 @@ import jd.utils.locale.JDL;
 
 public class PremiumJTableModel extends JDTableModel {
 
-    /**
-     * 
-     */
     private static final long serialVersionUID = 896539023856191287L;
 
     private ArrayList<HostPluginWrapper> plugins;
@@ -54,6 +51,9 @@ public class PremiumJTableModel extends JDTableModel {
         super(configname);
         plugins = HostPluginWrapper.getHostWrapper();
         hosts = new TreeMap<String, HostAccounts>();
+    }
+
+    protected void initColumns() {
         this.addColumn(new HosterColumn(JDL.L(IDENT_PREFIX + "hoster", "Hoster"), this));
         this.addColumn(new EnabledColumn(JDL.L(IDENT_PREFIX + "enabled", "Enabled"), this));
         this.addColumn(new UserColumn(JDL.L(IDENT_PREFIX + "user", "User"), this));

@@ -37,6 +37,9 @@ public class DownloadJTableModel extends JDTableModel {
 
     public DownloadJTableModel(String configname) {
         super(configname);
+    }
+
+    protected void initColumns() {
         this.addColumn(new FileColumn(JDL.L("gui.treetable.name", "F"), this));
         this.addColumn(new PartColumn(JDL.L("gui.treetable.part", "Part"), this));
         this.addColumn(new SizeColumn(JDL.L("gui.treetable.size", "FileSize"), this));

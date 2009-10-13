@@ -32,17 +32,13 @@ import jd.controlling.JDLogger;
 import jd.controlling.LinkGrabberController;
 import jd.controlling.ProgressController;
 import jd.event.ControlEvent;
-import jd.gui.UserIO;
-import jd.gui.swing.components.linkbutton.JLink;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.http.Browser;
 import jd.nutils.Formatter;
-import jd.nutils.JDFlags;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.jobber.JDRunnable;
 import jd.nutils.jobber.Jobber;
 import jd.parser.Regex;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 /**
@@ -60,8 +56,6 @@ public abstract class PluginForDecrypt extends Plugin {
 
     private static HashMap<Class<? extends PluginForDecrypt>, Long> LAST_STARTED_TIME = new HashMap<Class<? extends PluginForDecrypt>, Long>();
     private Long WAIT_BETWEEN_STARTS = 0L;
-
-
 
     public synchronized long getLastTimeStarted() {
         if (!LAST_STARTED_TIME.containsKey(this.getClass())) { return 0; }
@@ -175,7 +169,7 @@ public abstract class PluginForDecrypt extends Plugin {
             tmpLinks = new ArrayList<DownloadLink>();
             progress.setStatusText(this.getHost() + ": " + e.getErrorMessage());
             progress.setColor(Color.RED);
-        
+
             progress.doFinalize(15000l);
         } catch (InterruptedException e2) {
             tmpLinks = new ArrayList<DownloadLink>();
@@ -187,8 +181,6 @@ public abstract class PluginForDecrypt extends Plugin {
             logger.severe("Decrypter out of date: " + this);
             logger.severe("Decrypter out of date: " + getVersion());
             progress.setStatusText("Decrypter out of date: " + this.getHost());
-
-          
 
             progress.setColor(Color.RED);
             progress.doFinalize(15000l);
@@ -265,7 +257,6 @@ public abstract class PluginForDecrypt extends Plugin {
         if (cc == null) throw new DecrypterException(DecrypterException.CAPTCHA);
         return cc;
     }
-
 
     public ArrayList<DownloadLink> decryptLinks(CryptedLink[] cryptedLinks) {
         fireControlEvent(ControlEvent.CONTROL_PLUGIN_ACTIVE, cryptedLinks);

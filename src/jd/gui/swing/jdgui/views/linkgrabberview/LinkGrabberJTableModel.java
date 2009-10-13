@@ -34,6 +34,9 @@ public class LinkGrabberJTableModel extends JDTableModel {
 
     public LinkGrabberJTableModel(String configname) {
         super(configname);
+    }
+
+    protected void initColumns() {
         this.addColumn(new FileColumn(JDL.L("gui.linkgrabber.header.packagesfiles", "Pakete/Dateien"), this));
         this.addColumn(new PartColumn(JDL.L("gui.treetable.header.part", "Part"), this));
         this.addColumn(new SizeColumn(JDL.L("gui.treetable.header.size", "Größe"), this));

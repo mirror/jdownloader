@@ -207,7 +207,7 @@ public class SrcParser {
                 currentContent += "\r\nJDL.L(\"" + "gui.menu." + k + ".accel" + "\",\"" + "-" + "\");";
             }
         }
-        
+
         if (this.currentContent.contains(" MenuAction")) {
             String[] keys = new Regex(currentContent, " MenuAction\\s*\\(\"(.*?)\"").getColumn(0);
 

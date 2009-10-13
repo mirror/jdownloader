@@ -419,12 +419,8 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
             t.setParam("page_refresh", JDWebinterface.getRefreshRate());
 
             boolean hasUnrar = false;
-            for (OptionalPluginWrapper wrapper : OptionalPluginWrapper.getOptionalWrapper()) {
-                if (wrapper.isEnabled() && wrapper.getPlugin().getClass().getName().endsWith("JDUnrar")) {
-                    hasUnrar = true;
-                    break;
-                }
-            }
+            OptionalPluginWrapper wrapper = JDUtilities.getOptionalPlugin("unrar");
+            if (wrapper != null && wrapper.isEnabled()) hasUnrar = true;
             t.setParam("unrar_available", hasUnrar ? "unrarAvailable" : "unrarUnavailable");
 
             if (url.startsWith("single_info.tmpl") == true) {

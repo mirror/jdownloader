@@ -53,6 +53,7 @@ public class LFEView extends ClosableView {
         init();
     }
 
+    @Override
     protected void initMenu(JMenuBar menubar) {
         lfeGui.initMenu(menubar);
     }

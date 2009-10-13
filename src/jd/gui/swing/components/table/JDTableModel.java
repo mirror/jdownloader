@@ -24,9 +24,6 @@ import jd.config.SubConfiguration;
 
 public abstract class JDTableModel extends AbstractTableModel {
 
-    /**
-     * 
-     */
     private static final long serialVersionUID = -7560879256832858265L;
 
     protected SubConfiguration config;
@@ -39,8 +36,14 @@ public abstract class JDTableModel extends AbstractTableModel {
     public JDTableModel(String configname) {
         super();
         config = SubConfiguration.getConfig(configname);
+        initColumns();
     }
 
+    /**
+     * Should be overwritten to initialize the columns of the JDTable
+     */
+    protected abstract void initColumns();
+    
     public void setJDTable(JDTable table) {
         this.table = table;
     }

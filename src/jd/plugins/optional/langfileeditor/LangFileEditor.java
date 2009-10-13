@@ -35,7 +35,6 @@ import jd.plugins.PluginOptional;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 
-@OptionalPlugin(rev = "$Revision$", id = "langfileditor", interfaceversion = 5)
 /**
  * Editor for jDownloader language files. Gets JDLocale.L() and JDLocale.LF()
  * entries from source and compares them to the keypairs in the language file.
@@ -44,6 +43,7 @@ import jd.utils.locale.JDL;
  * @author Greeny
  * @author coalado
  */
+@OptionalPlugin(rev = "$Revision$", id = "langfileditor", interfaceversion = 5)
 public class LangFileEditor extends PluginOptional {
 
     private final SingletonPanel lfe;
@@ -64,15 +64,12 @@ public class LangFileEditor extends PluginOptional {
             public void actionPerformed(ActionEvent e) {
                 try {
                     LocalBrowser.openURL(null, new URL("http://jdownloader.org/knowledge/wiki/development/translation/translate-jdownloader"));
-
                 } catch (Exception e1) {
-                    // TODO Auto-generated catch block
                     e1.printStackTrace();
-
                     UserIO.getInstance().requestMessageDialog(JDL.L("jd.plugins.optional.langfileeditor.LangFileEditor.btn.readmore", "more..."), "http://jdownloader.org/knowledge/wiki/development/translation/translate-jdownloader");
                 }
-
             }
+
         }, JDL.L("jd.plugins.optional.langfileeditor.LangFileEditor.btn.readmore", "more..."), JDL.L("jd.plugins.optional.langfileeditor.LangFileEditor.initConfigEntries.message", "To use this addon, you need a JD-SVN Account"), null));
 
         user = getPluginConfig().getStringProperty(LFEGui.PROPERTY_SVN_ACCESS_USER);
@@ -80,6 +77,7 @@ public class LangFileEditor extends PluginOptional {
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), LFEGui.PROPERTY_SVN_ACCESS_USER, "Upload (SVN) Username") {
             private static final long serialVersionUID = 1L;
 
+            @Override
             public void valueChanged(Object newValue) {
                 super.valueChanged(newValue);
                 user = newValue.toString();
@@ -89,6 +87,7 @@ public class LangFileEditor extends PluginOptional {
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, getPluginConfig(), LFEGui.PROPERTY_SVN_ACCESS_PASS, "Upload (SVN) Password") {
             private static final long serialVersionUID = 1L;
 
+            @Override
             public void valueChanged(Object newValue) {
                 super.valueChanged(newValue);
                 pass = newValue.toString();

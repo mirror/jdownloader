@@ -34,9 +34,7 @@ public class OptionalPluginWrapper extends PluginWrapper {
 
     public static ArrayList<OptionalPluginWrapper> getOptionalWrapper() {
         Collections.sort(OPTIONAL_WRAPPER, new Comparator<OptionalPluginWrapper>() {
-
             public int compare(OptionalPluginWrapper o1, OptionalPluginWrapper o2) {
-            
                 return o1.getHost().compareToIgnoreCase(o2.getHost());
             }
         });
@@ -49,8 +47,6 @@ public class OptionalPluginWrapper extends PluginWrapper {
     private String revision;
     private OptionalPlugin annotation;
 
-    // public OptionalPluginWrapper(String string, double d, String id, String
-    // name) {
     public OptionalPluginWrapper(Class<?> c, OptionalPlugin help) {
 
         super(c.getName(), null, c.getName(), null, 0);
@@ -83,6 +79,7 @@ public class OptionalPluginWrapper extends PluginWrapper {
         return version;
     }
 
+    @Override
     public String getHost() {
         return name;
     }
@@ -90,12 +87,13 @@ public class OptionalPluginWrapper extends PluginWrapper {
     /**
      * returns the addon's version (revision)
      */
+    @Override
     public String getVersion() {
         // TODO
         return revision;
     }
 
-    // @Override
+    @Override
     public PluginOptional getPlugin() {
         if (!OPTIONAL_WRAPPER.contains(this)) return null;
         if (loadedPlugin == null) loadPlugin();
@@ -140,6 +138,7 @@ public class OptionalPluginWrapper extends PluginWrapper {
 
     }
 
+    @Override
     public String getID() {
         return id;
     }
@@ -148,7 +147,7 @@ public class OptionalPluginWrapper extends PluginWrapper {
         return "OPTIONAL_PLUGIN2_" + id;
     }
 
-    // @Override
+    @Override
     public int compareTo(PluginWrapper plg) {
         return getHost().toLowerCase().compareTo(plg.getHost().toLowerCase());
     }

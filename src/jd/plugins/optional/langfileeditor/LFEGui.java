@@ -47,7 +47,6 @@ import javax.swing.JScrollPane;
 import javax.swing.KeyStroke;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
-import javax.swing.table.AbstractTableModel;
 
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
@@ -59,6 +58,7 @@ import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.components.pieapi.ChartAPIEntity;
 import jd.gui.swing.components.pieapi.PieChartAPI;
+import jd.gui.swing.components.table.JDTable;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.nutils.JDFlags;
 import jd.nutils.nativeintegration.LocalBrowser;
@@ -70,7 +70,6 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
-import org.jdesktop.swingx.JXTable;
 import org.jdesktop.swingx.decorator.ColorHighlighter;
 import org.jdesktop.swingx.decorator.ComponentAdapter;
 import org.jdesktop.swingx.decorator.HighlightPredicate;
@@ -95,17 +94,20 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
 
     private static final String MISSING_KEY = "~MISSING KEY/REMOVED~";
 
-    private JXTable table;
-    private MyTableModel tableModel;
+    private LFETableModel tableModel;
+    private JDTable table;
     private File languageFile;
     private PieChartAPI keyChart;
     private ChartAPIEntity entDone, entMissing, entOld;
-    private JMenu mnuFile, mnuLoad, mnuKey, mnuEntries;
-    private JMenuItem mnuSave, mnuReload;
-    private JMenuItem mnuAdd, mnuAdopt, mnuAdoptMissing, mnuClear, mnuDelete, mnuTranslate, mnuTranslateMissing;
+
+    private JMenuBar menubar;
+    private JMenu mnuFile, mnuLoad, mnuKey, mnuEntries, mnuTest;
+    private JMenuItem mnuSave, mnuSaveLocal, mnuReload;
+    private JMenuItem mnuAdd, mnuAdopt, mnuClear, mnuDelete;
     private JMenuItem mnuShowDupes, mnuOpenSearchDialog;
+    private JMenuItem mnuCurrent, mnuKeymode;
     private JPopupMenu mnuContextPopup;
-    private JMenuItem mnuContextAdopt, mnuContextClear, mnuContextDelete, mnuContextTranslate;
+    private JMenuItem mnuContextAdopt, mnuContextClear, mnuContextDelete;
 
     private HashMap<String, String> languageKeysFormFile = new HashMap<String, String>();
     private HashMap<String, String> languageENKeysFormFile = new HashMap<String, String>();
@@ -118,27 +120,14 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
     private static final Color colorDone = new Color(204, 255, 170);
     private static final Color colorMissing = new Color(221, 34, 34);
     private static final Color colorOld = Color.ORANGE;
-    private ColorHighlighter doneHighlighter, missingHighlighter, oldHighlighter;
 
     private SrcParser sourceParser;
 
-    // private long HEAD;
-
-    private JMenuItem mnuCurrent;
-
-    private JMenu mnuTest;
-
-    private JMenuItem mnuKeymode;
-
     private Thread updater;
-
-    private JMenuBar menubar;
 
     private JButton warning;
 
     private LangFileEditor plugin;
-
-    private JMenuItem mnuSaveLocal;
 
     public LFEGui(SubConfiguration cfg, LangFileEditor plg) {
         subConfig = cfg;
@@ -151,13 +140,13 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
         showGui();
     }
 
-    private void showGui() {
-        doneHighlighter = new ColorHighlighter(new DonePredicate(), colorDone, null);
-        missingHighlighter = new ColorHighlighter(new MissingPredicate(), colorMissing, null);
-        oldHighlighter = new ColorHighlighter(new OldPredicate(), colorOld, null);
+    public ArrayList<KeyInfo> getData() {
+        return data;
+    }
 
-        tableModel = new MyTableModel();
-        table = new JXTable(tableModel);
+    private void showGui() {
+        tableModel = new LFETableModel(this);
+        table = new JDTable(tableModel);
 
         table.setEnabled(false);
         table.getTableHeader().setReorderingAllowed(false);
@@ -169,11 +158,10 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
         table.addMouseListener(this);
         table.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         table.setAutoStartEditOnKeyStroke(false);
+        table.addHighlighter(new ColorHighlighter(new MissingPredicate(), colorMissing, null));
+        table.addHighlighter(new ColorHighlighter(new OldPredicate(), colorOld, null));
 
-        table.addHighlighter(doneHighlighter);
-        table.addHighlighter(missingHighlighter);
-        table.addHighlighter(oldHighlighter);
-        keyChart = new PieChartAPI("", 225, 50);
+        keyChart = new PieChartAPI("", 350, 50);
         keyChart.addEntity(entDone = new ChartAPIEntity(JDL.L(LOCALE_PREFIX + "keychart.done", "Done"), 0, colorDone));
         keyChart.addEntity(entMissing = new ChartAPIEntity(JDL.L(LOCALE_PREFIX + "keychart.missing", "Missing"), 0, colorMissing));
         keyChart.addEntity(entOld = new ChartAPIEntity(JDL.L(LOCALE_PREFIX + "keychart.old", "Old"), 0, colorOld));
@@ -186,19 +174,16 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
             public void actionPerformed(ActionEvent e) {
                 try {
                     LocalBrowser.openURL(null, new URL("http://jdownloader.org/knowledge/wiki/development/translation/translate-jdownloader"));
-
                 } catch (Exception e1) {
-                    // TODO Auto-generated catch block
                     e1.printStackTrace();
-
                     UserIO.getInstance().requestMessageDialog(JDL.L("jd.plugins.optional.langfileeditor.LangFileEditor.btn.readmore", "more..."), "http://jdownloader.org/knowledge/wiki/development/translation/translate-jdownloader");
                 }
-
             }
+
         });
         this.add(warning, "grow, spanx,hidemode 2");
         this.add(new JScrollPane(table), "grow, spanx");
-        this.add(keyChart, "w 225!, h 50!");
+        this.add(keyChart, "h 50!, w 350!");
 
         updater = new Thread(new Runnable() {
 
@@ -215,7 +200,6 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
                                 public Object runSave() {
                                     warning.setVisible(true);
                                     mnuFile.setEnabled(false);
-
                                     return null;
                                 }
 
@@ -328,12 +312,10 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
         mnuContextPopup.add(mnuContextClear = new JMenuItem(JDL.L(LOCALE_PREFIX + "clearValues", "Clear Value(s)")));
         mnuContextPopup.addSeparator();
         mnuContextPopup.add(mnuContextAdopt = new JMenuItem(JDL.L(LOCALE_PREFIX + "adoptDefaults", "Adopt Default(s)")));
-        mnuContextPopup.add(mnuContextTranslate = new JMenuItem(JDL.L(LOCALE_PREFIX + "translate", "Translate with Google")));
 
         mnuContextDelete.addActionListener(this);
         mnuContextClear.addActionListener(this);
         mnuContextAdopt.addActionListener(this);
-        mnuContextTranslate.addActionListener(this);
     }
 
     public void actionPerformed(ActionEvent e) {
@@ -354,9 +336,7 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
                 }
             }).start();
 
-            
-         
-        } else if (e.getSource() ==   mnuSaveLocal) {
+        } else if (e.getSource() == mnuSaveLocal) {
 
             saveLanguageFile(languageFile, false);
         } else if (e.getSource() == mnuSave) {
@@ -372,7 +352,7 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
             UserIO.getInstance().requestMessageDialog("Started JDownloader in KEY DEBUG Mode");
         } else if (e.getSource() == mnuAdd) {
 
-            String[] result = UserIO.getInstance().requestTwoTextFieldDialog(JDL.L(LOCALE_PREFIX + "addKey.title", "Add new key"), JDL.L(LOCALE_PREFIX + "addKey.message1", "Type in the name of the key:"), JDL.L(LOCALE_PREFIX + "addKey.message2", "Type in the translated message of the key:"), "", "");
+            String[] result = UserIO.getInstance().requestTwoTextFieldDialog(JDL.L(LOCALE_PREFIX + "addKey.title", "Add new key"), JDL.L(LOCALE_PREFIX + "addKey.message1", "Type in the name of the key:"), "", JDL.L(LOCALE_PREFIX + "addKey.message2", "Type in the translated message of the key:"), "");
             if (result == null || result[0].equals("")) return;
             result[0] = result[0].toLowerCase();
             for (KeyInfo ki : data) {
@@ -382,6 +362,7 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
                 }
             }
             data.add(new KeyInfo(result[0].toLowerCase(), null, result[1], languageENKeysFormFile.get(result[0].toLowerCase())));
+            tableModel.refreshModel();
             tableModel.fireTableDataChanged();
             updateKeyChart();
 
@@ -392,22 +373,15 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
         } else if (e.getSource() == mnuAdopt || e.getSource() == mnuContextAdopt) {
 
             for (int row : getSelectedRows()) {
-                tableModel.setValueAt(tableModel.getValueAt(row, 2), row, 3);
-            }
-
-        } else if (e.getSource() == mnuAdoptMissing) {
-
-            for (int i = 0; i < tableModel.getRowCount(); ++i) {
-
-                if (tableModel.getValueAt(i, 3).equals("")) {
-                    tableModel.setValueAt(tableModel.getValueAt(i, 2), i, 3);
-                }
+                data.get(row).setLanguage(data.get(row).getSource());
+                this.dataChanged();
             }
 
         } else if (e.getSource() == mnuClear || e.getSource() == mnuContextClear) {
 
             for (int row : getSelectedRows()) {
-                tableModel.setValueAt("", row, 3);
+                data.get(row).setLanguage("");
+                this.dataChanged();
             }
 
         } else if (e.getSource() == mnuShowDupes) {
@@ -417,26 +391,6 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
         } else if (e.getSource() == mnuOpenSearchDialog) {
 
             SearchFactory.getInstance().showFindInput(table, table.getSearchable());
-
-        } else if (e.getSource() == mnuTranslate || e.getSource() == mnuContextTranslate) {
-
-            if (lngKey == null) return;
-
-            int[] rows = getSelectedRows();
-
-            for (int i = rows.length - 1; i >= 0; --i) {
-                translateRow(rows[i]);
-            }
-
-        } else if (e.getSource() == mnuTranslateMissing) {
-
-            if (lngKey == null) return;
-
-            for (int i = tableModel.getRowCount() - 1; i >= 0; --i) {
-                if (tableModel.getValueAt(i, 2).equals("")) {
-                    translateRow(i);
-                }
-            }
 
         }
 
@@ -460,7 +414,7 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
 
     private void saveChanges() {
         if (!changed) return;
-        int ret = UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN, "Save changes?", "Save your changes to " + this.languageFile + "?", null, null, null);
+        int ret = UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN, JDL.L(LOCALE_PREFIX + "saveChanges", "Save changes?"), JDL.LF(LOCALE_PREFIX + "saveChanges.message", "Save your changes to %s?", this.languageFile), null, JDL.L("gui.btn_yes", "Yes"), JDL.L("gui.btn_no", "No"));
         if (JDFlags.hasAllFlags(ret, UserIO.RETURN_OK)) {
             saveLanguageFile(languageFile, true);
         }
@@ -525,14 +479,6 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
 
     }
 
-    private void translateRow(int row) {
-        String def = tableModel.getValueAt(row, 2);
-        if (!def.equals("")) {
-            String res = JDL.translate(lngKey, def);
-            if (res != null) tableModel.setValueAt(res, row, 3);
-        }
-    }
-
     private void deleteSelectedKeys() {
         int[] rows = getSelectedRows();
         Arrays.sort(rows);
@@ -542,7 +488,6 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
         ArrayList<ArrayList<String>> obj = new ArrayList<ArrayList<String>>(dupes.values());
         ArrayList<String> values;
         for (int i = len; i >= 0; --i) {
-            System.out.println(rows[i]);
             String temp = data.remove(rows[i]).getKey();
             data.remove(temp);
             for (int j = obj.size() - 1; j >= 0; --j) {
@@ -550,7 +495,8 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
                 values.remove(temp);
                 if (values.size() == 1) dupes.remove(keys.get(j));
             }
-            tableModel.fireTableRowsDeleted(rows[i], rows[i]);
+            tableModel.refreshModel();
+            tableModel.fireTableDataChanged();
         }
         int newRow = Math.min(rows[len] - len, tableModel.getRowCount() - 1);
         table.getSelectionModel().setSelectionInterval(newRow, newRow);
@@ -665,8 +611,8 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
 
         Collections.sort(data);
 
-        tableModel.fireTableRowsInserted(0, data.size() - 1);
-        table.packAll();
+        tableModel.refreshModel();
+        tableModel.fireTableDataChanged();
         changed = false;
 
         SwingUtilities.invokeLater(new Runnable() {
@@ -686,26 +632,8 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
     }
 
     private void getSourceEntries() {
-
-        getSourceEntriesFromFolder();
-
-    }
-
-    private void getSourceEntriesFromFolder() {
-
         ProgressController progress = new ProgressController(JDL.L(LOCALE_PREFIX + "analyzingSource1", "Analyzing Source Folder"));
         progress.setIndeterminate(true);
-        // Subversion svn = null;
-        // try {
-        // svn = new Subversion(SOURCE_SVN,
-        // subConfig.getStringProperty(PROPERTY_SVN_ACCESS_USER),
-        // subConfig.getStringProperty(PROPERTY_SVN_ACCESS_PASS));
-        // } catch (SVNAuthenticationException e) {
-        // subConfig.setProperty(PROPERTY_SVN_ACCESS_USER, null);
-        // subConfig.save();
-        // } catch (SVNException e) {
-        // e.printStackTrace();
-        // }
 
         sourceParser = new SrcParser(this.dirWorkingCopy);
         sourceParser.getBroadcaster().addListener(progress);
@@ -868,152 +796,16 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
     public void mouseReleased(MouseEvent e) {
     }
 
-    private class KeyInfo implements Comparable<KeyInfo> {
-
-        private final String key;
-
-        private String source = "";
-
-        private String language = "";
-
-        private String enValue;
-
-        public KeyInfo(String key, String source, String language, String en) {
-            this.key = key;
-            this.setSource(source);
-            enValue = en;
-            this.setLanguage(language);
-        }
-
-        public String getKey() {
-            return this.key;
-        }
-
-        public String getLanguage() {
-            return this.language;
-        }
-
-        public String getSource() {
-            return this.source;
-        }
-
-        public void setLanguage(String language) {
-            if (language != null) this.language = language;
-        }
-
-        public void setSource(String source) {
-            if (source != null) this.source = source;
-        }
-
-        public boolean isMissing() {
-            return this.getLanguage().equals("");
-        }
-
-        public boolean isOld() {
-            return this.getSource().equals("");
-        }
-
-        public int compareTo(KeyInfo o) {
-            return this.getKey().compareToIgnoreCase(o.getKey());
-        }
-
-        @Override
-        public String toString() {
-            return this.getKey() + " = " + this.getLanguage();
-        }
-
-        /**
-         * Returns the english value
-         * 
-         * @return
-         */
-        public String getEnglish() {
-
-            return enValue;
-        }
-
-    }
-
-    private class DonePredicate implements HighlightPredicate {
-        public boolean isHighlighted(Component arg0, ComponentAdapter arg1) {
-            return (!table.getValueAt(arg1.row, 2).equals("") && !table.getValueAt(arg1.row, 3).equals(""));
-        }
-    }
-
     private class MissingPredicate implements HighlightPredicate {
         public boolean isHighlighted(Component arg0, ComponentAdapter arg1) {
-            return (table.getValueAt(arg1.row, 3).equals(""));
+            return (data.get(arg1.row).getLanguage().equals(""));
         }
     }
 
     private class OldPredicate implements HighlightPredicate {
         public boolean isHighlighted(Component arg0, ComponentAdapter arg1) {
-            return (table.getValueAt(arg1.row, 2).equals(""));
+            return (data.get(arg1.row).getSource().equals(""));
         }
-    }
-
-    private class MyTableModel extends AbstractTableModel {
-
-        private static final long serialVersionUID = -5434313385327397539L;
-
-        private String[] columnNames = { JDL.L(LOCALE_PREFIX + "id", "ID"), JDL.L(LOCALE_PREFIX + "key", "Key"), JDL.L(LOCALE_PREFIX + "sourceValue", "Default Value"), JDL.L(LOCALE_PREFIX + "languageFileValue", "Language File Value"), JDL.L(LOCALE_PREFIX + "english", "en.loc") };
-
-        public int getColumnCount() {
-            return columnNames.length;
-        }
-
-        public int getRowCount() {
-            return data.size();
-        }
-
-        @Override
-        public String getColumnName(int col) {
-            return columnNames[col];
-        }
-
-        public String getValueAt(int row, int col) {
-            switch (col) {
-            case 0:
-                return getType(data.get(row)) + row + "";
-            case 1:
-                return data.get(row).getKey();
-            case 2:
-                return data.get(row).getSource();
-            case 3:
-                return data.get(row).getLanguage();
-            case 4:
-                return data.get(row).getEnglish();
-            }
-            return "";
-        }
-
-        private String getType(KeyInfo keyInfo) {
-            if (keyInfo.isMissing()) return "M";
-            if (keyInfo.getSource() == null || keyInfo.getSource().equals("")) return "O";
-            if (keyInfo.getLanguage() != null && keyInfo.getLanguage().trim().length() > 0) return "D";
-            return " ";
-        }
-
-        @Override
-        public Class<?> getColumnClass(int c) {
-            return String.class;
-        }
-
-        @Override
-        public boolean isCellEditable(int row, int col) {
-            return true;
-        }
-
-        @Override
-        public void setValueAt(Object value, int row, int col) {
-            if (col == 3) {
-                data.get(row).setLanguage((String) value);
-                this.fireTableRowsUpdated(row, row);
-                updateKeyChart();
-                changed = true;
-            }
-        }
-
     }
 
     @Override
@@ -1069,18 +861,11 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
         mnuKey.add(mnuClear = new JMenuItem(JDL.L(LOCALE_PREFIX + "clearValues", "Clear Value(s)")));
         mnuKey.addSeparator();
         mnuKey.add(mnuAdopt = new JMenuItem(JDL.L(LOCALE_PREFIX + "adoptDefaults", "Adopt Default(s)")));
-        mnuKey.add(mnuAdoptMissing = new JMenuItem(JDL.L(LOCALE_PREFIX + "adoptDefaults.missing", "Adopt Defaults of Missing Entries")));
-        mnuKey.addSeparator();
-        mnuKey.add(mnuTranslate = new JMenuItem(JDL.L(LOCALE_PREFIX + "translate", "Translate with Google")));
-        mnuKey.add(mnuTranslateMissing = new JMenuItem(JDL.L(LOCALE_PREFIX + "translate.missing", "Translate Missing Entries with Google")));
 
         mnuAdd.addActionListener(this);
         mnuDelete.addActionListener(this);
         mnuClear.addActionListener(this);
         mnuAdopt.addActionListener(this);
-        mnuAdoptMissing.addActionListener(this);
-        mnuTranslate.addActionListener(this);
-        mnuTranslateMissing.addActionListener(this);
 
         mnuDelete.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0));
 
@@ -1099,7 +884,6 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
         mnuOpenSearchDialog.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F, KeyEvent.CTRL_DOWN_MASK));
 
         // Test
-
         mnuTest = new JMenu(JDL.L(LOCALE_PREFIX + "test", "Test"));
 
         mnuTest.add(mnuCurrent = new JMenuItem(JDL.L(LOCALE_PREFIX + "startcurrent", "Test JD with current translation")));
@@ -1107,14 +891,20 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
         mnuTest.add(mnuKeymode = new JMenuItem(JDL.L(LOCALE_PREFIX + "startkey", "Test JD in Key mode")));
         mnuKeymode.addActionListener(this);
         mnuCurrent.setEnabled(false);
-        // Menü-Bar zusammensetzen
 
+        // Menü-Bar zusammensetzen
         menubar.add(mnuFile);
         menubar.add(mnuKey);
         menubar.add(mnuEntries);
         menubar.add(mnuTest);
         menubar.setEnabled(false);
 
+    }
+
+    public void dataChanged() {
+        tableModel.fireTableDataChanged();
+        updateKeyChart();
+        changed = true;
     }
 
 }
