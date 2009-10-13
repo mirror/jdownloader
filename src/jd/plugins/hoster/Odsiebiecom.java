@@ -91,7 +91,6 @@ public class Odsiebiecom extends PluginForHost {
     /*
      * public String getVersion() { return getVersion("$Revision$"); }
      */
-
     public int getMaxSimultanPremiumDownloadNum() {
         return getMaxSimultanDownloadNum();
     }
@@ -129,11 +128,16 @@ public class Odsiebiecom extends PluginForHost {
             /* Button folgen, schaun ob Link oder Captcha als nächstes kommt */
             downloadurl = "http://odsiebie.com/pobierz/" + steplink;
             br.getPage(downloadurl);
-            Form capform = br.getFormbyProperty("name", "wer");
+            Form capform = br.getFormbyProperty("name", "wer1");
+            if (capform == null) {
+                String form2search = br.getRegex("from picture\\)</small>.*?<form name=\"(.*?)\" method").getMatch(0);
+                if (form2search == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                capform = br.getFormbyProperty("name", form2search);
+            }
             int i = 0;
             Browser brc = br.cloneBrowser();
             while (capform != null) {
-                String pagepiece = br.getRegex("name=\"wer\"(.*?)</form>").getMatch(0);
+                String pagepiece = br.getRegex("<img src=\"(.*?)</form>").getMatch(0);
                 if (pagepiece == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
                 String[] captchalinks = HTMLParser.getHttpLinks(pagepiece, "");
                 if (captchalinks == null || captchalinks.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
@@ -160,10 +164,11 @@ public class Odsiebiecom extends PluginForHost {
                 String code = getCaptchaCode(file, downloadLink);
                 capform.getInputFieldByName("captcha").setValue(code);
                 br.submitForm(capform);
-                capform = br.getFormbyProperty("name", "wer");
+                capform = br.getFormbyProperty("name", "wer1");
                 i++;
                 if (i > 3) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
             }
+            if (capform != null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
             br.setFollowRedirects(false);
             /* DownloadLink suchen */
             steplink = br.getRegex("href=\"/download/(.*?)\"").getMatch(0);
