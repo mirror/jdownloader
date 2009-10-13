@@ -161,6 +161,16 @@ public class JDExternInterface extends PluginOptional {
                         if (urls.length != 0) {
                             ArrayList<DownloadLink> links = new DistributeData(Encoding.htmlDecode(request.getParameters().get("urls"))).findLinks();
                             LinkGrabberController.getInstance().addLinks(links, false, false);
+                            new GuiRunnable<Object>() {
+
+                                @Override
+                                public Object runSave() {
+                                    SwingGui.getInstance().getMainFrame().toFront();
+
+                                    return null;
+                                }
+
+                            }.waitForEDT();
                             response.addContent("success\r\n");
                         } else {
                             response.addContent("failed\r\n");
@@ -178,6 +188,16 @@ public class JDExternInterface extends PluginOptional {
                             ArrayList<DownloadLink> links = JDUtilities.getController().getContainerLinks(tmp);
 
                             LinkGrabberController.getInstance().addLinks(links, false, false);
+                            new GuiRunnable<Object>() {
+
+                                @Override
+                                public Object runSave() {
+                                    SwingGui.getInstance().getMainFrame().toFront();
+
+                                    return null;
+                                }
+
+                            }.waitForEDT();
                             response.addContent("success\r\n");
                         } catch (IOException e) {
                             e.printStackTrace();
@@ -265,6 +285,16 @@ public class JDExternInterface extends PluginOptional {
                         }
                         fp.addLinks(links);
                         LinkGrabberController.getInstance().addLinks(links, autostart, autostart);
+                        new GuiRunnable<Object>() {
+
+                            @Override
+                            public Object runSave() {
+                                SwingGui.getInstance().getMainFrame().toFront();
+
+                                return null;
+                            }
+
+                        }.waitForEDT();
                     }
                 }
             } catch (Exception e) {

@@ -68,6 +68,8 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
 
     public static final String PARAM_CONTROLPOSITION = "PARAM_CONTROLPOSITION";
 
+    public static final String PARAM_USE_CNL2 = "PARAM_USE_CNL2";
+
     private static LinkGrabberController INSTANCE = null;
 
     private LinkGrabberControllerBroadcaster broadcaster;

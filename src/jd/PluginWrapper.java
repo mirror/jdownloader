@@ -43,6 +43,7 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
     public static final int LOAD_ON_INIT = 1 << 1;
     public static final int ACCEPTONLYSURLSFALSE = 1 << 2;
     public static final int ALWAYS_ENABLED = 1 << 3;
+    public static final int CNL_2 = 1 << 4;
     /**
      * Load only if debug flag is set
      */

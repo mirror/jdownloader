@@ -61,7 +61,7 @@ public abstract class PluginForDecrypt extends Plugin {
     private static HashMap<Class<? extends PluginForDecrypt>, Long> LAST_STARTED_TIME = new HashMap<Class<? extends PluginForDecrypt>, Long>();
     private Long WAIT_BETWEEN_STARTS = 0L;
 
-    private static int OPEN_CLICK_N_LOAD = 0;
+
 
     public synchronized long getLastTimeStarted() {
         if (!LAST_STARTED_TIME.containsKey(this.getClass())) { return 0; }
@@ -175,7 +175,7 @@ public abstract class PluginForDecrypt extends Plugin {
             tmpLinks = new ArrayList<DownloadLink>();
             progress.setStatusText(this.getHost() + ": " + e.getErrorMessage());
             progress.setColor(Color.RED);
-            tryClickNLoad(cryptedLink);
+        
             progress.doFinalize(15000l);
         } catch (InterruptedException e2) {
             tmpLinks = new ArrayList<DownloadLink>();
@@ -188,7 +188,7 @@ public abstract class PluginForDecrypt extends Plugin {
             logger.severe("Decrypter out of date: " + getVersion());
             progress.setStatusText("Decrypter out of date: " + this.getHost());
 
-            tryClickNLoad(cryptedLink);
+          
 
             progress.setColor(Color.RED);
             progress.doFinalize(15000l);
@@ -266,29 +266,6 @@ public abstract class PluginForDecrypt extends Plugin {
         return cc;
     }
 
-    private void tryClickNLoad(CryptedLink cryptedLink) {
-        if (this.isClickNLoadEnabled() && OPEN_CLICK_N_LOAD >= 0 && OPEN_CLICK_N_LOAD <= 25) {
-            synchronized (JDUtilities.USERIO_LOCK) {
-                if (OPEN_CLICK_N_LOAD < 0) return;
-                boolean open = JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(0, JDL.LF("gui.plugins.decrypt.askclicknload", "The decrypter %s seems to be outdated, but supports Click'n'Load. Open the website now?", this.getHost())), UserIO.RETURN_OK);
-                if (open) {
-                    try {
-                        JLink.openURL(cryptedLink.getCryptedUrl());
-                        OPEN_CLICK_N_LOAD++;
-                    } catch (Exception e) {
-                        open = false;
-                    }
-                }
-                if (!open) {
-                    OPEN_CLICK_N_LOAD = -1;
-                }
-            }
-        }
-    }
-
-    protected boolean isClickNLoadEnabled() {
-        return false;
-    }
 
     public ArrayList<DownloadLink> decryptLinks(CryptedLink[] cryptedLinks) {
         fireControlEvent(ControlEvent.CONTROL_PLUGIN_ACTIVE, cryptedLinks);

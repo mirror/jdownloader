@@ -121,6 +121,8 @@ public class ClipboardHandler extends Thread implements ControlListener {
                                         }
                                     }
                                 }
+                                
+                                if(CNL2.checkText(text))return;
                                 /* parsing clipboard for Links */
                                 if (isTextContent) new DistributeData(text.trim()).start();
                             }
