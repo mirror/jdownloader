@@ -388,6 +388,21 @@ public class JDExternInterface extends PluginOptional {
             JDLogger.getLogger().warning(request.toString());
             JDLogger.getLogger().warning(request.getParameters().toString());
             JDLogger.getLogger().warning("\r\n-----------------------External request---------------------");
+            String url = request.getHeader("referer");   
+            if(url ==null){
+                url = request.getHeader("Referer");    
+            }
+            if(url ==null){
+                url = request.getHeader("Referrer");    
+            }
+            if(url ==null){
+                url = request.getHeader("referrer");    
+            }
+            if(url ==null){
+                url = request.getHeader("source");    
+            }
+            
+            app=url!=null?new URL(url).getHost():app;
             if (!JDFlags.hasAllFlags(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN, JDL.LF("jd.plugins.optional.interfaces.jdflashgot.security.title", "External request from %s to %s interface!", app, namespace), JDL.LF("jd.plugins.optional.interfaces.jdflashgot.security.message", "An external application tries to add links. See Log for details."), UserIO.getInstance().getIcon(UserIO.ICON_WARNING), JDL.L("jd.plugins.optional.interfaces.jdflashgot.security.btn_allow", "Allow it!"), JDL.L("jd.plugins.optional.interfaces.jdflashgot.security.btn_deny", "Deny access!")), UserIO.RETURN_OK)) {
                 JDLogger.getLogger().warning("Denied access.");
                 throw new Exception("User denied access");
