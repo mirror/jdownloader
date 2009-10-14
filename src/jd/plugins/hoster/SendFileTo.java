@@ -17,8 +17,6 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.SortedMap;
-import java.util.TreeMap;
 
 import jd.PluginWrapper;
 import jd.parser.Regex;
@@ -31,7 +29,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-//quickupload by pspzockerscene
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sendfile.to" }, urls = { "http://[\\w\\.]*?sendfile.to/[a-z0-9]+" }, flags = { 0 })
 public class SendFileTo extends PluginForHost {
 
@@ -62,10 +59,10 @@ public class SendFileTo extends PluginForHost {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
         // Form um auf free zu "klicken"
-        Form DLForm0 = br.getForm(2);
-        if (DLForm0 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        DLForm0.remove("method_premium");
-        br.submitForm(DLForm0);
+        Form dlForm0 = br.getForm(2);
+        if (dlForm0 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        dlForm0.remove("method_premium");
+        br.submitForm(dlForm0);
         if (br.containsHTML("You have to wait")) {
             int minutes = 0, seconds = 0, hours = 0;
             String tmphrs = br.getRegex("\\s+(\\d+)\\s+hours?").getMatch(0);
@@ -79,7 +76,8 @@ public class SendFileTo extends PluginForHost {
         }
         // Form um auf "Datei herunterladen" zu klicken
         Form DLForm = br.getFormbyProperty("name", "F1");
-        if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        String captchalink = br.getRegex("\"(http://www.sendfile.to/captchas/.*?)\"").getMatch(0);
+        if (DLForm == null || captchalink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         String passCode = null;
         if (br.containsHTML("<br><b>Password:</b>")) {
             if (downloadLink.getStringProperty("pass", null) == null) {
@@ -90,31 +88,20 @@ public class SendFileTo extends PluginForHost {
             }
             DLForm.put("password", passCode);
         }
-        String[][] letters = br.getRegex("<span style='position:absolute;padding-left:(\\d+)px;padding-top:\\d+px;'>(\\d)</span>").getMatches();
-        if (letters.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        SortedMap<Integer, String> capMap = new TreeMap<Integer, String>();
-        for (String[] letter : letters) {
-            capMap.put(Integer.parseInt(letter[0]), letter[1]);
-        }
-        StringBuilder code = new StringBuilder();
-        for (String value : capMap.values()) {
-            code.append(value);
-        }
-        DLForm.put("code", code.toString());
+        String code = getCaptchaCode(captchalink, downloadLink);
+        DLForm.put("code", code);
 
         int tt = Integer.parseInt(br.getRegex("countdown\">(\\d+)</span>").getMatch(0));
         sleep(tt * 1001, downloadLink);
         br.submitForm(DLForm);
-        if (br.containsHTML("Wrong password")) {
-            logger.warning("Wrong password!");
+        if (br.containsHTML("Wrong password") || br.containsHTML("Wrong captcha")) {
+            logger.warning("Wrong password or wrong captcha!");
             downloadLink.setProperty("pass", null);
-            throw new PluginException(LinkStatus.ERROR_RETRY);
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
         if (passCode != null) {
             downloadLink.setProperty("pass", passCode);
         }
-
-        if (br.containsHTML("Wrong captcha")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         String dllink = br.getRegex("dotted #bbb;padding:[0-9]px;\">.*?<a href=\"(.*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
