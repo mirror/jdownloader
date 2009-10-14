@@ -72,6 +72,7 @@ public class BxNt extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.getPage(cryptedUrl);
         String decryptedLink = br.getRegex(SINGLE_DOWNLOAD_LINK_PATTERN).getMatch(0);
+        decryptedLink = decryptedLink.replace("amp;", "");
         if (decryptedLink == null) return null;
 
         decryptedLink = Encoding.htmlDecode(decryptedLink);
