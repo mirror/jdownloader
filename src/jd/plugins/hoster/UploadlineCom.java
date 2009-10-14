@@ -33,14 +33,13 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadline.com" }, urls = { "http://[\\w\\.]*?uploadline\\.com/\\d+/.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadline.com" }, urls = { "http://[\\w\\.]*?uploadline\\.com/\\d+" }, flags = { 0 })
 public class UploadlineCom extends PluginForHost {
 
     public UploadlineCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
@@ -93,15 +92,18 @@ public class UploadlineCom extends PluginForHost {
                 }
                 form.setAction(downloadLink.getDownloadURL());
                 form.put("code", code.toString());
-                if (br.containsHTML("countdown")){
-                int tt = Integer.parseInt(br.getRegex("countdown\">(\\d+)</span>").getMatch(0));
-                sleep(tt * 1001, downloadLink);
+                if (br.containsHTML("countdown")) {
+                    int tt = Integer.parseInt(br.getRegex("countdown\">(\\d+)</span>").getMatch(0));
+                    sleep(tt * 1001, downloadLink);
                 }
                 br.submitForm(form);
                 URLConnectionAdapter con2 = br.getHttpConnection();
                 dllink = br.getRedirectLocation();
                 if (con2.getContentType().contains("html")) {
-                    if (br.containsHTML("Download Link Generated")) dllink = br.getRegex("hours<br><br>\\s+<a\\shref=\"(.*?)\">").getMatch(0);
+                    if (br.containsHTML("<b>Click here to Download</b>")) {
+                        dllink = br.getRegex("<div align=\"center\">.*?<br>.*?<br>.*?<a href=\"(.*?)\"").getMatch(0);
+                        if (dllink == null) dllink = br.getRegex("\"(http://[a-z0-9A-Z]+\\.uploadline\\.com:[0-9]+/d/.*?/.*)?\"").getMatch(0);
+                    }
                     if (br.containsHTML("Error happened when generating Download Link")) {
                         con2.disconnect();
                         String error = br.getRegex("err\">(.*?)</font>").getMatch(0);
@@ -113,23 +115,28 @@ public class UploadlineCom extends PluginForHost {
         }
 
         if (dllink != null && dllink != "") {
-            dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, dllink, true, 1);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+            if (!(dl.getConnection().isContentDisposition())) {
+                br.followConnection();
+                if (br.containsHTML("Wrong IP")){
+                    logger.severe("Wrong IP!");
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+                throw new PluginException(LinkStatus.ERROR_FATAL);
+            }
             dl.startDownload();
         } else
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
     }
 
-    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
-    // @Override
     public String getAGBLink() {
         return "http://www.uploadline.com/tos.html";
     }
 
-    // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         String filename = null;
         String filesize = null;
@@ -154,20 +161,12 @@ public class UploadlineCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    // @Override
-    /*
-     * public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    // @Override
     public void reset() {
     }
 
-    // @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 

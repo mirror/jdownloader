@@ -32,16 +32,10 @@ public class RFlPlcCm extends PluginForDecrypt {
         super(wrapper);
     }
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-
-        br.getPage(param.toString().replace("files/", "popup.php?file="));
-        String link = br.getRegex("onClick=poplink\\('(.*?)'\\)>").getMatch(0);
+        String link = param.toString().replace("yourfileplace", "rapidshare");
         decryptedLinks.add(createDownloadlink(link));
         return decryptedLinks;
     }
-
-    // @Override
-
 }

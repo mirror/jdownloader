@@ -24,27 +24,32 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharebase.to folder" }, urls = { "http://[\\w\\.]*?sharebase\\.to/ordner/.+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharebase.to folder" }, urls = { "http://[\\w\\.]*?sharebase\\.to/3,[A-Z0-9]+\\.html" }, flags = { 0 })
 public class ShrBsTFldr extends PluginForDecrypt {
 
     public ShrBsTFldr(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         String url = param.getCryptedUrl();
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-
+        br.setFollowRedirects(false);
         br.getPage(url);
-        String[] files = br.getRegex("onclick=\"window\\.open\\('(.*?)', 'dldown'\\)\"").getColumn(0);
+        String check = br.getRedirectLocation();
+        if (br.containsHTML(">Dieser Ordner existiert nicht") || check != null) {
+            logger.warning("Wrong link");
+            logger.warning(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+            return new ArrayList<DownloadLink>();
+        }
+        String[] files = br.getRegex("ng>DL:</strong>(.*?)<br").getColumn(0);
+        if (files == null || files.length == 0) files = br.getRegex("\"a2\" href=\"(.*?)\"").getColumn(0);
+        if (files == null || files.length == 0) return null;
         for (String file : files) {
             decryptedLinks.add(createDownloadlink(file));
         }
         return decryptedLinks;
     }
-
-    // @Override
-
 }
