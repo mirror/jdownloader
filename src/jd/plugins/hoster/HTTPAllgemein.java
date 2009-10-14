@@ -125,8 +125,8 @@ public class HTTPAllgemein extends PluginForHost {
             downloadLink.setBrowserUrl(downloadLink.getDownloadURL());
             downloadLink.setDownloadSize(urlConnection.getLongContentLength());
             this.contentType = urlConnection.getContentType();
-            if (this.contentType.contains("text/html")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_NEEDED); }
             urlConnection.disconnect();
+            if (this.contentType.contains("text/html")) throw new PluginException(LinkStatus.ERROR_PLUGIN_NEEDED);
             return AvailableStatus.TRUE;
         } catch (PluginException e2) {
             throw e2;

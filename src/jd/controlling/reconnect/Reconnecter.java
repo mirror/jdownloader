@@ -227,17 +227,14 @@ public class Reconnecter {
     /* reset ipblocked links */
     private static void resetAllLinks() {
         ArrayList<FilePackage> packages = JDUtilities.getController().getPackages();
+        /* reset hoster ipblock waittimes */
+        DownloadWatchDog.getInstance().resetIPBlockWaittime(null);
         synchronized (packages) {
             for (FilePackage fp : packages) {
                 for (DownloadLink nextDownloadLink : fp.getDownloadLinkList()) {
-                    if (nextDownloadLink.getPlugin() != null && (nextDownloadLink.getPlugin().getRemainingHosterWaittime() > 0 || nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.ERROR_IP_BLOCKED))) {
-                        if (nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.ERROR_IP_BLOCKED)) {
-                            nextDownloadLink.getLinkStatus().setStatus(LinkStatus.TODO);
-                            nextDownloadLink.getLinkStatus().resetWaitTime();
-                            nextDownloadLink.getPlugin().resetHosterWaitTime();
-                            logger.finer("Reset GLOBALS: " + nextDownloadLink.getPlugin());
-                            nextDownloadLink.getPlugin().resetPluginGlobals();
-                        }
+                    if (nextDownloadLink.getPlugin() != null && nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.ERROR_IP_BLOCKED)) {
+                        nextDownloadLink.getLinkStatus().setStatus(LinkStatus.TODO);
+                        nextDownloadLink.getLinkStatus().resetWaitTime();
                     }
                 }
             }

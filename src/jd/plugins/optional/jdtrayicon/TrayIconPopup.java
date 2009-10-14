@@ -189,8 +189,8 @@ public class TrayIconPopup extends JWindow implements MouseListener, ChangeListe
     private JToggleButton createButton(final ToolBarAction action) {
         action.init();
         final JToggleButton bt = new JToggleButton(action);
-        bt.setContentAreaFilled(true);
-        bt.setBorderPainted(true);
+        bt.setContentAreaFilled(false);
+        bt.setBorderPainted(false);
         bt.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
@@ -198,7 +198,7 @@ public class TrayIconPopup extends JWindow implements MouseListener, ChangeListe
             }
 
         });
-        bt.setOpaque(true);
+        bt.setOpaque(false);
         bt.setIcon((Icon) action.getValue(Action.SMALL_ICON));
 
         bt.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
@@ -206,6 +206,7 @@ public class TrayIconPopup extends JWindow implements MouseListener, ChangeListe
 
         bt.setHorizontalAlignment(JButton.LEFT);
         bt.setIconTextGap(5);
+        bt.addMouseListener(new HoverEffect(bt));
         return bt;
     }
 

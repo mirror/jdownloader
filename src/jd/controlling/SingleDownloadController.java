@@ -183,17 +183,19 @@ public class SingleDownloadController extends Thread {
                 onErrorLocalIO(downloadLink, currentPlugin);
                 break;
             case LinkStatus.ERROR_IP_BLOCKED:
-                onErrorWaittime(downloadLink, currentPlugin);
+                onErrorIPWaittime(downloadLink, currentPlugin);
                 break;
             case LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE:
-                onErrorTemporarilyUnavailable(downloadLink, currentPlugin);
+                onErrorDownloadTemporarilyUnavailable(downloadLink, currentPlugin);
+                break;
+            case LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE:
+                onErrorHostTemporarilyUnavailable(downloadLink, currentPlugin);
                 break;
             case LinkStatus.ERROR_AGB_NOT_SIGNED:
                 onErrorAGBNotSigned(downloadLink, currentPlugin);
                 break;
             case LinkStatus.ERROR_FILE_NOT_FOUND:
                 Balloon.showIfHidden(JDL.L("ballon.download.error.title", "Error"), JDTheme.II("gui.images.bad", 32, 32), JDL.LF("ballon.download.fnf.message", "<b>%s<b><hr>File not found", downloadLink.getName() + " (" + Formatter.formatReadable(downloadLink.getDownloadSize()) + ")"));
-
                 onErrorFileNotFound(downloadLink, currentPlugin);
                 break;
             case LinkStatus.ERROR_LINK_IN_PROGRESS:
@@ -201,7 +203,6 @@ public class SingleDownloadController extends Thread {
                 break;
             case LinkStatus.ERROR_FATAL:
                 Balloon.showIfHidden(JDL.L("ballon.download.error.title", "Error"), JDTheme.II("gui.images.bad", 32, 32), JDL.LF("ballon.download.fatalerror.message", "<b>%s<b><hr>Fatal Plugin Error", downloadLink.getHost()));
-
                 onErrorFatal(downloadLink, currentPlugin);
                 break;
             case LinkStatus.ERROR_CAPTCHA:
@@ -216,25 +217,19 @@ public class SingleDownloadController extends Thread {
             case LinkStatus.ERROR_ALREADYEXISTS:
                 onErrorFileExists(downloadLink, currentPlugin);
                 break;
-
             case LinkStatus.ERROR_DOWNLOAD_FAILED:
                 onErrorChunkloadFailed(downloadLink, currentPlugin);
                 Balloon.showIfHidden(JDL.L("ballon.download.error.title", "Error"), JDTheme.II("gui.images.bad", 32, 32), JDL.LF("ballon.download.failed.message", "<b>%s<b><hr>failed", downloadLink.getName() + " (" + Formatter.formatReadable(downloadLink.getDownloadSize()) + ")"));
-
                 break;
-
             case LinkStatus.ERROR_PLUGIN_DEFEKT:
                 onErrorPluginDefect(downloadLink, currentPlugin);
                 Balloon.showIfHidden(JDL.L("ballon.download.error.title", "Error"), JDTheme.II("gui.images.bad", 32, 32), JDL.LF("ballon.download.plugindefect.message", "<b>%s<b><hr>Plugin defect", downloadLink.getHost()));
-
                 break;
             case LinkStatus.ERROR_NO_CONNECTION:
             case LinkStatus.ERROR_TIMEOUT_REACHED:
                 Balloon.showIfHidden(JDL.L("ballon.download.error.title", "Error"), JDTheme.II("gui.images.bad", 32, 32), JDL.LF("ballon.download.connectionlost.message", "<b>%s<b><hr>Connection lost", downloadLink.getHost()));
-
                 onErrorNoConnection(downloadLink, currentPlugin);
                 break;
-
             default:
                 if (linkStatus.hasStatus(LinkStatus.FINISHED)) {
                     logger.finest("\r\nFinished- " + downloadLink.getLinkStatus());
@@ -244,7 +239,6 @@ public class SingleDownloadController extends Thread {
                     retry(downloadLink, currentPlugin);
                 }
             }
-
         } catch (Exception e) {
             logger.severe("Error in Plugin Version: " + downloadLink.getPlugin().getVersion());
             JDLogger.exception(e);
@@ -517,7 +511,7 @@ public class SingleDownloadController extends Thread {
      * @param plugin
      * @param step
      */
-    private void onErrorTemporarilyUnavailable(DownloadLink downloadLink, PluginForHost plugin) {
+    private void onErrorDownloadTemporarilyUnavailable(DownloadLink downloadLink, PluginForHost plugin) {
         logger.warning("Error occurred: Temporarily unavailably: PLease wait " + downloadLink.getLinkStatus().getValue() + " ms for a retry");
         LinkStatus status = downloadLink.getLinkStatus();
         if (status.getErrorMessage() == null) status.setErrorMessage(JDL.L("controller.status.tempUnavailable", "kurzzeitig nicht verfügbar"));
@@ -539,6 +533,19 @@ public class SingleDownloadController extends Thread {
         DownloadController.getInstance().fireDownloadLinkUpdate(downloadLink);
     }
 
+    private void onErrorHostTemporarilyUnavailable(DownloadLink downloadLink, PluginForHost plugin) {
+        LinkStatus status = downloadLink.getLinkStatus();
+        long milliSeconds = downloadLink.getLinkStatus().getValue();
+        if (milliSeconds <= 0) {
+            logger.severe(JDL.L("plugins.errors.pluginerror", "Plugin error. Please inform Support"));
+            milliSeconds = 3600000l;
+        }
+        logger.warning("Error occurred: Download from this host is currently not possble: PLease wait " + milliSeconds + " ms for a retry");
+        status.setWaitTime(milliSeconds);
+        DownloadWatchDog.getInstance().setTempUnavailWaittime(plugin.getHost(), milliSeconds);
+        DownloadController.getInstance().fireDownloadLinkUpdate(downloadLink);
+    }
+
     /**
      * Diese Funktion wird aufgerufen wenn Ein Download mit einem Waittimefehler
      * abgebrochen wird
@@ -547,7 +554,7 @@ public class SingleDownloadController extends Thread {
      * @param plugin
      * @param step
      */
-    private void onErrorWaittime(DownloadLink downloadLink, PluginForHost plugin) {
+    private void onErrorIPWaittime(DownloadLink downloadLink, PluginForHost plugin) {
         LinkStatus status = downloadLink.getLinkStatus();
         long milliSeconds = downloadLink.getLinkStatus().getValue();
 
@@ -556,7 +563,7 @@ public class SingleDownloadController extends Thread {
             milliSeconds = 3600000l;
         }
         status.setWaitTime(milliSeconds);
-        plugin.setHosterWaittime(milliSeconds);
+        DownloadWatchDog.getInstance().setIPBlockWaittime(plugin.getHost(), milliSeconds);
         DownloadController.getInstance().fireDownloadLinkUpdate(downloadLink);
     }
 

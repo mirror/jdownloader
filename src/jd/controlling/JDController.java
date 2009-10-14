@@ -599,37 +599,6 @@ public class JDController implements ControlListener {
         }
     }
 
-    /**
-     * Setzt de Status aller Links zurück die nicht gerade geladen werden.
-     */
-    public void resetAllLinks() {
-        ArrayList<FilePackage> packages = JDUtilities.getDownloadController().getPackages();
-        synchronized (packages) {
-            ArrayList<DownloadLink> al = new ArrayList<DownloadLink>();
-            Iterator<FilePackage> iterator = packages.iterator();
-            FilePackage fp = null;
-            DownloadLink nextDownloadLink;
-            while (iterator.hasNext()) {
-                fp = iterator.next();
-                Iterator<DownloadLink> it2 = fp.getDownloadLinkList().iterator();
-                while (it2.hasNext()) {
-                    nextDownloadLink = it2.next();
-                    if (!nextDownloadLink.getLinkStatus().isPluginActive()) {
-                        nextDownloadLink.getLinkStatus().setStatus(LinkStatus.TODO);
-                        nextDownloadLink.getLinkStatus().setStatusText("");
-                        nextDownloadLink.getLinkStatus().reset();
-                        // nextDownloadLink.setEndOfWaittime(0);
-                        nextDownloadLink.getPlugin().resetPluginGlobals();
-                        al.add(nextDownloadLink);
-                    }
-
-                }
-            }
-            DownloadController.getInstance().fireDownloadLinkUpdate(al);
-        }
-
-    }
-
     public void loadContainerFile(final File file) {
         loadContainerFile(file, false, false);
     }

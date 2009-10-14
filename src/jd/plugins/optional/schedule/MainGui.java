@@ -93,6 +93,7 @@ public class MainGui extends SwitchPanel implements ActionListener, MouseListene
         table.getModel().fireTableDataChanged();
         schedule.saveActions();
         removeTab(act);
+        schedule.updateTable();
     }
 
     public void removeTab(Actions act) {

@@ -231,6 +231,11 @@ public class LinkGrabberTable extends JDTable implements MouseListener, MouseMot
             }
         }
         if (e.getButton() == MouseEvent.BUTTON1) {
+            if (column == 0) {
+                Point p = this.getPointinCell(e.getPoint());
+                /* dont react here on collapse/expand icon */
+                if (p != null && p.getX() < 30) return;
+            }
             if ((e.getClickCount() == 1 && linkgrabber.isFilePackageInfoVisible(null)) || e.getClickCount() == 2) {
                 Object element = getValueAt(row, 0);
                 if (linkgrabber.isFilePackageInfoVisible(element) && e.getClickCount() == 2) {

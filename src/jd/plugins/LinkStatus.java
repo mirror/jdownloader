@@ -21,6 +21,7 @@ import java.lang.reflect.Field;
 
 import javax.swing.ImageIcon;
 
+import jd.controlling.DownloadWatchDog;
 import jd.controlling.JDLogger;
 import jd.nutils.Formatter;
 import jd.nutils.JDFlags;
@@ -160,6 +161,11 @@ public class LinkStatus implements Serializable {
      */
     public static final int ERROR_PLUGIN_NEEDED = 1 << 30;
 
+    /**
+     * hoster is temporarily not available, dont try other links for this host
+     */
+    public static final int ERROR_HOSTER_TEMPORARILY_UNAVAILABLE = 1 << 31;
+
     private static final long serialVersionUID = 3885661829491436448L;
 
     @Deprecated
@@ -234,6 +240,8 @@ public class LinkStatus implements Serializable {
             return JDL.L("downloadlink.status.error.premium", "Premium Error");
         case LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE:
             return JDL.L("downloadlink.status.error.temp_unavailable", "Temp. unavailable");
+        case LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE:
+            return JDL.L("downloadlink.status.error.hoster_temp_unavailable", "Download from this host is currently not possible");
         case LinkStatus.ERROR_FATAL:
             return JDL.L("downloadlink.status.error.fatal", "Fatal Error");
         case LinkStatus.WAITING_USERIO:
@@ -302,8 +310,8 @@ public class LinkStatus implements Serializable {
         }
 
         /* ip blocked */
-        if (hasStatus(ERROR_IP_BLOCKED) && downloadLink.getPlugin().getRemainingHosterWaittime() > 0) {
-            ret.append(JDL.LF("gui.download.waittime_status2", "Wait %s", Formatter.formatSeconds((downloadLink.getPlugin().getRemainingHosterWaittime() / 1000))));
+        if (hasStatus(ERROR_IP_BLOCKED) && DownloadWatchDog.getInstance().getRemainingIPBlockWaittime(downloadLink.getHost()) > 0) {
+            ret.append(JDL.LF("gui.download.waittime_status2", "Wait %s", Formatter.formatSeconds(getRemainingWaittime() / 1000)));
             if (errorMessage != null) return errorMessage + " " + ret.toString();
             return ret.toString();
         }
@@ -313,10 +321,16 @@ public class LinkStatus implements Serializable {
             if (errorMessage != null) return errorMessage + " " + ret.toString();
             return ret.toString();
         }
+        /* hoster temp unavail */
+        if (hasStatus(ERROR_HOSTER_TEMPORARILY_UNAVAILABLE) && DownloadWatchDog.getInstance().getRemainingTempUnavailWaittime(downloadLink.getHost()) > 0) {
+            ret.append(JDL.LF("gui.download.waittime_status2", "Wait %s", Formatter.formatSeconds(getRemainingWaittime() / 1000)));
+            if (errorMessage != null) return errorMessage + " " + ret.toString();
+            return ret.toString();
+        }
 
         if (isFailed()) return getLongErrorMessage();
-        if (downloadLink.getPlugin() != null && downloadLink.getPlugin().getRemainingHosterWaittime() > 0 && !downloadLink.getLinkStatus().isPluginActive()) { return JDL.L("gui.downloadlink.hosterwaittime", "[wait for new ip]"); }
-
+        if (downloadLink.getPlugin() != null && DownloadWatchDog.getInstance().getRemainingIPBlockWaittime(downloadLink.getHost()) > 0 && !downloadLink.getLinkStatus().isPluginActive()) { return JDL.L("gui.downloadlink.hosterwaittime", "[wait for new ip]"); }
+        if (downloadLink.getPlugin() != null && DownloadWatchDog.getInstance().getRemainingTempUnavailWaittime(downloadLink.getHost()) > 0 && !downloadLink.getLinkStatus().isPluginActive()) { return JDL.L("gui.downloadlink.hostertempunavail", "[download currently not possible]"); }
         if (downloadLink.getDownloadInstance() == null && hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
             removeStatus(DOWNLOADINTERFACE_IN_PROGRESS);
         }
@@ -362,7 +376,7 @@ public class LinkStatus implements Serializable {
      * @return
      */
     public boolean hasStatus(int status) {
-        return (this.status & status) > 0;
+        return (this.status & status) != 0;
     }
 
     public boolean isFailed() {

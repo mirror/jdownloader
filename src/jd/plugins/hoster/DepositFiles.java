@@ -60,6 +60,7 @@ public class DepositFiles extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
+        br.forceDebug(true);
         requestFileInformation(downloadLink);
         String link = downloadLink.getDownloadURL();
         br.getPage(link);
@@ -117,8 +118,8 @@ public class DepositFiles extends PluginForHost {
         /* county slots full */
         if (br.containsHTML("but all downloading slots for your country")) {
             String wait = br.getRegex("html_download_api-limit_country\">(\\d+)</span>").getMatch(0);
-            if (wait != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait.trim()) * 1000l);
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, JDL.L("plugins.hoster.depositfilescom.errors.allslotsbusy", "All download slots for your country are busy"), 30 * 60 * 1000l);
+            if (wait != null) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, Integer.parseInt(wait.trim()) * 1000l);
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.depositfilescom.errors.allslotsbusy", "All download slots for your country are busy"), 30 * 60 * 1000l);
         }
         /* already loading */
         if (br.containsHTML("Von Ihren IP-Addresse werden schon einige")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1001l);

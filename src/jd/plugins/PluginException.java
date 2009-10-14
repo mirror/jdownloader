@@ -48,14 +48,6 @@ public class PluginException extends Exception {
         this.value = value;
     }
 
-    public int getLinkStatus() {
-        return linkStatus;
-    }
-
-    public void setLinkStatus(int linkStatus) {
-        this.linkStatus = linkStatus;
-    }
-
     public String getErrorMessage() {
         return errorMessage;
     }
@@ -73,7 +65,7 @@ public class PluginException extends Exception {
     }
 
     public void fillLinkStatus(LinkStatus linkStatus) {
-        if (this.linkStatus >= 0) linkStatus.addStatus(this.linkStatus);
+        linkStatus.addStatus(this.linkStatus);
         if (value >= 0) linkStatus.setValue(value);
         if (errorMessage != null) linkStatus.setErrorMessage(errorMessage);
     }

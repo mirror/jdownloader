@@ -132,9 +132,6 @@ public abstract class PluginForHost extends Plugin {
     private static final String CONFIGNAME = "pluginsForHost";
     private static int currentConnections = 0;
 
-    private static HashMap<String, Long> HOSTER_WAIT_TIMES = new HashMap<String, Long>();
-    private static HashMap<String, Long> HOSTER_WAIT_UNTIL_TIMES = new HashMap<String, Long>();
-
     public static final String PARAM_MAX_RETRIES = "MAX_RETRIES";
     protected DownloadInterface dl = null;
     private int maxConnections = 50;
@@ -170,7 +167,6 @@ public abstract class PluginForHost extends Plugin {
             downloadLink.requestGuiUpdate();
         }
         return free;
-
     }
 
     protected void setBrowserExclusive() {
@@ -415,18 +411,13 @@ public abstract class PluginForHost extends Plugin {
      * TODO: Which one is the correct one? The parameter is useless.
      */
     public int getMaxSimultanDownloadNum(DownloadLink link) {
-        return ignoreHosterWaittime() ? getMaxSimultanPremiumDownloadNum() : getMaxSimultanFreeDownloadNum();
+        return isPremiumDownload() ? getMaxSimultanPremiumDownloadNum() : getMaxSimultanFreeDownloadNum();
     }
 
-    public boolean ignoreHosterWaittime() {
-        if (AccountController.getInstance().getValidAccount(this) == null) return false;
+    public boolean isPremiumDownload() {
         if (!enablePremium || !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)) return false;
+        if (AccountController.getInstance().getValidAccount(this) == null) return false;
         return true;
-    }
-
-    public long getRemainingHosterWaittime() {
-        if (!HOSTER_WAIT_UNTIL_TIMES.containsKey(getHost())) { return 0; }
-        return Math.max(0, (HOSTER_WAIT_UNTIL_TIMES.get(getHost()) - System.currentTimeMillis()));
     }
 
     public synchronized long getLastTimeStarted() {
@@ -470,11 +461,6 @@ public abstract class PluginForHost extends Plugin {
             return;
         }
 
-        Long t = 0l;
-
-        if (HOSTER_WAIT_UNTIL_TIMES.containsKey(getHost())) {
-            t = HOSTER_WAIT_UNTIL_TIMES.get(getHost());
-        }
         Account account = null;
         if (enablePremium) account = AccountController.getInstance().getValidAccount(this);
         if (account != null) {
@@ -528,10 +514,6 @@ public abstract class PluginForHost extends Plugin {
                 if (account.getAccountInfo() != null) account.getAccountInfo().setStatus(JDL.L("plugins.hoster.premium.status_ok", "Account is ok"));
             }
         } else {
-            if (t > 0) {
-                resetHosterWaitTime();
-                DownloadController.getInstance().fireGlobalUpdate();
-            }
             try {
                 handleFree(downloadLink);
                 if (dl != null && dl.getConnection() != null) {
@@ -565,13 +547,7 @@ public abstract class PluginForHost extends Plugin {
 
     public abstract void resetDownloadlink(DownloadLink link);
 
-    public void resetHosterWaitTime() {
-        HOSTER_WAIT_TIMES.put(getHost(), 0l);
-        HOSTER_WAIT_UNTIL_TIMES.put(getHost(), 0l);
-    }
-
     public void resetPluginGlobals() {
-        br = new Browser();
     }
 
     public void setAGBChecked(boolean value) {
@@ -581,11 +557,6 @@ public abstract class PluginForHost extends Plugin {
 
     public static synchronized void setCurrentConnections(int CurrentConnections) {
         currentConnections = CurrentConnections;
-    }
-
-    public void setHosterWaittime(long milliSeconds) {
-        HOSTER_WAIT_TIMES.put(getHost(), milliSeconds);
-        HOSTER_WAIT_UNTIL_TIMES.put(getHost(), System.currentTimeMillis() + milliSeconds);
     }
 
     public int getTimegapBetweenConnections() {
@@ -648,15 +619,6 @@ public abstract class PluginForHost extends Plugin {
 
     public boolean isAborted(DownloadLink downloadLink) {
         return (downloadLink.getDownloadLinkController() != null && downloadLink.getDownloadLinkController().isAborted());
-    }
-
-    /**
-     * wird vom controlling (watchdog) beim stoppen aufgerufen. Damit werdend ie
-     * hostercontrollvariablen zurückgesetzt.
-     */
-    public static void resetStatics() {
-        HOSTER_WAIT_TIMES.clear();
-        HOSTER_WAIT_UNTIL_TIMES.clear();
     }
 
     public Browser getBrowser() {
@@ -743,15 +705,12 @@ public abstract class PluginForHost extends Plugin {
 
         g.dispose();
         try {
-            File imageFile = JDUtilities.getResourceFile("jd/img/hosterlogos/" + getHost() + ".png");
-            if (!imageFile.getParentFile().exists()) imageFile.getParentFile().mkdirs();
+            File imageFile = JDUtilities.getResourceFile("jd/img/hosterlogos/" + getHost() + ".png", true);
             ImageIO.write(image, "png", imageFile);
         } catch (IOException e) {
             e.printStackTrace();
         }
-
         return image;
-
     }
 
     public HosterInfo getHosterInfo() {

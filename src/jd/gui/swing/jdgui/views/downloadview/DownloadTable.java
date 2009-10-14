@@ -143,7 +143,7 @@ public class DownloadTable extends JDTable implements MouseListener, MouseMotion
                 if (o == null || !(o instanceof DownloadLink)) return false;
                 DownloadLink dl = (DownloadLink) o;
                 if (dl.getLinkStatus().hasStatus(LinkStatus.FINISHED) || !dl.isEnabled() || dl.getLinkStatus().isPluginActive()) return false;
-                return dl.getPlugin() == null || dl.getPlugin().getRemainingHosterWaittime() > 0;
+                return (DownloadWatchDog.getInstance().getRemainingIPBlockWaittime(dl.getHost()) > 0) || (DownloadWatchDog.getInstance().getRemainingTempUnavailWaittime(dl.getHost()) > 0);
             }
         });
     }
@@ -450,6 +450,11 @@ public class DownloadTable extends JDTable implements MouseListener, MouseMotion
             }
         }
         if (e.getButton() == MouseEvent.BUTTON1) {
+            if (column == 0) {
+                Point p = this.getPointinCell(e.getPoint());
+                /* dont react here on collapse/expand icon */
+                if (p != null && p.getX() < 30) return;
+            }
             if ((e.getClickCount() == 1 && panel.isFilePackageInfoVisible(null)) || e.getClickCount() == 2) {
                 Object element = getValueAt(row, 0);
                 if (panel.isFilePackageInfoVisible(element) && e.getClickCount() == 2) {

@@ -67,6 +67,7 @@ public class EnabledColumn extends JDTableColumn implements ActionListener {
     public void setValue(Object value, Object object) {
         ((Actions) object).setEnabled((Boolean) value);
         schedule.saveActions();
+        schedule.updateTable();
     }
 
     @Override

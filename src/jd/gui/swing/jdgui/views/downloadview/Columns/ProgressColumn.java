@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.Comparator;
 
 import jd.controlling.DownloadController;
+import jd.controlling.DownloadWatchDog;
 import jd.gui.swing.components.table.JDRowHighlighter;
 import jd.gui.swing.components.table.JDTableColumn;
 import jd.gui.swing.components.table.JDTableModel;
@@ -107,7 +108,13 @@ public class ProgressColumn extends JDTableColumn {
                 progress.setValue(dLink.getPluginProgress().getCurrent());
                 COL_PROGRESS = COL_PROGRESS_NORMAL;
                 return progress;
-            } else if ((dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_IP_BLOCKED) && dLink.getPlugin().getRemainingHosterWaittime() > 0) || (dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE) && dLink.getLinkStatus().getRemainingWaittime() > 0)) {
+            } else if ((dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_IP_BLOCKED) && DownloadWatchDog.getInstance().getRemainingIPBlockWaittime(dLink.getHost()) > 0)) {
+                progress.setMaximum(dLink.getLinkStatus().getTotalWaitTime());
+                COL_PROGRESS = COL_PROGRESS_ERROR;
+                progress.setString(Formatter.formatSeconds(dLink.getLinkStatus().getRemainingWaittime() / 1000));
+                progress.setValue(dLink.getLinkStatus().getRemainingWaittime());
+                return progress;
+            } else if ((dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE) && DownloadWatchDog.getInstance().getRemainingTempUnavailWaittime(dLink.getHost()) > 0)) {
                 progress.setMaximum(dLink.getLinkStatus().getTotalWaitTime());
                 COL_PROGRESS = COL_PROGRESS_ERROR;
                 progress.setString(Formatter.formatSeconds(dLink.getLinkStatus().getRemainingWaittime() / 1000));

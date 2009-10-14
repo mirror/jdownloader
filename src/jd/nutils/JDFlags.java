@@ -28,21 +28,20 @@ public class JDFlags {
     public static boolean hasAllFlags(int status, int... flags) {
         for (int i : flags) {
             if ((status & i) == 0) return false;
-
         }
         return true;
     }
 
     public static boolean hasNoFlags(int status, int... flags) {
         for (int i : flags) {
-            if ((status & i) > 0) return false;
+            if ((status & i) != 0) return false;
         }
         return true;
     }
 
     public static boolean hasSomeFlags(int status, int... flags) {
         for (int i : flags) {
-            if ((status & i) > 0) return true;
+            if ((status & i) != 0) return true;
         }
         return false;
     }
@@ -54,7 +53,7 @@ public class JDFlags {
      * @param filtermask
      * @return curState&filtermask
      */
-    public static int filterFlags(int curState, int filtermask) {      
+    public static int filterFlags(int curState, int filtermask) {
         return curState & filtermask;
     }
 

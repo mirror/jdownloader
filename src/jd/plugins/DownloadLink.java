@@ -32,6 +32,7 @@ import jd.config.Configuration;
 import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.controlling.DownloadController;
+import jd.controlling.DownloadWatchDog;
 import jd.controlling.JDLogger;
 import jd.controlling.SingleDownloadController;
 import jd.event.JDBroadcaster;
@@ -172,7 +173,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     private int priority = 0;
 
-    private transient ImageIcon icon;
+    private transient ImageIcon icon = null;
 
     private long requestTime;
 
@@ -619,7 +620,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
                 break;
             } catch (PluginException e) {
                 e.fillLinkStatus(this.getLinkStatus());
-
                 availableStatus = AvailableStatus.FALSE;
                 break;
             } catch (IOException e) {
@@ -733,7 +733,8 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
             }
         }
         finalFileName = null;
-        getPlugin().resetHosterWaitTime();
+        DownloadWatchDog.getInstance().resetIPBlockWaittime(getHost());
+        DownloadWatchDog.getInstance().resetTempUnavailWaittime(getHost());
         if (getPlugin() != null) getPlugin().resetDownloadlink(this);
     }
 

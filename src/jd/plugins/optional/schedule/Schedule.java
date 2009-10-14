@@ -50,35 +50,31 @@ public class Schedule extends PluginOptional {
 
     private ArrayList<SchedulerModuleInterface> modules;
 
-    private SimpleDateFormat time;
-
-    private SimpleDateFormat date;
-
     private SchedulerView view;
 
     private MainGui gui;
 
-    private Schedulercheck sc;
+    private Schedulercheck sc = null;
 
     private boolean running = false;
 
     private MenuAction activateAction;
 
+    public static final Object LOCK = new Object();
+
     public Schedule(PluginWrapper wrapper) {
         super(wrapper);
-
         actions = this.getPluginConfig().getGenericProperty("Scheduler_Actions", new ArrayList<Actions>());
         if (actions == null) {
             actions = new ArrayList<Actions>();
             saveActions();
         }
-
         initModules();
-
-        time = new SimpleDateFormat("HH:mm");
-        date = new SimpleDateFormat("dd.MM.yyyy");
-
-        startCheck();
+        activateAction = new MenuAction(getWrapper().getID(), 0);
+        activateAction.setActionListener(this);
+        activateAction.setTitle(getHost());
+        activateAction.setIcon(this.getIconKey());
+        activateAction.setSelected(false);
     }
 
     private void initModules() {
@@ -107,24 +103,30 @@ public class Schedule extends PluginOptional {
 
     public void removeAction(int row) {
         if (row < 0) return;
-        actions.remove(row);
-        saveActions();
-        stopCheck();
-    }
-
-    public void addAction(Actions act) {
-        actions.add(act);
-        saveActions();
-        startCheck();
-    }
-
-    public void saveActions() {
-        this.getPluginConfig().setProperty("Scheduler_Actions", actions);
-        this.getPluginConfig().save();
+        synchronized (LOCK) {
+            actions.remove(row);
+            saveActions();
+        }
         updateTable();
     }
 
+    public void addAction(Actions act) {
+        synchronized (LOCK) {
+            actions.add(act);
+            saveActions();
+        }
+        updateTable();
+    }
+
+    public void saveActions() {
+        synchronized (LOCK) {
+            this.getPluginConfig().setProperty("Scheduler_Actions", actions);
+            this.getPluginConfig().save();
+        }
+    }
+
     public void updateTable() {
+        if (sc != null && sc.isSleeping()) sc.interrupt();
         if (gui != null) gui.updateTable();
     }
 
@@ -171,13 +173,10 @@ public class Schedule extends PluginOptional {
 
     @Override
     public boolean initAddon() {
-        activateAction = new MenuAction(getWrapper().getID(), 0);
-        activateAction.setActionListener(this);
-        activateAction.setTitle(getHost());
-        activateAction.setIcon(this.getIconKey());
-        activateAction.setSelected(false);
-
-        logger.info("Schedule OK");
+        logger.info("Schedule Init: OK");
+        running = true;
+        sc = new Schedulercheck();
+        sc.start();
         return true;
     }
 
@@ -192,35 +191,32 @@ public class Schedule extends PluginOptional {
 
     @Override
     public void onExit() {
-    }
-
-    public void startCheck() {
-        if (sc == null) sc = new Schedulercheck();
-        if (sc.isAlive() || !shouldStart()) return;
-        logger.info("Starting scheduler");
-        running = true;
-        sc.start();
-    }
-
-    public void stopCheck() {
-        if (sc == null || !sc.isAlive() || shouldStart()) return;
-        logger.info("Stoping scheduler");
+        saveActions();
         running = false;
-    }
-
-    private boolean shouldStart() {
-        if (actions.isEmpty()) return false;
-        for (Actions a : actions) {
-            if (a.isEnabled()) return true;
-        }
-        return false;
+        if (sc != null && sc.isSleeping()) sc.interrupt();
+        sc = null;
     }
 
     public class Schedulercheck extends Thread {
         private Date today;
+        private SimpleDateFormat time;
+        private SimpleDateFormat date;
+        private ArrayList<Actions> tmpactions = null;
+        private ArrayList<Executions> tmpexe = null;
+        private boolean sleeping = false;
 
         public Schedulercheck() {
             super("Schedulercheck");
+            time = new SimpleDateFormat("HH:mm");
+            date = new SimpleDateFormat("dd.MM.yyyy");
+            tmpactions = new ArrayList<Actions>();
+            tmpexe = new ArrayList<Executions>();
+        }
+
+        public boolean isSleeping() {
+            synchronized (this) {
+                return sleeping;
+            }
         }
 
         private boolean updateTimer(Actions a, long curtime) {
@@ -251,8 +247,9 @@ public class Schedule extends PluginOptional {
 
         @Override
         public void run() {
+            logger.finest("Scheduler: start");
             while (running) {
-                logger.finest("Checking scheduler");
+                logger.finest("Scheduler: checking");
                 /* getting current date and time */
                 long currenttime = System.currentTimeMillis();
                 today = new Date(currenttime);
@@ -260,11 +257,19 @@ public class Schedule extends PluginOptional {
                 String todaytime = time.format(today);
                 boolean savechanges = false;
                 /* check all scheduler actions */
-                for (Actions a : actions) {
+                synchronized (LOCK) {
+                    tmpactions.clear();
+                    tmpactions.addAll(actions);
+                }
+                for (Actions a : tmpactions) {
                     /* check if we have to start the scheduler action */
                     if (a.isEnabled() && todaydate.equals(date.format(a.getDate())) && todaytime.equals(time.format(a.getDate()))) {
                         /* lets execute the action */
-                        for (Executions e : a.getExecutions()) {
+                        synchronized (LOCK) {
+                            tmpexe.clear();
+                            tmpexe.addAll(a.getExecutions());
+                        }
+                        for (Executions e : tmpexe) {
                             logger.finest("Execute: " + e.getModule().getTranslation());
                             e.exceute();
                         }
@@ -278,11 +283,18 @@ public class Schedule extends PluginOptional {
                     updateTable();
                 }
                 /* wait a minute and check again */
+                synchronized (this) {
+                    sleeping = true;
+                }
                 try {
-                    Thread.sleep(60000);
+                    sleep(60000);
                 } catch (InterruptedException e) {
                 }
+                synchronized (this) {
+                    sleeping = false;
+                }
             }
+            logger.finest("Scheduler: stop");
         }
     }
 }
