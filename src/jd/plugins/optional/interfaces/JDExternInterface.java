@@ -23,7 +23,13 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 
+import javax.crypto.Cipher;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 import javax.swing.JFrame;
+
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.Scriptable;
 
 import jd.Installer;
 import jd.PluginWrapper;
@@ -40,6 +46,7 @@ import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.nutils.JDFlags;
+import jd.nutils.encoding.Base64;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.httpserver.Handler;
 import jd.nutils.httpserver.HttpServer;
@@ -54,6 +61,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginOptional;
 import jd.update.WebUpdater;
+import jd.utils.JDHexUtils;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.WebUpdate;
@@ -111,6 +119,22 @@ public class JDExternInterface extends PluginOptional {
         } catch (Exception e) {
         }
         server = null;
+    }
+
+    public static String decrypt(byte[] b, byte[] key) {
+        Cipher cipher;
+        try {
+            IvParameterSpec ivSpec = new IvParameterSpec(key);
+            SecretKeySpec skeySpec = new SecretKeySpec(key, "AES");
+
+            cipher = Cipher.getInstance("AES/CBC/NoPadding");
+            cipher.init(Cipher.DECRYPT_MODE, skeySpec, ivSpec);
+            return new String(cipher.doFinal(b));
+        } catch (Exception e) {
+
+            JDLogger.exception(e);
+        }
+        return null;
     }
 
     @Override
@@ -201,6 +225,58 @@ public class JDExternInterface extends PluginOptional {
                             response.addContent("success\r\n");
                         } catch (IOException e) {
                             e.printStackTrace();
+                        }
+                    } else if (splitPath.length > 1 && splitPath[1].equalsIgnoreCase("addcrypted2")) {
+                        askPermission(request);
+                        /* parse the post data */
+                        String string = Encoding.htmlDecode(request.getParameters().get("crypted")).trim().replace(" ", "+");
+
+                        byte[] baseDecoded = Base64.decode(string);
+                        try {
+                            byte[] key;
+                            
+                            if(request.getParameters().containsKey("jk")){
+                                Context cx = Context.enter();
+                                Scriptable scope = cx.initStandardObjects();
+                                String fun = Encoding.htmlDecode(request.getParameters().get("jk"))+"  f()";
+                             
+                                Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
+                           
+                                key=JDHexUtils.getByteArray(Context.toString(result));
+                                Context.exit(); 
+                            }else{
+                                key=JDHexUtils.getByteArray(request.getParameters().get("k"));
+                            }
+                            
+                          
+                            
+                            
+                            String decryted = decrypt(baseDecoded, key).trim();
+                            String passwords[] = Regex.getLines(Encoding.htmlDecode(request.getParameters().get("passwords")));
+                            PasswordListController.getInstance().addPasswords(passwords);
+
+                            ArrayList<DownloadLink> links = new DistributeData(Encoding.htmlDecode(decryted)).findLinks();
+                            for (DownloadLink l : links) {
+                                l.addSourcePluginPasswords(passwords);
+                                if (request.getParameters().get("source") != null){
+                                    l.setBrowserUrl(Encoding.htmlDecode(request.getParameters().get("source")));
+                                }
+                            }
+                            LinkGrabberController.getInstance().addLinks(links, false, false);
+                            new GuiRunnable<Object>() {
+
+                                @Override
+                                public Object runSave() {
+                                    SwingGui.getInstance().getMainFrame().toFront();
+
+                                    return null;
+                                }
+
+                            }.waitForEDT();
+                            response.addContent("success\r\n");
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            response.addContent("failed\r\n");
                         }
                     } else {
                         response.addContent(JDUtilities.getJDTitle() + "\r\n");
