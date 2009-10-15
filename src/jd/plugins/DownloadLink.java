@@ -620,7 +620,11 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
                 break;
             } catch (PluginException e) {
                 e.fillLinkStatus(this.getLinkStatus());
-                availableStatus = AvailableStatus.FALSE;
+                if (this.getLinkStatus().hasStatus(LinkStatus.ERROR_IP_BLOCKED) || this.getLinkStatus().hasStatus(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE) || this.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE)) {
+                    availableStatus = AvailableStatus.UNCHECKABLE;
+                } else {
+                    availableStatus = AvailableStatus.FALSE;
+                }
                 break;
             } catch (IOException e) {
                 if (e.getMessage().contains("code: 500")) {
