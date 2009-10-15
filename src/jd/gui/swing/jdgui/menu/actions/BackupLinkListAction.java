@@ -23,21 +23,21 @@ import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 
 import jd.config.SubConfiguration;
+import jd.controlling.DownloadController;
 import jd.crypt.JDCrypt;
 import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.components.JDFileChooser;
-import jd.gui.swing.jdgui.actions.ToolBarAction;
+import jd.gui.swing.jdgui.actions.ThreadedAction;
 import jd.nutils.JDHash;
 import jd.nutils.io.JDFileFilter;
 import jd.nutils.io.JDIO;
 import jd.plugins.FilePackage;
 import jd.utils.JDHexUtils;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-public class BackupLinkListAction extends ToolBarAction {
+public class BackupLinkListAction extends ThreadedAction {
     /**
      * 
      */
@@ -48,16 +48,32 @@ public class BackupLinkListAction extends ToolBarAction {
         super("action.backuplinklist", "gui.images.save");
     }
 
-    public void onAction(ActionEvent e) {
+    /**
+     * @param requestInputDialog
+     * @return
+     */
+    public static byte[] getPWByte(String requestInputDialog) {
+        return JDHexUtils.getByteArray(JDHash.getMD5(requestInputDialog));
+    }
 
-        ArrayList<FilePackage> packages = JDUtilities.getDownloadController().getPackages();
+    @Override
+    public void init() {
+    }
 
+    @Override
+    public void initDefaults() {
+    }
+
+    @Override
+    public void threadedActionPerformed(ActionEvent e) {
+        ArrayList<FilePackage> packages = DownloadController.getInstance().getPackages();
         try {
-
             // Serialize to a byte array
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             ObjectOutputStream out = new ObjectOutputStream(bos);
-            out.writeObject(packages);
+            synchronized (DownloadController.ControllerLock) {
+                out.writeObject(packages);
+            }
             out.close();
 
             GuiRunnable<File> temp = new GuiRunnable<File>() {
@@ -76,34 +92,8 @@ public class BackupLinkListAction extends ToolBarAction {
             }
             String defaultpw = SubConfiguration.getConfig("JDC_CONFIG").getStringProperty("password", "jddefault");
             byte[] crypted = JDCrypt.encrypt(JDHexUtils.getHexString(bos.toByteArray()), getPWByte(UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN, JDL.L("jd.gui.swing.jdgui.menu.actions.BackupLinkListAction.password", "Enter Encryption Password"), defaultpw)));
-
             JDIO.saveToFile(ret, crypted);
-
-            // Deserialize from a byte array
-            // ObjectInputStream in = new ObjectInputStream(new
-            // ByteArrayInputStream(buf));
-            // ArrayList<FilePackage> button = (ArrayList<FilePackage>)
-            // in.readObject();
-            // in.close();
-
         } catch (Exception ew) {
         }
-
-    }
-
-    /**
-     * @param requestInputDialog
-     * @return
-     */
-    public static byte[] getPWByte(String requestInputDialog) {
-        return JDHexUtils.getByteArray(JDHash.getMD5(requestInputDialog));
-    }
-
-    @Override
-    public void init() {
-    }
-
-    @Override
-    public void initDefaults() {
     }
 }
