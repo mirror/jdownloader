@@ -92,7 +92,27 @@ public class DepositFiles extends PluginForHost {
             br.submitForm(form);
             checkErrors();
             if (br.getRedirectLocation() != null && br.getRedirectLocation().indexOf("error") > 0) { throw new PluginException(LinkStatus.ERROR_RETRY); }
-            dllink = br.getRegex("<div id=\"download_url\" style=\"display:none;\">.*?<form action=\"(.*?)\" method=\"get\" onSubmit=\"download_start").getMatch(0);
+            dllink = br.getRegex("<div id=\"download_url\" style=\"display:none;\">.*?<form action=\"(.*?)\" method=\"get").getMatch(0);
+            if (dllink == null) {
+                /* check for captcha */
+                String icid = br.getRegex("get_download_img_code\\.php\\?icid=(.*?)\"").getMatch(0);
+                if (icid != null) {
+                    Form cap = new Form();
+                    cap.setAction(link);
+                    cap.setMethod(Form.MethodType.POST);
+                    cap.put("icid", icid);
+                    // form.put("submit", "Continue");
+                    String captcha = getCaptchaCode("http://depositfiles.com/de/get_download_img_code.php?icid=" + icid, downloadLink);
+                    cap.put("img_code", captcha);
+                    br.submitForm(cap);
+                    dllink = br.getRegex("<div id=\"download_url\" style=\"display:none;\">.*?<form action=\"(.*?)\" method=\"get").getMatch(0);
+                    if (dllink == null) {
+                        /* TODO: get correct output here */
+                        logger.severe("Debug: " + br.toString());
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    }
+                }
+            }
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
             URLConnectionAdapter con = dl.getConnection();
@@ -125,6 +145,7 @@ public class DepositFiles extends PluginForHost {
         }
         /* already loading */
         if (br.containsHTML("Von Ihren IP-Addresse werden schon einige")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1001l);
+        if (br.containsHTML("You cannot download more than one file in parallel")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1001l);
         /* unknown error, try again */
         String wait = br.getRegex("Bitte versuchen Sie noch mal nach(.*?)<\\/strong>").getMatch(0);
         if (wait != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Regex.getMilliSeconds(wait));
