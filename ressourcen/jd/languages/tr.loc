@@ -587,6 +587,7 @@ gui.menu.add = Link Ekle
 gui.menu.addons = Eklentiler
 gui.menu.addonsmenu.configuration.mnem = M
 gui.menu.addonsmenu.configuration.name = Eklenti Yönetimi
+gui.menu.gui.jdshutdown.toggle.name = JD Sistem Kapatma TEST
 gui.menu.optional.hjsplit.menu.extract.singlefils.mnem = A
 gui.menu.optional.hjsplit.menu.extract.singlefils.name = Arşiv(leri) Birleştir
 gui.menu.optional.hjsplit.menu.toggle.name = Etkinleştir
