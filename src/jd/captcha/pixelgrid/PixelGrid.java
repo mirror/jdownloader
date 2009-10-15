@@ -98,10 +98,10 @@ public class PixelGrid extends Property {
                 }
             }
         }
-//        grid[xOL][yOL] = 0xff0000;
-//        grid[xOR][yOR] = 0x00FFCC;
-//        grid[xUR][yUR] = 0x3366FF;
-//        grid[xUL][yUL] = 0xFFCC33;
+        grid[xOL][yOL] = 0xff0000;
+        grid[xOR][yOR] = 0x00FFCC;
+        grid[xUR][yUR] = 0x3366FF;
+        grid[xUL][yUL] = 0xFFCC33;
 
         int g = 0;
         double distBest = getM(xOL, xOR, yOL, yOR);
@@ -121,8 +121,8 @@ public class PixelGrid extends Property {
         }
 
         skipw=(xUR - xUL)<(getHeight()/3)||yUL<(getHeight()*2/3)||yUR<(getHeight()*2/3);
-
-
+        
+System.out.println(distBest);
 
         int turn = 60;
 //        if(Math.abs( Math.round(distBest * turn))>6)
@@ -180,10 +180,10 @@ public class PixelGrid extends Property {
                 }
             }
         }
-//        grid[xOL][yOL] = 0xff0000;
-//        grid[xOR][yOR] = 0x00FFCC;
-//        grid[xUR][yUR] = 0x3366FF;
-//        grid[xUL][yUL] = 0xFFCC33;
+        grid[xOL][yOL] = 0xff0000;
+        grid[xOR][yOR] = 0x00FFCC;
+        grid[xUR][yUR] = 0x3366FF;
+        grid[xUL][yUL] = 0xFFCC33;
 
         int g = 0;
         double distBest = getM(xOL, xOR, yOL, yOR);

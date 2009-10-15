@@ -49,5 +49,5 @@ param.splitGapsOverlap=0;
 param.autoLetterNum=true;
 
 param.useSpecialGetLetters=EasyShare.getLetters;
-
+param.useLetterFilter=EasyCaptcha.letterFilter;
 

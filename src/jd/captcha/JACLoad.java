@@ -42,8 +42,43 @@ public class JACLoad {
         // String methodsPath=Utilities.getFullPath(new String[] {
         // JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath(),
         // "jd", "captcha", "methods"});
-        load();
+        // load();
         // loadMegaUpload();
+        loadknt();
+    }
+
+    private void loadknt() {
+        final Browser br = new Browser();
+
+        try {
+
+            br.setCookie("kino.to", "_csoot", "1255453317840");
+            br.setCookie("kino.to", "_csuid", "48c78b976f126fa6");
+            br.setCookie("kino.to", "sitechrx", "1cb8625bb6a0e8a8125cb62ebf20d179");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        for (int i = 0; i < 100; i++) {
+            final int c = i;
+            new Thread(new Runnable() {
+                public void run() {
+                    String dir = "/home/dwd/.jd_home/captchas/knt/";
+                    File file = new File(dir + c + ".png");
+
+                    Browser cln = br.cloneBrowser();
+
+                    try {
+
+                        cln.getPage("http://kino.to/Entry/6788/Die%20Simpsons%20-%20Der%20Film.html");
+                        cln.getDownload(file, "http://kino.to" + cln.getRegex("src=\"(/res/gr/Img/Capture.php.*?)\" height").getMatch(0));
+                    } catch (IOException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    }
+                }
+            }).start();
+        }
+        System.out.println(br);
     }
 
     private void load() {
