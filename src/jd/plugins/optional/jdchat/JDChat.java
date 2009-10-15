@@ -106,6 +106,8 @@ public class JDChat extends PluginOptional implements ControlListener {
     private static final String PARAM_NATIVELANGUAGE = "PARAM_NATIVELANGUAGE2";
     private static final String PARAM_PERFORM = "PARAM_PERFORM";
     private static final String PARAM_PORT = "PARAM_PORT";
+    private static final String PARAM_USERCOLOR = "PARAM_USERCOLOR";
+    
 
     public static final String STYLE = JDIO.getLocalFile(JDUtilities.getResourceFile("plugins/jdchat/styles.css"));
     public static final String STYLE_ACTION = "action";
@@ -881,9 +883,8 @@ public class JDChat extends PluginOptional implements ControlListener {
     private void initConfigEntries() {
         ConfigEntry cfg;
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, PARAM_NICK, JDL.L("plugins.optional.jdchat.user", "Nickname")));
-
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PARAM_USERCOLOR, JDL.L("plugins.optional.jdchat.usercolor", "Only black usernames?")));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, subConfig, PARAM_PERFORM, JDL.L("plugins.optional.jdchat.performonstart", "Perform commands after connection estabilished")));
-
         ConfigContainer lngse = new ConfigContainer(JDL.L("plugins.optional.jdchat.locale", "Language settings"));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CONTAINER, lngse));
 
@@ -963,28 +964,33 @@ public class JDChat extends PluginOptional implements ControlListener {
         scrollPane = new JScrollPane(textArea);
         tabbedPane = new JTabbedPane();
         tabbedPane.add("JDChat", scrollPane);
-        tabbedPane.addFocusListener(new FocusListener() {
-            public void focusGained(FocusEvent e) {
-                JTabbedPane pane = (JTabbedPane) e.getSource();
-                int sel = pane.getSelectedIndex();
-                tabbedPane.setForegroundAt(sel, Color.black);
-            }
-
-            public void focusLost(FocusEvent e) {
-            }
-        });
-
         textField = new JTextField();
         textField.setFocusTraversalKeys(KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS, Collections.EMPTY_SET);
         textField.setFocusTraversalKeys(KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS, Collections.EMPTY_SET);
+        textField.addFocusListener(new FocusListener(){
 
+            @Override
+            public void focusGained(FocusEvent e) {
+                int sel = tabbedPane.getSelectedIndex();               
+                tabbedPane.setForegroundAt(sel, Color.black);
+            }
+
+            @Override
+            public void focusLost(FocusEvent e) {
+                int sel = tabbedPane.getSelectedIndex();               
+                tabbedPane.setForegroundAt(sel, Color.black);
+                
+            }
+            
+        });
         textField.addKeyListener(new KeyListener() {
 
             private int counter = 0;
             private String last = null;
 
             public void keyPressed(KeyEvent e) {
-
+                int sel = tabbedPane.getSelectedIndex();               
+                tabbedPane.setForegroundAt(sel, Color.black);
             }
 
             public void keyReleased(KeyEvent e) {
@@ -1587,12 +1593,15 @@ public class JDChat extends PluginOptional implements ControlListener {
     public void updateNamesPanel() {
         final StringBuilder sb = new StringBuilder();
         Collections.sort(NAMES);
-
+        String color = subConfig.getStringProperty(PARAM_USERCOLOR);
         // USERLIST_STYLE
         sb.append("<ul>");
         for (User name : NAMES) {
             sb.append("<li>");
-            sb.append("<span style='color:#" + name.getColor() + (name.name.equals(conn.getNick()) ? ";font-weight:bold;" : "") + "'>");
+            if(color.equals("false"))
+                sb.append("<span style='color:#" + name.getColor() + (name.name.equals(conn.getNick()) ? ";font-weight:bold;" : "") + "'>");
+            else
+                sb.append("<span style='color:#000000" + (name.name.equals(conn.getNick()) ? ";font-weight:bold;" : "") + "'>");
             sb.append(name.getRank() + name.getNickLink("query"));
             sb.append("</span></li>");
         }
