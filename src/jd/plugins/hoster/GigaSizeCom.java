@@ -121,13 +121,14 @@ public class GigaSizeCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink parameter) throws Exception {
         requestFileInformation(parameter);
+        if (parameter.getAvailableStatus() == AvailableStatus.UNCHECKABLE) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
         handleFree0(parameter);
     }
 
     public void handleFree0(DownloadLink downloadLink) throws Exception {
         br.getPage(downloadLink.getDownloadURL());
         br.setFollowRedirects(true);
-        if (br.containsHTML("versuchen gerade mehr")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l); }
+        if (br.containsHTML("versuchen gerade mehr")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
         Form forms[] = br.getForms();
         Form captchaForm = null;
         for (Form form : forms) {

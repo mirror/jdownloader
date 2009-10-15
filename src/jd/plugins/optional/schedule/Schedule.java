@@ -39,9 +39,11 @@ import jd.plugins.optional.schedule.modules.SchedulerModuleInterface;
 import jd.plugins.optional.schedule.modules.SetChunck;
 import jd.plugins.optional.schedule.modules.SetMaxDownloads;
 import jd.plugins.optional.schedule.modules.SetSpeed;
+import jd.plugins.optional.schedule.modules.SetStopMark;
 import jd.plugins.optional.schedule.modules.StartDownloads;
 import jd.plugins.optional.schedule.modules.StopDownloads;
 import jd.plugins.optional.schedule.modules.UnPauseDownloads;
+import jd.plugins.optional.schedule.modules.UnSetStopMark;
 
 @OptionalPlugin(rev = "$Revision$", id = "scheduler", hasGui = true, interfaceversion = 5)
 public class Schedule extends PluginOptional {
@@ -91,6 +93,8 @@ public class Schedule extends PluginOptional {
         modules.add(new EnableReconnect());
         modules.add(new DisableReconnect());
         modules.add(new DoReconnect());
+        modules.add(new SetStopMark());
+        modules.add(new UnSetStopMark());
     }
 
     public ArrayList<SchedulerModuleInterface> getModules() {
