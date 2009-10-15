@@ -57,12 +57,10 @@ public class NarodRu extends PluginForHost {
         this.setBrowserExclusive();
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (compatible; MSIE 6.0; Windows NT 5.0; YB/3.5.2.0;. NET CLR 1.1.4322)");
         br.getPage(downloadLink.getDownloadURL());
-        System.out.print(br.toString());
         if (br.containsHTML("<title>404</title>") || br.containsHTML("Файл удален с сервиса")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String name = br.getRegex(Pattern.compile("<dt class=\"name\"><i class=\"b-old-icon b-old-icon-arc\"></i>(.*?)</dt>")).getMatch(0);
-        if (name == null)name = br.getRegex(Pattern.compile("class=\"name\"><i class=.*?></i>(.*?)</dt>")).getMatch(0);
+        if (name == null) name = br.getRegex(Pattern.compile("class=\"name\"><i class=.*?></i>(.*?)</dt>")).getMatch(0);
         if (name == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-
         String md5Hash = br.getRegex(Pattern.compile("<dt class=\"size\">md5:</dt>.*<dd class=\"size\">(.*?)</dd>", Pattern.DOTALL)).getMatch(0);
         if (md5Hash == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String fileSize = br.getRegex(Pattern.compile("<td class=\"l-download-info-right\">.*?<dl class=\"b-download-item g-line\">.*?<dt class=\"size\">.*?</dt>.*?<dd class=\"size\">(.*?).</dd>", Pattern.DOTALL)).getMatch(0);

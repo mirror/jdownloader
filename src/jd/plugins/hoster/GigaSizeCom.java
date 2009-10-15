@@ -45,6 +45,8 @@ public class GigaSizeCom extends PluginForHost {
     }
 
     public void login(Account account) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.getPage("http://www.gigasize.com/index.php?lang=de");
         br.postPage("http://www.gigasize.com/login.php", "uname=" + Encoding.urlEncode(account.getUser()) + "&passwd=" + Encoding.urlEncode(account.getPass()) + "&=Login&login=1");
         String cookie = br.getCookie("http://www.gigasize.com", "Cookieuser[pass]");
         if (cookie == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -109,7 +111,10 @@ public class GigaSizeCom extends PluginForHost {
         br.getPage("http://www.gigasize.com/form.php");
         Form download = br.getForm(0);
         dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, download, true, 0);
-        if (!dl.getConnection().isContentDisposition()) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT); }
+        if (!dl.getConnection().isContentDisposition()) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_FATAL);
+        }
         dl.startDownload();
     }
 
@@ -137,10 +142,11 @@ public class GigaSizeCom extends PluginForHost {
         br.submitForm(captchaForm);
         if (br.containsHTML("YOU HAVE REACHED")) {
             String temp = br.getRegex("Please retry after\\s(\\d+)\\sMinu").getMatch(0);
+            int waitTime = 60;
             if (temp != null) {
-                int waitTime = Integer.parseInt(temp) + 1;
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitTime * 60 * 1000l);
+                waitTime = Integer.parseInt(temp) + 1;
             }
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitTime * 60 * 1000l);
         }
         Form download = br.getFormbyProperty("id", "formDownload");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, download, true, 1);
@@ -156,11 +162,12 @@ public class GigaSizeCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         setBrowserExclusive();
+        br.getPage("http://www.gigasize.com/index.php?lang=de");
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("has been removed because we have received a legitimate complaint")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("has been removed because we")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("Download-Slots sind besetzt")) {
             downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.gigasizecom.errors.alreadyloading", "Cannot check, because already loading file"));
-            return AvailableStatus.TRUE;
+            return AvailableStatus.UNCHECKABLE;
         }
         String[] dat = br.getRegex("strong>Name</strong>: <b>(.*?)</b></p>.*?<p>Gr.*? <span>(.*?)</span>").getRow(0);
         if (dat.length != 2) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

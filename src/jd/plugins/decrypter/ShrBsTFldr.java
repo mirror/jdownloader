@@ -42,7 +42,7 @@ public class ShrBsTFldr extends PluginForDecrypt {
         if (br.containsHTML(">Dieser Ordner existiert nicht") || check != null) {
             logger.warning("Wrong link");
             logger.warning(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-            return new ArrayList<DownloadLink>();
+            return decryptedLinks;
         }
         String[] files = br.getRegex("ng>DL:</strong>(.*?)<br").getColumn(0);
         if (files == null || files.length == 0) files = br.getRegex("\"a2\" href=\"(.*?)\"").getColumn(0);

@@ -44,7 +44,7 @@ public class GotUploadCom extends PluginForHost {
     // @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.setCookie("http://www.ugotfile.com", "lang", "english");
+        br.setCookie("http://www.gotupload.com", "lang", "english");
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("No such file")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("File Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -63,7 +63,7 @@ public class GotUploadCom extends PluginForHost {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
         // Form um auf free zu "klicken"
-        Form dlForm0 = br.getFormBySubmitvalue("kostenloser+download");
+        Form dlForm0 = br.getFormBySubmitvalue("free+download");
         if (dlForm0 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         dlForm0.remove("method_premium");
         br.submitForm(dlForm0);
@@ -91,7 +91,7 @@ public class GotUploadCom extends PluginForHost {
             }
             dlForm1.put("password", passCode);
         }
-        //Waittime
+        // Waittime
         int tt = Integer.parseInt(br.getRegex("countdown\">(\\d+)</span>").getMatch(0));
         sleep(tt * 1001l, downloadLink);
         jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlForm1, false, 1);
@@ -112,7 +112,6 @@ public class GotUploadCom extends PluginForHost {
     public void reset() {
     }
 
-    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }

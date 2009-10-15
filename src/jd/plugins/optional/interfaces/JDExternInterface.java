@@ -19,7 +19,6 @@ package jd.plugins.optional.interfaces;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
-import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 
@@ -27,9 +26,6 @@ import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import javax.swing.JFrame;
-
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.Scriptable;
 
 import jd.Installer;
 import jd.PluginWrapper;
@@ -66,6 +62,9 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.WebUpdate;
 import jd.utils.locale.JDL;
+
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.Scriptable;
 
 @OptionalPlugin(rev = "$Revision$", defaultEnabled = true, id = "externinterface", interfaceversion = 5)
 public class JDExternInterface extends PluginOptional {
@@ -126,12 +125,10 @@ public class JDExternInterface extends PluginOptional {
         try {
             IvParameterSpec ivSpec = new IvParameterSpec(key);
             SecretKeySpec skeySpec = new SecretKeySpec(key, "AES");
-
             cipher = Cipher.getInstance("AES/CBC/NoPadding");
             cipher.init(Cipher.DECRYPT_MODE, skeySpec, ivSpec);
             return new String(cipher.doFinal(b));
         } catch (Exception e) {
-
             JDLogger.exception(e);
         }
         return null;
@@ -203,29 +200,21 @@ public class JDExternInterface extends PluginOptional {
                         askPermission(request);
                         /* parse the post data */
                         String dlc = Encoding.htmlDecode(request.getParameters().get("crypted")).trim().replace(" ", "+");
-                        File tmp;
-                        try {
-                            JDUtilities.getResourceFile("tmp").mkdirs();
-                            tmp = File.createTempFile("jd_", ".dlc", JDUtilities.getResourceFile("tmp"));
+                        File tmp = JDUtilities.getResourceFile("tmp/jd_" + System.currentTimeMillis() + ".dlc", true);
+                        tmp.deleteOnExit();
 
-                            JDIO.saveToFile(tmp, dlc.getBytes());
-                            ArrayList<DownloadLink> links = JDUtilities.getController().getContainerLinks(tmp);
+                        JDIO.saveToFile(tmp, dlc.getBytes());
+                        ArrayList<DownloadLink> links = JDUtilities.getController().getContainerLinks(tmp);
 
-                            LinkGrabberController.getInstance().addLinks(links, false, false);
-                            new GuiRunnable<Object>() {
-
-                                @Override
-                                public Object runSave() {
-                                    SwingGui.getInstance().getMainFrame().toFront();
-
-                                    return null;
-                                }
-
-                            }.waitForEDT();
-                            response.addContent("success\r\n");
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
+                        LinkGrabberController.getInstance().addLinks(links, false, false);
+                        new GuiRunnable<Object>() {
+                            @Override
+                            public Object runSave() {
+                                SwingGui.getInstance().getMainFrame().toFront();
+                                return null;
+                            }
+                        }.waitForEDT();
+                        response.addContent("success\r\n");
                     } else if (splitPath.length > 1 && splitPath[1].equalsIgnoreCase("addcrypted2")) {
                         askPermission(request);
                         /* parse the post data */
@@ -234,23 +223,20 @@ public class JDExternInterface extends PluginOptional {
                         byte[] baseDecoded = Base64.decode(string);
                         try {
                             byte[] key;
-                            
-                            if(request.getParameters().containsKey("jk")){
+
+                            if (request.getParameters().containsKey("jk")) {
                                 Context cx = Context.enter();
                                 Scriptable scope = cx.initStandardObjects();
-                                String fun = Encoding.htmlDecode(request.getParameters().get("jk"))+"  f()";
-                             
+                                String fun = Encoding.htmlDecode(request.getParameters().get("jk")) + "  f()";
+
                                 Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
-                           
-                                key=JDHexUtils.getByteArray(Context.toString(result));
-                                Context.exit(); 
-                            }else{
-                                key=JDHexUtils.getByteArray(request.getParameters().get("k"));
+
+                                key = JDHexUtils.getByteArray(Context.toString(result));
+                                Context.exit();
+                            } else {
+                                key = JDHexUtils.getByteArray(request.getParameters().get("k"));
                             }
-                            
-                          
-                            
-                            
+
                             String decryted = decrypt(baseDecoded, key).trim();
                             String passwords[] = Regex.getLines(Encoding.htmlDecode(request.getParameters().get("passwords")));
                             PasswordListController.getInstance().addPasswords(passwords);
@@ -258,20 +244,17 @@ public class JDExternInterface extends PluginOptional {
                             ArrayList<DownloadLink> links = new DistributeData(Encoding.htmlDecode(decryted)).findLinks();
                             for (DownloadLink l : links) {
                                 l.addSourcePluginPasswords(passwords);
-                                if (request.getParameters().get("source") != null){
+                                if (request.getParameters().get("source") != null) {
                                     l.setBrowserUrl(Encoding.htmlDecode(request.getParameters().get("source")));
                                 }
                             }
                             LinkGrabberController.getInstance().addLinks(links, false, false);
                             new GuiRunnable<Object>() {
-
                                 @Override
                                 public Object runSave() {
                                     SwingGui.getInstance().getMainFrame().toFront();
-
                                     return null;
                                 }
-
                             }.waitForEDT();
                             response.addContent("success\r\n");
                         } catch (Exception e) {
@@ -388,21 +371,15 @@ public class JDExternInterface extends PluginOptional {
             JDLogger.getLogger().warning(request.toString());
             JDLogger.getLogger().warning(request.getParameters().toString());
             JDLogger.getLogger().warning("\r\n-----------------------External request---------------------");
-            String url = request.getHeader("referer");   
-            if(url ==null){
-                url = request.getHeader("Referer");    
+            String url = request.getHeader("referer");
+            if (url == null) {
+                url = request.getHeader("referrer");
             }
-            if(url ==null){
-                url = request.getHeader("Referrer");    
+            if (url == null) {
+                url = request.getHeader("source");
             }
-            if(url ==null){
-                url = request.getHeader("referrer");    
-            }
-            if(url ==null){
-                url = request.getHeader("source");    
-            }
-            
-            app=url!=null?new URL(url).getHost():app;
+
+            app = url != null ? new URL(url).getHost() : app;
             if (!JDFlags.hasAllFlags(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN, JDL.LF("jd.plugins.optional.interfaces.jdflashgot.security.title", "External request from %s to %s interface!", app, namespace), JDL.LF("jd.plugins.optional.interfaces.jdflashgot.security.message", "An external application tries to add links. See Log for details."), UserIO.getInstance().getIcon(UserIO.ICON_WARNING), JDL.L("jd.plugins.optional.interfaces.jdflashgot.security.btn_allow", "Allow it!"), JDL.L("jd.plugins.optional.interfaces.jdflashgot.security.btn_deny", "Deny access!")), UserIO.RETURN_OK)) {
                 JDLogger.getLogger().warning("Denied access.");
                 throw new Exception("User denied access");

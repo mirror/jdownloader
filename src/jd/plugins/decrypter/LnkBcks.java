@@ -36,7 +36,6 @@ public class LnkBcks extends PluginForDecrypt {
         super(wrapper);
     }
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -56,7 +55,6 @@ public class LnkBcks extends PluginForDecrypt {
             link = br.getRegex(Pattern.compile("noresize=\"[0-9+]\" src=\"(http.*?)\"", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
             if (link == null) {
                 link = br.getRegex(Pattern.compile("\"frame2\" frameborder.*?src=\"(.*?)\"", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-
             }
         }
         if (link == null) return null;
@@ -64,7 +62,5 @@ public class LnkBcks extends PluginForDecrypt {
 
         return decryptedLinks;
     }
-
-    // @Override
 
 }

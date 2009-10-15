@@ -151,8 +151,7 @@ public class SendspaceCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, true, 1);
         URLConnectionAdapter con = dl.getConnection();
         if (con.getURL().toExternalForm().contains("?e=") || con.getContentType().contains("html")) {
-            con.disconnect();
-            br.getPage(con.getURL().toExternalForm());
+            br.followConnection();
             String error = br.getRegex("<div class=\"errorbox-bad\".*?>(.*?)</div>").getMatch(0);
             if (error == null) error = br.getRegex("<div class=\"errorbox-bad\".*?>.*?>(.*?)</>").getMatch(0);
             if (error == null) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.sendspacecom.errors.servererror", "Unknown server error"), 5 * 60 * 1000l);

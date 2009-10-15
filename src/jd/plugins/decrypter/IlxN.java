@@ -50,27 +50,27 @@ public class IlxN extends PluginForDecrypt {
             String finallink = new Regex(finallink0, "ifram\" src=\"(.*?)\"").getMatch(0);
             if (finallink == null) return null;
             decryptedLinks.add(createDownloadlink(finallink));
-        }
-        // Multiple/Single links handling
-        String[] multipleLinks = br.getRegex("name='n' value='([0-9]{1,3})'>").getColumn(0);
-        if (multipleLinks != null && multipleLinks.length != 0) {
-            progress.setRange(multipleLinks.length);
-            for (String link : multipleLinks) {
-
-                Form form = new Form();
-                form.setMethod(Form.MethodType.POST);
-                form.put("n", link);
-                br.submitForm(form);
-                br.getPage("http://ilix.in/encrypt.php");
-                String finallink0 = br.getRegex("\\(unescape\\('(.*?)'\\)\\)").getMatch(0);
-                if (finallink0 == null) return null;
-                finallink0 = Encoding.htmlDecode(finallink0);
-                String finallink = new Regex(finallink0, "ifram\" src=\"(.*?)\"").getMatch(0);
-                if (finallink == null) return null;
-                decryptedLinks.add(createDownloadlink(finallink));
-                progress.increase(1);
+        } else {
+            // Multiple/Single links handling
+            String[] multipleLinks = br.getRegex("name='n' value='([0-9]{1,3})'>").getColumn(0);
+            if (multipleLinks != null && multipleLinks.length != 0) {
+                progress.setRange(multipleLinks.length);
+                for (String link : multipleLinks) {
+                    Form form = new Form();
+                    form.setMethod(Form.MethodType.POST);
+                    form.put("n", link);
+                    br.submitForm(form);
+                    br.getPage("http://ilix.in/encrypt.php");
+                    String finallink0 = br.getRegex("\\(unescape\\('(.*?)'\\)\\)").getMatch(0);
+                    if (finallink0 == null) return null;
+                    finallink0 = Encoding.htmlDecode(finallink0);
+                    String finallink = new Regex(finallink0, "ifram\" src=\"(.*?)\"").getMatch(0);
+                    if (finallink == null) return null;
+                    decryptedLinks.add(createDownloadlink(finallink));
+                    progress.increase(1);
+                }
+                return decryptedLinks;
             }
-            return decryptedLinks;
         }
         return null;
     }

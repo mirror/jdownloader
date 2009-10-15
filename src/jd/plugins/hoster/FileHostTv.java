@@ -39,7 +39,6 @@ public class FileHostTv extends PluginForHost {
     }
 
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
-
         this.setBrowserExclusive();
         br.setCookie("http://filehost.tv", "filehosttv_lang", "en");
         br.getPage(downloadLink.getDownloadURL());
