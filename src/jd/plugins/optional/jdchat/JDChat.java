@@ -16,11 +16,14 @@
 
 package jd.plugins.optional.jdchat;
 
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.KeyboardFocusManager;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
@@ -960,6 +963,22 @@ public class JDChat extends PluginOptional implements ControlListener {
         scrollPane = new JScrollPane(textArea);
         tabbedPane = new JTabbedPane();
         tabbedPane.add("JDChat", scrollPane);
+        tabbedPane.addFocusListener(new FocusListener() {
+            public void focusGained(FocusEvent e) {
+                JTabbedPane pane = (JTabbedPane) e.getSource();
+                int sel = pane.getSelectedIndex();
+                tabbedPane.setForegroundAt(sel, Color.black);
+
+            }
+
+            @Override
+            public void focusLost(FocusEvent e) {
+                // TODO Auto-generated method stub
+
+            }
+
+        });
+
         textField = new JTextField();
         textField.setFocusTraversalKeys(KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS, Collections.EMPTY_SET);
         textField.setFocusTraversalKeys(KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS, Collections.EMPTY_SET);
@@ -1279,6 +1298,15 @@ public class JDChat extends PluginOptional implements ControlListener {
         NAMES = new ArrayList<User>();
         if (getUser(conn.getNick().trim()) == null) {
             NAMES.add(new User(conn.getNick().trim()));
+        }
+    }
+
+    public void notifyPMS(String Username) {
+        for (int x = 0; x < tabbedPane.getComponentCount(); x++) {
+            if (tabbedPane.getTitleAt(x).equals(Username)) {
+                tabbedPane.setForegroundAt(x, Color.RED);
+                break;
+            }
         }
     }
 
