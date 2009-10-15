@@ -16,6 +16,7 @@
 
 package jd.plugins.optional.jdchat;
 
+import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -102,6 +103,7 @@ class IRCListener implements IRCEventListener {
     public void onNick(IRCUser u, String nickNew) {
         // logger.info("Nick: " + u.getNick() + " is now known as " + nickNew);
         owner.addToText(null, JDChat.STYLE_SYSTEM_MESSAGE, u.getNick() + " is now known as " + nickNew);
+        owner.renamePMS(u.getNick().toLowerCase(), nickNew);
         owner.renameUser(u.getNick(), nickNew);
     }
 
@@ -181,10 +183,13 @@ class IRCListener implements IRCEventListener {
             owner.addToText(null, JDChat.STYLE_ACTION, user.getNickLink("pmnick") + " " + Utils.prepareMsg(msg.trim().substring(6).trim()));
 
         } else if (chan.equals(owner.getNick())) {
-            owner.addToText(user, JDChat.STYLE_PM, Utils.prepareMsg(msg));
+            TreeMap<String, JDChatPMS> pms = owner.getPms();
+            if (!pms.containsKey(user.name.toLowerCase())) {
+                owner.addPMS(user.name);
+                pms = owner.getPms();
+            }
+            owner.addToText(user, null, Utils.prepareMsg(msg), pms.get(user.name.toLowerCase()).getTextArea(), pms.get(user.name.toLowerCase()).getSb());
 
-            // resetNamesList();
-            // conn.doNames(CHANNEL);
         } else {
             owner.addToText(user, null, Utils.prepareMsg(msg));
 
