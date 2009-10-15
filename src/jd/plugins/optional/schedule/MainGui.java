@@ -16,6 +16,7 @@
 
 package jd.plugins.optional.schedule;
 
+import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
@@ -83,22 +84,26 @@ public class MainGui extends SwitchPanel implements ActionListener, MouseListene
         table.getModel().fireTableDataChanged();
     }
 
-    public void addAction(Actions act) {
-        table.getModel().fireTableDataChanged();
-
-        removeTab(act);
-    }
-
-    public void updateAction(Actions act) {
+    public void updateActions(Component p) {
         table.getModel().fireTableDataChanged();
         schedule.saveActions();
-        removeTab(act);
+        if (p != null) removeTab(p);
         schedule.updateTable();
     }
 
-    public void removeTab(Actions act) {
+    public void removeTab(Component p) {
         for (int i = 0; i < tabs.getTabCount(); i++) {
-            if (tabs.getTitleAt(i).equals(act.getName())) {
+            if (tabs.getComponentAt(i) == p) {
+                tabs.remove(i);
+                return;
+            }
+        }
+    }
+
+    public void removeTab(Actions e) {
+        for (int i = 0; i < tabs.getTabCount(); i++) {
+            if (!(tabs.getComponentAt(i) instanceof AddGui)) continue;
+            if (((AddGui) tabs.getComponentAt(i)).getActions() == e) {
                 tabs.remove(i);
                 return;
             }
@@ -107,7 +112,7 @@ public class MainGui extends SwitchPanel implements ActionListener, MouseListene
 
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == add) {
-            tabs.addTab("Schedule " + Integer.valueOf(schedule.getActions().size() + 1), new AddGui(schedule, this, new Actions("Schedule " + Integer.valueOf(schedule.getActions().size() + 1)), false));
+            tabs.addTab("Schedule Plan", new AddGui(schedule, this, new Actions("Schedule Plan"), false));
             tabs.setSelectedIndex(tabs.getTabCount() - 1);
         } else if (e.getSource() == delete) {
             if (table.getSelectedRow() < 0) return;
@@ -123,9 +128,10 @@ public class MainGui extends SwitchPanel implements ActionListener, MouseListene
         }
     }
 
-    public void changeTabText(String oldText, String newText) {
+    public void changeTabText(Actions e, String newText) {
         for (int i = 0; i < tabs.getTabCount(); i++) {
-            if (tabs.getTitleAt(i).equals(oldText)) {
+            if (!(tabs.getComponentAt(i) instanceof AddGui)) continue;
+            if (((AddGui) tabs.getComponentAt(i)).getActions() == e) {
                 tabs.setTitleAt(i, newText);
                 return;
             }

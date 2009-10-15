@@ -23,7 +23,7 @@ public class SchedulerTableModel extends JDTableModel {
     }
 
     protected void initColumns() {
-        this.addColumn(new EnabledColumn("", this, schedule));
+        this.addColumn(new EnabledColumn(JDL.L(JDL_PREFIX + "onoff", "On/Off"), this, schedule));
         this.addColumn(new NameColumn(JDL.L(JDL_PREFIX + "name", "Name"), this));
         this.addColumn(new DateColumn(JDL.L(JDL_PREFIX + "date", "Date"), this));
         this.addColumn(new TimeColumn(JDL.L(JDL_PREFIX + "time", "Time"), this));

@@ -107,7 +107,6 @@ public class JDChat extends PluginOptional implements ControlListener {
     private static final String PARAM_PERFORM = "PARAM_PERFORM";
     private static final String PARAM_PORT = "PARAM_PORT";
     private static final String PARAM_USERCOLOR = "PARAM_USERCOLOR";
-    
 
     public static final String STYLE = JDIO.getLocalFile(JDUtilities.getResourceFile("plugins/jdchat/styles.css"));
     public static final String STYLE_ACTION = "action";
@@ -967,21 +966,19 @@ public class JDChat extends PluginOptional implements ControlListener {
         textField = new JTextField();
         textField.setFocusTraversalKeys(KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS, Collections.EMPTY_SET);
         textField.setFocusTraversalKeys(KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS, Collections.EMPTY_SET);
-        textField.addFocusListener(new FocusListener(){
+        textField.addFocusListener(new FocusListener() {
 
-            @Override
             public void focusGained(FocusEvent e) {
-                int sel = tabbedPane.getSelectedIndex();               
+                int sel = tabbedPane.getSelectedIndex();
                 tabbedPane.setForegroundAt(sel, Color.black);
             }
 
-            @Override
             public void focusLost(FocusEvent e) {
-                int sel = tabbedPane.getSelectedIndex();               
+                int sel = tabbedPane.getSelectedIndex();
                 tabbedPane.setForegroundAt(sel, Color.black);
-                
+
             }
-            
+
         });
         textField.addKeyListener(new KeyListener() {
 
@@ -989,7 +986,7 @@ public class JDChat extends PluginOptional implements ControlListener {
             private String last = null;
 
             public void keyPressed(KeyEvent e) {
-                int sel = tabbedPane.getSelectedIndex();               
+                int sel = tabbedPane.getSelectedIndex();
                 tabbedPane.setForegroundAt(sel, Color.black);
             }
 
@@ -1598,7 +1595,7 @@ public class JDChat extends PluginOptional implements ControlListener {
         sb.append("<ul>");
         for (User name : NAMES) {
             sb.append("<li>");
-            if(color.equals("false"))
+            if (color.equals("false"))
                 sb.append("<span style='color:#" + name.getColor() + (name.name.equals(conn.getNick()) ? ";font-weight:bold;" : "") + "'>");
             else
                 sb.append("<span style='color:#000000" + (name.name.equals(conn.getNick()) ? ";font-weight:bold;" : "") + "'>");

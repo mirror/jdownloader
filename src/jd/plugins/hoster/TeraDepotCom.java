@@ -16,9 +16,14 @@
 
 package jd.plugins.hoster;
 
+import java.util.regex.Pattern;
+
 import jd.PluginWrapper;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.BrowserAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
@@ -28,18 +33,107 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-//teradepot.com by pspzockerscene
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "teradepot.com" }, urls = { "http://[\\w\\.]*?teradepot\\.com/[0-9a-z]+/" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "teradepot.com" }, urls = { "http://[\\w\\.]*?teradepot\\.com/[0-9a-z]+/" }, flags = { 2 })
 public class TeraDepotCom extends PluginForHost {
 
     public TeraDepotCom(PluginWrapper wrapper) {
         super(wrapper);
-        // TODO Auto-generated constructor stub
+        enablePremium("http://www.teradepot.com/premium.html");
     }
 
     @Override
     public String getAGBLink() {
         return "http://www.teradepot.com/tos.html";
+    }
+
+    private void login(Account account) throws Exception {
+        this.setBrowserExclusive();
+        br.setCookie("http://www.teradepot.com", "lang", "english");
+        br.setDebug(true);
+        br.getPage("http://www.teradepot.com/");
+        Form login = br.getForm(0);
+        login.put("login", Encoding.urlEncode(account.getUser()));
+        login.put("password", Encoding.urlEncode(account.getPass()));
+        login.setAction("http://www.teradepot.com/");
+        br.submitForm(login);
+        br.getPage("http://www.teradepot.com/?op=my_account");
+        if (!br.containsHTML("Premium-Account expire")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (br.getCookie("http://www.teradepot.com/", "login") == null || br.getCookie("http://www.teradepot.com/", "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        String space = br.getRegex(Pattern.compile("Used space:</TD><TD><b>(.*?) of", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
+        if (space != null) ai.setUsedSpace(space + " Mb");
+        String points = br.getRegex(Pattern.compile("You have collected:</TD><TD><b>(\\d+) premium ", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
+        if (points != null) ai.setPremiumPoints(Long.parseLong(points));
+        account.setValid(true);
+        ai.setUnlimitedTraffic();
+        String expire = br.getRegex("Premium-Account expire:</TD><TD><b>(.*?)</b>").getMatch(0);
+        if (expire == null) {
+            ai.setExpired(true);
+            account.setValid(false);
+            return ai;
+        } else {
+            ai.setValidUntil(Regex.getMilliSeconds(expire, "dd MMMM yyyy", null));
+        }
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(DownloadLink link, Account account) throws Exception {
+        String passCode = null;
+        requestFileInformation(link);
+        login(account);
+        br.getPage(link.getDownloadURL());
+        br.setFollowRedirects(true);
+        // Form um auf "Datei herunterladen" zu klicken
+        Form DLForm = br.getFormbyProperty("name", "F1");
+        if (DLForm == null && br.getRedirectLocation() != null) {
+            br.setFollowRedirects(true);
+            dl = BrowserAdapter.openDownload(br, link, br.getRedirectLocation(), true, 0);
+        } else {
+            if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (br.containsHTML("valign=top><b>Password:</b></td>")) {
+                if (link.getStringProperty("pass", null) == null) {
+                    passCode = Plugin.getUserInput("Password?", link);
+                } else {
+                    /* gespeicherten PassCode holen */
+                    passCode = link.getStringProperty("pass", null);
+                }
+                DLForm.put("password", passCode);
+            }
+            br.setFollowRedirects(true);
+            dl = BrowserAdapter.openDownload(br, link, DLForm, true, 0);
+        }
+        if (dl.getConnection() != null && dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            if (br.containsHTML("Wrong password")) {
+                logger.warning("Wrong password!");
+                link.setProperty("pass", null);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            } else {
+                String url = br.getRegex("direct link.*?href=\"(http:.*?)\"").getMatch(0);
+                if (url == null) throw new PluginException(LinkStatus.ERROR_FATAL);
+                br.setFollowRedirects(true);
+                dl = BrowserAdapter.openDownload(br, link, url, true, 0);
+                if (dl.getConnection() != null && dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("html")) {
+                    br.followConnection();
+                    throw new PluginException(LinkStatus.ERROR_FATAL);
+                }
+            }
+        }
+        if (passCode != null) {
+            link.setProperty("pass", passCode);
+        }
+        dl.startDownload();
     }
 
     @Override
@@ -50,8 +144,8 @@ public class TeraDepotCom extends PluginForHost {
         if (br.containsHTML("No such file with this filename")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("No such user exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("File not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("Filename.*?:.*?<td>(.*?)</").getMatch(0);
-        String filesize = br.getRegex("Size.*?:.*?small.*?\\(.*?(\\d+)").getMatch(0);
+        String filename = br.getRegex("<Center><h2>Download File(.*?)</").getMatch(0);
+        String filesize = br.getRegex("You have requested.*?</font></b> \\((.*?)\\)").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         parameter.setName(filename.trim());
         parameter.setDownloadSize(Regex.getSize(filesize));

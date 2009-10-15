@@ -26,6 +26,7 @@ public class Actions implements Serializable {
     private boolean enabled = true;
     private Date date;
     private int repeat = 0;
+    private boolean alreadyhandled = false;
     private ArrayList<Executions> executions = new ArrayList<Executions>();
 
     public Actions(String name) {
@@ -38,6 +39,14 @@ public class Actions implements Serializable {
 
     public String getName() {
         return name;
+    }
+
+    public boolean wasAlreadyHandled() {
+        return alreadyhandled;
+    }
+
+    public void setAlreadyHandled(boolean b) {
+        alreadyhandled = b;
     }
 
     public void setEnabled(boolean enabled) {

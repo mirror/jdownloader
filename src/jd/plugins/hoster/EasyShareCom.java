@@ -23,6 +23,7 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.http.Cookie;
 import jd.http.Cookies;
+import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -58,11 +59,8 @@ public class EasyShareCom extends PluginForHost {
         login.put("login", Encoding.urlEncode(account.getUser()));
         login.put("password", Encoding.urlEncode(account.getPass()));
         login.setAction("http://www.easy-share.com/accounts/login");
-
         br.submitForm(login);
-
         if (br.getCookie("http://www.easy-share.com/", "PREMIUM") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-
     }
 
     private Cookie isExpired(Account account) throws MalformedURLException, PluginException {
@@ -95,6 +93,7 @@ public class EasyShareCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.setCookie("http://www.easy-share.com", "language", "en");
         br.getPage(downloadLink.getDownloadURL());
         br.setCookie("http://www.easy-share.com", "language", "en");
@@ -122,7 +121,7 @@ public class EasyShareCom extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("Please wait or buy a Premium membership")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
         Form form = br.getForm(3);
-        String captcha = br.getRegex("<img src=\"(.*?)\"").getMatch(0);
+        String captcha = br.getRegex("<img src=\"(/kapt.*?)\"").getMatch(0);
         String captchaUrl = "http://" + br.getHost() + "/" + captcha;
         if (captcha != null) {
             String captchaCode = getCaptchaCode(null, captchaUrl, downloadLink);
@@ -133,7 +132,8 @@ public class EasyShareCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, true, 1);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            if (br.containsHTML("Invalid characters")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            throw new PluginException(LinkStatus.ERROR_FATAL);
         }
         dl.startDownload();
     }

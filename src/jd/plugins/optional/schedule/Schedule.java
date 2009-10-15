@@ -232,6 +232,7 @@ public class Schedule extends PluginOptional {
                 long timestamp = a.getDate().getTime();
                 long currenttime = curtime;
                 if (timestamp <= currenttime) {
+                    a.setAlreadyHandled(false);
                     /* remove secs and milisecs */
                     currenttime = (currenttime / (60 * 1000));
                     currenttime = currenttime * (60 * 1000);
@@ -268,14 +269,17 @@ public class Schedule extends PluginOptional {
                 for (Actions a : tmpactions) {
                     /* check if we have to start the scheduler action */
                     if (a.isEnabled() && todaydate.equals(date.format(a.getDate())) && todaytime.equals(time.format(a.getDate()))) {
-                        /* lets execute the action */
-                        synchronized (LOCK) {
-                            tmpexe.clear();
-                            tmpexe.addAll(a.getExecutions());
-                        }
-                        for (Executions e : tmpexe) {
-                            logger.finest("Execute: " + e.getModule().getTranslation());
-                            e.exceute();
+                        if (!a.wasAlreadyHandled()) {
+                            a.setAlreadyHandled(true);
+                            /* lets execute the action */
+                            synchronized (LOCK) {
+                                tmpexe.clear();
+                                tmpexe.addAll(a.getExecutions());
+                            }
+                            for (Executions e : tmpexe) {
+                                logger.finest("Execute: " + e.getModule().getTranslation());
+                                e.exceute();
+                            }
                         }
                     }
                     /* update timer */

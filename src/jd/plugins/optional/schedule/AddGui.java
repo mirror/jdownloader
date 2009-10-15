@@ -65,7 +65,6 @@ public class AddGui extends JPanel implements ActionListener, ChangeListener, Do
     private JSpinner hour;
     private JSpinner minute;
     private JPanel datepre;
-    private String oldText;
     private JButton cancel;
     private JButton save;
     private JLabel problems;
@@ -80,8 +79,6 @@ public class AddGui extends JPanel implements ActionListener, ChangeListener, Do
         this.schedule = schedule;
         this.gui = gui;
         this.act = act;
-
-        oldText = act.getName();
 
         this.edit = edit;
 
@@ -334,10 +331,10 @@ public class AddGui extends JPanel implements ActionListener, ChangeListener, Do
             }
 
             if (edit) {
-                gui.updateAction(act);
+                gui.updateActions(this);
             } else {
                 schedule.addAction(act);
-                gui.addAction(act);
+                gui.updateActions(this);
             }
 
             return;
@@ -398,8 +395,7 @@ public class AddGui extends JPanel implements ActionListener, ChangeListener, Do
     }
 
     public void changedUpdate(DocumentEvent e) {
-        gui.changeTabText(oldText, name.getText());
-        oldText = name.getText();
+        gui.changeTabText(act, name.getText());
     }
 
     public void insertUpdate(DocumentEvent e) {
@@ -426,5 +422,9 @@ public class AddGui extends JPanel implements ActionListener, ChangeListener, Do
     }
 
     public void mouseReleased(MouseEvent e) {
+    }
+
+    public Actions getActions() {
+        return act;
     }
 }
