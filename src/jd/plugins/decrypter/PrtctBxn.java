@@ -17,18 +17,23 @@
 package jd.plugins.decrypter;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
-import jd.parser.html.Form;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.pluginUtils.Recaptcha;
+import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "protectbox.in" }, urls = { "http://[\\w\\.]*?protectbox\\.in/.*" }, flags = { 0 })
 public class PrtctBxn extends PluginForDecrypt {
@@ -44,21 +49,33 @@ public class PrtctBxn extends PluginForDecrypt {
         String parameter = param.toString();
         FilePackage fp = FilePackage.getInstance();
         br.getPage(parameter);
-        if (br.containsHTML("includes/captcha/")) {
-            for (int i = 0; i <= 5; i++) {
-                Form captchaform = br.getForm(0);
-                if (captchaform == null) return null;
-                File file = this.getLocalCaptchaFile();
-                Browser.download(file, br.cloneBrowser().openGetConnection("http://www.protectbox.in/includes/captcha/imagecreate.php"));
-                int[] p = new jd.captcha.specials.GmdMscCm(file).getResult();
-                if (p == null) throw new DecrypterException(DecrypterException.CAPTCHA);
-                captchaform.put("button.x", p[0] + "");
-                captchaform.put("button.y", p[1] + "");
-                br.submitForm(captchaform);
-                if (!br.containsHTML("/includes/captcha/")) break;
-            }
+        for (int i = 0; i <= 3; i++) {
+            Recaptcha rc = new Recaptcha(br);
+            rc.parse();
+            rc.load();
+            File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+            String c = getCaptchaCode(cf, param);
+            rc.setCode(c);
+            if (br.containsHTML("Sie haben den Captcha leider falsch eingeben")) continue;
+            break;
         }
-        System.out.print(br.toString());
+        if (br.containsHTML("Sie haben den Captcha leider falsch eingeben")) throw new DecrypterException(DecrypterException.CAPTCHA);
+        // container handling (if no containers found, use webprotection
+        if (br.containsHTML(">DLC<")) {
+            decryptedLinks = loadcontainer(br, "dlc");
+            if (decryptedLinks != null && decryptedLinks.size() > 0) return decryptedLinks;
+        }
+
+        if (br.containsHTML(">RSDF<")) {
+            decryptedLinks = loadcontainer(br, "rsdf");
+            if (decryptedLinks != null && decryptedLinks.size() > 0) return decryptedLinks;
+        }
+
+        if (br.containsHTML(">CCF<")) {
+            decryptedLinks = loadcontainer(br, "ccf");
+            if (decryptedLinks != null && decryptedLinks.size() > 0) return decryptedLinks;
+        }
+
         /* Password handling */
         String pass = br.getRegex("<b>Passwort:</b>.*?</td>.*?<td>(.*?)</td>").getMatch(0);
         String fpName = br.getRegex("<b>Ordnername:</b>.*?</td>.*?<td>(.*?)</td>").getMatch(0);
@@ -84,6 +101,34 @@ public class PrtctBxn extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    // @Override
+    // By Jiaz
+    private ArrayList<DownloadLink> loadcontainer(Browser br, String format) throws IOException, PluginException {
+        Browser brc = br.cloneBrowser();
+        String[] dlclinks = br.getRegex("\"(container/[0-9a-zA-Z]+\\." + format + ".*?)\"").getColumn(0);
+        if (dlclinks == null || dlclinks.length == 0) return null;
+        for (String link : dlclinks) {
+            link = "http://www.protectbox.in/" + link;
+            String test = Encoding.htmlDecode(link);
+            File file = null;
+            URLConnectionAdapter con = brc.openGetConnection(link);
+            if (con.getResponseCode() == 200) {
+                file = JDUtilities.getResourceFile("tmp/protectbox/" + test.replace("http://www.protectbox.in/", "") + "." + format);
+                if (file == null) return null;
+                file.deleteOnExit();
+                brc.downloadConnection(file, con);
+            } else {
+                con.disconnect();
+                return null;
+            }
+
+            if (file != null && file.exists() && file.length() > 100) {
+                ArrayList<DownloadLink> decryptedLinks = JDUtilities.getController().getContainerLinks(file);
+                if (decryptedLinks.size() > 0) return decryptedLinks;
+            } else {
+                return null;
+            }
+        }
+        return null;
+    }
 
 }

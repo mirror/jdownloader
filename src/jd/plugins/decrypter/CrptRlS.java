@@ -44,7 +44,6 @@ public class CrptRlS extends PluginForDecrypt {
         super(wrapper);
     }
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -106,8 +105,6 @@ public class CrptRlS extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    // @Override
-
     private ArrayList<DownloadLink> loadcontainer(Browser br, String format) throws IOException, PluginException {
         Browser brc = br.cloneBrowser();
         String containerlink = br.getRegex("href=\"(/cont/.*?)\"").getMatch(0);
@@ -125,14 +122,14 @@ public class CrptRlS extends PluginForDecrypt {
             brc.downloadConnection(file, con);
         } else {
             con.disconnect();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            return null;
         }
 
         if (file != null && file.exists() && file.length() > 100) {
             ArrayList<DownloadLink> decryptedLinks = JDUtilities.getController().getContainerLinks(file);
             if (decryptedLinks.size() > 0) return decryptedLinks;
         } else {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            return null;
         }
         return null;
     }

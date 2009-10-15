@@ -34,12 +34,10 @@ public class FurkNet extends PluginForHost {
         super(wrapper);
     }
 
-    @Override
     public String getAGBLink() {
         return "https://www.furk.net/terms";
     }
 
-    @Override
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
         this.setBrowserExclusive();
@@ -49,7 +47,14 @@ public class FurkNet extends PluginForHost {
         if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         form.remove(null);
         br.setFollowRedirects(false);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,link, form, false, 1);
+        String waittime = br.getRegex("\"Free Download \\(wait (\\d+)s\\)\"").getMatch(0);
+        if (waittime != null) {
+            // waittime
+            int tt = Integer.parseInt(waittime);
+            sleep(tt * 1001l, link);
+        } else
+            sleep(60001l, link);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, form, true, 1);
         URLConnectionAdapter con = dl.getConnection();
         if (!con.isContentDisposition()) {
             br.followConnection();
@@ -61,7 +66,6 @@ public class FurkNet extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
         br.getPage(parameter.getDownloadURL());
@@ -74,19 +78,12 @@ public class FurkNet extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    @Override
     public void reset() {
     }
 
-    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 
-    /*
-     * public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }

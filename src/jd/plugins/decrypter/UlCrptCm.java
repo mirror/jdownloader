@@ -30,7 +30,6 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
@@ -54,7 +53,7 @@ public class UlCrptCm extends PluginForDecrypt {
 
         if (br.containsHTML("geben Sie bitte jetzt das Passwort ein") || br.containsHTML("Sicherheitsabfrage")) {
             Form captchaForm = br.getForm(0);
-            if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (captchaForm == null) return null;
             String passCode = null;
             // Captcha handling
             if (br.containsHTML("Sicherheitsabfrage")) {
@@ -69,9 +68,9 @@ public class UlCrptCm extends PluginForDecrypt {
             }
             br.submitForm(captchaForm);
             // Password errorhandling
-            if (br.containsHTML("geben Sie bitte jetzt das Passwort ein")) { throw new DecrypterException(DecrypterException.PASSWORD); }
+            if (br.containsHTML("geben Sie bitte jetzt das Passwort ein")) throw new DecrypterException(DecrypterException.PASSWORD);
             // Captcha errorhandling
-            if (br.containsHTML("Sicherheitsabfrage")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            if (br.containsHTML("Sicherheitsabfrage")) throw new DecrypterException(DecrypterException.CAPTCHA);
         }
 
         /* Password handling */
@@ -133,14 +132,14 @@ public class UlCrptCm extends PluginForDecrypt {
                 brc.downloadConnection(file, con);
             } else {
                 con.disconnect();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                return null;
             }
 
             if (file != null && file.exists() && file.length() > 100) {
                 ArrayList<DownloadLink> decryptedLinks = JDUtilities.getController().getContainerLinks(file);
                 if (decryptedLinks.size() > 0) return decryptedLinks;
             } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                return null;
             }
         }
         return null;
