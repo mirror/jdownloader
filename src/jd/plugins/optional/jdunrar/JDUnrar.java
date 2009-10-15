@@ -339,6 +339,8 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         ArrayList<String> pwList = new ArrayList<String>();
         pwList.add(link.getFilePackage().getPassword());
         pwList.addAll((link.getFilePackage().getPasswordAuto()));
+        String dlpw = link.getStringProperty("pass", null);
+        if (dlpw != null) pwList.add(dlpw);
         pwList.addAll((PasswordListController.getInstance().getPasswordList()));
         // Fügt den Archivnamen und dan dateinamen ans ende der passwortliste
         pwList.add(this.getArchiveName(link));
