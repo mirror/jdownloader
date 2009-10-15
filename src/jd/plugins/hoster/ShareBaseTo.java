@@ -50,6 +50,8 @@ public class ShareBaseTo extends PluginForHost {
     public void correctDownloadLink(DownloadLink link) throws MalformedURLException {
         /* damit neue links mit .de als .to in die liste kommen */
         link.setUrlDownload(link.getDownloadURL().replaceAll("sharebase\\.de", "sharebase\\.to"));
+        String id = new Regex(link.getDownloadURL(), "/files/([\\w]+\\.html)").getMatch(0);
+        if (id != null) link.setUrlDownload("http://sharebase.to/1," + id);
     }
 
     @Override
@@ -117,7 +119,9 @@ public class ShareBaseTo extends PluginForHost {
         /* für links welche noch mit .de in der liste stehen */
         String url = downloadLink.getDownloadURL();
         br.getPage(url);
-
+        if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
+        br.postPage(br.getURL(), "lang=de&submit.x=8&submit.y=9");
+        br.postPage(br.getURL(), "free=Free");
         Form form = br.getFormBySubmitvalue("Please+Activate+Javascript");
         String id = form.getVarsMap().get("asi");
         form.put(id, Encoding.urlEncode("Download Now !"));
@@ -131,7 +135,7 @@ public class ShareBaseTo extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.sharebaseto.errors.maintenance", "Maintenance works in progress"), 30 * 60 * 1000l);
         } else if (br.containsHTML("Sorry, es laden derzeit")) {
             logger.severe("ShareBaseTo Error: Too many Users");
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.sharebaseto.errors.toomanyusers", "Too many users"), 5 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.sharebaseto.errors.toomanyusers", "Too many users"), 5 * 60 * 1000l);
         }
         String[] wait = br.getRegex("Du musst noch <strong>(\\d*?)min (\\d*?)sec</strong> warten").getRow(0);
         if (wait != null) {
@@ -139,17 +143,19 @@ public class ShareBaseTo extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitTime);
         }
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.getRedirectLocation(), true, 0);
-        if (dl.getConnection() == null) {
+        if (br.getRedirectLocation() == null) throw new PluginException(LinkStatus.ERROR_FATAL);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.getRedirectLocation(), false, 1);
+        if (dl.getConnection() == null || dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
             logger.severe("ServerError");
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.sharebaseto.errors.servicenotavailable", "Service not available"), 10 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_FATAL);
         }
         dl.startDownload();
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 2;
+        return 1;
     }
 
     @Override
