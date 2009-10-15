@@ -24,6 +24,7 @@ public class LanguageColumn extends JDTableColumn implements ActionListener {
         jlr = new JRendererLabel();
         jlr.setBorder(null);
         text = new JTextField();
+        setClickstoEdit(2);
     }
 
     @Override

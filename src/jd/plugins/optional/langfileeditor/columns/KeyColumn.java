@@ -33,7 +33,7 @@ public class KeyColumn extends JDTableColumn implements ActionListener {
 
     @Override
     public boolean isEditable(Object obj) {
-        return true;
+        return false;
     }
 
     @Override
@@ -61,10 +61,6 @@ public class KeyColumn extends JDTableColumn implements ActionListener {
     }
 
     @Override
-    public void setValue(Object value, Object object) {
-    }
-
-    @Override
     public void sort(Object obj, boolean sortingToggle) {
         ((LFETableModel) getJDTableModel()).setSorting(LFETableModel.SORT_KEY, sortingToggle);
     }
@@ -74,6 +70,10 @@ public class KeyColumn extends JDTableColumn implements ActionListener {
             text.removeActionListener(this);
             this.fireEditingStopped();
         }
+    }
+
+    @Override
+    public void setValue(Object value, Object object) {
     }
 
 }

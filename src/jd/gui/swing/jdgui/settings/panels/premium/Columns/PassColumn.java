@@ -86,6 +86,7 @@ public class PassColumn extends JDTableColumn implements ActionListener {
         passw = new JDPasswordField();
         jlr = new JRendererLabel();
         jlr.setBorder(null);
+        setClickstoEdit(2);
     }
 
     @Override

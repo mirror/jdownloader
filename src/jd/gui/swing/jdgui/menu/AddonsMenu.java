@@ -18,6 +18,7 @@ package jd.gui.swing.jdgui.menu;
 
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
+import java.util.Collections;
 
 import javax.swing.JMenuItem;
 
@@ -74,7 +75,9 @@ public class AddonsMenu extends JStartMenu {
         ArrayList<JMenuItem> itemsToggle = new ArrayList<JMenuItem>();
         ArrayList<JMenuItem> itemsPress = new ArrayList<JMenuItem>();
         ArrayList<JMenuItem> itemsConfig = new ArrayList<JMenuItem>();
-        for (final OptionalPluginWrapper plg : OptionalPluginWrapper.getOptionalWrapper()) {
+        ArrayList<OptionalPluginWrapper> pluginsOptional = new ArrayList<OptionalPluginWrapper>(OptionalPluginWrapper.getOptionalWrapper());
+        Collections.sort(pluginsOptional);
+        for (final OptionalPluginWrapper plg : pluginsOptional) {
             if (!plg.isLoaded() || !plg.isEnabled()) continue;
             boolean config = false;
             ArrayList<MenuAction> mis = plg.getPlugin().createMenuitems();

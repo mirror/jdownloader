@@ -149,12 +149,11 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
         table = new JDTable(tableModel);
 
         table.setEnabled(false);
-        table.getTableHeader().setReorderingAllowed(false);
-        table.getColumn(0).setMinWidth(50);
-        table.getColumn(0).setMaxWidth(50);
-        table.getColumn(1).setMinWidth(200);
-        table.getColumn(1).setPreferredWidth(200);
-        table.getColumn(3).setPreferredWidth(200);
+        // table.getColumn(0).setMinWidth(50);
+        // table.getColumn(0).setMaxWidth(50);
+        // table.getColumn(1).setMinWidth(200);
+        // table.getColumn(1).setPreferredWidth(200);
+        // table.getColumn(3).setPreferredWidth(200);
         table.addMouseListener(this);
         table.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         table.setAutoStartEditOnKeyStroke(false);

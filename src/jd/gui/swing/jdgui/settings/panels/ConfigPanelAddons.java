@@ -34,6 +34,8 @@ import jd.gui.swing.jdgui.views.sidebars.configuration.ConfigSidebar;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
+import org.jdesktop.swingx.JXTable;
+
 /**
  * @author JD-Team
  * 
@@ -143,7 +145,7 @@ public class ConfigPanelAddons extends ConfigPanel {
     public ConfigPanelAddons(Configuration configuration) {
         super();
         this.configuration = configuration;
-        pluginsOptional = OptionalPluginWrapper.getOptionalWrapper();
+        pluginsOptional = new ArrayList<OptionalPluginWrapper>(OptionalPluginWrapper.getOptionalWrapper());
         Collections.sort(pluginsOptional);
         initPanel();
         load();
@@ -152,7 +154,7 @@ public class ConfigPanelAddons extends ConfigPanel {
     @Override
     public void initPanel() {
         tableModel = new InternalTableModel();
-        table = new JTable(tableModel);
+        table = new JXTable(tableModel);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.getColumnModel().getColumn(0).setMaxWidth(80);
 

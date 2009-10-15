@@ -33,7 +33,7 @@ public class SourceColumn extends JDTableColumn implements ActionListener {
 
     @Override
     public boolean isEditable(Object obj) {
-        return true;
+        return false;
     }
 
     @Override

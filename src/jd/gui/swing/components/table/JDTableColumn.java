@@ -18,6 +18,7 @@ package jd.gui.swing.components.table;
 
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.event.MouseEvent;
 import java.util.EventObject;
 
 import javax.swing.AbstractCellEditor;
@@ -46,11 +47,16 @@ public abstract class JDTableColumn extends AbstractCellEditor implements TableC
     private Color currentbackground = null;
     private Color currentforeground = null;
     private StatusLabel sl = null;
+    private int clickcount = 1;
 
     public JDTableColumn(String name, JDTableModel table) {
         this.name = name;
         this.table = table;
         defaultrenderer = new DefaultTableRenderer();
+    }
+
+    public void setClickstoEdit(int i) {
+        clickcount = Math.max(0, i);
     }
 
     public String getName() {
@@ -76,6 +82,11 @@ public abstract class JDTableColumn extends AbstractCellEditor implements TableC
     }
 
     public boolean shouldSelectCell(EventObject anEvent) {
+        return true;
+    }
+
+    public boolean isCellEditable(EventObject evt) {
+        if (evt instanceof MouseEvent) { return ((MouseEvent) evt).getClickCount() >= clickcount; }
         return true;
     }
 

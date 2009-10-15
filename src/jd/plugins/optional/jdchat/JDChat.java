@@ -1590,12 +1590,12 @@ public class JDChat extends PluginOptional implements ControlListener {
     public void updateNamesPanel() {
         final StringBuilder sb = new StringBuilder();
         Collections.sort(NAMES);
-        String color = subConfig.getStringProperty(PARAM_USERCOLOR);
+        boolean color = subConfig.getBooleanProperty(PARAM_USERCOLOR, true);
         // USERLIST_STYLE
         sb.append("<ul>");
         for (User name : NAMES) {
             sb.append("<li>");
-            if (color.equals("false"))
+            if (color)
                 sb.append("<span style='color:#" + name.getColor() + (name.name.equals(conn.getNick()) ? ";font-weight:bold;" : "") + "'>");
             else
                 sb.append("<span style='color:#000000" + (name.name.equals(conn.getNick()) ? ";font-weight:bold;" : "") + "'>");

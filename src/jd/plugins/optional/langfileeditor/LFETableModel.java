@@ -28,7 +28,6 @@ public class LFETableModel extends JDTableModel {
 
     public LFETableModel(LFEGui gui) {
         super("lfetable");
-
         this.gui = gui;
     }
 
@@ -48,8 +47,8 @@ public class LFETableModel extends JDTableModel {
         this.addColumn(new TypeColumn(JDL.L(LOCALE_PREFIX + "id", "ID"), this));
         this.addColumn(new KeyColumn(JDL.L(LOCALE_PREFIX + "key", "Key"), this));
         this.addColumn(new SourceColumn(JDL.L(LOCALE_PREFIX + "sourceValue", "Default Value"), this));
-        this.addColumn(new LanguageColumn(JDL.L(LOCALE_PREFIX + "languageFileValue", "Language File Value"), this));
         this.addColumn(new EnglishColumn(JDL.L(LOCALE_PREFIX + "english", "en.loc"), this));
+        this.addColumn(new LanguageColumn(JDL.L(LOCALE_PREFIX + "languageFileValue", "Language File Value"), this));
     }
 
     @Override

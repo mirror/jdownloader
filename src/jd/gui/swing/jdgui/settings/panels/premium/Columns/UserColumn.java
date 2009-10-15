@@ -39,6 +39,7 @@ public class UserColumn extends JDTableColumn implements ActionListener {
         user = new JTextField();
         jlr = new JRendererLabel();
         jlr.setBorder(null);
+        setClickstoEdit(2);
     }
 
     private static final long serialVersionUID = -5291590062503352550L;

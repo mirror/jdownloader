@@ -143,6 +143,7 @@ public class ConfigSidebar extends SideBarPanel {
     protected void onHide() {
         /* getPanel is null in case the user selected a rootnode */
         if (((TreeEntry) tree.getLastSelectedPathComponent()).getPanel() == null) return;
+        if (((TreeEntry) tree.getLastSelectedPathComponent()).getPanel().getPanel() == null) return;
         GUIUtils.getConfig().setProperty(PROPERTY_LAST_PANEL, ((TreeEntry) tree.getLastSelectedPathComponent()).getPanel().getPanel().getClass().getName());
         GUIUtils.getConfig().save();
     }

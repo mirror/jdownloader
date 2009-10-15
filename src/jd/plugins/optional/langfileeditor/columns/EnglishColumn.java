@@ -33,7 +33,7 @@ public class EnglishColumn extends JDTableColumn implements ActionListener {
 
     @Override
     public boolean isEditable(Object obj) {
-        return true;
+        return false;
     }
 
     @Override
@@ -70,10 +70,8 @@ public class EnglishColumn extends JDTableColumn implements ActionListener {
     }
 
     public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == text) {
-            text.removeActionListener(this);
-            this.fireEditingStopped();
-        }
+        text.removeActionListener(this);
+        this.fireEditingStopped();
     }
 
 }
