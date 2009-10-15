@@ -586,6 +586,7 @@ gui.menu.action.restore.accel = -
 gui.menu.action.restore.mnem = -
 gui.menu.action.restore.name = Restaurar
 gui.menu.action.save.accel = CTRL+S
+gui.menu.action.save.mnem = S
 gui.menu.action.save.name = Crear contenedor
 gui.menu.action.search.accel = CTRL+F
 gui.menu.action.search.mnem = F
