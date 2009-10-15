@@ -103,8 +103,9 @@ class IRCListener implements IRCEventListener {
     public void onNick(IRCUser u, String nickNew) {
         // logger.info("Nick: " + u.getNick() + " is now known as " + nickNew);
         owner.addToText(null, JDChat.STYLE_SYSTEM_MESSAGE, u.getNick() + " is now known as " + nickNew);
-        owner.renamePMS(u.getNick().toLowerCase(), nickNew);
         owner.renameUser(u.getNick(), nickNew);
+        if(owner.getPms().containsKey(u.getNick().toLowerCase()))
+            owner.renamePMS(u.getNick().toLowerCase(), nickNew);
     }
 
     public void onNotice(String target, IRCUser u, String msg) {
