@@ -45,7 +45,7 @@ public class UgotFileCom extends PluginForHost {
 
     public void login(Account account) throws Exception {
         this.setBrowserExclusive();
-        br.setCookie("http://my-share.at/", "lang", "english");
+        br.setCookie("http://ugotfile.com/", "lang", "english");
         br.getPage("http://ugotfile.com/user/login/");
         Form form = br.getForm(0);
         form.put(form.getBestVariable("userName"), Encoding.urlEncode(account.getUser()));

@@ -59,6 +59,7 @@ public class Megauploadcom extends PluginForHost {
     private static final Object Lock = new Object();
     private static int simultanpremium = 1;
     private boolean onlyapi = false;
+    private static final Object PREMLOCK = new Object();
 
     private String user;
 
@@ -155,21 +156,26 @@ public class Megauploadcom extends PluginForHost {
 
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
-        requestFileInformation(link);
-        br = new Browser();
-        br.setDebug(true);
-        login(account);
-
-        if (!isPremium()) {
-            simultanpremium = 1;
+        boolean free = false;
+        synchronized (PREMLOCK) {
+            requestFileInformation(link);
+            br = new Browser();
+            br.setDebug(true);
+            login(account);
+            if (!isPremium()) {
+                simultanpremium = 1;
+                free = true;
+            } else {
+                if (simultanpremium + 1 > 20) {
+                    simultanpremium = 20;
+                } else {
+                    simultanpremium++;
+                }
+            }
+        }
+        if (free) {
             handleFree0(link, account);
             return;
-        } else {
-            if (simultanpremium + 1 > 20) {
-                simultanpremium = 20;
-            } else {
-                simultanpremium++;
-            }
         }
         String url = null;
 
@@ -643,7 +649,9 @@ public class Megauploadcom extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return simultanpremium;
+        synchronized (PREMLOCK) {
+            return simultanpremium;
+        }
     }
 
     @Override

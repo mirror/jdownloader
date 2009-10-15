@@ -37,6 +37,7 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploading.com" }, urls = { "http://[\\w\\.]*?uploading\\.com/files/\\w+/.+" }, flags = { 2 })
 public class UploadingCom extends PluginForHost {
     private static int simultanpremium = 1;
+    private static final Object PREMLOCK = new Object();
 
     public UploadingCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -90,19 +91,25 @@ public class UploadingCom extends PluginForHost {
 
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
-        requestFileInformation(link);
-        login(account);
-        if (!isPremium()) {
-            simultanpremium = 1;
+        boolean free = false;
+        synchronized (PREMLOCK) {
+            requestFileInformation(link);
+            login(account);
+            if (!isPremium()) {
+                simultanpremium = 1;
+                free = true;
+            } else {
+                if (simultanpremium + 1 > 20) {
+                    simultanpremium = 20;
+                } else {
+                    simultanpremium++;
+                }
+            }
+        }
+        if (free) {
             br.getPage(link.getDownloadURL());
             handleFree0(link);
             return;
-        } else {
-            if (simultanpremium + 1 > 20) {
-                simultanpremium = 20;
-            } else {
-                simultanpremium++;
-            }
         }
         br.getPage(link.getDownloadURL());
         String redirect = getDownloadUrl(br, link);
@@ -233,7 +240,9 @@ public class UploadingCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return simultanpremium;
+        synchronized (PREMLOCK) {
+            return simultanpremium;
+        }
     }
 
     @Override

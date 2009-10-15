@@ -37,6 +37,7 @@ public class GigaSizeCom extends PluginForHost {
 
     private static final String AGB_LINK = "http://www.gigasize.com/page.php?p=terms";
     private static int simultanpremium = 1;
+    private static final Object PREMLOCK = new Object();
 
     public GigaSizeCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -89,22 +90,28 @@ public class GigaSizeCom extends PluginForHost {
 
     @Override
     public void handlePremium(DownloadLink parameter, Account account) throws Exception {
-        requestFileInformation(parameter);
-        login(account);
-        if (!this.isPremium()) {
-            if (simultanpremium + 1 > 2) {
-                simultanpremium = 2;
+        boolean free = false;
+        synchronized (PREMLOCK) {
+            requestFileInformation(parameter);
+            login(account);
+            if (!this.isPremium()) {
+                if (simultanpremium + 1 > 2) {
+                    simultanpremium = 2;
+                } else {
+                    simultanpremium++;
+                }
+                free = true;
             } else {
-                simultanpremium++;
+                if (simultanpremium + 1 > 20) {
+                    simultanpremium = 20;
+                } else {
+                    simultanpremium++;
+                }
             }
+        }
+        if (free) {
             handleFree0(parameter);
             return;
-        } else {
-            if (simultanpremium + 1 > 20) {
-                simultanpremium = 20;
-            } else {
-                simultanpremium++;
-            }
         }
         br.getPage(parameter.getDownloadURL());
         br.setFollowRedirects(true);
@@ -184,7 +191,9 @@ public class GigaSizeCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return simultanpremium;
+        synchronized (PREMLOCK) {
+            return simultanpremium;
+        }
     }
 
     @Override

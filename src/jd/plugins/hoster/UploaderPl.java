@@ -37,6 +37,7 @@ import jd.utils.locale.JDL;
 public class UploaderPl extends PluginForHost {
 
     private int simultanpremium = 1;
+    private static final Object PREMLOCK = new Object();
 
     public UploaderPl(PluginWrapper wrapper) {
         super(wrapper);
@@ -118,23 +119,31 @@ public class UploaderPl extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return simultanpremium;
+        synchronized (PREMLOCK) {
+            return simultanpremium;
+        }
     }
 
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
-        requestFileInformation(downloadLink);
-        login(account);
-        if (!this.isPremium()) {
-            simultanpremium = 10;
+        boolean free = false;
+        synchronized (PREMLOCK) {
+            requestFileInformation(downloadLink);
+            login(account);
+            if (!this.isPremium()) {
+                simultanpremium = 10;
+                free = true;
+            } else {
+                if (simultanpremium + 1 > 20) {
+                    simultanpremium = 20;
+                } else {
+                    simultanpremium++;
+                }
+            }
+        }
+        if (free) {
             handleFree0(downloadLink);
             return;
-        } else {
-            if (simultanpremium + 1 > 20) {
-                simultanpremium = 20;
-            } else {
-                simultanpremium++;
-            }
         }
         String linkurl = br.getRegex("downloadurl'\\);\">(.*?)</textarea>").getMatch(0);
         if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);

@@ -50,6 +50,8 @@ public class DepositFiles extends PluginForHost {
 
     private Pattern FILE_INFO_SIZE = Pattern.compile("Dateigr.*?: <b>(.*?)</b>");
 
+    private static final Object PREMLOCK = new Object();
+
     private static int simultanpremium = 1;
 
     public DepositFiles(PluginWrapper wrapper) {
@@ -197,18 +199,24 @@ public class DepositFiles extends PluginForHost {
 
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
-        requestFileInformation(downloadLink);
-        login(account);
-        if (this.isFreeAccount()) {
-            simultanpremium = 1;
+        boolean free = false;
+        synchronized (PREMLOCK) {
+            requestFileInformation(downloadLink);
+            login(account);
+            if (this.isFreeAccount()) {
+                simultanpremium = 1;
+                free = true;
+            } else {
+                if (simultanpremium + 1 > 20) {
+                    simultanpremium = 20;
+                } else {
+                    simultanpremium++;
+                }
+            }
+        }
+        if (free) {
             handleFree(downloadLink);
             return;
-        } else {
-            if (simultanpremium + 1 > 20) {
-                simultanpremium = 20;
-            } else {
-                simultanpremium++;
-            }
         }
         String link = downloadLink.getDownloadURL();
         br.getPage(link);
@@ -275,7 +283,9 @@ public class DepositFiles extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return simultanpremium;
+        synchronized (PREMLOCK) {
+            return simultanpremium;
+        }
     }
 
     @Override

@@ -81,6 +81,11 @@ public class LinkStatus implements Serializable {
     public static final int ERROR_TEMPORARILY_UNAVAILABLE = 1 << 11;
 
     /**
+     * hoster is temporarily not available, dont try other links for this host
+     */
+    public static final int ERROR_HOSTER_TEMPORARILY_UNAVAILABLE = 1 << 12;
+
+    /**
      * Controlling & Downloadinterface: Zeigt an, dass die Datei auf der
      * Festplatte schon existiert
      */
@@ -160,11 +165,6 @@ public class LinkStatus implements Serializable {
      * ein Hosting Service handelt für das es noch kein Plugin gibt.
      */
     public static final int ERROR_PLUGIN_NEEDED = 1 << 30;
-
-    /**
-     * hoster is temporarily not available, dont try other links for this host
-     */
-    public static final int ERROR_HOSTER_TEMPORARILY_UNAVAILABLE = 1 << 31;
 
     private static final long serialVersionUID = 3885661829491436448L;
 

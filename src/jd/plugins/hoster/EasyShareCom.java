@@ -125,13 +125,16 @@ public class EasyShareCom extends PluginForHost {
         String captcha = br.getRegex("<img src=\"(.*?)\"").getMatch(0);
         String captchaUrl = "http://" + br.getHost() + "/" + captcha;
         if (captcha != null) {
-            String captchaCode = getCaptchaCode(captchaUrl, downloadLink);
+            String captchaCode = getCaptchaCode(null, captchaUrl, downloadLink);
             form.put("captcha", captchaCode);
         }
         /* Datei herunterladen */
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, true, 1);
-        if (!dl.getConnection().isContentDisposition()) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
+        if (!dl.getConnection().isContentDisposition()) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        }
         dl.startDownload();
     }
 

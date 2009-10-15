@@ -133,7 +133,12 @@ public class SendspaceCom extends PluginForHost {
         /* bypass captcha with retry ;) */
         if (br.containsHTML("User Verification") && br.containsHTML("Please type all the characters") || br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 1 * 60 * 1000l);
         /* Link holen */
-        String script = br.getRegex(Pattern.compile("<script type=\"text/javascript\">(.*?)</script>", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        String script = br.getRegex(Pattern.compile("<script type=\"text/javascript\">(function .*?)</script>", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        if (script == null) {
+            br.postPage(downloadLink.getDownloadURL(), "download=%C2%A0REGULAR+DOWNLOAD%C2%A0");
+            script = br.getRegex(Pattern.compile("<script type=\"text/javascript\">(function .*?)</script>", Pattern.CASE_INSENSITIVE)).getMatch(0);
+            if (script == null) throw new PluginException(LinkStatus.ERROR_FATAL);
+        }
         String dec = br.getRegex(Pattern.compile("base64ToText\\('(.*?)'\\)", Pattern.CASE_INSENSITIVE)).getMatch(0);
         script += new Browser().getPage("http://www.sendspace.com/jsc/download.js");
         String fun = "function f(){ " + script + " return  utf8_decode(enc(base64ToText('" + dec + "')));} f()";

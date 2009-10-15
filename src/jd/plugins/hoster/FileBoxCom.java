@@ -39,6 +39,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 public class FileBoxCom extends PluginForHost {
 
     private static int simultanpremium = 1;
+    private static final Object PREMLOCK = new Object();
 
     public FileBoxCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -113,17 +114,20 @@ public class FileBoxCom extends PluginForHost {
 
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
-        requestFileInformation(link);
-        login(account);
+        boolean premium = false;
         String passCode = null;
-        boolean premium = br.containsHTML("Premium User");
-        if (!premium) {
-            simultanpremium = 1;
-        } else {
-            if (simultanpremium + 1 > 20) {
-                simultanpremium = 20;
+        synchronized (PREMLOCK) {
+            requestFileInformation(link);
+            login(account);
+            premium = br.containsHTML("Premium User");
+            if (!premium) {
+                simultanpremium = 1;
             } else {
-                simultanpremium++;
+                if (simultanpremium + 1 > 20) {
+                    simultanpremium = 20;
+                } else {
+                    simultanpremium++;
+                }
             }
         }
         br.getPage(link.getDownloadURL());
@@ -221,7 +225,9 @@ public class FileBoxCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return simultanpremium;
+        synchronized (PREMLOCK) {
+            return simultanpremium;
+        }
     }
 
     @Override
