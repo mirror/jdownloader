@@ -678,7 +678,7 @@ public class JDChat extends PluginOptional implements ControlListener {
         sb.append("<li>");
         if (user != null) {
             {
-                if (color)
+                if (!color)
                     sb.append("<span style='" + user.getStyle() + (getUser(conn.getNick()) == user ? ";font-weight:bold" : "") + "'>[" + df.format(dt) + "] " + user.getNickLink("pmnick") + (JDChat.STYLE_PM.equalsIgnoreCase(style) ? ">> " : ": ") + "</span>");
                 else
                     sb.append("<span style='color:#000000" + (getUser(conn.getNick()) == user ? ";font-weight:bold" : "") + "'>[" + df.format(dt) + "] " + user.getNickLink("pmnick") + (JDChat.STYLE_PM.equalsIgnoreCase(style) ? ">> " : ": ") + "</span>");
@@ -1600,7 +1600,7 @@ public class JDChat extends PluginOptional implements ControlListener {
         sb.append("<ul>");
         for (User name : NAMES) {
             sb.append("<li>");
-            if (color)
+            if (!color)
                 sb.append("<span style='color:#" + name.getColor() + (name.name.equals(conn.getNick()) ? ";font-weight:bold;" : "") + "'>");
             else
                 sb.append("<span style='color:#000000" + (name.name.equals(conn.getNick()) ? ";font-weight:bold;" : "") + "'>");
