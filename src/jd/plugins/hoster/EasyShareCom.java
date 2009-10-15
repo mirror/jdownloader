@@ -124,7 +124,7 @@ public class EasyShareCom extends PluginForHost {
         String captcha = br.getRegex("<img src=\"(/kapt.*?)\"").getMatch(0);
         String captchaUrl = "http://" + br.getHost() + "/" + captcha;
         if (captcha != null) {
-            String captchaCode = getCaptchaCode(null, captchaUrl, downloadLink);
+            String captchaCode = getCaptchaCode(captchaUrl, downloadLink);
             form.put("captcha", captchaCode);
         }
         /* Datei herunterladen */
