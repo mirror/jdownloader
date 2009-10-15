@@ -51,7 +51,6 @@ public class JDShutdown extends PluginOptional {
     private static Thread shutdown = null;
     private static boolean shutdownenabled = false;
     private static MenuAction menuAction = null;
-    private String jd;
     private static String[] MODES_AVAIL = null;
 
     public JDShutdown(PluginWrapper wrapper) {
@@ -60,6 +59,7 @@ public class JDShutdown extends PluginOptional {
         initConfig();
     }
 
+    @Override
     public void controlEvent(ControlEvent event) {
         super.controlEvent(event);
         if (shutdownenabled) {
@@ -79,12 +79,14 @@ public class JDShutdown extends PluginOptional {
         }
     }
 
+    @Override
     public ArrayList<MenuAction> createMenuitems() {
         ArrayList<MenuAction> menu = new ArrayList<MenuAction>();
         menu.add(menuAction);
         return menu;
     }
 
+    @Override
     public boolean initAddon() {
         if (menuAction == null) menuAction = new MenuAction("gui.jdshutdown.toggle", "gui.images.logout") {
             private static final long serialVersionUID = 4359802245569811800L;
@@ -118,6 +120,7 @@ public class JDShutdown extends PluginOptional {
         return true;
     }
 
+    @Override
     public void onExit() {
         JDUtilities.getController().removeControlListener(this);
     }
@@ -177,9 +180,10 @@ public class JDShutdown extends PluginOptional {
 
     class ShutDown extends Thread {
 
-        /*
+        /**
          * Wait for JD-Unrar
          */
+        @Override
         public void run() {
             OptionalPluginWrapper addon = JDUtilities.getOptionalPlugin("unrar");
             if (addon != null && addon.isEnabled()) {
@@ -286,6 +290,7 @@ public class JDShutdown extends PluginOptional {
         JDUtilities.runCommand("dbus-send", new String[] { "--session", "--dest=org.freedesktop.PowerManagement", "--type=method_call", "--print-reply", "--reply-timeout=2000", "/org/freedesktop/PowerManagement", "org.freedesktop.PowerManagement." + command }, null, 0);
     }
 
+    @Override
     public String getIconKey() {
         return "gui.images.logout";
     }

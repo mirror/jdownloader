@@ -632,7 +632,7 @@ public class JDChat extends PluginOptional implements ControlListener {
 
     }
 
-    // @Override
+    @Override
     public void actionPerformed(ActionEvent e) {
 
         if (((ToolBarAction) e.getSource()).isSelected()) {
@@ -742,7 +742,7 @@ public class JDChat extends PluginOptional implements ControlListener {
         updateNamesPanel();
     }
 
-    // @Override
+    @Override
     public void controlEvent(ControlEvent e) {
 
         if (e.getID() == ControlEvent.CONTROL_INTERACTION_CALL) {
@@ -770,7 +770,7 @@ public class JDChat extends PluginOptional implements ControlListener {
         }
     }
 
-    // @Override
+    @Override
     public ArrayList<MenuAction> createMenuitems() {
         ArrayList<MenuAction> menu = new ArrayList<MenuAction>();
         MenuAction m;
@@ -856,7 +856,7 @@ public class JDChat extends PluginOptional implements ControlListener {
         return null;
     }
 
-    // @Override
+    @Override
     public boolean initAddon() {
         NAMES = new ArrayList<User>();
         sb = new StringBuilder();
@@ -968,15 +968,10 @@ public class JDChat extends PluginOptional implements ControlListener {
                 JTabbedPane pane = (JTabbedPane) e.getSource();
                 int sel = pane.getSelectedIndex();
                 tabbedPane.setForegroundAt(sel, Color.black);
-
             }
 
-            @Override
             public void focusLost(FocusEvent e) {
-                // TODO Auto-generated method stub
-
             }
-
         });
 
         textField = new JTextField();
@@ -1199,7 +1194,7 @@ public class JDChat extends PluginOptional implements ControlListener {
 
     }
 
-    // @Override
+    @Override
     public void onExit() {
         NAMES.clear();
         this.setLoggedIn(false);
@@ -1448,6 +1443,7 @@ public class JDChat extends PluginOptional implements ControlListener {
 
                     private static final long serialVersionUID = 3966113588850405974L;
 
+                    @Override
                     protected void initMenu(JMenuBar menubar) {
                         menubar.add(top = new JButton(JDL.L("jd.plugins.optional.jdchat.JDChat.topic.default", "Loading Message of the day")));
                         top.setContentAreaFilled(false);
@@ -1503,7 +1499,7 @@ public class JDChat extends PluginOptional implements ControlListener {
 
             JDUtilities.getController().addControlListener(this);
             new Thread() {
-                // @Override
+                @Override
                 public void run() {
                     initIRC();
                 }
@@ -1518,7 +1514,7 @@ public class JDChat extends PluginOptional implements ControlListener {
         }
     }
 
-    // @Override
+    @Override
     public String getIconKey() {
         return "gui.images.chat";
     }
@@ -1566,7 +1562,7 @@ public class JDChat extends PluginOptional implements ControlListener {
 
     private void startAwayObserver() {
         Thread th = new Thread() {
-            // @Override
+            @Override
             public void run() {
                 while (true) {
                     if (System.currentTimeMillis() - lastAction > AWAY_TIMEOUT) {
