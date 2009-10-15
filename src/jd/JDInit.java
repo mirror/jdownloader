@@ -79,8 +79,8 @@ public class JDInit {
     }
 
     public void checkUpdate() {
-        if (JDUtilities.getResourceFile("webcheck.tmp").exists() && JDIO.getLocalFile(JDUtilities.getResourceFile("webcheck.tmp")).indexOf("(Revision" + JDUtilities.getRevision() + ")") > 0) {
-            UserIO.getInstance().requestTextAreaDialog("Error", "Failed Update detected!", "It seems that the previous webupdate failed.\r\nPlease ensure that your java-version is equal- or above 1.5.\r\nMore infos at http://www.syncom.org/projects/jdownloader/wiki/FAQ.\r\n\r\nErrorcode: \r\n" + JDIO.getLocalFile(JDUtilities.getResourceFile("webcheck.tmp")));
+        if (JDUtilities.getResourceFile("webcheck.tmp").exists() && JDIO.readFileToString(JDUtilities.getResourceFile("webcheck.tmp")).indexOf("(Revision" + JDUtilities.getRevision() + ")") > 0) {
+            UserIO.getInstance().requestTextAreaDialog("Error", "Failed Update detected!", "It seems that the previous webupdate failed.\r\nPlease ensure that your java-version is equal- or above 1.5.\r\nMore infos at http://www.syncom.org/projects/jdownloader/wiki/FAQ.\r\n\r\nErrorcode: \r\n" + JDIO.readFileToString(JDUtilities.getResourceFile("webcheck.tmp")));
             JDUtilities.getResourceFile("webcheck.tmp").delete();
             JDUtilities.getConfiguration().setProperty(Configuration.PARAM_WEBUPDATE_AUTO_RESTART, false);
         } else {
@@ -411,6 +411,11 @@ public class JDInit {
         }
         try {
             new CPluginWrapper("dlc", "D", ".+\\.dlc");
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+        try {
+            new CPluginWrapper("jdc", "J", ".+\\.jdc");
         } catch (Throwable e) {
             e.printStackTrace();
         }

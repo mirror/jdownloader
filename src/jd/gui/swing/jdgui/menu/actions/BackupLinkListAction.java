@@ -1,0 +1,109 @@
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2009  JD-Team support@jdownloader.org
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+package jd.gui.swing.jdgui.menu.actions;
+
+import java.awt.event.ActionEvent;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.ObjectOutputStream;
+import java.util.ArrayList;
+
+import jd.config.SubConfiguration;
+import jd.crypt.JDCrypt;
+import jd.gui.UserIO;
+import jd.gui.swing.GuiRunnable;
+import jd.gui.swing.SwingGui;
+import jd.gui.swing.components.JDFileChooser;
+import jd.gui.swing.jdgui.actions.ToolBarAction;
+import jd.nutils.JDHash;
+import jd.nutils.io.JDFileFilter;
+import jd.nutils.io.JDIO;
+import jd.plugins.FilePackage;
+import jd.utils.JDHexUtils;
+import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
+
+public class BackupLinkListAction extends ToolBarAction {
+    /**
+     * 
+     */
+
+    private static final long serialVersionUID = 823930266263085474L;
+
+    public BackupLinkListAction() {
+        super("action.backuplinklist", "gui.images.save");
+    }
+
+    public void onAction(ActionEvent e) {
+
+        ArrayList<FilePackage> packages = JDUtilities.getDownloadController().getPackages();
+
+        try {
+
+            // Serialize to a byte array
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            ObjectOutputStream out = new ObjectOutputStream(bos);
+            out.writeObject(packages);
+            out.close();
+
+            GuiRunnable<File> temp = new GuiRunnable<File>() {
+                // @Override
+                public File runSave() {
+                    JDFileChooser fc = new JDFileChooser("_LOADSAVEDLC");
+                    fc.setFileFilter(new JDFileFilter(null, ".jdc", true));
+                    if (fc.showSaveDialog(SwingGui.getInstance().getMainFrame()) == JDFileChooser.APPROVE_OPTION) return fc.getSelectedFile();
+                    return null;
+                }
+            };
+            File ret = temp.getReturnValue();
+            if (ret == null) return;
+            if (JDIO.getFileExtension(ret) == null || !JDIO.getFileExtension(ret).equalsIgnoreCase("jdc")) {
+                ret = new File(ret.getAbsolutePath() + ".jdc");
+            }
+            String defaultpw = SubConfiguration.getConfig("JDC_CONFIG").getStringProperty("password", "jddefault");
+            byte[] crypted = JDCrypt.encrypt(JDHexUtils.getHexString(bos.toByteArray()), getPWByte(UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN, JDL.L("jd.gui.swing.jdgui.menu.actions.BackupLinkListAction.password", "Enter Encryption Password"), defaultpw)));
+
+            JDIO.saveToFile(ret, crypted);
+
+            // Deserialize from a byte array
+            // ObjectInputStream in = new ObjectInputStream(new
+            // ByteArrayInputStream(buf));
+            // ArrayList<FilePackage> button = (ArrayList<FilePackage>)
+            // in.readObject();
+            // in.close();
+
+        } catch (Exception ew) {
+        }
+
+    }
+
+    /**
+     * @param requestInputDialog
+     * @return
+     */
+    public static byte[] getPWByte(String requestInputDialog) {
+        return JDHexUtils.getByteArray(JDHash.getMD5(requestInputDialog));
+    }
+
+    @Override
+    public void init() {
+    }
+
+    @Override
+    public void initDefaults() {
+    }
+}

@@ -499,7 +499,7 @@ public class JAntiCaptcha {
         // String ret = exec.getOutputStream() + " \r\n " +
         // exec.getErrorStream();
 
-        String res = JDIO.getLocalFile(JDUtilities.getResourceFile(this.dstFile));
+        String res = JDIO.readFileToString(JDUtilities.getResourceFile(this.dstFile));
         if (res == null) return null;
         return res.trim();
 
@@ -837,7 +837,7 @@ public class JAntiCaptcha {
             }
             return;
         }
-        doc = JDUtilities.parseXmlString(JDIO.getLocalFile(f), false);
+        doc = JDUtilities.parseXmlString(JDIO.readFileToString(f), false);
         if (doc == null) {
             if (Utilities.isLoggerActive()) {
                 logger.severe("" + "jacinfo.xml" + " is missing2");
@@ -1466,7 +1466,7 @@ public class JAntiCaptcha {
         File f = getResourceFile("letters.mth");
         String str = null;
         if (f.exists()) {
-            str = JDIO.getLocalFile(f);
+            str = JDIO.readFileToString(f);
         } else {
             str = "<jDownloader></jDownloader>";
         }

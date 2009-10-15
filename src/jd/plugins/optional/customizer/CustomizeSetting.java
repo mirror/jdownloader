@@ -34,7 +34,7 @@ public class CustomizeSetting implements Serializable {
     }
 
     public boolean matches(String fileName) {
-        if (regex.length() == 0) return false;
+        if (regex==null||regex.length() == 0) return false;
         try {
             return new Regex(fileName, regex).matches();
         } catch (Exception e) {

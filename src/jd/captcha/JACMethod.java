@@ -82,7 +82,7 @@ public class JACMethod implements Comparable<JACMethod> {
     }
 
     private static ArrayList<JACMethod> parseJACInfo(File dir) {
-        String filecontent = JDIO.getLocalFile(new File(dir.getAbsolutePath() + "/jacinfo.xml"));
+        String filecontent = JDIO.readFileToString(new File(dir.getAbsolutePath() + "/jacinfo.xml"));
         Document doc = JDUtilities.parseXmlString(filecontent, false);
         if (doc == null) return null;
 
@@ -129,7 +129,7 @@ public class JACMethod implements Comparable<JACMethod> {
     }
 
     private static boolean isAvailableExternMethod(File jacinfo) {
-        return isAvailableExternMethod(JDIO.getLocalFile(jacinfo));
+        return isAvailableExternMethod(JDIO.readFileToString(jacinfo));
     }
 
     private static boolean isAvailableExternMethod(String content) {

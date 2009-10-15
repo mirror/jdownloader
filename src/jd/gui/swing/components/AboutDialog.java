@@ -74,7 +74,7 @@ public class AboutDialog extends AbstractDialog {
         cp.add(btn = Factory.createButton(JDL.L(JDL_PREFIX + "license", "Show license"), JDTheme.II("gui.images.premium", 16, 16), new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
-                String license = JDIO.getLocalFile(JDUtilities.getResourceFile("licenses/jdownloader.license"));
+                String license = JDIO.readFileToString(JDUtilities.getResourceFile("licenses/jdownloader.license"));
                 UserIO.getInstance().requestConfirmDialog(UserIO.NO_CANCEL_OPTION | UserIO.STYLE_LARGE | UserIO.NO_ICON, JDL.L(JDL_PREFIX + "license.title", "JDownloader License"), license, null, null, null);
             }
 

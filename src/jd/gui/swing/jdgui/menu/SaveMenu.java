@@ -17,6 +17,7 @@
 package jd.gui.swing.jdgui.menu;
 
 import jd.gui.swing.jdgui.menu.actions.BackupAction;
+import jd.gui.swing.jdgui.menu.actions.BackupLinkListAction;
 
 public class SaveMenu extends JStartMenu {
 
@@ -25,6 +26,7 @@ public class SaveMenu extends JStartMenu {
     public SaveMenu() {
         super("gui.menu.save", "gui.images.save");
         this.add(new BackupAction());
+        this.add(new BackupLinkListAction());
     }
 
 }

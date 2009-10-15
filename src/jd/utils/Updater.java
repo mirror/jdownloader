@@ -177,7 +177,7 @@ public class Updater {
 	}
 
 	private void cleanUp() {
-		String[] outdated = Regex.getLines(JDIO.getLocalFile(new File(
+		String[] outdated = Regex.getLines(JDIO.readFileToString(new File(
 				this.workingDir, "outdated.dat")));
 
 		for (String path : outdated) {
@@ -619,7 +619,7 @@ public class Updater {
 		tmp = new File(this.workingDir, "/tmp/");
 		JDIO.removeDirectoryOrFile(tmp);
 		tmp.mkdirs();
-		String version = JDIO.getLocalFile(new File(this.workingDir,
+		String version = JDIO.readFileToString(new File(this.workingDir,
 				"/config/version.cfg"));
 		tmp = new File(this.workingDir, "/config/");
 		JDIO.removeDirectoryOrFile(tmp);

@@ -406,7 +406,7 @@ public class WebUpdater implements Serializable {
 
     private void parseFileList(File file, ArrayList<FileUpdate> ret, HashMap<String, FileUpdate> plugins) {
         String source;
-        source = JDIO.getLocalFile(file);
+        source = JDIO.readFileToString(file);
 
         String pattern = "[\r\n\\;]*([^=]+)\\=(.*?)\\;";
 

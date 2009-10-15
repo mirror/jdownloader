@@ -1086,7 +1086,7 @@ public class JACScript {
         }
 
         File f = JDUtilities.getResourceFile(JDUtilities.getJACMethodsDirectory() + method + "/" + scriptFile);
-        String script = JDIO.getLocalFile(f);
+        String script = JDIO.readFileToString(f);
 
         logger.info("JAC GET: " + f);
         if (script == null || script.length() == 0) {

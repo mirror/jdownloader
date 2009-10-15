@@ -363,7 +363,7 @@ public class Main {
                 String hash2 = JDHash.getMD5(JDUtilities.getResourceFile("updatewarnings.html"));
                 if (hash2 != null && !hash2.equals(warnHash)) {
                     String str;
-                    str = JDIO.getLocalFile(new File("updatewarnings.html"));
+                    str = JDIO.readFileToString(new File("updatewarnings.html"));
                     if (str.trim().length() > 0) {
                         if (JOptionPane.showConfirmDialog(frame, str, "UPDATE WARNINGS", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE) == JOptionPane.NO_OPTION) {
                             Main.log(log, "Abort due to warnings " + str);

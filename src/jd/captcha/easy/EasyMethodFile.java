@@ -72,7 +72,7 @@ public class EasyMethodFile implements JDLabelContainer, Serializable {
 
     public boolean isEasyCaptchaMethode() {
         File js = getScriptJas();
-        return js.exists() && JDIO.getLocalFile(js).contains("param.useSpecialGetLetters=EasyCaptcha");
+        return js.exists() && JDIO.readFileToString(js).contains("param.useSpecialGetLetters=EasyCaptcha");
     }
 
     public File getFile() {
@@ -240,7 +240,7 @@ public class EasyMethodFile implements JDLabelContainer, Serializable {
         String ret= null;
         try {
             if(infoxml.exists())
-                ret= new Regex(JDIO.getLocalFile(infoxml),"name=\"([^\"]*)").getMatch(0);
+                ret= new Regex(JDIO.readFileToString(infoxml),"name=\"([^\"]*)").getMatch(0);
         } catch (Exception e) {
 //e.printStackTrace();
         }

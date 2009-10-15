@@ -101,7 +101,7 @@ public class SrcParser {
         broadcaster.fireEvent(new MessageEvent(this, PARSE_NEW_FILE, "Parse " + file.getAbsolutePath()));
 
         // find all lines containing JDL calls
-        currentContent = JDIO.getLocalFile(file);
+        currentContent = JDIO.readFileToString(file);
         File cacheEntries = JDUtilities.getResourceFile("tmp/lfe/cache/" + JDHash.getMD5(currentContent) + ".entries");
         File cachePattern = JDUtilities.getResourceFile("tmp/lfe/cache/" + JDHash.getMD5(currentContent) + ".pattern");
         ArrayList<LngEntry> fileEntries = new ArrayList<LngEntry>();
@@ -530,7 +530,7 @@ public class SrcParser {
     }
 
     public void parseDefault(File file) {
-        String[] entries = Regex.getLines(JDIO.getLocalFile(file));
+        String[] entries = Regex.getLines(JDIO.readFileToString(file));
 
         for (String line : entries) {
             if (line.startsWith("#pattern: ")) {

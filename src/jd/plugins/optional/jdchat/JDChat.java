@@ -108,7 +108,7 @@ public class JDChat extends PluginOptional implements ControlListener {
     private static final String PARAM_PORT = "PARAM_PORT";
     private static final String PARAM_USERCOLOR = "PARAM_USERCOLOR";
 
-    public static final String STYLE = JDIO.getLocalFile(JDUtilities.getResourceFile("plugins/jdchat/styles.css"));
+    public static final String STYLE = JDIO.readFileToString(JDUtilities.getResourceFile("plugins/jdchat/styles.css"));
     public static final String STYLE_ACTION = "action";
     public static final String STYLE_ERROR = "error";
     public static final String STYLE_HIGHLIGHT = "highlight";
@@ -117,7 +117,7 @@ public class JDChat extends PluginOptional implements ControlListener {
     public static final String STYLE_SELF = "self";
     public static final String STYLE_SYSTEM_MESSAGE = "system";
     // private static final int TEXT_BUFFER = 1024 * 600;
-    public static final String USERLIST_STYLE = JDIO.getLocalFile(JDUtilities.getResourceFile("plugins/jdchat/userliststyles.css"));
+    public static final String USERLIST_STYLE = JDIO.readFileToString(JDUtilities.getResourceFile("plugins/jdchat/userliststyles.css"));
     private static final String CHANNEL_LNG = "CHANNEL_LNG3";
     protected JButton top;
     private boolean changed;

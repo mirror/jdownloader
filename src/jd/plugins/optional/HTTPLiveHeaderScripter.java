@@ -104,7 +104,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
                 Vector<String> save = (Vector<String>) JDIO.loadObject(tabbedPanel, ret, true);
                 textArea.setText(save.get(2));
             } catch (Exception e2) {
-                textArea.setText(JDIO.getLocalFile(ret));
+                textArea.setText(JDIO.readFileToString(ret));
             }
 
         } else if (e.getSource() == menSave) {

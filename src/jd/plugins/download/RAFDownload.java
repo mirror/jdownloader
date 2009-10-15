@@ -123,7 +123,7 @@ public class RAFDownload extends DownloadInterface {
 
                     long crc = JDUtilities.getCRC(new File(downloadLink.getFileOutput()));
 
-                    String sfvText = JDIO.getLocalFile(new File(sfv.getFileOutput()));
+                    String sfvText = JDIO.readFileToString(new File(sfv.getFileOutput()));
                     if (sfvText != null && sfvText.toLowerCase().contains(new File(downloadLink.getFileOutput()).getName().toLowerCase())) {
                         String[] l = Regex.getLines(sfvText);
                         boolean c = false;

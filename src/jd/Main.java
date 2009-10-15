@@ -556,6 +556,7 @@ public class Main {
                 }
             }
         } else {
+            
             /* dynamics in der public laden */
             JDLogger.getLogger().finest("Run dynamics");
             if (WebUpdater.getPluginList() == null) return;

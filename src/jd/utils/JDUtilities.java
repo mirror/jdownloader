@@ -592,7 +592,7 @@ public class JDUtilities {
         if (REVISION != null) return REVISION;
         int rev = -1;
         try {
-            rev = Formatter.filterInt(JDIO.getLocalFile(JDUtilities.getResourceFile("config/version.cfg")));
+            rev = Formatter.filterInt(JDIO.readFileToString(JDUtilities.getResourceFile("config/version.cfg")));
         } catch (Throwable t) {
             t.printStackTrace();
         }

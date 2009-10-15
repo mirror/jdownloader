@@ -335,7 +335,7 @@ public class Subversion implements ISVNEventHandler {
         final String mine = "<<<<<<< .mine";
         final String delim = "=======";
         final String theirs = ">>>>>>> .r";
-        String txt = JDIO.getLocalFile(file);
+        String txt = JDIO.readFileToString(file);
         String pre, post;
         while (true) {
             int mineStart = txt.indexOf(mine);

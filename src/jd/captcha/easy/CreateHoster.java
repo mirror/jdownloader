@@ -23,7 +23,7 @@ public class CreateHoster {
     public static void setImageType(EasyMethodFile destination)
     {
         String type = destination.getCaptchaType(true);
-        String info = JDIO.getLocalFile(destination.getJacinfoXml());
+        String info = JDIO.readFileToString(destination.getJacinfoXml());
         if(!info.contains("type=\""+type+"\""))
         {
             info=info.replaceFirst("type=\"[^\"]*\"", "type=\""+type+"\"");

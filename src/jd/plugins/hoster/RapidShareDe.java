@@ -109,7 +109,7 @@ public class RapidShareDe extends PluginForHost {
 
         File l = new File(downloadLink.getFileOutput());
         if (l.length() < 10240) {
-            String local = JDIO.getLocalFile(l);
+            String local = JDIO.readFileToString(l);
             if (Regex.matches(local, "Zugriffscode falsch")) {
                 l.delete();
                 l.deleteOnExit();

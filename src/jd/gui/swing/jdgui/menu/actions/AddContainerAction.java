@@ -35,7 +35,7 @@ public class AddContainerAction extends ToolBarAction {
     }
 
     public void onAction(ActionEvent e) {
-        File[] ret = UserIO.getInstance().requestFileChooser("_LOADSAVEDLC", JDL.L("gui.filechooser.loaddlc", "Load DLC file"), JDFileChooser.FILES_ONLY, new JDFileFilter(null, ".dlc|.rsdf|.ccf|.metalink", true), true);
+        File[] ret = UserIO.getInstance().requestFileChooser("_LOADSAVEDLC", JDL.L("gui.filechooser.loaddlc", "Load DLC file"), JDFileChooser.FILES_ONLY, new JDFileFilter(null, ".jdc|.dlc|.rsdf|.ccf|.metalink", true), true);
         if (ret == null) return;
         for (File r : ret) {
             JDUtilities.getController().loadContainerFile(r);

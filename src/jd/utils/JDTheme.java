@@ -173,7 +173,7 @@ public class JDTheme {
         }
         currentTheme = themeID;
         data = new HashMap<String, String>();
-        String str = JDIO.getLocalFile(file);
+        String str = JDIO.readFileToString(file);
         String[] lines = Regex.getLines(str);
         for (String element : lines) {
             int split = element.indexOf("=");
@@ -201,7 +201,7 @@ public class JDTheme {
                 return;
             }
             data = new HashMap<String, String>();
-            str = JDIO.getLocalFile(file);
+            str = JDIO.readFileToString(file);
             lines = Regex.getLines(str);
             for (String element : lines) {
                 int split = element.indexOf("=");
