@@ -670,14 +670,19 @@ public class JDChat extends PluginOptional implements ControlListener {
 
         }
         final String msg2 = msg;
-
+        boolean color = subConfig.getBooleanProperty(PARAM_USERCOLOR, true);
         Date dt = new Date();
 
         SimpleDateFormat df = new SimpleDateFormat("HH:mm:ss");
         sb.append("<!---->");
         sb.append("<li>");
         if (user != null) {
-            sb.append("<span style='" + user.getStyle() + (getUser(conn.getNick()) == user ? ";font-weight:bold" : "") + "'>[" + df.format(dt) + "] " + user.getNickLink("pmnick") + (JDChat.STYLE_PM.equalsIgnoreCase(style) ? ">> " : ": ") + "</span>");
+            {
+                if (color)
+                    sb.append("<span style='" + user.getStyle() + (getUser(conn.getNick()) == user ? ";font-weight:bold" : "") + "'>[" + df.format(dt) + "] " + user.getNickLink("pmnick") + (JDChat.STYLE_PM.equalsIgnoreCase(style) ? ">> " : ": ") + "</span>");
+                else
+                    sb.append("<span style='color:#000000" + (getUser(conn.getNick()) == user ? ";font-weight:bold" : "") + "'>[" + df.format(dt) + "] " + user.getNickLink("pmnick") + (JDChat.STYLE_PM.equalsIgnoreCase(style) ? ">> " : ": ") + "</span>");
+            }
         } else {
             sb.append("<span class='time'>[" + df.format(dt) + "] </span>");
 
