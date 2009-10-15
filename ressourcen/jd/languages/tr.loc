@@ -263,6 +263,7 @@ gui.config.jdrr.success = Başarılı!
 gui.config.jdrr.title = Tekrar Bağlan kaydedici
 gui.config.jdshutdown.forceshutdown = Sistem kapatmayı zorla (Bazı sistemler için)
 gui.config.jdshutdown.hibernate = Hazırda beklet (Bazı sistemler için)
+gui.config.jdshutdown.mode = Mod:
 gui.config.jdshutdown.standby = Beklemede (Her işletim sisteminde çalışmaz)
 gui.config.linkgrabber.controlposition = Link Yakalayıcı butonlarını tablonun üstüne yerleştir
 gui.config.linkgrabber.infopanel.onlinkgrab = Link yaklandığı vakit dosya bilgi panelini göster
@@ -368,6 +369,7 @@ gui.javacheck.html = <div style='width:534px;height;200px'><h2>You useses a wron
 gui.javacheck.newerjavaavailable.msg = jDownloader sizdeki java sürümüz ile düzgün çalışsa  bile , size son java sürmünü kullanmanızı tavsiye ederiz. \r\nJDownloader daha stabil daha hızlı çalışacaktır ve daha güzel görünecektir. \r\n\r\nZiyaret edin http://jdownloader.org/download.
 gui.javacheck.newerjavaavailable.title = Java sürmünüz ESKİ: %s!
 gui.javacheck.title = Yanlış Java Sürümü
+gui.jdshutdown.toggle.tooltip = JD Sistem Kapatma
 gui.linkgrabber.aborted = Vazgeçildi
 gui.linkgrabber.adding = %s Link Ekleniyor
 gui.linkgrabber.alreadyindl = Zaten indirme listesinde
