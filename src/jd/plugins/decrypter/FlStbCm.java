@@ -55,8 +55,10 @@ public class FlStbCm extends PluginForDecrypt {
             }
         }
         fp.setName(fpName);
-        String temp = br.getRegex(Pattern.compile("<pre  id=\"copy_paste_links\" style=\".*auto\">(.*?)</pre></div>", Pattern.DOTALL)).getMatch(0);
+        String temp = br.getRegex(Pattern.compile("und:#fff;overflow: auto\">(.*?)<br /></pre></", Pattern.DOTALL)).getMatch(0);
+        if (temp == null) return null;
         String[] links = temp.split("<br />");
+        if (links == null || links.length == 0) return null;
         progress.setRange(links.length);
         for (String data : links) {
             decryptedLinks.add(createDownloadlink(data));

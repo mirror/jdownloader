@@ -128,47 +128,51 @@ public class Odsiebiecom extends PluginForHost {
             /* Button folgen, schaun ob Link oder Captcha als nächstes kommt */
             downloadurl = "http://odsiebie.com/pobierz/" + steplink;
             br.getPage(downloadurl);
+            downloadurl = br.getRegex("href=\"/download/(.*?)\"").getMatch(0);
             Form capform = br.getFormbyProperty("name", "wer1");
             if (capform == null) {
                 String form2search = br.getRegex("from picture\\)</small>.*?<form name=\"(.*?)\" method").getMatch(0);
-                if (form2search == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-                capform = br.getFormbyProperty("name", form2search);
-            }
-            int i = 0;
-            Browser brc = br.cloneBrowser();
-            while (capform != null) {
-                String pagepiece = br.getRegex("<img src=\"(.*?)</form>").getMatch(0);
-                if (pagepiece == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-                String[] captchalinks = HTMLParser.getHttpLinks(pagepiece, "");
-                if (captchalinks == null || captchalinks.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-                String adr = null;
-                File file = null;
-                for (String link : captchalinks) {
-                    URLConnectionAdapter con = brc.openGetConnection(link);
-                    if ((con.getContentType().contains("image"))) {
-                        adr = link;
-                        file = this.getLocalCaptchaFile();
-                        Browser.download(file, con);
-                        break;
-                    }
-                    con.disconnect();
-                    continue;
+                if (form2search != null) {
+                    capform = br.getFormbyProperty("name", form2search);
                 }
-                // String adr =
-                // br.getRegex("<img src=\"http://odsiebie.com/v_auth.php\" style=\"display: none;\"><img src=\"(.*?)\"  style=\"display:").getMatch(0);
-                // adr = "http://odsiebie.com/v.php";
-                if (adr == null || file == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-                // URLConnectionAdapter con = brc.openGetConnection(adr);
-                // File file = this.getLocalCaptchaFile();
-                // Browser.download(file, con);
-                String code = getCaptchaCode(file, downloadLink);
-                capform.getInputFieldByName("captcha").setValue(code);
-                br.submitForm(capform);
-                capform = br.getFormbyProperty("name", "wer1");
-                i++;
-                if (i > 3) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
             }
-            if (capform != null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (downloadurl == null && capform != null) {
+                int i = 0;
+                Browser brc = br.cloneBrowser();
+                while (capform != null) {
+                    String pagepiece = br.getRegex("<img src=\"(.*?)</form>").getMatch(0);
+                    if (pagepiece == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                    String[] captchalinks = HTMLParser.getHttpLinks(pagepiece, "");
+                    if (captchalinks == null || captchalinks.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                    String adr = null;
+                    File file = null;
+                    for (String link : captchalinks) {
+                        URLConnectionAdapter con = brc.openGetConnection(link);
+                        if ((con.getContentType().contains("image"))) {
+                            adr = link;
+                            file = this.getLocalCaptchaFile();
+                            Browser.download(file, con);
+                            break;
+                        }
+                        con.disconnect();
+                        continue;
+                    }
+                    // String adr =
+                    // br.getRegex("<img src=\"http://odsiebie.com/v_auth.php\" style=\"display: none;\"><img src=\"(.*?)\"  style=\"display:").getMatch(0);
+                    // adr = "http://odsiebie.com/v.php";
+                    if (adr == null || file == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                    // URLConnectionAdapter con = brc.openGetConnection(adr);
+                    // File file = this.getLocalCaptchaFile();
+                    // Browser.download(file, con);
+                    String code = getCaptchaCode(file, downloadLink);
+                    capform.getInputFieldByName("captcha").setValue(code);
+                    br.submitForm(capform);
+                    capform = br.getFormbyProperty("name", "wer1");
+                    i++;
+                    if (i > 3) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
+                }
+                if (capform != null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            }
             br.setFollowRedirects(false);
             /* DownloadLink suchen */
             steplink = br.getRegex("href=\"/download/(.*?)\"").getMatch(0);
