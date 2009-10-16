@@ -46,6 +46,7 @@ public class HostColumn extends JDTableColumn {
 
     @Override
     public Component myTableCellRendererComponent(JDTableModel table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+        jlr.setIcon(((HostPluginWrapper) value).getIcon());
         jlr.setText(((HostPluginWrapper) value).getHost());
         return jlr;
     }
