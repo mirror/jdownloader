@@ -65,7 +65,7 @@ import jd.gui.swing.jdgui.menu.SaveMenu;
 import jd.gui.swing.jdgui.menu.actions.ExitAction;
 import jd.gui.swing.jdgui.menu.actions.RestartAction;
 import jd.gui.swing.jdgui.menu.actions.RestoreAction;
-import jd.gui.swing.jdgui.settings.panels.ConfigPanelAddons;
+import jd.gui.swing.jdgui.settings.panels.addons.ConfigPanelAddons;
 import jd.gui.swing.jdgui.settings.panels.premium.Premium;
 import jd.gui.swing.jdgui.views.ConfigurationView;
 import jd.gui.swing.jdgui.views.DownloadView;
@@ -290,6 +290,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         return INSTANCE;
     }
 
+    @Override
     public void setFrameStatus(int id) {
         switch (id) {
         case UIConstants.WINDOW_STATUS_MAXIMIZED:
@@ -325,6 +326,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
             }.start();
             if (GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_START_DOWNLOADS_AFTER_START, false)) {
                 new Thread() {
+                    @Override
                     public void run() {
                         this.setName("Autostart counter");
                         final ProgressController pc = new ProgressController(JDL.L("gui.autostart", "Autostart downloads in few seconds..."));
@@ -394,6 +396,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         return exitRequested;
     }
 
+    @Override
     public void windowClosing(WindowEvent e) {
         if (e.getComponent() == getMainFrame()) {
             /* dont close/exit if trayicon minimizing is enabled */
@@ -422,6 +425,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         }
     }
 
+    @Override
     public void closeWindow() {
         if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_COUNTDOWN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, JDL.L("sys.ask.rlyclose", "Wollen Sie jDownloader wirklich schließen?")), UserIO.RETURN_OK)) {
             JDUtilities.getController().exit();
@@ -465,6 +469,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         return this.mainTabbedPane;
     }
 
+    @Override
     public void requestPanel(final Panels panel, final Object param) {
         new GuiRunnable<Object>() {
             @Override
@@ -559,6 +564,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         if (links.size() == 0) return;
         if (hidegrabber || autostart) {
             new Thread() {
+                @Override
                 public void run() {
                     /* TODO: hier autopackaging ? */
                     ArrayList<FilePackage> fps = new ArrayList<FilePackage>();

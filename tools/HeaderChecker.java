@@ -35,7 +35,7 @@ public class HeaderChecker {
     private ArrayList<File> files;
 
     public HeaderChecker(File dir) {
-        LICENSE = JDIO.getLocalFile(JDUtilities.getResourceFile("gpl.header"));
+        LICENSE = JDIO.readFileToString(JDUtilities.getResourceFile("gpl.header"));
         LICENSE_PREFIX = LICENSE.substring(0, Math.min(LICENSE.indexOf('\r'), LICENSE.indexOf('\n')));
         LICENSE_PREFIX_TRIMMED = LICENSE_PREFIX.substring(2).trim();
 
@@ -59,7 +59,7 @@ public class HeaderChecker {
         String content;
         int count;
         for (File file : getSourceFiles(dir)) {
-            content = JDIO.getLocalFile(file);
+            content = JDIO.readFileToString(file);
             count = new Regex(content, LICENSE_PREFIX_TRIMMED).count();
             if (count > 1) {
                 System.out.println(prepareFilename(file));
@@ -97,7 +97,7 @@ public class HeaderChecker {
     }
 
     private boolean fixFile(File file) {
-        String content = JDIO.getLocalFile(file);
+        String content = JDIO.readFileToString(file);
         if (content.contains(LICENSE_PREFIX_TRIMMED)) return false;
 
         StringBuilder sb = new StringBuilder();

@@ -14,7 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.gui.swing.jdgui.settings.panels;
+package jd.gui.swing.jdgui.settings.panels.hoster;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -29,25 +29,28 @@ import javax.swing.JTabbedPane;
 import javax.swing.ListSelectionModel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
-import javax.swing.table.AbstractTableModel;
-import javax.swing.table.TableColumn;
 
 import jd.HostPluginWrapper;
 import jd.config.ConfigGroup;
 import jd.config.Configuration;
 import jd.config.ConfigEntry.PropertyType;
 import jd.gui.UserIF;
-import jd.gui.swing.dialog.AgbDialog;
-import jd.gui.swing.jdgui.menu.PremiumMenu;
+import jd.gui.swing.components.table.JDTable;
+import jd.gui.swing.components.table.JDTableModel;
 import jd.gui.swing.jdgui.settings.ConfigPanel;
+import jd.gui.swing.jdgui.settings.panels.hoster.columns.AcceptColumn;
+import jd.gui.swing.jdgui.settings.panels.hoster.columns.HostColumn;
+import jd.gui.swing.jdgui.settings.panels.hoster.columns.PremiumColumn;
+import jd.gui.swing.jdgui.settings.panels.hoster.columns.SettingsColumn;
+import jd.gui.swing.jdgui.settings.panels.hoster.columns.UseColumn;
+import jd.gui.swing.jdgui.settings.panels.hoster.columns.VersionColumn;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
-import org.jdesktop.swingx.JXTable;
-
 public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListener, MouseListener {
 
+    @Override
     public String getBreadcrum() {
         return JDL.L(this.getClass().getName() + ".breadcrum", this.getClass().getSimpleName());
     }
@@ -58,79 +61,31 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
 
     private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.ConfigPanelPluginForHost.";
 
-    private class InternalTableModel extends AbstractTableModel {
+    private class InternalTableModel extends JDTableModel {
 
-        private static final long serialVersionUID = 1155282457354673850L;
+        private static final long serialVersionUID = -5584463272737285033L;
+        
+        public InternalTableModel() {
+            super("hostertable");
 
-        @Override
-        public Class<?> getColumnClass(int columnIndex) {
-            return getValueAt(0, columnIndex).getClass();
-        }
-
-        public int getColumnCount() {
-            return 6;
-        }
-
-        @Override
-        public String getColumnName(int column) {
-            switch (column) {
-            case 0:
-                return JDL.L("gui.column_host", "Host");
-            case 1:
-                return JDL.L("gui.column_version", "Version");
-            case 2:
-                return JDL.L("gui.column_premium", "Premium");
-            case 3:
-                return JDL.L("gui.column_settings", "Settings");
-            case 4:
-                return JDL.L("gui.column_agbChecked", "akzeptieren");
-            case 5:
-                return JDL.L("gui.column_usePlugin", "verwenden");
-            }
-            return super.getColumnName(column);
-        }
-
-        public int getRowCount() {
-            return pluginsForHost.size();
-        }
-
-        public Object getValueAt(final int rowIndex, final int columnIndex) {
-            switch (columnIndex) {
-            case 0:
-                return pluginsForHost.get(rowIndex).getHost();
-            case 1:
-                return pluginsForHost.get(rowIndex).getVersion();
-            case 2:
-                return pluginsForHost.get(rowIndex).isLoaded() && pluginsForHost.get(rowIndex).isPremiumEnabled();
-            case 3:
-                return pluginsForHost.get(rowIndex).hasConfig();
-            case 4:
-                return pluginsForHost.get(rowIndex).isAGBChecked();
-            case 5:
-                return pluginsForHost.get(rowIndex).usePlugin();
-            }
-
-            return null;
+            list.clear();
+            list.addAll(pluginsForHost);
         }
 
         @Override
-        public boolean isCellEditable(int rowIndex, int columnIndex) {
-            return columnIndex >= 4;
+        protected void initColumns() {
+            this.addColumn(new HostColumn(JDL.L("gui.column_host", "Host"), this));
+            this.addColumn(new VersionColumn(JDL.L("gui.column_version", "Version"), this));
+            this.addColumn(new PremiumColumn(JDL.L("gui.column_premium", "Premium"), this));
+            this.addColumn(new SettingsColumn(JDL.L("gui.column_settings", "Settings"), this));
+            this.addColumn(new AcceptColumn(JDL.L("gui.column_agbChecked", "akzeptieren"), this));
+            this.addColumn(new UseColumn(JDL.L("gui.column_usePlugin", "verwenden"), this));
         }
 
         @Override
-        public void setValueAt(Object value, int row, int col) {
-            if (col == 4) {
-                if ((Boolean) value) {
-                    AgbDialog.showDialog(pluginsForHost.get(row).getPlugin());
-                } else {
-                    pluginsForHost.get(row).setAGBChecked(false);
-                }
-            } else if (col == 5) {
-                pluginsForHost.get(row).setUsePlugin((Boolean) value);
-                PremiumMenu.getInstance().update();
-            }
+        public void refreshModel() {
         }
+
     }
 
     private static final long serialVersionUID = -5219586497809869375L;
@@ -139,9 +94,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
 
     private ArrayList<HostPluginWrapper> pluginsForHost;
 
-    private JXTable table;
-
-    private InternalTableModel tableModel;
+    private JDTable table;
 
     public ConfigPanelPluginForHost(Configuration configuration) {
         super();
@@ -165,9 +118,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
 
     @Override
     public void initPanel() {
-        tableModel = new InternalTableModel();
-        table = new JXTable(tableModel);
-        table.setSortable(false);
+        table = new JDTable(new InternalTableModel());
         table.addMouseListener(this);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
@@ -178,32 +129,6 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
             }
         });
         table.getTableHeader().setReorderingAllowed(false);
-
-        TableColumn column = null;
-
-        for (int c = 0; c < tableModel.getColumnCount(); c++) {
-            column = table.getColumnModel().getColumn(c);
-            switch (c) {
-            case 0:
-                column.setPreferredWidth(100);
-                break;
-            case 1:
-                column.setPreferredWidth(60);
-                break;
-            case 2:
-                column.setPreferredWidth(60);
-                break;
-            case 3:
-                column.setPreferredWidth(60);
-                break;
-            case 4:
-                column.setPreferredWidth(90);
-                break;
-            case 5:
-                column.setPreferredWidth(100);
-                break;
-            }
-        }
 
         btnEdit = new JButton(JDL.L("gui.btn_settings", "Einstellungen"));
         btnEdit.setEnabled(false);

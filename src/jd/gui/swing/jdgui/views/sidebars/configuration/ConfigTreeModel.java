@@ -31,9 +31,9 @@ import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.SingletonPanel;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.settings.ConfigPanel;
-import jd.gui.swing.jdgui.settings.panels.ConfigPanelAddons;
 import jd.gui.swing.jdgui.settings.panels.ConfigPanelGeneral;
-import jd.gui.swing.jdgui.settings.panels.ConfigPanelPluginForHost;
+import jd.gui.swing.jdgui.settings.panels.addons.ConfigPanelAddons;
+import jd.gui.swing.jdgui.settings.panels.hoster.ConfigPanelPluginForHost;
 import jd.gui.swing.jdgui.settings.panels.premium.Premium;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
@@ -249,6 +249,7 @@ public class ConfigTreeModel implements TreeModel {
                 panel = new SingletonPanel(class1, JDUtilities.getConfiguration());
                 // init this panel in an extra thread..
                 new Thread() {
+                    @Override
                     public void run() {
                         new GuiRunnable<Object>() {
                             @Override

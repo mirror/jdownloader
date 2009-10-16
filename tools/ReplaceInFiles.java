@@ -74,7 +74,7 @@ public class ReplaceInFiles {
         long id = System.currentTimeMillis();
         boolean ok = false;
         for (File f : scanDir) {
-            String l = JDIO.getLocalFile(f);
+            String l = JDIO.readFileToString(f);
 
             String newL = Pattern.compile(find, Pattern.DOTALL | Pattern.CASE_INSENSITIVE).matcher(l).replaceAll(replace);
 
