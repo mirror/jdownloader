@@ -107,13 +107,13 @@ public class CZShareCom extends PluginForHost {
             ai.setStatus(JDL.L("plugins.hoster.CZShareCom.nocreditleft", "No traffic credit left"));
             return ai;
         }
-        String trafficleft = br.getRegex("Platnost do</td>[^d]*d>(.*?)</td>").getMatch(0);
-        String expires = br.getRegex("Platnost do</td>.*<td>.*<td>(.*?)</td>").getMatch(0);
+        String trafficleft = br.getRegex("Velikost kreditu.*?Platnost do</td>.*?<td>(.*?)</td>").getMatch(0);
+        String expires = br.getRegex("Velikost kreditu.*?Platnost do</td>.*?<td>.*?<td>(.*?)</td>").getMatch(0);
         if (expires != null) ai.setValidUntil(Regex.getMilliSeconds(expires, "dd.MM.yy HH:mm", Locale.GERMANY));
         if (trafficleft != null) ai.setTrafficLeft(trafficleft);
 
         // Logout
-        br.getPage("http://czshare.com/profi/index.php?odhlasit=ano");
+        // br.getPage("http://czshare.com/profi/index.php?odhlasit=ano");
         return ai;
     }
 

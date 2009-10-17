@@ -52,8 +52,8 @@ public class YourFilesBiz extends PluginForHost {
         br.setCookie("http://yourfiles.to/", "yab_mylang", "en");
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.getPage(downloadLink.getDownloadURL());
-        String filename = br.getRegex("<b>File name:</b></td>\\s+<td align=left width=[0-9]+%>(.*?)</td>").getMatch(0);
-        String filesize = br.getRegex("File size:</b></td>\\s+<td align=left>(.*?)</td>").getMatch(0);
+        String filename = br.getRegex("<b>File.*?name:</b></td>\\s+<td align=left width=[0-9]+%>(.*?)</td>").getMatch(0);
+        String filesize = br.getRegex("File.*?size:</b></td>\\s+<td align=left>(.*?)</td>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(Regex.getSize(filesize.trim()));
@@ -63,7 +63,7 @@ public class YourFilesBiz extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        String filename = br.getRegex("<b>File name:</b></td>\\s+<td align=left width=[0-9]+%>(.*?)</td>").getMatch(0);
+        String filename = br.getRegex("<b>File.*?name:</b></td>\\s+<td align=left width=[0-9]+%>(.*?)</td>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         filename = Encoding.deepHtmlDecode(filename);
         String page = Encoding.urlDecode(br.toString(), true);

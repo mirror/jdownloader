@@ -155,9 +155,10 @@ public class FileFactory extends PluginForHost {
         }
         expire = expire.replaceFirst("([^\\d].*?) ", " ");
         ai.setValidUntil(Regex.getMilliSeconds(expire, "dd MMMM, yyyy", Locale.UK));
-        Regex traffic = br.getRegex("You have downloaded(.*?)out of your daily limit of(.*?\\. )");
-        ai.setTrafficMax(Regex.getSize(traffic.getMatch(1)));
-        ai.setTrafficLeft(ai.getTrafficMax() - Regex.getSize(traffic.getMatch(0)));
+        String loaded = br.getRegex("You have downloaded(.*?)out").getMatch(0);
+        String max = br.getRegex("limit of(.*?\\. )").getMatch(0);
+        ai.setTrafficMax(Regex.getSize(max));
+        ai.setTrafficLeft(ai.getTrafficMax() - Regex.getSize(loaded));
         br.getPage("http://www.filefactory.com/reward/summary.php");
         String points = br.getMatch("Available reward points.*?class=\"amount\">(.*?) points").replaceAll("\\,", "");
         ai.setPremiumPoints(Long.parseLong(points.trim()));

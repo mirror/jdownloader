@@ -45,6 +45,8 @@ import jd.plugins.optional.schedule.modules.SchedulerModuleInterface;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
+import org.jdesktop.swingx.JXTable;
+
 public class AddGui extends JPanel implements ActionListener, ChangeListener, DocumentListener, MouseListener {
     private static final long serialVersionUID = 8080132393187788526L;
     private MainGui gui;
@@ -203,7 +205,7 @@ public class AddGui extends JPanel implements ActionListener, ChangeListener, Do
         actions.add(delete);
 
         tableModel = new MyTableModel();
-        table = new JTable(tableModel);
+        table = new JXTable(tableModel);
         table.addMouseListener(this);
 
         JPanel control = new JPanel(new MigLayout("wrap 3", "[grow, fill, right][right][right]"));

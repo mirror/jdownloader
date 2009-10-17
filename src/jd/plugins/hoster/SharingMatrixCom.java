@@ -76,10 +76,6 @@ public class SharingMatrixCom extends PluginForHost {
             account.setValid(true);
             return ai;
         }
-        if (expiredate == null && daysleft == null) {
-            account.setValid(false);
-            return ai;
-        }
         account.setValid(false);
         return ai;
     }
@@ -91,6 +87,11 @@ public class SharingMatrixCom extends PluginForHost {
         String dllink = downloadLink.getDownloadURL();
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        if (dl.getConnection() != null && dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            if (br.containsHTML("are sorry but we are currently performing technical")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverfailure, Please try again later!", 30 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_FATAL);
+        }
         dl.startDownload();
     }
 
@@ -177,9 +178,10 @@ public class SharingMatrixCom extends PluginForHost {
         // System.out.print(br2.toString());
         if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         dl = jd.plugins.BrowserAdapter.openDownload(br2, downloadLink, linkurl, true, 1);
-        if (!dl.getConnection().isContentDisposition()) {
-            br2.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dl.getConnection() != null && dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            if (br.containsHTML("are sorry but we are currently performing technical")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverfailure, Please try again later!", 30 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_FATAL);
         }
         dl.startDownload();
     }

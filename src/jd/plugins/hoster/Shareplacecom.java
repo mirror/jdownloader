@@ -56,8 +56,8 @@ public class Shareplacecom extends PluginForHost {
         br.getPage(url);
         if (br.containsHTML("Your requested file is not found")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         if (br.getRedirectLocation() == null) {
-            String filename = Encoding.htmlDecode(br.getRegex(Pattern.compile("File name: </b>(.*?)<b>", Pattern.CASE_INSENSITIVE)).getMatch(0));
-            String filesize = br.getRegex("File size: </b>(.*?)<b><br>").getMatch(0);
+            String filename = Encoding.htmlDecode(br.getRegex(Pattern.compile("File.*?name.*?:.*?</b>(.*?)<b>", Pattern.CASE_INSENSITIVE)).getMatch(0));
+            String filesize = br.getRegex("File.*?size.*?:.*?</b>(.*?)<b><br>").getMatch(0);
             if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             downloadLink.setName(filename.trim());
             downloadLink.setDownloadSize(Regex.getSize(filesize.trim()));
@@ -68,7 +68,7 @@ public class Shareplacecom extends PluginForHost {
 
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        String filename = Encoding.htmlDecode(br.getRegex(Pattern.compile("File name: </b>(.*?)<b>", Pattern.CASE_INSENSITIVE)).getMatch(0));
+        String filename = Encoding.htmlDecode(br.getRegex(Pattern.compile("File.*?name.*?:.*?</b>(.*?)<b>", Pattern.CASE_INSENSITIVE)).getMatch(0));
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         filename = Encoding.deepHtmlDecode(filename);
         String page = Encoding.urlDecode(br.toString(), true);

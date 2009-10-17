@@ -75,7 +75,7 @@ public class Zippysharecom extends PluginForHost {
         int index = -1;
         while (true) {
             index++;
-            String allreplaces = br.getRegex("ziptime.*?unescape(.*?)function").getMatch(0);
+            String allreplaces = br.getRegex("ziptime.*?unescape(.*?)var").getMatch(0);
             String[][] replaces = new Regex(allreplaces, "replace\\((.*?),.*?\"(.*?)\"").getMatches();
             String page = Encoding.urlDecode(br.toString(), true);
             for (String[] replace : replaces) {
@@ -88,11 +88,12 @@ public class Zippysharecom extends PluginForHost {
             String[] links = HTMLParser.getHttpLinks(page, null);
             if (index > links.length - 1) break;
             String curlink = links[index];
-            if (!new Regex(curlink, ".*?www\\d*\\.zippyshare\\.com/[^\\?]*\\..{1,4}$").matches()) {
+            if (!new Regex(curlink, ".*?www\\d{1,2}\\.zippyshare\\.com/[^\\?]*\\..{1,4}$").matches()) {
                 continue;
             }
             sleep(10000l, downloadLink);
             Browser brc = br.cloneBrowser();
+            brc.setDebug(true);
             brc.getCookies(getHost()).remove(brc.getCookies(getHost()).get("zippop"));
             dl = BrowserAdapter.openDownload(brc, downloadLink, curlink);
             if (dl.getConnection().isContentDisposition()) {

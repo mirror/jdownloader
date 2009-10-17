@@ -429,7 +429,6 @@ public class Browser {
      * @param host
      */
     public static Browser getAssignedBrowserInstance(URL url) {
-
         return URL_LINK_MAP.get(url);
     }
 
@@ -1319,13 +1318,12 @@ public class Browser {
 
     }
 
-    public static void setRequestIntervalLimitGlobal(String host, int i) {
+    public static synchronized void setRequestIntervalLimitGlobal(String host, int i) {
         if (REQUEST_INTERVAL_LIMIT_MAP == null) {
             REQUEST_INTERVAL_LIMIT_MAP = new HashMap<String, Integer>();
             REQUESTTIME_MAP = new HashMap<String, Long>();
         }
         REQUEST_INTERVAL_LIMIT_MAP.put(host, i);
-
     }
 
     public static boolean isVerbose() {

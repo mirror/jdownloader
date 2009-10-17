@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -46,9 +47,16 @@ public class StorePlaceOrg extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
-        br.setCookie("http://www.storeplace.org", "setlang", "en");
-        br.getPage(downloadLink.getDownloadURL());
-
+        for (int i = 0; i < 5; i++) {
+            /* hoster blocks several useragents */
+            this.setBrowserExclusive();
+            br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+            br.setCookie("http://www.storeplace.org", "setlang", "en");
+            br.getPage(downloadLink.getDownloadURL());
+            if (!br.containsHTML("User-Agent not allowed")) break;
+            Thread.sleep(250);
+        }
+        if (br.containsHTML("User-Agent not allowed")) throw new PluginException(LinkStatus.ERROR_FATAL);
         if (br.containsHTML("Your requested file is not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = Encoding.htmlDecode(br.getRegex("File name:</b></td>.*?<td align=.*?width=[0-9]+px>(.*?)</td>").getMatch(0));
         String filesize = br.getRegex("File size:</b></td>.*?<td align=left>(.*?)</td>").getMatch(0);
@@ -86,10 +94,12 @@ public class StorePlaceOrg extends PluginForHost {
                 downloadLink.setProperty("pass", passCode);
             }
         }
-        //Limit errorhandling, currently this host does not have any limit but if they add the limit, this should work as it is the standard phrase of the script which they use!
+        // Limit errorhandling, currently this host does not have any limit but
+        // if they add the limit, this should work as it is the standard phrase
+        // of the script which they use!
         if (br.containsHTML("You have reached the maximum")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l); }
         String dllink = br.getRegex("wnloadfile style=\"display:none\">.*?<a href=\"(.*?)\" onmouseout='window.status=\"\";return true;' onmou").getMatch(0);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, dllink, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         dl.startDownload();
     }
 

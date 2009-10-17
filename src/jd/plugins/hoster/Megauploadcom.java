@@ -282,10 +282,17 @@ public class Megauploadcom extends PluginForHost {
             br.setCookie("http://" + wwwWorkaround + "megaupload.com", "user", user);
             return;
         } else {
-            this.setBrowserExclusive();
-            br.setCookie("http://" + wwwWorkaround + "megaupload.com", "l", "en");
-            br.getPage("http://" + wwwWorkaround + "megaupload.com/?c=login");
-            br.postPage("http://" + wwwWorkaround + "megaupload.com/?c=login", "login=1&redir=1&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+            if (account.getUser().trim().equalsIgnoreCase("cookie")) {
+                this.setBrowserExclusive();
+                br.setCookie("http://" + wwwWorkaround + "megaupload.com", "l", "en");
+                br.setCookie("http://" + wwwWorkaround + "megaupload.com", "user", account.getPass());
+                br.getPage("http://" + wwwWorkaround + "megaupload.com/");
+            } else {
+                this.setBrowserExclusive();
+                br.setCookie("http://" + wwwWorkaround + "megaupload.com", "l", "en");
+                br.getPage("http://" + wwwWorkaround + "megaupload.com/?c=login");
+                br.postPage("http://" + wwwWorkaround + "megaupload.com/?c=login", "login=1&redir=1&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+            }
             user = br.getCookie("http://" + wwwWorkaround + "megaupload.com", "user");
             br.setCookie("http://" + wwwWorkaround + "megaupload.com", "user", user);
             account.setProperty("user", user);
@@ -413,7 +420,7 @@ public class Megauploadcom extends PluginForHost {
             br.getPage("http://" + wwwWorkaround + "megaupload.com/?d=" + getDownloadID(l));
             if (br.containsHTML("location='http://www\\.megaupload\\.com/\\?c=msg")) br.getPage("http://www.megaupload.com/?c=msg");
             if (br.containsHTML("No htmlCode read") || br.containsHTML("This service is temporarily not available from your service area")) {
-                logger.info("It seems Megaupload is blocked! Only API may work!");
+                logger.info("It seems Megaupload is blocked! Only API may work! " + br.toString());
                 onlyapi = true;
                 l.setAvailable(true);
                 checkLinks(new DownloadLink[] { l });

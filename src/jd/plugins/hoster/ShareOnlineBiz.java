@@ -213,6 +213,8 @@ public class ShareOnlineBiz extends PluginForHost {
         Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
         String url = Context.toString(result);
         Context.exit();
+        if (br.containsHTML("Probleme mit einem Fileserver")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.shareonlinebiz.errors.servernotavailable", "Server temporarily down"), 15 * 60 * 1000l);
+        if (br.containsHTML("Server Info: no slots available")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.shareonlinebiz.errors.servernotavailable3", "No free Free-User Slots! Get PremiumAccount or wait!"), 15 * 60 * 1000l);
 
         // Keine Zwangswartezeit, deswegen auskommentiert
         // sleep(15000, downloadLink);

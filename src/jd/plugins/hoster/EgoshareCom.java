@@ -54,6 +54,11 @@ public class EgoshareCom extends PluginForHost {
     }
 
     @Override
+    public void correctDownloadLink(DownloadLink link) throws Exception {
+        link.setUrlDownload(link.getDownloadURL().replaceFirst("http://egoshare\\.com/", "http://www.egoshare.com/"));
+    }
+
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setCookie("http://www.egoshare.com/", "king_mylang", "en");

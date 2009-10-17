@@ -53,14 +53,11 @@ public class EasyShareCom extends PluginForHost {
     private void login(Account account) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        br.setCookie("http://www.easy-share.com", "language", "en");
         br.getPage("http://www.easy-share.com/");
         br.setDebug(true);
-        Form login = br.getForm(0);
-        login.put("login", Encoding.urlEncode(account.getUser()));
-        login.put("password", Encoding.urlEncode(account.getPass()));
-        login.setAction("http://www.easy-share.com/accounts/login");
-        br.submitForm(login);
-        if (br.getCookie("http://www.easy-share.com/", "PREMIUM") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        br.postPage("http://www.easy-share.com/accounts/login", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember=1");
+        if (br.getCookie("http://www.easy-share.com/", "PREMIUM") == null || br.getCookie("http://www.easy-share.com/", "PREMIUMSTATUS") == null || !br.getCookie("http://www.easy-share.com/", "PREMIUMSTATUS").equalsIgnoreCase("ACTIVE")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
     private Cookie isExpired(Account account) throws MalformedURLException, PluginException {
@@ -145,6 +142,10 @@ public class EasyShareCom extends PluginForHost {
         isExpired(account);
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, 0);
+        if (!dl.getConnection().isContentDisposition()) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_FATAL);
+        }
         dl.startDownload();
     }
 
