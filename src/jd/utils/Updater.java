@@ -30,9 +30,6 @@ import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
 import jd.config.CFGConfig;
-import jd.controlling.JDLogger;
-import jd.event.MessageEvent;
-import jd.event.MessageListener;
 import jd.http.Browser;
 import jd.nutils.JDHash;
 import jd.nutils.SimpleFTP;
@@ -41,8 +38,6 @@ import jd.nutils.io.JDIO.FileSelector;
 import jd.nutils.svn.Subversion;
 import jd.nutils.zip.Zip;
 import jd.parser.Regex;
-import jd.update.FileUpdate;
-import jd.update.Restarter;
 import jd.update.WebUpdater;
 
 import org.tmatesoft.svn.core.SVNException;
@@ -50,8 +45,8 @@ import org.tmatesoft.svn.core.SVNException;
 public class Updater {
 	private File pluginsDir;
 
-	private WebUpdater webupdater;
-	private ArrayList<FileUpdate> remoteFileList;
+	// private WebUpdater webupdater;
+	// private ArrayList<FileUpdate> remoteFileList;
 	private File workingDir;
 	private JFrame frame;
 	private static String UPDATE_SUB_DIR = "exclude_jd_update";
@@ -61,8 +56,7 @@ public class Updater {
 	private File jars;
 
 	private ArrayList<File> packedFiles;
-	public static final String BRANCH = "Pinky_F";
-	
+	public static final String BRANCH = "pinky_4";
 
 	public static ArrayList<Server> SERVERLIST = new ArrayList<Server>();
 	public static Server UPDATE0 = new RSYNCServer(-1,
@@ -83,7 +77,6 @@ public class Updater {
 		SERVERLIST.add(UPDATE2);
 		SERVERLIST.add(UPDATE1);
 
-		
 		SERVERLIST.add(new RSYNCServer(-1,
 				"http://update4ex.jdownloader.org/branches/" + BRANCH + "/",
 				"rsync://update4ex.jdownloader.org", 0, "/jd-mirror/branches/"
@@ -303,7 +296,7 @@ public class Updater {
 	private ArrayList<File> pack(File file) {
 
 		new File(file, file.getName() + ".extract").delete();
-		//new File(file, file.getName() + ".extract").deleteOnExit();
+		// new File(file, file.getName() + ".extract").deleteOnExit();
 		Zip zip = new Zip(file.listFiles(), new File(file, file.getName()
 				+ ".extract"));
 		zip.setDeleteAfterPack(true);
@@ -619,17 +612,27 @@ public class Updater {
 		tmp = new File(this.workingDir, "/tmp/");
 		JDIO.removeDirectoryOrFile(tmp);
 		tmp.mkdirs();
-		String version = JDIO.readFileToString(new File(this.workingDir,
-				"/config/version.cfg"));
+		// String version = JDIO.readFileToString(new File(this.workingDir,
+		// "/config/version.cfg"));
 		tmp = new File(this.workingDir, "/config/");
-		JDIO.removeDirectoryOrFile(tmp);
-		JDIO.writeLocalFile(new File(this.workingDir, "/config/version.cfg"),
-				version);
+		// JDIO.removeDirectoryOrFile(tmp);
+		// JDIO.writeLocalFile(new File(this.workingDir, "/config/version.cfg"),
+		// version);
 		tmp.mkdirs();
+		JDIO.removeRekursive(tmp, new FileSelector() {
+
+			@Override
+			public boolean doIt(File file) {
+				if (file.isDirectory())
+					return true;
+				return !file.getName().endsWith("version.cfg");
+			}
+
+		});
 		tmp = new File(this.workingDir, "/backup/");
 		JDIO.removeDirectoryOrFile(tmp);
 		tmp.mkdirs();
-		//int i = 0;
+		// int i = 0;
 		// for (File f : localFiles) {
 		// if (!f.isDirectory()
 		// && !containsFile(f)
@@ -713,62 +716,49 @@ public class Updater {
 	 */
 	@SuppressWarnings("unchecked")
 	private void webupdate() {
-		try {
-			FileUpdate.WAITTIME_ON_ERROR = 1;
-			webupdater = new WebUpdater();
-			webupdater.setIgnorePlugins(false);
-			webupdater.setWorkingdir(workingDir);
-			webupdater.setOSFilter(false);
-			remoteFileList = webupdater.getAvailableFiles();
-
-			ArrayList<FileUpdate> update = (ArrayList<FileUpdate>) remoteFileList
-					.clone();
-			webupdater.filterAvailableUpdates(update);
-			System.out.println("UPdate: " + update);
-			webupdater.updateFiles(update, null);
-			webupdater.getBroadcaster().addListener(new MessageListener() {
-
-				public void onMessage(MessageEvent event) {
-					System.out.println(event.getMessage());
-
-				}
-
-			});
-			Restarter.main(new String[] { "-nolog" });
-
-		} catch (Exception e) {
-			JDLogger.exception(e);
-			remoteFileList = new ArrayList<FileUpdate>();
-		}
+		// try {
+		// FileUpdate.WAITTIME_ON_ERROR = 1;
+		// webupdater = new WebUpdater();
+		// webupdater.setIgnorePlugins(false);
+		// webupdater.setWorkingdir(workingDir);
+		// webupdater.setOSFilter(false);
+		// remoteFileList = webupdater.getAvailableFiles();
+		//
+		// ArrayList<FileUpdate> update = (ArrayList<FileUpdate>) remoteFileList
+		// .clone();
+		// webupdater.filterAvailableUpdates(update);
+		// System.out.println("UPdate: " + update);
+		// webupdater.updateFiles(update, null);
+		// webupdater.getBroadcaster().addListener(new MessageListener() {
+		//
+		// public void onMessage(MessageEvent event) {
+		// System.out.println(event.getMessage());
+		//
+		// }
+		//
+		// });
+		// //Restarter.main(new String[] { "-nolog" });
+		//
+		// } catch (Exception e) {
+		// JDLogger.exception(e);
+		// remoteFileList = new ArrayList<FileUpdate>();
+		// }
 
 	}
 
 	/*
-	** checks if file f is oart of the hashlist *
-	private boolean containsFile(File f) {
-		if (remoteFileList == null)
-			return true;
-		for (FileUpdate fu : remoteFileList) {
-			String remote = fu.getLocalFile().getAbsolutePath();
-			String local = f.getAbsolutePath();
-			if (f.isDirectory()) {
-				if (remote.startsWith(local)) {
-					return true;
-				}
-			} else {
-
-				if (f.exists()
-						&& remote.equals(local)
-						&& JDHash.getMD5(f)
-								.equalsIgnoreCase(fu.getRemoteHash())) {
-					return true;
-				}
-			}
-
-		}
-		return false;
-	}
-	*/
+	 * * checks if file f is oart of the hashlist * private boolean
+	 * containsFile(File f) { if (remoteFileList == null) return true; for
+	 * (FileUpdate fu : remoteFileList) { String remote =
+	 * fu.getLocalFile().getAbsolutePath(); String local = f.getAbsolutePath();
+	 * if (f.isDirectory()) { if (remote.startsWith(local)) { return true; } }
+	 * else {
+	 * 
+	 * if (f.exists() && remote.equals(local) && JDHash.getMD5(f)
+	 * .equalsIgnoreCase(fu.getRemoteHash())) { return true; } }
+	 * 
+	 * } return false; }
+	 */
 
 	/**
 	 * Scans a folder rec. filters addons.lst, src and update_doif folder.
