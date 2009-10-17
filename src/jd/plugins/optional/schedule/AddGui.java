@@ -32,7 +32,6 @@ import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.JSpinner;
-import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.event.ChangeEvent;
@@ -52,7 +51,7 @@ public class AddGui extends JPanel implements ActionListener, ChangeListener, Do
     private MainGui gui;
     private Schedule schedule;
     private MyTableModel tableModel;
-    private JTable table;
+    private JXTable table;
     private Actions act;
     private JComboBox cboActions;
     private JButton add;

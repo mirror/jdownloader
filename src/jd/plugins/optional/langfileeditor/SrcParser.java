@@ -136,7 +136,6 @@ public class SrcParser {
             // splitting all calls.
             parseCodeLine(match, fileEntries, filePattern);
         }
-        if (!filePattern.isEmpty()) new Exception(file + " == " + filePattern).printStackTrace();
 
         try {
             JDIO.saveObject(null, fileEntries, cacheEntries, null, null, false);
