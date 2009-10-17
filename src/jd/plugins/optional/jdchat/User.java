@@ -18,7 +18,7 @@ package jd.plugins.optional.jdchat;
 
 import java.awt.Color;
 
-public class User implements Comparable<Object> {
+public class User implements Comparable<User> {
     public static final int RANK_DEFAULT = -1;
     public static final int RANK_OP = 0;
     public static final int RANK_VOICE = 1;
@@ -47,9 +47,8 @@ public class User implements Comparable<Object> {
 
     }
 
-    public int compareTo(Object o) {
-
-        return getRangName().compareTo(((User) o).getRangName());
+    public int compareTo(User o) {
+        return getRangName().compareTo(o.getRangName());
     }
 
     public String getNickLink(String id) {
@@ -59,12 +58,11 @@ public class User implements Comparable<Object> {
     private String getRangName() {
         switch (rank) {
         case RANK_OP:
-            return "!!!" + name;
+            return "!!!" + name.toLowerCase();
         case RANK_VOICE:
-            return "!!" + name;
+            return "!!" + name.toLowerCase();
         }
-        return name;
-
+        return name.toLowerCase();
     }
 
     public String getRank() {
@@ -96,6 +94,7 @@ public class User implements Comparable<Object> {
     }
 
     // @Override
+    @Override
     public String toString() {
         switch (rank) {
         case RANK_OP:

@@ -18,7 +18,6 @@ package jd.plugins.optional.jdchat;
 
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.EventQueue;
 import java.awt.KeyboardFocusManager;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -45,6 +44,8 @@ import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
 import javax.swing.JTextPane;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 
@@ -677,11 +678,10 @@ public class JDChat extends PluginOptional implements ControlListener {
         sb.append("<!---->");
         sb.append("<li>");
         if (user != null) {
-            {
-                if (!color)
-                    sb.append("<span style='" + user.getStyle() + (getUser(conn.getNick()) == user ? ";font-weight:bold" : "") + "'>[" + df.format(dt) + "] " + user.getNickLink("pmnick") + (JDChat.STYLE_PM.equalsIgnoreCase(style) ? ">> " : ": ") + "</span>");
-                else
-                    sb.append("<span style='color:#000000" + (getUser(conn.getNick()) == user ? ";font-weight:bold" : "") + "'>[" + df.format(dt) + "] " + user.getNickLink("pmnick") + (JDChat.STYLE_PM.equalsIgnoreCase(style) ? ">> " : ": ") + "</span>");
+            if (!color) {
+                sb.append("<span style='" + user.getStyle() + (getUser(conn.getNick()) == user ? ";font-weight:bold" : "") + "'>[" + df.format(dt) + "] " + user.getNickLink("pmnick") + (JDChat.STYLE_PM.equalsIgnoreCase(style) ? ">> " : ": ") + "</span>");
+            } else {
+                sb.append("<span style='color:#000000" + (getUser(conn.getNick()) == user ? ";font-weight:bold" : "") + "'>[" + df.format(dt) + "] " + user.getNickLink("pmnick") + (JDChat.STYLE_PM.equalsIgnoreCase(style) ? ">> " : ": ") + "</span>");
             }
         } else {
             sb.append("<span class='time'>[" + df.format(dt) + "] </span>");
@@ -703,8 +703,10 @@ public class JDChat extends PluginOptional implements ControlListener {
         // sb.append(tmp);
         // }
         changed = true;
-        EventQueue.invokeLater(new Runnable() {
-            public void run() {
+        new GuiRunnable<Object>() {
+
+            @Override
+            public Object runSave() {
                 if (changed) {
 
                     if (!SwingGui.getInstance().getMainFrame().isActive() && conn != null && msg2.contains(conn.getNick())) {
@@ -719,9 +721,10 @@ public class JDChat extends PluginOptional implements ControlListener {
                     scrollPane.getVerticalScrollBar().setValue(max);
                     changed = false;
                 }
-
+                return null;
             }
-        });
+
+        }.start();
 
     }
 
@@ -966,20 +969,24 @@ public class JDChat extends PluginOptional implements ControlListener {
         scrollPane = new JScrollPane(textArea);
         tabbedPane = new JTabbedPane(JTabbedPane.TOP, JTabbedPane.SCROLL_TAB_LAYOUT);
         tabbedPane.add("JDChat", scrollPane);
+        tabbedPane.addChangeListener(new ChangeListener() {
+
+            public void stateChanged(ChangeEvent e) {
+                tabbedPane.setForegroundAt(tabbedPane.getSelectedIndex(), Color.black);
+            }
+            
+        });
         textField = new JTextField();
         textField.setFocusTraversalKeys(KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS, Collections.EMPTY_SET);
         textField.setFocusTraversalKeys(KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS, Collections.EMPTY_SET);
         textField.addFocusListener(new FocusListener() {
 
             public void focusGained(FocusEvent e) {
-                int sel = tabbedPane.getSelectedIndex();
-                tabbedPane.setForegroundAt(sel, Color.black);
+                tabbedPane.setForegroundAt(tabbedPane.getSelectedIndex(), Color.black);
             }
 
             public void focusLost(FocusEvent e) {
-                int sel = tabbedPane.getSelectedIndex();
-                tabbedPane.setForegroundAt(sel, Color.black);
-
+                tabbedPane.setForegroundAt(tabbedPane.getSelectedIndex(), Color.black);
             }
 
         });
@@ -1270,20 +1277,23 @@ public class JDChat extends PluginOptional implements ControlListener {
     }
 
     public void removeUser(String name) {
-        User user;
-        if ((user = getUser(name)) != null) {
-            NAMES.remove(user);
+        User user = getUser(name);
 
+        JDChatPMS p = pms.get(name.toLowerCase());
+        if (p != null) {
+            addToText(null, STYLE_HIGHLIGHT, name + " has left the chat!", p.getTextArea(), p.getSb());
+        }
+
+        if (user != null) {
+            NAMES.remove(user);
         }
         updateNamesPanel();
     }
 
     public void renameUser(String name, String name2) {
-
-        User user;
-        if ((user = getUser(name)) != null) {
+        User user = getUser(name);
+        if (user != null) {
             user.name = name2;
-
         } else {
             addUser(name2);
         }
@@ -1330,10 +1340,10 @@ public class JDChat extends PluginOptional implements ControlListener {
         tabbedPane.add(userNew.trim(), pms.get(userNew.trim().toLowerCase()).getScrollPane());
     }
 
-    public void delPMS(String Username) {
-        pms.remove(Username.toLowerCase());
+    public void delPMS(String user) {
+        pms.remove(user.toLowerCase());
         for (int x = 0; x < tabbedPane.getComponentCount(); x++) {
-            if (tabbedPane.getTitleAt(x).toLowerCase().equals(Username.toLowerCase())) {
+            if (tabbedPane.getTitleAt(x).toLowerCase().equals(user.toLowerCase())) {
                 tabbedPane.remove(x);
                 return;
             }
@@ -1599,21 +1609,25 @@ public class JDChat extends PluginOptional implements ControlListener {
         sb.append("<ul>");
         for (User name : NAMES) {
             sb.append("<li>");
-            if (!color)
+            if (!color) {
                 sb.append("<span style='color:#" + name.getColor() + (name.name.equals(conn.getNick()) ? ";font-weight:bold;" : "") + "'>");
-            else
+            } else {
                 sb.append("<span style='color:#000000" + (name.name.equals(conn.getNick()) ? ";font-weight:bold;" : "") + "'>");
+            }
             sb.append(name.getRank() + name.getNickLink("query"));
             sb.append("</span></li>");
         }
         sb.append("</ul>");
 
-        EventQueue.invokeLater(new Runnable() {
-            public void run() {
-                if (right != null) right.setText(USERLIST_STYLE + sb);
-            }
-        });
+        if (right != null) new GuiRunnable<Object>() {
 
+            @Override
+            public Object runSave() {
+                right.setText(USERLIST_STYLE + sb);
+                return null;
+            }
+
+        }.start();
     }
 
 }
