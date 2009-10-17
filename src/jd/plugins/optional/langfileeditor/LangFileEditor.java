@@ -36,8 +36,8 @@ import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 
 /**
- * Editor for jDownloader language files. Gets JDLocale.L() and JDLocale.LF()
- * entries from source and compares them to the keypairs in the language file.
+ * Editor for jDownloader language files. Gets JDL.L() and JDL.LF() entries from
+ * source and compares them to the keypairs in the language file.
  * 
  * @author eXecuTe
  * @author Greeny
@@ -74,7 +74,7 @@ public class LangFileEditor extends PluginOptional {
 
         user = getPluginConfig().getStringProperty(LFEGui.PROPERTY_SVN_ACCESS_USER);
         pass = getPluginConfig().getStringProperty(LFEGui.PROPERTY_SVN_ACCESS_PASS);
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), LFEGui.PROPERTY_SVN_ACCESS_USER, "Upload (SVN) Username") {
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), LFEGui.PROPERTY_SVN_ACCESS_USER, JDL.L("jd.plugins.optional.langfileeditor.LangFileEditor.initConfigEntries.username", "Upload (SVN) Username")) {
             private static final long serialVersionUID = 1L;
 
             @Override
@@ -84,7 +84,7 @@ public class LangFileEditor extends PluginOptional {
             }
         });
 
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, getPluginConfig(), LFEGui.PROPERTY_SVN_ACCESS_PASS, "Upload (SVN) Password") {
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, getPluginConfig(), LFEGui.PROPERTY_SVN_ACCESS_PASS, JDL.L("jd.plugins.optional.langfileeditor.LangFileEditor.initConfigEntries.password", "Upload (SVN) Password")) {
             private static final long serialVersionUID = 1L;
 
             @Override
@@ -116,16 +116,14 @@ public class LangFileEditor extends PluginOptional {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        if (e.getSource() instanceof MenuAction && ((MenuAction) e.getSource()).getActionID() == 0) {
+        if (e.getSource() == activateAction) {
             if (lfeView == null) lfeView = new LFEView(lfe.getPanel(), this);
 
             if (((MenuAction) e.getSource()).isSelected()) {
-
                 SwingGui.getInstance().setContent(lfeView);
             } else {
                 lfeView.close();
             }
-
         }
     }
 

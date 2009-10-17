@@ -149,11 +149,6 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
         table = new JDTable(tableModel);
 
         table.setEnabled(false);
-        // table.getColumn(0).setMinWidth(50);
-        // table.getColumn(0).setMaxWidth(50);
-        // table.getColumn(1).setMinWidth(200);
-        // table.getColumn(1).setPreferredWidth(200);
-        // table.getColumn(3).setPreferredWidth(200);
         table.addMouseListener(this);
         table.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         table.setAutoStartEditOnKeyStroke(false);
@@ -521,7 +516,7 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
         Collections.sort(data);
 
         for (KeyInfo entry : data) {
-            if (!entry.isMissing()) sb.append(entry.toString() + "\n");
+            if (!entry.isMissing()) sb.append(entry.toString()).append('\n');
         }
 
         try {
@@ -674,13 +669,13 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
                                     if (key.equalsIgnoreCase(tkey)) {
                                         found = true;
                                         if (value.equals(tvalue)) {
-                                            sb.append(key + " = " + value + "\r\n");
+                                            sb.append(key).append(" = ").append(value).append("\r\n");
                                             keys.add(key);
                                             break;
                                         } else {
 
                                             String newValue = selectVersion(key, value, tvalue);
-                                            sb.append(key + " = " + newValue + "\r\n");
+                                            sb.append(key).append(" = ").append(newValue).append("\r\n");
                                             keys.add(key);
                                             break;
                                         }
@@ -693,7 +688,7 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
                             if (!found) {
                                 String newValue = selectVersion(key, value, MISSING_KEY);
                                 if (newValue == MISSING_KEY) continue;
-                                sb.append(key + " = " + value + "\r\n");
+                                sb.append(key).append(" = ").append(value).append("\r\n");
                                 keys.add(key);
                                 continue;
                             }

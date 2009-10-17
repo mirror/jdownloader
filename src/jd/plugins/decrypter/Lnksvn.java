@@ -35,6 +35,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 import org.xml.sax.SAXException;
 
@@ -46,7 +47,7 @@ public class Lnksvn extends PluginForDecrypt {
         br.setRequestIntervalLimit(this.getHost(), 1000);
     }
 
-    // @Override
+    @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         this.setBrowserExclusive();
@@ -58,7 +59,7 @@ public class Lnksvn extends PluginForDecrypt {
         for (int retry = 0; retry < 5; retry++) {
             if (form == null) break;
             if (form.containsHTML("besucherpasswort")) {
-                String pw = getUserInput("Besucherpasswort", param);
+                String pw = getUserInput(JDL.L("jd.plugins.decrypter.Lnksvn.pass", "Userpassword"), param);
                 form.put("besucherpasswort", pw);
             }
             String url = "captcha/cap.php?hsh=" + form.getRegex("\\/captcha\\/cap\\.php\\?hsh=([^\"]+)").getMatch(0);
@@ -79,14 +80,6 @@ public class Lnksvn extends PluginForDecrypt {
         String[] container = br.getRegex("\\.href\\=unescape\\(\\'(.*?)\\'\\)\\;").getColumn(0);
         if (container != null && container.length > 0) {
             for (String c : container) {
-                /*
-                 * Context cx = Context.enter(); Scriptable scope =
-                 * cx.initStandardObjects(); String fun =
-                 * "function f(){ \nreturn '" + c + "';} f()"; Object result =
-                 * cx.evaluateString(scope, fun, "<cmd>", 1, null);
-                 * 
-                 * c=result.toString();
-                 */
                 Browser clone = br.cloneBrowser();
                 String test = Encoding.htmlDecode(c);
                 File file = null;
@@ -111,7 +104,6 @@ public class Lnksvn extends PluginForDecrypt {
                     try {
                         decryptedLinks = JDUtilities.getController().getContainerLinks(file);
                     } catch (Exception e) {
-                        // TODO: handle exception
                     }
 
                 }
@@ -127,11 +119,11 @@ public class Lnksvn extends PluginForDecrypt {
                     this.browser = browser;
                 }
 
+                @Override
                 public void run() {
                     try {
                         result = getDirektLink(browser);
                     } catch (IOException e) {
-                        // TODO Auto-generated catch block
                         e.printStackTrace();
                     }
                     synchronized (this) {
@@ -152,16 +144,12 @@ public class Lnksvn extends PluginForDecrypt {
                         try {
                             lsDirektLinkTH.wait();
                         } catch (InterruptedException e) {
-                            // TODO Auto-generated catch block
-                            // e.printStackTrace();
                         }
                     }
                 }
                 if (lsDirektLinkTH.result != null) decryptedLinks.add(createDownloadlink(lsDirektLinkTH.result));
             }
             if (decryptedLinks.size() == 0) throw new DecrypterException("Out of date. Try Click'n'Load");
-
-            // throw new DecrypterException("Out of date. Try Click'n'Load");
         }
         return decryptedLinks;
     }
@@ -191,29 +179,13 @@ public class Lnksvn extends PluginForDecrypt {
                     link2 = br.getForm(0).getAction();
                 }
                 if (link2 != null) return link2.trim();
-
-                // br.getRequest().setHtmlCode(js.getVar("o"));
-
-                // String var=js.callFunction(eval);
-                // System.out.println(br);
-                // System.out.println(br.getForm(0).getAction());
             } catch (SAXException e) {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
             } catch (IOException e) {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
             }
-
         }
         return null;
     }
-
-    // @Override
-    protected boolean isClickNLoadEnabled() {
-        return true;
-    }
-
-    // @Override
 
 }
