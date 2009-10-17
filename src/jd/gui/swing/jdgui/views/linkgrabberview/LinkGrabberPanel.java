@@ -17,12 +17,15 @@
 package jd.gui.swing.jdgui.views.linkgrabberview;
 
 import java.awt.EventQueue;
+import java.awt.Toolkit;
+import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Logger;
 
@@ -33,7 +36,9 @@ import javax.swing.Timer;
 
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
+import jd.controlling.ClipboardHandler;
 import jd.controlling.DownloadWatchDog;
+import jd.controlling.JDLogger;
 import jd.controlling.LinkCheck;
 import jd.controlling.LinkCheckEvent;
 import jd.controlling.LinkCheckListener;
@@ -48,6 +53,7 @@ import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.components.Balloon;
 import jd.gui.swing.components.JDFileChooser;
+import jd.gui.swing.components.linkbutton.JLink;
 import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.jdgui.JDGuiConstants;
 import jd.gui.swing.jdgui.actions.ThreadedAction;
@@ -423,6 +429,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
                 }
                 ArrayList<LinkGrabberFilePackage> selected_packages = new ArrayList<LinkGrabberFilePackage>();
                 ArrayList<DownloadLink> selected_links = new ArrayList<DownloadLink>();
+                DownloadLink link = null;
                 int prio = 0;
                 String pw = "";
                 HashMap<String, Object> prop = new HashMap<String, Object>();
@@ -431,6 +438,9 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
                 Set<String> hoster = null;
                 String name = null;
                 boolean b = false;
+                HashSet<String> List = new HashSet<String>();
+                StringBuilder build = new StringBuilder();
+                String string = null;
                 synchronized (LinkGrabberController.ControllerLock) {
                     synchronized (LGINSTANCE.getPackages()) {
                         ArrayList<LinkGrabberFilePackage> fps = LGINSTANCE.getPackages();
@@ -462,7 +472,11 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
                             case LinkGrabberTableAction.MERGE_PACKAGE:
                             case LinkGrabberTableAction.SAVE_DLC:
                             case LinkGrabberTableAction.ADD_SELECTED_LINKS:
+                            case LinkGrabberTableAction.COPY_LINK:
                                 selected_links = (ArrayList<DownloadLink>) ((LinkGrabberTableAction) ((JMenuItem) arg0.getSource()).getAction()).getProperty().getProperty("links");
+                                break;
+                            case LinkGrabberTableAction.BROWSE_LINK:
+                                link = (DownloadLink) ((LinkGrabberTableAction) ((JMenuItem) arg0.getSource()).getAction()).getProperty().getProperty("link");
                                 break;
                             case LinkGrabberTableAction.EXT_FILTER:
                                 ext = (String) ((LinkGrabberTableAction) ((JMenuItem) arg0.getSource()).getAction()).getProperty().getProperty("extension");
@@ -574,8 +588,8 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
                                 nfp.setExtractAfterDownload(fp.isExtractAfterDownload());
                                 nfp.setUseSubDir(fp.useSubDir());
                                 nfp.setComment(fp.getComment());
-                                for (DownloadLink link : selected_links) {
-                                    fp = LGINSTANCE.getFPwithLink(link);
+                                for (DownloadLink dlink : selected_links) {
+                                    fp = LGINSTANCE.getFPwithLink(dlink);
                                     if (fp != null) nfp.setPassword(fp.getPassword());
                                 }
                                 nfp.addAll(selected_links);
@@ -583,6 +597,30 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
                                     LGINSTANCE.addPackageAt(nfp, 0, 0);
                                 } else {
                                     LGINSTANCE.addPackage(nfp);
+                                }
+                            }
+                            break;
+                        case LinkGrabberTableAction.COPY_LINK:
+                            for (int i = 0; i < selected_links.size(); i++) {
+                                if (selected_links.get(i).getLinkType() == DownloadLink.LINKTYPE_NORMAL) {
+                                    String url = selected_links.get(i).getBrowserUrl();
+                                    if (!List.contains(url)) {
+                                        if (List.size() > 0) build.append("\r\n");
+                                        List.add(url);
+                                        build.append(url);
+                                    }
+                                }
+                            }
+                            string = build.toString();
+                            ClipboardHandler.getClipboard().setOldText(string);
+                            Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(string), null);
+                            break;
+                        case LinkGrabberTableAction.BROWSE_LINK:
+                            if (link.getLinkType() == DownloadLink.LINKTYPE_NORMAL) {
+                                try {
+                                    JLink.openURL(link.getBrowserUrl());
+                                } catch (Exception e1) {
+                                    JDLogger.exception(e1);
                                 }
                             }
                             break;
@@ -620,11 +658,11 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
                             confirmPackages(selected_packages);
                             break;
                         case LinkGrabberTableAction.DELETE:
-                            for (DownloadLink link : selected_links) {
-                                link.setProperty("removed", true);
-                                fp = LGINSTANCE.getFPwithLink(link);
+                            for (DownloadLink dlink : selected_links) {
+                                dlink.setProperty("removed", true);
+                                fp = LGINSTANCE.getFPwithLink(dlink);
                                 if (fp == null) continue;
-                                fp.remove(link);
+                                fp.remove(dlink);
                             }
                             break;
 

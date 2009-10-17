@@ -117,7 +117,7 @@ public class LinkGrabberTable extends JDTable implements MouseListener, MouseMot
 
     public void fireTableChanged() {
         new GuiRunnable<Object>() {
-            // @Override
+            @Override
             public Object runSave() {
                 final Rectangle viewRect = linkgrabber.getScrollPane().getViewport().getViewRect();
                 int[] rows = getSelectedRows();
@@ -142,6 +142,7 @@ public class LinkGrabberTable extends JDTable implements MouseListener, MouseMot
         }.start();
     }
 
+    @Override
     protected boolean processKeyBinding(KeyStroke ks, KeyEvent e, int condition, boolean pressed) {
         boolean ret = super.processKeyBinding(ks, e, condition, pressed);
         if (ks.getKeyCode() == KeyEvent.VK_ENTER && !ks.isOnKeyRelease()) {
@@ -342,6 +343,12 @@ public class LinkGrabberTable extends JDTable implements MouseListener, MouseMot
             if (obj instanceof LinkGrabberFilePackage || obj instanceof DownloadLink) {
                 addSortItem(popup, col, sfp, JDL.L("gui.table.contextmenu.packagesort", "Paket sortieren") + " (" + sfp.size() + "), (" + getJDTableModel().getColumnName(col) + ")");
                 popup.addSeparator();
+                if (obj instanceof DownloadLink) {
+                    popup.add(new JMenuItem(new LinkGrabberTableAction(linkgrabber, JDTheme.II("gui.icons.cut", 16, 16), JDL.L("gui.table.contextmenu.copyLink", "Copy URL") + " (" + alllinks.size() + ")", LinkGrabberTableAction.COPY_LINK, new Property("links", alllinks))));
+                    JMenuItem tmp;
+                    popup.add(tmp = new JMenuItem(new LinkGrabberTableAction(linkgrabber, JDTheme.II("gui.images.browse", 16, 16), JDL.L("gui.table.contextmenu.browseLink", "im Browser öffnen"), LinkGrabberTableAction.BROWSE_LINK, new Property("link", obj))));
+                    if (((DownloadLink) obj).getLinkType() != DownloadLink.LINKTYPE_NORMAL) tmp.setEnabled(false);
+                }
                 popup.add(new JMenuItem(new LinkGrabberTableAction(linkgrabber, JDTheme.II("gui.images.dlc", 16, 16), JDL.L("gui.table.contextmenu.dlc", "DLC erstellen") + " (" + alllinks.size() + ")", LinkGrabberTableAction.SAVE_DLC, new Property("links", alllinks))));
                 popup.add(buildpriomenu(alllinks));
                 addExtMenu(popup);
