@@ -35,6 +35,7 @@ import javax.swing.ImageIcon;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JPasswordField;
 import javax.swing.JPopupMenu;
 import javax.swing.JTabbedPane;
 import javax.swing.KeyStroke;
@@ -84,23 +85,20 @@ public class EDTEventQueue extends EventQueue {
 
         }
 
-        // @Override
+        @Override
         public boolean isEnabled() {
             return c.isEditable() && c.isEnabled() && c.getSelectedText() != null;
         }
     }
 
-    // @Override
+    @Override
     protected void dispatchEvent(AWTEvent ev) {
         qh: if (ev instanceof MouseEvent) {
             MouseEvent e = (MouseEvent) ev;
-
             if ((e.getID() == MouseEvent.MOUSE_RELEASED || e.getID() == MouseEvent.MOUSE_CLICKED) && lastPoint > 0) {
-
                 lastPoint--;
                 break qh;
             } else if (e.getID() == MouseEvent.MOUSE_PRESSED && e.isControlDown() && e.isShiftDown()) {
-
                 this.lastPoint = 2;
                 Point point = e.getPoint();
                 Component source = JDGui.getInstance().getMainFrame().getContentPane();
@@ -115,6 +113,7 @@ public class EDTEventQueue extends EventQueue {
                     if (source2 == source || source2 == null) {
                         if (sb.length() > 0) {
                             new Thread() {
+                                @Override
                                 public void run() {
                                     try {
                                         String url = "http://jdownloader.org/quickhelp/" + sb;
@@ -171,19 +170,15 @@ public class EDTEventQueue extends EventQueue {
                             String text = null;
                             if (source2 instanceof JLabel) {
                                 text = ((JLabel) source2).getText();
-
                             } else {
-
                                 Method method = null;
                                 try {
                                     method = source2.getClass().getMethod("getText", new Class[] {});
                                 } catch (Exception e1) {
-                                    // e1.printStackTrace();
                                 }
                                 try {
                                     method = source2.getClass().getMethod("getTitle", new Class[] {});
                                 } catch (Exception e1) {
-                                    // e1.printStackTrace();
                                 }
                                 if (method != null) {
                                     try {
@@ -204,7 +199,7 @@ public class EDTEventQueue extends EventQueue {
                                         sb2.append("\r\n" + Formatter.fillString("", " ", "", i * 3) + " Possible Translation: " + JDL.L(t, text) + " (" + t + ")");
                                     }
 
-                                    JDLogger.getLogger().info(sb2+"");
+                                    JDLogger.getLogger().info(sb2 + "");
 
                                 }
                                 if (source2 instanceof JLabel) {
@@ -226,7 +221,6 @@ public class EDTEventQueue extends EventQueue {
                 point.x -= (source.getLocationOnScreen().x - JDGui.getInstance().getMainFrame().getLocationOnScreen().x);
                 point.y -= (source.getLocationOnScreen().y - JDGui.getInstance().getMainFrame().getLocationOnScreen().y);
                 while (source != null) {
-
                     Component source2 = source.getComponentAt(point);
                     if (source instanceof JTabbedPane) {
                         source2 = ((JTabbedPane) source).getSelectedComponent();
@@ -235,28 +229,24 @@ public class EDTEventQueue extends EventQueue {
                     source = source2;
                     point.x -= source.getLocation().x;
                     point.y -= source.getLocation().y;
-                    // if (source == sdource || sdource == null) {
                     if (source.getName() != null) {
                         lbl.setText(JDL.LF("gui.quickhelp.text", "Click for help: %s", source.getName()));
                         mouseOver.revalidate();
                         MouseFollower.show(mouseOver);
-
                         break;
                     }
-
                 }
             } else {
                 MouseFollower.hide();
-
             }
 
         }
 
         super.dispatchEvent(ev);
-        if (!(ev instanceof MouseEvent)) { return; }
+        if (!(ev instanceof MouseEvent)) return;
 
         MouseEvent e = (MouseEvent) ev;
-        if (!e.isPopupTrigger()) { return; }
+        if (!e.isPopupTrigger()) return;
         if (e.getComponent() == null) return;
         Component c = null;
         Point point = e.getPoint();
@@ -268,8 +258,8 @@ public class EDTEventQueue extends EventQueue {
             point.y -= (source.getLocationOnScreen().y - JDGui.getInstance().getMainFrame().getLocationOnScreen().y);
             c = SwingUtilities.getDeepestComponentAt(source, (int) point.getX(), (int) point.getY());
         }
-        if (!(c instanceof JTextComponent)) { return; }
-        if (MenuSelectionManager.defaultManager().getSelectedPath().length > 0) { return; }
+        if (!(c instanceof JTextComponent)) return;
+        if (MenuSelectionManager.defaultManager().getSelectedPath().length > 0) return;
         final JTextComponent t = (JTextComponent) c;
 
         JPopupMenu menu = new JPopupMenu();
@@ -281,6 +271,11 @@ public class EDTEventQueue extends EventQueue {
             public void actionPerformed(ActionEvent e) {
                 c.cut();
             }
+
+            @Override
+            public boolean isEnabled() {
+                return !(c instanceof JPasswordField);
+            }
         });
         menu.add(new MenuAbstractAction(t, JDL.L("gui.textcomponent.context.copy", "Kopieren"), JDTheme.II("gui.icons.copy", 16, 16), JDL.L("gui.textcomponent.context.copy.acc", "ctrl C")) {
 
@@ -290,9 +285,9 @@ public class EDTEventQueue extends EventQueue {
                 c.copy();
             }
 
-            // @Override
+            @Override
             public boolean isEnabled() {
-                return c.isEnabled() && c.getSelectedText() != null;
+                return !(c instanceof JPasswordField) && c.isEnabled() && c.getSelectedText() != null;
             }
         });
         menu.add(new MenuAbstractAction(t, JDL.L("gui.textcomponent.context.paste", "Einfügen"), JDTheme.II("gui.icons.paste", 16, 16), JDL.L("gui.textcomponent.context.paste.acc", "ctrl V")) {
@@ -303,7 +298,7 @@ public class EDTEventQueue extends EventQueue {
                 c.paste();
             }
 
-            // @Override
+            @Override
             public boolean isEnabled() {
                 if (c.isEditable() && c.isEnabled()) {
                     Transferable contents = Toolkit.getDefaultToolkit().getSystemClipboard().getContents(this);
@@ -330,7 +325,7 @@ public class EDTEventQueue extends EventQueue {
                 c.selectAll();
             }
 
-            // @Override
+            @Override
             public boolean isEnabled() {
                 return c.isEnabled() && c.getText().length() > 0;
             }
