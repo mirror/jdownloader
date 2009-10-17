@@ -30,15 +30,11 @@ public abstract class ToolBarAction extends JDAction {
      * Preferred ButtonType
      * 
      * @author Coalado
-     * 
      */
     public static enum Types {
         TOGGLE, NORMAL, SEPARATOR, CONTAINER
     }
 
-    /**
-     * 
-     */
     protected boolean inited = false;
     private static final long serialVersionUID = -7856598906795360922L;
 
@@ -56,7 +52,6 @@ public abstract class ToolBarAction extends JDAction {
 
     public void setId(String id) {
         this.putValue(ID, id);
-
     }
 
     public void setPriority(int priority) {
@@ -69,7 +64,6 @@ public abstract class ToolBarAction extends JDAction {
 
     public ToolBarAction(String menukey, String iconkey) {
         this(menukey, iconkey, -1);
-
     }
 
     public ToolBarAction(String menukey, String iconkey, int id) {
@@ -102,8 +96,10 @@ public abstract class ToolBarAction extends JDAction {
         getActionListener().actionPerformed(new ActionEvent(this, getActionID(), getTitle()));
     }
 
+    @Override
     public void setSelected(final boolean selected) {
         new GuiRunnable<Object>() {
+            @Override
             public Object runSave() {
                 setSelectedInternal(selected);
                 return null;
@@ -122,11 +118,10 @@ public abstract class ToolBarAction extends JDAction {
      * 
      * @param e
      */
-
     public void onAction(ActionEvent e) {
-
     }
 
+    @Override
     public boolean equals(Object o) {
         if (o == null || !(o instanceof ToolBarAction)) return false;
         if (getID() == null) return false;

@@ -73,22 +73,14 @@ public class SrcParser {
         return pattern;
     }
 
-    public void setPattern(ArrayList<String> pattern) {
-        this.pattern = pattern;
-    }
-
     public void parse() {
-
         for (File f : getSourceFiles(root)) {
             parseFile(f);
         }
-
     }
 
-    public static void main(String args[]) {
-
-        SrcParser p = new SrcParser(new File("C:\\Users\\Coalado\\.jd_home\\tmp\\lfe\\src\\jd"));
-        p.parse();
+    private void print(String s) {
+        System.out.println(s);
     }
 
     @SuppressWarnings("unchecked")
@@ -107,7 +99,6 @@ public class SrcParser {
         ArrayList<LngEntry> fileEntries = new ArrayList<LngEntry>();
         ArrayList<String> filePattern = new ArrayList<String>();
         if (cacheEntries.exists() && cachePattern.exists()) {
-
             try {
                 fileEntries = (ArrayList<LngEntry>) JDIO.loadObject(null, cacheEntries, false);
 
@@ -115,20 +106,19 @@ public class SrcParser {
 
                 for (LngEntry entry : fileEntries) {
                     if (!entries.contains(entry)) {
-                        System.out.println(" CACHE: " + entry);
+                        print(" CACHE: " + entry);
                         entries.add(entry);
                     }
                 }
 
                 for (String patt : filePattern) {
                     if (!pattern.contains(patt)) {
-                        System.out.println(" CACHE: " + patt);
+                        print(" CACHE: " + patt);
                         pattern.add(patt);
                     }
                 }
                 return;
             } catch (Exception e) {
-
                 cacheEntries.delete();
                 cachePattern.delete();
                 fileEntries = new ArrayList<LngEntry>();
@@ -139,20 +129,18 @@ public class SrcParser {
         prepareContent();
         currentContent = Pattern.compile("\\/\\*(.*?)\\*\\/", Pattern.DOTALL).matcher(currentContent).replaceAll("[[/*.....*/]]");
         currentContent = Pattern.compile("[^:]//(.*?)[\n|\r]", Pattern.DOTALL).matcher(currentContent).replaceAll("[[\\.....]]");
-
         currentContent = Pattern.compile("JDL\\s*?\\.\\s*?L", Pattern.DOTALL).matcher(currentContent).replaceAll("JDL.L");
         String[] matches = new Regex(currentContent, "([^;^{^}]*JDL\\.LF?\\s*?\\(.*?\\)[^;^{^}]*)").getColumn(0);
 
         for (String match : matches) {
             // splitting all calls.
             parseCodeLine(match, fileEntries, filePattern);
-
         }
+        if (!filePattern.isEmpty()) new Exception(file + " == " + filePattern).printStackTrace();
 
         try {
             JDIO.saveObject(null, fileEntries, cacheEntries, null, null, false);
             JDIO.saveObject(null, filePattern, cachePattern, null, null, false);
-
         } catch (Exception e) {
             e.printStackTrace();
             cacheEntries.delete();
@@ -172,9 +160,6 @@ public class SrcParser {
         currentContent = currentContent.replace("this.getClass().getSimpleName()", "\"" + simple + "\"");
         currentContent = currentContent.replace("getClass().getSimpleName()", "\"" + simple + "\"");
         currentContent = currentContent.replace("\"+\"", "");
-        if (this.currentFile.getAbsolutePath().toLowerCase().contains("actioncontroll")) {
-            System.out.println("I");
-        }
         if (this.currentContent.contains("jd.gui.swing.jdgui.menu.actions;")) {
             String menukey = new Regex(currentContent, "super\\(\"(.*?)\",\\s*\".*?\"\\);").getMatch(0);
             if (menukey != null) {
@@ -189,32 +174,13 @@ public class SrcParser {
             currentContent = currentContent.replaceFirst("super\\(\"(.*?)\",\\s*\".*?\"\\);", "[[...]]");
             currentContent += "\r\nJDL.L(\"" + menukey + "\",\"" + menukey + "\");";
         }
-        if (this.currentContent.contains(" ThreadedAction")) {
-            String[] keys = new Regex(currentContent, " ThreadedAction\\s*\\(\"(.*?)\"").getColumn(0);
+        if (this.currentContent.contains(" ThreadedAction") || this.currentContent.contains(" ToolBarAction") || this.currentContent.contains(" MenuAction")) {
+            String[] keys = new Regex(currentContent, " (Threaded|ToolBar|Menu)Action\\s*\\(\"(.*?)\"").getColumn(1);
 
             for (String k : keys) {
-                currentContent += "\r\nJDL.L(\"" + "gui.menu." + k + ".name" + "\",\"" + "gui.menu." + k + ".name" + "\");";
-                currentContent += "\r\nJDL.L(\"" + "gui.menu." + k + ".mnem" + "\",\"" + "gui.menu." + k + ".mnem" + "\");";
-                currentContent += "\r\nJDL.L(\"" + "gui.menu." + k + ".accel" + "\",\"" + "-" + "\");";
-            }
-        }
-        if (this.currentContent.contains(" ToolBarAction")) {
-            String[] keys = new Regex(currentContent, " ToolBarAction\\s*\\(\"(.*?)\"").getColumn(0);
-
-            for (String k : keys) {
-                currentContent += "\r\nJDL.L(\"" + "gui.menu." + k + ".name" + "\",\"" + "gui.menu." + k + ".name" + "\");";
-                currentContent += "\r\nJDL.L(\"" + "gui.menu." + k + ".mnem" + "\",\"" + "gui.menu." + k + ".mnem" + "\");";
-                currentContent += "\r\nJDL.L(\"" + "gui.menu." + k + ".accel" + "\",\"" + "-" + "\");";
-            }
-        }
-
-        if (this.currentContent.contains(" MenuAction")) {
-            String[] keys = new Regex(currentContent, " MenuAction\\s*\\(\"(.*?)\"").getColumn(0);
-
-            for (String k : keys) {
-                currentContent += "\r\nJDL.L(\"" + "gui.menu." + k + ".name" + "\",\"" + "gui.menu." + k + ".name" + "\");";
-                currentContent += "\r\nJDL.L(\"" + "gui.menu." + k + ".mnem" + "\",\"" + "gui.menu." + k + ".mnem" + "\");";
-                currentContent += "\r\nJDL.L(\"" + "gui.menu." + k + ".accel" + "\",\"" + "-" + "\");";
+                currentContent += "\r\nJDL.L(\"gui.menu." + k + ".name\",\"gui.menu." + k + ".name\");";
+                currentContent += "\r\nJDL.L(\"gui.menu." + k + ".mnem\",\"gui.menu." + k + ".mnem\");";
+                currentContent += "\r\nJDL.L(\"gui.menu." + k + ".accel\",\"-\");";
             }
         }
         if (this.currentContent.contains("extends PluginOptional")) {
@@ -389,7 +355,7 @@ public class SrcParser {
                     if (!entries.contains(entry)) {
                         entries.add(entry);
 
-                        System.out.println("LF  " + Formatter.fillInteger(entries.size(), 3, "0") + " " + entry);
+                        print("LF  " + Formatter.fillInteger(entries.size(), 3, "0") + " " + entry);
                         broadcaster.fireEvent(new MessageEvent(this, PARSE_NEW_ENTRY, "LF  " + Formatter.fillInteger(entries.size(), 3, "0") + " " + entry));
 
                     }
@@ -417,20 +383,16 @@ public class SrcParser {
                     /*
                      * merge expressions
                      */
-
                     while (parameter[0].contains("+")) {
                         try {
                             String[][] matches = new Regex(parameter[0], "(\\+([^%]+)\\+?)").getMatches();
                             for (String[] mm : matches) {
                                 try {
                                     String value = getValueOf(mm[1]);
-                                    System.out.println(mm[0] + " - " + mm[1]);
+                                    print(mm[0] + " - " + mm[1]);
                                     parameter[0] = parameter[0].replace(mm[0], value);
-
                                 } catch (Exception e) {
                                     parameter[0] = parameter[0].replace(mm[0], "*");
-                                    JDLogger.getLogger().severe("Pattern match in " + currentFile + " : " + match);
-
                                 }
                             }
 
@@ -491,8 +453,9 @@ public class SrcParser {
                     }
 
                     if (parameter[0].contains("*")) {
+                        if (currentFile.getName().contains("ToolBarAction")) continue;
                         String patt = parameter[0].replace(".", "\\.").replace("*", "(.+?)");
-
+                        JDLogger.getLogger().severe("Pattern match in " + currentFile + " : " + match);
                         if (!pattern.contains(patt)) pattern.add(patt);
                         if (!filePattern.contains(patt)) filePattern.add(patt);
 
@@ -502,7 +465,7 @@ public class SrcParser {
                         if (!entries.contains(entry)) {
                             entries.add(entry);
 
-                            System.out.println("L   " + Formatter.fillInteger(entries.size(), 3, "0") + " " + entry);
+                            print("L   " + Formatter.fillInteger(entries.size(), 3, "0") + " " + entry);
                             broadcaster.fireEvent(new MessageEvent(this, PARSE_NEW_ENTRY, "L   " + Formatter.fillInteger(entries.size(), 3, "0") + " " + entry));
 
                         }
@@ -529,20 +492,4 @@ public class SrcParser {
 
     }
 
-    public void parseDefault(File file) {
-        String[] entries = Regex.getLines(JDIO.readFileToString(file));
-
-        for (String line : entries) {
-            if (line.startsWith("#pattern: ")) {
-                pattern.add(line.substring(10));
-                continue;
-
-            }
-            if (line.startsWith("#")) continue;
-            String key = line.substring(0, line.indexOf("=")).trim();
-            String value = line.substring(line.indexOf("=") + 1).trim();
-            this.entries.add(new LngEntry(key, value));
-        }
-
-    }
 }

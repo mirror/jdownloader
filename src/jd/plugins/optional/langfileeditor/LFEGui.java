@@ -101,10 +101,9 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
     private ChartAPIEntity entDone, entMissing, entOld;
 
     private JMenuBar menubar;
-    private JMenu mnuFile, mnuLoad, mnuKey, mnuEntries, mnuTest;
+    private JMenu mnuFile, mnuLoad, mnuKey, mnuTest;
     private JMenuItem mnuSave, mnuSaveLocal, mnuReload;
-    private JMenuItem mnuAdd, mnuAdopt, mnuClear, mnuDelete;
-    private JMenuItem mnuShowDupes, mnuOpenSearchDialog;
+    private JMenuItem mnuAdd, mnuAdopt, mnuClear, mnuDelete, mnuOpenSearchDialog;
     private JMenuItem mnuCurrent, mnuKeymode;
     private JPopupMenu mnuContextPopup;
     private JMenuItem mnuContextAdopt, mnuContextClear, mnuContextDelete;
@@ -112,7 +111,6 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
     private HashMap<String, String> languageKeysFormFile = new HashMap<String, String>();
     private HashMap<String, String> languageENKeysFormFile = new HashMap<String, String>();
     private ArrayList<KeyInfo> data = new ArrayList<KeyInfo>();
-    private HashMap<String, ArrayList<String>> dupes = new HashMap<String, ArrayList<String>>();
     private String lngKey = null;
     private boolean changed = false;
     private final File dirLanguages, dirWorkingCopy;
@@ -378,10 +376,6 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
                 this.dataChanged();
             }
 
-        } else if (e.getSource() == mnuShowDupes) {
-
-            new LFEDupeDialog(dupes);
-
         } else if (e.getSource() == mnuOpenSearchDialog) {
 
             SearchFactory.getInstance().showFindInput(table, table.getSearchable());
@@ -478,17 +472,9 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
         Arrays.sort(rows);
 
         int len = rows.length - 1;
-        ArrayList<String> keys = new ArrayList<String>(dupes.keySet());
-        ArrayList<ArrayList<String>> obj = new ArrayList<ArrayList<String>>(dupes.values());
-        ArrayList<String> values;
         for (int i = len; i >= 0; --i) {
             String temp = data.remove(rows[i]).getKey();
             data.remove(temp);
-            for (int j = obj.size() - 1; j >= 0; --j) {
-                values = obj.get(j);
-                values.remove(temp);
-                if (values.size() == 1) dupes.remove(keys.get(j));
-            }
             tableModel.refreshModel();
             tableModel.fireTableDataChanged();
         }
@@ -559,34 +545,17 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
 
         parseLanguageFile(languageFile, languageKeysFormFile);
         parseLanguageFile(new File(dirLanguages, "en.loc"), languageENKeysFormFile);
-        HashMap<String, String> dupeHelp = new HashMap<String, String>();
         data.clear();
-        dupes.clear();
         if (languageFile != null) {
             lngKey = languageFile.getName().substring(0, languageFile.getName().length() - 4);
             lngKey = JDGeoCode.parseLanguageCode(lngKey)[0];
         }
-        ArrayList<String> values;
-        String value, key, language;
+        String value, key;
         KeyInfo keyInfo;
         for (LngEntry entry : sourceParser.getEntries()) {
             key = entry.getKey();
             keyInfo = new KeyInfo(key, entry.getValue(), languageKeysFormFile.remove(key), languageENKeysFormFile.get(key));
             data.add(keyInfo);
-            if (!keyInfo.isMissing()) {
-
-                language = keyInfo.getLanguage();
-                if (dupeHelp.containsKey(language)) {
-                    values = dupes.get(language);
-                    if (values == null) {
-                        values = new ArrayList<String>();
-                        values.add(dupeHelp.get(language));
-                        dupes.put(language, values);
-                    }
-                    values.add(key);
-                }
-                dupeHelp.put(language, key);
-            }
         }
 
         for (Entry<String, String> entry : languageKeysFormFile.entrySet()) {
@@ -594,7 +563,6 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
             value = null;
 
             for (String patt : sourceParser.getPattern()) {
-
                 if (key.matches(patt)) {
                     value = "<pattern> " + patt;
                 }
@@ -613,7 +581,6 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
 
             public void run() {
                 updateKeyChart();
-                mnuEntries.setEnabled(true);
                 mnuKey.setEnabled(true);
                 mnuCurrent.setEnabled(true);
                 mnuSave.setEnabled(true);
@@ -855,26 +822,16 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
         mnuKey.add(mnuClear = new JMenuItem(JDL.L(LOCALE_PREFIX + "clearValues", "Clear Value(s)")));
         mnuKey.addSeparator();
         mnuKey.add(mnuAdopt = new JMenuItem(JDL.L(LOCALE_PREFIX + "adoptDefaults", "Adopt Default(s)")));
+        mnuKey.addSeparator();
+        mnuKey.add(mnuOpenSearchDialog = new JMenuItem(JDL.L(LOCALE_PREFIX + "openSearchDialog", "Open Search Dialog")));
 
         mnuAdd.addActionListener(this);
         mnuDelete.addActionListener(this);
         mnuClear.addActionListener(this);
         mnuAdopt.addActionListener(this);
-
-        mnuDelete.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0));
-
-        // Entries Menü
-        mnuEntries = new JMenu(JDL.L(LOCALE_PREFIX + "entries", "Entries"));
-        mnuEntries.setEnabled(false);
-
-        mnuEntries.add(mnuShowDupes = new JMenuItem(JDL.L(LOCALE_PREFIX + "showDupes", "Show Dupes")));
-        mnuEntries.addSeparator();
-        mnuEntries.add(mnuOpenSearchDialog = new JMenuItem(JDL.L(LOCALE_PREFIX + "openSearchDialog", "Open Search Dialog")));
-
-        mnuShowDupes.addActionListener(this);
         mnuOpenSearchDialog.addActionListener(this);
 
-        mnuShowDupes.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_D, KeyEvent.CTRL_DOWN_MASK));
+        mnuDelete.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0));
         mnuOpenSearchDialog.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F, KeyEvent.CTRL_DOWN_MASK));
 
         // Test
@@ -889,7 +846,6 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
         // Menü-Bar zusammensetzen
         menubar.add(mnuFile);
         menubar.add(mnuKey);
-        menubar.add(mnuEntries);
         menubar.add(mnuTest);
         menubar.setEnabled(false);
 
