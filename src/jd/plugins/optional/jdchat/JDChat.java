@@ -798,19 +798,17 @@ public class JDChat extends PluginOptional implements ControlListener {
 
             return;
         }
+        User usr = getUser(name);
         if (textField.getText().length() == 0) {
-            if (!pms.containsKey(getUser(name).name.toLowerCase())) addPMS(getUser(name).name);
+            if (!pms.containsKey(usr.name.toLowerCase())) addPMS(usr.name);
             for (int x = 0; x < tabbedPane.getTabCount(); x++) {
-                if (tabbedPane.getTitleAt(x).equals(getUser(name).name)) {
+                if (tabbedPane.getTitleAt(x).equals(usr.name)) {
                     tabbedPane.setSelectedIndex(x);
                     break;
                 }
             }
-
-            // textField.setText("/msg " + getUser(name).name + " ");
         } else {
-
-            textField.setText(textField.getText().trim() + " " + getUser(name).name + " ");
+            textField.setText(textField.getText().trim() + " " + usr.name + " ");
         }
 
         textField.requestFocus();
@@ -966,7 +964,7 @@ public class JDChat extends PluginOptional implements ControlListener {
         textArea.addHyperlinkListener(hyp);
         right.addHyperlinkListener(hyp);
         scrollPane = new JScrollPane(textArea);
-        tabbedPane = new JTabbedPane();
+        tabbedPane = new JTabbedPane(JTabbedPane.TOP, JTabbedPane.SCROLL_TAB_LAYOUT);
         tabbedPane.add("JDChat", scrollPane);
         textField = new JTextField();
         textField.setFocusTraversalKeys(KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS, Collections.EMPTY_SET);
@@ -1033,7 +1031,7 @@ public class JDChat extends PluginOptional implements ControlListener {
                             users.add(user);
                         }
                     }
-                    if (users.size() == 0) { return; }
+                    if (users.size() == 0) return;
 
                     counter++;
                     if (counter > users.size() - 1) {
@@ -1304,31 +1302,32 @@ public class JDChat extends PluginOptional implements ControlListener {
         }
     }
 
-    public void notifyPMS(String Username) {
+    public void notifyPMS(String user) {
         for (int x = 0; x < tabbedPane.getComponentCount(); x++) {
-            if (tabbedPane.getTitleAt(x).equals(Username)) {
+            if (tabbedPane.getTitleAt(x).equals(user)) {
                 tabbedPane.setForegroundAt(x, Color.RED);
                 break;
             }
         }
     }
 
-    public void addPMS(String Username) {
-        pms.put(Username.trim().toLowerCase(), new JDChatPMS(Username.trim()));
-        tabbedPane.add(Username.trim(), pms.get(Username.trim().toLowerCase()).getScrollPane());
+    public void addPMS(String user) {
+        user = user.trim();
+        if (user.equals(conn.getNick().trim())) return;
+        pms.put(user.trim().toLowerCase(), new JDChatPMS(user.trim()));
+        tabbedPane.add(user.trim(), pms.get(user.trim().toLowerCase()).getScrollPane());
     }
 
-    public void renamePMS(String Usernameold, String Usernamenew) {
-        pms.put(Usernamenew.trim().toLowerCase(), pms.get(Usernameold.trim().toLowerCase()));
+    public void renamePMS(String userOld, String userNew) {
+        pms.put(userNew.trim().toLowerCase(), pms.get(userOld.trim().toLowerCase()));
         for (int x = 0; x < tabbedPane.getComponentCount(); x++) {
-            if (tabbedPane.getTitleAt(x).toLowerCase().equals(Usernameold.toLowerCase())) {
+            if (tabbedPane.getTitleAt(x).toLowerCase().equals(userOld.toLowerCase())) {
                 tabbedPane.remove(x);
                 break;
             }
         }
-        pms.remove(Usernameold);
-        tabbedPane.add(Usernamenew.trim(), pms.get(Usernamenew.trim().toLowerCase()).getScrollPane());
-
+        pms.remove(userOld);
+        tabbedPane.add(userNew.trim(), pms.get(userNew.trim().toLowerCase()).getScrollPane());
     }
 
     public void delPMS(String Username) {
