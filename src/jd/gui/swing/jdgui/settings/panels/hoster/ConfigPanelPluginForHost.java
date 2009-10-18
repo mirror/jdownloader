@@ -64,7 +64,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
     private class InternalTableModel extends JDTableModel {
 
         private static final long serialVersionUID = -5584463272737285033L;
-        
+
         public InternalTableModel() {
             super("hostertable");
 
@@ -128,7 +128,6 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
                 btnEdit.setEnabled(hpw.hasConfig());
             }
         });
-        table.getTableHeader().setReorderingAllowed(false);
 
         btnEdit = new JButton(JDL.L("gui.btn_settings", "Einstellungen"));
         btnEdit.setEnabled(false);

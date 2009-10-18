@@ -20,34 +20,20 @@ import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 
 import jd.controlling.DownloadController;
-import jd.gui.swing.jdgui.actions.ToolBarAction;
+import jd.controlling.LinkGrabberController;
+import jd.gui.swing.jdgui.actions.ThreadedAction;
+import jd.gui.swing.jdgui.views.linkgrabberview.LinkGrabberPanel;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkGrabberFilePackage;
 import jd.plugins.LinkStatus;
 
-public class RemoveOfflineAction extends ToolBarAction {
+public class RemoveOfflineAction extends ThreadedAction {
 
     private static final long serialVersionUID = -5335194420202699757L;
 
     public RemoveOfflineAction() {
         super("action.remove_offline", "gui.images.remove_failed");
-    }
-
-    public void onAction(ActionEvent e) {
-        DownloadController dlc = DownloadController.getInstance();
-        ArrayList<DownloadLink> downloadstodelete = new ArrayList<DownloadLink>();
-        synchronized (dlc.getPackages()) {
-            for (FilePackage fp : dlc.getPackages()) {
-                synchronized (fp.getDownloadLinkList()) {
-                    for (DownloadLink dl : fp.getDownloadLinkList()) {
-                        if (dl.getLinkStatus().hasStatus(LinkStatus.ERROR_FILE_NOT_FOUND)) downloadstodelete.add(dl);
-                    }
-                }
-            }
-        }
-        for (DownloadLink dl : downloadstodelete) {
-            dl.getFilePackage().remove(dl);
-        }
     }
 
     @Override
@@ -56,5 +42,39 @@ public class RemoveOfflineAction extends ToolBarAction {
 
     @Override
     public void initDefaults() {
+    }
+
+    @Override
+    public void threadedActionPerformed(ActionEvent e) {
+        if (!LinkGrabberPanel.getLinkGrabber().isNotVisible()) {
+            synchronized (LinkGrabberController.ControllerLock) {
+                synchronized (LinkGrabberController.getInstance().getPackages()) {
+                    synchronized (LinkGrabberController.ControllerLock) {
+                        synchronized (LinkGrabberController.getInstance().getPackages()) {
+                            ArrayList<LinkGrabberFilePackage> selected_packages = new ArrayList<LinkGrabberFilePackage>(LinkGrabberController.getInstance().getPackages());
+                            selected_packages.add(LinkGrabberController.getInstance().getFilterPackage());
+                            for (LinkGrabberFilePackage fp2 : selected_packages) {
+                                fp2.removeOffline();
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            DownloadController dlc = DownloadController.getInstance();
+            ArrayList<DownloadLink> downloadstodelete = new ArrayList<DownloadLink>();
+            synchronized (dlc.getPackages()) {
+                for (FilePackage fp : dlc.getPackages()) {
+                    synchronized (fp.getDownloadLinkList()) {
+                        for (DownloadLink dl : fp.getDownloadLinkList()) {
+                            if (dl.getLinkStatus().hasStatus(LinkStatus.ERROR_FILE_NOT_FOUND)) downloadstodelete.add(dl);
+                        }
+                    }
+                }
+            }
+            for (DownloadLink dl : downloadstodelete) {
+                dl.getFilePackage().remove(dl);
+            }
+        }
     }
 }

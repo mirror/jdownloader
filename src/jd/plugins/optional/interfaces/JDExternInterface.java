@@ -357,7 +357,6 @@ public class JDExternInterface extends PluginOptional {
                     }
                 }
             } catch (Exception e) {
-                JDLogger.exception(e);
             }
         }
 

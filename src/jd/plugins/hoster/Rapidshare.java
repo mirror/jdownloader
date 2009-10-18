@@ -86,6 +86,8 @@ public class Rapidshare extends PluginForHost {
 
     private static final String PROPERTY_USE_PRESELECTED = "USE_PRESELECTED";
 
+    private static final String WAIT_HOSTERFULL = "WAIT_HOSTERFULL";
+
     private static final String PROPERTY_USE_TELEKOMSERVER = "USE_TELEKOMSERVER";
 
     private static String[] serverList1 = new String[] { "cg", "cg2", "dt", "gc", "gc2", "l3", "l32", "l33", "l34", "tg", "tl", "tl2" };
@@ -436,7 +438,11 @@ public class Rapidshare extends PluginForHost {
             if (ticketCode.contains("Leider sind derzeit keine freien Slots ")) {
                 downloadLink.getLinkStatus().setStatusText("All free slots in use: try to download again after 2 minutes");
                 logger.warning("All free slots in use: try to download again after 2 minutes");
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "All free slots in use", 120 * 1000l);
+                if (getPluginConfig().getBooleanProperty(WAIT_HOSTERFULL, true)) {
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "All free slots in use", 120 * 1000l);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "All free slots in use", 120 * 1000l);
+                }
             }
             if (new Regex(ticketCode, ".*download.{0,3}limit.{1,50}free.{0,3}users.*").matches()) {
                 String waitfor = new Regex(ticketCode, "Or try again in about(.*?)minutes").getMatch(0);
@@ -550,8 +556,20 @@ public class Rapidshare extends PluginForHost {
             if (Regex.matches(error, Pattern.compile("(Der Uploader hat diese Datei)"))) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
             if (Regex.matches(error, Pattern.compile("(als 200 Megabyte)"))) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugin.rapidshare.error.filetolarge", "This file is larger than 200 MB, you need a premium-account to download this file."));
             if (Regex.matches(error, Pattern.compile("(weder einem Premiumaccount)"))) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-            if (Regex.matches(error, Pattern.compile("(keine freien Slots)"))) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "All free slots in use", 120 * 1000l); }
-            if (Regex.matches(error, Pattern.compile("(in 2 Minuten)"))) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many users are currently downloading this file", 120 * 1000l); }
+            if (Regex.matches(error, Pattern.compile("(keine freien Slots)"))) {
+                if (getPluginConfig().getBooleanProperty(WAIT_HOSTERFULL, true)) {
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "All free slots in use", 120 * 1000l);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "All free slots in use", 120 * 1000l);
+                }
+            }
+            if (Regex.matches(error, Pattern.compile("(in 2 Minuten)"))) {
+                if (getPluginConfig().getBooleanProperty(WAIT_HOSTERFULL, true)) {
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many users are currently downloading this file", 120 * 1000l);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many users are currently downloading this file", 120 * 1000l);
+                }
+            }
             if (Regex.matches(error, Pattern.compile("(Die Datei konnte nicht gefunden werden)"))) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
             if (Regex.matches(error, Pattern.compile("Der Server .*? ist momentan nicht verf.*"))) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.LF("plugin.rapidshare.error.serverunavailable", "The Server %s is currently unavailable.", error.substring(11, error.indexOf(" ist"))), 3600 * 1000l); }
             if (Regex.matches(error, PATTERM_MATCHER_ALREADY_LOADING)) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Already a download from your ip in progress!", 120 * 1000l); }
@@ -893,6 +911,7 @@ public class Rapidshare extends PluginForHost {
 
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), PROPERTY_INCREASE_TICKET, JDL.L("plugins.hoster.rapidshare.com.increaseTicketTime", "Ticketwartezeit verlängern (0%-500%)"), 0, 500).setDefaultValue(0).setStep(1));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), WAIT_HOSTERFULL, JDL.L("plugins.hoster.rapidshare.com.waithosterfull", "Wait if all FreeUser Slots are full")).setDefaultValue(true));
     }
 
     @SuppressWarnings("unchecked")

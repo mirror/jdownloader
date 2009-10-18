@@ -370,6 +370,19 @@ public class JDController implements ControlListener {
         }
     }
 
+    /* syncs all data to database */
+    public void syncDatabase() {
+        if (DatabaseConnector.isDatabaseShutdown()) return;
+        logger.info("Sync Downloadlist");
+        JDUtilities.getDownloadController().saveDownloadLinksSyncnonThread();
+        logger.info("Sync Accountlist");
+        AccountController.getInstance().saveSyncnonThread();
+        logger.info("Sync Passwordlist");
+        PasswordListController.getInstance().saveSync();
+        logger.info("Sync HTACCESSlist");
+        HTACCESSController.getInstance().saveSync();
+    }
+
     /**
      * hiermit kann ein Thread den Exit von JD verzögern (zb. speichern von db
      * sachen) gibt eine ID zurück, mit welcher wieder der request freigegeben

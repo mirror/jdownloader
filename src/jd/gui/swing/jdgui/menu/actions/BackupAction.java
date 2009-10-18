@@ -18,34 +18,22 @@ package jd.gui.swing.jdgui.menu.actions;
 
 import java.awt.event.ActionEvent;
 
+import jd.controlling.JDController;
 import jd.gui.swing.components.Balloon;
-import jd.gui.swing.jdgui.actions.ToolBarAction;
+import jd.gui.swing.jdgui.actions.ThreadedAction;
 import jd.update.JDUpdateUtils;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 
-public class BackupAction extends ToolBarAction {
+public class BackupAction extends ThreadedAction {
     /**
      * 
      */
 
-    private static boolean inprogress = false;
     private static final long serialVersionUID = 823930266263085474L;
 
     public BackupAction() {
         super("action.backup", "gui.images.save");
-    }
-
-    public void onAction(ActionEvent e) {
-        if (inprogress) return;
-        new Thread() {
-            public void run() {
-                inprogress = true;
-                JDUpdateUtils.backupDataBase();
-                Balloon.show(JDL.L("gui.balloon.backup.title", "Backup"), JDTheme.II("gui.images.save", 32, 32), JDL.LF("gui.backup.finished", "Linklist successfully backuped!"));
-                inprogress = false;
-            }
-        }.start();
     }
 
     @Override
@@ -54,5 +42,12 @@ public class BackupAction extends ToolBarAction {
 
     @Override
     public void initDefaults() {
+    }
+
+    @Override
+    public void threadedActionPerformed(ActionEvent e) {
+        JDController.getInstance().syncDatabase();
+        JDUpdateUtils.backupDataBase();
+        Balloon.show(JDL.L("gui.balloon.backup.title", "Backup"), JDTheme.II("gui.images.save", 32, 32), JDL.LF("gui.backup.finished", "Linklist successfully backuped!"));
     }
 }

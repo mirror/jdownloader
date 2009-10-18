@@ -205,11 +205,11 @@ public class UnrarWrapper extends Thread implements JDRunnable {
                 }
                 fireEvent(JDUnrarConstants.WRAPPER_OPEN_ARCHIVE_SUCCESS);
 
-                extract();
+                boolean okay = extract();
                 this.checkSizes();
                 switch (exitCode) {
                 case EXIT_CODE_SUCCESS:
-                    if (!gotInterrupted && removeAfterExtraction) {
+                    if (!gotInterrupted && removeAfterExtraction && okay) {
                         removeArchiveFiles();
                     }
                     fireEvent(JDUnrarConstants.WRAPPER_FINISHED_SUCCESSFULL);

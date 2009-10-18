@@ -82,8 +82,13 @@ public class RequestHandler extends Thread {
             }
 
             Response res = new Response();
-            handler.handle(req, res);
-
+            try {
+                handler.handle(req, res);
+            } catch (Exception e) {
+                JDLogger.exception(e);
+                res.setReturnStatus(Response.ERROR);
+                res.addContent(e.toString());
+            }
             OutputStream out = socket.getOutputStream();
             res.writeToStream(out);
             out.close();
@@ -126,12 +131,12 @@ public class RequestHandler extends Thread {
 
                     reader.mark(0);
 
-                    sb.append((char)byteread);
+                    sb.append((char) byteread);
                     if ((byteread = reader.read()) != -1) {
 
                         if (byteread == 13 || byteread == 10) {
 
-                            sb.append((char)byteread);
+                            sb.append((char) byteread);
                             break;
                         } else {
                             reader.reset();
@@ -141,7 +146,7 @@ public class RequestHandler extends Thread {
 
                 }
 
-                sb.append((char)byteread);
+                sb.append((char) byteread);
 
             }
             if (byteread == -1) {

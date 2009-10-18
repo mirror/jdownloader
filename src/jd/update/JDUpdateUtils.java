@@ -22,45 +22,48 @@ import java.io.FileOutputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import jd.config.DatabaseConnector;
 import jd.utils.JDUtilities;
 
 public class JDUpdateUtils {
 
     public static boolean backupDataBase() {
-        String[] filenames = new String[] { "JDU.cfg", "WEBUPDATE.cfg", "database.properties", "database.script" };
-        byte[] buf = new byte[8192];
-        File file = JDUtilities.getResourceFile("backup/database.zip");
-        if (file.exists()) {
-            File old = JDUtilities.getResourceFile("backup/database_" + file.lastModified() + ".zip");
-            file.getParentFile().mkdirs();
+        synchronized (DatabaseConnector.LOCK) {
+            String[] filenames = new String[] { "JDU.cfg", "WEBUPDATE.cfg", "database.properties", "database.script" };
+            byte[] buf = new byte[8192];
+            File file = JDUtilities.getResourceFile("backup/database.zip");
             if (file.exists()) {
-                file.renameTo(old);
-            }
-            file.delete();
-        } else {
-            file.getParentFile().mkdirs();
-        }
-        try {
-            String outFilename = file.getAbsolutePath();
-            ZipOutputStream out = new ZipOutputStream(new FileOutputStream(outFilename));
-
-            for (int i = 0; i < filenames.length; i++) {
-                File filein = JDUtilities.getResourceFile("config/" + filenames[i]);
-                if (!filein.exists()) continue;
-                FileInputStream in = new FileInputStream(filein.getAbsoluteFile());
-                out.putNextEntry(new ZipEntry(filenames[i]));
-                int len;
-                while ((len = in.read(buf)) > 0) {
-                    out.write(buf, 0, len);
+                File old = JDUtilities.getResourceFile("backup/database_" + file.lastModified() + ".zip");
+                file.getParentFile().mkdirs();
+                if (file.exists()) {
+                    file.renameTo(old);
                 }
-                out.closeEntry();
-                in.close();
+                file.delete();
+            } else {
+                file.getParentFile().mkdirs();
             }
-            out.close();
-        } catch (Exception e) {
-            return false;
+            try {
+                String outFilename = file.getAbsolutePath();
+                ZipOutputStream out = new ZipOutputStream(new FileOutputStream(outFilename));
+
+                for (int i = 0; i < filenames.length; i++) {
+                    File filein = JDUtilities.getResourceFile("config/" + filenames[i]);
+                    if (!filein.exists()) continue;
+                    FileInputStream in = new FileInputStream(filein.getAbsoluteFile());
+                    out.putNextEntry(new ZipEntry(filenames[i]));
+                    int len;
+                    while ((len = in.read(buf)) > 0) {
+                        out.write(buf, 0, len);
+                    }
+                    out.closeEntry();
+                    in.close();
+                }
+                out.close();
+            } catch (Exception e) {
+                return false;
+            }
+            return true;
         }
-        return true;
     }
 
 }

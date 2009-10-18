@@ -27,6 +27,7 @@ import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -82,15 +83,55 @@ public class SharingMatrixCom extends PluginForHost {
 
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+        String passCode = null;
         requestFileInformation(downloadLink);
         login(account);
         String dllink = downloadLink.getDownloadURL();
+        br.getPage(dllink);
+        String url = br.getRedirectLocation();
+        boolean direct = true;
+        if (url == null) {
+            direct = false;
+            if (br.containsHTML("Enter password:<")) {
+                if (downloadLink.getStringProperty("pass", null) == null) {
+                    passCode = Plugin.getUserInput("Password?", downloadLink);
+                } else {
+                    /* gespeicherten PassCode holen */
+                    passCode = downloadLink.getStringProperty("pass", null);
+                }
+            }
+            String linkid = br.getRegex("link_id = '(\\d+)';").getMatch(0);
+            String link_name = br.getRegex("link_name = '([^']*')").getMatch(0);
+            if (linkid == null || link_name == null) throw new PluginException(LinkStatus.ERROR_FATAL);
+            Browser brc = br.cloneBrowser();
+            brc.getPage("http://www.sharingmatrix.com/ajax_scripts/_get.php?link_id=" + linkid + "&link_name=" + link_name + "&dl_id=0&prem=1" + (passCode == null ? "" : "&password=" + Encoding.urlEncode(passCode)));
+            if (brc.containsHTML("server_down")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverfailure, Please try again later!", 30 * 60 * 1000l);
+            String server = brc.getRegex("serv:\"(http://.*?)\"").getMatch(0);
+            String hash = brc.getRegex("hash:\"(.*?)\"").getMatch(0);
+            if (server == null || hash == null) throw new PluginException(LinkStatus.ERROR_FATAL);
+            url = server + "/download/" + hash + "/0/" + (passCode == null ? "" : Encoding.urlEncode(passCode));
+        }
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        if (direct) {
+            passCode = downloadLink.getStringProperty("pass", null);
+            if (passCode != null) url = url + passCode;
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 0);
         if (dl.getConnection() != null && dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.containsHTML("are sorry but we are currently performing technical")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverfailure, Please try again later!", 30 * 60 * 1000l);
+            if (br.containsHTML("Incorrect password for this file.")) {
+                logger.info("Password wrong");
+                downloadLink.setProperty("pass", null);
+                if (direct) {
+                    passCode = Plugin.getUserInput("Password?", downloadLink);
+                    downloadLink.setProperty("pass", passCode);
+                }
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
             throw new PluginException(LinkStatus.ERROR_FATAL);
+        }
+        if (passCode != null) {
+            downloadLink.setProperty("pass", passCode);
         }
         dl.startDownload();
     }
@@ -128,22 +169,16 @@ public class SharingMatrixCom extends PluginForHost {
 
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        // System.out.print(br.toString());
-        // if
-        // (br.containsHTML("You have got max allowed bandwidth size per hour"))
-        // { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED); }
+        String passCode = null;
         if (br.containsHTML("no available free download slots left")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No free slots available for this file");
         String linkid = br.getRegex("link_id = '(\\d+)';").getMatch(0);
         if (linkid == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT); }
         String freepage = "http://sharingmatrix.com/ajax_scripts/download.php?type_membership=free&link_id=" + linkid;
         br.getPage(freepage);
         String link_name = br.getRegex("link_name = '([^']+')").getMatch(0);
-        // System.out.print(br.toString());
-        // long time = System.currentTimeMillis();
+
         String linkurl = br.getRegex("<input\\.*document\\.location=\"(.*?)\";").getMatch(0);
-        // String captchalink =
-        // "http://sharingmatrix.com/include/crypt/cryptographp.php?cfg=0&";
-        // br.cloneBrowser().getPage(captchalink);
+
         String captchalink = "http://sharingmatrix.com/include/crypt/cryptographp.inc.php?cfg=0&sn=PHPSESSID&";
 
         File captcha = getLocalCaptchaFile();
@@ -152,36 +187,37 @@ public class SharingMatrixCom extends PluginForHost {
         brc.setCookiesExclusive(true);
         brc.setCookie("sharingmatrix.com", "cryptcookietest", "1");
         brc.getDownload(captcha, captchalink);
-        // br.cloneBrowser().getPage("http://sharingmatrix.com/js/jquery-impromptu.1.5.js?_="
-        // + System.currentTimeMillis());
+
         String code = getCaptchaCode(captcha, downloadLink);
         Browser br2 = br.cloneBrowser();
-        // looks like wait time is js only (can be skipped)
-        // long delay = 60000 - (System.currentTimeMillis() - time);
-        // try {
-        // delay =
-        // (Long.parseLong(br.getRegex("current_time = '([\\d]+)';").getMatch(0))
-        // * 1000) - (System.currentTimeMillis() - time);
-        // } catch (Exception e) {
-        // }
-        // sleep(delay, downloadLink);
+        if (br.containsHTML("Enter password:<")) {
+            if (downloadLink.getStringProperty("pass", null) == null) {
+                passCode = Plugin.getUserInput("Password?", downloadLink);
+            } else {
+                /* gespeicherten PassCode holen */
+                passCode = downloadLink.getStringProperty("pass", null);
+            }
+        }
         br2.postPage("http://sharingmatrix.com/ajax_scripts/verifier.php", "?&code=" + code);
         if (Integer.parseInt(br2.toString().trim()) != 1) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         String dl_id = br2.getPage("http://sharingmatrix.com/ajax_scripts/dl.php").trim();
-        // br2.getPage("http://sharingmatrix.com/ajax_scripts/update_dl.php?id="
-        // + dl_id);
-        br2.getPage("http://sharingmatrix.com/ajax_scripts/_get.php?link_id=" + linkid + "&link_name=" + link_name + "&dl_id=" + dl_id + "&password=");
-        linkurl = br2.getRegex("serv:\"([^\"]+)\"").getMatch(0) + "/download/" + br2.getRegex("hash:\"([^\"]+)\"").getMatch(0) + "/" + dl_id.trim() + "/";
-        // br2.getPage("http://sharingmatrix.com/ajax_scripts/update_dl.php?id="
-        // + dl_id);
-        // System.out.println(br2.getCookies("http://sharingmatrix.com"));
-        // System.out.print(br2.toString());
+
+        br2.getPage("http://sharingmatrix.com/ajax_scripts/_get.php?link_id=" + linkid + "&link_name=" + link_name + "&dl_id=" + dl_id + (passCode == null ? "" : "&password=" + Encoding.urlEncode(passCode)));
+        if (br2.containsHTML("server_down")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverfailure, Please try again later!", 30 * 60 * 1000l);
+        linkurl = br2.getRegex("serv:\"([^\"]+)\"").getMatch(0) + "/download/" + br2.getRegex("hash:\"([^\"]+)\"").getMatch(0) + "/" + dl_id.trim() + "/" + (passCode == null ? "" : "&password=" + Encoding.urlEncode(passCode));
         if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         dl = jd.plugins.BrowserAdapter.openDownload(br2, downloadLink, linkurl, true, 1);
         if (dl.getConnection() != null && dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.containsHTML("are sorry but we are currently performing technical")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverfailure, Please try again later!", 30 * 60 * 1000l);
+            if (br.containsHTML("Incorrect password for this file.")) {
+                logger.info("Password wrong");
+                downloadLink.setProperty("pass", null);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
             throw new PluginException(LinkStatus.ERROR_FATAL);
+        }
+        if (passCode != null) {
+            downloadLink.setProperty("pass", passCode);
         }
         dl.startDownload();
     }

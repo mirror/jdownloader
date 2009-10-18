@@ -39,7 +39,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ddl-warez.org" }, urls = { "http://[\\w\\.]*?ddl-warez\\.org/detail\\.php\\?id=.+&cat=[\\w]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ddl-warez.org" }, urls = { "http://[\\w\\.]*?ddl-warez\\.org/detail\\.php\\?id=.+&cat=[\\w]+" }, flags = { PluginWrapper.CNL_2 })
 public class DDLWrz extends PluginForDecrypt {
     static class DDLWrz_Linkgrabber extends Thread {
         public final static int THREADFAIL = 1;
@@ -141,7 +141,7 @@ public class DDLWrz extends PluginForDecrypt {
                     passwords.add(pass);
                 }
 
-                Form form = br.getForm(1);
+                Form form = br.getFormBySubmitvalue("OK");
 
                 if (form != null && !form.getAction().contains("get_file.php") && !form.getAction().contains("goref.php")) {
 

@@ -114,7 +114,7 @@ public class MegasharesCom extends PluginForHost {
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlLink, true, -6);
         if (!dl.getConnection().isContentDisposition()) {
-            dl.getConnection().disconnect();
+            br.followConnection();
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 5 * 60 * 1000l);
         }
         dl.startDownload();

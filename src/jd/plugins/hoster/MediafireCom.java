@@ -89,6 +89,7 @@ public class MediafireCom extends PluginForHost {
                     if (!downloadLink.getStringProperty("origin", "").equalsIgnoreCase("decrypter")) {
                         downloadLink.setName(Plugin.extractFileNameFromURL(br.getRedirectLocation()));
                     }
+                    return AvailableStatus.TRUE;
                 }
 
                 break;

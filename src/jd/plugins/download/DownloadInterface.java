@@ -1852,6 +1852,7 @@ abstract public class DownloadInterface {
             linkstatus.setErrorMessage(JDL.L("system.download.errors.invalidoutputfile", "Invalid Outputfile"));
             return true;
         }
+        if (fileOutput.isDirectory()) return false;
         if (!fileOutput.getParentFile().exists()) {
             fileOutput.getParentFile().mkdirs();
         }

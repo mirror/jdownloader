@@ -459,6 +459,7 @@ public class Megauploadcom extends PluginForHost {
             }
             return;
         } catch (Exception e) {
+            logger.severe(e.toString());
             l.setAvailable(false);
         }
         return;
@@ -479,7 +480,10 @@ public class Megauploadcom extends PluginForHost {
             } else
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 25 * 60 * 1000l);
         }
-        if (downloadLink.getAvailableStatus() == AvailableStatus.FALSE) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (downloadLink.getAvailableStatus() == AvailableStatus.FALSE) {
+            logger.info("DebugInfo for maybe Wrong FileNotFound: " + br.toString());
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         return downloadLink.getAvailableStatus();
     }
 

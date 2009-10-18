@@ -26,7 +26,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filehost.tv" }, urls = { "http://[\\w\\.]*?filehost\\.tv/f/[0-9]+/[a-z0-9A-Z@.-]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filehost.tv" }, urls = { "http://[\\w\\.]*?filehost\\.tv/f/[0-9]+/.*?\\.html" }, flags = { 0 })
 public class FileHostTv extends PluginForHost {
 
     public FileHostTv(PluginWrapper wrapper) {

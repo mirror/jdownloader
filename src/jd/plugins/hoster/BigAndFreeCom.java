@@ -53,6 +53,7 @@ public class BigAndFreeCom extends PluginForHost {
         }
         this.setBrowserExclusive();
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+        br.setCookie("http://www.bigandfree.com", "geoCode", "EN");
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("The file you requested has been removed")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -70,6 +71,12 @@ public class BigAndFreeCom extends PluginForHost {
         requestFileInformation(downloadLink);
         synchronized (LOCK) {
             if (this.isAborted(downloadLink)) return;
+        }
+        if (br.containsHTML("You have exceeded your download limit")) {
+            int wait = 60;
+            String time = br.getRegex("Please wait (\\d+) Minut").getMatch(0);
+            if (time != null) wait = Integer.parseInt(time);
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait * 1000l * 60);
         }
         Form freeform = br.getFormbyProperty("name", "chosen");
         if (freeform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
@@ -123,7 +130,7 @@ public class BigAndFreeCom extends PluginForHost {
     }
 
     public int getMaxSimultanFreeDownloadNum() {
-        return 10;
+        return 1;
     }
 
     public void reset() {

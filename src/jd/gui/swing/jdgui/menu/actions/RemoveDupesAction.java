@@ -17,33 +17,24 @@
 package jd.gui.swing.jdgui.menu.actions;
 
 import java.awt.event.ActionEvent;
+import java.util.ArrayList;
 import java.util.Vector;
 
 import jd.controlling.DownloadController;
-import jd.gui.swing.jdgui.actions.ToolBarAction;
+import jd.controlling.LinkGrabberController;
+import jd.gui.swing.jdgui.actions.ThreadedAction;
+import jd.gui.swing.jdgui.views.linkgrabberview.LinkGrabberPanel;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkGrabberFilePackage;
 import jd.plugins.LinkStatus;
 
-public class RemoveDupesAction extends ToolBarAction {
+public class RemoveDupesAction extends ThreadedAction {
 
     private static final long serialVersionUID = -4068088102973973923L;
 
     public RemoveDupesAction() {
         super("action.remove_dupes", "gui.images.remove_dupes");
-    }
-
-    public void onAction(ActionEvent e) {
-        DownloadController dlc = DownloadController.getInstance();
-        Vector<DownloadLink> downloadstodelete = new Vector<DownloadLink>();
-        synchronized (dlc.getPackages()) {
-            for (FilePackage fp : dlc.getPackages()) {
-                downloadstodelete.addAll(fp.getLinksListbyStatus(LinkStatus.ERROR_ALREADYEXISTS));
-            }
-        }
-        for (DownloadLink dl : downloadstodelete) {
-            dl.getFilePackage().remove(dl);
-        }
     }
 
     @Override
@@ -52,5 +43,32 @@ public class RemoveDupesAction extends ToolBarAction {
 
     @Override
     public void initDefaults() {
+    }
+
+    @Override
+    public void threadedActionPerformed(ActionEvent e) {
+        if (!LinkGrabberPanel.getLinkGrabber().isNotVisible()) {
+            synchronized (LinkGrabberController.ControllerLock) {
+                synchronized (LinkGrabberController.getInstance().getPackages()) {
+                    ArrayList<LinkGrabberFilePackage> selected_packages = new ArrayList<LinkGrabberFilePackage>(LinkGrabberController.getInstance().getPackages());
+                    selected_packages.add(LinkGrabberController.getInstance().getFilterPackage());
+                    for (LinkGrabberFilePackage fp2 : selected_packages) {
+                        ArrayList<DownloadLink> selected_links = fp2.getLinksListbyStatus(LinkStatus.ERROR_ALREADYEXISTS);
+                        fp2.remove(selected_links);
+                    }
+                }
+            }
+        } else {
+            DownloadController dlc = DownloadController.getInstance();
+            Vector<DownloadLink> downloadstodelete = new Vector<DownloadLink>();
+            synchronized (dlc.getPackages()) {
+                for (FilePackage fp : dlc.getPackages()) {
+                    downloadstodelete.addAll(fp.getLinksListbyStatus(LinkStatus.ERROR_ALREADYEXISTS));
+                }
+            }
+            for (DownloadLink dl : downloadstodelete) {
+                dl.getFilePackage().remove(dl);
+            }
+        }
     }
 }

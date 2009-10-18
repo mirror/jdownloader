@@ -75,7 +75,7 @@ public class Zippysharecom extends PluginForHost {
         int index = -1;
         while (true) {
             index++;
-            String allreplaces = br.getRegex("ziptime.*?unescape(.*?)var").getMatch(0);
+            String allreplaces = br.getRegex("ziptime.*?unescape(.*?)(var|'|;)").getMatch(0);
             String[][] replaces = new Regex(allreplaces, "replace\\((.*?),.*?\"(.*?)\"").getMatches();
             String page = Encoding.urlDecode(br.toString(), true);
             for (String[] replace : replaces) {

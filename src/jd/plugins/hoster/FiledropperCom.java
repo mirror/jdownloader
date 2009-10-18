@@ -45,15 +45,12 @@ public class FiledropperCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("Share This Link:")) {
-            String filename = br.getRegex("File Details:.*?Filename: (.*?) <br>").getMatch(0);
-            String filesize = br.getRegex("File Details:.*?Size: (.*?), Type:.*?<br>").getMatch(0);
-            if (!(filename == null || filesize == null)) {
-                downloadLink.setName(filename);
-                downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
-                return AvailableStatus.TRUE;
-            }
-
+        String filename = br.getRegex("File Details:.*?Filename: (.*?) <br>").getMatch(0);
+        String filesize = br.getRegex("File Details:.*?Size: (.*?), Type:.*?<br>").getMatch(0);
+        if (!(filename == null || filesize == null)) {
+            downloadLink.setName(filename);
+            downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
+            return AvailableStatus.TRUE;
         }
 
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
