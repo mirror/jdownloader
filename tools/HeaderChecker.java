@@ -91,8 +91,12 @@ public class HeaderChecker {
         debug("Missing:  " + filesMissing.size());
         debug("======================================================");
         for (File file : filesMissing) {
-            System.out.println(prepareFilename(file));
-            if (FIXIT) System.out.println(fixFile(file) ? "FIXED" : "NOT FIXED");
+            System.out.print(prepareFilename(file));
+            if (FIXIT) {
+                System.out.println(fixFile(file) ? " : FIXED" : " : NOT FIXED");
+            } else {
+                System.out.println("");
+            }
         }
     }
 

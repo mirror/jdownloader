@@ -1,3 +1,19 @@
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2009  JD-Team support@jdownloader.org
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package jd.captcha.specials;
 
 import java.awt.Image;
@@ -117,23 +133,20 @@ public class ProtectItOrg {
             Letter bestLetter = null;
             for (PixelObject pixelObject : obj) {
                 if (pixelObject.getWidth() > 63 || pixelObject.getHeight() > 63) {
-                        PixelObject[] objb = pixelObject.splitAt(62);
-                        for (PixelObject pixelObject2 : objb) {
-                            if(pixelObject.getHeight() > 63)
-                            {
-                                PixelObject[] objb2 = pixelObject2.horizintalSplitAt(62);
-                                for (PixelObject pixelObject3 : objb2) {
-                                    Letter b = pixelObject3.toColoredLetter();
-                                    mainCLC.setLetterB(b);
-                                    double val = mainCLC.run();
-                                    if (val < bestVal) {
-                                        bestLetter = b;
-                                        bestVal = val;
-                                    }
+                    PixelObject[] objb = pixelObject.splitAt(62);
+                    for (PixelObject pixelObject2 : objb) {
+                        if (pixelObject.getHeight() > 63) {
+                            PixelObject[] objb2 = pixelObject2.horizintalSplitAt(62);
+                            for (PixelObject pixelObject3 : objb2) {
+                                Letter b = pixelObject3.toColoredLetter();
+                                mainCLC.setLetterB(b);
+                                double val = mainCLC.run();
+                                if (val < bestVal) {
+                                    bestLetter = b;
+                                    bestVal = val;
                                 }
                             }
-                            else
-                            {
+                        } else {
                             Letter b = pixelObject2.toColoredLetter();
                             mainCLC.setLetterB(b);
                             double val = mainCLC.run();
@@ -142,8 +155,8 @@ public class ProtectItOrg {
                                 bestLetter = b;
                                 bestVal = val;
                             }
-                            }
                         }
+                    }
                 } else {
                     Letter b = pixelObject.toColoredLetter();
                     mainCLC.setLetterB(b);
@@ -162,11 +175,11 @@ public class ProtectItOrg {
             Letter[] ret = new Letter[tx.length];
             for (int i = 0; i < tx.length; i++) {
                 Letter re = new Letter();
-                re.setDecodedValue(""+tx[i]);
+                re.setDecodedValue("" + tx[i]);
                 LetterComperator let1 = new LetterComperator(re, re);
                 let1.setValityPercent(0);
-                re.detected=let1;
-                ret[i]=re;
+                re.detected = let1;
+                ret[i] = re;
             }
             return ret;
         }
@@ -179,6 +192,7 @@ public class ProtectItOrg {
         // }
         return null;
     }
+
     public static Letter[] letterFilter(Letter[] org, JAntiCaptcha jac) {
         return org;
     }

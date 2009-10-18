@@ -1,3 +1,19 @@
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2009  JD-Team support@jdownloader.org
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package jd.captcha.easy;
 
 import java.awt.Image;
@@ -27,7 +43,8 @@ public class BackGroundImageManager {
     private Captcha captchaImage;
     public int zoom;
     protected int[][] backupGrid;
-    private String fileName="bgimages.xml";
+    private String fileName = "bgimages.xml";
+
     private void autoSetZoomFaktor() {
         if (captchaImage.getWidth() > 200 || captchaImage.getHeight() > 100)
             zoom = 100;
@@ -70,8 +87,7 @@ public class BackGroundImageManager {
         methode = new EasyMethodFile(captchaImage.owner.getResourceFile("jacinfo.xml").getParentFile());
         load();
     }
-    
-    
+
     /**
      * gibt ein um den Zoomfaktor Scalliertes Image zurück
      * 
@@ -124,11 +140,12 @@ public class BackGroundImageManager {
     public void setCaptchaImage(Captcha captchaImage) {
         this.captchaImage = captchaImage;
     }
-    public void setBackGroundImageListFileName(String name)
-    {
-        fileName=name;
+
+    public void setBackGroundImageListFileName(String name) {
+        fileName = name;
         load();
     }
+
     /**
      * gibt die Xmldatei zurück in der die Informationen der Huntergrundbilder
      * gespeichert sind
@@ -144,11 +161,11 @@ public class BackGroundImageManager {
      */
     @SuppressWarnings("unchecked")
     private void load() {
-            File file = getBgImagesXmlFile();
-            if (file.exists())
-                backgroundList = (Vector<BackGroundImage>) JDIO.loadObject(null, file, true);
-            else
-                backgroundList = new Vector<BackGroundImage>();
+        File file = getBgImagesXmlFile();
+        if (file.exists())
+            backgroundList = (Vector<BackGroundImage>) JDIO.loadObject(null, file, true);
+        else
+            backgroundList = new Vector<BackGroundImage>();
     }
 
     /**

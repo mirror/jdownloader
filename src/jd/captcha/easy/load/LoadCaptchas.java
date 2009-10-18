@@ -1,3 +1,19 @@
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2009  JD-Team support@jdownloader.org
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package jd.captcha.easy.load;
 
 import java.awt.GridLayout;
@@ -335,8 +351,7 @@ public class LoadCaptchas {
         JSpinner sm = new GuiRunnable<JSpinner>() {
             public JSpinner runSave() {
                 p.add(new JLabel(JDL.L("easycaptcha.loadcaptchas.howmuch", "How much captchas you need") + ":"));
-                if(loadImage!=null)
-                    tfl.setText(loadImage.baseUrl);
+                if (loadImage != null) tfl.setText(loadImage.baseUrl);
                 return new JSpinner(new SpinnerNumberModel(100, 1, 4000, 1));
             }
         }.getReturnValue();
@@ -438,7 +453,7 @@ public class LoadCaptchas {
         dialog.dispose();
         LoadInfo retLI = new LoadInfo(link, menge);
         retLI.followLinks = followLinks.isSelected();
-        this.threaded=threadedCheck.isSelected();
+        this.threaded = threadedCheck.isSelected();
         retLI.directLoad = loadDirect.isSelected();
         return retLI;
 
@@ -485,32 +500,29 @@ public class LoadCaptchas {
             pd.setAlwaysOnTop(true);
             Runnable runnable = new Runnable() {
                 public void run() {
-                    if(!threaded)
-                    {
-                    for (int k = 0; k < loadinfo.menge; k++) {
-                        try {
+                    if (!threaded) {
+                        for (int k = 0; k < loadinfo.menge; k++) {
+                            try {
 
-                            File f2 = new File(dir + System.currentTimeMillis() + imageType);
-                            br.getDownload(f2, loadinfo.link);
-                            final int c = k;
-                            new GuiRunnable<Object>() {
-                                public Object runSave() {
-                                    pd.setValue(c);
-                                    return null;
-                                }
-                            }.waitForEDT();
+                                File f2 = new File(dir + System.currentTimeMillis() + imageType);
+                                br.getDownload(f2, loadinfo.link);
+                                final int c = k;
+                                new GuiRunnable<Object>() {
+                                    public Object runSave() {
+                                        pd.setValue(c);
+                                        return null;
+                                    }
+                                }.waitForEDT();
 
-                        } catch (Exception ev) {
-                            ev.printStackTrace();
+                            } catch (Exception ev) {
+                                ev.printStackTrace();
+                            }
+
                         }
-
-                    }
-                    }
-                    else
-                    {
+                    } else {
                         Thread[] ths = new Thread[loadinfo.menge];
                         for (int k = 0; k < loadinfo.menge; k++) {
-                            ths[k]=new Thread(new Runnable() {
+                            ths[k] = new Thread(new Runnable() {
                                 public void run() {
                                     try {
 
@@ -530,15 +542,14 @@ public class LoadCaptchas {
                         }
                         int k = 0;
                         for (Thread thread : ths) {
-                            while(thread.isAlive())
-                            {
+                            while (thread.isAlive()) {
                                 synchronized (thread) {
-                                 try {
-                                    thread.wait(30000);
-                                } catch (InterruptedException e) {
-                                    // TODO Auto-generated catch block
-                                    e.printStackTrace();
-                                }   
+                                    try {
+                                        thread.wait(30000);
+                                    } catch (InterruptedException e) {
+                                        // TODO Auto-generated catch block
+                                        e.printStackTrace();
+                                    }
                                 }
                             }
                             final int c = k;
@@ -722,11 +733,10 @@ public class LoadCaptchas {
         final Runnable runnable = new Runnable() {
             public void run() {
                 try {
-                    if(images!=null)
-                    {
-                    for (LoadImage loadImage : images) {
-                        if (!loadImage.file.equals(selectedImage.file)) loadImage.file.delete();
-                    }
+                    if (images != null) {
+                        for (LoadImage loadImage : images) {
+                            if (!loadImage.file.equals(selectedImage.file)) loadImage.file.delete();
+                        }
                     }
                     boolean direct = selectedImage.directCaptchaLoad(dir);
                     LoadImage.save(selectedImage, host);
@@ -737,8 +747,7 @@ public class LoadCaptchas {
                         }
                     }.waitForEDT();
                     if (direct && loadinfo.directLoad) {
-                        if(!threaded)
-                        {
+                        if (!threaded) {
                             for (int k = 1; k < loadinfo.menge - 1; k++) {
                                 selectedImage.directCaptchaLoad(dir);
                                 final int d = k;
@@ -749,12 +758,10 @@ public class LoadCaptchas {
                                     }
                                 }.waitForEDT();
                             }
-                        }
-                        else
-                        {
+                        } else {
                             Thread[] ths = new Thread[loadinfo.menge];
                             for (int k = 1; k < loadinfo.menge - 1; k++) {
-                                ths[k]=new Thread(new Runnable() {
+                                ths[k] = new Thread(new Runnable() {
                                     public void run() {
                                         try {
                                             selectedImage.directCaptchaLoad(dir);
@@ -772,15 +779,14 @@ public class LoadCaptchas {
                             }
                             int k = 0;
                             for (Thread thread : ths) {
-                                while(thread!=null&&thread.isAlive())
-                                {
+                                while (thread != null && thread.isAlive()) {
                                     synchronized (thread) {
-                                     try {
-                                        thread.wait(30000);
-                                    } catch (InterruptedException e) {
-                                        // TODO Auto-generated catch block
-                                        e.printStackTrace();
-                                    }   
+                                        try {
+                                            thread.wait(30000);
+                                        } catch (InterruptedException e) {
+                                            // TODO Auto-generated catch block
+                                            e.printStackTrace();
+                                        }
                                     }
                                 }
                                 final int c = k;
@@ -797,8 +803,7 @@ public class LoadCaptchas {
                     } else {
                         selectedImage.file.delete();
 
-                        if(!threaded)
-                        {
+                        if (!threaded) {
                             for (int k = 1; k < loadinfo.menge - 1; k++) {
                                 selectedImage.load(host);
                                 final int d = k;
@@ -810,12 +815,10 @@ public class LoadCaptchas {
                                 }.waitForEDT();
 
                             }
-                        }
-                        else
-                        {
+                        } else {
                             Thread[] ths = new Thread[loadinfo.menge];
                             for (int k = 1; k < loadinfo.menge - 1; k++) {
-                                ths[k]=new Thread(new Runnable() {
+                                ths[k] = new Thread(new Runnable() {
                                     public void run() {
                                         try {
                                             selectedImage.load(host);
@@ -833,15 +836,14 @@ public class LoadCaptchas {
                             }
                             int k = 0;
                             for (Thread thread : ths) {
-                                while(thread!=null&&thread.isAlive())
-                                {
+                                while (thread != null && thread.isAlive()) {
                                     synchronized (thread) {
-                                     try {
-                                        thread.wait(30000);
-                                    } catch (InterruptedException e) {
-                                        // TODO Auto-generated catch block
-                                        e.printStackTrace();
-                                    }   
+                                        try {
+                                            thread.wait(30000);
+                                        } catch (InterruptedException e) {
+                                            // TODO Auto-generated catch block
+                                            e.printStackTrace();
+                                        }
                                     }
                                 }
                                 final int c = k;

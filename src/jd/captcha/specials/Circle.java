@@ -1,3 +1,19 @@
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2009  JD-Team support@jdownloader.org
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package jd.captcha.specials;
 
 import java.util.ArrayList;
@@ -69,7 +85,8 @@ public class Circle {
         if (!b) n.add(x, y, c);
         return b ? 1 : 0;
     }
-    //Midpoint circle algorithm
+
+    // Midpoint circle algorithm
     private int circle(int cx, int cy, int radius, PixelObject n) {
         int error = -radius;
         int x = radius;
@@ -92,7 +109,8 @@ public class Circle {
         }
         return ret;
     }
-    //Midpoint circle algorithm
+
+    // Midpoint circle algorithm
     private int plot8points(int cx, int cy, int x, int y, PixelObject n) {
         int ret = 0;
         ret += plot4points(cx, cy, x, y, n);
@@ -101,7 +119,8 @@ public class Circle {
         }
         return ret;
     }
-    //Midpoint circle algorithm
+
+    // Midpoint circle algorithm
     private int plot4points(int cx, int cy, int x, int y, PixelObject n) {
         int ret = 0;
         ret += checkBackground(cx + x, cy + y, n);
@@ -112,8 +131,9 @@ public class Circle {
     }
 
     /**
-     * returns the Circles Bounds on the Captcha TODO
-     * geht nur bei x entlang sollte noch bei y gemacht werden um bessere ergebnisse zu bekommen
+     * returns the Circles Bounds on the Captcha TODO geht nur bei x entlang
+     * sollte noch bei y gemacht werden um bessere ergebnisse zu bekommen
+     * 
      * @param pixelObject
      * @param captcha
      * @return
@@ -236,7 +256,7 @@ public class Circle {
         objectArray = obnew;
         return obnew;
     }
-    
+
     public Letter[] getOpenCirclePositionAsLetters() {
         openCircle = getOpenCircle();
         if (openCircle == null) return null;
@@ -244,8 +264,8 @@ public class Circle {
         int y = openCircle.getLocation()[1] + (openCircle.getHeight() / 2);
         return getPostionLetters(x, y);
     }
-    public static Letter[] getPostionLetters(int x, int y)
-    {
+
+    public static Letter[] getPostionLetters(int x, int y) {
         char[] tx = (x + ":" + y).toCharArray();
         Letter[] ret = new Letter[tx.length];
         for (int i = 0; i < ret.length; i++) {
@@ -258,6 +278,7 @@ public class Circle {
         }
         return ret;
     }
+
     /**
      * returns the open circle
      * 

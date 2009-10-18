@@ -1,3 +1,19 @@
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2009  JD-Team support@jdownloader.org
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package jd.captcha.specials;
 
 import jd.captcha.pixelgrid.Captcha;
@@ -6,13 +22,14 @@ import jd.captcha.pixelgrid.PixelGrid;
 import jd.nutils.Colors;
 
 public class NtLdN {
-    static boolean isRgb(int color)
-    {
-        return Colors.getRGBDistance(color)>70;
+    static boolean isRgb(int color) {
+        return Colors.getRGBDistance(color) > 70;
     }
+
     /**
-     * overwrite the colored dots in digits with black dots
-     * die bunten punkte in den Zahlen werden mit schwarzen punkten ersetzt
+     * overwrite the colored dots in digits with black dots die bunten punkte in
+     * den Zahlen werden mit schwarzen punkten ersetzt
+     * 
      * @param captcha
      */
     static void setDotsInDigits(Captcha captcha) {

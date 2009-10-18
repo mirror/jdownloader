@@ -1,3 +1,19 @@
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2009  JD-Team support@jdownloader.org
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package jd.captcha;
 
 import java.util.Arrays;
@@ -14,9 +30,9 @@ public class LevenShteinLetterComperator {
     public boolean detectHorizonalOffset = false;
 
     public void run(Letter letter) {
-        if(letterDB.length==0||letter.getWidth()==0||letter.getHeight()==0)return;
+        if (letterDB.length == 0 || letter.getWidth() == 0 || letter.getHeight() == 0) return;
         boolean[][][] b = getBooleanArrays(letter);
-        
+
         // dimension/=b[0].length;
         // System.out.println(this.costs+":"+dimension);
 
@@ -26,15 +42,16 @@ public class LevenShteinLetterComperator {
         for (int i = 0; i < letterDB.length; i++) {
             if (onlySameWidth && jac.letterDB.get(i).getWidth() != letter.getWidth()) continue;
             int[] dist = getLevenshteinDistance(b, letterDB[i], bestdist);
-            if (dist!=null&&bestdist > dist[0]) {
+            if (dist != null && bestdist > dist[0]) {
                 bestOffset = dist;
-                bestdist=dist[0];
+                bestdist = dist[0];
                 best = i;
             }
         }
-        if(bestOffset==null)return;
+        if (bestOffset == null) return;
         Letter bestLetter = jac.letterDB.get(best);
-//        LetterComperator r = new LetterComperator(letter,bestBiggest.detected.getB() );
+        // LetterComperator r = new
+        // LetterComperator(letter,bestBiggest.detected.getB() );
 
         letter.detected = new LetterComperator(letter, bestLetter);
         letter.detected.setOffset(new int[] { bestOffset[1], bestOffset[2] });
@@ -89,7 +106,7 @@ public class LevenShteinLetterComperator {
     }
 
     private boolean[][][] getBooleanArrays(Letter letter) {
-        if(letter.getWidth()==0||letter.getWidth()==0)return null;
+        if (letter.getWidth() == 0 || letter.getWidth() == 0) return null;
         boolean[][] leth1 = new boolean[letter.getWidth()][letter.getHeight()];
         int avg = letter.getAverage();
         for (int x = 0; x < leth1.length; x++) {
@@ -170,7 +187,7 @@ public class LevenShteinLetterComperator {
 
     private int[] getLevenshteinDistance(boolean[][][] ba, boolean[][][] bb, int best) {
         int res = 0;
-        if(ba==null||bb==null)return null;
+        if (ba == null || bb == null) return null;
         boolean[][] bba1 = ba[0];
         boolean[][] bbb1 = bb[0];
         boolean[][] bba2 = ba[1];
