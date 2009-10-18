@@ -16,6 +16,8 @@
 
 package jd.plugins.optional.langfileeditor;
 
+import jd.parser.Regex;
+
 public class KeyInfo implements Comparable<KeyInfo> {
 
     private final String key;
@@ -25,6 +27,10 @@ public class KeyInfo implements Comparable<KeyInfo> {
     private String language = "";
 
     private String english = "";
+
+    private int sourceParameterCount = -1;
+
+    private int languageParameterCount = -1;
 
     public KeyInfo(String key, String source, String language, String english) {
         this.key = key;
@@ -54,12 +60,22 @@ public class KeyInfo implements Comparable<KeyInfo> {
         return this.english;
     }
 
+    public boolean hasWrongParameterCount() {
+        return this.sourceParameterCount != -1 && this.languageParameterCount != -1 && this.sourceParameterCount != this.languageParameterCount;
+    }
+
     public void setLanguage(String language) {
-        if (language != null) this.language = language;
+        if (language != null) {
+            this.language = language;
+            this.languageParameterCount = language.equals("") ? -1 : new Regex(language, "\\%s").count();
+        }
     }
 
     public void setSource(String source) {
-        if (source != null) this.source = source;
+        if (source != null) {
+            this.source = source;
+            this.sourceParameterCount = source.equals("") ? -1 : new Regex(source, "\\%s").count();
+        }
     }
 
     public void setEnglish(String english) {
@@ -67,11 +83,11 @@ public class KeyInfo implements Comparable<KeyInfo> {
     }
 
     public boolean isMissing() {
-        return this.getLanguage().equals("");
+        return this.getLanguage().equals("") && !this.getSource().equals("");
     }
 
     public boolean isOld() {
-        return this.getSource().equals("");
+        return !this.getLanguage().equals("") && this.getSource().equals("");
     }
 
     public int compareTo(KeyInfo o) {

@@ -17,7 +17,6 @@
 package jd.plugins.optional.langfileeditor;
 
 import java.awt.Color;
-import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -58,6 +57,7 @@ import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.components.pieapi.ChartAPIEntity;
 import jd.gui.swing.components.pieapi.PieChartAPI;
+import jd.gui.swing.components.table.JDRowHighlighter;
 import jd.gui.swing.components.table.JDTable;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.nutils.JDFlags;
@@ -70,9 +70,6 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
-import org.jdesktop.swingx.decorator.ColorHighlighter;
-import org.jdesktop.swingx.decorator.ComponentAdapter;
-import org.jdesktop.swingx.decorator.HighlightPredicate;
 import org.jdesktop.swingx.search.SearchFactory;
 import org.tmatesoft.svn.core.SVNException;
 import org.tmatesoft.svn.core.wc.SVNInfo;
@@ -115,9 +112,9 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
     private boolean changed = false;
     private final File dirLanguages, dirWorkingCopy;
 
-    private static final Color colorDone = new Color(204, 255, 170);
-    private static final Color colorMissing = new Color(221, 34, 34);
-    private static final Color colorOld = Color.ORANGE;
+    public static final Color COLOR_DONE = new Color(204, 255, 170);
+    public static final Color COLOR_MISSING = new Color(221, 34, 34);
+    public static final Color COLOR_OLD = Color.ORANGE;
 
     private SrcParser sourceParser;
 
@@ -150,13 +147,28 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
         table.addMouseListener(this);
         table.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         table.setAutoStartEditOnKeyStroke(false);
-        table.addHighlighter(new ColorHighlighter(new MissingPredicate(), colorMissing, null));
-        table.addHighlighter(new ColorHighlighter(new OldPredicate(), colorOld, null));
+        table.addJDRowHighlighter(new JDRowHighlighter(COLOR_MISSING) {
+
+            @Override
+            public boolean doHighlight(Object obj) {
+                return ((KeyInfo) obj).isMissing();
+            }
+
+        });
+
+        table.addJDRowHighlighter(new JDRowHighlighter(COLOR_OLD) {
+
+            @Override
+            public boolean doHighlight(Object obj) {
+                return ((KeyInfo) obj).isOld();
+            }
+
+        });
 
         keyChart = new PieChartAPI("", 350, 50);
-        keyChart.addEntity(entDone = new ChartAPIEntity(JDL.L(LOCALE_PREFIX + "keychart.done", "Done"), 0, colorDone));
-        keyChart.addEntity(entMissing = new ChartAPIEntity(JDL.L(LOCALE_PREFIX + "keychart.missing", "Missing"), 0, colorMissing));
-        keyChart.addEntity(entOld = new ChartAPIEntity(JDL.L(LOCALE_PREFIX + "keychart.old", "Old"), 0, colorOld));
+        keyChart.addEntity(entDone = new ChartAPIEntity(JDL.L(LOCALE_PREFIX + "keychart.done", "Done"), 0, COLOR_DONE));
+        keyChart.addEntity(entMissing = new ChartAPIEntity(JDL.L(LOCALE_PREFIX + "keychart.missing", "Missing"), 0, COLOR_MISSING));
+        keyChart.addEntity(entOld = new ChartAPIEntity(JDL.L(LOCALE_PREFIX + "keychart.old", "Old"), 0, COLOR_OLD));
 
         this.setLayout(new MigLayout("wrap 3", "[grow, fill]", "[][grow, fill][]"));
         warning = new JButton(JDL.L(LOCALE_PREFIX + "account.warning", "SVN Account missing. Click here to read more."));
@@ -384,14 +396,18 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
 
             int old = Integer.valueOf(entOld.getData());
             if (old > 0 && JDFlags.hasAllFlags(UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN | UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, JDL.L(LOCALE_PREFIX + "deleteOld.title", "Delete Old Key(s)?"), JDL.LF(LOCALE_PREFIX + "deleteOld.message", "Delete all %s old Key(s)?", old)), UserIO.RETURN_OK)) {
-                for (int i = data.size() - 1; i >= 0; --i) {
-                    if (data.get(i).isOld()) data.remove(i);
-                }
-                this.dataChanged();
+                deleteOldKeys();
             }
 
         }
 
+    }
+
+    private void deleteOldKeys() {
+        for (int i = data.size() - 1; i >= 0; --i) {
+            if (data.get(i).isOld()) data.remove(i);
+        }
+        this.dataChanged();
     }
 
     private void startNewInstance(String[] strings) {
@@ -507,6 +523,11 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
         StringBuilder sb = new StringBuilder();
 
         Collections.sort(data);
+
+        int old = Integer.valueOf(entOld.getData());
+        if (old > 0 && JDFlags.hasAllFlags(UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN | UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_OK, JDL.L(LOCALE_PREFIX + "deleteOld.title", "Delete Old Key(s)?"), JDL.LF(LOCALE_PREFIX + "deleteOld.message2", "There are still %s old keys in the LanguageFile. Delete them before saving?", old)), UserIO.RETURN_OK)) {
+            deleteOldKeys();
+        }
 
         for (KeyInfo entry : data) {
             if (!entry.isMissing()) sb.append(entry.toString()).append('\n');
@@ -762,18 +783,6 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
     }
 
     public void mouseReleased(MouseEvent e) {
-    }
-
-    private class MissingPredicate implements HighlightPredicate {
-        public boolean isHighlighted(Component arg0, ComponentAdapter arg1) {
-            return (data.get(arg1.row).getLanguage().equals(""));
-        }
-    }
-
-    private class OldPredicate implements HighlightPredicate {
-        public boolean isHighlighted(Component arg0, ComponentAdapter arg1) {
-            return (data.get(arg1.row).getSource().equals(""));
-        }
     }
 
     @Override

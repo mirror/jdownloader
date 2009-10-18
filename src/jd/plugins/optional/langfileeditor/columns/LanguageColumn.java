@@ -25,6 +25,7 @@ import javax.swing.JTextField;
 import jd.gui.swing.components.table.JDTableColumn;
 import jd.gui.swing.components.table.JDTableModel;
 import jd.plugins.optional.langfileeditor.KeyInfo;
+import jd.plugins.optional.langfileeditor.LFEGui;
 import jd.plugins.optional.langfileeditor.LFETableModel;
 
 import org.jdesktop.swingx.renderer.JRendererLabel;
@@ -79,7 +80,7 @@ public class LanguageColumn extends JDTableColumn implements ActionListener {
 
     @Override
     public void setValue(Object value, Object object) {
-        if (((KeyInfo) object).getLanguage().equals((String) value)) return;
+        if (((KeyInfo) object).getLanguage().equals(value.toString())) return;
         ((KeyInfo) object).setLanguage((String) value);
         ((LFETableModel) getJDTableModel()).getGui().dataChanged();
     }
@@ -87,6 +88,13 @@ public class LanguageColumn extends JDTableColumn implements ActionListener {
     @Override
     public void sort(Object obj, boolean sortingToggle) {
         ((LFETableModel) getJDTableModel()).setSorting(LFETableModel.SORT_LANGUAGE, sortingToggle);
+    }
+
+    @Override
+    public void postprocessCell(Component c, JDTableModel table, Object value, boolean isSelected, int row, int column) {
+        if (((KeyInfo) value).hasWrongParameterCount()) {
+            c.setBackground(LFEGui.COLOR_MISSING);
+        }
     }
 
     public void actionPerformed(ActionEvent e) {
