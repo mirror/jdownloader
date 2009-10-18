@@ -67,10 +67,6 @@ public class JACController {
         } else {
             chooserText = JDL.L("showcaptcha.choose.file", "Wählen sie eine Bilddatei aus");
         }
-
-        JDL.L("showcaptcha.choose.tester3",
-
-        "Wählen sie eine Bilddatei aus;}");
         frame.add(new JLabel(JDL.L("train.method", "Wählen sie eine Methode aus:")));
         frame.add(methods, "growx, spanx");
         frame.add(new JLabel(chooserText));
