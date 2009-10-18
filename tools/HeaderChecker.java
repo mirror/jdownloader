@@ -22,7 +22,7 @@ public class HeaderChecker {
     private static final boolean DEBUG = true;
     private static final boolean FIXIT = false;
 
-    private static final String[] IGNORE_NAMES = new String[] { "junique", "jaxe", "template", "ShortCuts", "DiffMatchPatch", "Tester", "Base64", "XTrustProvider", "HTMLEntities" };
+    private static final String[] IGNORE_NAMES = new String[] { "junique", "jaxe", "template", "ShortCuts", "DiffMatchPatch", "Tester", "Base64", "XTrustProvider", "HTMLEntities", "Win32" };
 
     private static String LICENSE;
     private static String LICENSE_PREFIX;

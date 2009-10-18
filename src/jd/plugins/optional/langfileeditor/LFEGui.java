@@ -366,15 +366,15 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
 
             for (int row : getSelectedRows()) {
                 data.get(row).setLanguage(data.get(row).getSource());
-                this.dataChanged();
             }
+            this.dataChanged();
 
         } else if (e.getSource() == mnuClear || e.getSource() == mnuContextClear) {
 
             for (int row : getSelectedRows()) {
                 data.get(row).setLanguage("");
-                this.dataChanged();
             }
+            this.dataChanged();
 
         } else if (e.getSource() == mnuOpenSearchDialog) {
 

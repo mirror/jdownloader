@@ -1,3 +1,19 @@
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2009  JD-Team support@jdownloader.org
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package jd.plugins.optional.langfileeditor;
 
 public class KeyInfo implements Comparable<KeyInfo> {
@@ -8,12 +24,12 @@ public class KeyInfo implements Comparable<KeyInfo> {
 
     private String language = "";
 
-    private String enValue;
+    private String english = "";
 
-    public KeyInfo(String key, String source, String language, String enValue) {
+    public KeyInfo(String key, String source, String language, String english) {
         this.key = key;
         this.setSource(source);
-        this.enValue = enValue;
+        this.setEnglish(english);
         this.setLanguage(language);
     }
 
@@ -29,12 +45,25 @@ public class KeyInfo implements Comparable<KeyInfo> {
         return this.source;
     }
 
+    /**
+     * Returns the english value
+     * 
+     * @return
+     */
+    public String getEnglish() {
+        return this.english;
+    }
+
     public void setLanguage(String language) {
         if (language != null) this.language = language;
     }
 
     public void setSource(String source) {
         if (source != null) this.source = source;
+    }
+
+    public void setEnglish(String english) {
+        if (english != null) this.english = english;
     }
 
     public boolean isMissing() {
@@ -52,15 +81,6 @@ public class KeyInfo implements Comparable<KeyInfo> {
     @Override
     public String toString() {
         return this.getKey() + " = " + this.getLanguage();
-    }
-
-    /**
-     * Returns the english value
-     * 
-     * @return
-     */
-    public String getEnglish() {
-        return enValue;
     }
 
 }
