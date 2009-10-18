@@ -31,6 +31,7 @@ import jd.utils.locale.JDL;
 
 class LinkGrabberFilePackageBroadcaster extends JDBroadcaster<LinkGrabberFilePackageListener, LinkGrabberFilePackageEvent> {
 
+    @Override
     protected void fireEvent(LinkGrabberFilePackageListener listener, LinkGrabberFilePackageEvent event) {
         listener.handle_LinkGrabberFilePackageEvent(event);
     }
@@ -342,6 +343,10 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
 
     public void clear() {
         this.setDownloadLinks(new ArrayList<DownloadLink>());
+    }
+
+    public boolean isEmpty() {
+        return getDownloadLinks().isEmpty();
     }
 
     public void setDownloadLinks(ArrayList<DownloadLink> downloadLinks) {

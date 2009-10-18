@@ -974,7 +974,7 @@ public class JDChat extends PluginOptional implements ControlListener {
             public void stateChanged(ChangeEvent e) {
                 tabbedPane.setForegroundAt(tabbedPane.getSelectedIndex(), Color.black);
             }
-            
+
         });
         textField = new JTextField();
         textField.setFocusTraversalKeys(KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS, Collections.EMPTY_SET);
@@ -1324,14 +1324,14 @@ public class JDChat extends PluginOptional implements ControlListener {
     public void addPMS(String user) {
         user = user.trim();
         if (user.equals(conn.getNick().trim())) return;
-        pms.put(user.trim().toLowerCase(), new JDChatPMS(user.trim()));
-        tabbedPane.add(user.trim(), pms.get(user.trim().toLowerCase()).getScrollPane());
+        pms.put(user.toLowerCase(), new JDChatPMS(user));
+        tabbedPane.add(user, pms.get(user.toLowerCase()).getScrollPane());
     }
 
     public void renamePMS(String userOld, String userNew) {
         pms.put(userNew.trim().toLowerCase(), pms.get(userOld.trim().toLowerCase()));
         for (int x = 0; x < tabbedPane.getComponentCount(); x++) {
-            if (tabbedPane.getTitleAt(x).toLowerCase().equals(userOld.toLowerCase())) {
+            if (tabbedPane.getTitleAt(x).equalsIgnoreCase(userOld)) {
                 tabbedPane.remove(x);
                 break;
             }

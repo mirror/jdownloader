@@ -152,9 +152,6 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
     public void initActions() {
         new ThreadedAction("action.linkgrabber.clearlist", "gui.images.clear") {
 
-            /**
-             * 
-             */
             private static final long serialVersionUID = -4407938288408350792L;
 
             @Override
@@ -168,6 +165,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
 
             @Override
             public void threadedActionPerformed(ActionEvent e) {
+                if (LGINSTANCE.getPackages().isEmpty() && LGINSTANCE.getFilterPackage().isEmpty()) return;
                 if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_COUNTDOWN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, JDL.L("gui.linkgrabberv2.lg.clear.ask", "Clear linkgrabber list?")), UserIO.RETURN_OK)) {
                     synchronized (LinkGrabberController.ControllerLock) {
                         synchronized (LGINSTANCE.getPackages()) {
@@ -186,9 +184,6 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
         };
         new ThreadedAction("action.linkgrabber.addall", "gui.images.add_all") {
 
-            /**
-             * 
-             */
             private static final long serialVersionUID = 6181260839200699153L;
 
             @Override
