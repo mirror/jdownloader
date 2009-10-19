@@ -140,7 +140,7 @@ public class Odsiebiecom extends PluginForHost {
                 int i = 0;
                 Browser brc = br.cloneBrowser();
                 while (capform != null) {
-                    String pagepiece = br.getRegex("<img src=\"(.*?)</form>").getMatch(0);
+                    String pagepiece = br.getRegex("<img src.*?\"(.*?)</form>").getMatch(0);
                     if (pagepiece == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
                     String[] captchalinks = HTMLParser.getHttpLinks(pagepiece, "");
                     if (captchalinks == null || captchalinks.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);

@@ -130,7 +130,10 @@ public class Freaksharenet extends PluginForHost {
         requestFileInformation(downloadLink);
         if (br.containsHTML("You can Download only 1 File in")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1001);
         Form form = br.getForm(1);
-        sleep(50 * 1000l, downloadLink);
+        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        // waittime
+        int tt = Integer.parseInt(br.getRegex("var time = (\\d+).[0-9];").getMatch(0));
+        sleep(tt * 1001l, downloadLink);
         br.submitForm(form);
         form = br.getForm(0);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, false, 1);
