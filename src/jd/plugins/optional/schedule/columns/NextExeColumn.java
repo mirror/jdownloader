@@ -76,6 +76,10 @@ public class NextExeColumn extends JDTableColumn {
                     jlr.setText(JDL.L("jd.plugins.optional.schedule.wait", "wait a moment"));
                 }
             } else {
+                /*
+                 * we will not show secs, so show 1 min left
+                 */
+                if (nexttime < 60000) nexttime = 60000;
                 jlr.setText(Formatter.formatSeconds(nexttime / 1000, false));
             }
         }

@@ -26,6 +26,7 @@ import jd.nutils.FtpListener;
 import jd.nutils.JDHash;
 import jd.nutils.SimpleFTP;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -105,9 +106,14 @@ public class Ftp extends PluginForHost {
             Chunk ch = dl.new Chunk(0, 0, null, null);
             ch.setInProgress(true);
             dl.getChunks().add(ch);
+            String name = new Regex(ftpurl, ".*/(.+)").getMatch(0);
+            if (name == null) {
+                logger.severe("could not get filename from ftpurl");
+                name = downloadLink.getName();
+            }
             downloadLink.getLinkStatus().addStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
             try {
-                ftp.download(downloadLink.getName(), tmp = new File(downloadLink.getFileOutput() + ".part"));
+                ftp.download(name, tmp = new File(downloadLink.getFileOutput() + ".part"));
             } finally {
                 downloadLink.getLinkStatus().removeStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
                 downloadLink.setDownloadInstance(null);

@@ -330,7 +330,7 @@ public class AddGui extends JPanel implements ActionListener, ChangeListener, Do
             } else if (optSpecific.isSelected()) {
                 act.setRepeat(((Integer) repeathour.getValue() * 60) + (Integer) repeatminute.getValue());
             }
-
+            act.setAlreadyHandled(false);
             if (edit) {
                 gui.updateActions(this);
             } else {
