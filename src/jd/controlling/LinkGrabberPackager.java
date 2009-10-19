@@ -34,7 +34,7 @@ public class LinkGrabberPackager {
     public static final Pattern pat8 = Pattern.compile("(?is).*\\.7z\\.[\\d]+$", Pattern.CASE_INSENSITIVE);
     public static final Pattern pat9 = Pattern.compile("(.*)\\.a.$", Pattern.CASE_INSENSITIVE);
 
-    public static final Pattern pat10 = Pattern.compile("(.*)\\.[_a-z]{3}(\\.|$)");
+    public static final Pattern pat10 = Pattern.compile("(.*)\\._((_[a-z]{1})|([a-z]{2}))(\\.|$)");
     public static final Pattern pat11 = Pattern.compile("(.*)(\\.|_|-)[\\d]+($|" + HTTPAllgemein.ENDINGS + "$)", Pattern.CASE_INSENSITIVE);
 
     public static final Pattern pat12 = Pattern.compile("(CD\\d+)", Pattern.CASE_INSENSITIVE);
