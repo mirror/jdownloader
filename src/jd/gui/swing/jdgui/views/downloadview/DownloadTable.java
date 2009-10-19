@@ -24,7 +24,6 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
-import java.awt.event.MouseMotionListener;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -81,7 +80,7 @@ class PropMenuItem extends JMenuItem implements ActionListener {
     }
 }
 
-public class DownloadTable extends JDTable implements MouseListener, MouseMotionListener, KeyListener {
+public class DownloadTable extends JDTable implements MouseListener, KeyListener {
 
     public static final String PROPERTY_EXPANDED = "expanded";
     public final static byte EXPCOL_TOP = 0;
@@ -101,10 +100,7 @@ public class DownloadTable extends JDTable implements MouseListener, MouseMotion
         this.panel = panel;
         addMouseListener(this);
         addKeyListener(this);
-        addMouseMotionListener(this);
         if (JDUtilities.getJavaVersion() >= 1.6) {
-            // setDropMode(DropMode.ON_OR_INSERT_ROWS); /*muss noch geschaut
-            // werden wie man das genau macht*/
             setDropMode(DropMode.USE_SELECTION);
         }
         setDragEnabled(true);
@@ -120,6 +116,7 @@ public class DownloadTable extends JDTable implements MouseListener, MouseMotion
         propItem = new PropMenuItem(panel);
     }
 
+    @Override
     protected boolean processKeyBinding(KeyStroke ks, KeyEvent e, int condition, boolean pressed) {
         boolean ret = super.processKeyBinding(ks, e, condition, pressed);
         if (getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).get(ks) != null) { return false; }
@@ -169,6 +166,7 @@ public class DownloadTable extends JDTable implements MouseListener, MouseMotion
     public void fireTableChanged(final int id, final ArrayList<Object> objs) {
         new GuiRunnable<Object>() {
             // @Override
+            @Override
             public Object runSave() {
                 final Rectangle viewRect = panel.getScrollPane().getViewport().getViewRect();
                 int first = rowAtPoint(new Point(0, viewRect.y));
@@ -267,16 +265,10 @@ public class DownloadTable extends JDTable implements MouseListener, MouseMotion
     public void mouseClicked(MouseEvent e) {
     }
 
-    public void mouseDragged(MouseEvent e) {
-    }
-
     public void mouseEntered(MouseEvent e) {
     }
 
     public void mouseExited(MouseEvent e) {
-    }
-
-    public void mouseMoved(MouseEvent e) {
     }
 
     public void mousePressed(MouseEvent e) {
@@ -398,9 +390,9 @@ public class DownloadTable extends JDTable implements MouseListener, MouseMotion
         JMenu pluginPopup = new JMenu(JDL.L("gui.table.contextmenu.extrasSubmenu", "Extras"));
         ArrayList<MenuAction> entries = new ArrayList<MenuAction>();
         if (obj instanceof FilePackage) {
-            JDUtilities.getController().fireControlEventDirect(new ControlEvent((FilePackage) obj, ControlEvent.CONTROL_LINKLIST_CONTEXT_MENU, entries));
+            JDUtilities.getController().fireControlEventDirect(new ControlEvent(obj, ControlEvent.CONTROL_LINKLIST_CONTEXT_MENU, entries));
         } else if (obj instanceof DownloadLink) {
-            JDUtilities.getController().fireControlEventDirect(new ControlEvent((DownloadLink) obj, ControlEvent.CONTROL_LINKLIST_CONTEXT_MENU, entries));
+            JDUtilities.getController().fireControlEventDirect(new ControlEvent(obj, ControlEvent.CONTROL_LINKLIST_CONTEXT_MENU, entries));
         } else {
             return null;
         }

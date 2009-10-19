@@ -24,7 +24,6 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
-import java.awt.event.MouseMotionListener;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -73,7 +72,7 @@ class PropMenuItem extends JMenuItem implements ActionListener {
     }
 }
 
-public class LinkGrabberTable extends JDTable implements MouseListener, MouseMotionListener, KeyListener {
+public class LinkGrabberTable extends JDTable implements MouseListener, KeyListener {
 
     public final static byte EXPCOL_TOP = 0;
     public final static byte EXPCOL_CUR = 1;
@@ -98,10 +97,7 @@ public class LinkGrabberTable extends JDTable implements MouseListener, MouseMot
         this.linkgrabber = linkgrabber;
         addMouseListener(this);
         addKeyListener(this);
-        addMouseMotionListener(this);
         if (JDUtilities.getJavaVersion() >= 1.6) {
-            // setDropMode(DropMode.ON_OR_INSERT_ROWS); /*muss noch geschaut
-            // werden wie man das genau macht*/
             setDropMode(DropMode.USE_SELECTION);
         }
         setDragEnabled(true);
@@ -184,12 +180,6 @@ public class LinkGrabberTable extends JDTable implements MouseListener, MouseMot
             }
         }
         return ret;
-    }
-
-    public void mouseDragged(MouseEvent arg0) {
-    }
-
-    public void mouseMoved(MouseEvent e) {
     }
 
     public void mouseClicked(MouseEvent e) {

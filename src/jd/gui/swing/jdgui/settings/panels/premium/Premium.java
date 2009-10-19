@@ -108,6 +108,7 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
         ViewToolbar vt = new ViewToolbar() {
             private static final long serialVersionUID = 583469943193290056L;
 
+            @Override
             public void setDefaults(int i, AbstractButton ab) {
                 ab.setForeground(new JLabel().getForeground());
             }
@@ -137,6 +138,7 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
             public void init() {
             }
 
+            @Override
             public void threadedActionPerformed(final ActionEvent e) {
                 internalTable.editingStopped(null);
                 new GuiRunnable<Object>() {
@@ -168,8 +170,9 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
             public void init() {
             }
 
+            @Override
             public void threadedActionPerformed(ActionEvent e) {
-                ArrayList<Account> accs = internalTable.getSelectedAccounts();
+                ArrayList<Account> accs = internalTable.getAllSelectedAccounts();
                 internalTable.editingStopped(null);
                 if (accs.size() == 0) return;
                 if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(0, JDL.L("action.premiumview.removeacc.ask", "Remove selected?") + " (" + JDL.LF("action.premiumview.removeacc.accs", "%s Account(s)", accs.size()) + ")"), UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
@@ -193,6 +196,7 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
             public void init() {
             }
 
+            @Override
             public void threadedActionPerformed(ActionEvent e) {
                 internalTable.editingStopped(null);
                 new GuiRunnable<Object>() {

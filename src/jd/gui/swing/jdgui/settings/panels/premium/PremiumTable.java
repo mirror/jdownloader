@@ -16,26 +16,38 @@
 
 package jd.gui.swing.jdgui.settings.panels.premium;
 
+import java.awt.Point;
 import java.awt.Rectangle;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.util.ArrayList;
 
+import javax.swing.JMenuItem;
+import javax.swing.JPopupMenu;
 import javax.swing.SwingUtilities;
 
+import jd.controlling.AccountController;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.components.table.JDTable;
+import jd.gui.swing.jdgui.actions.ActionController;
 import jd.plugins.Account;
+import jd.utils.locale.JDL;
 
-public class PremiumTable extends JDTable {
+public class PremiumTable extends JDTable implements MouseListener, KeyListener {
 
-    /**
-     * 
-     */
     private static final long serialVersionUID = 9049514723238421532L;
+    private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.premium.PremiumTable.";
     private Premium panel;
 
     public PremiumTable(Premium panel) {
         super(new PremiumJTableModel("premiumview"));
         this.panel = panel;
+        addMouseListener(this);
+        addKeyListener(this);
     }
 
     public ArrayList<Account> getSelectedAccounts() {
@@ -50,9 +62,32 @@ public class PremiumTable extends JDTable {
         return ret;
     }
 
+    public ArrayList<Account> getAllSelectedAccounts() {
+        ArrayList<Account> accs = getSelectedAccounts();
+        ArrayList<HostAccounts> ha = getSelectedHostAccounts();
+        for (HostAccounts hostAccount : ha) {
+            for (Account acc : AccountController.getInstance().getAllAccounts(hostAccount.getHost())) {
+                if (!accs.contains(acc)) accs.add(acc);
+            }
+        }
+        return accs;
+    }
+
+    public ArrayList<HostAccounts> getSelectedHostAccounts() {
+        int[] rows = getSelectedRows();
+        ArrayList<HostAccounts> ret = new ArrayList<HostAccounts>();
+        for (int row : rows) {
+            Object element = this.getModel().getValueAt(row, 0);
+            if (element != null && element instanceof HostAccounts) {
+                ret.add((HostAccounts) element);
+            }
+        }
+        return ret;
+    }
+
     public void fireTableChanged() {
         new GuiRunnable<Object>() {
-            // @Override
+            @Override
             public Object runSave() {
                 final Rectangle viewRect = panel.getScrollPane().getViewport().getViewRect();
                 int[] rows = getSelectedRows();
@@ -75,6 +110,67 @@ public class PremiumTable extends JDTable {
                 return null;
             }
         }.start();
+    }
+
+    public void mouseClicked(MouseEvent e) {
+    }
+
+    public void mouseEntered(MouseEvent e) {
+    }
+
+    public void mouseExited(MouseEvent e) {
+    }
+
+    public void mousePressed(MouseEvent e) {
+        /* nicht auf headerclicks reagieren */
+        if (e.getSource() != this) return;
+        Point point = e.getPoint();
+        int row = rowAtPoint(point);
+
+        if (getValueAt(row, 0) == null) {
+            clearSelection();
+        }
+
+        if (!isRowSelected(row) && e.getButton() == MouseEvent.BUTTON3) {
+            clearSelection();
+            if (getValueAt(row, 0) != null) this.addRowSelectionInterval(row, row);
+        }
+
+        if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
+            final ArrayList<Account> accs = getAllSelectedAccounts();
+            JPopupMenu popup = new JPopupMenu();
+            JMenuItem tmp;
+            popup.add(tmp = new JMenuItem(JDL.LF(JDL_PREFIX + "refresh", "Refresh Account(s) (%s)", accs.size())));
+            tmp.addActionListener(new ActionListener() {
+
+                public void actionPerformed(ActionEvent e) {
+                    new Thread(new Runnable() {
+                        public void run() {
+                            for  (Account acc : accs) {
+                                AccountController.getInstance().updateAccountInfo(acc.getHoster(), acc, true);
+                            }
+                        }
+                    }).start();
+                }
+
+            });
+            popup.show(this, point.x, point.y);
+        }
+    }
+
+    public void mouseReleased(MouseEvent e) {
+    }
+
+    public void keyPressed(KeyEvent e) {
+    }
+
+    public void keyReleased(KeyEvent e) {
+        if (e.getKeyCode() == KeyEvent.VK_DELETE) {
+            ActionController.getToolBarAction("action.premiumview.removeacc").actionPerformed(null);
+        }
+    }
+
+    public void keyTyped(KeyEvent e) {
     }
 
 }
