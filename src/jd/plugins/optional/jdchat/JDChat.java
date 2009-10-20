@@ -1210,6 +1210,7 @@ public class JDChat extends PluginOptional implements ControlListener {
     @Override
     public void onExit() {
         NAMES.clear();
+        pms.clear();
         this.setLoggedIn(false);
         this.updateNamesPanel();
         if (view != null) SwingGui.getInstance().disposeView(view);
