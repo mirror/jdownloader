@@ -945,6 +945,7 @@ jd.gui.swing.jdgui.settings.panels.premium.premiumjtablemodel.trafficleft = Dát
 jd.gui.swing.jdgui.settings.panels.premium.premiumjtablemodel.trafficshare = Zdieľané Dáta
 jd.gui.swing.jdgui.settings.panels.premium.premiumjtablemodel.usedspace = Využité Miesto
 jd.gui.swing.jdgui.settings.panels.premium.premiumjtablemodel.user = Meno
+jd.gui.swing.jdgui.settings.panels.premium.premiumtable.refresh = Obnoviť konto(á) (%s)
 jd.gui.swing.jdgui.settings.panels.premium.premiumtablerenderer.account = Konto
 jd.gui.swing.jdgui.settings.panels.reconnect.advanced.breadcrum = Moduly - Znovupripojenie - Rozšírené
 jd.gui.swing.jdgui.settings.panels.reconnect.advanced.reconnect.advanced.title = Rozšírené
