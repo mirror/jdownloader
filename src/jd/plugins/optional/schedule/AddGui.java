@@ -22,6 +22,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.util.Calendar;
+import java.util.Date;
 
 import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
@@ -307,6 +308,10 @@ public class AddGui extends JPanel implements ActionListener, ChangeListener, Do
             } else if (act.getExecutions().size() == 0) {
                 problems.setText(JDL.L("plugin.optional.scheduler.add.problem.nochanges", "No changes made"));
                 return;
+                // Check for Zero repeat
+            } else if (optSpecific.isSelected() && (((Integer) repeathour.getValue() * 60) + (Integer) repeatminute.getValue()) == 0) {
+                problems.setText(JDL.L("plugin.optional.scheduler.add.problem.zerorepeat", "Repeattime equals Zero"));
+                return;
             }
 
             act.setName(name.getText());
@@ -318,6 +323,12 @@ public class AddGui extends JPanel implements ActionListener, ChangeListener, Do
             c.set(Calendar.HOUR_OF_DAY, (Integer) hour.getValue());
             c.set(Calendar.MINUTE, (Integer) minute.getValue());
             act.setDate(c.getTime());
+
+            // Check for a bad starttime
+            if (act.getDate().compareTo(new Date()) < 0) {
+                problems.setText(JDL.L("plugin.optional.scheduler.add.problem.pastdate", "Execution time is in the past"));
+                return;
+            }
 
             if (optDate.isSelected()) {
                 act.setRepeat(0);
