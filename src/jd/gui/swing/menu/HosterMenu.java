@@ -68,7 +68,7 @@ public class HosterMenu extends Menu {
         int entries = 10;
         int menus = ('z' - 'a') / entries + 1;
         JMenu[] jmenus = new JMenu[menus];
-        JMenu num = new JMenu("0 - 9");
+        JMenu num = new JMenu(JDL.LF("jd.gui.swing.menu.HosterMenu", "Hoster %s", "0 - 9"));
         c.add(num);
         for (HostPluginWrapper wrapper : hosts) {
             if (!wrapper.isLoaded() || !wrapper.isPremiumEnabled()) continue;
