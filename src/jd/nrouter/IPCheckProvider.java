@@ -20,10 +20,11 @@ public interface IPCheckProvider {
 
     /**
      * this method should return current IP as String Object or
-     * IPCheck.CHECK.FAILED if there has been an error or
-     * IPCheck.CHECK.SEQFAILED if this method should be paused
+     * IPCheck.CheckStatus.FAILED if there has been an error or
+     * IPCheck.CheckStatus.SEQFAILED if this method should be paused
      * 
      * @return
+     * @see IPCheck.CheckStatus
      */
     public Object getIP();
 

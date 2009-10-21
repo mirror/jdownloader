@@ -26,6 +26,7 @@ import jd.gui.swing.components.table.JDTableColumn;
 import jd.gui.swing.components.table.JDTableModel;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkGrabberFilePackage;
+import jd.utils.locale.JDL;
 
 import org.jdesktop.swingx.renderer.JRendererLabel;
 
@@ -38,11 +39,13 @@ public class HosterColumn extends JDTableColumn {
     private DownloadLink dLink;
     private LinkGrabberFilePackage fp;
     private JRendererLabel jlr;
+    private String strLoadingFrom;
 
     public HosterColumn(String name, JDTableModel table) {
         super(name, table);
         jlr = new JRendererLabel();
         jlr.setBorder(null);
+        strLoadingFrom = JDL.L("jd.gui.swing.jdgui.views.downloadview.TableRenderer.loadingFrom", "Loading from") + " ";
     }
 
     @Override
@@ -66,6 +69,7 @@ public class HosterColumn extends JDTableColumn {
             if (dLink.getPlugin().hasHosterIcon()) {
                 jlr.setText(dLink.getPlugin().getSessionInfo());
                 jlr.setIcon(dLink.getPlugin().getHosterIcon());
+                jlr.setToolTipText(strLoadingFrom + dLink.getPlugin().getHost());
             } else {
                 jlr.setText(dLink.getPlugin().getHost());
                 jlr.setIcon(null);
