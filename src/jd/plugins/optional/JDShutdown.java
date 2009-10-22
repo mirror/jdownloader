@@ -28,6 +28,8 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.SubConfiguration;
+import jd.controlling.DownloadWatchDog;
+import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.controlling.interaction.Interaction;
 import jd.controlling.interaction.InteractionTrigger;
@@ -125,9 +127,21 @@ public class JDShutdown extends PluginOptional {
         JDUtilities.getController().removeControlListener(this);
     }
 
-    private void shutDownWin() {
-        if (getPluginConfig().getIntegerProperty(CONFIG_MODE, 0) == 0) {
+    private void shutdown() {
+        logger.info("shutdown");
+        JDController.getInstance().prepareShutdown(false);
+        int id = 0;
+        switch (id = OSDetector.getOSID()) {
+        case OSDetector.OS_WINDOWS_2003:
+        case OSDetector.OS_WINDOWS_VISTA:
+        case OSDetector.OS_WINDOWS_XP:
+        case OSDetector.OS_WINDOWS_7:
+            /* modern windows versions */
+        case OSDetector.OS_WINDOWS_2000:
+        case OSDetector.OS_WINDOWS_NT:
+            /* not so modern windows versions */
             if (getPluginConfig().getBooleanProperty(CONFIG_FORCESHUTDOWN, false)) {
+                /* force shutdown */
                 try {
                     JDUtilities.runCommand("shutdown.exe", new String[] { "-s", "-f", "-t", "01" }, null, 0);
                 } catch (Exception e) {
@@ -137,6 +151,7 @@ public class JDShutdown extends PluginOptional {
                 } catch (Exception e) {
                 }
             } else {
+                /* normal shutdown */
                 try {
                     JDUtilities.runCommand("shutdown.exe", new String[] { "-s", "-t", "01" }, null, 0);
                 } catch (Exception e) {
@@ -146,27 +161,89 @@ public class JDShutdown extends PluginOptional {
                 } catch (Exception e) {
                 }
             }
-        } else {
-            if (getPluginConfig().getIntegerProperty(CONFIG_MODE, 0) == 1) {
+            if (id == OSDetector.OS_WINDOWS_2000 || id == OSDetector.OS_WINDOWS_NT) {
+                /* also try extra methods for windows2000 and nt */
                 try {
-                    JDUtilities.runCommand("powercfg.exe", new String[] { "hibernate on" }, null, 0);
-                } catch (Exception e) {
+                    FileWriter fw = null;
+                    BufferedWriter bw = null;
                     try {
-                        JDUtilities.runCommand("%windir%\\system32\\powercfg.exe", new String[] { "hibernate on" }, null, 0);
-                    } catch (Exception ex) {
+                        fw = new FileWriter(JDUtilities.getResourceFile("jd/shutdown.vbs"));
+                        bw = new BufferedWriter(fw);
+                        bw.write("set WshShell = CreateObject(\"WScript.Shell\")\r\nWshShell.SendKeys \"^{ESC}^{ESC}^{ESC}{UP}{ENTER}{ENTER}\"\r\n");
+                        bw.flush();
+                        bw.close();
+                        JDUtilities.runCommand("cmd", new String[] { "/c", "start", "/min", "cscript", JDUtilities.getResourceFile("jd/shutdown.vbs").getAbsolutePath() }, null, 0);
+                    } catch (IOException e) {
                     }
-                }
-            } else {
-                try {
-                    JDUtilities.runCommand("powercfg.exe", new String[] { "hibernate off" }, null, 0);
                 } catch (Exception e) {
-                    try {
-                        JDUtilities.runCommand("%windir%\\system32\\powercfg.exe", new String[] { "hibernate off" }, null, 0);
-                    } catch (Exception ex) {
-                    }
                 }
             }
+            break;
+        case OSDetector.OS_WINDOWS_OTHER:
+            /* older windows versions */
+            try {
+                JDUtilities.runCommand("RUNDLL32.EXE", new String[] { "user,ExitWindows" }, null, 0);
+            } catch (Exception e) {
+            }
+            try {
+                JDUtilities.runCommand("RUNDLL32.EXE", new String[] { "Shell32,SHExitWindowsEx", "1" }, null, 0);
+            } catch (Exception e) {
+            }
+            break;
+        case OSDetector.OS_MAC_OTHER:
+            /* mac os */
+            try {
+                JDUtilities.runCommand("/usr/bin/osascript", new String[] { JDUtilities.getResourceFile("jd/osx/osxshutdown.scpt").getAbsolutePath() }, null, 0);
+            } catch (Exception e) {
+            }
+            break;
+        default:
+            /* linux and others */
+            try {
+                dbusPowerState("Shutdown");
+            } catch (Exception e) {
+            }
+            try {
+                JDUtilities.runCommand("dcop", new String[] { "--all-sessions", "--all-users", "ksmserver", "ksmserver", "logout", "0", "2", "0" }, null, 0);
+            } catch (Exception e) {
+            }
+            try {
+                JDUtilities.runCommand("sudo", new String[] { "shutdown", "-h", "now" }, null, 0);
+            } catch (Exception e) {
+            }
+        }
+        try {
+            Thread.sleep(8000);
+        } catch (InterruptedException e) {
+        }
+        System.exit(0);
+    }
 
+    private void prepateHibernateorStandby() {
+        logger.info("Stop all running downloads");
+        DownloadWatchDog.getInstance().stopDownloads();
+        JDController.getInstance().syncDatabase();
+    }
+
+    private void hibernate() {
+        switch (OSDetector.getOSID()) {
+        case OSDetector.OS_WINDOWS_2003:
+        case OSDetector.OS_WINDOWS_VISTA:
+        case OSDetector.OS_WINDOWS_XP:
+        case OSDetector.OS_WINDOWS_7:
+            /* modern windows versions */
+        case OSDetector.OS_WINDOWS_2000:
+        case OSDetector.OS_WINDOWS_NT:
+            /* not so modern windows versions */
+            prepateHibernateorStandby();
+            try {
+                JDUtilities.runCommand("powercfg.exe", new String[] { "hibernate on" }, null, 0);
+            } catch (Exception e) {
+                try {
+                    JDUtilities.runCommand("%windir%\\system32\\powercfg.exe", new String[] { "hibernate on" }, null, 0);
+                } catch (Exception ex) {
+                }
+            }
             try {
                 JDUtilities.runCommand("RUNDLL32.EXE", new String[] { "powrprof.dll,SetSuspendState" }, null, 0);
             } catch (Exception e) {
@@ -175,16 +252,84 @@ public class JDShutdown extends PluginOptional {
                 } catch (Exception ex) {
                 }
             }
+            break;
+        case OSDetector.OS_WINDOWS_OTHER:
+            /* older windows versions */
+            logger.info("no hibernate support, use shutdown");
+            shutdown();
+            break;
+        case OSDetector.OS_MAC_OTHER:
+            /* mac os */
+            prepateHibernateorStandby();
+            try {
+                JDUtilities.runCommand("/usr/bin/osascript", new String[] { JDUtilities.getResourceFile("jd/osx/osxhibernate.scpt").getAbsolutePath() }, null, 0);
+            } catch (Exception e) {
+            }
+            break;
+        default:
+            /* linux and other */
+            prepateHibernateorStandby();
+            try {
+                dbusPowerState("Hibernate");
+            } catch (Exception e) {
+            }
+            break;
+        }
+    }
+
+    private void standby() {
+        switch (OSDetector.getOSID()) {
+        case OSDetector.OS_WINDOWS_2003:
+        case OSDetector.OS_WINDOWS_VISTA:
+        case OSDetector.OS_WINDOWS_XP:
+        case OSDetector.OS_WINDOWS_7:
+            /* modern windows versions */
+        case OSDetector.OS_WINDOWS_2000:
+        case OSDetector.OS_WINDOWS_NT:
+            /* not so modern windows versions */
+            prepateHibernateorStandby();
+            try {
+                JDUtilities.runCommand("powercfg.exe", new String[] { "hibernate off" }, null, 0);
+            } catch (Exception e) {
+                try {
+                    JDUtilities.runCommand("%windir%\\system32\\powercfg.exe", new String[] { "hibernate off" }, null, 0);
+                } catch (Exception ex) {
+                }
+            }
+            try {
+                JDUtilities.runCommand("RUNDLL32.EXE", new String[] { "powrprof.dll,SetSuspendState" }, null, 0);
+            } catch (Exception e) {
+                try {
+                    JDUtilities.runCommand("%windir%\\system32\\RUNDLL32.EXE", new String[] { "powrprof.dll,SetSuspendState" }, null, 0);
+                } catch (Exception ex) {
+                }
+            }
+            break;
+        case OSDetector.OS_WINDOWS_OTHER:
+            /* older windows versions */
+            logger.info("no standby support, use shutdown");
+            shutdown();
+            break;
+        case OSDetector.OS_MAC_OTHER:
+            /* mac os */
+            logger.info("no standby support, use shutdown");
+            shutdown();
+            break;
+        default:
+            /* linux and other */
+            prepateHibernateorStandby();
+            try {
+                dbusPowerState("Suspend");
+            } catch (Exception e) {
+            }
+            break;
         }
     }
 
     class ShutDown extends Thread {
-
-        /**
-         * Wait for JD-Unrar
-         */
         @Override
         public void run() {
+            /* check for running jdunrar and wait */
             OptionalPluginWrapper addon = JDUtilities.getOptionalPlugin("unrar");
             if (addon != null && addon.isEnabled()) {
                 while (true) {
@@ -198,90 +343,48 @@ public class JDShutdown extends PluginOptional {
                     }
                 }
             }
-            logger.info("Shutting down now");
-            String message = JDL.L("interaction.shutdown.dialog.msg", "<h2><font color=\"red\">Achtung ihr Betriebssystem wird heruntergefahren!</font></h2>");
-            UserIO.setCountdownTime(count);
-            int ret = UserIO.getInstance().requestConfirmDialog(UserIO.STYLE_HTML, JDL.L("interaction.shutdown.dialog.title", "Shutdown"), message, UserIO.getInstance().getIcon(UserIO.ICON_WARNING), null, null);
-            UserIO.setCountdownTime(-1);
-            logger.info("Return code: " + ret);
-            if (JDFlags.hasSomeFlags(ret, UserIO.RETURN_OK, UserIO.RETURN_COUNTDOWN_TIMEOUT)) {
-                logger.info("Prepare Shutdown");
-                JDUtilities.getController().prepareShutdown(false);
-                switch (OSDetector.getOSID()) {
-                case OSDetector.OS_WINDOWS_2003:
-                case OSDetector.OS_WINDOWS_VISTA:
-                case OSDetector.OS_WINDOWS_XP:
-                case OSDetector.OS_WINDOWS_7:
-                    shutDownWin();
-                    break;
-                case OSDetector.OS_WINDOWS_2000:
-                case OSDetector.OS_WINDOWS_NT:
-                    shutDownWin();
-                    try {
-                        FileWriter fw = null;
-                        BufferedWriter bw = null;
-                        try {
-                            fw = new FileWriter(JDUtilities.getResourceFile("jd/shutdown.vbs"));
-                            bw = new BufferedWriter(fw);
-
-                            bw.write("set WshShell = CreateObject(\"WScript.Shell\")\r\nWshShell.SendKeys \"^{ESC}^{ESC}^{ESC}{UP}{ENTER}{ENTER}\"\r\n");
-
-                            bw.flush();
-                            bw.close();
-
-                            JDUtilities.runCommand("cmd", new String[] { "/c", "start", "/min", "cscript", JDUtilities.getResourceFile("jd/shutdown.vbs").getAbsolutePath() }, null, 0);
-
-                        } catch (IOException e) {
-                        }
-                    } catch (Exception e) {
-                    }
-                    break;
-                case OSDetector.OS_WINDOWS_OTHER:
-                    try {
-                        JDUtilities.runCommand("RUNDLL32.EXE", new String[] { "user,ExitWindows" }, null, 0);
-                    } catch (Exception e) {
-                    }
-                    try {
-                        JDUtilities.runCommand("RUNDLL32.EXE", new String[] { "Shell32,SHExitWindowsEx", "1" }, null, 0);
-                    } catch (Exception e) {
-                    }
-                    break;
-                case OSDetector.OS_MAC_OTHER:
-                    try {
-                        if (getPluginConfig().getIntegerProperty(CONFIG_MODE, 0) == 1) {
-                            JDUtilities.runCommand("/usr/bin/osascript", new String[] { JDUtilities.getResourceFile("jd/osx/osxhibernate.scpt").getAbsolutePath() }, null, 0);
-                        } else {
-                            JDUtilities.runCommand("/usr/bin/osascript", new String[] { JDUtilities.getResourceFile("jd/osx/osxshutdown.scpt").getAbsolutePath() }, null, 0);
-                        }
-                    } catch (Exception e) {
-                    }
-                default:
-                    if (getPluginConfig().getIntegerProperty(CONFIG_MODE, 0) == 2) {
-                        try {
-                            dbusPowerState("Hibernate");
-                        } catch (Exception e) {
-                        }
-                    } else if (getPluginConfig().getIntegerProperty(CONFIG_MODE, 0) == 1) {
-                        try {
-                            dbusPowerState("Suspend");
-                        } catch (Exception e) {
-                        }
-                    } else {
-                        try {
-                            dbusPowerState("Shutdown");
-                        } catch (Exception e) {
-                        }
-                        try {
-                            JDUtilities.runCommand("dcop", new String[] { "--all-sessions", "--all-users", "ksmserver", "ksmserver", "logout", "0", "2", "0" }, null, 0);
-                        } catch (Exception e) {
-                        }
-                        try {
-                            JDUtilities.runCommand("sudo", new String[] { "shutdown", "-h", "now" }, null, 0);
-                        } catch (Exception e) {
-                        }
-                    }
-                    break;
+            int ret = getPluginConfig().getIntegerProperty(CONFIG_MODE, 0);
+            String message;
+            int ret2;
+            switch (ret) {
+            case 0:
+                /* try to shutdown */
+                logger.info("ask user about shutdown");
+                message = JDL.L("interaction.shutdown.dialog.msg.shutdown", "<h2><font color=\"red\">System will be shut down!</font></h2>");
+                UserIO.setCountdownTime(count);
+                ret2 = UserIO.getInstance().requestConfirmDialog(UserIO.STYLE_HTML, JDL.L("interaction.shutdown.dialog.title.shutdown", "Shutdown?"), message, UserIO.getInstance().getIcon(UserIO.ICON_WARNING), null, null);
+                UserIO.setCountdownTime(-1);
+                logger.info("Return code: " + ret2);
+                if (JDFlags.hasSomeFlags(ret2, UserIO.RETURN_OK, UserIO.RETURN_COUNTDOWN_TIMEOUT)) {
+                    shutdown();
                 }
+                break;
+            case 1:
+                /* try to standby */
+                logger.info("ask user about standby");
+                message = JDL.L("interaction.shutdown.dialog.msg.standby", "<h2><font color=\"red\">System will be put into standby mode!</font></h2>");
+                UserIO.setCountdownTime(count);
+                ret2 = UserIO.getInstance().requestConfirmDialog(UserIO.STYLE_HTML, JDL.L("interaction.shutdown.dialog.title.standby", "Standby?"), message, UserIO.getInstance().getIcon(UserIO.ICON_WARNING), null, null);
+                UserIO.setCountdownTime(-1);
+                logger.info("Return code: " + ret2);
+                if (JDFlags.hasSomeFlags(ret2, UserIO.RETURN_OK, UserIO.RETURN_COUNTDOWN_TIMEOUT)) {
+                    standby();
+                }
+                break;
+            case 2:
+                /* try to hibernate */
+                logger.info("ask user about hibernate");
+                message = JDL.L("interaction.shutdown.dialog.msg.hibernate", "<h2><font color=\"red\">System will be put into hibernate mode!</font></h2>");
+                UserIO.setCountdownTime(count);
+                ret2 = UserIO.getInstance().requestConfirmDialog(UserIO.STYLE_HTML, JDL.L("interaction.shutdown.dialog.title.hibernate", "Hibernate?"), message, UserIO.getInstance().getIcon(UserIO.ICON_WARNING), null, null);
+                UserIO.setCountdownTime(-1);
+                logger.info("Return code: " + ret2);
+                if (JDFlags.hasSomeFlags(ret2, UserIO.RETURN_OK, UserIO.RETURN_COUNTDOWN_TIMEOUT)) {
+                    standby();
+                }
+                break;
+            default:
+                break;
             }
         }
     }

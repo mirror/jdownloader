@@ -313,7 +313,7 @@ public class DownloadTable extends JDTable implements MouseListener, KeyListener
             if (obj instanceof FilePackage || obj instanceof DownloadLink) {
                 popup.add(tmp = new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.stopsign", 16, 16), JDL.L("gui.table.contextmenu.stopmark", "Stop sign"), TableAction.STOP_MARK, new Property("item", obj))));
                 if (DownloadWatchDog.getInstance().isStopMark(obj)) tmp.setIcon(tmp.getDisabledIcon());
-                popup.add(new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.delete", 16, 16), JDL.L("gui.table.contextmenu.delete", "entfernen") + " (" + alllinks.size() + ")", TableAction.DELETE, new Property("links", alllinks))));
+                popup.add(builddeletemenu(alllinks));
 
                 popup.addSeparator();
             }
@@ -362,6 +362,13 @@ public class DownloadTable extends JDTable implements MouseListener, KeyListener
             }
             if (popup.getComponentCount() != 0) popup.show(this, point.x, point.y);
         }
+    }
+
+    private JMenu builddeletemenu(ArrayList<DownloadLink> alllinks) {
+        JMenu pop = new JMenu(JDL.L("gui.table.contextmenu.delete", "entfernen"));
+        pop.add(new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.delete", 16, 16), JDL.L("gui.table.contextmenu.deletelist", "from list") + " (" + alllinks.size() + ")", TableAction.DELETE, new Property("links", alllinks))));
+        pop.add(new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.delete", 16, 16), JDL.L("gui.table.contextmenu.deletelistdisk", "from list and disk") + " (" + alllinks.size() + ")", TableAction.DELETEFILE, new Property("links", alllinks))));
+        return pop;
     }
 
     private JMenu buildpriomenu(ArrayList<DownloadLink> links) {

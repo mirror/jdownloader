@@ -88,9 +88,6 @@ public class Odsiebiecom extends PluginForHost {
     }
 
     @Override
-    /*
-     * public String getVersion() { return getVersion("$Revision$"); }
-     */
     public int getMaxSimultanPremiumDownloadNum() {
         return getMaxSimultanDownloadNum();
     }

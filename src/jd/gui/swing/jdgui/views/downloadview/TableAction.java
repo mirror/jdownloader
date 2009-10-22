@@ -31,6 +31,7 @@ public class TableAction extends AbstractAction {
     public static final int DE_ACTIVATE = 400;
     public static final int CHECK = 500;
     public static final int DELETE = 999;
+    public static final int DELETEFILE = 9991;
     public static final int NEW_PACKAGE = 100;
     public static final int DOWNLOAD_PRIO = 200;
     public static final int SET_PW = 201;

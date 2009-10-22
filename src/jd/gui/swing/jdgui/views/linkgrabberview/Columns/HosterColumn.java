@@ -64,12 +64,13 @@ public class HosterColumn extends JDTableColumn {
             fp = (LinkGrabberFilePackage) value;
             jlr.setText(fp.getHoster());
             jlr.setIcon(null);
+            jlr.setToolTipText(strLoadingFrom + fp.getHoster());
         } else {
             dLink = (DownloadLink) value;
+            jlr.setToolTipText(strLoadingFrom + dLink.getPlugin().getHost());
             if (dLink.getPlugin().hasHosterIcon()) {
                 jlr.setText(dLink.getPlugin().getSessionInfo());
                 jlr.setIcon(dLink.getPlugin().getHosterIcon());
-                jlr.setToolTipText(strLoadingFrom + dLink.getPlugin().getHost());
             } else {
                 jlr.setText(dLink.getPlugin().getHost());
                 jlr.setIcon(null);

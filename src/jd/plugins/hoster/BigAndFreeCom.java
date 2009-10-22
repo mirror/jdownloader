@@ -121,7 +121,8 @@ public class BigAndFreeCom extends PluginForHost {
         downloadForm.put("download_now", "Click+here+to+download");
         downloadForm.setAction(downloadLink.getDownloadURL());
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadForm, true, 0);
+        br.setDebug(true);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadForm, false, 1);
         if (!(dl.getConnection().isContentDisposition()) && !dl.getConnection().getContentType().contains("octet")) {
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_FATAL);

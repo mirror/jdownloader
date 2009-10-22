@@ -396,6 +396,7 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
                         selectedLinks = (ArrayList<DownloadLink>) prop.get("links");
                         break;
                     case TableAction.DELETE:
+                    case TableAction.DELETEFILE:
                     case TableAction.SET_PW:
                     case TableAction.NEW_PACKAGE:
                     case TableAction.CHECK:
@@ -593,6 +594,18 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
                         for (int i = 0; i < selectedLinks.size(); i++) {
                             selectedLinks.get(i).setEnabled(false);
                             selectedLinks.get(i).getFilePackage().remove(selectedLinks.get(i));
+                        }
+                    }
+                    return;
+                }
+                case TableAction.DELETEFILE: {
+                    if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, JDL.L("gui.downloadlist.delete", "Ausgewählte Links wirklich entfernen?") + " (" + JDL.LF("gui.downloadlist.delete.size_packagev2", "%s links", selectedLinks.size()) + ")"), UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
+                        for (int i = 0; i < selectedLinks.size(); i++) {
+                            selectedLinks.get(i).setEnabled(false);
+                            selectedLinks.get(i).getFilePackage().remove(selectedLinks.get(i));
+                        }
+                        for (int i = 0; i < selectedLinks.size(); i++) {
+                            selectedLinks.get(i).deleteFile();
                         }
                     }
                     return;

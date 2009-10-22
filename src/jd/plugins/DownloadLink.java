@@ -726,6 +726,14 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         this.setEnabled(true);
         this.getTransferStatus().usePremium(false);
         this.getTransferStatus().setResumeSupport(false);
+        deleteFile();
+        finalFileName = null;
+        DownloadWatchDog.getInstance().resetIPBlockWaittime(getHost());
+        DownloadWatchDog.getInstance().resetTempUnavailWaittime(getHost());
+        if (getPlugin() != null) getPlugin().resetDownloadlink(this);
+    }
+
+    public void deleteFile() {
         if (new File(this.getFileOutput()).exists()) {
             if (!new File(this.getFileOutput()).delete()) {
                 logger.severe(JDL.L("system.download.errors.couldnotoverwrite", "Could not overwrite existing file"));
@@ -736,10 +744,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
                 logger.severe(JDL.L("system.download.errors.couldnotoverwrite", "Could not overwrite existing file"));
             }
         }
-        finalFileName = null;
-        DownloadWatchDog.getInstance().resetIPBlockWaittime(getHost());
-        DownloadWatchDog.getInstance().resetTempUnavailWaittime(getHost());
-        if (getPlugin() != null) getPlugin().resetDownloadlink(this);
     }
 
     /**

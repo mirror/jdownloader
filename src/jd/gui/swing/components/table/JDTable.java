@@ -27,6 +27,7 @@ import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
+import javax.swing.JButton;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
@@ -104,29 +105,7 @@ public class JDTable extends JXTable {
                     int col = realColumnAtPoint(e.getPoint());
                     if (getJDTableModel().getJDTableColumn(col).isSortable(null)) getJDTableModel().getJDTableColumn(col).doSort(null);
                 } else if (e.getButton() == MouseEvent.BUTTON3) {
-                    JPopupMenu popup = new JPopupMenu();
-                    JCheckBoxMenuItem[] mis = new JCheckBoxMenuItem[getJDTableModel().getColumnCount()];
-
-                    for (int i = 0; i < getJDTableModel().getColumnCount(); ++i) {
-                        final int j = i;
-                        final JExtCheckBoxMenuItem mi = new JExtCheckBoxMenuItem(getJDTableModel().getColumnName(i));
-                        mi.setHideOnClick(false);
-                        mis[i] = mi;
-                        if (i == 0) mi.setEnabled(false);
-                        mi.setSelected(getJDTableModel().isVisible(i));
-                        mi.addActionListener(new ActionListener() {
-
-                            public void actionPerformed(ActionEvent e) {
-                                getJDTableModel().setVisible(j, mi.isSelected());
-                                createColumns();
-                                revalidate();
-                                repaint();
-                            }
-
-                        });
-                        popup.add(mi);
-                    }
-                    popup.show(getTableHeader(), e.getX(), e.getY());
+                    columControlMenu().show(getTableHeader(), e.getX(), e.getY());
                 }
             }
 
@@ -137,6 +116,7 @@ public class JDTable extends JXTable {
         setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         setAutoscrolls(true);
         this.setRowHeight(ROWHEIGHT);
+        installColumnControlButton();
         getTableHeader().setPreferredSize(new Dimension(getColumnModel().getTotalColumnWidth(), 19));
         // This method is 1.6 only
         if (JDUtilities.getJavaVersion() >= 1.6) this.setFillsViewportHeight(true);
@@ -166,6 +146,48 @@ public class JDTable extends JXTable {
             }
 
         });
+    }
+
+    private void installColumnControlButton() {
+        JButton button = new JButton("columnControl");
+        button.setToolTipText("ColumnControl");
+        button.addActionListener(new ActionListener() {
+
+            public void actionPerformed(ActionEvent event) {
+                JButton source = (JButton) event.getSource();
+                int x = source.getLocation().x;
+                int y = source.getLocation().y;
+                columControlMenu().show(getTableHeader(), x, y);
+            }
+        });
+        this.setColumnControl(button);
+        this.setColumnControlVisible(true);
+    }
+
+    public JPopupMenu columControlMenu() {
+        JPopupMenu popup = new JPopupMenu();
+        JCheckBoxMenuItem[] mis = new JCheckBoxMenuItem[getJDTableModel().getColumnCount()];
+
+        for (int i = 0; i < getJDTableModel().getColumnCount(); ++i) {
+            final int j = i;
+            final JExtCheckBoxMenuItem mi = new JExtCheckBoxMenuItem(getJDTableModel().getColumnName(i));
+            mi.setHideOnClick(false);
+            mis[i] = mi;
+            if (i == 0) mi.setEnabled(false);
+            mi.setSelected(getJDTableModel().isVisible(i));
+            mi.addActionListener(new ActionListener() {
+
+                public void actionPerformed(ActionEvent e) {
+                    getJDTableModel().setVisible(j, mi.isSelected());
+                    createColumns();
+                    revalidate();
+                    repaint();
+                }
+
+            });
+            popup.add(mi);
+        }
+        return popup;
     }
 
     public ArrayList<JDRowHighlighter> getJDRowHighlighter() {

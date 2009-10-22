@@ -22,7 +22,7 @@ import jd.parser.Regex;
 import jd.plugins.hoster.HTTPAllgemein;
 
 public class LinkGrabberPackager {
-
+    public static final Pattern pat0 = Pattern.compile("(.*)(\\.|_|-)p[0-9]+.rar$", Pattern.CASE_INSENSITIVE);
     public static final Pattern pat1 = Pattern.compile("(.*)(\\.|_|-)part[0]*[1].rar$", Pattern.CASE_INSENSITIVE);
     public static final Pattern pat2 = Pattern.compile("(.*)(\\.|_|-)part[0-9]+.rar$", Pattern.CASE_INSENSITIVE);
     public static final Pattern pat3 = Pattern.compile("(.*)\\.rar$", Pattern.CASE_INSENSITIVE);
@@ -46,6 +46,7 @@ public class LinkGrabberPackager {
 
     public static String cleanFileName(String name) {
         /** remove rar extensions */
+        name = getNameMatch(name, pat0);
         name = getNameMatch(name, pat1);
         name = getNameMatch(name, pat2);
         name = getNameMatch(name, pat3);
@@ -87,7 +88,9 @@ public class LinkGrabberPackager {
         name = getNameMatch(name, pat14);
         name = getNameMatch(name, pat15);
         name = getNameMatch(name, pat16);
-        return name;
+        /* replace _ with spaces */
+        name = name.replaceAll("_", " ");
+        return name.trim();
     }
 
     private static String getNameMatch(String name, Pattern pattern) {
