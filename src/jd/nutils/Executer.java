@@ -24,7 +24,7 @@ import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 
-public class Executer extends Thread {
+public class Executer extends Thread implements Runnable{
     public static final String CODEPAGE = OSDetector.isWindows() ? "ISO-8859-1" : "UTF-8";
     private boolean debug = true;
 
@@ -46,7 +46,7 @@ public class Executer extends Thread {
         this.codepage = codepage;
     }
 
-    class StreamObserver extends Thread {
+    class StreamObserver extends Thread implements Runnable {
 
         private BufferedInputStream reader;
 
@@ -64,7 +64,7 @@ public class Executer extends Thread {
             dynbuf = buffer;
         }
 
-        // @Override
+        @Override
         public void run() {
 
             this.started = true;
@@ -152,18 +152,14 @@ public class Executer extends Thread {
         }
 
         public void requestInterrupt() {
-
             try {
                 // causes inputstream.read or inputstream.available() to throw
                 // IOException --> interrupts reading, but does not interrupt
                 // connected listener
                 stream.close();
-
             } catch (IOException e) {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
             }
-
         }
 
     }
@@ -235,7 +231,7 @@ public class Executer extends Thread {
         return waitTimeout;
     }
 
-    // @Override
+    @Override
     public void run() {
         if (command == null || command.trim().length() == 0) {
             System.out.println("Execute Parameter error: No Command");
@@ -284,6 +280,7 @@ public class Executer extends Thread {
 
             if (waitTimeout > 0) {
                 Thread timeoutThread = new Thread() {
+                    @Override
                     public void run() {
                         try {
                             Thread.sleep(waitTimeout * 1000);
@@ -341,8 +338,8 @@ public class Executer extends Thread {
         return process;
     }
 
+    @Override
     public void interrupt() {
-
         if (sbeObserver != null) this.sbeObserver.requestInterrupt();
         if (sboObserver != null) this.sboObserver.requestInterrupt();
         super.interrupt();
@@ -362,7 +359,6 @@ public class Executer extends Thread {
             if (isDebug()) System.out.println("Out>" + data);
             outputStream.flush();
         } catch (IOException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
     }
@@ -402,7 +398,12 @@ public class Executer extends Thread {
         return exitValue;
     }
 
-    // for compatibility reasons.... can be refactored someday
+    /**
+     * for compatibility reasons.... can be refactored someday
+     * 
+     * @deprecated Use {@link #getExitValue()} instead
+     */
+    @Deprecated
     public boolean gotInterrupted() {
         return getExitValue() == -1;
     }

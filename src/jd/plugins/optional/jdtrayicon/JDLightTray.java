@@ -442,6 +442,8 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
 
     public void onLinkGrabberControllerEvent(LinkGrabberControllerEvent event) {
         if (event.getID() == LinkGrabberControllerEvent.NEW_LINKS && ((subConfig.getBooleanProperty(PROPERTY_SHOW_ON_LINKGRAB, true) && !guiFrame.isVisible()) || subConfig.getBooleanProperty(PROPERTY_SHOW_ON_LINKGRAB2, false))) {
+            /* dont try to restore jd if password required */
+            if (subConfig.getBooleanProperty(PROPERTY_PASSWORD_REQUIRED, false)) return;
             if (!guiFrame.isVisible()) {
                 /* set visible */
                 new GuiRunnable<Object>() {
