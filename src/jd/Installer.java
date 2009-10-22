@@ -69,6 +69,10 @@ public class Installer {
 
     private String countryCode;
 
+    private File dlFolder = null;
+
+    private BrowseFile br;
+
     // private boolean error;
 
     private String languageCode;
@@ -220,6 +224,7 @@ public class Installer {
                         JDL.setConfigLocale((JDLocale) list.getSelectedValue());
                         JDL.setLocale(JDL.getConfigLocale());
                         SubConfiguration.getConfig(JDL.CONFIG).save();
+                        dlFolder = br.getCurrentPath();
                         dialog.dispose();
                         showConfig();
                     }
@@ -227,19 +232,22 @@ public class Installer {
                 });
                 content.add(Factory.createHeader(JDL.L("gui.config.general.downloaddirectory", "Download directory"), JDTheme.II("gui.images.taskpanes.download", 24, 24)), " growx,pushx,gaptop 10");
 
-                final BrowseFile br;
                 content.add(br = new BrowseFile(), "growx,pushx,gapleft 40,gapright 10");
                 br.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
                 // if (error) br.setEnabled(false);
                 content.add(new JSeparator(), "growx,pushx,gaptop 5");
-                if (OSDetector.isMac()) {
-                    br.setCurrentPath(new File(System.getProperty("user.home") + "/Downloads"));
-                } else if (OSDetector.isWindows() && new File(System.getProperty("user.home") + "/Downloads").exists()) {
-                    br.setCurrentPath(new File(System.getProperty("user.home") + "/Downloads"));
-                } else if (OSDetector.isWindows() && new File(System.getProperty("user.home") + "/Download").exists()) {
-                    br.setCurrentPath(new File(System.getProperty("user.home") + "/Download"));
+                if (dlFolder != null) {
+                    br.setCurrentPath(dlFolder);
                 } else {
-                    br.setCurrentPath(JDUtilities.getResourceFile("downloads"));
+                    if (OSDetector.isMac()) {
+                        br.setCurrentPath(new File(System.getProperty("user.home") + "/Downloads"));
+                    } else if (OSDetector.isWindows() && new File(System.getProperty("user.home") + "/Downloads").exists()) {
+                        br.setCurrentPath(new File(System.getProperty("user.home") + "/Downloads"));
+                    } else if (OSDetector.isWindows() && new File(System.getProperty("user.home") + "/Download").exists()) {
+                        br.setCurrentPath(new File(System.getProperty("user.home") + "/Download"));
+                    } else {
+                        br.setCurrentPath(JDUtilities.getResourceFile("downloads"));
+                    }
                 }
                 new ContainerDialog(UserIO.NO_COUNTDOWN, JDL.L("installer.gui.title", "JDownloader Installation"), p, JDImage.getImage("logo/jd_logo_54_54"), null, null) {
                     private static final long serialVersionUID = 4685519683324833575L;

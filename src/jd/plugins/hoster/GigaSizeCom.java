@@ -173,6 +173,7 @@ public class GigaSizeCom extends PluginForHost {
         br.getPage("http://www.gigasize.com/index.php?lang=de");
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("has been removed because we")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("Die[ ]*?Datei[ ]*?wurde[ ]*?gel")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("Download-Slots sind besetzt")) {
             downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.gigasizecom.errors.alreadyloading", "Cannot check, because already loading file"));
             return AvailableStatus.UNCHECKABLE;

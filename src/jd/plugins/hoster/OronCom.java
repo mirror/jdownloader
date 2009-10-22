@@ -119,7 +119,6 @@ public class OronCom extends PluginForHost {
                     dlForm.put("password", passCode);
                 }
                 br.submitForm(dlForm);
-                System.out.print(br.toString());
             }
             if (br.containsHTML("Wrong password") || br.containsHTML("Wrong captcha")) {
                 logger.warning("Wrong password or wrong captcha");
@@ -132,7 +131,6 @@ public class OronCom extends PluginForHost {
             String dllink = br.getRegex("height=\"[0-9]+\"><a href=\"(.*?)\"").getMatch(0);
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
             jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
-
             dl.startDownload();
         }
     }

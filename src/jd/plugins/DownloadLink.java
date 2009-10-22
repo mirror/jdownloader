@@ -736,14 +736,25 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     public void deleteFile() {
+        int maxtries = 5;
+        while (getLinkStatus().isPluginActive()) {
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                JDLogger.exception(e);
+            }
+            maxtries--;
+            if (maxtries == 0) break;
+        }
+        String d = this.getFileOutput() + "2";
         if (new File(this.getFileOutput()).exists()) {
             if (!new File(this.getFileOutput()).delete()) {
-                logger.severe(JDL.L("system.download.errors.couldnotoverwrite", "Could not overwrite existing file"));
+                logger.severe(JDL.L("system.download.errors.couldnotdelete", "Could not delete file") + this.getFileOutput());
             }
         }
         if (new File(this.getFileOutput() + ".part").exists()) {
             if (!new File(this.getFileOutput() + ".part").delete()) {
-                logger.severe(JDL.L("system.download.errors.couldnotoverwrite", "Could not overwrite existing file"));
+                logger.severe(JDL.L("system.download.errors.couldnotdelete", "Could not delete file") + this.getFileOutput());
             }
         }
     }

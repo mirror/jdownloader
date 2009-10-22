@@ -28,7 +28,7 @@ public class BrowserAdapter {
         try {
             dl.connect(br);
         } catch (PluginException e) {
-            if (e.getValue() == DownloadInterface.ERROR_REDIRECTED && br.isFollowingRedirects()) {
+            if (e.getValue() == DownloadInterface.ERROR_REDIRECTED) {
 
                 int maxRedirects = 10;
                 while (maxRedirects-- > 0) {
@@ -55,7 +55,7 @@ public class BrowserAdapter {
         try {
             dl.connect(br);
         } catch (PluginException e) {
-            if (e.getValue() == DownloadInterface.ERROR_REDIRECTED && br.isFollowingRedirects()) {
+            if (e.getValue() == DownloadInterface.ERROR_REDIRECTED) {
 
                 int maxRedirects = 10;
                 while (maxRedirects-- > 0) {
@@ -81,7 +81,7 @@ public class BrowserAdapter {
         try {
             dl.connect(br);
         } catch (PluginException e) {
-            if (e.getValue() == DownloadInterface.ERROR_REDIRECTED && br.isFollowingRedirects()) {
+            if (e.getValue() == DownloadInterface.ERROR_REDIRECTED) {
 
                 int maxRedirects = 10;
                 while (maxRedirects-- > 0) {
@@ -108,7 +108,7 @@ public class BrowserAdapter {
         try {
             dl.connect(br);
         } catch (PluginException e) {
-            if (e.getValue() == DownloadInterface.ERROR_REDIRECTED && br.isFollowingRedirects()) {
+            if (e.getValue() == DownloadInterface.ERROR_REDIRECTED) {
 
                 int maxRedirects = 10;
                 while (maxRedirects-- > 0) {
@@ -136,7 +136,7 @@ public class BrowserAdapter {
         try {
             dl.connect(br);
         } catch (PluginException e) {
-            if (e.getValue() == DownloadInterface.ERROR_REDIRECTED && br.isFollowingRedirects()) {
+            if (e.getValue() == DownloadInterface.ERROR_REDIRECTED) {
 
                 int maxRedirects = 10;
                 while (maxRedirects-- > 0) {
@@ -164,7 +164,7 @@ public class BrowserAdapter {
         try {
             dl.connect(br);
         } catch (PluginException e) {
-            if (e.getValue() == DownloadInterface.ERROR_REDIRECTED && br.isFollowingRedirects()) {
+            if (e.getValue() == DownloadInterface.ERROR_REDIRECTED) {
 
                 int maxRedirects = 10;
                 while (maxRedirects-- > 0) {
