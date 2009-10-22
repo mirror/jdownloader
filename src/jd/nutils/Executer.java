@@ -53,10 +53,12 @@ public class Executer extends Thread {
         private DynByteBuffer dynbuf;
         private boolean started;
 
-        private boolean interruptRequestet = false;
         private boolean eof = false;
 
+        private InputStream stream;
+
         public StreamObserver(InputStream stream, DynByteBuffer buffer) {
+            this.stream = stream;
             reader = new BufferedInputStream(stream);
 
             dynbuf = buffer;
@@ -64,13 +66,14 @@ public class Executer extends Thread {
 
         // @Override
         public void run() {
+
             this.started = true;
             int num;
             try {
                 fireEvent(dynbuf, 0, this == Executer.this.sbeObserver ? Executer.LISTENER_ERRORSTREAM : Executer.LISTENER_STDSTREAM);
                 while (!eof) {
                     num = readLine();
-                    if (!interruptRequestet) eof = false;
+
                     if (num <= 0) {
                         Thread.sleep(50);
                     } else {
@@ -85,23 +88,22 @@ public class Executer extends Thread {
                         }
                         if (line.length() > 0) {
                             if (isDebug()) {
-
                                 System.out.println(this + ": " + line + "");
-                                // logger.finest(this + ": " +
-                                // JDHexUtils.getHexString(dynbuf.getLast(num))
-                                // + "");
 
                             }
-                            // System.out.println(">"+line);
+
                             fireEvent(line, dynbuf, this == Executer.this.sbeObserver ? Executer.LISTENER_ERRORSTREAM : Executer.LISTENER_STDSTREAM);
-                            // dynbuf.clear();
+
                         }
                     }
                 }
             } catch (IOException e) {
+
                 e.printStackTrace();
             } catch (InterruptedException e) {
-                // JDLogger.exception(e);
+                e.printStackTrace();
+            } finally {
+                System.out.println("end");
             }
 
         }
@@ -109,12 +111,26 @@ public class Executer extends Thread {
         private int readLine() throws IOException, InterruptedException {
             int i = 0;
             byte[] buffer = new byte[1];
+            // some processes to not return an errorstream which leads
+            // reader.read to lock. This lock cannot be released unter windows
+            // so we start reading as soon as available() marks some bytes as
+            // available
+            boolean bytesAvailable = false;
             for (;;) {
+
+                int read;
 
                 if (this.isInterrupted()) {
 
                 throw new InterruptedException(); }
-                int read = 0;
+                // lock until bytes are available
+                while (!bytesAvailable || reader.available() <= 0) {
+                    bytesAvailable = true;
+                    if (this.isInterrupted()) {
+
+                    throw new InterruptedException(); }
+                }
+
                 if ((read = reader.read(buffer)) < 0) {
                     this.eof = true;
                     return i;
@@ -136,7 +152,17 @@ public class Executer extends Thread {
         }
 
         public void requestInterrupt() {
-            this.interruptRequestet = true;
+
+            try {
+                // causes inputstream.read or inputstream.available() to throw
+                // IOException --> interrupts reading, but does not interrupt
+                // connected listener
+                stream.close();
+
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
 
         }
 
@@ -162,10 +188,9 @@ public class Executer extends Thread {
     private StreamObserver sboObserver;
     private OutputStream outputStream = null;
     private Exception exception = null;
-    private boolean processgotinterrupted = false;
 
     public Executer(String command) {
-        processgotinterrupted = false;
+
         this.command = command;
         parameter = new ArrayList<String>();
 
@@ -244,7 +269,7 @@ public class Executer extends Thread {
         }
 
         try {
-            processgotinterrupted = false;
+
             process = pb.start();
 
             if (waitTimeout == 0) { return; }
@@ -252,7 +277,8 @@ public class Executer extends Thread {
             sbeObserver = new StreamObserver(process.getErrorStream(), errorStreamBuffer);
             sbeObserver.setName(this.getName() + " ERRstreamobserver");
             sboObserver = new StreamObserver(process.getInputStream(), inputStreamBuffer);
-            sbeObserver.setName(this.getName() + " STDstreamobserver");
+            sboObserver.setName(this.getName() + " STDstreamobserver");
+            sbeObserver.setName(this.getName() + " ERRstreamobserver");
             sbeObserver.start();
             sboObserver.start();
 
@@ -263,11 +289,10 @@ public class Executer extends Thread {
                             Thread.sleep(waitTimeout * 1000);
                         } catch (InterruptedException e) {
                         }
-                        try {
-                            process.destroy();
-                        } catch (Exception e) {
-                            processgotinterrupted = true;
-                        }
+                        // interrupt on timeout. this handles and timeout like
+                        // an external interrupt
+                        Executer.this.interrupt();
+
                     }
                 };
                 timeoutThread.start();
@@ -275,38 +300,27 @@ public class Executer extends Thread {
 
             try {
                 process.waitFor();
+                exitValue = process.exitValue();
             } catch (InterruptedException e1) {
                 process.destroy();
-                processgotinterrupted = true;
-            }
-            if (processgotinterrupted) {
                 exitValue = -1;
-            } else {
-                try {
-                    exitValue = process.exitValue();
-                } catch (Exception e) {
-                }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
+
             if (sboObserver.isAlive()) {
                 sboObserver.requestInterrupt();
+
             }
             if (sbeObserver.isAlive()) {
                 sbeObserver.requestInterrupt();
             }
-            int maxwait = 100;
+
+            // must be called to clear interrupt flag
+            interrupted();
             while ((sbeObserver != null && this.sbeObserver.isAlive()) || (sboObserver != null && this.sboObserver.isAlive())) {
-                if (processgotinterrupted) maxwait--;
-                if (maxwait == 0) {
-                    super.interrupt();
-                    if (sbeObserver != null) this.sbeObserver.interrupt();
-                    if (sboObserver != null) this.sboObserver.interrupt();
-                    process.destroy();
-                }
+
                 Thread.sleep(50);
-            }
-            try {
-                exitValue = process.exitValue();
-            } catch (Exception e) {
             }
 
         } catch (IOException e1) {
@@ -328,9 +342,10 @@ public class Executer extends Thread {
     }
 
     public void interrupt() {
+
+        if (sbeObserver != null) this.sbeObserver.requestInterrupt();
+        if (sboObserver != null) this.sboObserver.requestInterrupt();
         super.interrupt();
-        if (sbeObserver != null) this.sbeObserver.interrupt();
-        if (sboObserver != null) this.sboObserver.interrupt();
         process.destroy();
     }
 
@@ -387,8 +402,9 @@ public class Executer extends Thread {
         return exitValue;
     }
 
+    // for compatibility reasons.... can be refactored someday
     public boolean gotInterrupted() {
-        return processgotinterrupted;
+        return getExitValue() == -1;
     }
 
     public void addProcessListener(ProcessListener listener, int flag) {
