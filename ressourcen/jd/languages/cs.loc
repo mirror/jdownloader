@@ -1554,6 +1554,7 @@ system.dialogs.update = Jsou dostupné aktualizace
 system.download.docrc2 = CRC-Check probíhá (%s)
 system.download.docrc2.failed = CRC-Check SELHAL (%s)
 system.download.docrc2.success = CRC-Check OK (%s)
+system.download.errors.couldnotdelete = Nelze smazat soubor
 system.download.errors.couldnotoverwrite = Nemůžu přepsat existující soubor
 system.download.errors.couldnotrename = Nemůžu přejmenovat dočasný soubor
 system.download.errors.invalidoutputfile = Neplatný výstupní soubor
