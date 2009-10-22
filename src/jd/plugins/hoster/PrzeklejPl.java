@@ -42,30 +42,26 @@ public class PrzeklejPl extends PluginForHost {
         this.setStartIntervall(5000l);
     }
 
-    // @Override
     public String getAGBLink() {
         return "http://przeklej.pl/regulamin";
     }
 
-    // @Override
+    public void correctDownloadLink(DownloadLink link) throws Exception {
+        link.setUrlDownload(link.getDownloadURL().replaceAll("_", "-"));
+    }
+
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("<h1 style=\"font-size: 40px;\">Podana strona nie istnieje</h1>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = Encoding.htmlDecode(br.getRegex(Pattern.compile("title=\"Pobierz pli.*?\">(.*?)<", Pattern.CASE_INSENSITIVE)).getMatch(0));
+        String filename = Encoding.htmlDecode(br.getRegex(Pattern.compile("<title>przeklej.pl -(.*?)Wrzucaj", Pattern.CASE_INSENSITIVE)).getMatch(0));
         String filesize = br.getRegex(Pattern.compile("class=\"size\".*?\\((.*?)\\)</span>", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        downloadLink.setFinalFileName(filename.trim());
+        downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
         return AvailableStatus.TRUE;
     }
 
-    // @Override
-    /*
-     * public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         String passCode = null;
@@ -74,7 +70,7 @@ public class PrzeklejPl extends PluginForHost {
             if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
             linkurl = "http://www.przeklej.pl" + linkurl;
             br.setFollowRedirects(true);
-            dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, linkurl, false, 1);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, false, 1);
             dl.startDownload();
         } else {
             if (downloadLink.getStringProperty("pass", null) == null) {
@@ -97,26 +93,22 @@ public class PrzeklejPl extends PluginForHost {
             } else {
                 con.disconnect();
                 downloadLink.setProperty("pass", passCode);
-                dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, form, false, 1);
+                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, false, 1);
                 dl.startDownload();
             }
         }
     }
 
-    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    // @Override
     public void reset() {
     }
 
-    // @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 }

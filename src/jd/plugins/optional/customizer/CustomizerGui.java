@@ -115,6 +115,7 @@ public class CustomizerGui extends SwitchPanel implements KeyListener, ActionLis
                         if (result != null) {
                             table.getModel().getSettings().add(new CustomizeSetting(result));
                             table.getModel().refreshModel();
+                            table.getModel().fireTableDataChanged();
                         }
                         return null;
                     }
@@ -147,6 +148,7 @@ public class CustomizerGui extends SwitchPanel implements KeyListener, ActionLis
                     }
                 }
                 table.getModel().refreshModel();
+                table.getModel().fireTableDataChanged();
             }
         };
     }

@@ -41,6 +41,7 @@ public class RegexColumn extends JDTableColumn implements ActionListener {
         jlr = new JRendererLabel();
         jlr.setBorder(null);
         text = new JTextField();
+        setClickstoEdit(2);
     }
 
     @Override
@@ -95,6 +96,7 @@ public class RegexColumn extends JDTableColumn implements ActionListener {
 
     @Override
     public void postprocessCell(Component c, JDTableModel table, Object value, boolean isSelected, int row, int column) {
+        if (((CustomizeSetting) value).getRegex() == null) return;
         if (((CustomizeSetting) value).getRegex().equals("")) {
             c.setBackground(new Color(221, 34, 34));
             return;

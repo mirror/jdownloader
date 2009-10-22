@@ -42,6 +42,7 @@ public class DownloadDirColumn extends JDTableColumn {
         file.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
         file.setButtonText("...");
         file.getTextField().setBorder(null);
+        setClickstoEdit(2);
     }
 
     @Override
