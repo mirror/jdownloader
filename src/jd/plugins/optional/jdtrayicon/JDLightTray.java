@@ -32,7 +32,6 @@ import java.awt.event.WindowStateListener;
 import java.util.ArrayList;
 
 import javax.swing.JFrame;
-import javax.swing.JWindow;
 import javax.swing.SwingUtilities;
 
 import jd.Main;
@@ -46,6 +45,7 @@ import jd.controlling.LinkGrabberController;
 import jd.controlling.LinkGrabberControllerEvent;
 import jd.controlling.LinkGrabberControllerListener;
 import jd.event.ControlEvent;
+import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.JDGui;
@@ -76,6 +76,10 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
     private static final String PROPERTY_SHOW_ON_LINKGRAB2 = "PROPERTY_SHOW_ON_LINKGRAB2";
 
     private static final String PROPERTY_SHOW_INFO_IN_TITLE = "PROPERTY_SHOW_INFO_IN_TITLE";
+
+    private static final String PROPERTY_PASSWORD_REQUIRED = "PROPERTY_PASSWORD_REQUIRED";
+
+    private static final String PROPERTY_PASSWORD = "PROPERTY_PASSWORD";
 
     private TrayIconPopup trayIconPopup;
 
@@ -143,6 +147,7 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
     }
 
     public void initConfig() {
+        ConfigEntry ce, cond;
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_CLOSE_TO_TRAY, JDL.L("plugins.optional.JDLightTray.closetotray", "Close to tray")).setDefaultValue(true));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_START_MINIMIZED, JDL.L("plugins.optional.JDLightTray.startMinimized", "Start minimized")).setDefaultValue(false));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
@@ -152,6 +157,10 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_SHOW_ON_LINKGRAB, JDL.L("plugins.optional.JDLightTray.linkgrabber.intray", "Show on Linkgrabbing (when minimized as trayicon)")).setDefaultValue(true));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_SHOW_ON_LINKGRAB2, JDL.L("plugins.optional.JDLightTray.linkgrabber.always", "Show on Linkgrabbing (always)")).setDefaultValue(false));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_SHOW_INFO_IN_TITLE, JDL.L("plugins.optional.JDLightTray.titleinfo", "Show info in TaskBar when minimized")).setDefaultValue(true));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        config.addEntry(cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_PASSWORD_REQUIRED, JDL.L("plugins.optional.JDLightTray.passwordRequired", "Enter Password to open from Tray")).setDefaultValue(false));
+        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, subConfig, PROPERTY_PASSWORD, JDL.L("plugins.optional.JDLightTray.password", "Password:")));
+        ce.setEnabledCondidtion(cond, "==", true);
     }
 
     @Override
@@ -252,8 +261,6 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
                         trayIconPopup.startAutoHide();
                     }
                 }
-            } else if (e.getSource() instanceof JWindow) {
-
             } else {
                 if (SwingUtilities.isLeftMouseButton(e)) {
                     if (e.getClickCount() >= (subConfig.getBooleanProperty(PROPERTY_SINGLE_CLICK, false) ? 1 : 2) && !SwingUtilities.isLeftMouseButton(e)) {
@@ -297,7 +304,7 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
         }
     }
 
-    private void calcLocation(final JWindow window, final Point p) {
+    private static void calcLocation(final TrayIconPopup window, final Point p) {
         new GuiRunnable<Object>() {
             @Override
             public Object runSave() {
@@ -336,6 +343,13 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
     }
 
     private void miniIt(final boolean minimize) {
+        if (!minimize && subConfig.getBooleanProperty(PROPERTY_PASSWORD_REQUIRED, false)) {
+            String password = UserIO.getInstance().requestInputDialog(JDL.L("plugins.optional.JDLightTray.enterPassword", "Enter the Password to open JD:"));
+            if (password == null || !password.equals(subConfig.getStringProperty(PROPERTY_PASSWORD, ""))) {
+                UserIO.getInstance().requestMessageDialog(JDL.L("plugins.optional.JDLightTray.enterPassword.wrong", "The entered Password was wrong!"));
+                return;
+            }
+        }
         new GuiRunnable<Object>() {
             @Override
             public Object runSave() {
