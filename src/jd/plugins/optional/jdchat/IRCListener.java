@@ -200,6 +200,13 @@ class IRCListener implements IRCEventListener {
 
     public void onQuit(IRCUser u, String msg) {
         // logger.info("Quit: " + u.getNick());
+        if (owner.getPms().containsKey(u.getNick().toLowerCase())) {
+            if (msg != null && msg.trim().length() > 0) {
+                owner.addToText(null, JDChat.STYLE_SYSTEM_MESSAGE, u.getNick() + " has left the channel (" + msg + ")", owner.getPms().get(u.getNick().toLowerCase()).getTextArea(), owner.getPms().get(u.getNick().toLowerCase()).getSb());
+            } else {
+                owner.addToText(null, JDChat.STYLE_SYSTEM_MESSAGE, u.getNick() + " has left the channel", owner.getPms().get(u.getNick().toLowerCase()).getTextArea(), owner.getPms().get(u.getNick().toLowerCase()).getSb());
+            }
+        }
         if (msg != null && msg.trim().length() > 0) {
             owner.addToText(null, JDChat.STYLE_SYSTEM_MESSAGE, u.getNick() + " has left the channel (" + msg + ")");
         } else {

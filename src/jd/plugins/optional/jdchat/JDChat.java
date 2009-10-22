@@ -1280,11 +1280,6 @@ public class JDChat extends PluginOptional implements ControlListener {
     public void removeUser(String name) {
         User user = getUser(name);
 
-        JDChatPMS p = pms.get(name.toLowerCase());
-        if (p != null) {
-            addToText(null, STYLE_HIGHLIGHT, name + " has left the chat!", p.getTextArea(), p.getSb());
-        }
-
         if (user != null) {
             NAMES.remove(user);
         }
