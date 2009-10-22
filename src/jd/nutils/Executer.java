@@ -282,7 +282,10 @@ public class Executer extends Thread {
             if (processgotinterrupted) {
                 exitValue = -1;
             } else {
-                exitValue = process.exitValue();
+                try {
+                    exitValue = process.exitValue();
+                } catch (Exception e) {
+                }
             }
             if (sboObserver.isAlive()) {
                 sboObserver.requestInterrupt();
@@ -294,11 +297,16 @@ public class Executer extends Thread {
             while ((sbeObserver != null && this.sbeObserver.isAlive()) || (sboObserver != null && this.sboObserver.isAlive())) {
                 if (processgotinterrupted) maxwait--;
                 if (maxwait == 0) {
+                    super.interrupt();
                     if (sbeObserver != null) this.sbeObserver.interrupt();
                     if (sboObserver != null) this.sboObserver.interrupt();
                     process.destroy();
                 }
                 Thread.sleep(50);
+            }
+            try {
+                exitValue = process.exitValue();
+            } catch (Exception e) {
             }
 
         } catch (IOException e1) {
