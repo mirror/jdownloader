@@ -380,7 +380,7 @@ public class JDShutdown extends PluginOptional {
                 UserIO.setCountdownTime(-1);
                 logger.info("Return code: " + ret2);
                 if (JDFlags.hasSomeFlags(ret2, UserIO.RETURN_OK, UserIO.RETURN_COUNTDOWN_TIMEOUT)) {
-                    standby();
+                    hibernate();
                 }
                 break;
             default:

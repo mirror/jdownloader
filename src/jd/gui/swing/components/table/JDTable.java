@@ -81,6 +81,7 @@ class SortMenuItem extends JMenuItem implements ActionListener {
 public class JDTable extends JXTable {
 
     private static final long serialVersionUID = -6631229711568284941L;
+    private static final String JDL_PREFIX = "jd.gui.swing.components.table.JDTable.";
     private JDTableModel model;
     private SubConfiguration tableconfig;
     private SortMenuItem defaultSortMenuItem;
@@ -149,8 +150,8 @@ public class JDTable extends JXTable {
     }
 
     private void installColumnControlButton() {
-        JButton button = new JButton("columnControl");
-        button.setToolTipText("ColumnControl");
+        JButton button = new JButton(((JButton) getColumnControl()).getIcon());
+        button.setToolTipText(JDL.L(JDL_PREFIX + "columnControl", "Change Columns"));
         button.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent event) {
@@ -159,6 +160,7 @@ public class JDTable extends JXTable {
                 int y = source.getLocation().y;
                 columControlMenu().show(getTableHeader(), x, y);
             }
+
         });
         this.setColumnControl(button);
         this.setColumnControlVisible(true);
