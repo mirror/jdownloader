@@ -23,6 +23,8 @@ import java.io.Serializable;
 import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Set;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
@@ -1140,5 +1142,15 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
             }
         }
         return icon;
+    }
+
+    public static Set<String> getHosterList(ArrayList<DownloadLink> links) {
+        HashMap<String, String> hosters = new HashMap<String, String>();
+        for (DownloadLink dl : links) {
+            if (!hosters.containsKey(dl.getPlugin().getHost())) {
+                hosters.put(dl.getPlugin().getHost(), "");
+            }
+        }
+        return hosters.keySet();
     }
 }

@@ -31,6 +31,7 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.pluginUtils.Recaptcha;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "linkbase.biz" }, urls = { "http://[\\w\\.]*?linkbase\\.biz/\\?v=[\\w]+" }, flags = { 0 })
 public class LnkbsBz extends PluginForDecrypt {
@@ -146,6 +147,15 @@ public class LnkbsBz extends PluginForDecrypt {
                         if (br.containsHTML("Das war leider Falsch")) {
                             continue;
                         }
+                    }
+                    if (br.containsHTML("api.recaptcha.net")) {
+                        Recaptcha rc = new Recaptcha(br);
+                        rc.parse();
+                        rc.load();
+                        File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                        String c = getCaptchaCode(null, cf, param);
+                        rc.setCode(c);
+                        if (br.containsHTML("Das war leider Falsch")) continue;
                     }
                     String links[] = br.getRegex("window.open\\('\\?go=(.*?)','.*?'\\)").getColumn(0);
                     progress.setRange(links.length);

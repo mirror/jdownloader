@@ -249,6 +249,10 @@ public class Megauploadcom extends PluginForHost {
             }
             if (!dl.getConnection().isContentDisposition()) {
                 br.followConnection();
+                if (br.containsHTML("gencap\\.php\\?")) {
+                    logger.info("strange servererror: again a captcha?");
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
                 logger.info("MegaUpload Unknown Error: " + br.toString());
                 if (link.getBooleanProperty("waitworkaround", false)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
                 link.setProperty("waitworkaround", true);

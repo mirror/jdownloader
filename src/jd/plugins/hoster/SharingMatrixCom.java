@@ -92,7 +92,7 @@ public class SharingMatrixCom extends PluginForHost {
         boolean direct = true;
         if (url == null) {
             direct = false;
-            if (br.containsHTML("Enter password:<")) {
+            if (br.containsHTML("Enter password:<") && !br.containsHTML("enter_password\" style=\"display:none\"")) {
                 if (downloadLink.getStringProperty("pass", null) == null) {
                     passCode = Plugin.getUserInput("Password?", downloadLink);
                 } else {
@@ -190,7 +190,7 @@ public class SharingMatrixCom extends PluginForHost {
 
         String code = getCaptchaCode(captcha, downloadLink);
         Browser br2 = br.cloneBrowser();
-        if (br.containsHTML("Enter password:<")) {
+        if (br.containsHTML("Enter password:<") && !br.containsHTML("enter_password\" style=\"display:none\"")) {
             if (downloadLink.getStringProperty("pass", null) == null) {
                 passCode = Plugin.getUserInput("Password?", downloadLink);
             } else {

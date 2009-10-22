@@ -26,6 +26,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Set;
 import java.util.logging.Logger;
 
 import javax.swing.JComponent;
@@ -463,7 +464,13 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
                 case TableAction.DOWNLOAD_RESUME:
                     for (int i = 0; i < selectedLinks.size(); i++) {
                         selectedLinks.get(i).getLinkStatus().setStatus(LinkStatus.TODO);
+                        selectedLinks.get(i).getLinkStatus().resetWaitTime();
                         selectedLinks.get(i).getLinkStatus().setStatusText(JDL.L("gui.linklist.status.doresume", "Warte auf Fortsetzung"));
+                    }
+                    Set<String> hosts = DownloadLink.getHosterList(selectedLinks);
+                    for (String host : hosts) {
+                        DownloadWatchDog.getInstance().resetIPBlockWaittime(host);
+                        DownloadWatchDog.getInstance().resetTempUnavailWaittime(host);
                     }
                     break;
                 case TableAction.DOWNLOAD_BROWSE_LINK:

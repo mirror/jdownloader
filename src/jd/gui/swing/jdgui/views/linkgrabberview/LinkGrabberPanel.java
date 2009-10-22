@@ -394,16 +394,6 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
         fireTableChanged();
     }
 
-    public Set<String> getHosterList(ArrayList<DownloadLink> links) {
-        HashMap<String, String> hosters = new HashMap<String, String>();
-        for (DownloadLink dl : links) {
-            if (!hosters.containsKey(dl.getPlugin().getHost())) {
-                hosters.put(dl.getPlugin().getHost(), "");
-            }
-        }
-        return hosters.keySet();
-    }
-
     @SuppressWarnings("unchecked")
     public void actionPerformed(final ActionEvent arg0) {
         new Thread() {
@@ -516,7 +506,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
                             for (LinkGrabberFilePackage fp2 : selected_packages) {
                                 synchronized (fp2) {
                                     ArrayList<DownloadLink> links2 = new ArrayList<DownloadLink>(fp2.getDownloadLinks());
-                                    Set<String> hosts = INSTANCE.getHosterList(links2);
+                                    Set<String> hosts = DownloadLink.getHosterList(links2);
                                     for (String host : hosts) {
                                         LinkGrabberFilePackage fp3 = new LinkGrabberFilePackage(fp2.getName());
                                         fp3.setDownloadDirectory(fp2.getDownloadDirectory());

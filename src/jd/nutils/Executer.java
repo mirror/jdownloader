@@ -316,16 +316,13 @@ public class Executer extends Thread implements Runnable{
             // must be called to clear interrupt flag
             interrupted();
             while ((sbeObserver != null && this.sbeObserver.isAlive()) || (sboObserver != null && this.sboObserver.isAlive())) {
-
                 Thread.sleep(50);
             }
 
         } catch (IOException e1) {
-
             this.exception = e1;
             return;
         } catch (InterruptedException e) {
-
             this.exception = e;
         }
     }

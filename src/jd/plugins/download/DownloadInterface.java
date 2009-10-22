@@ -1353,8 +1353,8 @@ abstract public class DownloadInterface {
 
         }
         if (this.plugin.getBrowser().isDebug()) logger.finest(request.printHeaders());
-        if (request.getLocation() != null) { throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, DownloadInterface.ERROR_REDIRECTED); }
         connection = request.getHttpConnection();
+        if (request.getLocation() != null) throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, DownloadInterface.ERROR_REDIRECTED);
         if (connection.getRange() != null) {
             // Dateigröße wird aus dem Range-Response gelesen
             if (connection.getRange()[2] > 0) {

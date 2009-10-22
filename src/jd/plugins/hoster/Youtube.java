@@ -81,7 +81,7 @@ public class Youtube extends PluginForHost {
         this.setBrowserExclusive();
         prem = false;
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL());
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, 1);
         if (!dl.getConnection().isContentDisposition()) {
             downloadLink.setProperty("valid", false);
             dl.getConnection().disconnect();
@@ -98,7 +98,7 @@ public class Youtube extends PluginForHost {
             login(account, br);
             prem = true;
             requestFileInformation(downloadLink);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL());
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, 1);
         }
         if (!dl.getConnection().isContentDisposition()) {
             downloadLink.setProperty("valid", false);

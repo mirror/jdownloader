@@ -49,7 +49,7 @@ import jd.utils.JDUtilities;
 public class TbCm extends PluginForDecrypt {
 
     static private String host = "youtube.com";
-    static private final Pattern patternswfArgs = Pattern.compile("(.*?swfArgs.*)", Pattern.CASE_INSENSITIVE);
+    static private final Pattern patternswfArgs = Pattern.compile("(.*?swf_Args.*)", Pattern.CASE_INSENSITIVE);
     private static final String PLAYER = "get_video";
     private static final String T = "\"t\"";
     private static final String VIDEO_ID = "video_id";
