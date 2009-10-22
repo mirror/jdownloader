@@ -111,7 +111,7 @@ public class Executer extends Thread {
             byte[] buffer = new byte[1];
             for (;;) {
 
-                if (this.isInterrupted()) {
+                if (this.isInterrupted() || interruptRequestet) {
 
                 throw new InterruptedException(); }
                 int read = 0;
@@ -300,7 +300,7 @@ public class Executer extends Thread {
             this.exception = e1;
             return;
         } catch (InterruptedException e) {
-            
+
             this.exception = e;
         }
     }
