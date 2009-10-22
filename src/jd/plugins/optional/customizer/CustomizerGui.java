@@ -83,7 +83,7 @@ public class CustomizerGui extends SwitchPanel implements KeyListener, ActionLis
 
             @Override
             public boolean doHighlight(Object obj) {
-                return ((CustomizeSetting) obj).matches(tester.getText());
+                return ((CustomizeSetting) obj).matches(tester.getText()) && tester.getText().length() > 0;
             }
 
         });
@@ -163,6 +163,7 @@ public class CustomizerGui extends SwitchPanel implements KeyListener, ActionLis
     protected void onShow() {
         table.getModel().setSettings(config.getGenericProperty(JDPackageCustomizer.PROPERTY_SETTINGS, new ArrayList<CustomizeSetting>()));
         table.getModel().refreshModel();
+        table.getModel().fireTableDataChanged();
     }
 
     public void keyPressed(KeyEvent e) {
