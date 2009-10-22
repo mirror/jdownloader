@@ -37,6 +37,7 @@ public class JDProgressBar extends JProgressBar {
         super();
     }
 
+    @Override
     public void setMaximum(int value) {
         setMaximum((long) value);
     }
@@ -46,7 +47,7 @@ public class JDProgressBar extends JProgressBar {
         update();
     }
 
-    /*enable/disable autoscaling*/
+    /** enable/disable autoscaling */
     public void setAutoScaling(boolean b) {
         autofaktor = b;
     }
@@ -71,6 +72,7 @@ public class JDProgressBar extends JProgressBar {
         super.setValue((int) (realCur / scale));
     }
 
+    @Override
     public void setValue(int value) {
         setValue((long) value);
     }

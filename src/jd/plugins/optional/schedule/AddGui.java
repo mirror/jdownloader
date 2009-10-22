@@ -393,9 +393,11 @@ public class AddGui extends JPanel implements ActionListener, ChangeListener, Do
         for (int i = 0; i < schedule.getModules().size(); i++) {
             boolean found = false;
             for (Executions e : act.getExecutions()) {
-                if (e.getModule().getTranslation().equals(schedule.getModules().get(i).getTranslation())) found = true;
+                if (e.getModule().getTranslation().equals(schedule.getModules().get(i).getTranslation())) {
+                    found = true;
+                    break;
+                }
             }
-
             if (!found) cboActions.addItem(schedule.getModules().get(i).getTranslation());
         }
     }
