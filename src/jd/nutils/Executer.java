@@ -111,7 +111,7 @@ public class Executer extends Thread {
             byte[] buffer = new byte[1];
             for (;;) {
 
-                if (this.isInterrupted() || interruptRequestet) {
+                if (this.isInterrupted()) {
 
                 throw new InterruptedException(); }
                 int read = 0;
@@ -290,8 +290,14 @@ public class Executer extends Thread {
             if (sbeObserver.isAlive()) {
                 sbeObserver.requestInterrupt();
             }
-
+            int maxwait = 100;
             while ((sbeObserver != null && this.sbeObserver.isAlive()) || (sboObserver != null && this.sboObserver.isAlive())) {
+                if (processgotinterrupted) maxwait--;
+                if (maxwait == 0) {
+                    if (sbeObserver != null) this.sbeObserver.interrupt();
+                    if (sboObserver != null) this.sboObserver.interrupt();
+                    process.destroy();
+                }
                 Thread.sleep(50);
             }
 
