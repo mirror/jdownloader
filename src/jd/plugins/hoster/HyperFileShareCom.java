@@ -50,21 +50,15 @@ public class HyperFileShareCom extends PluginForHost {
             br.getPage(properlink);
         }
         if (br.containsHTML("Download URL is incorrect") || br.containsHTML("Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<b class=\"green\">Download (.*?)</b>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>Download (.*?)</title>").getMatch(0);
-        String size = br.getRegex("size:</td>\\s+<td><b>(\\d+)</b>").getMatch(0);
+        String filename = br.getRegex("<title>Download (.*?)</title>").getMatch(0);
+        if (filename == null) filename = br.getRegex("<span>Download(.*?)</span></div>").getMatch(0);
+        String size = br.getRegex("File size:.*?strong>(.*?)</strong>").getMatch(0);
         if (filename == null || size == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(Regex.getSize(size + "B"));
         return AvailableStatus.TRUE;
     }
 
-    // @Override
-    /*
-     * public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
@@ -76,24 +70,20 @@ public class HyperFileShareCom extends PluginForHost {
         url = br.getRegex("href=\"(download\\.php\\?code=[a-f0-9]+&sid=[a-f0-9]+&s=\\d)\"").getMatch(0);
         if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         url = "http://download.hyperfileshare.com/" + url;
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, url, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 1);
         dl.startDownload();
     }
 
-    // @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 5;
+        return 20;
     }
 
-    // @Override
     public void reset() {
     }
 
-    // @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 }
