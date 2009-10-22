@@ -32,7 +32,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.pluginUtils.Recaptcha;
 
-//oron by pspzockerscene
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "oron.com" }, urls = { "http://[\\w\\.]*?oron\\.com/[a-z|0-9]+/.+" }, flags = { 0 })
 public class OronCom extends PluginForHost {
 
@@ -82,23 +81,47 @@ public class OronCom extends PluginForHost {
             int waittime = ((3600 * hours) + (60 * minutes) + seconds + 1) * 1000;
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
         } else {
-            String passCode = null;
-            Recaptcha rc = new Recaptcha(br);
-            rc.parse();
-            rc.load();
-            File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-            String c = getCaptchaCode(cf, downloadLink);
-            if (br.containsHTML("name=\"password\"")) {
-                if (downloadLink.getStringProperty("pass", null) == null) {
-                    passCode = Plugin.getUserInput("Password?", downloadLink);
-                } else {
-                    /* gespeicherten PassCode holen */
-                    passCode = downloadLink.getStringProperty("pass", null);
-                }
-                rc.getForm().put("password", passCode);
+            // waittime
+            String ttt = br.getRegex("countdown\">(\\d+)</span>").getMatch(0);
+            if (ttt != null) {
+                int tt = Integer.parseInt(ttt);
+                sleep(tt * 1001l, downloadLink);
             }
-            rc.setCode(c);
-            if (br.containsHTML("Wrong password")||br.containsHTML("Wrong captcha")) {
+            String passCode = null;
+            // Re Captcha handling
+            if (br.containsHTML("api.recaptcha.net")) {
+                Recaptcha rc = new Recaptcha(br);
+                rc.parse();
+                rc.load();
+                File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                String c = getCaptchaCode(cf, downloadLink);
+                if (br.containsHTML("name=\"password\"")) {
+                    if (downloadLink.getStringProperty("pass", null) == null) {
+                        passCode = Plugin.getUserInput("Password?", downloadLink);
+                    } else {
+                        /* gespeicherten PassCode holen */
+                        passCode = downloadLink.getStringProperty("pass", null);
+                    }
+                    rc.getForm().put("password", passCode);
+                }
+                rc.setCode(c);
+            } else {
+                // No captcha handling
+                Form dlForm = br.getFormbyProperty("name", "F1");
+                if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                if (br.containsHTML("name=\"password\"")) {
+                    if (downloadLink.getStringProperty("pass", null) == null) {
+                        passCode = Plugin.getUserInput("Password?", downloadLink);
+                    } else {
+                        /* gespeicherten PassCode holen */
+                        passCode = downloadLink.getStringProperty("pass", null);
+                    }
+                    dlForm.put("password", passCode);
+                }
+                br.submitForm(dlForm);
+                System.out.print(br.toString());
+            }
+            if (br.containsHTML("Wrong password") || br.containsHTML("Wrong captcha")) {
                 logger.warning("Wrong password or wrong captcha");
                 downloadLink.setProperty("pass", null);
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
