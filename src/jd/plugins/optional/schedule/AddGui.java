@@ -301,6 +301,14 @@ public class AddGui extends JPanel implements ActionListener, ChangeListener, Do
     public void actionPerformed(ActionEvent e) {
         problems.setText("");
 
+        Calendar c = Calendar.getInstance();
+        c.set(Calendar.YEAR, (Integer) year.getValue());
+        c.set(Calendar.MONTH, (Integer) month.getValue() - 1);
+        c.set(Calendar.DAY_OF_MONTH, (Integer) day.getValue());
+        c.set(Calendar.HOUR_OF_DAY, (Integer) hour.getValue());
+        c.set(Calendar.MINUTE, (Integer) minute.getValue());
+        Date d = c.getTime();
+
         if (e.getSource() == save) {
             if (name.getText().equals("")) {
                 problems.setText(JDL.L("plugin.optional.scheduler.add.problem.emptyname", "Name is empty"));
@@ -312,23 +320,14 @@ public class AddGui extends JPanel implements ActionListener, ChangeListener, Do
             } else if (optSpecific.isSelected() && (((Integer) repeathour.getValue() * 60) + (Integer) repeatminute.getValue()) == 0) {
                 problems.setText(JDL.L("plugin.optional.scheduler.add.problem.zerorepeat", "Repeattime equals Zero"));
                 return;
-            }
-
-            act.setName(name.getText());
-
-            Calendar c = Calendar.getInstance();
-            c.set(Calendar.YEAR, (Integer) year.getValue());
-            c.set(Calendar.MONTH, (Integer) month.getValue() - 1);
-            c.set(Calendar.DAY_OF_MONTH, (Integer) day.getValue());
-            c.set(Calendar.HOUR_OF_DAY, (Integer) hour.getValue());
-            c.set(Calendar.MINUTE, (Integer) minute.getValue());
-            act.setDate(c.getTime());
-
-            // Check for a bad starttime
-            if (act.getDate().compareTo(new Date()) < 0) {
+                // Check for a bad starttime
+            } else if (d.compareTo(new Date()) < 0) {
                 problems.setText(JDL.L("plugin.optional.scheduler.add.problem.pastdate", "Execution time is in the past"));
                 return;
             }
+
+            act.setName(name.getText());
+            act.setDate(d);
 
             if (optDate.isSelected()) {
                 act.setRepeat(0);
