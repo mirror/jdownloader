@@ -16,6 +16,7 @@
 
 package jd.plugins.hoster;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -27,9 +28,11 @@ import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.pluginUtils.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadcell.com" }, urls = { "http://[\\w\\.]*?uploadcell.com/[0-9a-z]+/[0-9a-zA-Z_.-]+" }, flags = { 0 })
 public class UploadcellCom extends PluginForHost {
@@ -58,25 +61,53 @@ public class UploadcellCom extends PluginForHost {
             int waittime = ((3600 * hours) + (60 * minutes) + seconds + 1) * 1000;
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
         } else {
-            form = br.getFormbyProperty("name", "F1");
-            if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-            /* "Captcha Method" */
-            String[][] letters = br.getRegex("<span style='position:absolute;padding-left:(\\d+)px;padding-top:\\d+px;'>(\\d)</span>").getMatches();
-            if (letters.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-            SortedMap<Integer, String> capMap = new TreeMap<Integer, String>();
-            for (String[] letter : letters) {
-                capMap.put(Integer.parseInt(letter[0]), letter[1]);
-            }
-            StringBuilder code = new StringBuilder();
-            for (String value : capMap.values()) {
-                code.append(value);
-            }
-            form.put("code", code.toString());
-            form.setAction(downloadLink.getDownloadURL());
             // Ticket Time
             int tt = Integer.parseInt(br.getRegex("countdown\">(\\d+)</span>").getMatch(0));
             sleep(tt * 1001, downloadLink);
-            br.submitForm(form);
+            String passCode = null;
+            if (br.containsHTML("api.recaptcha.net")) {
+                Recaptcha rc = new Recaptcha(br);
+                rc.parse();
+                rc.load();
+                File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                String c = getCaptchaCode(cf, downloadLink);
+                if (br.containsHTML("name=\"password\"")) {
+                    if (downloadLink.getStringProperty("pass", null) == null) {
+                        passCode = Plugin.getUserInput("Password?", downloadLink);
+                    } else {
+                        /* gespeicherten PassCode holen */
+                        passCode = downloadLink.getStringProperty("pass", null);
+                    }
+                    rc.getForm().put("password", passCode);
+                }
+                rc.setCode(c);
+            } else {
+                form = br.getFormbyProperty("name", "F1");
+                if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                /* "Captcha Method" */
+                String[][] letters = br.getRegex("<span style='position:absolute;padding-left:(\\d+)px;padding-top:\\d+px;'>(\\d)</span>").getMatches();
+                if (letters.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                SortedMap<Integer, String> capMap = new TreeMap<Integer, String>();
+                for (String[] letter : letters) {
+                    capMap.put(Integer.parseInt(letter[0]), letter[1]);
+                }
+                StringBuilder code = new StringBuilder();
+                for (String value : capMap.values()) {
+                    code.append(value);
+                }
+                form.put("code", code.toString());
+                form.setAction(downloadLink.getDownloadURL());
+                if (br.containsHTML("name=\"password\"")) {
+                    if (downloadLink.getStringProperty("pass", null) == null) {
+                        passCode = Plugin.getUserInput("Password?", downloadLink);
+                    } else {
+                        /* gespeicherten PassCode holen */
+                        passCode = downloadLink.getStringProperty("pass", null);
+                    }
+                    form.put("password", passCode);
+                }
+                br.submitForm(form);
+            }
             String dllink = br.getRedirectLocation();
 
             String error = br.getRegex("class=\"err\">(.*?)</font>").getMatch(0);
@@ -90,10 +121,14 @@ public class UploadcellCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, error, 10000);
                 }
             }
+            if (br.containsHTML("Wrong password")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             if (br.containsHTML("Download Link Generated")) dllink = br.getRegex("padding:7px;\">\\s+<a\\s+href=\"(.*?)\">").getMatch(0);
 
             br.setFollowRedirects(true);
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (passCode != null) {
+                downloadLink.setProperty("pass", passCode);
+            }
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
             dl.startDownload();
         }
