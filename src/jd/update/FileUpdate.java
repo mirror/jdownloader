@@ -285,6 +285,7 @@ public class FileUpdate {
                     // Download failed. delete tmp file and exit
 
                     broadcaster.fireEvent(new MessageEvent(this, ERROR, "Hash Failed"));
+                    currentServer.setRequestTime(100000l);
                     if (hasServer()) {
                         broadcaster.fireEvent(new MessageEvent(this, ERROR, "Error. Retry"));
                     } else {
