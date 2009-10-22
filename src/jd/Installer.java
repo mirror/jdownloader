@@ -248,6 +248,7 @@ public class Installer {
                     protected void packed() {
                         dialog = this;
                         this.setSize(550, 400);
+                        this.setAlwaysOnTop(true);
                     }
 
                     @Override

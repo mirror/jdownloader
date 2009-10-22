@@ -219,7 +219,6 @@ public class JDExternInterface extends PluginOptional {
                         askPermission(request);
                         /* parse the post data */
                         String string = Encoding.htmlDecode(request.getParameters().get("crypted")).trim().replace(" ", "+");
-
                         byte[] baseDecoded = Base64.decode(string);
                         try {
                             byte[] key;
@@ -236,8 +235,10 @@ public class JDExternInterface extends PluginOptional {
                             } else {
                                 key = JDHexUtils.getByteArray(request.getParameters().get("k"));
                             }
-
+    
                             String decryted = decrypt(baseDecoded, key).trim();
+                     
+                           
                             String passwords[] = Regex.getLines(Encoding.htmlDecode(request.getParameters().get("passwords")));
                             PasswordListController.getInstance().addPasswords(passwords);
 
