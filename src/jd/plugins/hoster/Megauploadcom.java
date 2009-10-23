@@ -228,10 +228,15 @@ public class Megauploadcom extends PluginForHost {
         String waitb = br.getRegex("count=(\\d+);").getMatch(0);
         long waittime = 0;
         try {
-            if (link.getBooleanProperty("waitworkaround", false)) {
+            if (link.getIntegerProperty("waitworkaround2", 0) == 0) {
+                /* try not to wait */
+                waittime = 0;
+            } else if (link.getIntegerProperty("waitworkaround2", 0) == 1) {
+                /* try normal waittime */
+                if (waitb != null) waittime = Long.parseLong(waitb);
+            } else {
+                /* last try with 60 secs */
                 waittime = 60;
-            } else if (waitb != null) {
-                waittime = Long.parseLong(waitb);
             }
         } catch (Exception e) {
         }
@@ -254,8 +259,8 @@ public class Megauploadcom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 }
                 logger.info("MegaUpload Unknown Error: " + br.toString());
-                if (link.getBooleanProperty("waitworkaround", false)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
-                link.setProperty("waitworkaround", true);
+                if (link.getIntegerProperty("waitworkaround2", 0) == 2) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
+                link.setProperty("waitworkaround2", link.getIntegerProperty("waitworkaround2", 0) + 1);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
 
@@ -642,7 +647,7 @@ public class Megauploadcom extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
-        link.setProperty("waitworkaround", false);
+        link.setProperty("waitworkaround2", 0);
     }
 
     private void setConfigElements() {
