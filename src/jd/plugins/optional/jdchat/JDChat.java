@@ -891,9 +891,9 @@ public class JDChat extends PluginOptional implements ControlListener {
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, PARAM_NICK, JDL.L("plugins.optional.jdchat.user", "Nickname")));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PARAM_USERCOLOR, JDL.L("plugins.optional.jdchat.usercolor", "Only black usernames?")));
         ArrayList<String> position = new ArrayList<String>();
-        position.add("Right");
-        position.add("Left");
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, PARAM_USERLISTPOSITION, position.toArray(), JDL.L("interaction.jdchat.userlistposition", "Userlist position: ")));
+        position.add(JDL.L("plugins.jdchat.userlistposition_right", "Right"));
+        position.add(JDL.L("plugins.jdchat.userlistposition_left", "Left"));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, subConfig, PARAM_USERLISTPOSITION, position.toArray(), JDL.L("plugins.jdchat.userlistposition", "Userlist position: ")));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, subConfig, PARAM_PERFORM, JDL.L("plugins.optional.jdchat.performonstart", "Perform commands after connection estabilished")));
         ConfigContainer lngse = new ConfigContainer(JDL.L("plugins.optional.jdchat.locale", "Language settings"));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CONTAINER, lngse));
@@ -941,7 +941,7 @@ public class JDChat extends PluginOptional implements ControlListener {
 
     @SuppressWarnings("unchecked")
     private void initGUI() {
-        String userlistposition = subConfig.getStringProperty(PARAM_USERLISTPOSITION, "Right");
+        int userlistposition = subConfig.getIntegerProperty(PARAM_USERLISTPOSITION, 0);
         textArea = new JTextPane();
         HyperlinkListener hyp = new HyperlinkListener() {
 
@@ -1110,14 +1110,17 @@ public class JDChat extends PluginOptional implements ControlListener {
             }
         });
         JScrollPane scrollPane_userlist = new JScrollPane(right);
-        if (userlistposition.equals("Left")) {
-            frame.add(scrollPane_userlist, "width 180:180:180 ,split 2");
-            frame.add(tabbedPane);
-        }
-        if (userlistposition.equals("Right")) {
+        switch (userlistposition) {
+        case 0:
             frame.add(tabbedPane, "split 2");
             frame.add(scrollPane_userlist, "width 180:180:180");
+            break;
+        case 1:
+            frame.add(scrollPane_userlist, "width 180:180:180 ,split 2");
+            frame.add(tabbedPane);
+            break;
         }
+
         frame.add(textField, "growx, split 3");
         frame.add(closeTab, "w pref!");
         frame.add(lang, "w pref!");
