@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.net.URL;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
@@ -24,6 +25,7 @@ import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -44,13 +46,18 @@ public class FileKeeperOrg extends PluginForHost {
         this.setBrowserExclusive();
         URLConnectionAdapter con = br.openGetConnection(link.getDownloadURL());
         String check = con.getContentType();
-        if (check.contains("application")) return AvailableStatus.TRUE;
+        if (check.contains("application")) {
+            link.setFinalFileName(Plugin.getFileNameFromHeader(con));
+            link.setDownloadSize(con.getLongContentLength());
+            con.disconnect();
+            return AvailableStatus.TRUE;
+        }
         br.followConnection();
         if (br.containsHTML("404 Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("\"download/[a-zA-Z0-9/]+/(\\(\\)0-9A-Za-z.-_% )\"").getMatch(0);
-        String filesize = br.getRegex("</a>.*?—(.*?)<br>").getMatch(0);
+        String filename = br.getRegex("/download/.*?\">(http://.*?)<").getMatch(0);
+        String filesize = br.getRegex("</a>.*?dash;(.*?)<br>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        link.setName(filename);
+        link.setName(Plugin.getFileNameFromURL(new URL(filename)));
         link.setDownloadSize(Regex.getSize(filesize.replace("&nbsp;", "")));
         return AvailableStatus.TRUE;
     }
@@ -59,13 +66,15 @@ public class FileKeeperOrg extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
-        URLConnectionAdapter con = br.openGetConnection(downloadLink.getDownloadURL());
-        String check = con.getContentType();
-        if (check.contains("application")) {
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, 0);
+        if (!dl.getConnection().getContentType().contains("application")) {
+            br.followConnection();
             jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, 0);
-            dl.startDownload();
+            if (!dl.getConnection().getContentType().contains("application")) {
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_FATAL);
+            }
         }
-        jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, 0);
         dl.startDownload();
     }
 

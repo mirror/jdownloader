@@ -28,7 +28,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-//flyfile by pspzockerscene (with help)
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flyfile.us" }, urls = { "http://[\\w\\.]*?flyfile\\.us/[a-z|0-9]+/.+" }, flags = { 0 })
 public class FlyFileUs extends PluginForHost {
 
@@ -41,7 +40,6 @@ public class FlyFileUs extends PluginForHost {
         return "http://flyfile.us/tos.html";
     }
 
-    // @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setCookie("http://www.flyfile.us", "lang", "english");
@@ -49,8 +47,9 @@ public class FlyFileUs extends PluginForHost {
         if (br.containsHTML("No such file with this filename")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("No such user exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("File Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        //old filesize handling
-        // String filesize = br.getRegex("</font> \\((.*?)\\)</font>").getMatch(0);
+        // old filesize handling
+        // String filesize =
+        // br.getRegex("</font> \\((.*?)\\)</font>").getMatch(0);
         String filename = Encoding.htmlDecode(br.getRegex("<font style=\"font-size:12px;\">You have requested <font color=\"red\">http://flyfile.us/[a-z|0-9]+/(.*?)</font>").getMatch(0));
         if (filename == null) filename = br.getRegex("<h2>Download File (.*?)</h2>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -59,13 +58,12 @@ public class FlyFileUs extends PluginForHost {
         DLForm0.remove("method_premium");
         br.submitForm(DLForm0);
         if (br.containsHTML(">File was deleted by administrator<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filesize = br.getRegex("\\((.*?) bytes\\)").getMatch(0);
+        String filesize = br.getRegex("<center.*Size.*?small.*?\\((.*?) bytes\\)").getMatch(0);
         link.setName(filename);
         if (filesize != null) link.setDownloadSize(Regex.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
-    // @Override
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
@@ -114,7 +112,6 @@ public class FlyFileUs extends PluginForHost {
     public void reset() {
     }
 
-    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
