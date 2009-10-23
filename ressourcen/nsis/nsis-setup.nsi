@@ -20,6 +20,13 @@ RequestExecutionLevel admin
 !include MUI2.nsh
 !include "FileAssociation.nsh"
 
+# Java Check
+!define JRE_VERSION "1.7"
+!define JRE_SILENT 0
+!define JRE_URL "http://javadl.sun.com/webapps/download/AutoDL?BundleId=33787"
+!include "JREDyna.mod.nsh"
+
+
 # Variables
 Var StartMenuGroup
 
@@ -28,6 +35,7 @@ Var StartMenuGroup
 !insertmacro MUI_PAGE_LICENSE C:\JD-Install\license.txt
 !insertmacro MUI_PAGE_COMPONENTS
 !insertmacro MUI_PAGE_DIRECTORY
+!insertmacro CUSTOM_PAGE_JREINFO
 !insertmacro MUI_PAGE_INSTFILES
 !insertmacro MUI_PAGE_FINISH
 !insertmacro MUI_UNPAGE_CONFIRM
@@ -95,6 +103,7 @@ Var StartMenuGroup
 
 # Installer attributes
 OutFile JDownloaderSetup.exe
+#TODO: Switch to current User dir if no admin rights granted.
 InstallDir $PROGRAMFILES\JDownloader
 CRCCheck on
 XPStyle on
@@ -116,6 +125,7 @@ Section $(SecJDMain_TITLE) SecJDMain
     SetOutPath $INSTDIR
     SetOverwrite on
     File /r C:\JD-Install\files\*
+    call DownloadAndInstallJREIfNecessary
     SetOutPath $SMPROGRAMS\$StartMenuGroup
     CreateShortcut $SMPROGRAMS\$StartMenuGroup\JDownloader.lnk $INSTDIR\JDownloader.exe
     CreateShortcut "$SMPROGRAMS\$StartMenuGroup\JDownloader Support.lnk" http://jdownloader.org/knowledge/index
@@ -277,11 +287,21 @@ LangString ^UninstallLink ${LANG_WELSH} "Uninstall $(^Name)"
 
 #---- English
 
+
+#Sections
 LangString SecJDMain_TITLE ${LANG_ENGLISH} "JDownloader (required)"
 LangString SecJDMain_DESC ${LANG_ENGLISH} "The main part of JDownloader."
-
 LangString SecAssociateFiles_TITLE ${LANG_ENGLISH} "Associate JDownloader with Containerfiles"
 LangString SecAssociateFiles_DESC ${LANG_ENGLISH} "Associate JDownloader with DLC, CCF, RSDF, Click'n'Load and Metalink Fileextensions"
+
+#JRE Stuff
+LangString JRE_INSTALL_TITLE ${LANG_ENGLISH} "JRE Installation Required"
+LangString JRE_INSTALL_HEADLINE ${LANG_ENGLISH} "This application requires Java ${JRE_VERSION} or higher"
+LangString JRE_INSTALL_TEXT ${LANG_ENGLISH} "This application requires installation of the Java Runtime Environment. This will be downloaded and installed as part of the installation."
+
+LangString JRE_UPDATE_TITLE ${LANG_ENGLISH} "JRE Update Required"
+LangString JRE_UPDATE_HEADLINE ${LANG_ENGLISH} "This application requires Java ${JRE_VERSION} or higher"
+LangString JRE_UPDATE_TEXT ${LANG_ENGLISH} "This application requires a more recent version of the Java Runtime Environment. This will be downloaded and installed as part of the installation."
 
 /*
 #---- German
