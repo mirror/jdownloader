@@ -475,8 +475,10 @@ gui.menu.action.configuration.accel = F11
 gui.menu.action.configuration.mnem = C
 gui.menu.action.configuration.name = Yapılandırma
 gui.menu.action.customize.addsetting.accel = -
+gui.menu.action.customize.addsetting.mnem = Ayar Ekle
 gui.menu.action.customize.addsetting.name = Filtre Ekle
 gui.menu.action.customize.removesetting.accel = -
+gui.menu.action.customize.removesetting.mnem = Ayarları Kaldır
 gui.menu.action.customize.removesetting.name = Filtreyi Kaldır
 gui.menu.action.dnd.accel = CTRL+6
 gui.menu.action.dnd.mnem = 6
@@ -536,7 +538,7 @@ gui.menu.action.move_up.name = Yukarı taşı
 gui.menu.action.opendlfolder.accel = -
 gui.menu.action.opendlfolder.mnem = O
 gui.menu.action.opendlfolder.name = İndirme Dizinini Aç
-gui.menu.action.optconfig.name = Eklenti yapılandırma
+gui.menu.action.optconfig.name = Eklenti Ayarları
 gui.menu.action.passwordlist.accel = F3
 gui.menu.action.passwordlist.mnem = b
 gui.menu.action.passwordlist.name = Parola listesini düzenle
@@ -836,7 +838,6 @@ interaction.liveheader.name = HTTP LiveHeader
 interaction.liveheader.progress.3_step = (Adım) HTTP LiveHeader :
 interaction.liveheader.progress.4_step = (%s) HTTP LiveHeader
 interaction.resetlink.name = İndirme linkini ilk duruma getir (sıfırla)
-interaction.shutdown.dialog.msg = <h2><font color="red">Dikkat! İşletim sisteminiz kapatılacak</font></h2>
 interaction.shutdown.dialog.msg.hibernate = <h2><font color="red">Sisteminiz uyku moduna (hazırda bekleme) geçirilecek!</font></h2>
 interaction.shutdown.dialog.msg.shutdown = <h2><font color="red">Sisteminiz kapatılacak!</font></h2>
 interaction.shutdown.dialog.msg.standby = <h2><font color="red">Sisteminiz bekleme moduna geçirilecek!</font></h2>
@@ -1231,7 +1232,7 @@ plugins.host.rapidshare.errors.a16604cac6ed412855855173ba739bfc = Dosya bulunama
 plugins.host.rapidshare.errors.bcfe246b0634299062224a73ae50f17e = Bu dosyada yasal olmayan içerik var gibi ve kitlenmiş.Bu dosyayı indirmek Rapidshare tarafından yasaklanmıştır.
 plugins.host.rapidshare.errors.cd6152e1a7a4fb8ba7a6dde3b792d937 = Servis kuralları ihlali nedeni ile dosya bu sunucudan kaldırlmıştır.
 plugins.host.rapidshare.errors.d11f499020a3607ffdf987ce3968c692 = 10 GB limitine ulaşıldı.
-plugins.host.rapidshare.loadedvia = %s yoluyla yüklendi
+plugins.host.rapidshare.loadedvia = %s ile yüklendi
 plugins.host.shareswiftcom.uncheckableduewaittime = Mevcut durumu kontrol edebilmek için bekleyin ya da tekrar bağlanın
 plugins.host.uploadlinecom.premiumonly = Uploadline.com: 1GB üzerindeki dosyalar sadece Premium kullanıcılar mevcuttur.
 plugins.hoster.2sharedcom.errors.sessionlimit = Oturum limitine ulaşıldı
