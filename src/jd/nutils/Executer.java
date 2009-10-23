@@ -100,12 +100,10 @@ public class Executer extends Thread implements Runnable {
                     }
                 }
             } catch (IOException e) {
-
                 e.printStackTrace();
             } catch (InterruptedException e) {
                 // e.printStackTrace();
             } finally {
-                System.out.println("end");
             }
 
         }
@@ -118,14 +116,13 @@ public class Executer extends Thread implements Runnable {
             // so we start reading as soon as available() marks some bytes as
             // available
             boolean bytesAvailable = false;
-            for (;;) {
+            try {
+                for (;;) {
 
-                int read;
+                    int read;
 
-                if (this.isInterrupted()) {
-
-                throw new InterruptedException(); }
-                if (this.interrupted && reader.available() <= 0) {
+                    if (this.isInterrupted()) throw new InterruptedException();
+                    if (this.interrupted && reader.available() <= 0) throw new InterruptedException();
                     // try {
                     // causes inputstream.read or inputstream.available() to
                     // throw
@@ -137,31 +134,32 @@ public class Executer extends Thread implements Runnable {
                     // e.printStackTrace();
                     // }
 
-                    throw new InterruptedException();
+                    // lock until bytes are available
+                    while (!bytesAvailable || reader.available() <= 0) {
+                        bytesAvailable = true;
+                        if (this.isInterrupted() || interrupted) throw new InterruptedException();
+                    }
 
+                    if ((read = reader.read(buffer)) < 0) {
+                        this.eof = true;
+                        return i;
+                    }
+                    i += read;
+
+                    dynbuf.put(buffer, read);
+
+                    if (buffer[0] == '\b' || buffer[0] == '\r' || buffer[0] == '\n') {
+
+                    return i; }
+                    fireEvent(dynbuf, read, this == Executer.this.sbeObserver ? Executer.LISTENER_ERRORSTREAM : Executer.LISTENER_STDSTREAM);
                 }
-                // lock until bytes are available
-                while (!bytesAvailable || reader.available() <= 0) {
-                    bytesAvailable = true;
-                    if (this.isInterrupted() || interrupted) {
-
-                    throw new InterruptedException(); }
-                }
-
-                if ((read = reader.read(buffer)) < 0) {
-                    this.eof = true;
+            } catch (IOException e) {
+                if (e.toString().contains("closed") || e.toString().contains("file descriptor")) {
+                    eof = true;
                     return i;
-                }
-                i += read;
-
-                dynbuf.put(buffer, read);
-
-                if (buffer[0] == '\b' || buffer[0] == '\r' || buffer[0] == '\n') {
-
-                return i; }
-                fireEvent(dynbuf, read, this == Executer.this.sbeObserver ? Executer.LISTENER_ERRORSTREAM : Executer.LISTENER_STDSTREAM);
+                } else
+                    throw e;
             }
-
         }
 
         public boolean isStarted() {
