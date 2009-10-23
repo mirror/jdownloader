@@ -1,6 +1,6 @@
 Name JDownloader
 
-RequestExecutionLevel admin
+RequestExecutionLevel user    /* RequestExecutionLevel REQUIRED! */
 
 # General Symbol Definitions
 !define REGKEY "SOFTWARE\$(^Name)"
@@ -8,31 +8,37 @@ RequestExecutionLevel admin
 !define COMPANY "AppWork UG (haftungsbeschränkt)"
 !define URL http://www.jdownloader.org
 
+!define APPNAME "JDownloader"
+!define INSTDIR_USER "$PROFILE\${APPNAME}"
+!define INSTDIR_ADMIN "$PROGRAMFILES\${APPNAME}"
+
 # MUI Symbol Definitions
-!define MUI_ICON C:\JD-Install\install.ico
+!define MUI_ICON .\res\install.ico
 !define MUI_FINISHPAGE_NOAUTOCLOSE
 !define MUI_FINISHPAGE_RUN $INSTDIR\JDownloader.exe
-!define MUI_UNICON C:\JD-Install\uninstall.ico
+!define MUI_UNICON .\res\uninstall.ico
 !define MUI_UNFINISHPAGE_NOAUTOCLOSE
 
+# Java Check
+!define JRE_VERSION "1.6"
+!define JRE_SILENT 1
+!define JRE_URL "http://javadl.sun.com/webapps/download/AutoDL?BundleId=33787"
+
 # Included files
+!AddPluginDir plugins
 !include Sections.nsh
 !include MUI2.nsh
 !include "FileAssociation.nsh"
-
-# Java Check
-!define JRE_VERSION "1.7"
-!define JRE_SILENT 0
-!define JRE_URL "http://javadl.sun.com/webapps/download/AutoDL?BundleId=33787"
+!include "ProtocolAssociation.nsh"
+!include "UAC.nsh"
 !include "JREDyna.mod.nsh"
-
 
 # Variables
 Var StartMenuGroup
 
 # Installer pages
 !insertmacro MUI_PAGE_WELCOME
-!insertmacro MUI_PAGE_LICENSE C:\JD-Install\license.txt
+!insertmacro MUI_PAGE_LICENSE .\res\license.txt
 !insertmacro MUI_PAGE_COMPONENTS
 !insertmacro MUI_PAGE_DIRECTORY
 !insertmacro CUSTOM_PAGE_JREINFO
@@ -104,7 +110,7 @@ Var StartMenuGroup
 # Installer attributes
 OutFile JDownloaderSetup.exe
 #TODO: Switch to current User dir if no admin rights granted.
-InstallDir $PROGRAMFILES\JDownloader
+InstallDir ${INSTDIR_USER}
 CRCCheck on
 XPStyle on
 ShowInstDetails show
@@ -122,24 +128,38 @@ ShowUninstDetails show
 # Installer sections
 Section $(SecJDMain_TITLE) SecJDMain
     SectionIn RO
-    SetOutPath $INSTDIR
+    SetOutPath $INSTDIR    
     SetOverwrite on
-    File /r C:\JD-Install\files\*
-    call DownloadAndInstallJREIfNecessary
+    File /r C:\JD-Install\files\*    
     SetOutPath $SMPROGRAMS\$StartMenuGroup
     CreateShortcut $SMPROGRAMS\$StartMenuGroup\JDownloader.lnk $INSTDIR\JDownloader.exe
     CreateShortcut "$SMPROGRAMS\$StartMenuGroup\JDownloader Support.lnk" http://jdownloader.org/knowledge/index
     SetOutPath $DESKTOP
     CreateShortcut $DESKTOP\JDownloader.lnk $INSTDIR\JDownloader.exe
+    
+    ${If} ${UAC_IsAdmin}
+    AccessControl::EnableFileInheritance "$INSTDIR\"
+    AccessControl::GrantOnFile "$INSTDIR\" "(S-1-1-0)" "FullAccess"
+    AccessControl::GrantOnFile "$INSTDIR\license.txt" "(S-1-1-0)" "FullAccess"
+        
+    call DownloadAndInstallJREIfNecessary
+    ${EndIf}
+    
     WriteRegStr HKLM "${REGKEY}\Components" JDownloader 1
 SectionEnd
 
 Section $(SecAssociateFiles_TITLE) SecAssociateFiles
-    ${registerExtension} "$INSTDIR\JDownloader.exe" ".jd" "JDownloader JD-File"
-    ${registerExtension} "$INSTDIR\JDownloader.exe" ".dlc" "JDownloader DLC-Container"
-    ${registerExtension} "$INSTDIR\JDownloader.exe" ".ccf" "JDownloader CCF-Container"
-    ${registerExtension} "$INSTDIR\JDownloader.exe" ".rsdf" "JDownloader RSDF-Container"
+    ${registerExtension} "$INSTDIR\JDownloader.exe" ".jd" "JDownloader JD File"
+    ${registerExtension} "$INSTDIR\JDownloader.exe" ".dlc" "JDownloader DLC Container"
+    ${registerExtension} "$INSTDIR\JDownloader.exe" ".ccf" "JDownloader CCF Container"
+    ${registerExtension} "$INSTDIR\JDownloader.exe" ".rsdf" "JDownloader RSDF Container"
     ${registerExtension} "$INSTDIR\JDownloader.exe" ".metalink" "JDownloader Metalink"
+    ${registerProtocol}  "$INSTDIR\JDownloader.exe" "rsdf" "JDownloader RSDF Link"
+    ${registerProtocol}  "$INSTDIR\JDownloader.exe" "ccf" "JDownloader CCF Link"
+    ${registerProtocol}  "$INSTDIR\JDownloader.exe" "dlc" "JDownloader DLC Link"
+    ${registerProtocol}  "$INSTDIR\JDownloader.exe" "metalink" "JDownloader Metalink"
+    ${registerProtocol}  "$INSTDIR\JDownloader.exe" "jd" "JDownloader JD Link"
+    ${registerProtocol}  "$INSTDIR\JDownloader.exe" "jdlist" "JDownloader JDList Link"
     WriteRegStr HKLM "${REGKEY}\Components" "Associate JDownloader with Containerfiles" 1
 SectionEnd
 
@@ -174,16 +194,32 @@ done${UNSECTION_ID}:
 
 # Uninstaller sections
 Section /o "-un.Associate JDownloader with Containerfiles" UNSecAssociateFiles
-    ${unregisterExtension} ".jd" "JDownloader JD-File"
-    ${unregisterExtension} ".dlc" "JDownloader DLC-Container"
-    ${unregisterExtension} ".ccf" "JDownloader CCF-Container"
-    ${unregisterExtension} ".rsdf" "JDownloader RSDF-Container"
+    ${unregisterExtension} ".jd" "JDownloader JD File"
+    ${unregisterExtension} ".dlc" "JDownloader DLC Container"
+    ${unregisterExtension} ".ccf" "JDownloader CCF Container"
+    ${unregisterExtension} ".rsdf" "JDownloader RSDF Container"
     ${unregisterExtension} ".metalink" "JDownloader Metalink"
+    ${unregisterProtocol}  "rsdf" "JDownloader RSDF Link"
+    ${unregisterProtocol}  "ccf" "JDownloader CCF Link"
+    ${unregisterProtocol}  "dlc" "JDownloader DLC Link"
+    ${unregisterProtocol}  "metalink" "JDownloader Metalink"
+    ${unregisterProtocol}  "jd" "JDownloader JD Link"
+    ${unregisterProtocol}  "jdlist" "JDownloader JDList Link"
     DeleteRegValue HKLM "${REGKEY}\Components" "Associate JDownloader with Containerfiles"
 SectionEnd
 
 Section /o -un.JDownloader UNSecJDMain
-    RmDir /r /REBOOTOK $INSTDIR
+    
+    CreateDirectory "$INSTDIR\..\JDownloaderDownloads"
+    Rename "$INSTDIR\downloads\" "$INSTDIR\..\JDownloaderDownloads\"
+    
+    RMDir /r $INSTDIR
+    
+    CreateDirectory "$INSTDIR\downloads\"
+    Rename "$INSTDIR\..\JDownloaderDownloads\" "$INSTDIR\downloads\"
+    
+    RMDir /REBOOTOK "$INSTDIR\..\JDownloaderDownloads\"
+    
     Delete /REBOOTOK $DESKTOP\JDownloader.lnk
     Delete /REBOOTOK "$SMPROGRAMS\$StartMenuGroup\JDownloader Support.lnk"
     Delete /REBOOTOK $SMPROGRAMS\$StartMenuGroup\JDownloader.lnk
@@ -198,19 +234,43 @@ Section -un.post UNSEC0002
     DeleteRegKey /IfEmpty HKLM "${REGKEY}\Components"
     DeleteRegKey /IfEmpty HKLM "${REGKEY}"
     RmDir /REBOOTOK $SMPROGRAMS\$StartMenuGroup
-    RmDir /REBOOTOK $INSTDIR
 SectionEnd
 
 # Installer functions
 Function .onInit
     InitPluginsDir
     StrCpy $StartMenuGroup JDownloader
+    
+!insertmacro UAC_RunElevated
+${Switch} $0
+${Case} 0
+    ${IfThen} $1 = 1 ${|} Quit ${|} ;we are the outer process, the inner process has done its work, we are done
+    ${IfThen} $3 <> 0 ${|} ${Break} ${|} ;we are admin, let the show go on
+${Case} 1062
+    MessageBox mb_IconStop|mb_TopMost|mb_SetForeground "Logon service not running, aborting!"
+    Quit
+${EndSwitch}
+
+    ${If} ${UAC_IsAdmin}
+    StrCpy $INSTDIR ${INSTDIR_ADMIN}
+    ${EndIf}
 FunctionEnd
 
 # Uninstaller functions
 Function un.onInit
     ReadRegStr $INSTDIR HKLM "${REGKEY}" Path
     StrCpy $StartMenuGroup JDownloader
+    
+    !insertmacro UAC_RunElevated
+    ${Switch} $0
+    ${Case} 0
+    ${IfThen} $1 = 1 ${|} Quit ${|} ;we are the outer process, the inner process has done its work, we are done
+    ${IfThen} $3 <> 0 ${|} ${Break} ${|} ;we are admin, let the show go on
+    ${Case} 1062
+    MessageBox mb_IconStop|mb_TopMost|mb_SetForeground "Logon service not running, aborting!"
+    Quit
+    ${EndSwitch}
+    
     !insertmacro SELECT_UNSECTION JDownloader ${UNSecJDMain}
     !insertmacro SELECT_UNSECTION "Associate JDownloader with Containerfiles" ${UNSecAssociateFiles}
 FunctionEnd
