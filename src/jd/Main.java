@@ -162,7 +162,9 @@ public class Main {
                 JDInitFlags.SWITCH_RETURNED_FROM_UPDATE = true;
             }
         }
-
+        if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL) {
+            JDInitFlags.SWITCH_DEBUG = true;
+        }
         UserIO.setInstance(UserIOGui.getInstance());
         preInitChecks();
         JDUtilities.setJDargs(args);
@@ -556,7 +558,7 @@ public class Main {
                 }
             }
         } else {
-            
+
             /* dynamics in der public laden */
             JDLogger.getLogger().finest("Run dynamics");
             if (WebUpdater.getPluginList() == null) return;

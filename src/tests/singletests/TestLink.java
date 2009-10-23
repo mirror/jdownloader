@@ -61,7 +61,13 @@ public class TestLink {
             br.setDebug(true);
             br.getPage("http://www.google.de/search?as_q=&num=250&as_qdr=m&as_epq=intext%3A" + Encoding.urlEncode(d));
 
-            String source = Encoding.htmlDecode(br.toString().replace("<em>", "").replace("</em>", ""));
+            String source = br.toString().replace("<em>", "").replace("</em>", "");
+
+            try {
+                source = Encoding.htmlDecode(source);
+            } catch (Exception e) {
+
+            }
 
             String[] links = HTMLParser.getHttpLinks(source, null);
 

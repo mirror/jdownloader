@@ -523,10 +523,11 @@ public class UnrarWrapper extends Thread implements JDRunnable {
 
                 exec.addProcessListener(new ProcessListener() {
 
-                    public void onBufferChanged(Executer exec, DynByteBuffer buffer, int latestNum) {
+                    public void onBufferChanged(final Executer exec, DynByteBuffer buffer, int latestNum) {
                         if (buffer.position() >= 50) {
-                            exec.interrupt();
                             System.out.println("loaded enough.... interrupt");
+                            exec.interrupt();
+
                         }
                     }
 
