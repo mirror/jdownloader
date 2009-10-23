@@ -34,6 +34,8 @@ import jd.plugins.DownloadLink.AvailableStatus;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hotfile.com" }, urls = { "http://[\\w\\.]*?hotfile\\.com/dl/\\d+/[0-9a-zA-Z]+/" }, flags = { 2 })
 public class HotFileCom extends PluginForHost {
 
+    private boolean skipperFailed = false;
+
     public HotFileCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://hotfile.com/register.html?reff=274657");
@@ -109,7 +111,7 @@ public class HotFileCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
-
+        br.setDebug(true);
         if (br.containsHTML("You are currently downloading")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
         if (br.containsHTML("starthtimer\\(\\)")) {
             String waittime = br.getRegex("starthtimer\\(\\).*?timerend=.*?\\+(\\d+);").getMatch(0);
@@ -125,9 +127,22 @@ public class HotFileCom extends PluginForHost {
             logger.info(br.toString());
             sleeptime = 60 * 1000l;
         }
-        this.sleep(sleeptime, link);
-        br.submitForm(form);
-
+        // try to skip waittime, if this fails, fallback to waittime
+        if (!this.skipperFailed) {
+            form.put("tm", "1245072880");
+            form.put("tmhash", "e5b845119f0055c5d8554ee5f2ffc7b2d5ef86d7");
+            form.put("wait", "30");
+            form.put("waithash", "3bf07c5d83f2e652ff22eeaee00a6f08d4d2409a");
+            br.submitForm(form);
+            if (br.containsHTML("name=wait") && !this.skipperFailed) {
+                skipperFailed = true;
+                handleFree(link);
+                return;
+            }
+        } else {
+            this.sleep(sleeptime, link);
+            br.submitForm(form);
+        }
         // captcha
         if (!br.containsHTML("Click here to download")) {
             form = br.getForm(1);
