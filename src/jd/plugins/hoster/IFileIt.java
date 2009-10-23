@@ -20,8 +20,11 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -29,93 +32,119 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ifile.it" }, urls = { "http://[\\w\\.]*?ifile\\.it/[\\w]+/?" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ifile.it" }, urls = { "http://[\\w\\.]*?ifile\\.it/[\\w]+/?" }, flags = { 2 })
 public class IFileIt extends PluginForHost {
 
     public IFileIt(PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium("https://secure.ifile.it/signup");
     }
 
-    // @Override
     public String getAGBLink() {
         return "http://ifile.it/tos";
     }
 
-    // @Override
+    public void login(Account account) throws Exception {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.getPage("https://secure.ifile.it/signin");
+        Form form = br.getForm(0);
+        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        form.put("usernameFld", Encoding.urlEncode(account.getUser()));
+        form.put("passwordFld", Encoding.urlEncode(account.getPass()));
+        br.submitForm(form);
+        br.setFollowRedirects(false);
+        if (!br.containsHTML("you have successfully signed in")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        // This isn't important but with it the login looks more like JD is a
+        // real user^^
+        String human = br.getRegex("refresh\".*?url=(.*?)\"").getMatch(0);
+        if (human != null) br.getPage(human);
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        account.setValid(true);
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+        requestFileInformation(downloadLink);
+        login(account);
+        br.setFollowRedirects(true);
+        br.getPage(downloadLink.getDownloadURL());
+        String downlink = br.getRegex("var url =.*?\"(.*?)\"").getMatch(0);
+        String esn = br.getRegex("var.*?esn =.*?(\\d+);<").getMatch(0);
+        if (downlink == null || esn == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        String finaldownlink = "http://ifile.it/" + downlink + esn;
+        br.getPage(finaldownlink);
+        if (!br.containsHTML("status\":\"ok\"")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        br.getPage("http://ifile.it/dl");
+        if (br.containsHTML("download:captcha")) {
+            Browser br2 = br.cloneBrowser();
+            for (int i = 0; i <= 5; i++) {
+                String code = getCaptchaCode("http://ifile.it/download:captcha?0." + Math.random(), downloadLink);
+                String captchaget = "http://ifile.it/" + downlink.replace("&type=na", "") + "&type=simple&esn=" + esn + "&9c16d=" + code;
+                br2.getPage(captchaget);
+                if (br2.containsHTML("\"retry\":\"retry\"")) continue;
+                br.getPage("http://ifile.it/dl");
+                break;
+            }
+            if (br2.containsHTML("\"retry\":\"retry\"")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        }
+        String dllink = br.getRegex("req_btn\".*?href=\"(http://.*?\\.ifile\\.it/.*?)\">").getMatch(0);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        br.setFollowRedirects(false);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -3);
+        dl.startDownload();
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return 18;
+    }
+
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("file not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>(.*?)\\s+. Ticket").getMatch(0);
-        String filesize = br.getRegex("nbsp;\\s+\\((.*?)\\)\\s").getMatch(0);
+        String filename = br.getRegex("font-size: [0-9]+%; color: gray;\">(.*?)\\&nbsp;").getMatch(0);
+        if (filename == null) filename = br.getRegex("id=\"descriptive_link\" value=\"http://ifile.it/.*?/(.*?)\"").getMatch(0);
+        String filesize = br.getRegex(".*?(([0-9]+|[0-9]+\\.[0-9]+) (MB|KB|B|GB)).*?").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        downloadLink.setName(filename);
+        downloadLink.setName(filename.trim().replaceAll("(\r|\n|\t)", ""));
         downloadLink.setDownloadSize(Regex.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
-    // @Override
-    /*
-     * public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         /* Nochmals das File überprüfen */
         requestFileInformation(downloadLink);
-        String dlLink;
-        String previousLink = downloadLink.getStringProperty("directLink", null);
-        if (previousLink == null) {
-            String it = br.getRegex("file_key\" value=\"(.*?)\"").getMatch(0);
-            Browser br2 = br.cloneBrowser();
-            br2.getPage("http://ifile.it/download:dl_request?it=" + it + ",type=na,esn=1");
-            if (br2.containsHTML("show_captcha")) {
-                String code = getCaptchaCode("http://ifile.it/download:captcha?" + Math.random(), downloadLink);
-                br2 = br.cloneBrowser();
-                br2.getPage("http://ifile.it/download:dl_request?it=" + it + ",type=simple,esn=1,0d149=" + code + ",0d149x=0");
-                if (br2.containsHTML("retry")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            }
-            br.getPage("http://ifile.it/dl");
-            dlLink = br.getRegex("var __url\\s+=\\s+'(http://.*?)'").getMatch(0);
-            if (dlLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-            dlLink = dlLink.replaceAll(" ", "%20");
-            downloadLink.setProperty("directLink", dlLink);
-
+        if (br.containsHTML("signup for a free account in order to download this file")) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via account");
         } else {
-            dlLink = previousLink;
+            throw new PluginException(LinkStatus.ERROR_FATAL, "No free handling implemented yep, please contact the support");
         }
-        br.setDebug(true);
-        /* Datei herunterladen */
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, dlLink, true, -2);
-        URLConnectionAdapter con = dl.getConnection();
-        if (!con.isOK()) {
-            if (previousLink != null) {
-                downloadLink.setProperty("directLink", null);
-                con.disconnect();
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            } else {
-                con.disconnect();
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-            }
-        }
-        dl.startDownload();
     }
 
-    // @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 5;
+        return 20;
     }
 
-    // @Override
     public void reset() {
     }
 
-    // @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
     public void resetDownloadlink(DownloadLink link) {
         link.setProperty("directLink", null);
     }
