@@ -75,6 +75,7 @@ public class SendFileTo extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
         }
         // Form um auf "Datei herunterladen" zu klicken
+        if (br.containsHTML("You can download files up to 200 Mb only")) throw new PluginException(LinkStatus.ERROR_FATAL, "Upgrade your account to download bigger files");
         Form DLForm = br.getFormbyProperty("name", "F1");
         String captchalink = br.getRegex("\"(http://www.sendfile.to/captchas/.*?)\"").getMatch(0);
         if (DLForm == null || captchalink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
