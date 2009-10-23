@@ -56,7 +56,7 @@ public class Updater {
     private File jars;
 
     private ArrayList<File> packedFiles;
-    public static final String BRANCH = "pinky_4";
+    public static final String BRANCH = "pinky_5";
 
     public static ArrayList<Server> SERVERLIST = new ArrayList<Server>();
     public static Server UPDATE0 = new RSYNCServer(-1, "http://update0.jdownloader.org/branches/" + BRANCH + "/", "update0.jdownloader.org", 2121, "/home/www/update/http/branches/" + BRANCH + "/", false);

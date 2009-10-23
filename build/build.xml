@@ -227,7 +227,7 @@
 				<include name="jd/plugins/optional/interfaces/**" />
 			</fileset>
 		</jar>
-
+		
 		<mkdir dir="${dist}/pluginressourcen/130__JDPremium/plugins" />
 		<jar jarfile="${dist}/pluginressourcen/130__JDPremium/plugins/JDPremium.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
@@ -241,6 +241,13 @@
 				<include name="jd/plugins/optional/JDGrowlNotification*" />
 			</fileset>
 		</jar>
+		
+		<mkdir dir="${dist}/pluginressourcen/132__Customizer/plugins" />
+			<jar jarfile="${dist}/pluginressourcen/132__Customizer/plugins/JDPackageCustomizer.jar" manifest="Manifest.MF">
+				<fileset dir="${cls}">
+					<include name="jd/plugins/optional/customizer/**" />
+				</fileset>
+			</jar>
 
 	</target>
 
