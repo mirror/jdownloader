@@ -1,5 +1,5 @@
 action.customize.addsetting.ask = Lütfen yeni ayar için isim ekleyin:
-action.customize.addsetting.tooltip = Yeni dizgi ekle
+action.customize.addsetting.tooltip = Yeni ayar ekle
 action.customize.removesetting.ask = Seçilen Ayar(lar) kaldırılsın mı? (%s Hesap)
 action.customize.removesetting.tooltip = Seçilen Ayarı(ları) kaldır
 action.downloadview.movedown.tooltip = Bir Alta Yerleştir
