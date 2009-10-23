@@ -107,7 +107,7 @@ downloadsuccessful:
   DetailPrint "Launching JRE setup"
   #mod here
   !ifdef JRE_SILENT
-  !if JRE_SILENT > 0
+  !if ${JRE_SILENT} > 0
     Goto doSilent
   !endif
   !endif
