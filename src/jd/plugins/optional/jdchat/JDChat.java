@@ -62,7 +62,6 @@ import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.components.linkbutton.JLink;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
-import jd.gui.swing.jdgui.interfaces.SideBarPanel;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelListener;
@@ -108,6 +107,7 @@ public class JDChat extends PluginOptional implements ControlListener {
     private static final String PARAM_PERFORM = "PARAM_PERFORM";
     private static final String PARAM_PORT = "PARAM_PORT";
     private static final String PARAM_USERCOLOR = "PARAM_USERCOLOR";
+    private static final String PARAM_USERLISTPOSITION = "PARAM_USERLISTPOSITION";
 
     public static final String STYLE = JDIO.readFileToString(JDUtilities.getResourceFile("plugins/jdchat/styles.css"));
     public static final String STYLE_ACTION = "action";
@@ -887,8 +887,13 @@ public class JDChat extends PluginOptional implements ControlListener {
 
     private void initConfigEntries() {
         ConfigEntry cfg;
+
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, PARAM_NICK, JDL.L("plugins.optional.jdchat.user", "Nickname")));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PARAM_USERCOLOR, JDL.L("plugins.optional.jdchat.usercolor", "Only black usernames?")));
+        ArrayList<String> position = new ArrayList<String>();
+        position.add("Right");
+        position.add("Left");
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, PARAM_USERLISTPOSITION, position.toArray(), JDL.L("interaction.jdchat.userlistposition", "Userlist position: ")));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, subConfig, PARAM_PERFORM, JDL.L("plugins.optional.jdchat.performonstart", "Perform commands after connection estabilished")));
         ConfigContainer lngse = new ConfigContainer(JDL.L("plugins.optional.jdchat.locale", "Language settings"));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CONTAINER, lngse));
@@ -936,7 +941,7 @@ public class JDChat extends PluginOptional implements ControlListener {
 
     @SuppressWarnings("unchecked")
     private void initGUI() {
-
+        String userlistposition = subConfig.getStringProperty(PARAM_USERLISTPOSITION, "Right");
         textArea = new JTextPane();
         HyperlinkListener hyp = new HyperlinkListener() {
 
@@ -1104,8 +1109,15 @@ public class JDChat extends PluginOptional implements ControlListener {
 
             }
         });
-
-        frame.add(tabbedPane);
+        JScrollPane scrollPane_userlist = new JScrollPane(right);
+        if (userlistposition.equals("Left")) {
+            frame.add(scrollPane_userlist, "width 180:180:180 ,split 2");
+            frame.add(tabbedPane);
+        }
+        if (userlistposition.equals("Right")) {
+            frame.add(tabbedPane, "split 2");
+            frame.add(scrollPane_userlist, "width 180:180:180");
+        }
         frame.add(textField, "growx, split 3");
         frame.add(closeTab, "w pref!");
         frame.add(lang, "w pref!");
@@ -1484,28 +1496,7 @@ public class JDChat extends PluginOptional implements ControlListener {
                 });
 
                 view.setContent(frame);
-                SideBarPanel p = new SideBarPanel() {
-
-                    private static final long serialVersionUID = -5145514567317749732L;
-
-                    @Override
-                    protected void onHide() {
-
-                    }
-
-                    @Override
-                    protected void onShow() {
-
-                    }
-
-                };
-
-                p.setLayout(new MigLayout("ins 2,wrap 1", "[grow,fill]", "[grow,fill]"));
-
-                p.add(right, "growx,pushx");
                 view.setSidebarBorder(View.ORG_BORDER);
-
-                view.setSideBar(p);
 
             }
             SwingGui.getInstance().setContent(view);
