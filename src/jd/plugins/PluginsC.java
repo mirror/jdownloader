@@ -183,7 +183,6 @@ public abstract class PluginsC extends Plugin {
             if (!res.exists()) {
                 logger.severe("Could not copy file to homedir");
             }
-
             containerStatus = callDecryption(res);
         }
         return;
@@ -337,7 +336,7 @@ public abstract class PluginsC extends Plugin {
         if (!rel.exists() && ab.exists()) {
             String extension = JDIO.getFileExtension(ab);
             md = JDHash.getMD5(ab);
-            File newFile = JDUtilities.getResourceFile("container/" + md + "." + extension);
+            File newFile = JDUtilities.getResourceFile("container/" + md + "." + extension, true);
             if (!newFile.exists()) {
                 JDIO.copyFile(ab, newFile);
             }
