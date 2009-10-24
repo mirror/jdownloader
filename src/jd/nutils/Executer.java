@@ -141,7 +141,7 @@ public class Executer extends Thread implements Runnable {
                     this.endOfFileReceived = true;
                     return i;
                 }
-                if (i > 0) {
+                if (read > 0) {
                     i += read;
                     dynbuf.put(buffer, read);
                     if (buffer[0] == '\b' || buffer[0] == '\r' || buffer[0] == '\n') { return i; }
