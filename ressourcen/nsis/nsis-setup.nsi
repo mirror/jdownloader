@@ -187,8 +187,8 @@ ${Case} 0
     ${IfThen} $1 = 1 ${|} Quit ${|} ;we are the outer process, the inner process has done its work, we are done
     ${IfThen} $3 <> 0 ${|} ${Break} ${|} ;we are admin, let the show go on
 ${Case} 1062
-    MessageBox mb_IconStop|mb_TopMost|mb_SetForeground "Logon service not running, aborting!"
-    Quit
+    #MessageBox mb_IconStop|mb_TopMost|mb_SetForeground "Logon service not running, aborting!"
+    #Quit
 ${EndSwitch}
 
     ${If} ${UAC_IsAdmin}
@@ -207,8 +207,8 @@ Function un.onInit
     ${IfThen} $1 = 1 ${|} Quit ${|} ;we are the outer process, the inner process has done its work, we are done
     ${IfThen} $3 <> 0 ${|} ${Break} ${|} ;we are admin, let the show go on
     ${Case} 1062
-    MessageBox mb_IconStop|mb_TopMost|mb_SetForeground "Logon service not running, aborting!"
-    Quit
+    #MessageBox mb_IconStop|mb_TopMost|mb_SetForeground "Logon service not running, aborting!"
+    #Quit
     ${EndSwitch}
     
     !insertmacro SELECT_UNSECTION JDownloader ${UNSecJDMain}
@@ -242,6 +242,10 @@ LangString JRE_INSTALL_TEXT ${LANG_ENGLISH} "This application requires installat
 LangString JRE_UPDATE_TITLE ${LANG_ENGLISH} "JRE Update Required"
 LangString JRE_UPDATE_HEADLINE ${LANG_ENGLISH} "This application requires Java ${JRE_VERSION} or higher"
 LangString JRE_UPDATE_TEXT ${LANG_ENGLISH} "This application requires a more recent version of the Java Runtime Environment. This will be downloaded and installed as part of the installation."
+LangString JRE_NOADMIN_TITLE ${LANG_ENGLISH} "JRE Installation Required"
+LangString JRE_NOADMIN_HEADLINE ${LANG_ENGLISH} "This application requires Java ${JRE_VERSION} or higher"
+LangString JRE_NOADMIN_TEXT ${LANG_ENGLISH} "This application requires installation of the Java Runtime Environment. Your account does not have the administrative rights required for installation. Please ask your system administrator for further instructions."
+
 
 ;;;;; German
 #General
@@ -260,3 +264,6 @@ LangString JRE_INSTALL_TEXT ${LANG_GERMAN} "Diese Anwendung erfordert die Instal
 LangString JRE_UPDATE_TITLE ${LANG_GERMAN} "JRE Update erforderlich"
 LangString JRE_UPDATE_HEADLINE ${LANG_GERMAN} "Diese Anwendung erfordert Java ${JRE_VERSION} oder höher"
 LangString JRE_UPDATE_TEXT ${LANG_GERMAN} "Diese Anwendung erfordert eine aktuellere Version des Java Runtime Environments. Diese wird im Laufe des Installationsprozesses automatisch heruntergeladen und installiert."
+LangString JRE_NOADMIN_TITLE ${LANG_GERMAN} "JRE Installation erforderlich"
+LangString JRE_NOADMIN_HEADLINE ${LANG_GERMAN} "Diese Anwendung erfordert Java ${JRE_VERSION} oder höher"
+LangString JRE_NOADMIN_TEXT ${LANG_GERMAN} "Diese Anwendung erfordert die Installation des Java Runtime Environments. Dieses kann mit den aktuell verfügbaren Systemrechten nicht installiert werden. Bitte wenden Sie sich an ihrem Systemadministrator."

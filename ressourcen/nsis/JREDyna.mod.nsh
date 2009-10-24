@@ -40,10 +40,20 @@ Function CUSTOM_PAGE_JREINFO
   nsDialogs::create /NOUNLOAD 1018
   pop $1
 
+  ${If} ${UAC_IsAdmin}
   StrCmp $0 "0" NoFound
   StrCmp $0 "-1" FoundOld
+  ${Else}
+    Goto NoAdmin
+  ${EndIf}
 
 #Text strings modded for internationalization
+
+NoAdmin:
+  !insertmacro MUI_HEADER_TEXT $(JRE_NOADMIN_TITLE) $(JRE_NOADMIN_HEADLINE)
+  ${NSD_CreateLabel} 0 0 100% 100% $(JRE_NOADMIN_TEXT)
+  pop $1
+  goto ShowDialog
 
 NoFound:
   !insertmacro MUI_HEADER_TEXT $(JRE_INSTALL_TITLE) $(JRE_INSTALL_HEADLINE)
