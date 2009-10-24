@@ -89,7 +89,7 @@ public class Odsiebiecom extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return getMaxSimultanDownloadNum();
+        return -1;
     }
 
     @Override
@@ -205,7 +205,7 @@ public class Odsiebiecom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return getMaxSimultanDownloadNum();
+        return -1;
     }
 
     @Override

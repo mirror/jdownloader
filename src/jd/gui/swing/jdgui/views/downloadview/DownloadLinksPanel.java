@@ -397,6 +397,7 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
                         selectedLinks = (ArrayList<DownloadLink>) prop.get("links");
                         break;
                     case TableAction.DELETE:
+                    case TableAction.FORCE_DOWNLOAD:
                     case TableAction.DELETEFILE:
                     case TableAction.SET_PW:
                     case TableAction.NEW_PACKAGE:
@@ -429,6 +430,10 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
                     }
                 }
                 switch (e.getID()) {
+                case TableAction.FORCE_DOWNLOAD: {
+                    DownloadWatchDog.getInstance().forceDownload(selectedLinks);
+                    break;
+                }
                 case TableAction.STOP_MARK:
                     DownloadWatchDog.getInstance().toggleStopMark(obj);
                     break;

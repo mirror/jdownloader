@@ -84,7 +84,7 @@ public class PartageFacileCom extends PluginForHost {
     }
 
     public int getMaxSimultanFreeDownloadNum() {
-        return getMaxSimultanDownloadNum();
+        return -1;
     }
 
     public void reset() {

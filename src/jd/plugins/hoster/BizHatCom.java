@@ -70,13 +70,13 @@ public class BizHatCom extends PluginForHost {
         br.postPage(downloadLink.getDownloadURL(), "id=" + Encoding.urlEncode(id) + "&download=" + Encoding.urlEncode("<< Download Now >>"));
         String linkurl = br.getRegex(Pattern.compile("str = \"(http.*?)\"")).getMatch(0);
         String downloadURL = Encoding.htmlDecode(linkurl);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, downloadURL, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadURL, true, 0);
         dl.startDownload();
     }
 
     // @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return this.getMaxSimultanDownloadNum();
+        return -1;
     }
 
     // @Override

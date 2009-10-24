@@ -361,7 +361,7 @@ public class MegaVideo extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return this.getMaxSimultanDownloadNum();
+        return -1;
     }
 
 }

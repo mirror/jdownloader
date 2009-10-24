@@ -397,21 +397,18 @@ public abstract class PluginForHost extends Plugin {
     }
 
     public int getMaxSimultanPremiumDownloadNum() {
-        return getMaxSimultanDownloadNum();
+        return -1;
     }
 
-    /**
-     * TODO: Which one is the correct one?
-     */
-    public int getMaxSimultanDownloadNum() {
-        return SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2);
-    }
-
-    /**
-     * TODO: Which one is the correct one? The parameter is useless.
-     */
     public int getMaxSimultanDownloadNum(DownloadLink link) {
-        return isPremiumDownload() ? getMaxSimultanPremiumDownloadNum() : getMaxSimultanFreeDownloadNum();
+        int max;
+        if (isPremiumDownload()) {
+            max = getMaxSimultanPremiumDownloadNum();
+        } else {
+            max = getMaxSimultanFreeDownloadNum();
+        }
+        if (max < 0) return Integer.MAX_VALUE;
+        return max;
     }
 
     public boolean isPremiumDownload() {

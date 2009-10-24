@@ -119,7 +119,7 @@ public class DuckLoad extends PluginForHost {
      * /* public String getVersion() { return getVersion("$Revision$"); }
      */
     public int getMaxSimultanFreeDownloadNum() {
-        return getMaxSimultanDownloadNum();
+        return -1;
     }
 
 }

@@ -80,6 +80,8 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
 
     private final static Object CountLOCK = new Object();
 
+    private final static Object DownloadLOCK = new Object();
+
     /**
      * Hier kann de Status des Downloads gespeichert werden.
      */
@@ -446,29 +448,31 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
      * @return Der nächste DownloadLink oder null
      */
     public DownloadLink getNextDownloadLink() {
-        if (this.reachedStopMark()) return null;
-        DownloadLink nextDownloadLink = null;
-        DownloadLink returnDownloadLink = null;
-        try {
-            for (FilePackage filePackage : dlc.getPackages()) {
-                for (Iterator<DownloadLink> it2 = filePackage.getDownloadLinkList().iterator(); it2.hasNext();) {
-                    nextDownloadLink = it2.next();
-                    // Setzt die Wartezeit zurück
-                    if (!nextDownloadLink.getLinkStatus().isPluginActive() && nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
-                        nextDownloadLink.reset();
-                        nextDownloadLink.getLinkStatus().setStatus(LinkStatus.TODO);
-                    }
-                    if (nextDownloadLink.isEnabled() && !nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE)) {
-                        if (nextDownloadLink.getPlugin().isPremiumDownload() || (getRemainingIPBlockWaittime(nextDownloadLink.getHost()) <= 0 && getRemainingTempUnavailWaittime(nextDownloadLink.getHost()) <= 0)) {
-                            if (!isDownloadLinkActive(nextDownloadLink)) {
-                                if (!nextDownloadLink.getLinkStatus().isPluginActive()) {
-                                    if (nextDownloadLink.getLinkStatus().isStatus(LinkStatus.TODO)) {
-                                        int maxPerHost = getSimultanDownloadNumPerHost();
-                                        if (activeDownloadsbyHosts(nextDownloadLink.getPlugin()) < (nextDownloadLink.getPlugin()).getMaxSimultanDownloadNum(nextDownloadLink) && activeDownloadsbyHosts(nextDownloadLink.getPlugin()) < maxPerHost && nextDownloadLink.getPlugin().getWrapper().usePlugin()) {
-                                            if (returnDownloadLink == null) {
-                                                returnDownloadLink = nextDownloadLink;
-                                            } else {
-                                                if (nextDownloadLink.getPriority() > returnDownloadLink.getPriority()) returnDownloadLink = nextDownloadLink;
+        synchronized (DownloadLOCK) {
+            if (this.reachedStopMark()) return null;
+            DownloadLink nextDownloadLink = null;
+            DownloadLink returnDownloadLink = null;
+            try {
+                for (FilePackage filePackage : dlc.getPackages()) {
+                    for (Iterator<DownloadLink> it2 = filePackage.getDownloadLinkList().iterator(); it2.hasNext();) {
+                        nextDownloadLink = it2.next();
+                        // Setzt die Wartezeit zurück
+                        if (!nextDownloadLink.getLinkStatus().isPluginActive() && nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
+                            nextDownloadLink.reset();
+                            nextDownloadLink.getLinkStatus().setStatus(LinkStatus.TODO);
+                        }
+                        if (nextDownloadLink.isEnabled() && !nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE)) {
+                            if (nextDownloadLink.getPlugin().isPremiumDownload() || (getRemainingIPBlockWaittime(nextDownloadLink.getHost()) <= 0 && getRemainingTempUnavailWaittime(nextDownloadLink.getHost()) <= 0)) {
+                                if (!isDownloadLinkActive(nextDownloadLink)) {
+                                    if (!nextDownloadLink.getLinkStatus().isPluginActive()) {
+                                        if (nextDownloadLink.getLinkStatus().isStatus(LinkStatus.TODO)) {
+                                            int maxPerHost = getSimultanDownloadNumPerHost();
+                                            if (activeDownloadsbyHosts(nextDownloadLink.getPlugin()) < (nextDownloadLink.getPlugin()).getMaxSimultanDownloadNum(nextDownloadLink) && activeDownloadsbyHosts(nextDownloadLink.getPlugin()) < maxPerHost && nextDownloadLink.getPlugin().getWrapper().usePlugin()) {
+                                                if (returnDownloadLink == null) {
+                                                    returnDownloadLink = nextDownloadLink;
+                                                } else {
+                                                    if (nextDownloadLink.getPriority() > returnDownloadLink.getPriority()) returnDownloadLink = nextDownloadLink;
+                                                }
                                             }
                                         }
                                     }
@@ -477,10 +481,39 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                         }
                     }
                 }
+            } catch (Exception e) {
             }
-        } catch (Exception e) {
+            return returnDownloadLink;
         }
-        return returnDownloadLink;
+    }
+
+    /*
+     * try to force a downloadstart, will ignore maxperhost and maxdownloads
+     * limits
+     */
+    public void forceDownload(ArrayList<DownloadLink> links) {
+        synchronized (StartStopSync) {
+            if (downloadStatus != STATE.RUNNING) return;
+        }
+        synchronized (DownloadLOCK) {
+            for (DownloadLink link : links) {
+                if (!link.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE)) {
+                    if (link.getPlugin().isPremiumDownload() || (getRemainingIPBlockWaittime(link.getHost()) <= 0 && getRemainingTempUnavailWaittime(link.getHost()) <= 0)) {
+                        if (!isDownloadLinkActive(link)) {
+                            if (!link.getLinkStatus().isPluginActive()) {
+                                if (link.getLinkStatus().isStatus(LinkStatus.TODO)) {
+                                    int activePerHost = activeDownloadsbyHosts(link.getPlugin());
+                                    if (activePerHost < (link.getPlugin()).getMaxSimultanDownloadNum(link) && link.getPlugin().getWrapper().usePlugin()) {
+                                        if (!link.isEnabled()) link.setEnabled(true);
+                                        startDownloadThread(link);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     /**

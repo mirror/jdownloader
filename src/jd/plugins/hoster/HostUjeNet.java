@@ -71,13 +71,13 @@ public class HostUjeNet extends PluginForHost {
         String link = null;
         link = br.getRedirectLocation();
         if (link == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA, JDL.L("downloadlink.status.error.captcha_wrong", "Captcha wrong"));
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, link, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, link, false, 1);
         dl.startDownload();
     }
 
     // @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return this.getMaxSimultanDownloadNum();
+        return -1;
     }
 
     // @Override

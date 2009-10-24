@@ -756,10 +756,8 @@ public class Srnnks extends PluginForDecrypt {
                                         for (String element4 : links2) {
                                             if (canHandle(element4)) {
                                                 SrnnksLinks dl = createDownloadLink(element4, new String[] { size, element3[0], element3[1], title });
-                                                if (JDUtilities.getPluginForHost(getHostname(element4)).getMaxSimultanDownloadNum() > 1) {
-                                                    decryptedLinks.add(dl);
-                                                    breakit = true;
-                                                }
+                                                decryptedLinks.add(dl);
+                                                breakit = true;
                                             }
                                         }
                                         if (breakit) {

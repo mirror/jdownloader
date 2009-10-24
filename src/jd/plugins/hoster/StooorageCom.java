@@ -73,7 +73,7 @@ public class StooorageCom extends PluginForHost {
     }
 
     public int getMaxSimultanFreeDownloadNum() {
-        return getMaxSimultanDownloadNum();
+        return -1;
     }
 
 }

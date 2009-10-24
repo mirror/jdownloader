@@ -113,7 +113,7 @@ public class Zippysharecom extends PluginForHost {
     }
 
     public int getMaxSimultanFreeDownloadNum() {
-        return this.getMaxSimultanDownloadNum();
+        return -1;
     }
 
     public void reset() {

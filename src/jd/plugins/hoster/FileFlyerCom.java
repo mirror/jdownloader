@@ -67,13 +67,13 @@ public class FileFlyerCom extends PluginForHost {
         String linkurl = br.getRegex(Pattern.compile("<a id=\"ItemsList_ctl00_img\".*href=\"(.*)\">")).getMatch(0);
         br.setFollowRedirects(true);
         String downloadURL = Encoding.htmlDecode(linkurl);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, downloadURL, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadURL, true, 0);
         dl.startDownload();
     }
 
     // @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return this.getMaxSimultanDownloadNum();
+        return -1;
     }
 
     // @Override
