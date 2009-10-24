@@ -63,6 +63,8 @@ public class FileFactory extends PluginForHost {
         requestFileInformation(parameter);
         try {
             handleFree0(parameter);
+        } catch (PluginException e4) {
+            throw e4;
         } catch (InterruptedException e2) {
             return;
         } catch (IOException e) {
@@ -82,12 +84,12 @@ public class FileFactory extends PluginForHost {
     }
 
     public void handleFree0(DownloadLink parameter) throws Exception {
+        this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(parameter.getDownloadURL());
-        if (br.containsHTML("there are currently no free download slots")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 3 * 60 * 1000l); }
-        if (br.containsHTML(NOT_AVAILABLE)) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.containsHTML(SERVER_DOWN) || br.containsHTML(NO_SLOT)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l); }
+        if (br.containsHTML("there are currently no free download slots")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
+        if (br.containsHTML(NOT_AVAILABLE)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(SERVER_DOWN) || br.containsHTML(NO_SLOT)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l); }
 
         String urlWithFilename = br.getRegex("class=\"basicBtn\".*?href=\"(.*?)\"").getMatch(0);
         if (urlWithFilename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);

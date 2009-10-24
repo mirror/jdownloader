@@ -188,8 +188,12 @@ public class SpeedMeterPanel extends JPanel implements ActionListener, MouseList
             g2.drawLine(0, limitpx, width, limitpx);
             if (limitpx > height / 2) {
                 g2.drawString((DownloadWatchDog.getInstance().isPaused() ? JDL.L("gui.speedmeter.pause", "pause") + " " : "") + Formatter.formatReadable(limit) + "/s", 5, limitpx - 4);
+                g2.setColor(fontCol);
+                g2.drawString(Formatter.formatReadable(JDUtilities.getController().getSpeedMeter()) + "/s", width - len - 5, limitpx - 4);
             } else {
                 g2.drawString((DownloadWatchDog.getInstance().isPaused() ? JDL.L("gui.speedmeter.pause", "pause") + " " : "") + Formatter.formatReadable(limit) + "/s", 5, limitpx + 12);
+                g2.setColor(fontCol);
+                g2.drawString(Formatter.formatReadable(JDUtilities.getController().getSpeedMeter()) + "/s", width - len - 5, limitpx + 12);
             }
         } else {
             g2.setColor(fontCol);

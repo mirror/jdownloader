@@ -163,7 +163,7 @@ public class SingleDownloadController extends Thread {
             } catch (Exception e) {
                 logger.finest("Hoster Plugin Version: " + downloadLink.getPlugin().getVersion());
                 JDLogger.exception(e);
-                linkStatus.addStatus(LinkStatus.ERROR_FATAL);
+                linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
                 linkStatus.setErrorMessage(JDL.L("plugins.errors.error", "Error: ") + JDUtilities.convertExceptionReadable(e));
             }
 
@@ -248,10 +248,8 @@ public class SingleDownloadController extends Thread {
     private void onErrorLinkBlock(DownloadLink downloadLink, PluginForHost currentPlugin) {
         LinkStatus status = downloadLink.getLinkStatus();
         if (status.hasStatus(LinkStatus.ERROR_ALREADYEXISTS)) {
-
             onErrorFileExists(downloadLink, currentPlugin);
         } else {
-
             status.resetWaitTime();
             downloadLink.setEnabled(false);
         }
@@ -276,7 +274,6 @@ public class SingleDownloadController extends Thread {
         downloadLink2.getLinkStatus().addStatus(LinkStatus.ERROR_FATAL);
         downloadLink2.getLinkStatus().setErrorMessage(JDL.L("controller.status.pluindefekt", "Plugin out of date"));
         downloadLink.requestGuiUpdate();
-
     }
 
     public boolean isAborted() {

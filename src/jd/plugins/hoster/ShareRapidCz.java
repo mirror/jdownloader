@@ -93,7 +93,7 @@ public class ShareRapidCz extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (!(dl.getConnection().isContentDisposition())) {
             br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_FATAL);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         }
         dl.startDownload();
     }
@@ -124,7 +124,7 @@ public class ShareRapidCz extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         String dllink = br.getRegex("class=\"important\" href=\"(.*?)\">Click to download! <").getMatch(0);
-        if (dllink == null && br.containsHTML("Stahování je přístupné pouze přihlášeným uživatelům")) { throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for registered users"); }
+        if (dllink == null && br.containsHTML("Stahování je přístupné pouze přihlášeným uživatelům")) throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for registered users");
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT, "Please contact the support jdownloader.org");
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);

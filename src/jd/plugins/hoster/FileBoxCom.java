@@ -163,15 +163,15 @@ public class FileBoxCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             } else if (premium) {
                 String url = br.getRegex("direct link.*?href=\"(http:.*?)\"").getMatch(0);
-                if (url == null) throw new PluginException(LinkStatus.ERROR_FATAL);
+                if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
                 br.setFollowRedirects(true);
                 dl = BrowserAdapter.openDownload(br, link, url, true, 0);
                 if (dl.getConnection() != null && dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("html")) {
                     br.followConnection();
-                    throw new PluginException(LinkStatus.ERROR_FATAL);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
                 }
             } else
-                throw new PluginException(LinkStatus.ERROR_FATAL);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         }
         if (passCode != null) {
             link.setProperty("pass", passCode);
@@ -207,7 +207,7 @@ public class FileBoxCom extends PluginForHost {
                 downloadLink.setProperty("pass", null);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
-            throw new PluginException(LinkStatus.ERROR_FATAL);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         }
         if (passCode != null) {
             downloadLink.setProperty("pass", passCode);

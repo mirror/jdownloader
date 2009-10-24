@@ -72,11 +72,11 @@ public class ClipfishDe extends PluginForHost {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
         URLConnectionAdapter urlConnection;
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, downloadLink.getDownloadURL());
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL());
         urlConnection = dl.connect();
         if (urlConnection.getLongContentLength() == 0) {
-            urlConnection.disconnect();
-            linkStatus.addStatus(LinkStatus.ERROR_FATAL);
+            br.followConnection();
+            linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
             return;
         }
 

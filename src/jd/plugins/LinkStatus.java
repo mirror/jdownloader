@@ -552,4 +552,35 @@ public class LinkStatus implements Serializable {
     public boolean isFinished() {
         return hasStatus(ERROR_ALREADYEXISTS) || hasStatus(FINISHED);
     }
+
+    /* use this function to reset linkstatus to TODO, if no notResetifFlag match */
+    public void resetStatus(int... notResetifFlag) {
+        if (this.downloadLink == null) return;
+        int curState = LinkStatus.TODO;
+        int curLState = LinkStatus.TODO;
+        String tmp2 = null;
+        String tmp3 = null;
+        int resetFlag = 0;
+        for (int flag : notResetifFlag) {
+            resetFlag = resetFlag | flag;
+        }
+        for (int flag : notResetifFlag) {
+            if (downloadLink.getLinkStatus().hasStatus(flag)) {
+                curState = downloadLink.getLinkStatus().getStatus();
+                curLState = downloadLink.getLinkStatus().getLatestStatus();
+                tmp2 = downloadLink.getLinkStatus().getErrorMessage();
+                tmp3 = downloadLink.getLinkStatus().getStatusText();
+                break;
+            }
+        }
+        // filter flags
+        curState = JDFlags.filterFlags(curState, resetFlag | LinkStatus.TODO);
+        curLState = JDFlags.filterFlags(curLState, resetFlag | LinkStatus.TODO);
+        /* reset and if needed restore the old state */
+        downloadLink.getLinkStatus().reset();
+        downloadLink.getLinkStatus().setStatus(curState);
+        downloadLink.getLinkStatus().setLatestStatus(curLState);
+        downloadLink.getLinkStatus().setErrorMessage(tmp2);
+        downloadLink.getLinkStatus().setStatusText(tmp3);
+    }
 }

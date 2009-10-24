@@ -20,7 +20,6 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -38,6 +37,7 @@ import jd.utils.locale.JDL;
 public class UploadingCom extends PluginForHost {
     private static int simultanpremium = 1;
     private static final Object PREMLOCK = new Object();
+    private String userAgent = "Mozilla/5.0 (Windows; U; Windows NT 6.0; chrome://global/locale/intl.properties; rv:1.8.1.12) Gecko/2008102920  Firefox/3.0.0";
 
     public UploadingCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -62,8 +62,10 @@ public class UploadingCom extends PluginForHost {
 
     public void login(Account account) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+        br.getHeaders().put("User-Agent", userAgent);
         br.setCookie("http://www.uploading.com/", "language", "1");
+        br.setCookie("http://www.uploading.com/", "setlang", "en");
+        br.setCookie("http://www.uploading.com/", "_lang", "en");
         br.getPage("http://www.uploading.com/");
         br.postPage("http://uploading.com/general/login_form/", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember=on");
         if (br.getCookie("http://www.uploading.com/", "remembered_user") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -92,31 +94,32 @@ public class UploadingCom extends PluginForHost {
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         boolean free = false;
+        br.setDebug(true);
         synchronized (PREMLOCK) {
-            requestFileInformation(link);
             login(account);
-            if (!isPremium()) {
-                simultanpremium = 1;
-                free = true;
-            } else {
-                if (simultanpremium + 1 > 20) {
-                    simultanpremium = 20;
-                } else {
-                    simultanpremium++;
-                }
-            }
+            // if (!isPremium()) {
+            // simultanpremium = 1;
+            // free = true;
+            // } else {
+            // if (simultanpremium + 1 > 20) {
+            // simultanpremium = 20;
+            // } else {
+            // simultanpremium++;
+            // }
+            // }
+            fileCheck(link);
         }
         if (free) {
-            br.getPage(link.getDownloadURL());
             handleFree0(link);
             return;
         }
-        br.getPage(link.getDownloadURL());
         String redirect = getDownloadUrl(br, link);
-        br.setFollowRedirects(true);
+        br.setFollowRedirects(false);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, redirect, true, 0);
         if (!dl.getConnection().isContentDisposition()) {
+            String error = dl.getConnection().getRequest().getCookies().get("error").getValue();
             br.followConnection();
+            if (error != null && error.contains("wait")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 1000l * 15);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         }
         dl.setFilenameFix(true);
@@ -137,22 +140,19 @@ public class UploadingCom extends PluginForHost {
         if (br.containsHTML("Only Premium users can download files larger than")) throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium");
         if (br.containsHTML("You have reached the daily downloads limit")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 1 * 60 * 60 * 1000l);
         String redirect = getDownloadUrl(br, link);
-        br.setFollowRedirects(true);
+        br.setFollowRedirects(false);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, redirect, true, 1);
         if (!dl.getConnection().isContentDisposition()) {
+            String error = dl.getConnection().getRequest().getCookies().get("error").getValue();
             br.followConnection();
+            if (error != null && error.contains("wait")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 1000l * 15);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         }
         dl.setFilenameFix(true);
         dl.startDownload();
     }
 
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
-        setBrowserExclusive();
-        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
-        br.setFollowRedirects(true);
-        br.setCookie("http://www.uploading.com/", "language", "1");
+    public AvailableStatus fileCheck(DownloadLink downloadLink) throws PluginException, IOException {
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("but due to abuse or through deletion by")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filesize = br.getRegex("File size: <b>(.*?)</b>").getMatch(0);
@@ -178,6 +178,17 @@ public class UploadingCom extends PluginForHost {
     }
 
     @Override
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
+        setBrowserExclusive();
+        br.getHeaders().put("User-Agent", userAgent);
+        br.setFollowRedirects(true);
+        br.setCookie("http://www.uploading.com/", "language", "1");
+        br.setCookie("http://www.uploading.com/", "setlang", "en");
+        br.setCookie("http://www.uploading.com/", "_lang", "en");
+        return fileCheck(downloadLink);
+    }
+
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
@@ -186,7 +197,10 @@ public class UploadingCom extends PluginForHost {
 
     public String getDownloadUrl(Browser br, DownloadLink downloadLink) throws PluginException, IOException {
         String varLink = br.getRegex("var file_link = '(http://.*?)'").getMatch(0);
-        if (varLink != null) return varLink;
+        if (varLink != null) {
+            sleep(2000, downloadLink);
+            return varLink;
+        }
         br.setFollowRedirects(false);
         String fileID = br.getRegex("file_id: (\\d+)").getMatch(0);
         if (fileID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);

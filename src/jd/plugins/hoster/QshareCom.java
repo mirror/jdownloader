@@ -119,7 +119,7 @@ public class QshareCom extends PluginForHost {
             String error = br.getRegex("<SPAN STYLE=\"font\\-size:13px;color:#BB0000;font\\-weight:bold\">(.*?)</SPAN>").getMatch(0);
             if (error != null) {
                 logger.severe(error);
-                throw new PluginException(LinkStatus.ERROR_FATAL);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
             }
             String[] links = br.getRegex("class=\"button\" href=\"(.*?)\"><span>").getColumn(0);
             if (links.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);

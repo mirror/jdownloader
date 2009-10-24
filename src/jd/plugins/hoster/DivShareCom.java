@@ -154,7 +154,7 @@ public class DivShareCom extends PluginForHost {
             if (br.containsHTML("This file is unavailable until")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             if (br.containsHTML("Sorry, we couldn't find this file.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             if (br.containsHTML("This file is secured by Divshare.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            throw new PluginException(LinkStatus.ERROR_FATAL);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
 
         } else {
             // handling für die anderen Links (mit "download" bzw. "image" im

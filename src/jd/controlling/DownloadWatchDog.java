@@ -28,7 +28,6 @@ import jd.controlling.reconnect.Reconnecter;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.swing.jdgui.actions.ActionController;
-import jd.nutils.JDFlags;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -353,33 +352,17 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
         resetTempUnavailWaittime(null);
         ArrayList<FilePackage> fps;
         fps = dlc.getPackages();
-        int curState;
-        int curLState;
-        String tmp2;
-        String tmp3;
         synchronized (fps) {
             for (FilePackage filePackage : fps) {
                 links = filePackage.getDownloadLinkList();
                 for (int i = 0; i < links.size(); i++) {
                     DownloadLink link = links.get(i);
-                    curState = LinkStatus.TODO;
-                    curLState = LinkStatus.TODO;
-                    tmp2 = null;
-                    tmp3 = null;
-                    if (link.getLinkStatus().isFinished() || link.getLinkStatus().hasStatus(LinkStatus.ERROR_FILE_NOT_FOUND)) {
-                        curState = link.getLinkStatus().getStatus();
-                        curLState = link.getLinkStatus().getLatestStatus();
-                        tmp2 = link.getLinkStatus().getErrorMessage();
-                        tmp3 = link.getLinkStatus().getStatusText();
-                    }
-                    curState = JDFlags.filterFlags(curState, LinkStatus.ERROR_FILE_NOT_FOUND | LinkStatus.FINISHED | LinkStatus.ERROR_ALREADYEXISTS | LinkStatus.TODO);
-                    curLState = JDFlags.filterFlags(curLState, LinkStatus.ERROR_FILE_NOT_FOUND | LinkStatus.FINISHED | LinkStatus.ERROR_ALREADYEXISTS | LinkStatus.TODO);
-                    link.getLinkStatus().setStatusText(tmp3);
-                    link.getLinkStatus().setErrorMessage(tmp2);
                     link.setAborted(false);
-                    link.getLinkStatus().setStatus(curState);
-                    link.getLinkStatus().setLatestStatus(curLState);
-                    link.getLinkStatus().resetWaitTime();
+                    /*
+                     * do not reset if link is offline, finished , already exist
+                     * or pluginerror (because only plugin updates can fix this)
+                     */
+                    link.getLinkStatus().resetStatus(LinkStatus.ERROR_FATAL | LinkStatus.ERROR_PLUGIN_DEFEKT | LinkStatus.ERROR_ALREADYEXISTS, LinkStatus.ERROR_FILE_NOT_FOUND, LinkStatus.FINISHED);
                 }
             }
         }

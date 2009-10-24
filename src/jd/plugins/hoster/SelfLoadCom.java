@@ -65,11 +65,11 @@ public class SelfLoadCom extends PluginForHost {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
         Form form = br.getForm(0);
-        if (form == null) throw new PluginException(LinkStatus.ERROR_FATAL);
+        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         form.setAction("/redirect.php"); // *FIXME: ohne / wird eine falsche url
         // in der Form.getAction berechnet!
         // hoster schuld oder Form fixen?
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, form, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, false, 1);
         dl.startDownload();
     }
 

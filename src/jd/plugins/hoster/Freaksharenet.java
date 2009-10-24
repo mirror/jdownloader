@@ -101,7 +101,7 @@ public class Freaksharenet extends PluginForHost {
         } else {
             url = br.getRedirectLocation();
         }
-        if (url == null) throw new PluginException(LinkStatus.ERROR_FATAL);
+        if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 0);
         dl.startDownload();
     }
@@ -142,7 +142,7 @@ public class Freaksharenet extends PluginForHost {
         if (!con.isContentDisposition()) {
             br.followConnection();
             if (br.containsHTML("you cant  download more then 1 at time")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1001);
-            throw new PluginException(LinkStatus.ERROR_FATAL);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         }
         dl.startDownload();
     }

@@ -30,7 +30,6 @@ import javax.swing.Timer;
 import jd.Main;
 import jd.config.Configuration;
 import jd.event.JDBroadcaster;
-import jd.nutils.JDFlags;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.FilePackageEvent;
@@ -296,27 +295,12 @@ public class DownloadController implements FilePackageListener, DownloadControll
                 it = fp.getDownloadLinkList().iterator();
                 while (it.hasNext()) {
                     localLink = it.next();
-
-                    int curState = LinkStatus.TODO;
-                    int curLState = LinkStatus.TODO;
-                    tmp2 = null;
-                    if (localLink.getLinkStatus().isFinished() || localLink.getLinkStatus().hasStatus(LinkStatus.ERROR_FILE_NOT_FOUND)) {
-                        /*
-                         * if link is finished or offline, save old status and
-                         * message
-                         */
-                        curState = localLink.getLinkStatus().getStatus();
-                        curLState = localLink.getLinkStatus().getLatestStatus();
-                        tmp2 = localLink.getLinkStatus().getErrorMessage();
-                    }
-                    // filter flags
-                    curState = JDFlags.filterFlags(curState, LinkStatus.ERROR_FILE_NOT_FOUND | LinkStatus.FINISHED | LinkStatus.ERROR_ALREADYEXISTS | LinkStatus.TODO);
-                    curLState = JDFlags.filterFlags(curLState, LinkStatus.ERROR_FILE_NOT_FOUND | LinkStatus.FINISHED | LinkStatus.ERROR_ALREADYEXISTS | LinkStatus.TODO);
-                    /* reset and if needed restore the old state */
-                    localLink.getLinkStatus().reset();
-                    localLink.getLinkStatus().setStatus(curState);
-                    localLink.getLinkStatus().setLatestStatus(curLState);
-                    localLink.getLinkStatus().setErrorMessage(tmp2);
+                    /*
+                     * reset not if already exist, offline or finished. plugin
+                     * errors will be reset here because plugin can be fixed
+                     * again
+                     */
+                    localLink.getLinkStatus().resetStatus(LinkStatus.ERROR_ALREADYEXISTS, LinkStatus.ERROR_FILE_NOT_FOUND, LinkStatus.FINISHED);
 
                     if (localLink.getLinkStatus().isFinished() && JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_FINISHED_DOWNLOADS_ACTION, 3) == 1) {
                         it.remove();

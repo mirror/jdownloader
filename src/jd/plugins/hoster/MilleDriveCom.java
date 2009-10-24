@@ -98,7 +98,7 @@ public class MilleDriveCom extends PluginForHost {
             br.submitForm(down1);
             if (br.containsHTML("currently in use")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED); }
             String url = br.getRegex("<a href=\"(http://cache[^\"]+)").getMatch(0);
-            if (url == null) throw new PluginException(LinkStatus.ERROR_FATAL);
+            if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
             if (br.containsHTML("The requested URL does not exist")) throw new PluginException(LinkStatus.ERROR_RETRY);
             br.setFollowRedirects(true);
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 1);

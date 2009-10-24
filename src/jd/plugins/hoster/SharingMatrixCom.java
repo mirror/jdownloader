@@ -102,13 +102,13 @@ public class SharingMatrixCom extends PluginForHost {
             }
             String linkid = br.getRegex("link_id = '(\\d+)';").getMatch(0);
             String link_name = br.getRegex("link_name = '([^']*')").getMatch(0);
-            if (linkid == null || link_name == null) throw new PluginException(LinkStatus.ERROR_FATAL);
+            if (linkid == null || link_name == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
             Browser brc = br.cloneBrowser();
             brc.getPage("http://www.sharingmatrix.com/ajax_scripts/_get.php?link_id=" + linkid + "&link_name=" + link_name + "&dl_id=0&prem=1" + (passCode == null ? "" : "&password=" + Encoding.urlEncode(passCode)));
             if (brc.containsHTML("server_down")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverfailure, Please try again later!", 30 * 60 * 1000l);
             String server = brc.getRegex("serv:\"(http://.*?)\"").getMatch(0);
             String hash = brc.getRegex("hash:\"(.*?)\"").getMatch(0);
-            if (server == null || hash == null) throw new PluginException(LinkStatus.ERROR_FATAL);
+            if (server == null || hash == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
             url = server + "/download/" + hash + "/0/" + (passCode == null ? "" : Encoding.urlEncode(passCode));
         }
         br.setFollowRedirects(true);
@@ -128,7 +128,7 @@ public class SharingMatrixCom extends PluginForHost {
                 }
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
-            throw new PluginException(LinkStatus.ERROR_FATAL);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         }
         if (passCode != null) {
             downloadLink.setProperty("pass", passCode);
@@ -214,7 +214,7 @@ public class SharingMatrixCom extends PluginForHost {
                 downloadLink.setProperty("pass", null);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
-            throw new PluginException(LinkStatus.ERROR_FATAL);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         }
         if (passCode != null) {
             downloadLink.setProperty("pass", passCode);

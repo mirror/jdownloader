@@ -50,8 +50,11 @@ public class FileRackCom extends PluginForHost {
         Form[] form = br.getForms();
         form[0].remove("method_premium");
         br.submitForm(form[0]);
+        if (br.containsHTML("Premium member can download more than 200MB file")) throw new PluginException(LinkStatus.ERROR_FATAL, "Only Premium member can download more than 200MB file");
         if (br.containsHTML("File is deleted.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        int sleep = Integer.parseInt(br.getRegex("Wait <span id=\"countdown\">(.*?)</span> seconds").getMatch(0));
+        String wait = br.getRegex("Wait <span id=\"countdown\">(.*?)</span> seconds").getMatch(0);
+        if (wait == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        int sleep = Integer.parseInt(wait);
         sleep(sleep * 1001, link);
         int retry = 0;
         do {
@@ -64,7 +67,7 @@ public class FileRackCom extends PluginForHost {
             retry++;
         } while (br.containsHTML("<b>Verification Code doesn't match </b>"));
         String dllink = br.getRegex(Pattern.compile("<span id=\"btn_download2\">.*<a href=\"(.*?)\" onclick=\"disableimg\\(\\)\">", Pattern.DOTALL)).getMatch(0);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,link, dllink, true, -20);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -20);
         dl.startDownload();
 
     }
@@ -88,7 +91,7 @@ public class FileRackCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-    
+
     // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;

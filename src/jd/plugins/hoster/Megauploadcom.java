@@ -222,7 +222,7 @@ public class Megauploadcom extends PluginForHost {
     }
 
     private void doDownload(DownloadLink link, String url, boolean resume, int chunks) throws Exception {
-        if (url == null) throw new PluginException(LinkStatus.ERROR_FATAL);
+        if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         url = url.replaceFirst("megaupload\\.com/", "megaupload\\.com:" + usePort() + "/");
         br.setFollowRedirects(true);
         String waitb = br.getRegex("count=(\\d+);").getMatch(0);

@@ -266,8 +266,7 @@ public class Uploadedto extends PluginForHost {
         }
         if (error != null) {
             String message = JDL.L("plugins.errors.uploadedto." + error, error.replaceAll("_", " "));
-            logger.severe("Fatal error 1");
-            linkStatus.addStatus(LinkStatus.ERROR_FATAL);
+            linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
             linkStatus.setErrorMessage(message);
             return;
 
@@ -283,10 +282,7 @@ public class Uploadedto extends PluginForHost {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, false, 1);
         } else {
             String dlLink = br.getRedirectLocation();
-            if (dlLink == null) {
-                logger.severe("Fatal error 1\r\n" + br);
-                throw new PluginException(LinkStatus.ERROR_FATAL);
-            }
+            if (dlLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlLink, false, 1);
         }
         if (!dl.getConnection().isContentDisposition()) {

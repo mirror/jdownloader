@@ -77,7 +77,7 @@ public class XupIn extends PluginForHost {
             }
             download.put("vpass", passCode);
         }
-        jd.plugins.BrowserAdapter.openDownload(br,downloadLink, download);
+        jd.plugins.BrowserAdapter.openDownload(br, downloadLink, download);
 
         if (!dl.getConnection().isContentDisposition()) {
             String page = br.loadConnection(dl.getConnection());
@@ -85,7 +85,7 @@ public class XupIn extends PluginForHost {
                 downloadLink.setProperty("pass", null);
                 throw new PluginException(LinkStatus.ERROR_RETRY, JDL.L("plugins.hoster.xupin.errors.passwrong", "Password wrong"));
             }
-            throw new PluginException(LinkStatus.ERROR_FATAL);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         }
         downloadLink.setProperty("pass", passCode);
         dl.startDownload();

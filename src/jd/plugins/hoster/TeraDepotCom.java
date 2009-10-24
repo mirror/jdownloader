@@ -121,12 +121,12 @@ public class TeraDepotCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             } else {
                 String url = br.getRegex("direct link.*?href=\"(http:.*?)\"").getMatch(0);
-                if (url == null) throw new PluginException(LinkStatus.ERROR_FATAL);
+                if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
                 br.setFollowRedirects(true);
                 dl = BrowserAdapter.openDownload(br, link, url, true, 0);
                 if (dl.getConnection() != null && dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("html")) {
                     br.followConnection();
-                    throw new PluginException(LinkStatus.ERROR_FATAL);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
                 }
             }
         }

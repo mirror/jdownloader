@@ -62,7 +62,7 @@ public class Youtube extends PluginForHost {
             downloadLink.setFinalFileName(downloadLink.getStringProperty("name", "video.tmp"));
             downloadLink.setDownloadSize((Long) downloadLink.getProperty("size", Long.valueOf(0l)));
             PluginForDecrypt plugin = JDUtilities.getPluginForDecrypt("youtube.com");
-            if (plugin == null) throw new PluginException(LinkStatus.ERROR_FATAL, "cannot decrypt videolink");
+            if (plugin == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT, "cannot decrypt videolink");
             if (downloadLink.getStringProperty("fmt", null) == null) throw new PluginException(LinkStatus.ERROR_FATAL, "You have to add link again");
             if (downloadLink.getStringProperty("videolink", null) == null) throw new PluginException(LinkStatus.ERROR_FATAL, "You have to add link again");
             String link = ((TbCm) plugin).getLink(downloadLink.getStringProperty("videolink", null), prem, this.br);

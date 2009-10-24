@@ -86,7 +86,7 @@ public class StorageTo extends PluginForHost {
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
             if (br.containsHTML("File not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            throw new PluginException(LinkStatus.ERROR_FATAL);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         }
         dl.startDownload();
     }
@@ -117,7 +117,7 @@ public class StorageTo extends PluginForHost {
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
             if (br.containsHTML("File not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            throw new PluginException(LinkStatus.ERROR_FATAL);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         }
         dl.startDownload();
     }

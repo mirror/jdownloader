@@ -120,7 +120,7 @@ public class Odsiebiecom extends PluginForHost {
                 downloadurl = br.getRegex("onLoad=\"scaleImg\\('thepic'\\)\" src=\"(.*?)\" \\/").getMatch(0);
             }
             /* kein Link gefunden */
-            if (downloadurl == null) { throw new PluginException(LinkStatus.ERROR_FATAL); }
+            if (downloadurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         } else {
             /* Button folgen, schaun ob Link oder Captcha als nächstes kommt */
             downloadurl = "http://odsiebie.com/pobierz/" + steplink;

@@ -137,7 +137,7 @@ public class SendspaceCom extends PluginForHost {
         if (script == null) {
             br.postPage(downloadLink.getDownloadURL(), "download=%C2%A0REGULAR+DOWNLOAD%C2%A0");
             script = br.getRegex(Pattern.compile("<script type=\"text/javascript\">(function .*?)</script>", Pattern.CASE_INSENSITIVE)).getMatch(0);
-            if (script == null) throw new PluginException(LinkStatus.ERROR_FATAL);
+            if (script == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         }
         String dec = br.getRegex(Pattern.compile("base64ToText\\('(.*?)'\\)", Pattern.CASE_INSENSITIVE)).getMatch(0);
         script += new Browser().getPage("http://www.sendspace.com/jsc/download.js");

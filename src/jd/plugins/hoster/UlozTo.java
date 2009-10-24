@@ -76,7 +76,7 @@ public class UlozTo extends PluginForHost {
         // Usually this errorhandling is not needed but in case...
         if (dllink == null) {
             if (br.containsHTML("Neopsal jsi spr.vn. text z obr.zku")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
-            throw new PluginException(LinkStatus.ERROR_FATAL);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         }
         if (dllink.contains("no#cpt")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);

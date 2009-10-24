@@ -90,8 +90,8 @@ public class TwoSharedCom extends PluginForHost {
             }
         }
         String link = br.getRegex(Pattern.compile("function startDownload.*?window.location = \"(.*?)\"", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-        if (link == null) throw new PluginException(LinkStatus.ERROR_FATAL);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, link);
+        if (link == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, link);
         if (dl.getConnection().getContentType().contains("text")) {
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, JDL.L("plugins.hoster.2sharedcom.errors.sessionlimit", "Session limit reached"), 10 * 60 * 1000l);

@@ -35,6 +35,7 @@ public class JDProgressBar extends JProgressBar {
 
     public JDProgressBar() {
         super();
+        this.setIndeterminate(false);
     }
 
     @Override

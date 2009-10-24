@@ -131,7 +131,7 @@ public class IFileIt extends PluginForHost {
         if (br.containsHTML("signup for a free account in order to download this file")) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via account");
         } else {
-            throw new PluginException(LinkStatus.ERROR_FATAL, "No free handling implemented yep, please contact the support");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT, "No free handling implemented yep, please contact the support");
         }
     }
 

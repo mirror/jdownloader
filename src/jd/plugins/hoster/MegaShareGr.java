@@ -83,7 +83,10 @@ public class MegaShareGr extends PluginForHost {
         requestFileInformation(downloadLink);
         login(account);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, (downloadLink.getDownloadURL()), true, 1);
-        if (!(dl.getConnection().isContentDisposition())) throw new PluginException(LinkStatus.ERROR_FATAL);
+        if (!(dl.getConnection().isContentDisposition())) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        }
         dl.startDownload();
     }
 

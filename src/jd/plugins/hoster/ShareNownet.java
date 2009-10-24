@@ -77,8 +77,15 @@ public class ShareNownet extends PluginForHost {
         form.remove("Submit2");
         form.remove("Usenet+Download");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form);
-        if (dl.getRequest().getLocation() != null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        if (dl.getConnection().getLongContentLength() == 0) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.sharenownet.errors.servererror", "Server Error"));
+        if (dl.getRequest().getLocation() != null) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        }
+        if (dl.getConnection().getLongContentLength() == 0) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT, JDL.L("plugins.hoster.sharenownet.errors.servererror", "Server Error"));
+        }
+
         /* Datei herunterladen */
         dl.startDownload();
     }

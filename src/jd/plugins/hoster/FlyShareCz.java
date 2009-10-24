@@ -65,15 +65,13 @@ public class FlyShareCz extends PluginForHost {
         Form DLForm = br.getForm(1);
         if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         // br.submitForm(DLForm);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, DLForm, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLForm, false, 1);
 
         if (!(dl.getConnection().isContentDisposition())) {
             br.followConnection();
             if (br.containsHTML("error: Invalid request")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            if (br.containsHTML("Too many simultaneous downloads")) {                
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
-            }
-            throw new PluginException(LinkStatus.ERROR_FATAL);
+            if (br.containsHTML("Too many simultaneous downloads")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l); }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         }
         dl.startDownload();
     }

@@ -140,8 +140,7 @@ public class HellShareCom extends PluginForHost {
         if (br.containsHTML("Current load 100%, take advantage of unlimited")) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "No free slots available");
         } else {
-            System.out.print(br.toString());
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Please send the log to a supporter");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT, "Please send the log to a supporter");
         }
     }
 

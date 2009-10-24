@@ -118,11 +118,11 @@ public class UploadlineCom extends PluginForHost {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
             if (!(dl.getConnection().isContentDisposition())) {
                 br.followConnection();
-                if (br.containsHTML("Wrong IP")){
+                if (br.containsHTML("Wrong IP")) {
                     logger.severe("Wrong IP!");
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
-                throw new PluginException(LinkStatus.ERROR_FATAL);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
             }
             dl.startDownload();
         } else

@@ -120,7 +120,7 @@ public class GigaSizeCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, download, true, 0);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_FATAL);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         }
         dl.startDownload();
     }
@@ -144,7 +144,7 @@ public class GigaSizeCom extends PluginForHost {
                 break;
             }
         }
-        if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_FATAL);
+        if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         String captchaCode = getCaptchaCode("http://www.gigasize.com/randomImage.php", downloadLink);
         captchaForm.put("txtNumber", captchaCode);
         br.submitForm(captchaForm);
@@ -158,7 +158,10 @@ public class GigaSizeCom extends PluginForHost {
         }
         Form download = br.getFormbyProperty("id", "formDownload");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, download, true, 1);
-        if (!dl.getConnection().isContentDisposition()) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT); }
+        if (!dl.getConnection().isContentDisposition()) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        }
         dl.startDownload();
     }
 

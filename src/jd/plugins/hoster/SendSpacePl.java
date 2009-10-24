@@ -62,7 +62,7 @@ public class SendSpacePl extends PluginForHost {
         /* Nochmals das File überprüfen */
         requestFileInformation(downloadLink);
         String dlLink = br.getRegex("<div class=\"info\"><a href=\"(http://www.sendspace.pl/download/.*?)\" class=\"black\"><b>.*?</b></a></div>").getMatch(0);
-        if (dlLink == null) { throw new PluginException(LinkStatus.ERROR_FATAL); }
+        if (dlLink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT); }
         br.setFollowRedirects(true);
         /* Datei herunterladen */
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlLink, false, 1);
@@ -81,7 +81,7 @@ public class SendSpacePl extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, waitTime);
             }
 
-            throw new PluginException(LinkStatus.ERROR_FATAL);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         }
         dl.startDownload();
     }

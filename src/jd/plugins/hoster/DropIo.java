@@ -98,7 +98,7 @@ public class DropIo extends PluginForHost {
                     br.followConnection();
                     // Captcha errorhandling
                     if (br.containsHTML("Captcha Does Not Match")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
-                    throw new PluginException(LinkStatus.ERROR_FATAL);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
                 }
                 dl.startDownload();
             }

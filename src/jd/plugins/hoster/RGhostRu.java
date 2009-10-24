@@ -96,7 +96,7 @@ public class RGhostRu extends PluginForHost {
                 sleep(20000l, link);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
-            throw new PluginException(LinkStatus.ERROR_FATAL);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         }
         if (passCode != null) link.setProperty("pass", passCode);
         dl.startDownload();

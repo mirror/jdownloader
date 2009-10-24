@@ -57,7 +57,7 @@ public class DlFreeFr extends PluginForHost {
         }
         String filename = br.getRegex(Pattern.compile("Fichier:</td>.*?<td.*?>(.*?)<", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
         String filesize = br.getRegex(Pattern.compile("Taille:</td>.*?<td.*?>(.*?)soit", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
-        //355 751 067
+        // 355 751 067
         if (filename == null || filesize == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll("o", "byte").replaceAll("Ko", "Kb").replaceAll("Mo", "Mb").replaceAll("Go", "Gb")));
@@ -73,18 +73,16 @@ public class DlFreeFr extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
         requestFileInformation(downloadLink);
-        if (br.containsHTML("Trop de slots utilis")) {                
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
-        }
+        if (br.containsHTML("Trop de slots utilis")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l); }
         String dlLink = br.getRegex("<tr><td colspan=\"2\" style=\"text-align: center; border: 1px solid #ffffff\"><a style=\"text-decoration: underline\" href=\"(.*?free.*?fr.*?)\">").getMatch(0);
-        if (dlLink == null) { throw new PluginException(LinkStatus.ERROR_FATAL); }
+        if (dlLink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT); }
         br.setFollowRedirects(true);
         /* Datei herunterladen */
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, dlLink, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlLink, true, 1);
         if (!dl.getConnection().isContentDisposition()) {
             dl.getConnection().disconnect();
             if (br.getURL().contains("overload")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l); }
-            throw new PluginException(LinkStatus.ERROR_FATAL);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         }
         dl.startDownload();
     }

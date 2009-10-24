@@ -102,7 +102,7 @@ public class Moosharenet extends PluginForHost {
             br.submitForm(form);
             dlLink = br.getRedirectLocation();
         }
-        if (dlLink == null) throw new PluginException(LinkStatus.ERROR_FATAL);
+        if (dlLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlLink, false, 1);
         if (!dl.getConnection().isContentDisposition()) {
@@ -169,15 +169,15 @@ public class Moosharenet extends PluginForHost {
         br.submitForm(form);
         String dlLink = br.getRedirectLocation();
         if (dlLink == null) {
-            if (br.containsHTML("falschen Code eingegeben")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
-            throw new PluginException(LinkStatus.ERROR_FATAL);
+            if (br.containsHTML("falschen Code eingegeben")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         }
         br.setFollowRedirects(true);
         br.setDebug(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlLink, false, 1);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_FATAL);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         }
         dl.startDownload();
     }

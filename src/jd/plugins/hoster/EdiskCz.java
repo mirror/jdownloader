@@ -46,7 +46,7 @@ public class EdiskCz extends PluginForHost {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("Tento soubor již neexistuje z následujích")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = Encoding.htmlDecode(br.getRegex("Stažení souboru &quot;(.*?)&quot").getMatch(0));
+        String filename = Encoding.htmlDecode(br.getRegex("Sta.*?en.*?souboru &quot;(.*?)&quot").getMatch(0));
         String filesize = br.getRegex("Velikost souboru: (.*?)<br").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         link.setName(filename);
@@ -59,13 +59,13 @@ public class EdiskCz extends PluginForHost {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
         br.setDebug(true);
-        String posturl = br.getRegex("Naposledy stáhnut.*?action=\"(http://.*?)\"").getMatch(0);
+        String posturl = br.getRegex("Naposledy st.*?hnut.*?action=\"(http://.*?)\"").getMatch(0);
         Form captchaForm = br.getForm(0);
-        if (captchaForm == null || posturl == null) throw new PluginException(LinkStatus.ERROR_FATAL);
+        if (captchaForm == null || posturl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         captchaForm.setAction(posturl);
         String code = "";
         for (int i = 0; i < 5; i++) {
-            if (!br.containsHTML("Opište text z obrázku")) break;
+            if (!br.containsHTML("Opi.*?te text z obr.*?zku")) break;
             String captchaurl0 = br.getRegex("captchaImgWrapper.*?src=\"(.*?)\"").getMatch(0);
             if (captchaurl0 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
             String captchaurl = "http://www.edisk.cz" + captchaurl0;
@@ -75,7 +75,7 @@ public class EdiskCz extends PluginForHost {
             br.submitForm(captchaForm);
         }
 
-        if (br.containsHTML("Opište text z obrázku")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        if (br.containsHTML("Opi.*?te text z obr.*?zku")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         String[] countDownInfo = br.getRegex("countDown\\(.*?'(.*?)'.*?,.*?'(.*?)'.*?,.*?'(.*?)'.*?,(.*?)").getRow(0);
         // you dont have to wait
         // (25001l, downloadLink);

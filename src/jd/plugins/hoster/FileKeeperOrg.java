@@ -72,7 +72,7 @@ public class FileKeeperOrg extends PluginForHost {
             jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, 0);
             if (!dl.getConnection().getContentType().contains("application")) {
                 br.followConnection();
-                throw new PluginException(LinkStatus.ERROR_FATAL);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
             }
         }
         dl.startDownload();

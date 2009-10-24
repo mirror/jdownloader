@@ -41,7 +41,6 @@ public class TinyProgressBar extends JPanel {
         this.add(prg = new JDProgressBar(), "width 10!");
         lbl.setOpaque(false);
         prg.setOpaque(false);
-        prg.setIndeterminate(false);
         prg.setOrientation(SwingConstants.VERTICAL);
         prg.setBorder(null);
         this.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));

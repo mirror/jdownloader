@@ -100,7 +100,7 @@ public class FlyFileUs extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
             if (br.containsHTML("404 Not Found")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 60 * 60 * 1000l);
-            throw new PluginException(LinkStatus.ERROR_FATAL);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         }
         if (passCode != null) {
             downloadLink.setProperty("pass", passCode);
