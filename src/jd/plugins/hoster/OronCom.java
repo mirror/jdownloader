@@ -52,8 +52,8 @@ public class OronCom extends PluginForHost {
         if (br.containsHTML("No such file with this filename")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("No such user exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("File Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = Encoding.htmlDecode(br.getRegex("<h3>Filename: (.*?)</h3>").getMatch(0));
-        String filesize = br.getRegex("<h3>Size: (.*?)</h3>").getMatch(0);
+        String filename = Encoding.htmlDecode(br.getRegex("div.*?Filename:.*?<.*?>(.*?)<").getMatch(0));
+        String filesize = br.getRegex("Size: (.*?)<").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         link.setName(filename);
         link.setDownloadSize(Regex.getSize(filesize));

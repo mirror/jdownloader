@@ -222,7 +222,7 @@ public class WebUpdater implements Serializable {
             String ret = WebUpdater.getConfig("WEBUPDATE").getStringProperty(WebUpdater.PARAM_BRANCH);
 
             if (ret == null) ret = latestBranch;
-         
+
             WebUpdater.getConfig("WEBUPDATE").setProperty(WebUpdater.BRANCHINUSE, ret);
             WebUpdater.getConfig("WEBUPDATE").save();
             if (ret == null) { return null; }
@@ -253,7 +253,7 @@ public class WebUpdater implements Serializable {
                     ArrayList<String> ret = new ArrayList<String>();
                     this.branches = new String[bs.length];
                     for (int ii = 0; ii < bs.length; ii++) {
-                       
+
                         if (isBetaBranch(bs[ii]) && betaBranch == null) {
                             betaBranch = bs[ii];
                         } else if (!isBetaBranch(bs[ii])) {
@@ -267,7 +267,7 @@ public class WebUpdater implements Serializable {
                     String savedBranch = WebUpdater.getConfig("WEBUPDATE").getStringProperty(WebUpdater.PARAM_BRANCH);
 
                     if (branches.length > 0 && savedBranch != null && isBetaBranch(savedBranch)) {
-                     
+
                         if (betaBranch == null || !savedBranch.equals(betaBranch)) {
                             WebUpdater.getConfig("WEBUPDATE").setProperty(WebUpdater.PARAM_BRANCH, branches[0]);
                             WebUpdater.getConfig("WEBUPDATE").save();

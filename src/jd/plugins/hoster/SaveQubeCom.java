@@ -67,7 +67,7 @@ public class SaveQubeCom extends PluginForHost {
         dlform.put("y", "31");
         if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         br.submitForm(dlform);
-        String dllink = br.getRegex("<span id=\"db\" style=\"display:none\"><a href=\"(.*?)\" id=\"freedownload\"><img src=\"images/butt1_2.jpg\"").getMatch(0);
+        String dllink = br.getRegex("<span id=\"db\" style=\"display:none\">.*?<a href=\"(.*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         if (br.containsHTML("bot detected")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         // waittime
@@ -86,7 +86,6 @@ public class SaveQubeCom extends PluginForHost {
     public void reset() {
     }
 
-    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }

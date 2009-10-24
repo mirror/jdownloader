@@ -746,7 +746,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
             maxtries--;
             if (maxtries == 0) break;
         }
-        String d = this.getFileOutput() + "2";
         if (new File(this.getFileOutput()).exists()) {
             if (!new File(this.getFileOutput()).delete()) {
                 logger.severe(JDL.L("system.download.errors.couldnotdelete", "Could not delete file") + this.getFileOutput());
@@ -982,7 +981,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
             partnum2 = null;
             return;
         }
-        partnum2 = new Regex(name2, ".*\\.part(\\d+)").getMatch(0);
+        partnum2 = new Regex(name2, ".*\\.pa?r?t?(\\d+)").getMatch(0);
         if (partnum2 == null) {
             partnum2 = new Regex(name2, ".*\\.r(\\d+)").getMatch(0);
         }
