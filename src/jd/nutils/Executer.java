@@ -80,6 +80,7 @@ public class Executer extends Thread implements Runnable {
 
                 while (isInterrupted() || reader.available() <= 0) {
                     if (isInterrupted()) return;
+                    Thread.sleep(50);
                 }
                 this.idle = false;
                 while (!endOfFileReceived) {
@@ -140,10 +141,15 @@ public class Executer extends Thread implements Runnable {
                     this.endOfFileReceived = true;
                     return i;
                 }
-                i += read;
-                dynbuf.put(buffer, read);
-                if (buffer[0] == '\b' || buffer[0] == '\r' || buffer[0] == '\n') { return i; }
-                fireEvent(dynbuf, read, this == Executer.this.sbeObserver ? Executer.LISTENER_ERRORSTREAM : Executer.LISTENER_STDSTREAM);
+                if (i > 0) {
+                    i += read;
+                    dynbuf.put(buffer, read);
+                    if (buffer[0] == '\b' || buffer[0] == '\r' || buffer[0] == '\n') { return i; }
+                    fireEvent(dynbuf, read, this == Executer.this.sbeObserver ? Executer.LISTENER_ERRORSTREAM : Executer.LISTENER_STDSTREAM);
+
+                } else {
+                    Thread.sleep(50);
+                }
             }
 
         }
