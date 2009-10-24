@@ -27,6 +27,7 @@
 				<exclude name="jd/captcha/**" />
 				<exclude name="jd/gui/**" />
 				<exclude name="it/**" />
+				<exclude name="jd/nutils/**" />
 				<exclude name="jd/plugins/hoster/**" />
 				<exclude name="jd/dynamics/**" />
 				<exclude name="jd/plugins/decrypter/**" />
