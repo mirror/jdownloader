@@ -80,7 +80,7 @@ public class Executer extends Thread implements Runnable {
 
                 while (isInterrupted() || reader.available() <= 0) {
                     if (isInterrupted()) return;
-                    Thread.sleep(50);
+                    Thread.sleep(150);
                 }
                 this.idle = false;
                 while (!endOfFileReceived) {
@@ -148,7 +148,7 @@ public class Executer extends Thread implements Runnable {
                     fireEvent(dynbuf, read, this == Executer.this.sbeObserver ? Executer.LISTENER_ERRORSTREAM : Executer.LISTENER_STDSTREAM);
 
                 } else {
-                    Thread.sleep(50);
+                    Thread.sleep(150);
                 }
             }
 

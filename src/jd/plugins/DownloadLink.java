@@ -424,9 +424,8 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     public String getFileOutput0() {
         String sfo = this.getStringProperty(DownloadLink.STATIC_OUTPUTFILE, null);
-        if (getFilePackage() == FilePackage.getDefaultFilePackage() && sfo != null && new File(sfo).exists()) { return sfo;
+        if (getFilePackage() == FilePackage.getDefaultFilePackage() && sfo != null && new File(sfo).exists()) return sfo;
 
-        }
         if (subdirectory != null) {
             if (getFilePackage() != null && getFilePackage().getDownloadDirectory() != null && getFilePackage().getDownloadDirectory().length() > 0) {
                 return new File(new File(getFilePackage().getDownloadDirectory(), File.separator + subdirectory), getName()).getAbsolutePath();
@@ -755,6 +754,12 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
             if (!new File(this.getFileOutput() + ".part").delete()) {
                 logger.severe(JDL.L("system.download.errors.couldnotdelete", "Could not delete file") + this.getFileOutput());
             }
+        }
+
+        /* try to delete folder (if its empty and NOT the default downloadfolder */
+        File dlFolder = new File(this.getFileOutput()).getParentFile();
+        if (dlFolder != null && dlFolder.exists() && dlFolder.isDirectory() && dlFolder.listFiles() != null && dlFolder.listFiles().length == 0) {
+            if (!new File(JDUtilities.getDefaultDownloadDirectory()).equals(dlFolder)) dlFolder.delete();
         }
     }
 
