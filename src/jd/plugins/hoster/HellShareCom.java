@@ -54,7 +54,7 @@ public class HellShareCom extends PluginForHost {
         form.put("lgnp7_psw", Encoding.urlEncode(account.getPass()));
         br.setFollowRedirects(true);
         br.submitForm(form);
-        if (!br.containsHTML("Your credit for downloads") || br.containsHTML("Špatně zadaný login nebo heslo uživatele")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (!br.containsHTML("credit for downloads") || br.containsHTML("Špatně zadaný login nebo heslo uživatele")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
     @Override

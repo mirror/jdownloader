@@ -46,7 +46,7 @@ public class ShareRapidCz extends PluginForHost {
 
     @Override
     public void correctDownloadLink(DownloadLink link) throws Exception {
-        // many domains are still missing/untested:
+        // Complete list of all domains, maybe they buy more....
         // http://share-rapid.com/informace/
         String downloadlinklink = link.getDownloadURL();
         if (downloadlinklink != null) downloadlinklink = downloadlinklink.replaceAll("(share-rapid\\.(com|info|cz|eu|info|net|sk)|((mediatack|rapidspool|e-stahuj|premium-rapidshare|qiuck|rapidshare-premium|share-credit|share-free)\\.cz)|((strelci|share-ms|)\\.net)|jirkasekyrka\\.com|((kadzet|universal-share)\\.com)|sharerapid\\.(biz|cz|net|org|sk)|stahuj-zdarma\\.eu)", "share-rapid\\.com");
@@ -86,8 +86,8 @@ public class ShareRapidCz extends PluginForHost {
         requestFileInformation(downloadLink);
         login(account);
         br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML("Již Vám došel kredit a vyčerpal jste free limit")) throw new PluginException(LinkStatus.ERROR_FATAL, "Not enough traffic left to download this file!");
         String dllink = br.getRegex("\"(http://s[0-9]{1,2}\\.share-rapid\\.com/download.*?)\"").getMatch(0);
-        if (br.containsHTML("Již Vám došel kredit a vyčerpal jste free limit")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l); }
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
@@ -109,7 +109,7 @@ public class ShareRapidCz extends PluginForHost {
         br.setCustomCharset("UTF-8");
         br.getPage(link.getDownloadURL());
         br.setFollowRedirects(true);
-        if (br.containsHTML("Nastala chyba 404")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("Nastala chyba 404")||br.containsHTML("Soubor byl smazán")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
         String filename = Encoding.htmlDecode(br.getRegex("<title>(.*?) - Share-Rapid</title>").getMatch(0));
         String filesize = Encoding.htmlDecode(br.getRegex("Velikost:</td>.*?<td class=\"h\"><strong>.*?(.*?)</strong></td>").getMatch(0));
