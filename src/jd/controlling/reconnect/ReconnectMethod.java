@@ -61,7 +61,7 @@ public abstract class ReconnectMethod {
             }
         } else {
             for (retry = 0; retry <= maxretries; retry++) {
-                if ((ret = doReconnectInteral(++retry)) == true) break;
+                if ((ret = doReconnectInteral(retry + 1)) == true) break;
             }
         }
         return ret;
