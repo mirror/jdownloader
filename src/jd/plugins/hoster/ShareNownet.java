@@ -17,7 +17,6 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
@@ -53,15 +52,12 @@ public class ShareNownet extends PluginForHost {
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("Datei existiert nicht oder")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String[] linkinfo = null;
-        linkinfo = br.getRegex(Pattern.compile("<h3 align=\"center\"><strong>(.*?)</strong> \\(\\s*([0-9\\.]*)\\s([GKMB]*)\\s*\\) </h3>", Pattern.CASE_INSENSITIVE)).getRow(0);
-
-        if (linkinfo == null || linkinfo.length < 2) {
-            linkinfo = br.getRegex("<p><span class=\"style\\d+\">\\s*(.*?)</span>.*?<span class=\"style\\d+\">(.*?)</span>").getRow(0);
-        }
-        if (linkinfo == null || linkinfo.length < 2) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        downloadLink.setDownloadSize(Regex.getSize(linkinfo[1]));
-        downloadLink.setName(linkinfo[0].trim());
+        String filename = br.getRegex("<title>(.*?)\\| share-now\\.net </title>").getMatch(0);
+        if (filename == null || filename.equals("")) filename = br.getRegex("class=\"style.*?>.*?<br />(.*?)</span>").getMatch(0);
+        String filesize = br.getRegex("content=\".*?Filesize:(.*?)-").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        downloadLink.setDownloadSize(Regex.getSize(filesize));
+        downloadLink.setName(filename.trim());
         return AvailableStatus.TRUE;
     }
 
@@ -69,6 +65,7 @@ public class ShareNownet extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         Form form = br.getForm(1);
+        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         br.setDebug(true);
         /* gibts nen captcha? */
         if (br.containsHTML("Sicherheitscode eingeben")) {
@@ -77,10 +74,11 @@ public class ShareNownet extends PluginForHost {
             form.put("Submit", "Download+Now");
             form.put("captcha", captchaCode);
         }
-        /* DownloadLink holen/Captcha check */
+        form.remove("Submit2");
+        form.remove("Usenet+Download");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form);
-        if (!dl.getConnection().isContentDisposition() || dl.getRequest().getLocation() != null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        if (dl.getConnection().isContentDisposition() && dl.getConnection().getLongContentLength() == 0) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.sharenownet.errors.servererror", "Server Error"));
+        if (dl.getRequest().getLocation() != null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        if (dl.getConnection().getLongContentLength() == 0) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.sharenownet.errors.servererror", "Server Error"));
         /* Datei herunterladen */
         dl.startDownload();
     }
