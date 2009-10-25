@@ -104,6 +104,7 @@ public class ToolbarController extends ConfigPanel {
         WHITELIST.add("action.exit");
 
         WHITELIST.add("gui.jdshutdown.toggle");
+        WHITELIST.add("optional.jdunrar.menu.extract.singlefils");
 
     }
     private static final long serialVersionUID = -7024581410075950497L;
@@ -259,8 +260,6 @@ public class ToolbarController extends ConfigPanel {
             if (!WHITELIST.contains(a.getID())) {
                 it.remove();
                 list.remove(a.getID());
-
-                System.out.println("WHITELIST.add(\"" + a.getID() + "\");");
                 continue;
             }
 

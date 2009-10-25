@@ -662,7 +662,7 @@ public class Srnnks extends PluginForDecrypt {
                             String[] info = getLinkName(element, lastHtmlCode);
                             SrnnksLinks dl_link = createDownloadLink(element, info);
 
-                            if (JDUtilities.getPluginForHost(getHostname(element)).getMaxSimultanDownloadNum(null) > 1) {
+                            if (JDUtilities.getPluginForHost(getHostname(element)).getMaxSimultanDownloadNum() > 1) {
 
                                 decryptedLinks.add(dl_link);
 

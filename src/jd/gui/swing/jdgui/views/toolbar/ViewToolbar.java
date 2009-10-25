@@ -31,29 +31,21 @@ import javax.swing.JToggleButton;
 import jd.controlling.JDLogger;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.SwingGui;
-import jd.gui.swing.jdgui.actions.ActionControlEvent;
 import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
-import jd.gui.swing.jdgui.actions.event.ActionControllerListener;
 import jd.utils.JDTheme;
 import net.miginfocom.swing.MigLayout;
 
-public class ViewToolbar extends JPanel implements ActionControllerListener {
+public class ViewToolbar extends JPanel {
     public ViewToolbar() {
 
         ActionController.initActions();
 
         // this.updateToolbar();
         current = defaultlist;
-
-        // please add listener here. to avoid the toolbar beiong pained multible
-        // times
-        ActionController.getBroadcaster().addListener(this);
     }
 
-    private static String[] defaultlist = new String[] {
-
-    };
+    private static String[] defaultlist = new String[] {};
 
     private static final long serialVersionUID = 7533137014274040205L;
 
@@ -73,7 +65,6 @@ public class ViewToolbar extends JPanel implements ActionControllerListener {
     public static final int LAST_COL = -2;
 
     private String[] current = null;
-
 
     protected int halign = ViewToolbar.WEST;
 
@@ -145,7 +136,6 @@ public class ViewToolbar extends JPanel implements ActionControllerListener {
                 }
 
                 action.init();
-           
 
                 ab = null;
                 switch (action.getType()) {
@@ -234,9 +224,6 @@ public class ViewToolbar extends JPanel implements ActionControllerListener {
     public String getButtonConstraint(int i, ToolBarAction action) {
         if (halign == EAST) { return BUTTON_CONSTRAINTS + ", alignx right"; }
         return BUTTON_CONSTRAINTS;
-    }
-
-    public synchronized void onActionControlEvent(ActionControlEvent event) {
     }
 
     /**

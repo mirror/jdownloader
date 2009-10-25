@@ -69,7 +69,7 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
         initConfig();
     }
 
-    // @Override
+    @Override
     public String getIconKey() {
         return "gui.images.addons.merge";
     }
@@ -82,7 +82,7 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
      * ins kontextmenü der gui die menüpunkte zu schreiben
      */
     @SuppressWarnings("unchecked")
-    // @Override
+    @Override
     public void controlEvent(ControlEvent event) {
         super.controlEvent(event);
         DownloadLink link;
@@ -132,7 +132,7 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
         }
     }
 
-    // @Override
+    @Override
     public ArrayList<MenuAction> createMenuitems() {
         ArrayList<MenuAction> menu = new ArrayList<MenuAction>();
         MenuAction m;
@@ -144,7 +144,7 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
         return menu;
     }
 
-    // @Override
+    @Override
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() instanceof MenuAction) {
             menuitemActionPerformed((MenuAction) e.getSource());
@@ -162,14 +162,14 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
             JDFileChooser fc = new JDFileChooser("_JDHJSPLIT_");
             fc.setMultiSelectionEnabled(true);
             FileFilter ff = new FileFilter() {
-                // @Override
+                @Override
                 public boolean accept(File pathname) {
                     if (isStartVolume(pathname)) return true;
                     if (pathname.isDirectory()) return true;
                     return false;
                 }
 
-                // @Override
+                @Override
                 public String getDescription() {
                     return JDL.L("plugins.optional.hjsplit.filefilter", "HJSPLIT-Startvolumes");
                 }
@@ -232,7 +232,7 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
         }
     }
 
-    // Startet das Abwarbeiten der extractqueue
+    /** Startet das Abwarbeiten der extractqueue */
     private void addToQueue(final DownloadLink link) {
 
         queue.add(new JDRunnable() {
@@ -519,7 +519,7 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
         return link;
     }
 
-    // @Override
+    @Override
     public boolean initAddon() {
         JDUtilities.getController().addControlListener(this);
         return true;
@@ -535,7 +535,7 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
         ce.setDefaultValue(true);
     }
 
-    // @Override
+    @Override
     public void onExit() {
         JDUtilities.getController().removeControlListener(this);
     }

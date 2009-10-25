@@ -27,8 +27,6 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -65,7 +63,6 @@ import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelListener;
-import jd.gui.swing.jdgui.interfaces.View;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.nutils.OSDetector;
 import jd.nutils.io.JDIO;
@@ -868,18 +865,10 @@ public class JDChat extends PluginOptional implements ControlListener {
         NAMES = new ArrayList<User>();
         sb = new StringBuilder();
         if (activateAction == null) {
-            this.activateAction = new MenuAction(getWrapper().getID(), 0);
+            activateAction = new MenuAction(getWrapper().getID(), 0);
             activateAction.setActionListener(this);
             activateAction.setTitle(getHost());
             activateAction.setIcon(this.getIconKey());
-            activateAction.addPropertyChangeListener(new PropertyChangeListener() {
-
-                public void propertyChange(PropertyChangeEvent evt) {
-                    System.out.println(evt);
-
-                }
-
-            });
             activateAction.setSelected(false);
         }
         return true;
@@ -890,10 +879,8 @@ public class JDChat extends PluginOptional implements ControlListener {
 
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, PARAM_NICK, JDL.L("plugins.optional.jdchat.user", "Nickname")));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PARAM_USERCOLOR, JDL.L("plugins.optional.jdchat.usercolor", "Only black usernames?")));
-        ArrayList<String> position = new ArrayList<String>();
-        position.add(JDL.L("plugins.jdchat.userlistposition_right", "Right"));
-        position.add(JDL.L("plugins.jdchat.userlistposition_left", "Left"));
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, subConfig, PARAM_USERLISTPOSITION, position.toArray(), JDL.L("plugins.jdchat.userlistposition", "Userlist position: ")));
+        String[] positions = new String[] { JDL.L("plugins.jdchat.userlistposition_right", "Right"), JDL.L("plugins.jdchat.userlistposition_left", "Left") };
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, subConfig, PARAM_USERLISTPOSITION, positions, JDL.L("plugins.jdchat.userlistposition", "Userlist position: ")));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, subConfig, PARAM_PERFORM, JDL.L("plugins.optional.jdchat.performonstart", "Perform commands after connection estabilished")));
         ConfigContainer lngse = new ConfigContainer(JDL.L("plugins.optional.jdchat.locale", "Language settings"));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CONTAINER, lngse));
@@ -1484,23 +1471,15 @@ public class JDChat extends PluginOptional implements ControlListener {
 
                     @Override
                     public void onPanelEvent(SwitchPanelEvent event) {
-                        switch (event.getID()) {
-                        case SwitchPanelEvent.ON_REMOVE:
+                        if (event.getID() == SwitchPanelEvent.ON_REMOVE) {
                             activateAction.setSelected(false);
                             onExit();
-
-                        case SwitchPanelEvent.ON_SHOW:
-                            // activateAction.setSelected(true);
-                            break;
                         }
-
                     }
 
                 });
 
                 view.setContent(frame);
-                view.setSidebarBorder(View.ORG_BORDER);
-
             }
             SwingGui.getInstance().setContent(view);
 

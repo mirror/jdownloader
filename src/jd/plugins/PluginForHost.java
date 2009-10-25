@@ -353,8 +353,8 @@ public abstract class PluginForHost extends Plugin {
         return links;
     }
 
+    /** überschreiben falls die downloadurl erst rekonstruiert werden muss */
     public void correctDownloadLink(DownloadLink link) throws Exception {
-        /* überschreiben falls die downloadurl erst rekonstruiert werden muss */
     }
 
     /**
@@ -400,7 +400,7 @@ public abstract class PluginForHost extends Plugin {
         return -1;
     }
 
-    public int getMaxSimultanDownloadNum(DownloadLink link) {
+    public int getMaxSimultanDownloadNum() {
         int max;
         if (isPremiumDownload()) {
             max = getMaxSimultanPremiumDownloadNum();

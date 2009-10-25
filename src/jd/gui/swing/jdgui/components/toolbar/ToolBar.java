@@ -34,14 +34,12 @@ import jd.controlling.JDLogger;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.ShortCuts;
 import jd.gui.swing.SwingGui;
-import jd.gui.swing.jdgui.actions.ActionControlEvent;
 import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
-import jd.gui.swing.jdgui.actions.event.ActionControllerListener;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
-public class ToolBar extends JToolBar implements ActionControllerListener {
+public class ToolBar extends JToolBar {
 
     private static final long serialVersionUID = 7533137014274040205L;
 
@@ -79,11 +77,6 @@ public class ToolBar extends JToolBar implements ActionControllerListener {
 
         // this.updateToolbar();
         current = DEFAULT_LIST.toArray(new String[] {});
-
-        // please add listener here. to avoid the toolbar beiong pained multible
-        // times
-        ActionController.getBroadcaster().addListener(this);
-
     }
 
     public void setList(String[] newlist) {
@@ -169,12 +162,12 @@ public class ToolBar extends JToolBar implements ActionControllerListener {
 
                                         @Override
                                         public Object runSave() {
-                                            button.setSelected((Boolean)evt.getNewValue());
+                                            button.setSelected((Boolean) evt.getNewValue());
                                             return null;
                                         }
 
                                     }.start();
-                                }else if (evt.getPropertyName() == ToolBarAction.LARGE_ICON_KEY) {
+                                } else if (evt.getPropertyName() == ToolBarAction.LARGE_ICON_KEY) {
                                     new GuiRunnable<Object>() {
 
                                         @Override
@@ -227,10 +220,6 @@ public class ToolBar extends JToolBar implements ActionControllerListener {
                 }
             }
         }
-    }
-
-    public synchronized void onActionControlEvent(ActionControlEvent event) {
-
     }
 
     /**

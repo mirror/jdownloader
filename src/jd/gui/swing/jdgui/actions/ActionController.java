@@ -34,11 +34,9 @@ import jd.controlling.ProgressController;
 import jd.controlling.reconnect.Reconnecter;
 import jd.event.ControlEvent;
 import jd.event.ControlIDListener;
-import jd.event.JDBroadcaster;
 import jd.gui.UserIF;
 import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
-import jd.gui.swing.jdgui.actions.event.ActionControllerListener;
 import jd.gui.swing.jdgui.views.linkgrabberview.LinkGrabberPanel;
 import jd.nutils.JDFlags;
 import jd.plugins.LinkGrabberFilePackage;
@@ -54,9 +52,7 @@ import jd.utils.locale.JDL;
  */
 public class ActionController {
     public static final String JDL_PREFIX = "jd.gui.swing.jdgui.actions.ActionController.";
-    private static JDBroadcaster<ActionControllerListener, ActionControlEvent> BROADCASTER = null;
     private static ArrayList<ToolBarAction> TOOLBAR_ACTION_LIST = new ArrayList<ToolBarAction>();
-    private static PropertyChangeListener PCL;
 
     public static void register(ToolBarAction action) {
         synchronized (TOOLBAR_ACTION_LIST) {
@@ -64,24 +60,8 @@ public class ActionController {
             for (ToolBarAction act : TOOLBAR_ACTION_LIST) {
                 if (act.getID().equalsIgnoreCase(action.getID())) return;
             }
-            action.addPropertyChangeListener(getPropertyChangeListener());
             TOOLBAR_ACTION_LIST.add(action);
         }
-    }
-
-    private static PropertyChangeListener getPropertyChangeListener() {
-        if (PCL == null) {
-            PCL = new PropertyChangeListener() {
-                public void propertyChange(PropertyChangeEvent evt) {
-                    // broadcast only known ids. this avoid recusrion loops and
-                    // stack overflow errors
-                    if (evt.getPropertyName() == ToolBarAction.ID || evt.getPropertyName() == ToolBarAction.PRIORITY || evt.getPropertyName() == ToolBarAction.ACCELERATOR_KEY || evt.getPropertyName() == ToolBarAction.ACTION_COMMAND_KEY || evt.getPropertyName() == ToolBarAction.DEFAULT || evt.getPropertyName() == ToolBarAction.DISPLAYED_MNEMONIC_INDEX_KEY || evt.getPropertyName() == ToolBarAction.LARGE_ICON_KEY || evt.getPropertyName() == ToolBarAction.LONG_DESCRIPTION || evt.getPropertyName() == ToolBarAction.MNEMONIC_KEY || evt.getPropertyName() == ToolBarAction.NAME || evt.getPropertyName() == ToolBarAction.SELECTED_KEY || evt.getPropertyName() == ToolBarAction.SHORT_DESCRIPTION || evt.getPropertyName() == ToolBarAction.SMALL_ICON) {
-                        getBroadcaster().fireEvent(new ActionControlEvent(evt.getSource(), ActionControlEvent.PROPERTY_CHANGED, evt.getPropertyName()));
-                    }
-                }
-            };
-        }
-        return PCL;
     }
 
     /**
@@ -494,24 +474,6 @@ public class ActionController {
             }
 
         };
-    }
-
-    /**
-     * Returns the broadcaster the broadcaster may be used to fireevents or to
-     * add/remove listeners
-     * 
-     * @return
-     */
-    public static JDBroadcaster<ActionControllerListener, ActionControlEvent> getBroadcaster() {
-        if (BROADCASTER == null) {
-            BROADCASTER = new JDBroadcaster<ActionControllerListener, ActionControlEvent>() {
-                @Override
-                protected void fireEvent(ActionControllerListener listener, ActionControlEvent event) {
-                    listener.onActionControlEvent(event);
-                }
-            };
-        }
-        return BROADCASTER;
     }
 
     /**

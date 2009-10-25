@@ -42,13 +42,6 @@ import jd.utils.locale.JDL;
  */
 public class UnrarWrapper extends Thread implements JDRunnable {
 
-    // private static final int CANNOT_FIND_VOLUME = 1;
-    // private static final int COULD_NOT_FIND_PASSWORD = 1 << 1;
-    // private static final int OPENED_SUCCESSFULL = 1 << 2;
-    // private static final int STARTED = 1 << 3;
-    private static final int NO_FILES_FOUND = 1 << 4;
-    // private static final int FAILED = 1 << 5;
-    // private static final int FAILED_CRC = 1 << 6;
     /**
      * User stopped the process
      */
@@ -164,13 +157,11 @@ public class UnrarWrapper extends Thread implements JDRunnable {
         return files;
     }
 
+    @Override
     public void run() {
         try {
             fireEvent(JDUnrarConstants.WRAPPER_STARTED);
             if (open()) {
-                if (this.files.size() == 0) {
-                    this.fireEvent(NO_FILES_FOUND);
-                }
                 if (this.isProtected && this.password == null) {
                     fireEvent(JDUnrarConstants.WRAPPER_CRACK_PASSWORD);
 
@@ -350,6 +341,7 @@ public class UnrarWrapper extends Thread implements JDRunnable {
         exec.start();
         this.startTime = System.currentTimeMillis();
         Thread inter = new Thread() {
+            @Override
             public void run() {
                 while (true) {
                     if (!exactProgress) {

@@ -283,7 +283,7 @@ public class DownloadController implements FilePackageListener, DownloadControll
             DownloadLink localLink;
             PluginForHost pluginForHost = null;
             PluginsC pluginForContainer = null;
-            String tmp2 = null;
+            // String tmp2 = null;
             Iterator<DownloadLink> it;
             FilePackage fp;
             while (iterator.hasNext()) {

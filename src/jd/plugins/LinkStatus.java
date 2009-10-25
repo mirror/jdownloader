@@ -553,7 +553,9 @@ public class LinkStatus implements Serializable {
         return hasStatus(ERROR_ALREADYEXISTS) || hasStatus(FINISHED);
     }
 
-    /* use this function to reset linkstatus to TODO, if no notResetifFlag match */
+    /**
+     * use this function to reset linkstatus to TODO, if no notResetifFlag match
+     */
     public void resetStatus(int... notResetifFlag) {
         if (this.downloadLink == null) return;
         int curState = LinkStatus.TODO;

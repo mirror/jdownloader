@@ -17,7 +17,6 @@
 package jd.plugins.optional.jdtrayicon;
 
 import java.awt.Dimension;
-import java.awt.Frame;
 import java.awt.Image;
 import java.awt.Point;
 import java.awt.SystemTray;
@@ -480,18 +479,12 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
         int oldState = evt.getOldState();
         int newState = evt.getNewState();
 
-        if ((oldState & Frame.ICONIFIED) == 0 && (newState & Frame.ICONIFIED) != 0) {
+        if ((oldState & JFrame.ICONIFIED) == 0 && (newState & JFrame.ICONIFIED) != 0) {
             iconified = true;
             // Frame was not iconified
-        } else if ((oldState & Frame.ICONIFIED) != 0 && (newState & Frame.ICONIFIED) == 0) {
+        } else if ((oldState & JFrame.ICONIFIED) != 0 && (newState & JFrame.ICONIFIED) == 0) {
             iconified = false;
             // Frame was iconified
         }
-        if ((oldState & Frame.MAXIMIZED_BOTH) == 0 && (newState & Frame.MAXIMIZED_BOTH) != 0) {
-            // Frame was maximized
-        } else if ((oldState & Frame.MAXIMIZED_BOTH) != 0 && (newState & Frame.MAXIMIZED_BOTH) == 0) {
-            // Frame was minimized
-        }
-
     }
 }
