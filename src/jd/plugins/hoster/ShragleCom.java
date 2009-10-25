@@ -143,6 +143,7 @@ public class ShragleCom extends PluginForHost {
             br.getPage(downloadLink.getDownloadURL() + "?jd=1");
         }
         br.setDebug(true);
+        boolean mayfail = br.getRegex("Download-Server ist unter").matches();
         String wait = br.getRegex(Pattern.compile("Bitte warten Sie(.*?)Minuten", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
         if (wait != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait.trim()) * 60 * 1000l); }
         wait = br.getRegex("var downloadWait =(.*?);").getMatch(0);
@@ -152,11 +153,18 @@ public class ShragleCom extends PluginForHost {
         br.setFollowRedirects(true);
 
         form.setAction(form.getAction() + "?jd=1");
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, true, 1);
+        try {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, true, 1);
+        } catch (Exception e) {
+            if (dl.getConnection() != null) dl.getConnection().disconnect();
+            if (mayfail) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
+            throw e;
+        }
         URLConnectionAdapter con = dl.getConnection();
         if (con.getContentType() != null && con.getContentType().contains("html")) {
             br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 60 * 60 * 1000l);
+
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         }
         dl.startDownload();
     }

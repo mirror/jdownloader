@@ -24,6 +24,7 @@ import jd.config.ConfigContainer;
 import jd.config.Configuration;
 import jd.config.Property;
 import jd.config.SubConfiguration;
+import jd.controlling.DownloadWatchDog;
 import jd.controlling.JDLogger;
 import jd.event.ControlEvent;
 import jd.utils.JDUtilities;
@@ -144,7 +145,7 @@ public abstract class Interaction extends Property implements Serializable {
                 }
             }
         }
-        if (trigger.getID() == Interaction.INTERACTION_ALL_DOWNLOADS_FINISHED.getID() && areInteractionsInProgress() && JDUtilities.getController().getFinishedLinks().size() > 0) {
+        if (trigger.getID() == Interaction.INTERACTION_ALL_DOWNLOADS_FINISHED.getID() && areInteractionsInProgress() && DownloadWatchDog.getInstance().getDownloadssincelastStart() > 0) {
             Interaction.handleInteraction(Interaction.INTERACTION_AFTER_DOWNLOAD_AND_INTERACTIONS, null);
         }
     }

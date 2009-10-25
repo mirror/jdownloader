@@ -89,7 +89,7 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
 
         switch (event.getID()) {
         case ControlEvent.CONTROL_PLUGIN_INACTIVE:
-            if (!(event.getSource() instanceof PluginForHost)) { return; }
+            if (!(event.getSource() instanceof PluginForHost)) return;
             if (this.getPluginConfig().getBooleanProperty("ACTIVATED", true)) {
                 link = ((SingleDownloadController) event.getParameter()).getDownloadLink();
                 File file = new File(link.getFileOutput());

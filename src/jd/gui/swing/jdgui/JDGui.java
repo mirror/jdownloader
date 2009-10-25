@@ -483,12 +483,11 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
                     break;
                 case PREMIUMCONFIG:
                     ((ConfigSidebar) JDGui.this.configurationView.getSidebar()).setSelectedTreeEntry(Premium.class);
-
-                    if (param != null) {
+                    mainTabbedPane.setSelectedComponent(JDGui.this.configurationView);
+                    if (param != null && param instanceof Account) {
                         Premium p = (Premium) configurationView.getContent();
                         p.setSelectedAccount((Account) param);
                     }
-                    mainTabbedPane.setSelectedComponent(JDGui.this.configurationView);
                     break;
                 case ADDON_MANAGER:
                     ((ConfigSidebar) JDGui.this.configurationView.getSidebar()).setSelectedTreeEntry(ConfigPanelAddons.class);

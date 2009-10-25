@@ -106,7 +106,8 @@ public class Moosharenet extends PluginForHost {
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlLink, false, 1);
         if (!dl.getConnection().isContentDisposition()) {
-            dl.getConnection().disconnect();
+            br.followConnection();
+            if (br.getURL().contains("download.php")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             throw new PluginException(LinkStatus.ERROR_RETRY);
         }
         dl.startDownload();
@@ -177,6 +178,7 @@ public class Moosharenet extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlLink, false, 1);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
+            if (br.getURL().contains("download.php")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         }
         dl.startDownload();

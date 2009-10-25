@@ -168,8 +168,6 @@ public class JDController implements ControlListener {
 
     private EventSender eventSender = null;
 
-    private ArrayList<DownloadLink> finishedLinks = new ArrayList<DownloadLink>();
-
     private int initStatus = -1;
 
     private DownloadLink lastDownloadFinished;
@@ -208,17 +206,6 @@ public class JDController implements ControlListener {
                 if (removeList.contains(listener)) removeList.remove(listener);
             }
             if (!controlListener.contains(listener)) controlListener.add(listener);
-        }
-    }
-
-    /**
-     * Fügt einen Downloadlink der Finishedliste hinzu.
-     * 
-     * @param lastDownloadFinished
-     */
-    private void addToFinished(DownloadLink lastDownloadFinished) {
-        synchronized (finishedLinks) {
-            finishedLinks.add(lastDownloadFinished);
         }
     }
 
@@ -276,7 +263,6 @@ public class JDController implements ControlListener {
             // Nur Hostpluginevents auswerten
             if (!(event.getSource() instanceof PluginForHost)) { return; }
             lastDownloadFinished = ((SingleDownloadController) event.getParameter()).getDownloadLink();
-            addToFinished(lastDownloadFinished);
 
             // Prüfen ob das Paket fertig ist und entfernt werden soll
             if (lastDownloadFinished.getFilePackage().getRemainingLinks() == 0) {
@@ -486,18 +472,6 @@ public class JDController implements ControlListener {
         EventSender th = new EventSender();
         th.start();
         return th;
-    }
-
-    /**
-     * Gibt alle in dieser Session beendeten Downloadlinks zurück. unabhängig
-     * davon ob sie noch in der dl liste stehen oder nicht
-     * 
-     * @return
-     */
-    public ArrayList<DownloadLink> getFinishedLinks() {
-        synchronized (finishedLinks) {
-            return finishedLinks;
-        }
     }
 
     public int getForbiddenReconnectDownloadNum() {

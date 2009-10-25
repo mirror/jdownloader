@@ -75,6 +75,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
     private DownloadController dlc = null;
 
     private int activeDownloads = 0;
+    private int downloadssincelastStart = 0;
 
     private final static Object StartStopSync = new Object();
 
@@ -253,6 +254,8 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                 /* full start reached */
                 logger.info("DownloadWatchDog: start");
                 JDController.getInstance().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOAD_START, this));
+                /* reset downloadcounter */
+                downloadssincelastStart = 0;
                 startWatchDogThread();
                 return true;
             }
@@ -385,6 +388,10 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
         return DownloadControllers.keySet().size();
     }
 
+    public int getDownloadssincelastStart() {
+        return downloadssincelastStart;
+    }
+
     /**
      * Zählt die Downloads die bereits über das Hostplugin laufen
      * 
@@ -404,6 +411,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
             DownloadControllers.put(link, con);
             synchronized (CountLOCK) {
                 this.activeDownloads++;
+                downloadssincelastStart++;
             }
         }
         String cl = link.getHost();
