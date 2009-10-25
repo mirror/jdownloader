@@ -33,8 +33,9 @@ public class IPAddress {
      * @return
      */
     public static boolean validateIP(String ip) {
+        if (ip == null) return false;
         try {
-            return Pattern.compile(SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.PARAM_GLOBAL_IP_MASK, IP_PATTERN)).matcher(ip).matches();
+            return Pattern.compile(SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.PARAM_GLOBAL_IP_MASK, IP_PATTERN)).matcher(ip.trim()).matches();
         } catch (Exception e) {
             JDLogger.getLogger().severe("Could not validate IP! " + e);
         }

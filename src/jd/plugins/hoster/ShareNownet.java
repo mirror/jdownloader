@@ -79,10 +79,12 @@ public class ShareNownet extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form);
         if (dl.getRequest().getLocation() != null) {
             br.followConnection();
+            if (br.getURL().contains("download.php")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
-        if (dl.getConnection().getLongContentLength() == 0) {
+        if (dl.getConnection().getLongContentLength() == 0 || dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            if (br.getURL().contains("download.php")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT, JDL.L("plugins.hoster.sharenownet.errors.servererror", "Server Error"));
         }
 

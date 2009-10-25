@@ -25,6 +25,7 @@ import java.io.File;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.Random;
 import java.util.Vector;
 import java.util.Map.Entry;
 
@@ -106,6 +107,9 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
 
                 commandvec.add("/get/ip");
                 infovector.add("Get IP");
+
+                commandvec.add("/get/randomip");
+                infovector.add("Answers with Random IP as replacement for real IP-Check");
 
                 commandvec.add("/get/config");
                 infovector.add("Get Config");
@@ -197,6 +201,10 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
             } else if (request.getRequestUrl().equals("/get/ip")) {
                 // Get IP
                 response.addContent(IPCheck.getIPAddress());
+            } else if (request.getRequestUrl().equals("/get/randomip")) {
+                // Get Random-IP
+                Random r = new Random();
+                response.addContent(r.nextInt(255) + "." + r.nextInt(255) + "." + r.nextInt(255) + "." + r.nextInt(255));
             } else if (request.getRequestUrl().equals("/get/config")) {
                 // Get Config
                 Property config = JDUtilities.getConfiguration();
@@ -591,7 +599,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
             }
         }
     }
-    
+
     @Override
     public void onExit() {
 

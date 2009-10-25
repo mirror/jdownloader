@@ -83,18 +83,18 @@ public class FileFactory extends PluginForHost {
         }
     }
 
-    public void handleFree0(DownloadLink parameter) throws Exception {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.getPage(parameter.getDownloadURL());
+    public void checkErrors() throws PluginException {
         if (br.containsHTML("there are currently no free download slots")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
         if (br.containsHTML(NOT_AVAILABLE)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML(SERVER_DOWN) || br.containsHTML(NO_SLOT)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l); }
+        if (br.containsHTML(SERVER_DOWN) || br.containsHTML(NO_SLOT)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l);
+    }
 
+    public void handleFree0(DownloadLink parameter) throws Exception {
+        checkErrors();
         String urlWithFilename = br.getRegex("class=\"basicBtn\".*?href=\"(.*?)\"").getMatch(0);
         if (urlWithFilename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         br.getPage("http://www.filefactory.com" + urlWithFilename);
-
+        checkErrors();
         String downloadUrl = br.getRegex("downloadLink\".*?href=\"(http://.*?filefactory.*?)\"").getMatch(0);
         String wait = br.getRegex("id=\"startWait\" value=\"(\\d+)\"").getMatch(0);
         if (wait == null || downloadUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
@@ -105,7 +105,6 @@ public class FileFactory extends PluginForHost {
 
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, downloadUrl);
-
         // Prüft ob content disposition header da sind
         if (dl.getConnection().isContentDisposition()) {
             dl.startDownload();
@@ -120,6 +119,7 @@ public class FileFactory extends PluginForHost {
                 if (waittime > 0) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waittime);
             }
             if (br.containsHTML("You are currently downloading too many files at once")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
+            checkErrors();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         }
     }

@@ -25,7 +25,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "iload.to" }, urls = { "http://(beta\\.iload|iload)\\.to/(go/\\d+/|(view|title|release)/.*?/)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "iload.to" }, urls = { "http://(beta\\.iload|iload)\\.to/(go/\\d+/(streaming/.+)?|(view|title|release)/.*?/)" }, flags = { 0 })
 public class LdT extends PluginForDecrypt {
 
     private String patternSupported_Info = ".*?(beta\\.iload|iload)\\.to/(view|title|release)/.*?/";
@@ -43,8 +43,8 @@ public class LdT extends PluginForDecrypt {
             String links_page[] = br.getRegex("href=\"(/go/[0-9]+/)\"").getColumn(0);
             br.getPage(parameter.replaceAll("(iload\\.to|beta\\.iload\\.to)", "beta.iload.to"));
             String streamlinks[] = br.getRegex("href=\"(/go/[0-9]+/streaming/.*?/)\"").getColumn(0);
-            progress.setRange(links_page.length);
             if (links_page == null && streamlinks == null) return null;
+            progress.setRange(links_page.length);
             if (links_page != null) {
                 for (String link : links_page) {
                     String golink = "http://iload.to/" + link;

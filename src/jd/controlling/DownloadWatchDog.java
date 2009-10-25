@@ -456,11 +456,6 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                 for (FilePackage filePackage : dlc.getPackages()) {
                     for (Iterator<DownloadLink> it2 = filePackage.getDownloadLinkList().iterator(); it2.hasNext();) {
                         nextDownloadLink = it2.next();
-                        // Setzt die Wartezeit zurück
-                        if (!nextDownloadLink.getLinkStatus().isPluginActive() && nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
-                            nextDownloadLink.reset();
-                            nextDownloadLink.getLinkStatus().setStatus(LinkStatus.TODO);
-                        }
                         if (nextDownloadLink.isEnabled() && !nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE)) {
                             if (nextDownloadLink.getPlugin().isPremiumDownload() || (getRemainingIPBlockWaittime(nextDownloadLink.getHost()) <= 0 && getRemainingTempUnavailWaittime(nextDownloadLink.getHost()) <= 0)) {
                                 if (!isDownloadLinkActive(nextDownloadLink)) {
