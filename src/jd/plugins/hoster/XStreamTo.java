@@ -26,23 +26,31 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-//mystream.to by pspzockerscene
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mystream.to" }, urls = { "http://[\\w\\.]*?mystream\\.to/file-[0-9]+-[0-9|a-z]+.+" }, flags = { 2 })
-public class MyStreamTo extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xstream.to" }, urls = { "http://[\\w\\.]*?xtream\\.to/file-[0-9]+-[0-9a-z]+-[0-9a-zA-Z._]+" }, flags = { 2 })
+public class XStreamTo extends PluginForHost {
 
-    public MyStreamTo(PluginWrapper wrapper) {
+    public XStreamTo(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public String getAGBLink() {
-        return "http://www.mystream.to/contact";
+        return "http://www.xtream.to/contact";
     }
 
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("Datei nicht gefunden")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<h2>Sie schauen: (.*?)</h2>").getMatch(0);
+        if (br.containsHTML("Datei nicht gefunden") || br.containsHTML("icon_error.png")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("font-weight:bold\"><a>(.*?)</a>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("onclick=\"select\\(\\);\" value=\"http://www.xtream.to/file-.*?-.*?-(.*?)\"").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("src\" value=\".*?file-.*?/.*?/(.*?)\"").getMatch(0);
+                if (filename == null) {
+                    filename = br.getRegex("video/divx\" src=\".*?file-.*?/.*?/(.*?)\"").getMatch(0);
+                }
+            }
+        }
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename);
         return AvailableStatus.TRUE;
@@ -51,8 +59,11 @@ public class MyStreamTo extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         String dllink = br.getRegex("video/divx\" src=\"(.*?)\"").getMatch(0);
-        if(dllink == null){
-            dllink = br.getRegex("name=\"flashvars\" value=\"file=(.*?)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("src\" value=\"(.*?)\"").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("name=\"flashvars\" value=\"file=(.*?)\"").getMatch(0);
+            }
         }
         if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT); }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
