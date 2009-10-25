@@ -22,10 +22,13 @@ import java.io.Serializable;
 import java.net.URL;
 import java.util.ArrayList;
 
+import jd.config.SubConfiguration;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.components.DnDWebBrowser;
+import jd.gui.swing.jdgui.JDGuiConstants;
 import jd.nutils.Executer;
 import jd.nutils.OSDetector;
+import jd.parser.Regex;
 import edu.stanford.ejalbert.BrowserLauncher;
 import edu.stanford.ejalbert.exception.BrowserLaunchingInitializingException;
 import edu.stanford.ejalbert.exception.UnsupportedOperatingSystemException;
@@ -233,35 +236,44 @@ public abstract class LocalBrowser implements Serializable {
      * can be used to e.g. install a firefox addon
      **/
     public static void openinFirefox(String url) {
+        /* first try custom browser if it seems to be firefox */
+        SubConfiguration cfg = SubConfiguration.getConfig(JDGuiConstants.CONFIG_PARAMETER);
+        if (cfg.getBooleanProperty(JDGuiConstants.PARAM_CUSTOM_BROWSER_USE, false) && cfg.getStringProperty(JDGuiConstants.PARAM_CUSTOM_BROWSER).contains("firefox")) {
+            Executer exec = new Executer(cfg.getStringProperty(JDGuiConstants.PARAM_CUSTOM_BROWSER));
+            String params = cfg.getStringProperty(JDGuiConstants.PARAM_CUSTOM_BROWSER_PARAM).replace("%url", url + "");
+            exec.addParameters(Regex.getLines(params));
+            exec.start();
+            exec.setWaitTimeout(5);
+            exec.waitTimeout();
+            return;
+        }
         String path = null;
         if (OSDetector.isWindows()) {
             if (new File("C:\\Program Files\\Mozilla Firefox\\firefox.exe").exists()) {
                 path = "C:\\Program Files\\Mozilla Firefox\\firefox.exe";
             } else if (new File("C:\\Programme\\Mozilla Firefox\\firefox.exe").exists()) {
                 path = "C:\\Programme\\Mozilla Firefox\\firefox.exe";
+            } else if (new File("C:\\Programme (x86)\\Mozilla Firefox\\firefox.exe").exists()) {
+                path = "C:\\Programme (x86)\\Mozilla Firefox\\firefox.exe";
+            } else if (new File("C:\\Program Files (x86)\\Mozilla Firefox\\firefox.exe").exists()) {
+                path = "C:\\Program Files (x86)\\Mozilla Firefox\\firefox.exe";
             }
             if (path != null) {
                 Executer exec = new Executer(path);
                 exec.addParameters(new String[] { url });
-
                 exec.start();
-
             }
         } else if (OSDetector.isMac()) {
             if (new File("/Applications/Firefox.app").exists()) {
                 path = "/Applications/Firefox.app";
                 Executer exec = new Executer("open");
                 exec.addParameters(new String[] { path, url });
-
                 exec.start();
-
             }
         } else if (OSDetector.isLinux()) {
             Executer exec = new Executer("firefox");
             exec.addParameters(new String[] { url });
-
             exec.start();
-
         }
     }
 }

@@ -86,8 +86,9 @@ public class LinkGrabberPackager {
         name = getNameMatch(name, pat14);
         name = getNameMatch(name, pat15);
         name = getNameMatch(name, pat16);
-        /* replace _ with spaces */
+        /* replace _ and . with spaces */
         name = name.replaceAll("_", " ");
+        name = name.replaceAll("\\.", " ");
         return name.trim();
     }
 

@@ -14,7 +14,7 @@
   <manifest></manifest>
   <icon>G:\Users\coalado\workspace\JDownloader\artwork\icons\by TRazo\jdicon.ico</icon>
   <jre>
-    <path>jre</path>
+    <path></path>
     <minVersion>1.5.0</minVersion>
     <maxVersion></maxVersion>
     <jdkPreference>preferJre</jdkPreference>
@@ -24,11 +24,11 @@
     <fileVersion>4.0.0.0</fileVersion>
     <txtFileVersion>4.0.0.0</txtFileVersion>
     <fileDescription>JDownloader Launcher v4</fileDescription>
-    <copyright>AppWork UG (haftungsbeschr‰nkt)</copyright>
+    <copyright>AppWork UG (haftungsbeschr√§nkt)</copyright>
     <productVersion>4.0.0.0</productVersion>
     <txtProductVersion>4.0.0.0</txtProductVersion>
     <productName>JDownloader Launcher v4</productName>
-    <companyName>AppWork UG (haftungsbeschr‰nkt)</companyName>
+    <companyName>AppWork UG (haftungsbeschr√§nkt)</companyName>
     <internalName>Jdownloader Launcher Trazo</internalName>
     <originalFilename>JDownloader.exe</originalFilename>
   </versionInfo>
