@@ -27,23 +27,69 @@ import javax.crypto.spec.SecretKeySpec;
 import jd.controlling.JDLogger;
 import sun.security.pkcs.PKCS7;
 
+/**
+ * JDCrypt class provides a few easy to use functions to encrypt or decrypt
+ * data. Use {@link jd.utils.JDHexUtils} to split Keys in Hex form to byte
+ * arrays. ALog AES CBC Mode is used.
+ * 
+ * @author unkown
+ * 
+ */
 public class JDCrypt {
-
+    /**
+     * Encrypt a string with the signature of jdownloader (128 bit)
+     * 
+     * @param string
+     *            String to encrypt
+     * @return
+     */
     public static byte[] encrypt(String string) {
-        return encrypt(string,sign());
-     
+        return encrypt(string, sign());
+
     }
 
+    /**
+     * Decrypt data with JDs signature (128 bit)
+     * 
+     * @param b
+     *            data tu decrypt
+     * @return
+     */
     public static String decrypt(byte[] b) {
-        return decrypt(b,sign());
-      
+        return decrypt(b, sign());
+
     }
-    public static byte[] encrypt(String string,byte[] key) {
+
+    /**
+     * Encrypts a String
+     * 
+     * @param string
+     *            data to encrypt
+     * @param key
+     *            Key for encryption. Use 128 Bit (16 Byte) key
+     * @return
+     */
+    public static byte[] encrypt(String string, byte[] key) {
+        return encrypt(string, key, key);
+    }
+
+    /**
+     * Encrypts a string
+     * 
+     * @param string
+     *            String to encrypt
+     * @param key
+     *            to use (128Bit (16 Byte))
+     * @param iv
+     *            to use (128Bit (16 Byte))
+     * @return
+     */
+    public static byte[] encrypt(String string, byte[] key, byte[] iv) {
         Cipher cipher;
         try {
             cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
 
-            IvParameterSpec ivSpec = new IvParameterSpec(key);
+            IvParameterSpec ivSpec = new IvParameterSpec(iv);
             SecretKeySpec skeySpec = new SecretKeySpec(key, "AES");
             cipher.init(Cipher.ENCRYPT_MODE, skeySpec, ivSpec);
             return cipher.doFinal(string.getBytes());
@@ -55,21 +101,64 @@ public class JDCrypt {
         return null;
     }
 
-    public static String decrypt(byte[] b,byte[] key) {
+    /**
+     * Decrypt data which has been encrypted width
+     * {@link JDCrypt#encrypt(String, byte[], byte[])}
+     * 
+     * @param b
+     *            data to decrypt
+     * @param key
+     *            to use (128Bit (16 Byte))
+     * @param iv
+     *            to use (128Bit (16 Byte))
+     * @return
+     */
+    public static String decrypt(byte[] b, byte[] key, byte[] iv) {
         Cipher cipher;
         try {
-            IvParameterSpec ivSpec = new IvParameterSpec(key);
+            IvParameterSpec ivSpec = new IvParameterSpec(iv);
             SecretKeySpec skeySpec = new SecretKeySpec(key, "AES");
 
             cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
             cipher.init(Cipher.DECRYPT_MODE, skeySpec, ivSpec);
             return new String(cipher.doFinal(b));
         } catch (Exception e) {
+            IvParameterSpec ivSpec = new IvParameterSpec(iv);
+            SecretKeySpec skeySpec = new SecretKeySpec(key, "AES");
 
-            JDLogger.exception(e);
+            try {
+                cipher = Cipher.getInstance("AES/CBC/nopadding");
+
+                cipher.init(Cipher.DECRYPT_MODE, skeySpec, ivSpec);
+                return new String(cipher.doFinal(b));
+            } catch (Exception e1) {
+                // TODO Auto-generated catch block
+                e1.printStackTrace();
+            }
+
         }
         return null;
     }
+
+    /**
+     * Decrypts data which has been encrypted with
+     * {@link JDCrypt#encrypt(String, byte[])}
+     * 
+     * @param b
+     *            data to decrypt
+     * @param key
+     *            to use (128 Bit/16 Byte)
+     * @return
+     */
+    public static String decrypt(byte[] b, byte[] key) {
+        return decrypt(b, key, key);
+    }
+
+    /**
+     * Returns the hash of the JD signatur (1287 bit/16 Byte)
+     * 
+     * @return
+     */
     private static byte[] sign() {
         InputStream in = null;
         byte[] buf = new byte[12 * 1024];
