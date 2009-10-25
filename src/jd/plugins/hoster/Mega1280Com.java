@@ -77,12 +77,16 @@ public class Mega1280Com extends PluginForHost {
         String dllink3 = br.getRegex("<div id=\"hdfilename\" style=\"display:none\">(.*?)</div>").getMatch(0);
         if (dllink0 == null || dllink1 == null || dllink2 == null || dllink3 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         String downloadURL = dllink0 + dllink1 + dllink2 + "/" + dllink3;
-        //Waittime
+        // Waittime
         String wait = br.getRegex("hdcountdown\" style=\"display:none\">(\\d+)</div>").getMatch(0);
         if (wait == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         long tt = Long.parseLong(wait.trim());
         sleep(tt * 1001l, downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadURL, true, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        }
         dl.startDownload();
     }
 

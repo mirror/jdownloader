@@ -558,23 +558,23 @@ public class Rapidshare extends PluginForHost {
             if (Regex.matches(error, Pattern.compile("(weder einem Premiumaccount)"))) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
             if (Regex.matches(error, Pattern.compile("(keine freien Slots)"))) {
                 if (getPluginConfig().getBooleanProperty(WAIT_HOSTERFULL, true)) {
-                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "All free slots in use", 120 * 1000l);
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "All free slots in use", 240 * 1000l);
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "All free slots in use", 120 * 1000l);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "All free slots in use", 250 * 1000l);
                 }
             }
             if (Regex.matches(error, Pattern.compile("(Diese Datei k.*?Sie nur als)")) || Regex.matches(error, Pattern.compile("(Es sind derzeit keine freien Download)"))) {
                 if (getPluginConfig().getBooleanProperty(WAIT_HOSTERFULL, true)) {
-                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "All free slots in use", 120 * 1000l);
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "All free slots in use", 10 * 60 * 1000l);
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "All free slots in use", 120 * 1000l);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "All free slots in use", 10 * 60 * 1000l);
                 }
             }
             if (Regex.matches(error, Pattern.compile("(in 2 Minuten)"))) {
                 if (getPluginConfig().getBooleanProperty(WAIT_HOSTERFULL, true)) {
-                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many users are currently downloading this file", 120 * 1000l);
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many users are currently downloading this file", 10 * 60 * 1000l);
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many users are currently downloading this file", 120 * 1000l);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many users are currently downloading this file", 10 * 60 * 1000l);
                 }
             }
             if (Regex.matches(error, Pattern.compile("(Die Datei konnte nicht gefunden werden)"))) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }

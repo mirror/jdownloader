@@ -36,14 +36,16 @@ public class HotShareNet extends PluginForHost {
         br.setFollowRedirects(true);
     }
 
-    // @Override
     public String getAGBLink() {
         return "http://www.hotshare.net/pages/tos.html";
     }
 
-    // @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+    public void correctDownloadLink(DownloadLink link) throws Exception {
+        String part = new Regex(link.getDownloadURL(), "(file/.+|audio/.+|video/.+)").getMatch(0);
+        link.setUrlDownload("http://www.hotshare.net/en/" + part);
+    }
 
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         br.setCookie("http://www.hotshare.net/", "language", "english");
         br.getPage(downloadLink.getDownloadURL().replaceAll("video", "file").replaceAll("audio", "file"));
@@ -55,37 +57,35 @@ public class HotShareNet extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    // @Override
-    /*
-     * public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         Form downloadForm = br.getFormbyProperty("name", "form1");
         downloadForm.put("download", "1");
+        downloadForm.put("imageField.x", "149");
+        downloadForm.put("imageField.y", "14");
         br.submitForm(downloadForm);
         String downloadUrl = br.getRegex(Pattern.compile("<a class=\"link_v3\" href=\"(.*?)\">")).getMatch(0);
-
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, downloadUrl, false, 1);
+        sleep(5000l, downloadLink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadUrl, false, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            if (br.containsHTML("File not")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        }
         dl.startDownload();
+        if (downloadLink.getDownloadCurrent() == 15) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
-    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 5;
     }
 
-    // @Override
     public void reset() {
     }
 
-    // @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 }
