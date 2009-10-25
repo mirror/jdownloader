@@ -187,7 +187,7 @@ public class IPCheck {
             JDLogger.getLogger().severe("IPCheck failed");
             return "na";
         }
-        return (String) ip;
+        return ip.toString().trim();
     }
 
     /**

@@ -84,6 +84,9 @@ public class Restarter {
                 i++;
 
             }
+
+            String javaPath = new File(new File(System.getProperty("sun.boot.library.path")), "javaw.exe").getAbsolutePath();
+
             if (RESTART) {
                 if (OSDetector.isMac()) {
                     Executer exec = new Executer("open");
@@ -93,8 +96,12 @@ public class Restarter {
                     exec.start();
 
                 } else {
-
-                    Executer exec = new Executer("java");
+                    Executer exec;
+                    if (new File(javaPath).exists()) {
+                        exec = new Executer(javaPath);
+                    } else {
+                        exec = new Executer("java");
+                    }
                     exec.addParameters(new String[] { "-jar", "-Xmx512m", "JDownloader.jar", "-rfu" });
                     exec.setRunin(new File(".").getAbsolutePath());
                     exec.setWaitTimeout(0);
@@ -110,31 +117,34 @@ public class Restarter {
         }
 
     }
-/**
- * Extracts all .extract files
- * @param file
- */
+
+    /**
+     * Extracts all .extract files
+     * 
+     * @param file
+     */
     private static void extract(File file) {
-        try{
-        for (File f : file.listFiles()) {
-            if (f.isDirectory()) {
-                extract(f);
-            } else {
-                if (f.getName().endsWith(".extract")) {
-                    logger.info("Extract: "+f);
-                    UnZip u = new UnZip(f, f.getParentFile());
-                    u.setOverwrite(false);
-                    try {
-                        File[] efiles = u.extract();
-                        logger.info("-->: "+efiles.length+" files");
-                    } catch (Exception e) {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
+        try {
+            for (File f : file.listFiles()) {
+                if (f.isDirectory()) {
+                    extract(f);
+                } else {
+                    if (f.getName().endsWith(".extract")) {
+                        logger.info("Extract: " + f);
+                        UnZip u = new UnZip(f, f.getParentFile());
+                        u.setOverwrite(false);
+                        try {
+                            File[] efiles = u.extract();
+                            logger.info("-->: " + efiles.length + " files");
+                        } catch (Exception e) {
+                            // TODO Auto-generated catch block
+                            e.printStackTrace();
+                        }
                     }
                 }
             }
+        } catch (Exception e) {
         }
-        }catch(Exception e){}
 
     }
 

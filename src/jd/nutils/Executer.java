@@ -24,6 +24,8 @@ import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 
+import jd.controlling.JDLogger;
+
 public class Executer extends Thread implements Runnable {
     public static final String CODEPAGE = OSDetector.isWindows() ? "ISO-8859-1" : "UTF-8";
     private boolean debug = true;
@@ -148,7 +150,8 @@ public class Executer extends Thread implements Runnable {
                     fireEvent(dynbuf, read, this == Executer.this.sbeObserver ? Executer.LISTENER_ERRORSTREAM : Executer.LISTENER_STDSTREAM);
 
                 } else {
-                    Thread.sleep(150);
+                    Thread.sleep(100);
+
                 }
             }
 
@@ -322,23 +325,34 @@ public class Executer extends Thread implements Runnable {
             } catch (Exception e) {
                 e.printStackTrace();
             }
+
+            JDLogger.getLogger().finer("Process returned");
             // stream did not return -1 yet, and so the observer sill still
             // waiting for data. we interrupt him
             if (sboObserver.isIdle()) {
-
+                JDLogger.getLogger().finer("sbo idle - interrupt");
                 sboObserver.requestInterrupt();
 
             }
             if (sbeObserver.isIdle()) {
+                JDLogger.getLogger().finer("sbe idle - interrupt");
                 sbeObserver.requestInterrupt();
             }
+            long returnTime = System.currentTimeMillis();
 
             // must be called to clear interrupt flag
             interrupted();
             while ((sbeObserver != null && this.sbeObserver.isAlive()) || (sboObserver != null && this.sboObserver.isAlive())) {
                 Thread.sleep(50);
-            }
+                if ((System.currentTimeMillis() - returnTime) > 60000) {
+                    JDLogger.getLogger().severe("Executer Error. REPORT THIS BUG INCL. THIS LOG to jd support");
+                    sboObserver.requestInterrupt();
+                    sbeObserver.requestInterrupt();
+                    break;
 
+                }
+            }
+            JDLogger.getLogger().finer("STream observer closed");
         } catch (IOException e1) {
             this.exception = e1;
             return;
