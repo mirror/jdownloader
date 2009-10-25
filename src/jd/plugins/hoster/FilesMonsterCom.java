@@ -26,7 +26,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
-@HostPlugin(revision = "$Revision: 9045 $", interfaceVersion = 2, names = { "filesmonster.com" }, urls = { "http://filesmonster\\.com/download.php\\?id=.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesmonster.com" }, urls = { "http://filesmonster\\.com/download.php\\?id=.+" }, flags = { 0 })
 public class FilesMonsterCom extends PluginForHost {
     public FilesMonsterCom(PluginWrapper wrapper) {
         super(wrapper);
