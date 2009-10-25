@@ -35,9 +35,9 @@ import jd.plugins.DownloadLink.AvailableStatus;
 
 //quickupload by pspzockerscene
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "quickupload.net" }, urls = { "http://[\\w\\.]*?quickupload\\.net/[a-z0-9]+/?" }, flags = { 0 })
-public class QuickUploadNet extends PluginForHost {
+public class QuickUploadDotNet extends PluginForHost {
 
-    public QuickUploadNet(PluginWrapper wrapper) {
+    public QuickUploadDotNet(PluginWrapper wrapper) {
         super(wrapper);
     }
 

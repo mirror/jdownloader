@@ -33,9 +33,9 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "file2upload.net" }, urls = { "http://[\\w\\.]*?file2upload\\.(net|com)/download/[0-9]+/" }, flags = { 2 })
-public class File2UploadNet extends PluginForHost {
+public class File2UploadDotNet extends PluginForHost {
 
-    public File2UploadNet(PluginWrapper wrapper) {
+    public File2UploadDotNet(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://file2upload.net/membership?paid");
     }

@@ -135,3 +135,8 @@ tools/flashgot-1.1.9.8.xpi
 tools/jdownff.xpi
 tools/Windows/kikin/KikinInstaller_1_11_4_jdownloader.exe
 tools/Windows/kikin/KikinInstaller_1_11_9_jdownloader.setup
+jd/plugins/hoster/BitRoadNet.class
+jd/plugins/hoster/File2UploadNet.class
+jd/plugins/hoster/FileUploadnet.class
+jd/plugins/hoster/FourFreeLoadNet.class
+jd/plugins/hoster/QuickUploadNet.class

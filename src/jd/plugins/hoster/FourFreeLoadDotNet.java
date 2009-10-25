@@ -37,9 +37,9 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4freeload.net" }, urls = { "http://[\\w\\.]*?4freeload\\.net/download\\.php\\?id=[A-Fa-f0-9]+" }, flags = { 2 })
-public class FourFreeLoadNet extends PluginForHost {
+public class FourFreeLoadDotNet extends PluginForHost {
 
-    public FourFreeLoadNet(PluginWrapper wrapper) {
+    public FourFreeLoadDotNet(PluginWrapper wrapper) {
         super(wrapper);
         enablePremium("http://4freeload.net/register.php");
     }
