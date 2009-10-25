@@ -36,7 +36,7 @@ public class ExternReconnect extends ReconnectMethod {
 
     private Configuration configuration;
 
-    private static final String PROPERTY_IP_WAIT_FOR_RETURN = "WAIT_FOR_RETURN3";
+    private static final String PROPERTY_IP_WAIT_FOR_RETURN = "WAIT_FOR_RETURN4";
 
     private static final String PROPERTY_RECONNECT_COMMAND = "InteractionExternReconnect_Command";
 
@@ -51,12 +51,11 @@ public class ExternReconnect extends ReconnectMethod {
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFILE, configuration, PROPERTY_RECONNECT_COMMAND, JDL.L("interaction.externreconnect.command", "Befehl (absolute Pfade verwenden)")));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, configuration, PROPERTY_RECONNECT_PARAMETER, JDL.L("interaction.externreconnect.parameter", "Parameter (1 Parameter/Zeile)")));
 
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, configuration, PROPERTY_IP_WAIT_FOR_RETURN, JDL.L("interaction.externreconnect.waitForTermination", "Warten x Sekunden bis Befehl beendet ist [sek]"), -1, 600).setDefaultValue(0));
     }
 
     // @Override
     protected boolean runCommands(ProgressController progress) {
-        int waitForReturn = configuration.getIntegerProperty(PROPERTY_IP_WAIT_FOR_RETURN, 0);
+        int waitForReturn = configuration.getIntegerProperty(PROPERTY_IP_WAIT_FOR_RETURN, -1);
         String command = configuration.getStringProperty(PROPERTY_RECONNECT_COMMAND);
 
         File f = new File(command);

@@ -20,6 +20,7 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -35,6 +36,8 @@ import jd.plugins.DownloadLink.AvailableStatus;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ifile.it" }, urls = { "http://[\\w\\.]*?ifile\\.it/[\\w]+/?" }, flags = { 2 })
 public class IFileIt extends PluginForHost {
 
+    private String useragent = RandomUserAgent.generate();
+
     public IFileIt(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://secure.ifile.it/signup");
@@ -46,6 +49,7 @@ public class IFileIt extends PluginForHost {
 
     public void login(Account account) throws Exception {
         this.setBrowserExclusive();
+        br.getHeaders().put("User-Agent", useragent);
         br.setFollowRedirects(true);
         br.getPage("https://secure.ifile.it/signin");
         Form form = br.getForm(0);
@@ -80,6 +84,7 @@ public class IFileIt extends PluginForHost {
         login(account);
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
+        br.cloneBrowser().getPage("http://ifile.it/ads/adframe.js");
         String downlink = br.getRegex("var url =.*?\"(.*?)\"").getMatch(0);
         String esn = br.getRegex("var.*?esn =.*?(\\d+);<").getMatch(0);
         if (downlink == null || esn == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
@@ -118,6 +123,7 @@ public class IFileIt extends PluginForHost {
 
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.getHeaders().put("User-Agent", useragent);
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("file not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

@@ -41,11 +41,12 @@ public class UpFileCom extends PluginForHost {
 
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
-        br.setCookie("http://up-file.com", "country", "DE");
+        br.setCookie("http://up-file.com", "country", "EN");
+        br.setCookie("http://up-file.com", "lang", "EN");
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("Das von Ihnen angefordete File ist nicht gefunden")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<h1><span>Filename::</span>(.*?)</h1>").getMatch(0);
-        String filesize = br.getRegex("<h1><span>Filegre::</span>(.*?)</h1>").getMatch(0);
+        if (br.containsHTML("The requested file is not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<h1><span>Fil.*?me.*?>(.*?)<").getMatch(0);
+        String filesize = br.getRegex("<h1><span>Fil.*?me.*?>.*?<h1><span>Fil.*?size.*?>(.*?)<").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
@@ -56,7 +57,7 @@ public class UpFileCom extends PluginForHost {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("Das Herunterladen von Ihrer IP-Adresse findet schon statt")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
+        if (br.containsHTML("Downloading is in process from your")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
         Form[] form = br.getForms();
         br.submitForm(form[7]);
         String dllink;
