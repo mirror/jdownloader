@@ -128,6 +128,7 @@ abstract public class DownloadInterface {
          * @param connection
          */
         public Chunk(long startByte, long endByte, URLConnectionAdapter connection, DownloadInterface dl) {
+           super("DOwnloadchunk "+startByte+" - "+endByte);
             this.startByte = startByte;
             this.endByte = endByte;
             this.connection = connection;
@@ -1170,6 +1171,7 @@ abstract public class DownloadInterface {
     }
 
     private DownloadInterface(PluginForHost plugin, DownloadLink downloadLink) {
+   
         this.downloadLink = downloadLink;
         linkStatus = downloadLink.getLinkStatus();
         linkStatus.setStatusText(JDL.L("download.connection.normal", "Download"));

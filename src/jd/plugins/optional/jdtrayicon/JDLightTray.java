@@ -180,7 +180,7 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
         } else if (event.getID() == ControlEvent.CONTROL_SYSTEM_EXIT) {
             shutdown = true;
         } else if (event.getID() == ControlEvent.CONTROL_DOWNLOAD_START) {
-            updateThread = new Thread() {
+            updateThread = new Thread("Tray Icon Updater") {
                 @Override
                 public void run() {
                     boolean needupdate = false;

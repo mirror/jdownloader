@@ -94,7 +94,7 @@ public class SpeedMeterPanel extends JPanel implements ActionListener, MouseList
 
     public void start() {
         if (th != null) return;
-        th = new Thread() {
+        th = new Thread("Speedmeter updater") {
 
             @Override
             public void run() {

@@ -31,6 +31,7 @@ public class HttpServer extends Thread {
     private int port;
 
     public HttpServer(int port, Handler handler) throws IOException {
+        super("HTTP-Server");
         this.handler = handler;
         this.port = port;
     }
@@ -48,7 +49,7 @@ public class HttpServer extends Thread {
         } catch (IOException e) {
             JDLogger.exception(e);
         }
-        run = new Thread(this);
+        run = new Thread(this,"Http-Server Consumer");
         run.start();
     }
 
@@ -59,9 +60,11 @@ public class HttpServer extends Thread {
             try {
                 csocket = ssocket.accept();
                 new RequestHandler(csocket, handler).run();
+                Thread.sleep(100);
             } catch (Exception e) {
                 JDLogger.exception(e);
             }
+           
         }
 
         try {

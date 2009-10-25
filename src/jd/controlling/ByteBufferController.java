@@ -55,7 +55,7 @@ public class ByteBufferController {
 
     private ByteBufferController() {
         bufferpool = new ArrayList<ByteBufferEntry>();
-        Thread thread = new Thread() {
+        Thread thread = new Thread("ByteBuffer debugger") {
             public void run() {
                 while (true) {
                     try {
