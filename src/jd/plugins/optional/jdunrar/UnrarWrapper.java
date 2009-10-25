@@ -311,7 +311,6 @@ public class UnrarWrapper extends Thread implements JDRunnable {
 
         fireEvent(JDUnrarConstants.WRAPPER_START_EXTRACTION);
         Executer exec = new Executer(unrarCommand);
-        exec.setCodepage(JDUnrar.CODEPAGE);
         exec.setDebug(DEBUG);
         exec.addParameter("x");
 
@@ -450,7 +449,6 @@ public class UnrarWrapper extends Thread implements JDRunnable {
                 crackProgress = ((c++) * 100) / passwordList.size();
                 fireEvent(JDUnrarConstants.WRAPPER_PASSWORT_CRACKING);
                 Executer exec = new Executer(unrarCommand);
-                exec.setCodepage(JDUnrar.CODEPAGE);
                 exec.setDebug(DEBUG);
                 exec.addParameter("t");
                 // exec.addParameter("-p");
@@ -500,7 +498,6 @@ public class UnrarWrapper extends Thread implements JDRunnable {
 
                 fireEvent(JDUnrarConstants.WRAPPER_PASSWORT_CRACKING);
                 Executer exec = new Executer(unrarCommand);
-                exec.setCodepage(JDUnrar.CODEPAGE);
                 exec.setDebug(DEBUG);
                 exec.addParameter("p");
                 // exec.addParameter("-p");
@@ -617,7 +614,6 @@ public class UnrarWrapper extends Thread implements JDRunnable {
 
         while (true) {
             Executer exec = new Executer(unrarCommand);
-            exec.setCodepage(JDUnrar.CODEPAGE);
             exec.setDebug(DEBUG);
             if (i > 0) {
                 if (passwordList.size() < i) {
@@ -870,7 +866,7 @@ public class UnrarWrapper extends Thread implements JDRunnable {
         public void onBufferChanged(Executer exec, DynByteBuffer buffer, int latestReadNum) {
             String lastLine;
             try {
-                lastLine = new String(buffer.getLast(buffer.position() - lastLinePosition), JDUnrar.CODEPAGE);
+                lastLine = new String(buffer.getLast(buffer.position() - lastLinePosition), Executer.CODEPAGE);
             } catch (Exception e) {
                 JDLogger.exception(e);
                 lastLine = new String(buffer.getLast(buffer.position() - lastLinePosition));

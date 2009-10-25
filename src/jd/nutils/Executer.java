@@ -100,7 +100,6 @@ public class Executer extends Thread implements Runnable {
                     if (line.length() > 0) {
                         if (isDebug()) {
                             System.out.println(this + ": " + line + "");
-
                         }
 
                         fireEvent(line, dynbuf, this == Executer.this.sbeObserver ? Executer.LISTENER_ERRORSTREAM : Executer.LISTENER_STDSTREAM);
@@ -169,10 +168,8 @@ public class Executer extends Thread implements Runnable {
             try {
                 stream.close();
             } catch (IOException e) {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
             }
-
         }
 
         /**
@@ -207,14 +204,12 @@ public class Executer extends Thread implements Runnable {
     private Exception exception = null;
 
     public Executer(String command) {
-
+        super("Executer: " + command);
         this.command = command;
         parameter = new ArrayList<String>();
 
         inputStreamBuffer = new DynByteBuffer(1024 * 4);
         errorStreamBuffer = new DynByteBuffer(1024 * 4);
-        setName("Executer: " + command);
-
     }
 
     public void addParameter(String par) {
@@ -289,13 +284,12 @@ public class Executer extends Thread implements Runnable {
 
             process = pb.start();
 
-            if (waitTimeout == 0) { return; }
+            if (waitTimeout == 0) return;
             outputStream = process.getOutputStream();
             sbeObserver = new StreamObserver(process.getErrorStream(), errorStreamBuffer);
             sbeObserver.setName(this.getName() + " ERRstreamobserver");
             sboObserver = new StreamObserver(process.getInputStream(), inputStreamBuffer);
             sboObserver.setName(this.getName() + " STDstreamobserver");
-            sbeObserver.setName(this.getName() + " ERRstreamobserver");
             sbeObserver.start();
             sboObserver.start();
 
@@ -422,9 +416,7 @@ public class Executer extends Thread implements Runnable {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-
         }
-        System.out.println("bla");
     }
 
     public int getExitValue() {
@@ -471,7 +463,6 @@ public class Executer extends Thread implements Runnable {
     public void removeProcessListener(ProcessListener listener, int flag) {
         if ((flag & Executer.LISTENER_STDSTREAM) > 0) this.listener.remove(listener);
         if ((flag & Executer.LISTENER_ERRORSTREAM) > 0) this.elistener.remove(listener);
-
     }
 
 }

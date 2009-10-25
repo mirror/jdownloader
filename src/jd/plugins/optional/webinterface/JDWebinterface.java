@@ -93,8 +93,7 @@ public class JDWebinterface extends PluginOptional {
 
     // @Override
     public boolean initAddon() {
-        @SuppressWarnings("unused")
-        JDSimpleWebserver server = new JDSimpleWebserver();
+        new JDSimpleWebserver();
         logger.info("WebInterface ok: java " + JDUtilities.getJavaVersion());
         return true;
     }

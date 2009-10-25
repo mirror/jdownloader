@@ -20,10 +20,7 @@ import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.Map.Entry;
 
 import javax.swing.filechooser.FileFilter;
 
@@ -57,7 +54,6 @@ import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginOptional;
 import jd.plugins.PluginProgress;
-import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -65,7 +61,6 @@ import jd.utils.locale.JDL;
 public class JDUnrar extends PluginOptional implements ControlListener, UnrarListener, ActionListener {
 
     private static final String DUMMY_HOSTER = "dum.my";
-    public static String CODEPAGE = OSDetector.isWindows() ? "ISO-8859-1" : "UTF-8";
 
     private static MenuAction menuAction = null;
 
@@ -679,54 +674,6 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         ce.setDefaultValue(false);
     }
 
-    /**
-     * Diese Funktion wird momentan nicht benötigt. sie sucht nach dem Richtigen
-     * Encoding.
-     * 
-     * @return
-     */
-    @SuppressWarnings("unused")
-    private String getCodepage() {
-        Executer exec = new Executer(this.getPluginConfig().getStringProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND));
-        exec.addParameter("v");
-        exec.addParameter("-v");
-        exec.addParameter("-c-");
-        exec.addParameter(JDUtilities.getResourceFile("plugins/jdunrar/aeoeue.rar").getAbsolutePath());
-        exec.setWaitTimeout(-1);
-        exec.start();
-        exec.waitTimeout();
-        byte[] b = exec.getInputStreamBuffer().getSub(280, 330);
-        Iterator<Entry<String, Charset>> it = Charset.availableCharsets().entrySet().iterator();
-        String found = null;
-        System.out.println(JDHexUtils.getHexString(b));
-        while (it.hasNext()) {
-            Entry<String, Charset> n = it.next();
-            try {
-                if (new String(b, n.getKey()).contains("Øaeäoeöueü")) {
-                    System.err.println(n.getKey() + " -->" + new String(b, n.getKey()));
-                    if (found == null) found = n.getKey();
-                } else {
-                    // System.out.println(n.getKey()+" : "+new String(b,
-                    // n.getKey()));
-                }
-            } catch (Exception e) {
-                JDLogger.exception(e);
-            }
-        }
-
-        exec = new Executer(this.getPluginConfig().getStringProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND));
-        exec.addParameter("v");
-        exec.setCodepage(found);
-        exec.addParameter("-v");
-        exec.addParameter("-c-");
-        exec.addParameter(JDUtilities.getResourceFile("plugins/jdunrar/aeoeue.rar").getAbsolutePath());
-        exec.setWaitTimeout(-1);
-        exec.start();
-        exec.waitTimeout();
-        System.err.println(exec.getInputStreamBuffer().toString());
-        return found;
-    }
-
     private void chmodUnrar(String path) {
         Executer exec = new Executer("chmod");
         exec.addParameter("+x");
@@ -737,9 +684,8 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
     }
 
     /**
-     * Überprüft den eingestellten UNrarbefehl und setzt ihn notfalls neu.
+     * Überprüft den eingestellten Unrarbefehl und setzt ihn notfalls neu.
      */
-
     private void checkUnrarCommand() {
         if (checkUnrarCommandIntern()) {
             logger.info("Found valid unrar binary at " + this.getPluginConfig().getStringProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, null));

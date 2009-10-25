@@ -16,16 +16,11 @@
 
 package jd.captcha.specials;
 
-import java.awt.Image;
-import java.awt.image.RenderedImage;
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.ListIterator;
 import java.util.Vector;
-
-import javax.imageio.ImageIO;
 
 import jd.captcha.ColorLetterComperator;
 import jd.captcha.JAntiCaptcha;
@@ -70,29 +65,6 @@ public class ProtectItOrg {
         }
 
         return ret;
-    }
-
-    @SuppressWarnings("unused")
-    private static void loadImagesIfNotExists(String code, Captcha captcha) {
-        if (!captcha.owner.getResourceFile("images/r/" + code + ".png").exists()) {
-            captcha.reset();
-            BackGroundImageManager bgit = new BackGroundImageManager(captcha);
-            bgit.clearCaptchaAll();
-            captcha.crop(0, 0, 0, 10);
-            ArrayList<PixelObject> obj = getObjects(captcha, 7);
-
-            for (PixelObject pixelObject : obj) {
-                Image img = pixelObject.toColoredLetter().getImage();
-                File retf = captcha.owner.getResourceFile("images/" + code + System.currentTimeMillis() + ".png");
-                try {
-                    ImageIO.write((RenderedImage) img, "png", retf);
-                } catch (IOException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }
-            }
-
-        }
     }
 
     public static Letter[] getLetters(Captcha captcha) throws Exception {

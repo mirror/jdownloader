@@ -369,19 +369,15 @@ public class WebUpdate {
         final ProgressController pc = new ProgressController("", files.size());
 
         try {
-
-            @SuppressWarnings("unused")
-			MessageListener list;
-            updater.getBroadcaster().addListener(list = new MessageListener() {
+            updater.getBroadcaster().addListener(new MessageListener() {
 
                 public void onMessage(MessageEvent event) {
                     pc.setStatusText(event.getMessage() + " " + JDL.L("jd.utils.WebUpdate.doPluginUpdate", "[Restart on plugin out of date errors]"));
-
                 }
 
             });
 
-            System.out.println("UPdate: " + files);
+            System.out.println("Update: " + files);
 
             updater.updateFiles(files, pc);// copies plugins
 

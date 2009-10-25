@@ -46,7 +46,7 @@ public class PasswordListener implements ProcessListener {
     public void onBufferChanged(Executer exec, DynByteBuffer buffer, int latestNum) {
         String lastLine;
         try {
-            lastLine = new String(buffer.getLast(buffer.position() - lastLinePosition), JDUnrar.CODEPAGE);
+            lastLine = new String(buffer.getLast(buffer.position() - lastLinePosition), Executer.CODEPAGE);
         } catch (Exception e) {
             JDLogger.exception(e);
             lastLine = new String(buffer.getLast(buffer.position() - lastLinePosition));

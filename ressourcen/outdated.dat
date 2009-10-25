@@ -101,6 +101,10 @@ tools/mac/unrar
 ICE_JNIRegistry.dll
 jd/dynamics/JDUpdateWarning$1.class
 jd/dynamics/JDUpdateWarning.class
+jd/dynamics/DBBackuper$1.class
+jd/dynamics/DBBackuper.class
+jd/dynamics/DynamicPluginInterface.class
+jd/dynamics/UpdateFix.class
 libs/laf/jsynthlaf.jar
 libs/jsynthlaf.jar
 libs/JTattoo.jar
