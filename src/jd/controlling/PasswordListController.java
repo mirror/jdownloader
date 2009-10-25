@@ -21,7 +21,6 @@ import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashSet;
-import java.util.LinkedList;
 import java.util.Set;
 
 import javax.swing.Timer;
@@ -52,8 +51,6 @@ public class PasswordListController implements ActionListener, DownloadControlle
         asyncSaveIntervalTimer.setInitialDelay(2000);
         asyncSaveIntervalTimer.setRepeats(false);
         asyncSaveIntervalTimer.stop();
-        importOld1();
-        importOld2();
         saveSync();
     }
 
@@ -112,34 +109,6 @@ public class PasswordListController implements ActionListener, DownloadControlle
                 sb.append(pw + "\r\n");
             }
             return sb.toString().trim();
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    private void importOld1() {
-        try {
-            LinkedList<String> oldList = (LinkedList<String>) SubConfiguration.getConfig("unrarPasswords").getProperty("PASSWORDLIST");
-            if (oldList != null) {
-                SubConfiguration.getConfig("unrarPasswords").setProperty("PASSWORDLIST", null);
-                addPasswords(oldList);
-                SubConfiguration.getConfig("unrarPasswords").save();
-                save();
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void importOld2() {
-        try {
-            String[] spl = Regex.getLines(CONFIG.getStringProperty("LIST", ""));
-            for (String pw : spl) {
-                addPasswords(Regex.getLines(pw));
-            }
-            CONFIG.setProperty("LIST", "");
-            CONFIG.save();
-        } catch (Exception e) {
-            e.printStackTrace();
         }
     }
 

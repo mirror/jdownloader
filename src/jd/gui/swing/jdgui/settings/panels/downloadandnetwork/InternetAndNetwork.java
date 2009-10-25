@@ -76,19 +76,19 @@ public class InternetAndNetwork extends ConfigPanel {
         conditionEntry.setPropertyType(PropertyType.NEEDS_RESTART);
         network.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, Configuration.PROXY_HOST, JDL.L("gui.config.download.proxy.host", "Host/IP")));
         ce.setDefaultValue("");
-        ce.setEnabledCondidtion(conditionEntry, "==", true);
+        ce.setEnabledCondidtion(conditionEntry, true);
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
         network.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, Configuration.PROXY_PORT, JDL.L("gui.config.download.proxy.port", "Port"), 1, 65535));
         ce.setDefaultValue(8080);
-        ce.setEnabledCondidtion(conditionEntry, "==", true);
+        ce.setEnabledCondidtion(conditionEntry, true);
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
         network.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, Configuration.PROXY_USER, JDL.L("gui.config.download.proxy.user", "User")));
         ce.setDefaultValue("");
-        ce.setEnabledCondidtion(conditionEntry, "==", true);
+        ce.setEnabledCondidtion(conditionEntry, true);
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
         network.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, config, Configuration.PROXY_PASS, JDL.L("gui.config.download.proxy.pass", "Pass")));
         ce.setDefaultValue("");
-        ce.setEnabledCondidtion(conditionEntry, "==", true);
+        ce.setEnabledCondidtion(conditionEntry, true);
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
 
         network.addEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, Configuration.USE_SOCKS, JDL.L("gui.config.download.use_socks", "Socks-Proxy Verwenden") + " (" + JDL.L("gui.warning.restartNeeded", "JD-Restart needed after changes!") + ")"));
@@ -107,19 +107,19 @@ public class InternetAndNetwork extends ConfigPanel {
 
         network.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, Configuration.SOCKS_HOST, JDL.L("gui.config.download.socks.host", "Host/IP")));
         ce.setDefaultValue("");
-        ce.setEnabledCondidtion(conditionEntry, "==", true);
+        ce.setEnabledCondidtion(conditionEntry, true);
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
         network.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, Configuration.SOCKS_PORT, JDL.L("gui.config.download.socks.port", "Port"), 1, 65535));
         ce.setDefaultValue(1080);
-        ce.setEnabledCondidtion(conditionEntry, "==", true);
+        ce.setEnabledCondidtion(conditionEntry, true);
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
         network.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, Configuration.PROXY_USER_SOCKS, JDL.L("gui.config.download.proxy.user", "User")));
         ce.setDefaultValue("");
-        ce.setEnabledCondidtion(conditionEntry, "==", true);
+        ce.setEnabledCondidtion(conditionEntry, true);
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
         network.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, config, Configuration.PROXY_PASS_SOCKS, JDL.L("gui.config.download.proxy.pass", "Pass")));
         ce.setDefaultValue("");
-        ce.setEnabledCondidtion(conditionEntry, "==", true);
+        ce.setEnabledCondidtion(conditionEntry, true);
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
         return network;
     }

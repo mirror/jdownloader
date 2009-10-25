@@ -69,7 +69,7 @@ public class General extends ConfigPanel {
 
         container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JDUtilities.getConfiguration(), Configuration.PARAM_CREATE_SUBFOLDER_BEFORE_DOWNLOAD, JDL.L("gui.config.general.createSubFoldersbefore", "Create sub-folders after adding links")));
         ce.setDefaultValue(false);
-        ce.setEnabledCondidtion(conditionEntry, "==", true);
+        ce.setEnabledCondidtion(conditionEntry, true);
 
         ce.setEnabled(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, false));
         /* control */

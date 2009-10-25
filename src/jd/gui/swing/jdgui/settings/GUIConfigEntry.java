@@ -374,7 +374,6 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
                 }
             }
         }
-        // if (decoration != null) decoration.setEnabled(state);
     }
 
     public JComponent getDecoration() {

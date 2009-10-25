@@ -58,9 +58,8 @@ public class ConfigEntry implements Serializable {
     private static final long serialVersionUID = 7422046260361380162L;
     private ActionListener actionListener;
     private boolean changes;
-    private String compareOperator;
     private ConfigEntry conditionEntry;
-    private Object conditionValue;
+    private Boolean compareValue;
     private ConfigContainer container;
     private transient ListController controller;
     private Object defaultValue;
@@ -126,8 +125,8 @@ public class ConfigEntry implements Serializable {
     }
 
     public ConfigEntry(int type, Property propertyInstance, String propertyName, int num) {
-        //sets defaultvalue in pi
-    
+        // sets defaultvalue in pi
+
         this.type = type;
         this.propertyName = propertyName;
         this.propertyInstance = propertyInstance;
@@ -154,7 +153,7 @@ public class ConfigEntry implements Serializable {
         this.type = type;
         this.propertyName = propertyName;
         this.propertyInstance = propertyInstance;
-       this.list = list;
+        this.list = list;
         this.label = label;
     }
 
@@ -242,18 +241,6 @@ public class ConfigEntry implements Serializable {
 
     public ActionListener getActionListener() {
         return actionListener;
-    }
-
-    public String getCompareOperator() {
-        return compareOperator;
-    }
-
-    public ConfigEntry getConditionEntry() {
-        return conditionEntry;
-    }
-
-    public Object getConditionValue() {
-        return conditionValue;
     }
 
     public ConfigContainer getContainer() {
@@ -347,43 +334,8 @@ public class ConfigEntry implements Serializable {
         return changes;
     }
 
-    @SuppressWarnings("unchecked")
     public boolean isConditionalEnabled(PropertyChangeEvent evt) {
-        if (evt.getSource() == conditionEntry) {
-            if (compareOperator.equals("<")) {
-                if (conditionValue instanceof Comparable<?>) {
-                    return ((Comparable) evt.getNewValue()).compareTo(conditionValue) < 0;
-                } else if (conditionValue instanceof Integer) {
-                    return (Integer) conditionValue < (Integer) evt.getNewValue();
-                } else {
-                    return true;
-                }
-            } else if (compareOperator.equals(">")) {
-                if (conditionValue instanceof Comparable<?>) {
-                    return ((Comparable) evt.getNewValue()).compareTo(conditionValue) > 0;
-                } else if (conditionValue instanceof Integer) {
-                    return (Integer) conditionValue > (Integer) evt.getNewValue();
-                } else {
-                    return true;
-                }
-            } else if (compareOperator.equals("!=")) {
-                if (conditionValue instanceof Comparable<?>) {
-                    return ((Comparable) evt.getNewValue()).compareTo(conditionValue) != 0;
-                } else if (conditionValue instanceof Integer) {
-                    return !((Integer) conditionValue).equals(evt.getNewValue());
-                } else {
-                    return true;
-                }
-            } else {
-                if (conditionValue instanceof Comparable<?>) {
-                    return ((Comparable) evt.getNewValue()).compareTo(conditionValue) == 0;
-                } else if (conditionValue instanceof Integer) {
-                    return ((Integer) conditionValue).equals(evt.getNewValue());
-                } else {
-                    return true;
-                }
-            }
-        }
+        if (evt.getSource() == conditionEntry) return compareValue.equals((Boolean) evt.getNewValue());
         return true;
     }
 
@@ -399,19 +351,6 @@ public class ConfigEntry implements Serializable {
     /** Gets set if this config entry has changes */
     public void setChanges(boolean b) {
         changes = b;
-    }
-
-    public void setCompareOperator(String compareOperator) {
-        this.compareOperator = compareOperator;
-    }
-
-    public void setConditionEntry(ConfigEntry conditionEntry) {
-        this.conditionEntry = conditionEntry;
-        conditionEntry.addListener(this);
-    }
-
-    public void setConditionValue(Object conditionValue) {
-        this.conditionValue = conditionValue;
     }
 
     public void setContainer(ConfigContainer container) {
@@ -441,10 +380,11 @@ public class ConfigEntry implements Serializable {
         return this;
     }
 
-    public ConfigEntry setEnabledCondidtion(ConfigEntry old, String comp, Object value) {
-        setConditionEntry(old);
-        setCompareOperator(comp);
-        setConditionValue(value);
+    public ConfigEntry setEnabledCondidtion(ConfigEntry conditionEntry, boolean compareValue) {
+        if (conditionEntry.getType() != ConfigContainer.TYPE_CHECKBOX) new Exception("Only checkbox-configentries are allowed").printStackTrace();
+        this.conditionEntry = conditionEntry;
+        this.compareValue = compareValue;
+        conditionEntry.addListener(this);
         return this;
     }
 

@@ -901,13 +901,13 @@ public class Rapidshare extends PluginForHost {
 
         ConfigEntry ce;
         config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getPluginConfig(), PROPERTY_SELECTED_SERVER, m1.toArray(new String[] {}), "#1").setDefaultValue("Level(3)"));
-        ce.setEnabledCondidtion(cond, "==", false);
+        ce.setEnabledCondidtion(cond, false);
         config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getPluginConfig(), PROPERTY_SELECTED_SERVER2, m2.toArray(new String[] {}), "#2").setDefaultValue("TeliaSonera"));
-        ce.setEnabledCondidtion(cond, "==", false);
+        ce.setEnabledCondidtion(cond, false);
         config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getPluginConfig(), PROPERTY_SELECTED_SERVER3, m3.toArray(new String[] {}), "#3").setDefaultValue("TeliaSonera"));
-        ce.setEnabledCondidtion(cond, "==", false);
+        ce.setEnabledCondidtion(cond, false);
         config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PROPERTY_USE_TELEKOMSERVER, JDL.L("plugins.hoster.rapidshare.com.telekom", "Telekom Server verwenden falls verfügbar")).setDefaultValue(false));
-        ce.setEnabledCondidtion(cond, "==", false);
+        ce.setEnabledCondidtion(cond, false);
 
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), PROPERTY_INCREASE_TICKET, JDL.L("plugins.hoster.rapidshare.com.increaseTicketTime", "Ticketwartezeit verlängern (0%-500%)"), 0, 500).setDefaultValue(0).setStep(1));

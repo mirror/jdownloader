@@ -159,7 +159,7 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         config.addEntry(cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_PASSWORD_REQUIRED, JDL.L("plugins.optional.JDLightTray.passwordRequired", "Enter Password to open from Tray")).setDefaultValue(false));
         config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, subConfig, PROPERTY_PASSWORD, JDL.L("plugins.optional.JDLightTray.password", "Password:")));
-        ce.setEnabledCondidtion(cond, "==", true);
+        ce.setEnabledCondidtion(cond, true);
     }
 
     @Override

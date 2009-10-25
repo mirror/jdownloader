@@ -68,19 +68,19 @@ public class Advanced extends ConfigPanel {
 
         extended.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, Configuration.PARAM_GLOBAL_IP_CHECK_SITE, JDL.L("gui.config.download.ipcheck.website", "IP prüfen über (Website)")));
         ce.setDefaultValue("Please enter Website for IPCheck here");
-        ce.setEnabledCondidtion(conditionEntry2, "==", false);
+        ce.setEnabledCondidtion(conditionEntry2, false);
 
         extended.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, Configuration.PARAM_GLOBAL_IP_PATTERN, JDL.L("gui.config.download.ipcheck.regex", "RegEx zum filtern der IP")));
         ce.setDefaultValue("Please enter Regex for IPCheck here");
-        ce.setEnabledCondidtion(conditionEntry2, "==", false);
+        ce.setEnabledCondidtion(conditionEntry2, false);
 
         extended.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, Configuration.PARAM_GLOBAL_IP_MASK, JDL.L("gui.config.download.ipcheck.mask", "Erlaubte IPs")));
         ce.setDefaultValue("\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).)" + "{3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b");
-        ce.setEnabledCondidtion(conditionEntry2, "==", false);
+        ce.setEnabledCondidtion(conditionEntry2, false);
 
         extended.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, "EXTERNAL_IP_CHECK_INTERVAL2", JDL.L("gui.config.download.ipcheck.externalinterval2", "External IP Check Interval [min]"), 10, 240));
         ce.setDefaultValue(10);
-        ce.setEnabledCondidtion(conditionEntry2, "==", false);
+        ce.setEnabledCondidtion(conditionEntry2, false);
 
         extended.setGroup(new ConfigGroup(JDL.L("gui.config.download.write", "File writing"), JDTheme.II("gui.images.save", 32, 32)));
 

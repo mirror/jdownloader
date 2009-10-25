@@ -319,10 +319,9 @@ public class ColorTrainer {
     /**
      * legt ein backup vom aktuellen Captcha an
      */
-    @SuppressWarnings("unchecked")
     public void backUP() {
         if (colorPointList != null)
-            colorPointListBackUp = (Vector<CPoint>) colorPointList.clone();
+            colorPointListBackUp = new Vector<CPoint>(colorPointList);
         else
             colorPointListBackUp = null;
         backUpCaptcha = new Captcha(workingCaptcha.getHeight(), workingCaptcha.getWidth());
@@ -373,7 +372,7 @@ public class ColorTrainer {
      */
     @SuppressWarnings("unchecked")
     public static Vector<CPoint> load(File file) {
-        if (file.exists()) { return (Vector<CPoint>) JDIO.loadObject(null, file, true); }
+        if (file.exists()) return (Vector<CPoint>) JDIO.loadObject(null, file, true);
         return new Vector<CPoint>();
     }
 

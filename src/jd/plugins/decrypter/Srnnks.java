@@ -933,7 +933,6 @@ public class Srnnks extends PluginForDecrypt {
         }
 
         @Override
-        @SuppressWarnings("unchecked")
         public void run() {
             ArrayList<DownloadLink> down = null;
             try {
@@ -950,7 +949,7 @@ public class Srnnks extends PluginForDecrypt {
                 }
                 ArrayList<DownloadLink> dls = getDownloadLinks(link, cryptedLink);
                 if (dls != null && dls.size() > 0) {
-                    down = (ArrayList<DownloadLink>) dls.clone();
+                    down = new ArrayList<DownloadLink>(dls);
                     ArrayList<DownloadLink> finaldls = null;
                     finaldls = new ArrayList<DownloadLink>();
                     for (DownloadLink dls2 : dls) {

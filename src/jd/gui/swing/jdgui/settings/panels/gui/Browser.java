@@ -90,7 +90,7 @@ public class Browser extends ConfigPanel {
         if (LocalBrowser.getBrowserList().length > 0) {
             ce.setDefaultValue(LocalBrowser.getBrowserList()[0]);
         }
-        ce.setEnabledCondidtion(conditionEntry, "==", false);
+        ce.setEnabledCondidtion(conditionEntry, false);
 
         container.addEntry(conditionEntry);
 
@@ -131,11 +131,11 @@ public class Browser extends ConfigPanel {
         }
 
         ce.setDefaultValue(path);
-        ce.setEnabledCondidtion(conditionEntry, "==", true);
+        ce.setEnabledCondidtion(conditionEntry, true);
 
         container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, subConfig, JDGuiConstants.PARAM_CUSTOM_BROWSER_PARAM, JDL.L("gui.config.gui.custom_browser_param", "Parameter %url (one parameter per line)")));
         ce.setDefaultValue(parameter);
-        ce.setEnabledCondidtion(conditionEntry, "==", true);
+        ce.setEnabledCondidtion(conditionEntry, true);
         return container;
     }
 

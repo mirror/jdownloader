@@ -1,11 +1,13 @@
 package jd;
 
-import jd.nutils.IPAddress;
+import jd.nutils.Executer;
 
 public class Tester {
 
     public static void main(String ss[]) throws Exception {
-        System.out.println(IPAddress.validateIP("132.142.172.209"));
+        Executer exec = new Executer("firefox");
+        exec.addParameters(new String[] { "heise.de" });
+        exec.start();
     }
 
 }
