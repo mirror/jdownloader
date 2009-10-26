@@ -58,6 +58,7 @@ import jd.event.ControlListener;
 import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.SwingGui;
+import jd.gui.swing.components.Balloon;
 import jd.gui.swing.components.linkbutton.JLink;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
@@ -1133,7 +1134,6 @@ public class JDChat extends PluginOptional implements ControlListener {
     }
 
     private void initIRC() {
-
         NAMES.clear();
         for (int i = 0; i < 20; i++) {
             String host = subConfig.getStringProperty(PARAM_HOST, "irc.freenode.net");
@@ -1142,6 +1142,7 @@ public class JDChat extends PluginOptional implements ControlListener {
             String nick = getNickname();
             String user = "jdChatuser";
             String name = "jdChatuser";
+            Balloon.show("JD Chat", null, "Connecting to JDChat...");
             addToText(null, STYLE_SYSTEM_MESSAGE, "Connecting to JDChat...");
             conn = new IRCConnection(host, new int[] { port }, pass, nick, user, name);
             conn.setTimeout(1000 * 60 * 60);
@@ -1310,10 +1311,13 @@ public class JDChat extends PluginOptional implements ControlListener {
         }
     }
 
-    public void notifyPMS(String user) {
+    public void notifyPMS(String user, String text) {
         for (int x = 0; x < tabbedPane.getComponentCount(); x++) {
             if (tabbedPane.getTitleAt(x).equals(user)) {
                 tabbedPane.setForegroundAt(x, Color.RED);
+                if (text.length() > 40) text = text.substring(0, 40).concat("...");
+                Object[] info = { user, text };
+                if (!tabbedPane.getTitleAt(tabbedPane.getSelectedIndex()).equals(user)) Balloon.show("JD Chat", null, JDL.LF("jd.plugins.optional.jdchat.newmessage", "New Message from %s:<hr> %s", info));
                 break;
             }
         }

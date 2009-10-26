@@ -188,7 +188,7 @@ class IRCListener implements IRCEventListener {
                 owner.addPMS(user.name);
                 pms = owner.getPms();
             }
-            owner.notifyPMS(user.name);
+            owner.notifyPMS(user.name, msg);
             owner.addToText(user, null, Utils.prepareMsg(msg), pms.get(user.name.toLowerCase()).getTextArea(), pms.get(user.name.toLowerCase()).getSb());
 
         } else {
