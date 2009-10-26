@@ -77,7 +77,7 @@ public class JUnique {
         }
         // Adds a shutdown hook releasing any unreleased lock at JVM shutdown.
         Runtime rt = Runtime.getRuntime();
-        rt.addShutdownHook(new Thread(new ShutdownHook()));
+        // rt.addShutdownHook(new Thread(new ShutdownHook()));
     }
 
     /**
