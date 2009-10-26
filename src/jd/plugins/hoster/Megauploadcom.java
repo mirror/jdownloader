@@ -55,6 +55,7 @@ public class Megauploadcom extends PluginForHost {
 
     private static final String MU_PARAM_PORT = "MU_PARAM_PORT";
     private static final String MU_PORTROTATION = "MU_PORTROTATION";
+    private final static String[] ports = new String[] { "80", "800", "1723" };
     private static String wwwWorkaround = null;
     private static final Object Lock = new Object();
     private static int simultanpremium = 1;
@@ -75,11 +76,9 @@ public class Megauploadcom extends PluginForHost {
     }
 
     public int usePort(DownloadLink link) {
-        int port = 0;
+        int port = this.getPluginConfig().getIntegerProperty(MU_PARAM_PORT, 0);
         if (this.getPluginConfig().getBooleanProperty("MU_PORTROTATION", true)) {
-            port = link.getIntegerProperty(MU_PARAM_PORT, 0);
-        } else {
-            port = this.getPluginConfig().getIntegerProperty(MU_PARAM_PORT, 0);
+            port += link.getIntegerProperty(MU_PARAM_PORT, 0);
         }
         switch (port) {
         case 1:
@@ -264,7 +263,10 @@ public class Megauploadcom extends PluginForHost {
             }
             if (!dl.getConnection().isContentDisposition()) {
                 br.followConnection();
-                if (link.getIntegerProperty("waitworkaround2", 0) == 2) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
+                if (link.getIntegerProperty("waitworkaround2", 0) == 2) {
+                    link.setProperty("waitworkaround2", 0);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
+                }
                 link.setProperty("waitworkaround2", link.getIntegerProperty("waitworkaround2", 0) + 1);
                 if (br.containsHTML("gencap\\.php\\?")) {
                     logger.info("strange servererror: again a captcha?");
@@ -638,19 +640,19 @@ public class Megauploadcom extends PluginForHost {
             port++;
             if (port > 2) {
                 /* all ports tried, have to wait */
-                link.setProperty(MU_PARAM_PORT, 0);
-                System.out.println("All ports tried, we will wait!");
+                port = 0;
+                link.setProperty(MU_PARAM_PORT, port);
+                logger.info("All ports tried, throw IP_Blocked");
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "API Limit reached!", secs * 1000l);
             } else {
                 /* try next port */
-                System.out.println("Try port " + port);
                 link.getLinkStatus().setLatestStatus(link.getLinkStatus().getRetryCount() + 1);
                 link.setProperty(MU_PARAM_PORT, port);
+                logger.info("IP_Blocked: Lets try next port as workaround");
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
         } else {
             /* have to wait */
-            System.out.println("We will wait");
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "API Limit reached!", secs * 1000l);
         }
 
@@ -690,10 +692,10 @@ public class Megauploadcom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
         link.setProperty("waitworkaround2", 0);
+        link.setProperty(MU_PARAM_PORT, 0);
     }
 
     private void setConfigElements() {
-        String[] ports = new String[] { "80", "800", "1723" };
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, this.getPluginConfig(), MU_PARAM_PORT, ports, JDL.L("plugins.host.megaupload.ports", "Use this port:")).setDefaultValue(0));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), MU_PORTROTATION, ports, JDL.L("plugins.host.megaupload.portrotation", "Use Portrotation to increase downloadlimit?")).setDefaultValue(true));
     }
