@@ -25,6 +25,7 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
@@ -51,8 +52,13 @@ public class FreeLoopsCom extends PluginForDecrypt {
                     return new ArrayList<DownloadLink>();
                 }
                 return null;
+            } else {
+                DownloadLink l;
+                decryptedLinks.add(l = createDownloadlink("directhttp://" + finallink));
+                l.setFinalFileName(Plugin.getFileNameFromHeader(con));
+                l.setDownloadSize(con.getLongContentLength());
+                con.disconnect();
             }
-            decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
         } else {
             br.getPage(parameter);
             String pagepiece = br.getRegex("<tr class=\"row-a\">(.*?)<td class=\"row-b\">").getMatch(0);
@@ -69,19 +75,18 @@ public class FreeLoopsCom extends PluginForDecrypt {
                     if (br.containsHTML("The file doesn't seem to be here") || br.containsHTML("Go back and try another file")) {
                         logger.warning("The requested document was not found on this server.");
                         logger.warning(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-                        finallink = "wrong";
                     }
-                }
-                if (finallink.equals("wrong")) {
-                    decryptedLinks.add(createDownloadlink(finallink));
                     progress.increase(1);
                 } else {
-                    decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
+                    DownloadLink l;
+                    decryptedLinks.add(l = createDownloadlink("directhttp://" + finallink));
+                    l.setFinalFileName(Plugin.getFileNameFromHeader(con));
+                    l.setDownloadSize(con.getLongContentLength());
+                    con.disconnect();
                     progress.increase(1);
                 }
             }
         }
-
         return decryptedLinks;
     }
 }
