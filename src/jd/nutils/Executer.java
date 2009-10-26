@@ -23,12 +23,20 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
-
-import jd.controlling.JDLogger;
+import java.util.logging.Logger;
 
 public class Executer extends Thread implements Runnable {
     public static final String CODEPAGE = OSDetector.isWindows() ? "ISO-8859-1" : "UTF-8";
     private boolean debug = true;
+    private Logger logger;
+
+    public Logger getLogger() {
+        return logger;
+    }
+
+    public void setLogger(Logger logger) {
+        this.logger = logger;
+    }
 
     public boolean isDebug() {
         return debug;
@@ -250,7 +258,7 @@ public class Executer extends Thread implements Runnable {
     @Override
     public void run() {
         if (command == null || command.trim().length() == 0) {
-            JDLogger.getLogger().severe("Execute Parameter error: No Command");
+            if (logger != null) logger.severe("Execute Parameter error: No Command");
             return;
         }
 
@@ -263,7 +271,7 @@ public class Executer extends Thread implements Runnable {
                 out.append(p);
                 out.append(' ');
             }
-            JDLogger.getLogger().info("Execute: " + out + " in " + runIn);
+            if (logger != null) logger.info("Execute: " + out + " in " + runIn);
         }
         ProcessBuilder pb = new ProcessBuilder(params.toArray(new String[] {}));
         if (runIn != null && runIn.length() > 0) {
@@ -275,7 +283,7 @@ public class Executer extends Thread implements Runnable {
                     // File(params.get(0)).getParentFile());
                     pb.directory(new File(params.get(0)).getParentFile());
                 } else {
-                    JDLogger.getLogger().severe("Working directory " + runIn + " does not exist!");
+                    if (logger != null) logger.severe("Working directory " + runIn + " does not exist!");
                 }
             }
         }
@@ -320,16 +328,16 @@ public class Executer extends Thread implements Runnable {
                 e.printStackTrace();
             }
 
-            JDLogger.getLogger().finer("Process returned");
+            if (logger != null) logger.finer("Process returned");
             // stream did not return -1 yet, and so the observer sill still
             // waiting for data. we interrupt him
             if (sboObserver.isIdle()) {
-                JDLogger.getLogger().finer("sbo idle - interrupt");
+                if (logger != null) logger.finer("sbo idle - interrupt");
                 sboObserver.requestInterrupt();
 
             }
             if (sbeObserver.isIdle()) {
-                JDLogger.getLogger().finer("sbe idle - interrupt");
+                if (logger != null) logger.finer("sbe idle - interrupt");
                 sbeObserver.requestInterrupt();
             }
             long returnTime = System.currentTimeMillis();
@@ -339,14 +347,14 @@ public class Executer extends Thread implements Runnable {
             while ((sbeObserver != null && this.sbeObserver.isAlive()) || (sboObserver != null && this.sboObserver.isAlive())) {
                 Thread.sleep(50);
                 if ((System.currentTimeMillis() - returnTime) > 60000) {
-                    JDLogger.getLogger().severe("Executer Error. REPORT THIS BUG INCL. THIS LOG to jd support");
+                    if (logger != null) logger.severe("Executer Error. REPORT THIS BUG INCL. THIS LOG to jd support");
                     sboObserver.requestInterrupt();
                     sbeObserver.requestInterrupt();
                     break;
 
                 }
             }
-            JDLogger.getLogger().finer("STream observer closed");
+            if (logger != null) logger.finer("STream observer closed");
         } catch (IOException e1) {
             this.exception = e1;
             return;

@@ -23,18 +23,52 @@ import java.io.StringWriter;
 import java.util.logging.FileHandler;
 import java.util.logging.Logger;
 
+import javax.swing.JOptionPane;
+
 import jd.nutils.Executer;
 import jd.nutils.OSDetector;
 import jd.nutils.OutdatedParser;
 import jd.nutils.zip.UnZip;
 
+/**
+ * This class is the mainclass of tinyupdate.jar. This tool is called by
+ * JDownloader.jar and moves fresh files from ./update/ to ./ after an update.
+ * Since jdownloader.jar is already closed when tinyupdate is running,
+ * tinyupdate ca overwrite jdownloader.jar <br>
+ * TINYUPDATE.jar must run in JD_HOME
+ * 
+ * @author coalado
+ * 
+ */
 public class Restarter {
-
+    /**
+     * This variable is false and is set to true as soon as the first file could
+     * be overwritten. It is used to wait until jdownlaoder.jar has really
+     * terminated <br>
+     * Take care that you do not use package-extern classes in here.
+     */
     private static boolean WAIT_FOR_JDOWNLOADER_TERM = false;
+    /**
+     * is set by -restart parameter to true, and is used to do a restart aftrer
+     * moving files
+     */
     private static boolean RESTART = false;
+    /**
+     * package logger
+     */
     private static Logger logger;
+    /**
+     * is set to true by parameter -nolog ,if the class should not write a log
+     * file. Use this if you use this class in another contect than MAIN class
+     */
     private static boolean NOLOG = false;
 
+    /**
+     * Returns the stacktrace of a Thorwable
+     * 
+     * @param thrown
+     * @return
+     */
     public static String getStackTrace(Throwable thrown) {
         StringWriter sw = new StringWriter();
         PrintWriter pw = new PrintWriter(sw);
@@ -64,7 +98,7 @@ public class Restarter {
 
         }
         try {
-
+            // waits while jdownloader.jar exixts and cannot be overwritten
             while (new File("JDownloader.jar").exists() && !new File("JDownloader.jar").canWrite()) {
                 logger.severe("Wait for jdownloader terminating");
                 try {
@@ -73,10 +107,18 @@ public class Restarter {
                     e.printStackTrace();
                 }
             }
+
+            // delete tinyupdate.jar in updatefolder. tinyupdate.jar gets
+            // updated by jdownloader.jar. REMEMBER: jar do not update
+            // themselves. tinyupdate.jar updates jdownloader.jar and
+            // jdownloader.jar updates tinyupdate.jar
             new File("update/tools/tinyupdate.jar").deleteOnExit();
             new File("update/tools/tinyupdate.jar").delete();
+
             extract(new File("update"));
             move(new File("update"));
+
+            // gives 3 tries to delete all files in outdated.dat
             int i = 0;
             while (!removeFiles() && i <= 3) {
 
@@ -84,12 +126,14 @@ public class Restarter {
                 i++;
 
             }
-
+            // use javaw if available. this helps to use a bundelt jre and
+            // ensures that jd uses the smae jre over restarts
             String javaPath = new File(new File(System.getProperty("sun.boot.library.path")), "javaw.exe").getAbsolutePath();
 
             if (RESTART) {
                 if (OSDetector.isMac()) {
                     Executer exec = new Executer("open");
+                    exec.setLogger(logger);
                     exec.addParameters(new String[] { "-n", "jDownloader.app" });
                     exec.setRunin(new File(".").getAbsolutePath());
                     exec.setWaitTimeout(0);
@@ -97,11 +141,13 @@ public class Restarter {
 
                 } else {
                     Executer exec;
+              
                     if (new File(javaPath).exists()) {
                         exec = new Executer(javaPath);
                     } else {
                         exec = new Executer("java");
                     }
+                    exec.setLogger(logger);
                     exec.addParameters(new String[] { "-jar", "-Xmx512m", "JDownloader.jar", "-rfu" });
                     exec.setRunin(new File(".").getAbsolutePath());
                     exec.setWaitTimeout(0);
@@ -114,6 +160,7 @@ public class Restarter {
 
         } catch (Throwable e) {
             logger.severe(getStackTrace(e));
+            JOptionPane.showMessageDialog(null, getStackTrace(e));
         }
 
     }
@@ -122,6 +169,7 @@ public class Restarter {
      * Extracts all .extract files
      * 
      * @param file
+     *            folder which gets scanned recursive for .extract files
      */
     private static void extract(File file) {
         try {
@@ -148,10 +196,21 @@ public class Restarter {
 
     }
 
+    /**
+     * Removes all files in outdated.dat
+     * 
+     * @return
+     */
     private static boolean removeFiles() {
         return OutdatedParser.parseFile(new File("outdated.dat"));
     }
 
+    /**
+     * moves all files from dir to ./ Waits a timeout for 15 ms if the files are
+     * locked. (maybe the are blocked by old jvm)
+     * 
+     * @param dir
+     */
     private static void move(File dir) {
         if (!dir.isDirectory()) return;
 
@@ -161,9 +220,9 @@ public class Restarter {
 
             } else {
 
-                // Create relativ path
+                // absolute path to update folder
                 String n = new File("update").getAbsolutePath();
-
+                // remove Updatefolder.
                 File newFile = new File(f.getAbsolutePath().replace(n, "").substring(1)).getAbsoluteFile();
                 logger.info("./update -> real  " + n + " ->" + newFile.getAbsolutePath());
                 logger.info("Exists: " + newFile.exists());

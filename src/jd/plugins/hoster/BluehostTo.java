@@ -37,6 +37,7 @@ public class BluehostTo extends PluginForHost {
 
     public BluehostTo(PluginWrapper wrapper) {
         super(wrapper);
+       
         this.enablePremium("http://bluehost.to/premium.php");
     }
 

@@ -56,7 +56,7 @@ public class Updater {
     private File jars;
 
     private ArrayList<File> packedFiles;
-    public static final String BRANCH = "pinky_5";
+    public static final String BRANCH = "NIGHTLY";
 
     public static ArrayList<Server> SERVERLIST = new ArrayList<Server>();
     public static Server UPDATE0 = new RSYNCServer(-1, "http://update0.jdownloader.org/branches/" + BRANCH + "/", "update0.jdownloader.org", 2121, "/home/www/update/http/branches/" + BRANCH + "/", false);
@@ -79,7 +79,7 @@ public class Updater {
         Browser.setGlobalConnectTimeout(500000);
         Browser.setGlobalReadTimeout(500000);
         Updater upd = new Updater();
-
+//
         WebUpdater.getConfig("WEBUPDATE").save();
         System.out.println("STATUS: Webupdate");
 
@@ -89,9 +89,9 @@ public class Updater {
         upd.movePlugins(getCFG("plugins_dir"));
         upd.moveJars(getCFG("dist_dir"));
         upd.removeFileOverhead();
-        upd.cleanUp();
+       upd.cleanUp();
         JOptionPane.showConfirmDialog(upd.frame, "Check " + upd.updateDir + " and remove files you do NOT want to update.");
-        JOptionPane.showConfirmDialog(upd.frame, "Check " + upd.workingDir + " and remove files that should not be in the hashlist.");
+//        JOptionPane.showConfirmDialog(upd.frame, "Check " + upd.workingDir + " and remove files that should not be in the hashlist.");
         upd.merge();
         upd.pack();
 
@@ -163,7 +163,7 @@ public class Updater {
             }
         }
 
-        String[] rest = new String[] {/* "libs/svnkit.jar" */"info.txt", "jd/img/default/flags", "plugins/JDPremium.jar", "tools/Windows/recycle.exe", "tools/Windows/recycle.cpp", "jd/img/screenshots", "jd/img/synthetica", "updateLog.txt", "jdupdate.jar"
+        String[] rest = new String[] {/* "libs/svnkit.jar" */"windows_createlog.bat~",".junique","info.txt", "jd/img/default/flags", "plugins/JDPremium.jar", "tools/Windows/recycle.exe", "tools/Windows/recycle.cpp", "jd/img/screenshots", "jd/img/synthetica", "updateLog.txt", "jdupdate.jar"
 
         };
         for (String path : rest) {

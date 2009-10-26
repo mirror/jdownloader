@@ -73,6 +73,7 @@ public class JLink extends JLabel {
         SubConfiguration cfg = SubConfiguration.getConfig(JDGuiConstants.CONFIG_PARAMETER);
         if (cfg.getBooleanProperty(JDGuiConstants.PARAM_CUSTOM_BROWSER_USE, false)) {
             Executer exec = new Executer(cfg.getStringProperty(JDGuiConstants.PARAM_CUSTOM_BROWSER));
+            exec.setLogger(JDLogger.getLogger());
             String params = cfg.getStringProperty(JDGuiConstants.PARAM_CUSTOM_BROWSER_PARAM).replace("%url", url + "");
             exec.addParameters(Regex.getLines(params));
             exec.start();

@@ -311,6 +311,7 @@ public class UnrarWrapper extends Thread implements JDRunnable {
 
         fireEvent(JDUnrarConstants.WRAPPER_START_EXTRACTION);
         Executer exec = new Executer(unrarCommand);
+        exec.setLogger(JDLogger.getLogger());
         exec.setDebug(DEBUG);
         exec.addParameter("x");
 
@@ -449,6 +450,7 @@ public class UnrarWrapper extends Thread implements JDRunnable {
                 crackProgress = ((c++) * 100) / passwordList.size();
                 fireEvent(JDUnrarConstants.WRAPPER_PASSWORT_CRACKING);
                 Executer exec = new Executer(unrarCommand);
+                exec.setLogger(JDLogger.getLogger());
                 exec.setDebug(DEBUG);
                 exec.addParameter("t");
                 // exec.addParameter("-p");
@@ -587,6 +589,7 @@ public class UnrarWrapper extends Thread implements JDRunnable {
     public static boolean isUnrarCommandValid(String path) {
         try {
             Executer exec = new Executer(path);
+            exec.setLogger(JDLogger.getLogger());
             exec.setWaitTimeout(5);
             exec.start();
             exec.waitTimeout();

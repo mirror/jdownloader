@@ -23,6 +23,7 @@ import java.net.URL;
 import java.util.ArrayList;
 
 import jd.config.SubConfiguration;
+import jd.controlling.JDLogger;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.components.DnDWebBrowser;
 import jd.gui.swing.jdgui.JDGuiConstants;
@@ -102,6 +103,7 @@ public abstract class LocalBrowser implements Serializable {
                     public void openURL(URL url) throws Exception {
                         if (url == null) return;
                         Executer exec = new Executer("open");
+                        exec.setLogger(JDLogger.getLogger());
                         exec.addParameters(new String[] { "/Applications/Firefox.app", "-new-tab", url.toString() });
                         exec.setWaitTimeout(10);
                         exec.start();
@@ -120,6 +122,7 @@ public abstract class LocalBrowser implements Serializable {
                     public void openURL(URL url) throws Exception {
                         if (url == null) return;
                         Executer exec = new Executer("open");
+                        exec.setLogger(JDLogger.getLogger());
                         exec.addParameters(new String[] { "/Applications/Safari.app", "-new-tab", url.toString() });
                         exec.setWaitTimeout(10);
                         exec.start();
@@ -145,6 +148,7 @@ public abstract class LocalBrowser implements Serializable {
                     public void openURL(URL url) throws Exception {
                         if (url == null) return;
                         Executer exec = new Executer("firefox");
+                        exec.setLogger(JDLogger.getLogger());
                         exec.addParameters(new String[] { "-new-tab", url.toString() });
                         exec.setWaitTimeout(10);
                         exec.start();
@@ -165,6 +169,7 @@ public abstract class LocalBrowser implements Serializable {
                 @Override
                 public void openURL(URL url) throws Exception {
                     Executer exec = new Executer("cmd");
+                    exec.setLogger(JDLogger.getLogger());
                     exec.addParameters(new String[] { "/c", "start " + url });
                     exec.setWaitTimeout(10);
                     exec.start();
@@ -240,6 +245,7 @@ public abstract class LocalBrowser implements Serializable {
         SubConfiguration cfg = SubConfiguration.getConfig(JDGuiConstants.CONFIG_PARAMETER);
         if (cfg.getBooleanProperty(JDGuiConstants.PARAM_CUSTOM_BROWSER_USE, false) && cfg.getStringProperty(JDGuiConstants.PARAM_CUSTOM_BROWSER).contains("firefox")) {
             Executer exec = new Executer(cfg.getStringProperty(JDGuiConstants.PARAM_CUSTOM_BROWSER));
+            exec.setLogger(JDLogger.getLogger());
             String params = cfg.getStringProperty(JDGuiConstants.PARAM_CUSTOM_BROWSER_PARAM).replace("%url", url + "");
             exec.addParameters(Regex.getLines(params));
             exec.start();
