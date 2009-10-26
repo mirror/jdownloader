@@ -71,10 +71,7 @@ public class LnkCrptWs extends PluginForDecrypt {
                 br.setDebug(true);
                 br.submitForm(password);
                 password = br.getForm(0);
-                if (password != null && password.hasInputFieldByName("password")) {
-                    PluginUtils.informPasswordWrong(this, latestPassword);
-                    return null;
-                }
+                if (password != null && password.hasInputFieldByName("password")) throw new DecrypterException(DecrypterException.PASSWORD);
                 getPluginConfig().setProperty("PASSWORD", latestPassword);
                 getPluginConfig().save();
             }

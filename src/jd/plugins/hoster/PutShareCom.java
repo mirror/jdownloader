@@ -19,14 +19,15 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.regex.Pattern;
+
 import jd.PluginWrapper;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
+import jd.plugins.BrowserAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -37,6 +38,9 @@ import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "putshare.com" }, urls = { "http://[\\w\\.]*?putshare\\.com/[0-9a-z]{12}" }, flags = { 2 })
 public class PutShareCom extends PluginForHost {
+
+    private static int simultanpremium = 1;
+    private static final Object PREMLOCK = new Object();
 
     public PutShareCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -50,14 +54,15 @@ public class PutShareCom extends PluginForHost {
     public void login(Account account) throws Exception {
         this.setBrowserExclusive();
         br.setCookie("http://putshare.com/", "lang", "english");
-        br.setFollowRedirects(true);
         br.getPage("http://www.putshare.com/login.html");
         Form premform = br.getForm(0);
         if (premform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         premform.put("login", account.getUser());
         premform.put("password", account.getPass());
         br.submitForm(premform);
-        if (!br.containsHTML("Renew premium") || br.containsHTML("Upgrade to premium") || br.containsHTML("Incorrect Login or Password")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        br.getPage("http://www.putshare.com/?op=my_account");
+        if (!br.containsHTML("Premium-Account expire")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (br.getCookie("http://www.putshare.com/", "login") == null || br.getCookie("http://www.putshare.com/", "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
     @Override
@@ -69,85 +74,71 @@ public class PutShareCom extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        String hostedFiles = br.getRegex("/.*?(\\d+).*?files").getMatch(0);
-        if (hostedFiles != null) ai.setFilesNum(Long.parseLong(hostedFiles));
-        String usedspace = br.getRegex("Used space(.*?)of").getMatch(0);
-        if (usedspace != null) {
-            ai.setUsedSpace(usedspace.trim());
-        }
-        br.getPage("http://www.putshare.com/?op=payments");
-        Regex timeleft = br.getRegex("Premium-Account expire:</b><br>(\\d+).*?da.*?,.*?(\\d+).*?hou.*?,.*?(\\d+).*?minut.*?,.*?(\\d+).*?secon.*?<br>");
-        if (timeleft.getMatch(0) != null && timeleft.getMatch(1) != null && timeleft.getMatch(2) != null && timeleft.getMatch(3) != null) {
-            long check = (System.currentTimeMillis() + Long.parseLong(timeleft.getMatch(0)) * 24 * 60 * 60 * 1000 + Long.parseLong(timeleft.getMatch(1)) * 60 * 60 * 1000 + Long.parseLong(timeleft.getMatch(2)) * 60 * 1000 + Long.parseLong(timeleft.getMatch(3)) * 1000);
-            ai.setValidUntil(check);
-        }
+        String space = br.getRegex(Pattern.compile("Used space:</TD><TD><b>(.*?) of", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
+        if (space != null) ai.setUsedSpace(space + " Mb");
+        String points = br.getRegex(Pattern.compile("You have collected:</TD><TD><b>(\\d+) premium ", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
+        if (points != null) ai.setPremiumPoints(Long.parseLong(points));
         account.setValid(true);
+        ai.setUnlimitedTraffic();
+        ai.setStatus("Premium User");
+        String expire = br.getRegex("Premium-Account expire:</TD><TD><b>(.*?)</b>").getMatch(0);
+        if (expire == null) {
+            ai.setExpired(true);
+            account.setValid(false);
+            return ai;
+        } else {
+            ai.setValidUntil(Regex.getMilliSeconds(expire, "dd MMMM yyyy", null));
+        }
         return ai;
     }
 
     @Override
-    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
-        requestFileInformation(downloadLink);
-        login(account);
+    public void handlePremium(DownloadLink link, Account account) throws Exception {
         String passCode = null;
-        Browser brc = br.cloneBrowser();
-        String dllink = null;
-        URLConnectionAdapter con = brc.openGetConnection(downloadLink.getDownloadURL());
-        if ((con.getContentType().contains("html"))) {
-            br.getPage(downloadLink.getDownloadURL());
-            for (int i = 0; i <= 3; i++) {
-                Form pwform = br.getFormbyProperty("name", "F1");
-                if (pwform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-                if (downloadLink.getStringProperty("pass", null) == null) {
-                    passCode = Plugin.getUserInput("Password?", downloadLink);
+        requestFileInformation(link);
+        login(account);
+        br.getPage(link.getDownloadURL());
+        br.setFollowRedirects(true);
+        // Form um auf "Datei herunterladen" zu klicken
+        Form DLForm = br.getFormbyProperty("name", "F1");
+        if (DLForm == null && br.getRedirectLocation() != null) {
+            br.setFollowRedirects(true);
+            dl = BrowserAdapter.openDownload(br, link, br.getRedirectLocation(), true, 0);
+        } else {
+            if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (br.containsHTML("<b>Password:</b>")) {
+                if (link.getStringProperty("pass", null) == null) {
+                    passCode = Plugin.getUserInput("Password?", link);
                 } else {
                     /* gespeicherten PassCode holen */
-                    passCode = downloadLink.getStringProperty("pass", null);
+                    passCode = link.getStringProperty("pass", null);
                 }
-                pwform.put("password", passCode);
-                br.submitForm(pwform);
-                System.out.print(br.toString());
-                if (br.containsHTML("Wrong password")) {
-                    logger.warning("Wrong password!");
-                    downloadLink.setProperty("pass", null);
-                    continue;
-                }
-                break;
+                DLForm.put("password", passCode);
             }
+            br.setFollowRedirects(true);
+            dl = BrowserAdapter.openDownload(br, link, DLForm, true, 0);
+        }
+        if (dl.getConnection() != null && dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
             if (br.containsHTML("Wrong password")) {
                 logger.warning("Wrong password!");
-                downloadLink.setProperty("pass", null);
+                link.setProperty("pass", null);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
+            } else {
+                String url = br.getRegex("direct link.*?href=\"(http:.*?)\"").getMatch(0);
+                if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                br.setFollowRedirects(true);
+                dl = BrowserAdapter.openDownload(br, link, url, true, 0);
+                if (dl.getConnection() != null && dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("html")) {
+                    br.followConnection();
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                }
             }
-            dllink = br.getRegex("background.*?border:[0-9]+px dotted #bbb;padding:[0-9]+px;\">.*?<a href=\"(.*?)\"").getMatch(0);
-        } else {
-            dllink = downloadLink.getDownloadURL();
         }
-
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         if (passCode != null) {
-            downloadLink.setProperty("pass", passCode);
+            link.setProperty("pass", passCode);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         dl.startDownload();
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
-    }
-
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setCookie("http://putshare.com/", "lang", "english");
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("No such (file|user)|File Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = Encoding.htmlDecode(br.getRegex("<h2>Download File(.*?)</h2>").getMatch(0));
-        String filesize = br.getRegex("</font>\\s*\\((.*?)\\)</font>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        downloadLink.setFinalFileName(filename.replace(" - www.putShare.com - free data hosting ", "").replace("www.putShare.com", "").replace("free data hosting", "").trim());
-        downloadLink.setDownloadSize(Regex.getSize(filesize));
-        return AvailableStatus.TRUE;
     }
 
     public void handleFree(DownloadLink downloadLink) throws Exception {
@@ -218,6 +209,19 @@ public class PutShareCom extends PluginForHost {
 
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
+    }
+
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setCookie("http://putshare.com/", "lang", "english");
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML("No such (file|user)|File Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = Encoding.htmlDecode(br.getRegex("<h2>Download File(.*?)</h2>").getMatch(0));
+        String filesize = br.getRegex("</font>\\s*\\((.*?)\\)</font>").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        downloadLink.setFinalFileName(filename.replace(" - www.putShare.com - free data hosting ", "").replace("www.putShare.com", "").replace("free data hosting", "").trim());
+        downloadLink.setDownloadSize(Regex.getSize(filesize));
+        return AvailableStatus.TRUE;
     }
 
     public void reset() {
