@@ -22,6 +22,7 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -49,7 +50,7 @@ public class SharingMatrixCom extends PluginForHost {
         br.setFollowRedirects(false);
         br.setCookie("http://sharingmatrix.com", "lang", "en");
         br.getPage("http://sharingmatrix.com/login");
-        br.getPage("http://sharingmatrix.com/ajax_scripts/login.php?email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+        br.getPage("http://sharingmatrix.com/ajax_scripts/login.php?email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember_me=true");
         String validornot = br.toString();
         validornot = validornot.replaceAll("(\n|\r)", "");
         if (!validornot.equals("1")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -91,6 +92,24 @@ public class SharingMatrixCom extends PluginForHost {
         String url = br.getRedirectLocation();
         boolean direct = true;
         if (url == null) {
+            if (br.containsHTML("no available free download slots left")) {
+                logger.info("Buggy Server: enable DirectDownload as workaround");
+                br.getPage("http://sharingmatrix.com/ajax_scripts/personal.php?query=settings");
+                Form form = br.getForm(0);
+                Form newform = new Form();
+                newform.setAction("http://sharingmatrix.com/ajax_scripts/personal/settings.php");
+                newform.setMethod(Form.MethodType.GET);
+                newform.put("id", br.getCookie("http://sharingmatrix.com", "user_id"));
+                if (br.getCookie("http://sharingmatrix.com", "user_id") == null || br.getCookie("http://sharingmatrix.com", "user_id").length() == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                newform.put("type_membership", "premium");
+                newform.put("nickname", form.getVarsMap().get("nickname") != null ? form.getVarsMap().get("nickname") : "");
+                newform.put("email", form.getVarsMap().get("email") != null ? form.getVarsMap().get("email") : "");
+                newform.put("password", form.getVarsMap().get("password") != null ? form.getVarsMap().get("password") : "");
+                newform.put("fast_link", "true");
+                br.getPage("Referer: http://sharingmatrix.com/personal");
+                br.submitForm(newform);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
             direct = false;
             if (br.containsHTML("Enter password:<") && !br.containsHTML("enter_password\" style=\"display:none\"")) {
                 if (downloadLink.getStringProperty("pass", null) == null) {

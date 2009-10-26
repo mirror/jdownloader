@@ -17,7 +17,6 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.Date;
 
 import jd.PluginWrapper;
 import jd.nutils.JDHash;
@@ -51,7 +50,7 @@ public class ShareSystemsDe extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
-        br.clearCookies("http://sharesystems.de");
+        this.setBrowserExclusive();
         br.getPage("http://sharesystems.de/index.php?login");
         br.forceDebug(true);
         Form login = br.getForm(0);
@@ -60,29 +59,25 @@ public class ShareSystemsDe extends PluginForHost {
         br.submitForm(login);
         if (br.getRedirectLocation() == null) {
             account.setValid(false);
-
         } else {
             account.setValid(true);
             br.getPage("http://sharesystems.de/index.php?statistik");
-            System.out.println(new Date());
             String validUntil = br.getRegex("Account g.*?ltig bis</div>.*?<div style=.*?>&nbsp;</div>.*?>(.*?)Uhr</div>").getMatch(0);
             ai.setValidUntil(Regex.getMilliSeconds("GMT+00:00, " + validUntil.trim(), "z, dd.MM.yyyy HH:mm", null));
+            String trafficLeft = br.getRegex("Traffic-Kontostand</div>.*?<div style=.*?>&nbsp;</div>.*?>(.*?)</div>").getMatch(0);
+            ai.setTrafficLeft(Regex.getSize(trafficLeft));
         }
         return ai;
     }
 
     /**
-     * Checks if the downloadlink is valid and online. 
-     * Throws a PluginException if this file is likely invalid, damaged or has
-     * any other errors.
+     * Checks if the downloadlink is valid and online. Throws a PluginException
+     * if this file is likely invalid, damaged or has any other errors.
      */
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
-
         this.setBrowserExclusive();
-        br.clearCookies("http://sharesystems.de");
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-
         String hash = new Regex(downloadLink.getDownloadURL().toLowerCase(), "hash=([0-9a-f]{32})").getMatch(0);
         downloadLink.setMD5Hash(hash);
         // method returns either the filename or an errorid.
@@ -90,12 +85,9 @@ public class ShareSystemsDe extends PluginForHost {
         // throws an appripriate exception of name is an errorid
         parseError(name);
         String size = br.getPage("http://91.121.188.186/share/tool_download_free.php?hash=" + hash + "&get_filesize").trim();
-
-        downloadLink.setName(name);
+        downloadLink.setFinalFileName(name);
         downloadLink.setDownloadSize(Long.parseLong(size));
-
         return AvailableStatus.TRUE;
-
     }
 
     @Override
@@ -105,14 +97,12 @@ public class ShareSystemsDe extends PluginForHost {
         // e86466b05601d8c12952105d82a9ad6a is the jd key
         String login = account.getUser() + JDHash.getMD5(account.getPass()) + "e86466b05601d8c12952105d82a9ad6a";
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, "http://91.121.188.186/share/tool_download.php?hash=" + downloadLink.getMD5Hash() + "&key=" + JDHash.getMD5(login), true, 0);
-
-        dl.startDownload();
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
             parseError(br.toString());
-
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         }
-
+        dl.startDownload();
     }
 
     /**
@@ -128,11 +118,9 @@ public class ShareSystemsDe extends PluginForHost {
             return;
         }
         switch (errorID) {
-
         case 11:
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             // -Wrong download or containerLink
-
         case 13:
             // username or password wrong
             throw new PluginException(LinkStatus.ERROR_PREMIUM);
@@ -156,23 +144,18 @@ public class ShareSystemsDe extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PREMIUM);
         case 31:// Damaged file
             throw new PluginException(LinkStatus.ERROR_FATAL);
-
         }
-
     }
 
-    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-
         this.requestFileInformation(downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, "http://91.121.188.186/share/tool_download_free.php?hash=" + downloadLink.getMD5Hash(), true, 1);
-
-        dl.startDownload();
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
             parseError(br.toString());
-
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         }
+        dl.startDownload();
     }
 
     public int getMaxSimultanFreeDownloadNum() {
