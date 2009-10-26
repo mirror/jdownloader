@@ -31,6 +31,7 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.controlling.JDLogger;
 import jd.http.Browser;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
@@ -53,11 +54,13 @@ import jd.utils.locale.JDL;
 public class Megauploadcom extends PluginForHost {
 
     private static final String MU_PARAM_PORT = "MU_PARAM_PORT";
-
+    private static final String MU_PORTROTATION = "MU_PORTROTATION";
     private static String wwwWorkaround = null;
     private static final Object Lock = new Object();
     private static int simultanpremium = 1;
     private boolean onlyapi = false;
+    private boolean usepremium = false;
+
     private static final Object PREMLOCK = new Object();
 
     public Megauploadcom(PluginWrapper wrapper) {
@@ -71,8 +74,14 @@ public class Megauploadcom extends PluginForHost {
         link.setUrlDownload("http://www.megaupload.com/?d=" + getDownloadID(link));
     }
 
-    public int usePort() {
-        switch (this.getPluginConfig().getIntegerProperty(MU_PARAM_PORT, 0)) {
+    public int usePort(DownloadLink link) {
+        int port = 0;
+        if (this.getPluginConfig().getBooleanProperty("MU_PORTROTATION", true)) {
+            port = link.getIntegerProperty(MU_PARAM_PORT, 0);
+        } else {
+            port = this.getPluginConfig().getIntegerProperty(MU_PARAM_PORT, 0);
+        }
+        switch (port) {
         case 1:
             return 800;
         case 2:
@@ -165,6 +174,7 @@ public class Megauploadcom extends PluginForHost {
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         boolean free = false;
         synchronized (PREMLOCK) {
+            usepremium = true;
             requestFileInformation(link);
             login(account, true);
             if (!isPremium(account)) {
@@ -223,7 +233,7 @@ public class Megauploadcom extends PluginForHost {
 
     private void doDownload(DownloadLink link, String url, boolean resume, int chunks) throws Exception {
         if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        url = url.replaceFirst("megaupload\\.com/", "megaupload\\.com:" + usePort() + "/");
+        url = url.replaceFirst("megaupload\\.com/", "megaupload\\.com:" + usePort(link) + "/");
         br.setFollowRedirects(true);
         String waitb = br.getRegex("count=(\\d+);").getMatch(0);
         long waittime = 0;
@@ -248,7 +258,7 @@ public class Megauploadcom extends PluginForHost {
                 if (dl.getConnection().getResponseCode() == 503) {
                     String wait = dl.getConnection().getHeaderField("Retry-After");
                     if (wait == null) wait = "120";
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "IP is already Loading or DownloadLimit exceeded!", Integer.parseInt(wait) * 1000l);
+                    limitReached(link, Integer.parseInt(wait.trim()));
                 }
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
             }
@@ -482,7 +492,7 @@ public class Megauploadcom extends PluginForHost {
         br.setCookie("http://" + wwwWorkaround + "megaupload.com", "l", "en");
         websiteFileCheck(downloadLink, br);
         /* in case of ip blocking, set ip blocked */
-        if (downloadLink.getAvailableStatus() == AvailableStatus.UNCHECKABLE) {
+        if (downloadLink.getAvailableStatus() == AvailableStatus.UNCHECKABLE && usepremium == false) {
             String wait = br.getRegex("Please check back in (\\+d) minutes").getMatch(0);
             if (wait != null) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait.trim()) * 60 * 1000l);
@@ -490,6 +500,11 @@ public class Megauploadcom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 25 * 60 * 1000l);
         }
         if (downloadLink.getAvailableStatus() == AvailableStatus.FALSE) {
+            try {
+                logger.finest(br.getRequest().getHttpConnection() + "");
+            } catch (Exception e) {
+                JDLogger.exception(e);
+            }
             logger.info("DebugInfo for maybe Wrong FileNotFound: " + br.toString());
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -510,11 +525,11 @@ public class Megauploadcom extends PluginForHost {
                 logger.severe("YOur IP got banned");
                 br.getPage(red);
                 String wait = br.getRegex("Please check back in (\\d+) minute").getMatch(0);
-                long l = 30 * 60 * 1000l;
+                int l = 30;
                 if (wait != null) {
-                    l = Long.parseLong(wait.trim()) * 60 * 1000l;
+                    l = Integer.parseInt(wait.trim());
                 }
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, l);
+                limitReached(link, l * 60);
             }
             if (br.containsHTML("trying to download is larger than")) throw new PluginException(LinkStatus.ERROR_FATAL, "File is over 1GB and needs Premium Account");
             form = br.getForm(0);
@@ -608,15 +623,42 @@ public class Megauploadcom extends PluginForHost {
         } else {
             getRedirectforAPI("http://" + wwwWorkaround + "megaupload.com/mgr_dl.php?d=" + dlID, link);
         }
-        if (br.getRedirectLocation() == null || br.getRedirectLocation().toUpperCase().contains(dlID)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "API Limit reached!", 10 * 60 * 1000l);
+        if (br.getRedirectLocation() == null || br.getRedirectLocation().toUpperCase().contains(dlID)) limitReached(link, 10 * 60);
+
         String url = br.getRedirectLocation();
         br.getHeaders().put("Host", new URL(url).getHost());
         br.getHeaders().put("Connection", "Keep-Alive,TE");
         doDownload(link, url, true, 1);
     }
 
+    private void limitReached(DownloadLink link, int secs) throws PluginException {
+        if (this.getPluginConfig().getBooleanProperty("MU_PORTROTATION", true)) {
+            /* try portrotation */
+            int port = link.getIntegerProperty(MU_PARAM_PORT, 0);
+            port++;
+            if (port > 2) {
+                /* all ports tried, have to wait */
+                link.setProperty(MU_PARAM_PORT, 0);
+                System.out.println("All ports tried, we will wait!");
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "API Limit reached!", secs * 1000l);
+            } else {
+                /* try next port */
+                System.out.println("Try port " + port);
+                link.getLinkStatus().setLatestStatus(link.getLinkStatus().getRetryCount() + 1);
+                link.setProperty(MU_PARAM_PORT, port);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+        } else {
+            /* have to wait */
+            System.out.println("We will wait");
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "API Limit reached!", secs * 1000l);
+        }
+
+    }
+
     @Override
     public void handleFree(DownloadLink parameter) throws Exception {
+        usepremium = false;
         requestFileInformation(parameter);
         if (onlyapi) {
             handleAPIDownload(parameter, null);
@@ -653,6 +695,7 @@ public class Megauploadcom extends PluginForHost {
     private void setConfigElements() {
         String[] ports = new String[] { "80", "800", "1723" };
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, this.getPluginConfig(), MU_PARAM_PORT, ports, JDL.L("plugins.host.megaupload.ports", "Use this port:")).setDefaultValue(0));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), MU_PORTROTATION, ports, JDL.L("plugins.host.megaupload.portrotation", "Use Portrotation to increase downloadlimit?")).setDefaultValue(true));
     }
 
 }

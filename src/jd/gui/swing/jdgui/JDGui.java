@@ -31,6 +31,7 @@ import javax.swing.ToolTipManager;
 
 import jd.OptionalPluginWrapper;
 import jd.config.ConfigContainer;
+import jd.config.Configuration;
 import jd.controlling.ClipboardHandler;
 import jd.controlling.DownloadController;
 import jd.controlling.DownloadWatchDog;
@@ -39,9 +40,6 @@ import jd.controlling.JDLogger;
 import jd.controlling.LinkCheck;
 import jd.controlling.LinkGrabberController;
 import jd.controlling.LinkGrabberDistributeEvent;
-import jd.controlling.ProgressController;
-import jd.controlling.ProgressControllerEvent;
-import jd.controlling.ProgressControllerListener;
 import jd.event.ControlEvent;
 import jd.gui.UIConstants;
 import jd.gui.UserIF;
@@ -324,31 +322,11 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
                     return null;
                 }
             }.start();
-            if (GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_START_DOWNLOADS_AFTER_START, false)) {
-                new Thread() {
-                    @Override
-                    public void run() {
-                        this.setName("Autostart counter");
-                        final ProgressController pc = new ProgressController(JDL.L("gui.autostart", "Autostart downloads in few seconds..."));
-                        pc.getBroadcaster().addListener(new ProgressControllerListener() {
-                            public void onProgressControllerEvent(ProgressControllerEvent event) {
-                                pc.setStatusText("Autostart aborted!");
-                            }
-                        });
-                        pc.doFinalize(10 * 1000l);
-                        while (!pc.isFinished()) {
-                            try {
-                                Thread.sleep(1000);
-                            } catch (InterruptedException e) {
-                                break;
-                            }
-                        }
-                        if (!pc.isAbort()) DownloadWatchDog.getInstance().startDownloads();
-                    }
-                }.start();
+            if (GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_START_DOWNLOADS_AFTER_START, false) && !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_AUTO_RESTART, false)) {
+                /* autostart downloads when no autoupdate is enabled */
+                JDController.getInstance().autostartDownloadsonStartup();
             }
             break;
-
         case ControlEvent.CONTROL_SYSTEM_EXIT:
             this.exitRequested = true;
             final String id = JDController.requestDelayExit("JDGUI");

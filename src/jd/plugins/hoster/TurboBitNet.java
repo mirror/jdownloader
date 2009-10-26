@@ -71,7 +71,7 @@ public class TurboBitNet extends PluginForHost {
         }
         String captchaUrl = br.getRegex("<img alt=\"Captcha\" src=\"(.*?)\" width=\"150\" height=\"50\" />").getMatch(0);
         if (captchaUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        Form form = br.getForm(0);
+        Form form = br.getForm(2);
         if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         for (int i = 1; i <= 3; i++) {
             String captchaCode = getCaptchaCode(captchaUrl, downloadLink);

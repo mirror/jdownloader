@@ -75,16 +75,22 @@ public class Zippysharecom extends PluginForHost {
         int index = -1;
         while (true) {
             index++;
-            String allreplaces = br.getRegex("ziptime.*?unescape(.*?)(var|'|;)").getMatch(0);
-            String[][] replaces = new Regex(allreplaces, "replace\\((.*?),.*?\"(.*?)\"").getMatches();
+            // String allreplaces =
+            // br.getRegex("ziptime.*?unescape(.*?)(var|'|;)").getMatch(0);
+            // String[][] replaces = new Regex(allreplaces,
+            // "replace\\((.*?),.*?\"(.*?)\"").getMatches();
             String page = Encoding.urlDecode(br.toString(), true);
-            for (String[] replace : replaces) {
-                replace[0] = replace[0].substring(1);
-                if (replace[0].endsWith("/")) replace[0] = replace[0].substring(0, replace[0].length() - 1);
-                if (replace[0].endsWith("/g")) replace[0] = replace[0].substring(0, replace[0].length() - 2);
-                if (replace[0].endsWith("/i")) replace[0] = replace[0].substring(0, replace[0].length() - 2);
-                page = page.replace(replace[0], replace[1]);
-            }
+            // for (String[] replace : replaces) {
+            // replace[0] = replace[0].substring(1);
+            // if (replace[0].endsWith("/")) replace[0] =
+            // replace[0].substring(0, replace[0].length() - 1);
+            // if (replace[0].endsWith("/g")) replace[0] =
+            // replace[0].substring(0, replace[0].length() - 2);
+            // if (replace[0].endsWith("/i")) replace[0] =
+            // replace[0].substring(0, replace[0].length() - 2);
+            // page = page.replace(replace[0], replace[1]);
+            // }
+            page = page.replaceAll("xxx", "www").replaceAll("seven", "7").replaceAll("unh", "d");
             String[] links = HTMLParser.getHttpLinks(page, null);
             if (index > links.length - 1) break;
             String curlink = links[index];

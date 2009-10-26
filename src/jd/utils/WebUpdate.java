@@ -38,6 +38,8 @@ import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.components.Balloon;
+import jd.gui.swing.jdgui.GUIUtils;
+import jd.gui.swing.jdgui.JDGuiConstants;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.JDFlags;
@@ -206,9 +208,7 @@ public class WebUpdate {
                 SubConfiguration.getConfig("a" + "pckage").setProperty(new String(new byte[] { 97, 112, 99, 107, 97, 103, 101 }), updater.sum);
                 SubConfiguration.getConfig("a" + "pckage").save();
             }
-
         } catch (Exception e) {
-
             UPDATE_IN_PROGRESS = false;
             JDController.releaseDelayExit(id);
             return;
@@ -268,6 +268,13 @@ public class WebUpdate {
                 // only ignore updaterequest of all plugins are present
                 if (HostPluginWrapper.getHostWrapper().size() > 50 && !JDInitFlags.SWITCH_RETURNED_FROM_UPDATE && !forceguiCall && SubConfiguration.getConfig("WEBUPDATE").getBooleanProperty(Configuration.PARAM_WEBUPDATE_DISABLE, false)) {
                     logger.severe("Webupdater disabled");
+                    /*
+                     * autostart downloads if not autostarted yet and
+                     * autowebupdate is also enabled
+                     */
+                    if (GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_START_DOWNLOADS_AFTER_START, false) && JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_AUTO_RESTART, false)) {
+                        JDController.getInstance().autostartDownloadsonStartup();
+                    }
                     JDController.releaseDelayExit(id);
                     UPDATE_IN_PROGRESS = false;
                     return;
@@ -303,7 +310,13 @@ public class WebUpdate {
                         }
                     }
                     logger.severe("Webupdater offline or nothing to update");
-
+                    /*
+                     * autostart downloads if not autostarted yet and
+                     * autowebupdate is also enabled
+                     */
+                    if (GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_START_DOWNLOADS_AFTER_START, false) && JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_AUTO_RESTART, false)) {
+                        JDController.getInstance().autostartDownloadsonStartup();
+                    }
                     JDController.releaseDelayExit(id);
                     UPDATE_IN_PROGRESS = false;
                     return;
@@ -314,12 +327,9 @@ public class WebUpdate {
 
                     final ProgressController progress = new ProgressController(JDL.L("init.webupdate.progress.0_title", "Webupdate"), 100);
                     updater.getBroadcaster().addListener(messageListener = new MessageListener() {
-
                         public void onMessage(MessageEvent event) {
                             progress.setStatusText(event.getSource() + ": " + event.getMessage());
-
                         }
-
                     });
 
                     progress.setRange(org = files.size());
@@ -358,7 +368,13 @@ public class WebUpdate {
 
                 }
                 if (messageListener != null) updater.getBroadcaster().removeListener(messageListener);
-
+                /*
+                 * autostart downloads if not autostarted yet and autowebupdate
+                 * is also enabled
+                 */
+                if (GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_START_DOWNLOADS_AFTER_START, false) && JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_AUTO_RESTART, false)) {
+                    JDController.getInstance().autostartDownloadsonStartup();
+                }
                 JDController.releaseDelayExit(id);
             }
         }.start();
@@ -499,7 +515,6 @@ public class WebUpdate {
 
                     }
                     pc.doFinalize();
-
                 } finally {
                     JDController.releaseDelayExit(id);
                     UPDATE_IN_PROGRESS = false;

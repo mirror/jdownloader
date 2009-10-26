@@ -182,6 +182,8 @@ public class JDController implements ControlListener {
 
     private ArrayList<FileUpdate> waitingUpdates = new ArrayList<FileUpdate>();
 
+    private boolean alreadyAutostart = false;
+
     /**
      * Der Download Watchdog verwaltet die Downloads
      */
@@ -708,6 +710,32 @@ public class JDController implements ControlListener {
             }
         }
         return al;
+    }
+
+    public synchronized void autostartDownloadsonStartup() {
+        if (alreadyAutostart == true) return;
+        alreadyAutostart = true;
+        new Thread() {
+            @Override
+            public void run() {
+                this.setName("Autostart counter");
+                final ProgressController pc = new ProgressController(JDL.L("gui.autostart", "Autostart downloads in few seconds..."));
+                pc.getBroadcaster().addListener(new ProgressControllerListener() {
+                    public void onProgressControllerEvent(ProgressControllerEvent event) {
+                        pc.setStatusText("Autostart aborted!");
+                    }
+                });
+                pc.doFinalize(10 * 1000l);
+                while (!pc.isFinished()) {
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        break;
+                    }
+                }
+                if (!pc.isAbort()) DownloadWatchDog.getInstance().startDownloads();
+            }
+        }.start();
     }
 
     public DownloadLink getDownloadLinkByFileOutput(File file, Integer Linkstatus) {
