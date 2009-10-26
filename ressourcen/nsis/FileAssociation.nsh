@@ -102,7 +102,7 @@ _____________________________________________________________________________
  
 !macro un.RegisterExtension
 !macroend
- 
+
 !macro RegisterExtension_
   !verbose push
   !verbose ${_FileAssociation_VERBOSE}
@@ -116,21 +116,43 @@ _____________________________________________________________________________
   Exch 2
   Push $0
   Push $1
- 
+  
+${If} ${UAC_IsAdmin}
+
   ReadRegStr $1 HKCR $R1 ""  ; read current file association
-  StrCmp "$1" "" NoBackup  ; is it empty
-  StrCmp "$1" "$R0" NoBackup  ; is it our own
+  StrCmp "$1" "" NoBackupAdmin  ; is it empty
+  StrCmp "$1" "$R0" NoBackupAdmin  ; is it our own
     WriteRegStr HKCR $R1 "backup_val" "$1"  ; backup current value
-NoBackup:
+NoBackupAdmin:
   WriteRegStr HKCR $R1 "" "$R0"  ; set our file association
  
   ReadRegStr $0 HKCR $R0 ""
-  StrCmp $0 "" 0 Skip
+  StrCmp $0 "" 0 SkipAdmin
     WriteRegStr HKCR "$R0" "" "$R0"
     WriteRegStr HKCR "$R0\shell" "" "open"
     WriteRegStr HKCR "$R0\DefaultIcon" "" "$R2,0"
-Skip:
+SkipAdmin:
   WriteRegStr HKCR "$R0\shell\open\command" "" '"$R2" "%1"'
+
+${Else}
+
+  ReadRegStr $1 HKCU "Software\Classes\$R1" ""  ; read current file association
+  StrCmp "$1" "" NoBackupUser  ; is it empty
+  StrCmp "$1" "$R0" NoBackupUser  ; is it our own
+    WriteRegStr HKCU "Software\Classes\$R1" "backup_val" "$1"  ; backup current value
+NoBackupUser:
+  WriteRegStr HKCU "Software\Classes\$R1" "" "$R0"  ; set our file association
+ 
+  ReadRegStr $0 HKCU "Software\Classes\$R0" ""
+  StrCmp $0 "" 0 SkipUser
+    WriteRegStr HKCU "Software\Classes\$R0" "" "$R0"
+    WriteRegStr HKCU "Software\Classes\$R0\shell" "" "open"
+    WriteRegStr HKCU "Software\Classes\$R0\DefaultIcon" "" "$R2,0"
+SkipUser:
+  WriteRegStr HKCU "Software\Classes\$R0\shell\open\command" "" '"$R2" "%1"'
+
+${EndIf}
+  
   /* No edit in our mod 
   WriteRegStr HKCR "$R0\shell\edit" "" "Edit $R0"
   WriteRegStr HKCR "$R0\shell\edit\command" "" '"$R2" "%1"'
@@ -167,20 +189,38 @@ Skip:
   Push $0
   Push $1
  
+${If} $ADMINATINSTALL > 0
+
   ReadRegStr $1 HKCR $R0 ""
-  StrCmp $1 $R1 0 NoOwn ; only do this if we own it
+  StrCmp $1 $R1 0 NoOwnAdmin ; only do this if we own it
   ReadRegStr $1 HKCR $R0 "backup_val"
-  StrCmp $1 "" 0 Restore ; if backup="" then delete the whole key
+  StrCmp $1 "" 0 RestoreAdmin ; if backup="" then delete the whole key
   DeleteRegKey HKCR $R0
-  Goto NoOwn
+  Goto NoOwnAdmin
  
-Restore:
+RestoreAdmin:
   WriteRegStr HKCR $R0 "" $1
   DeleteRegValue HKCR $R0 "backup_val"
   DeleteRegKey HKCR $R1 ;Delete key with association name settings
  
-NoOwn:
+NoOwnAdmin:
  
+${Else}
+  ReadRegStr $1 HKCU "Software\Classes\$R0" ""
+  StrCmp $1 $R1 0 NoOwnUser ; only do this if we own it
+  ReadRegStr $1 HKCU "Software\Classes\$R0" "backup_val"
+  StrCmp $1 "" 0 RestoreUser ; if backup="" then delete the whole key
+  DeleteRegKey HKCU "Software\Classes\$R0"
+  Goto NoOwnUser
+ 
+RestoreUser:
+  WriteRegStr HKCU "Software\Classes\$R0" "" $1
+  DeleteRegValue HKCU "Software\Classes\$R0" "backup_val"
+  DeleteRegKey HKCU "Software\Classes\$R1" ;Delete key with association name settings
+ 
+NoOwnUser:
+${EndIf}
+
   Pop $1
   Pop $0
   Pop $R1

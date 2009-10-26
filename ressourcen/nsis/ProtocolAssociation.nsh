@@ -117,22 +117,44 @@ _____________________________________________________________________________
   Exch 2
   Push $0
   Push $1
+  
+${If} ${UAC_IsAdmin}
  
   ReadRegStr $1 HKCR $R1 ""  ; read current protocol association
-  StrCmp "$1" "" NoProtocolBackup  ; is it empty
-  StrCmp "$1" $R0 NoProtocolBackup  ; is it our own
+  StrCmp "$1" "" NoProtocolBackupAdmin  ; is it empty
+  StrCmp "$1" $R0 NoProtocolBackupAdmin  ; is it our own
     WriteRegStr HKCR $R1 "backup_val" "$1"  ; backup current value
     ReadRegStr $1 HKCR "$R1\shell\open\command" "" ; backup assoc. exe 
     WriteRegStr HKCR "$R1\shell\open\command" "backup_val" "$1"  
-NoProtocolBackup:
+NoProtocolBackupAdmin:
   WriteRegStr HKCR $R1 "" $R0  ; set our protocol association
   WriteRegStr HKCR $R1 "URL Protocol" ""  ; set it as protocol
  
   ReadRegStr $0 HKCR "$R1\DefaultIcon" ""
-  StrCmp $0 "" 0 ProtocolSkip
+  StrCmp $0 "" 0 ProtocolSkipAdmin
     WriteRegStr HKCR "$R1\DefaultIcon" "" "$R2,0"
-ProtocolSkip:
+ProtocolSkipAdmin:
   WriteRegStr HKCR "$R1\shell\open\command" "" '"$R2" "%1"'
+ 
+${Else}
+ 
+  ReadRegStr $1 HKCU "Software\Classes\$R1" ""  ; read current protocol association
+  StrCmp "$1" "" NoProtocolBackupUser  ; is it empty
+  StrCmp "$1" $R0 NoProtocolBackupUser  ; is it our own
+    WriteRegStr HKCU "Software\Classes\$R1" "backup_val" "$1"  ; backup current value
+    ReadRegStr $1 HKCU "Software\Classes\$R1\shell\open\command" "" ; backup assoc. exe 
+    WriteRegStr HKCU "Software\Classes\$R1\shell\open\command" "backup_val" "$1"  
+NoProtocolBackupUser:
+  WriteRegStr HKCU "Software\Classes\$R1" "" $R0  ; set our protocol association
+  WriteRegStr HKCU "Software\Classes\$R1" "URL Protocol" ""  ; set it as protocol
+ 
+  ReadRegStr $0 HKCU "Software\Classes\$R1\DefaultIcon" ""
+  StrCmp $0 "" 0 ProtocolSkipUser
+    WriteRegStr HKCU "Software\Classes\$R1\DefaultIcon" "" "$R2,0"
+ProtocolSkipUser:
+  WriteRegStr HKCU "Software\Classes\$R1\shell\open\command" "" '"$R2" "%1"'
+
+${EndIf}
  
   Pop $1
   Pop $0
@@ -165,22 +187,41 @@ ProtocolSkip:
   Push $0
   Push $1
  
+${If} $ADMINATINSTALL > 0
   ReadRegStr $1 HKCR $R0 ""
-  StrCmp $1 $R1 0 NoOwnProtocol ; only do this if we own it
+  StrCmp $1 $R1 0 NoOwnProtocolAdmin ; only do this if we own it
   ReadRegStr $1 HKCR $R0 "backup_val"
-  StrCmp $1 "" 0 ProtocolRestore ; if backup="" then delete the whole key
+  StrCmp $1 "" 0 ProtocolRestoreAdmin ; if backup="" then delete the whole key
   DeleteRegKey HKCR $R0
-  Goto NoOwnProtocol
+  Goto NoOwnProtocolAdmin
  
-ProtocolRestore:
+ProtocolRestoreAdmin:
   WriteRegStr HKCR $R0 "" $1
   DeleteRegValue HKCR $R0 "backup_val"
   ReadRegStr $1 HKCR "$R0\shell\open\command" "backup_val"
   WriteRegStr HKCR "$R0\shell\open\command" "" $1
   DeleteRegValue HKCR "$R0\shell\open\command" "backup_val"
  
-NoOwnProtocol:
+NoOwnProtocolAdmin:
+${Else}
+
+  ReadRegStr $1 HKCU "Software\Classes\$R0" ""
+  StrCmp $1 $R1 0 NoOwnProtocolUser ; only do this if we own it
+  ReadRegStr $1 HKCU "Software\Classes\$R0" "backup_val"
+  StrCmp $1 "" 0 ProtocolRestoreUser ; if backup="" then delete the whole key
+  DeleteRegKey HKCU "Software\Classes\$R0"
+  Goto NoOwnProtocolUser
  
+ProtocolRestoreUser:
+  WriteRegStr HKCU "Software\Classes\$R0" "" $1
+  DeleteRegValue HKCU "Software\Classes\$R0" "backup_val"
+  ReadRegStr $1 HKCU "Software\Classes\$R0\shell\open\command" "backup_val"
+  WriteRegStr HKCU "Software\Classes\$R0\shell\open\command" "" $1
+  DeleteRegValue HKCU "Software\Classes\$R0\shell\open\command" "backup_val"
+ 
+NoOwnProtocolUser:
+${EndIf}
+
   Pop $1
   Pop $0
   Pop $R1

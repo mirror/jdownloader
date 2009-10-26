@@ -4,6 +4,7 @@ RequestExecutionLevel user
 
 # General Symbol Definitions
 !define REGKEY "SOFTWARE\$(^Name)"
+!define REGKEY2 "Software\$(^Name)"
 !define VERSION 0.89
 !define VERSION2 0.89.0.0
 !define COMPANY "AppWork UG (haftungsbeschränkt)"
@@ -36,6 +37,7 @@ RequestExecutionLevel user
 
 # Variables
 Var StartMenuGroup
+Var ADMINATINSTALL
 
 # Installer pages
 !insertmacro MUI_PAGE_WELCOME
@@ -67,7 +69,7 @@ VIAddVersionKey /LANG=${LANG_ENGLISH} CompanyWebsite "${URL}"
 VIAddVersionKey /LANG=${LANG_ENGLISH} FileVersion "${VERSION}"
 VIAddVersionKey /LANG=${LANG_ENGLISH} FileDescription "${APPNAME} Setup for Windows"
 VIAddVersionKey /LANG=${LANG_ENGLISH} LegalCopyright "${COMPANY}"
-InstallDirRegKey HKLM "${REGKEY}" Path
+#InstallDirRegKey HKLM "${REGKEY}" Path
 ShowUninstDetails show
 
 # Installer sections
@@ -92,8 +94,12 @@ Section $(SecJDMain_TITLE) SecJDMain
       AccessControl::GrantOnFile "$INSTDIR\" "(S-1-1-0)" "FullAccess"
       AccessControl::GrantOnFile "$INSTDIR\license.txt" "(S-1-1-0)" "FullAccess"
     ${EndIf}
-    
+    ${If} ${UAC_IsAdmin}
     WriteRegStr HKLM "${REGKEY}\Components" JDownloader 1
+    ${Else}
+    WriteRegStr HKCU "${REGKEY2}\Components" JDownloader 1
+    ${EndIf}
+    
 SectionEnd
 
 Section $(SecAssociateFiles_TITLE) SecAssociateFiles
@@ -109,15 +115,26 @@ Section $(SecAssociateFiles_TITLE) SecAssociateFiles
     ${registerProtocol}  "$INSTDIR\JDownloader.exe" "metalink" "JDownloader Metalink"
     ${registerProtocol}  "$INSTDIR\JDownloader.exe" "jd" "JDownloader JD Link"
     ${registerProtocol}  "$INSTDIR\JDownloader.exe" "jdlist" "JDownloader JDList Link"
+    
+    ${If} ${UAC_IsAdmin}
     WriteRegStr HKLM "${REGKEY}\Components" "Associate JDownloader with Containerfiles" 1
+    ${Else}
+    WriteRegStr HKCU "${REGKEY2}\Components" "Associate JDownloader with Containerfiles" 1
+    ${EndIf}
+    
 SectionEnd
 
 Section -post SEC0002
+    
+    ${If} ${UAC_IsAdmin}
     WriteRegStr HKLM "${REGKEY}" Path $INSTDIR
+    ${Else}
+    WriteRegStr HKCU "${REGKEY2}" "Path" $INSTDIR
+    ${EndIf}
     SetOutPath $INSTDIR
     WriteUninstaller $INSTDIR\uninstall.exe
     SetOutPath $SMPROGRAMS\$StartMenuGroup
-    CreateShortcut "$SMPROGRAMS\$StartMenuGroup\$(^UninstallLink).lnk" $INSTDIR\uninstall.exe
+    CreateShortcut "$SMPROGRAMS\$StartMenuGroup\$(^UninstallLink).lnk" "$INSTDIR\uninstall.exe"
     WriteRegStr HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\$(^Name)" DisplayName "$(^Name)"
     WriteRegStr HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\$(^Name)" DisplayVersion "${VERSION}"
     WriteRegStr HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\$(^Name)" Publisher "${COMPANY}"
@@ -131,8 +148,15 @@ SectionEnd
 # Macro for selecting uninstaller sections
 !macro SELECT_UNSECTION SECTION_NAME UNSECTION_ID
     Push $R0
+    
+    ${If} $ADMINATINSTALL > 0
     ReadRegStr $R0 HKLM "${REGKEY}\Components" "${SECTION_NAME}"
+    ${Else}
+    ReadRegStr $R0 HKCU "${REGKEY2}\Components" "${SECTION_NAME}"
+    ${EndIf}
+    
     StrCmp $R0 1 0 next${UNSECTION_ID}
+    
     !insertmacro SelectSection "${UNSECTION_ID}"
     GoTo done${UNSECTION_ID}
 next${UNSECTION_ID}:
@@ -155,7 +179,13 @@ Section /o "-un.Associate JDownloader with Containerfiles" UNSecAssociateFiles
     ${unregisterProtocol}  "metalink" "JDownloader Metalink"
     ${unregisterProtocol}  "jd" "JDownloader JD Link"
     ${unregisterProtocol}  "jdlist" "JDownloader JDList Link"
+    
+    ${If} $ADMINATINSTALL > 0
     DeleteRegValue HKLM "${REGKEY}\Components" "Associate JDownloader with Containerfiles"
+    ${Else}
+    DeleteRegValue HKCU "${REGKEY2}\Components" "Associate JDownloader with Containerfiles"
+    ${EndIf}
+    
 SectionEnd
 
 Section /o -un.JDownloader UNSecJDMain
@@ -163,16 +193,31 @@ Section /o -un.JDownloader UNSecJDMain
     Delete /REBOOTOK $DESKTOP\JDownloader.lnk
     Delete /REBOOTOK "$SMPROGRAMS\$StartMenuGroup\JDownloader Support.lnk"
     Delete /REBOOTOK $SMPROGRAMS\$StartMenuGroup\JDownloader.lnk
+    
+    ${If} $ADMINATINSTALL > 0
     DeleteRegValue HKLM "${REGKEY}\Components" JDownloader
+    ${Else}
+    DeleteRegValue HKCU "${REGKEY2}\Components" JDownloader
+    ${EndIf}
+    
 SectionEnd
 
 Section -un.post UNSEC0002
-    DeleteRegKey HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\$(^Name)"
     Delete /REBOOTOK "$SMPROGRAMS\$StartMenuGroup\$(^UninstallLink).lnk"
     Delete /REBOOTOK $INSTDIR\uninstall.exe
-    DeleteRegValue HKLM "${REGKEY}" Path
+    
+    ${If} $ADMINATINSTALL > 0
+    DeleteRegKey HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\$(^Name)"
+    DeleteRegValue HKLM "${REGKEY}" "Path"
     DeleteRegKey /IfEmpty HKLM "${REGKEY}\Components"
     DeleteRegKey /IfEmpty HKLM "${REGKEY}"
+    ${Else}
+    DeleteRegValue HKCU "${REGKEY2}" "Path"
+    DeleteRegKey /IfEmpty HKCU "${REGKEY2}\Components"
+    DeleteRegKey /IfEmpty HKCU "${REGKEY2}"    
+    ${EndIf}
+    
+
     RmDir /REBOOTOK $SMPROGRAMS\$StartMenuGroup
 SectionEnd
 
@@ -198,8 +243,6 @@ FunctionEnd
 
 # Uninstaller functions
 Function un.onInit
-    ReadRegStr $INSTDIR HKLM "${REGKEY}" Path
-    StrCpy $StartMenuGroup JDownloader
     
     !insertmacro UAC_RunElevated
     ${Switch} $0
@@ -210,6 +253,34 @@ Function un.onInit
     #MessageBox mb_IconStop|mb_TopMost|mb_SetForeground "Logon service not running, aborting!"
     #Quit
     ${EndSwitch}
+    
+    
+    ${If} ${UAC_IsAdmin}
+      #Uninstall with Admin rights
+      StrCpy $ADMINATINSTALL 1
+      ReadRegStr $INSTDIR HKLM "${REGKEY}" "Path"
+      StrCmp $INSTDIR "" 0 UninstDirFound #installed with admin rights, too
+    
+      #installed without adminrights then
+      StrCpy $ADMINATINSTALL 0
+      ReadRegStr $INSTDIR HKCU "${REGKEY2}" "Path"
+
+    ${Else}
+      StrCpy $ADMINATINSTALL 0
+      ReadRegStr $INSTDIR HKCU "${REGKEY2}" "Path"
+      StrCmp $INSTDIR "" 0 UninstDirFound
+      
+      #installed with adminrights then
+      MessageBox MB_ICONEXCLAMATION|mb_TopMost|mb_SetForeground "You're trying to uninstall a product you've installed with admin rights! Software might not be removed completely after uninstall."
+      ;Quit
+      StrCpy $ADMINATINSTALL 1
+      ReadRegStr $INSTDIR HKLM "${REGKEY}" "Path"
+
+    ${EndIf}
+
+UninstDirFound:
+  
+    StrCpy $StartMenuGroup JDownloader
     
     !insertmacro SELECT_UNSECTION JDownloader ${UNSecJDMain}
     !insertmacro SELECT_UNSECTION "Associate JDownloader with Containerfiles" ${UNSecAssociateFiles}
@@ -228,6 +299,8 @@ FunctionEnd
 ;;;;; English
 #General
 LangString ^UninstallLink ${LANG_ENGLISH} "Uninstall $(^Name)"
+LangString ^Name ${LANG_ENGLISH} "${APPNAME}"
+
 
 #Sections
 LangString SecJDMain_TITLE ${LANG_ENGLISH} "JDownloader (required)"
@@ -250,6 +323,7 @@ LangString JRE_NOADMIN_TEXT ${LANG_ENGLISH} "This application requires installat
 ;;;;; German
 #General
 LangString ^UninstallLink ${LANG_GERMAN} "Deinstalliere $(^Name)"
+LangString ^Name ${LANG_GERMAN} "${APPNAME}"
 
 #Sections
 LangString SecJDMain_TITLE ${LANG_GERMAN} "JDownloader (benötigt)"
