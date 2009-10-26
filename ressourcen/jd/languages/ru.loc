@@ -832,6 +832,12 @@ interaction.liveheader.name = HTTP LiveHeader
 interaction.liveheader.progress.3_step = (шаг) HTTP LiveHeader :
 interaction.liveheader.progress.4_step = (%s) HTTP LiveHeader
 interaction.resetlink.name = Перезагрузить ссылки
+interaction.shutdown.dialog.msg.hibernate = <h2><font color="red">Система перейдёт в режим гибернации!</font></h2>
+interaction.shutdown.dialog.msg.shutdown = <h2><font color="red">Система будет выключена!</font></h2>
+interaction.shutdown.dialog.msg.standby = <h2><font color="red">Система перейдёт в спящий режим!</font></h2>
+interaction.shutdown.dialog.title.hibernate = Гибернация?
+interaction.shutdown.dialog.title.shutdown = Выключить?
+interaction.shutdown.dialog.title.standby = Спящий режим?
 interaction.simpleexecute.name = Запустить программу/Скрипт
 interaction.trigger.after_reconnect = После переподключения
 interaction.trigger.after_reconnect.desc = Выполнить после переподключения
@@ -880,6 +886,7 @@ jd.gui.swing.components.accountdialog.name = Название:
 jd.gui.swing.components.accountdialog.pass = Пароль:
 jd.gui.swing.components.accountdialog.title = Добавить аккаунт
 jd.gui.swing.components.jdcollapser.closetooltip = Закрытие %s
+jd.gui.swing.components.table.jdtable.columncontrol = Изменить колонки
 jd.gui.swing.jdgui.actions.actioncontroller.toolbar.control.start.tooltip = Начать закачки из списка
 jd.gui.swing.jdgui.actions.actioncontroller.toolbar.control.stop.tooltip = Остановить все запущенные закачки
 jd.gui.swing.jdgui.actions.actioncontroller.toolbar.control.stopmark.tooltip = Остановить после текущей закачки
@@ -889,9 +896,9 @@ jd.gui.swing.jdgui.menu.actions.backuplinklistaction.password = Введите �
 jd.gui.swing.jdgui.settings.configpanel.restartquestion = Эта операция требует перезапуска программы
 jd.gui.swing.jdgui.settings.configpanel.restartquestion.ok = Перезапуск!
 jd.gui.swing.jdgui.settings.configpanel.restartquestion.title = Требуется перезапуск!
+jd.gui.swing.jdgui.settings.panels.addons.configpaneladdons.breadcrum = Плагины и 
 jd.gui.swing.jdgui.settings.panels.configpaneladdons.addons.title = Расширения
 jd.gui.swing.jdgui.settings.panels.configpaneladdons.askafterinit = Показать %s сейчас?\r\nВы можете открыть это позже через главное меню->дополнения
-jd.gui.swing.jdgui.settings.panels.configpaneladdons.breadcrum = 
 jd.gui.swing.jdgui.settings.panels.configpanelcaptcha.breadcrum = Модули-AntiCaptcha
 jd.gui.swing.jdgui.settings.panels.configpanelcaptcha.captcha.title = AntiCaptcha
 jd.gui.swing.jdgui.settings.panels.configpanelgeneral.breadcrum = Базовые - Общие
