@@ -71,6 +71,11 @@ public class ShareSystemsDe extends PluginForHost {
         return ai;
     }
 
+    /**
+     * Checks if the downloadlink is valid and online. 
+     * Throws a PluginException if this file is likely invalid, damaged or has
+     * any other errors.
+     */
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
 
         this.setBrowserExclusive();
@@ -80,8 +85,9 @@ public class ShareSystemsDe extends PluginForHost {
 
         String hash = new Regex(downloadLink.getDownloadURL().toLowerCase(), "hash=([0-9a-f]{32})").getMatch(0);
         downloadLink.setMD5Hash(hash);
-
+        // method returns either the filename or an errorid.
         String name = br.getPage("http://91.121.188.186/share/tool_download_free.php?hash=" + hash + "&get_filename").trim();
+        // throws an appripriate exception of name is an errorid
         parseError(name);
         String size = br.getPage("http://91.121.188.186/share/tool_download_free.php?hash=" + hash + "&get_filesize").trim();
 
@@ -94,6 +100,7 @@ public class ShareSystemsDe extends PluginForHost {
 
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+
         this.requestFileInformation(downloadLink);
         // e86466b05601d8c12952105d82a9ad6a is the jd key
         String login = account.getUser() + JDHash.getMD5(account.getPass()) + "e86466b05601d8c12952105d82a9ad6a";
@@ -168,19 +175,15 @@ public class ShareSystemsDe extends PluginForHost {
         }
     }
 
-  
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-   
     public void reset() {
     }
 
-    
     public void resetPluginGlobals() {
     }
-
 
     public void resetDownloadlink(DownloadLink link) {
     }
