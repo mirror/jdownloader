@@ -16,6 +16,8 @@
 
 package jd.controlling;
 
+import it.sauronsoftware.junique.JUnique;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -24,6 +26,7 @@ import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import jd.CPluginWrapper;
+import jd.Main;
 import jd.config.Configuration;
 import jd.config.DatabaseConnector;
 import jd.config.SubConfiguration;
@@ -352,6 +355,8 @@ public class JDController implements ControlListener {
             }
             logger.info("Shutdown Database");
             JDUtilities.getDatabaseConnector().shutdownDatabase();
+            logger.info("Release JUnique LOCK");
+            JUnique.releaseLock(Main.instanceID);
             fireControlEventDirect(new ControlEvent(this, ControlEvent.CONTROL_SYSTEM_SHUTDOWN_PREPARED, this));
         }
     }

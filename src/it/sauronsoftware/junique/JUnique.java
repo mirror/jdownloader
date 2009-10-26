@@ -76,8 +76,13 @@ public class JUnique {
             LOCK_FILES_DIR.mkdirs();
         }
         // Adds a shutdown hook releasing any unreleased lock at JVM shutdown.
-        Runtime rt = Runtime.getRuntime();
+        // Runtime rt = Runtime.getRuntime();
         // rt.addShutdownHook(new Thread(new ShutdownHook()));
+        /*
+         * do not use shutdownhook because it can lockup java instances (new
+         * java instances locks, while old one wants to clean up but cant get
+         * lock = deadlock)
+         */
     }
 
     /**
@@ -389,6 +394,7 @@ public class JUnique {
      * Some shutdown hook code, releasing any unreleased lock on JVM regular
      * shutdown.
      */
+    @SuppressWarnings("unused")
     private static class ShutdownHook implements Runnable {
 
         public void run() {

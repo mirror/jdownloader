@@ -80,7 +80,7 @@ public class Main {
 
     private static Logger LOGGER;
     // public static SplashScreen SPLASHSCREEN = null;
-    private static String instanceID = Main.class.getName();
+    public static final String instanceID = Main.class.getName();
     private static boolean instanceStarted = false;
 
     public static String getCaptcha(String path, String host) {
