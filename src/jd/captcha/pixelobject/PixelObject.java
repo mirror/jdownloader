@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Vector;
+import java.util.Map.Entry;
 import java.util.logging.Logger;
 
 import jd.captcha.LetterComperator;
@@ -140,12 +141,10 @@ public class PixelObject implements Comparable<PixelObject> {
     public boolean addColor(int color) {
         PixelObjectColor poc = new PixelObjectColor(color);
         int io = colors.indexOf(poc);
-        if (io==-1) {
+        if (io == -1) {
             colors.add(poc);
             return true;
-        }
-        else
-        {
+        } else {
             colors.get(io).count++;
         }
         return false;
@@ -193,9 +192,19 @@ public class PixelObject implements Comparable<PixelObject> {
 
     public void add(PixelObject current) {
         avg = Colors.mixColors(avg, current.getAverage(), getSize(), current.getSize());
-
+        xMin = Math.min(current.xMin, xMin);
+        xMax = Math.max(current.xMax, xMax);
+        yMin = Math.min(current.yMin, yMin);
+        yMax = Math.max(current.yMax, yMax);
+        for (Entry<Integer, HashMap<Integer, int[]>> set : current.grid.entrySet()) {
+            HashMap<Integer, int[]> row = grid.get(set.getKey());
+            if (row == null) grid.put(set.getKey(), set.getValue());
+            else
+            row.putAll(set.getValue());
+        }
         for (int i = 0; i < current.object.size(); i++) {
-            add(current.object.get(i)[0], current.object.get(i)[1], -1);
+            int[] ob = current.object.get(i);
+            object.add(new int[] { ob[0], ob[1], -1 });
         }
 
     }
@@ -798,5 +807,22 @@ public class PixelObject implements Comparable<PixelObject> {
         return false;
     }
 
-}
+    public int[] getNextPixel(int x, int y) {
+        Double bestDist = Double.MAX_VALUE;
+        int[] bestAKT = null;
+        for (int i = 0; i < getSize(); i++) {
+            int[] akt = elementAt(i);
+            int xd = x - akt[0];
+            int yd = y - akt[1];
+            if (Math.max(Math.abs(xd), Math.abs(yd)) < bestDist) {
+                double dist = Math.sqrt(Math.pow(xd, 2) + Math.pow(yd, 2));
+                if (dist < bestDist) {
+                    bestDist = dist;
+                    bestAKT = akt;
+                }
+            }
+        }
+        return bestAKT;
+    }
 
+}
