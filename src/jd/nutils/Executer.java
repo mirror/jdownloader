@@ -250,7 +250,7 @@ public class Executer extends Thread implements Runnable {
     @Override
     public void run() {
         if (command == null || command.trim().length() == 0) {
-            System.out.println("Execute Parameter error: No Command");
+            JDLogger.getLogger().severe("Execute Parameter error: No Command");
             return;
         }
 
@@ -263,7 +263,7 @@ public class Executer extends Thread implements Runnable {
                 out.append(p);
                 out.append(' ');
             }
-            System.out.println("Execute: " + out + " in " + runIn);
+            JDLogger.getLogger().info("Execute: " + out + " in " + runIn);
         }
         ProcessBuilder pb = new ProcessBuilder(params.toArray(new String[] {}));
         if (runIn != null && runIn.length() > 0) {
@@ -275,7 +275,7 @@ public class Executer extends Thread implements Runnable {
                     // File(params.get(0)).getParentFile());
                     pb.directory(new File(params.get(0)).getParentFile());
                 } else {
-                    System.out.println("Working directory " + runIn + " does not exist!");
+                    JDLogger.getLogger().severe("Working directory " + runIn + " does not exist!");
                 }
             }
         }

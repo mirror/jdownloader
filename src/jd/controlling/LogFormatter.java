@@ -38,6 +38,7 @@ public class LogFormatter extends SimpleFormatter {
     // property at the moment that the SimpleFormatter was created.
     private String lineSeparator = System.getProperty("line.separator");
     private StringBuilder sb = new StringBuilder();
+    private int lastThreadID;
 
     public synchronized String format(LogRecord record) {
 
@@ -55,7 +56,17 @@ public class LogFormatter extends SimpleFormatter {
         String message = formatMessage(record);
         // sb.append(text);
         // sb.append(" - ");
+       int th = record.getThreadID();
+       if(th!=lastThreadID){
+           sb.append("\r\n  ------------------------  Thread: ");
+           sb.append(th);
+           sb.append("----------------------\r\n");
+       }
+       lastThreadID=th;
         if (JDLogger.getLogger().getLevel() == Level.ALL) {
+            sb.append(record.getThreadID());
+            for(int i=0;i<(record.getThreadID()%10);i++)sb.append("  ");
+            
             sb.append(longTimestamp.format(dat));
             sb.append(" - ");
             sb.append(record.getLevel().getName());
@@ -70,6 +81,7 @@ public class LogFormatter extends SimpleFormatter {
                 sb.append(record.getSourceMethodName());
                 sb.append(")");
             }
+           
             sb.append("] ");
 
             sb.append("-> ");
