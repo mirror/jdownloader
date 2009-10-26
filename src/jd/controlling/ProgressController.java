@@ -28,7 +28,7 @@ import jd.utils.JDUtilities;
 
 class ProgressControllerBroadcaster extends JDBroadcaster<ProgressControllerListener, ProgressControllerEvent> {
 
-    // @Override
+    @Override
     protected void fireEvent(ProgressControllerListener listener, ProgressControllerEvent event) {
         listener.onProgressControllerEvent(event);
 
@@ -58,7 +58,7 @@ public class ProgressController implements MessageListener {
     private String statusText;
     private Color progresscolor;
 
-    public Icon icon = null;
+    private Icon icon = null;
 
     private transient ProgressControllerBroadcaster broadcaster = new ProgressControllerBroadcaster();
     private boolean abort = false;
@@ -127,6 +127,7 @@ public class ProgressController implements MessageListener {
         finalizing = true;
         final ProgressController instance = this;
         new Thread() {
+            @Override
             public void run() {
                 long timer = waittimer;
                 instance.setRange(timer);
@@ -157,7 +158,6 @@ public class ProgressController implements MessageListener {
 
     public long getMax() {
         return max;
-
     }
 
     public int getPercent() {
@@ -215,7 +215,7 @@ public class ProgressController implements MessageListener {
         fireChanges();
     }
 
-    // @Override
+    @Override
     public String toString() {
         return "ProgressController " + id;
     }
@@ -243,6 +243,5 @@ public class ProgressController implements MessageListener {
 
     public void onMessage(MessageEvent event) {
         this.setStatusText(event.getMessage());
-
     }
 }

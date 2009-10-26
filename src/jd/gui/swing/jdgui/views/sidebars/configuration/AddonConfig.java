@@ -49,7 +49,7 @@ public class AddonConfig extends ConfigPanel {
 
     @Override
     public String getBreadcrum() {
-        return JDL.L("jd.gui.swing.jdgui.settings.panels.ConfigPanelAddons.breadcrum", "") + " - " + name;
+        return JDL.L(this.getClass().getName() + ".breadcrum", this.getClass().getSimpleName()) + " - " + name;
     }
 
     public JPanel getPanel() {
