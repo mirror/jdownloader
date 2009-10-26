@@ -82,6 +82,7 @@ public class IFileIt extends PluginForHost {
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         requestFileInformation(downloadLink);
         login(account);
+        br.setDebug(true);
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         br.cloneBrowser().getPage("http://ifile.it/ads/adframe.js");

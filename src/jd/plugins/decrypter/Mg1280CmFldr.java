@@ -32,19 +32,16 @@ public class Mg1280CmFldr extends PluginForDecrypt {
         super(wrapper);
     }
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
-        String[] links = br.getRegex(";text-decoration:none;\">(.*?)</a></td>").getColumn(0);
+        br.getPage("http://mega.1280.com/getlinks.php?onLoad=[type Function]");
+        String[] links = br.getRegex("(http://mega\\.1280\\.com/file/[A-Z0-9]+)").getColumn(0);
         if (links.length == 0) return null;
         for (String dl : links)
             decryptedLinks.add(createDownloadlink(dl));
 
         return decryptedLinks;
     }
-
-    // @Override
-
 }

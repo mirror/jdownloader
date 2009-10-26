@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -44,6 +45,7 @@ public class Mega1280Com extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.setCustomCharset("UTF-8");
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("upload.php")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -59,6 +61,7 @@ public class Mega1280Com extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
+        br.setDebug(true);
         if (br.containsHTML("Vui lòng chờ cho lượt download kế tiếp")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l); }
         // Link zum Captcha (kann bei anderen Hostern auch mit ID sein)
         String captchaurl = "http://mega.1280.com/security_code.php";

@@ -95,6 +95,7 @@ public class Odsiebiecom extends PluginForHost {
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         /* Nochmals das File überprüfen */
+        br.setDebug(true);
         String finalfn = downloadLink.getName();
         requestFileInformation(downloadLink);
         if (account != null) {
@@ -187,7 +188,6 @@ public class Odsiebiecom extends PluginForHost {
         downloadurl = downloadurl.replaceAll(" ", "%20");
         /* Datei herunterladen */
         br.setFollowRedirects(true);
-        br.setDebug(true);
         downloadLink.setDownloadSize(0);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadurl, false, 1);
         if (dl.getConnection().getContentType().contains("text")) {
