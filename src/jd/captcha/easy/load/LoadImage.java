@@ -13,12 +13,17 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.captcha.easy.load;
 
+import java.awt.Color;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.net.URI;
 
+import javax.imageio.ImageIO;
+
+import jd.captcha.JAntiCaptcha;
+import jd.captcha.pixelgrid.Captcha;
 import jd.http.Browser;
 import jd.nutils.JDHash;
 import jd.nutils.io.JDIO;
@@ -130,7 +135,31 @@ public class LoadImage {
         }
         return false;
     }
+    public boolean renameCaptcha(File file, String destination )
+    {
+        long b = 0;
 
+        try {
+            BufferedImage ret = ImageIO.read(file);
+            Captcha captcha = new JAntiCaptcha("easycaptcha").createCaptcha(ret);
+            for (int x = 0; x < captcha.getWidth(); x++) {
+                for (int y = 0; y < captcha.getHeight(); y++) {
+                    Color c =  new Color(captcha.grid[x][y]);
+                    b+=c.getBlue();
+                }
+            }
+        } catch (Exception e) {
+            // TODO: handle exception
+        }
+        File dest = new File(destination, b+"_"+JDHash.getMD5(file)+ getFileType());
+
+        if(dest.exists())
+        {file.delete(); 
+        return false;}
+        file.renameTo(dest);
+        file=dest;
+        return true;
+    }
     /**
      * läd das Bild direkt in den vorgegebenen Ordner
      * 
@@ -140,14 +169,7 @@ public class LoadImage {
         file = new File(destination, System.currentTimeMillis() + getFileType());
         try {
             br.cloneBrowser().getDownload(file, imageUrl);
-            File dest = new File(destination, JDHash.getMD5(file) + getFileType());
-            if (dest.exists()) {
-                file.delete();
-                return false;
-            }
-            file.renameTo(dest);
-            file = dest;
-            return true;
+            return renameCaptcha(file, destination);
         } catch (Exception e) {
         }
         return false;
