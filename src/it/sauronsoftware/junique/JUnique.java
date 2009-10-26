@@ -393,6 +393,7 @@ public class JUnique {
 
         public void run() {
             // Cross-JVM lock.
+            System.out.println("Release Instance: LOCK");
             j_lock();
             try {
                 // Collects nids.
@@ -411,6 +412,7 @@ public class JUnique {
                 // Releases the cross-JVM lock.
                 j_unlock();
             }
+            System.out.println("Release Instance: UNLOCK");
         }
 
     }

@@ -208,12 +208,17 @@ public class JDInit {
         /* add ShutdownHook so we have chance to save database properly */
         Runtime.getRuntime().addShutdownHook(new Thread() {
             public void run() {
-                if (DatabaseConnector.isDatabaseShutdown()) {
-                    System.out.println("ShutDownHook: normal shutdown event, nothing to do.");
-                } else {
-                    System.out.println("ShutDownHook: unexpected shutdown event, hurry up and save database!");
-                    JDController.getInstance().prepareShutdown(true);
-                    System.exit(0);
+                try {
+                    if (DatabaseConnector.isDatabaseShutdown()) {
+                        System.out.println("ShutDownHook: normal shutdown event, nothing to do.");
+                        return;
+                    } else {
+                        System.out.println("ShutDownHook: unexpected shutdown event, hurry up and save database!");
+                        JDController.getInstance().prepareShutdown(true);
+                        System.out.println("ShutDownHook: unexpected shutdown event, could finish saving database!");
+                        return;
+                    }
+                } catch (Throwable e) {
                 }
             }
         });
