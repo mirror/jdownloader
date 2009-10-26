@@ -57,8 +57,7 @@ public class FileFrontCom extends PluginForHost {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
         String nextpageurl = br.getRegex("\"(http://www\\.filefront\\.com/thankyou\\.php\\?f=.*?k=.*?)\"").getMatch(0);
-        nextpageurl = null;
-        if(nextpageurl == null){
+        if (nextpageurl == null) {
             nextpageurl = br.getRegex("age_gate_[0-9]\" style=\"\"><a href=\"(.*?)\"").getMatch(0);
         }
         if (nextpageurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
@@ -71,20 +70,16 @@ public class FileFrontCom extends PluginForHost {
 
     }
 
-    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    // @Override
     public void reset() {
     }
 
-    // @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 }
