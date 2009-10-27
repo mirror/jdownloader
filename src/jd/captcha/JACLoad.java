@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 
 import jd.http.Browser;
+import jd.utils.JDUtilities;
 
 /**
  * JAC Tester
@@ -37,9 +38,35 @@ public class JACLoad {
     }
 
     private void go() {
-        loadknt();
+        loadAppScence();
     }
+    private void loadAppScence()
+    {
+        final String destination = JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/captchas/" + "ppscnrg" + "/";
+       System.out.println(destination);
+        for (int i = 0; i < 200; i++) {
 
+            new Thread(new Runnable() {
+                public void run() {
+                 Browser br = new Browser();
+                 try {
+                    br.getPage("http://www.appscene.org/download/YrsmOt0FmJ1a7c95b941");
+                    br.getDownload(new File(destination+Math.random()*100+""+System.currentTimeMillis()+".jpg"), br.getRegex("<img src=\"(http://www.appscene.org/captcha/.*?)\" />").getMatch(0));
+
+                 } catch (IOException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+                }
+            }).start();
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e1) {
+                // TODO Auto-generated catch block
+                e1.printStackTrace();
+            }
+        }
+    }
     private void loadknt() {
         final Browser br = new Browser();
 
