@@ -470,7 +470,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                                     if (!nextDownloadLink.getLinkStatus().isPluginActive()) {
                                         if (nextDownloadLink.getLinkStatus().isStatus(LinkStatus.TODO)) {
                                             int maxPerHost = getSimultanDownloadNumPerHost();
-                                            if (activeDownloadsbyHosts(nextDownloadLink.getPlugin()) < (nextDownloadLink.getPlugin()).getMaxSimultanDownloadNum() && activeDownloadsbyHosts(nextDownloadLink.getPlugin()) < maxPerHost && nextDownloadLink.getPlugin().getWrapper().usePlugin()) {
+                                            if (activeDownloadsbyHosts(nextDownloadLink.getPlugin()) < (nextDownloadLink.getPlugin()).getMaxSimultanDownloadNum() && activeDownloadsbyHosts(nextDownloadLink.getPlugin()) < maxPerHost && nextDownloadLink.getPlugin().getWrapper().isEnabled()) {
                                                 if (returnDownloadLink == null) {
                                                     returnDownloadLink = nextDownloadLink;
                                                 } else {
@@ -506,7 +506,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                             if (!link.getLinkStatus().isPluginActive()) {
                                 if (link.getLinkStatus().isStatus(LinkStatus.TODO)) {
                                     int activePerHost = activeDownloadsbyHosts(link.getPlugin());
-                                    if (activePerHost < (link.getPlugin()).getMaxSimultanDownloadNum() && link.getPlugin().getWrapper().usePlugin()) {
+                                    if (activePerHost < (link.getPlugin()).getMaxSimultanDownloadNum() && link.getPlugin().getWrapper().isEnabled()) {
                                         if (!link.isEnabled()) link.setEnabled(true);
                                         startDownloadThread(link);
                                     }

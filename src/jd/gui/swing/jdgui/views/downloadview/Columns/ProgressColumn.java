@@ -99,7 +99,7 @@ public class ProgressColumn extends JDTableColumn {
             if (dLink.getPlugin() == null) {
                 jlr.setText(strPluginError);
                 return jlr;
-            } else if (!dLink.getPlugin().getWrapper().usePlugin() && !dLink.getLinkStatus().isPluginActive()) {
+            } else if (!dLink.getPlugin().getWrapper().isEnabled() && !dLink.getLinkStatus().isPluginActive()) {
                 jlr.setText(strPluginDisabled);
                 return jlr;
             } else if (dLink.getPluginProgress() != null) {

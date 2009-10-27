@@ -66,20 +66,20 @@ public class UseColumn extends JDTableColumn implements ActionListener {
     @Override
     public Component myTableCellEditorComponent(JDTableModel table, Object value, boolean isSelected, int row, int column) {
         checkbox.removeActionListener(this);
-        checkbox.setSelected(((HostPluginWrapper) value).usePlugin());
+        checkbox.setSelected(((HostPluginWrapper) value).isEnabled());
         checkbox.addActionListener(this);
         return checkbox;
     }
 
     @Override
     public Component myTableCellRendererComponent(JDTableModel table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-        boolrend.setSelected(((HostPluginWrapper) value).usePlugin());
+        boolrend.setSelected(((HostPluginWrapper) value).isEnabled());
         return boolrend;
     }
 
     @Override
     public void setValue(Object value, Object object) {
-        ((HostPluginWrapper) object).setUsePlugin((Boolean) value);
+        ((HostPluginWrapper) object).setEnabled((Boolean) value);
         PremiumMenu.getInstance().update();
     }
 

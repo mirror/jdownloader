@@ -124,26 +124,26 @@ public class DistributeData extends Thread {
         if (DecryptPluginWrapper.getDecryptWrapper() == null) return false;
         data = data.replaceAll("jd://", "http://");
         for (DecryptPluginWrapper pDecrypt : DecryptPluginWrapper.getDecryptWrapper()) {
-            if (pDecrypt.usePlugin() && pDecrypt.canHandle(data)) return true;
+            if (pDecrypt.isEnabled() && pDecrypt.canHandle(data)) return true;
         }
         for (HostPluginWrapper pHost : HostPluginWrapper.getHostWrapper()) {
-            if (pHost.usePlugin() && pHost.canHandle(data)) return true;
+            if (pHost.isEnabled() && pHost.canHandle(data)) return true;
         }
         data = Encoding.urlDecode(data, true);
         for (DecryptPluginWrapper pDecrypt : DecryptPluginWrapper.getDecryptWrapper()) {
-            if (pDecrypt.usePlugin() && pDecrypt.canHandle(data)) return true;
+            if (pDecrypt.isEnabled() && pDecrypt.canHandle(data)) return true;
         }
         for (HostPluginWrapper pHost : HostPluginWrapper.getHostWrapper()) {
-            if (pHost.usePlugin() && pHost.canHandle(data)) return true;
+            if (pHost.isEnabled() && pHost.canHandle(data)) return true;
         }
         if (!filterNormalHTTP) {
             data = data.replaceAll("http://", "httpviajd://");
             data = data.replaceAll("https://", "httpsviajd://");
             for (DecryptPluginWrapper pDecrypt : DecryptPluginWrapper.getDecryptWrapper()) {
-                if (pDecrypt.usePlugin() && pDecrypt.canHandle(data)) return true;
+                if (pDecrypt.isEnabled() && pDecrypt.canHandle(data)) return true;
             }
             for (HostPluginWrapper pHost : HostPluginWrapper.getHostWrapper()) {
-                if (pHost.usePlugin() && pHost.canHandle(data)) return true;
+                if (pHost.isEnabled() && pHost.canHandle(data)) return true;
             }
         }
         return false;
@@ -181,7 +181,7 @@ public class DistributeData extends Thread {
                 }
                 boolean coulddecrypt = false;
                 for (DecryptPluginWrapper pDecrypt : DecryptPluginWrapper.getDecryptWrapper()) {
-                    if (pDecrypt.usePlugin() && pDecrypt.canHandle(url)) {
+                    if (pDecrypt.isEnabled() && pDecrypt.canHandle(url)) {
                         try {
                             PluginForDecrypt plg = (PluginForDecrypt) pDecrypt.getNewPluginInstance();
 
@@ -261,7 +261,7 @@ public class DistributeData extends Thread {
         foundPasswords.addAll(HTMLParser.findPasswords(data));
         if (ret != null && ret.size() == 1) {
             /* also check for disabled hosterplugin and filtering here */
-            if (!ret.get(0).getPlugin().getWrapper().usePlugin() || LinkGrabberController.isFiltered(ret.get(0))) {
+            if (!ret.get(0).getPlugin().getWrapper().isEnabled() || LinkGrabberController.isFiltered(ret.get(0))) {
                 ret.clear();
             } else {
                 ret.get(0).addSourcePluginPasswordList(foundPasswords);
@@ -356,7 +356,7 @@ public class DistributeData extends Thread {
                 if (pHost.canHandle(decrypted.getDownloadURL())) {
                     ArrayList<DownloadLink> dLinks = pHost.getPlugin().getDownloadLinks(decrypted.getDownloadURL(), decrypted.getFilePackage() != FilePackage.getDefaultFilePackage() ? decrypted.getFilePackage() : null);
                     gothost = true;
-                    if (!pHost.usePlugin()) break;
+                    if (!pHost.isEnabled()) break;
                     for (int c = 0; c < dLinks.size(); c++) {
                         dLinks.get(c).addSourcePluginPasswordList(decrypted.getSourcePluginPasswordList());
                         dLinks.get(c).setSourcePluginComment(decrypted.getSourcePluginComment());
@@ -389,7 +389,7 @@ public class DistributeData extends Thread {
                 } else {
                     orgData = pHost.getPlugin().cutMatches(orgData);
                 }
-                if (!pHost.usePlugin()) continue;
+                if (!pHost.isEnabled()) continue;
                 for (DownloadLink dll : dl) {
                     if (LinkGrabberController.isFiltered(dll)) continue;
                     links.add(dll);
@@ -429,7 +429,7 @@ public class DistributeData extends Thread {
         }
         Jobber decryptJobbers = new Jobber(4);
         for (DecryptPluginWrapper pDecrypt : DecryptPluginWrapper.getDecryptWrapper()) {
-            if (pDecrypt.usePlugin() && pDecrypt.canHandle(pDecrypt.isAcceptOnlyURIs() ? data : orgData)) {
+            if (pDecrypt.isEnabled() && pDecrypt.canHandle(pDecrypt.isAcceptOnlyURIs() ? data : orgData)) {
 
                 try {
                     PluginForDecrypt plg = (PluginForDecrypt) pDecrypt.getNewPluginInstance();
