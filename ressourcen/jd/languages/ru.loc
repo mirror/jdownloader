@@ -1077,7 +1077,7 @@ jd.plugins.optional.langfileeditor.langfileeditor.initconfigentries.checklogins.
 jd.plugins.optional.langfileeditor.langfileeditor.initconfigentries.message = Для использования этого дополонения нужен аккаунт JD-SVN
 jd.plugins.optional.langfileeditor.langfileeditor.initconfigentries.password = Пароль (SVN)
 jd.plugins.optional.langfileeditor.langfileeditor.initconfigentries.username = Логин (SVN)
-jd.plugins.optional.langfileeditor.langfileeditor.testlogins = Проверить и сохранить логины
+jd.plugins.optional.langfileeditor.langfileeditor.testlogins = Провер. и сохранить
 jd.plugins.optional.langfileeditor.langfileeditor.testloginsmessage = Проверить, верны ли логины
 jd.plugins.optional.langfileeditor.lfeview.title = Редактор переводов
 jd.plugins.optional.langfileeditor.lfeview.tooltip = Редактировать файл перевода
