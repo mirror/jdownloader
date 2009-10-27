@@ -16,10 +16,13 @@
 
 package jd.plugins.decrypter;
 
+import java.awt.Color;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.controlling.ProgressControllerEvent;
+import jd.controlling.ProgressControllerListener;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -29,13 +32,16 @@ import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shareapic.net" }, urls = { "http://[\\w\\.]*?shareapic\\.net/([0-9]+|(Zoom|View)-[0-9]+|content\\.php\\?id=[0-9]+)" }, flags = { 0 })
-public class ShareaPicNet extends PluginForDecrypt {
+public class ShareaPicNet extends PluginForDecrypt implements ProgressControllerListener{
+
+    private boolean abort = false;
 
     public ShareaPicNet(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+        progress.getBroadcaster().addListener(this);
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         // content links are kinda the same as View and can be handled easily so
@@ -83,6 +89,12 @@ public class ShareaPicNet extends PluginForDecrypt {
         if (links == null || links.length == 0) return null;
         progress.setRange(links.length);
         for (String link : links) {
+            if (abort) {
+                progress.setColor(Color.RED);
+                progress.setStatusText(progress.getStatusText() + ": Aborted");
+                progress.doFinalize(5000l);
+                return new ArrayList<DownloadLink>();
+            }
             link = link.replace("View", "Zoom");
             br.getPage(link + ".html");
             String finallink = br.getRegex("<img src=\"(.*?)\"").getMatch(0);
@@ -92,5 +104,11 @@ public class ShareaPicNet extends PluginForDecrypt {
         }
         fp.addLinks(decryptedLinks);
         return decryptedLinks;
+    }
+
+    public void onProgressControllerEvent(ProgressControllerEvent event) {
+       if (event.getID() == ProgressControllerEvent.CANCEL) {
+            abort = true;
+        }
     }
 }
