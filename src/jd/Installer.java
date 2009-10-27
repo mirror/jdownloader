@@ -93,7 +93,7 @@ public class Installer {
         AbstractDialog.setDefaultDimension(new Dimension(550, 400));
 
         askInstallFlashgot();
-        JDFileReg.registerFileExts();
+        //JDFileReg.registerFileExts();
         JDUtilities.getConfiguration().save();
 
         if (OSDetector.isWindows()) {
