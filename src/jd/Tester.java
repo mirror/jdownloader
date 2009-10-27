@@ -1,13 +1,12 @@
 package jd;
 
-import jd.nutils.Executer;
+import java.io.File;
 
 public class Tester {
 
     public static void main(String ss[]) throws Exception {
-        Executer exec = new Executer("firefox");
-        exec.addParameters(new String[] { "heise.de" });
-        exec.start();
+        File file = new File((File)null, "file.de");
+        System.out.println(file);
     }
 
 }

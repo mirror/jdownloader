@@ -73,4 +73,13 @@ public class CPluginWrapper extends PluginWrapper {
         return getPlugin().canHandle(data);
     }
 
+    /* (non-Javadoc)
+     * @see jd.PluginWrapper#getVersion()
+     */
+    @Override
+    public String getVersion() {
+        // TODO Auto-generated method stub
+        return this.isLoaded()?this.getPlugin().getVersion():"idle";
+    }
+
 }
