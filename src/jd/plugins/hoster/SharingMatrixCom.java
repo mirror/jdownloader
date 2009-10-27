@@ -190,6 +190,7 @@ public class SharingMatrixCom extends PluginForHost {
         requestFileInformation(downloadLink);
         String passCode = null;
         if (br.containsHTML("no available free download slots left")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No free slots available for this file");
+        if (br.containsHTML("daily download limit is over")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Daily limit reached", 60*60*1000l);
         String linkid = br.getRegex("link_id = '(\\d+)';").getMatch(0);
         if (linkid == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT); }
         String freepage = "http://sharingmatrix.com/ajax_scripts/download.php?type_membership=free&link_id=" + linkid;
