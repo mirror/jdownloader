@@ -978,6 +978,7 @@ jd.plugins.optional.jdchat.jdchat.topic.default = Chargement du message du jour
 jd.plugins.optional.jdchat.jdchat.topic.tooltip = Message du jour
 jd.plugins.optional.jdchat.jdchatview.title = JD Support Clavardage
 jd.plugins.optional.jdchat.jdchatview.tooltip = JD Support Clavardage
+jd.plugins.optional.jdchat.newmessage = Nouveau message de %s :<hr> %s
 jd.plugins.optional.jdgrowlnotification = Notification de grognement JD
 jd.plugins.optional.jdgrowlnotification.allfinished = Tous les téléchargements sont complétés !
 jd.plugins.optional.jdgrowlnotification.allfinished.title = Téléchargements complétés
