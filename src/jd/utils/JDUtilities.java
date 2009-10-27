@@ -680,7 +680,7 @@ public class JDUtilities {
                 System.arraycopy(JD_ARGUMENTS, 0, finalArgs, javaArgs.length, JD_ARGUMENTS.length);
 
                 ArrayList<File> restartfiles = JDIO.listFiles(JDUtilities.getResourceFile("update"));
-                String javaPath = new File(new File(System.getProperty("sun.boot.library.path")),"javaw.exe").getAbsolutePath();
+                String javaPath = new File(new File(System.getProperty("sun.boot.library.path")), "javaw.exe").getAbsolutePath();
                 if (restartfiles != null && restartfiles.size() > 0 || tinybypass) {
 
                     if (OSDetector.isMac()) {

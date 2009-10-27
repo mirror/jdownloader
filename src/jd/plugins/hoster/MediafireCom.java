@@ -205,7 +205,7 @@ public class MediafireCom extends PluginForHost {
             dl.startDownload();
         } catch (EvaluatorException e) {
             // too complexx retry
-            throw new PluginException(LinkStatus.ERROR_RETRY);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         }
     }
 

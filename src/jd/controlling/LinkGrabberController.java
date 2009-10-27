@@ -58,6 +58,7 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
     public static final byte MOVE_BOTTOM = 6;
 
     public static final String PARAM_ONLINECHECK = "PARAM_ONLINECHECK";
+    public static final String PARAM_REPLACEDOTS = "PARAM_REPLACEDOTS";
     public static final String PARAM_INFOPANEL_ONLINKGRAB = "PARAM_INFOPANEL_ONLINKGRAB";
     public static final String CONFIG = "LINKGRABBER";
     public static final String IGNORE_LIST = "IGNORE_LIST";

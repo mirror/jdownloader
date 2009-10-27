@@ -19,22 +19,16 @@ package jd;
 import java.lang.reflect.Constructor;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map.Entry;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.DownloadController;
 import jd.controlling.JDLogger;
-import jd.controlling.ProgressController;
 import jd.nutils.JDFlags;
 import jd.plugins.Plugin;
-import jd.update.FileUpdate;
-import jd.update.WebUpdater;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -179,52 +173,10 @@ public abstract class PluginWrapper implements Comparable<PluginWrapper> {
      */
     public synchronized Plugin getPlugin() {
         if (loadedPlugin != null) return loadedPlugin;
-        // is automated webupdate disabled?
-        boolean manualupdate = SubConfiguration.getConfig("WEBUPDATE").getBooleanProperty(Configuration.PARAM_WEBUPDATE_DISABLE, false);
         try {
-
             if (CL == null) CL = new URLClassLoader(new URL[] { JDUtilities.getJDHomeDirectoryFromEnvironment().toURI().toURL(), JDUtilities.getResourceFile("java").toURI().toURL() }, Thread.currentThread().getContextClassLoader());
-            // if webupdater's pluginlist is null (webupdater has run at least
-            // once) check the hash before loading the plugin
-            if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL_JARED && WebUpdater.getPluginList() != null) {
-
-                // often plugins have inner classes. Here we find all classes
-                // that belong to this plugin
-                ArrayList<FileUpdate> filelist = new ArrayList<FileUpdate>();
-                for (Entry<String, FileUpdate> entry : WebUpdater.PLUGIN_LIST.entrySet()) {
-                    if (entry.getKey().startsWith("/" + getClassName().replace(".", "/"))) {
-                        filelist.add(entry.getValue());
-                    }
-                }
-
-                ProgressController progress = new ProgressController(JDL.LF("wrapper.webupdate.updateFile", "Update plugin %s", getClassName()), filelist.size() + 1);
-                progress.increase(1);
-
-                for (FileUpdate entry : filelist) {
-
-                    String plg = entry.getLocalPath();
-                    // if plugin is out of date (hashes do not equal)
-                    if (!entry.equals()) {
-                        // and autoupdate is enabled
-                        if (!manualupdate) {
-                            // update the file
-                            if (!new WebUpdater().updateUpdatefile(entry)) {
-                                logger.severe("Could not update plugin: " + plg);
-                            } else {
-                                logger.info("Updated plugin: " + plg);
-                            }
-                        } else {
-                            logger.info("New plugin: " + plg + " available, but update-on-the-fly is disabled!");
-                        }
-                    }
-                    progress.increase(1);
-                }
-                progress.doFinalize();
-            }
             logger.finer("load plugin: " + getClassName());
-
             Class<?> plgClass;
-
             try {
                 plgClass = CL.loadClass(getClassName());
             } catch (ClassNotFoundException e) {

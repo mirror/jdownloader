@@ -18,6 +18,7 @@ package jd.controlling;
 
 import java.util.regex.Pattern;
 
+import jd.config.SubConfiguration;
 import jd.parser.Regex;
 import jd.plugins.hoster.HTTPAllgemein;
 
@@ -86,9 +87,10 @@ public class LinkGrabberPackager {
         name = getNameMatch(name, pat14);
         name = getNameMatch(name, pat15);
         name = getNameMatch(name, pat16);
-        /* replace _ and . with spaces */
+        /* replace _ with spaces */
         name = name.replaceAll("_", " ");
-        name = name.replaceAll("\\.", " ");
+        /* if enabled, replace dots with spaces */
+        if (SubConfiguration.getConfig(LinkGrabberController.CONFIG).getBooleanProperty(LinkGrabberController.PARAM_REPLACEDOTS, false)) name = name.replaceAll("\\.", " ");
         return name.trim();
     }
 

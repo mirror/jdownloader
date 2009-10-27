@@ -53,6 +53,10 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megaupload.com" }, urls = { "http://[\\w\\.]*?(megaupload)\\.com/.*?(\\?|&)d=[0-9A-Za-z]+" }, flags = { 2 })
 public class Megauploadcom extends PluginForHost {
 
+    private static enum STATUS {
+        ONLINE, OFFLINE, API, BLOCKED
+    };
+
     private static final String MU_PARAM_PORT = "MU_PARAM_PORT";
     private static final String MU_PORTROTATION = "MU_PORTROTATION";
     private final static String[] ports = new String[] { "80", "800", "1723" };
@@ -61,6 +65,15 @@ public class Megauploadcom extends PluginForHost {
     private static int simultanpremium = 1;
     private boolean onlyapi = false;
     private boolean usepremium = false;
+
+    /*
+     * every jd session starts with 1=default, because no waittime does not work
+     * at moment
+     * 
+     * try to workaround the waittime, 0=no waittime, 1 = default, other = 60
+     * secs
+     */
+    private static int WaittimeWorkaround = 1;
 
     private static final Object PREMLOCK = new Object();
 
@@ -113,10 +126,13 @@ public class Megauploadcom extends PluginForHost {
         }
     }
 
-    public boolean isPremium(Account account) throws IOException {
-        if (account.getBooleanProperty("typeknown", false) == false) {
-            br.getPage("http://" + wwwWorkaround + "megaupload.com/?c=account");
-            String type = br.getRegex(Pattern.compile("<TD>Account type:</TD>.*?<TD><b>(.*?)</b>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
+    public boolean isPremium(Account account, Browser br, boolean refresh) throws IOException {
+        if (account == null) return false;
+        if (account.getBooleanProperty("typeknown", false) == false || refresh) {
+            Browser brc = br.cloneBrowser();
+            brc.setCookie("http://" + wwwWorkaround + "megaupload.com", "l", "en");
+            brc.getPage("http://" + wwwWorkaround + "megaupload.com/?c=account");
+            String type = brc.getRegex(Pattern.compile("<TD>Account type:</TD>.*?<TD><b>(.*?)</b>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
             if (type == null || type.equalsIgnoreCase("regular")) {
                 account.setProperty("ispremium", false);
                 account.setProperty("typeknown", true);
@@ -142,11 +158,12 @@ public class Megauploadcom extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        if (!isPremium(account)) {
+        if (!isPremium(account, br, true)) {
             account.setValid(true);
             ai.setStatus("Free Membership");
             return ai;
         }
+        br.getPage("http://" + wwwWorkaround + "megaupload.com/?c=account");
         String type = br.getRegex(Pattern.compile("<TD>Account type:</TD>.*?<TD><b>(.*?)</b>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (type != null && !type.contains("Lifetime")) {
             String days = br.getRegex("<TD><b>Premium</b>.*?\\((\\d+) days remaining - <a").getMatch(0);
@@ -170,13 +187,23 @@ public class Megauploadcom extends PluginForHost {
     }
 
     @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
+    public void handlePremium(DownloadLink parameter, Account account) throws Exception {
         boolean free = false;
+        STATUS filestatus = null;
+        String wait = null;
         synchronized (PREMLOCK) {
-            usepremium = true;
-            requestFileInformation(link);
-            login(account, true);
-            if (!isPremium(account)) {
+            filestatus = getFileStatus(parameter);
+            if (filestatus != STATUS.API && filestatus != STATUS.OFFLINE) {
+                if (filestatus == STATUS.BLOCKED) {
+                    wait = br.getRegex("Please check back in (\\+d) minutes").getMatch(0);
+                    /* we are blocked, so we have to login again */
+                    login(account, false);
+                } else {
+                    login(account, true);
+                }
+            }
+            boolean check = filestatus == STATUS.BLOCKED && !(filestatus == STATUS.API || filestatus == STATUS.OFFLINE);
+            if (!isPremium(account, br.cloneBrowser(), check)) {
                 simultanpremium = 1;
                 free = true;
             } else {
@@ -187,60 +214,149 @@ public class Megauploadcom extends PluginForHost {
                 }
             }
         }
-        if (free || onlyapi) {
-            if (onlyapi) {
-                handleAPIDownload(link, account);
-            } else {
-                handleWebsiteDownload(link, account);
-            }
+        switch (filestatus) {
+        case API:
+            /* api only download possible */
+            handleAPIDownload(parameter, account);
             return;
+        case OFFLINE:
+            /* file offline */
+            try {
+                logger.finest(br.getRequest().getHttpConnection() + "");
+            } catch (Exception e) {
+                JDLogger.exception(e);
+            }
+            logger.info("DebugInfo for maybe Wrong FileNotFound: " + br.toString());
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        case BLOCKED:
+            /* only free users should have to wait on blocked */
+            if (free) {
+                if (wait != null) {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait.trim()) * 60 * 1000l);
+                } else
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 25 * 60 * 1000l);
+            }
+            break;
+        case ONLINE:
+            if (free) {
+                /* handle download via website, free user */
+                handleWebsiteDownload(parameter, account);
+                return;
+            }
+            break;
         }
         /* website download premium */
         String url = null;
         br.setFollowRedirects(false);
-        br.getPage("http://" + wwwWorkaround + "megaupload.com/?d=" + getDownloadID(link));
-        if (br.containsHTML("Unfortunately, the link you have clicked is not available")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        br.getPage("http://" + wwwWorkaround + "megaupload.com/?d=" + getDownloadID(parameter));
+        if (br.containsHTML("Unfortunately, the link you have clicked is not available")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.getRedirectLocation() == null) {
+            /* check if we are still premium user, because we login via cookie */
+            String red = br.getRegex("document\\.location='(.*?)'").getMatch(0);
+            if (red != null || br.containsHTML("trying to download is larger than")) {
+                if (!isPremium(account, br.cloneBrowser(), true)) {
+                    /* no longer premium retry */
+                    logger.info("No longer a premiumaccount, retry as normal account!");
+                    parameter.getLinkStatus().setRetryCount(parameter.getLinkStatus().getRetryCount() + 1);
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                } else {
+                    /* still premium, so something went wrong */
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                }
+            }
             Form form = br.getForm(0);
             if (form != null && form.containsHTML("logout")) form = br.getForm(1);
             if (form != null && form.containsHTML("filepassword")) {
                 String passCode;
-                if (link.getStringProperty("pass", null) == null) {
-                    passCode = Plugin.getUserInput("Password?", link);
+                if (parameter.getStringProperty("pass", null) == null) {
+                    passCode = Plugin.getUserInput("Password?", parameter);
                 } else {
                     /* gespeicherten PassCode holen */
-                    passCode = link.getStringProperty("pass", null);
+                    passCode = parameter.getStringProperty("pass", null);
                 }
                 form.put("filepassword", passCode);
                 br.submitForm(form);
                 form = br.getForm(0);
                 if (form != null && form.containsHTML("logout")) form = br.getForm(1);
                 if (form != null && form.containsHTML("filepassword")) {
-                    link.setProperty("pass", null);
+                    parameter.setProperty("pass", null);
                     throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.errors.wrongpassword", "Password wrong"));
                 } else {
-                    link.setProperty("pass", passCode);
+                    parameter.setProperty("pass", passCode);
+                }
+            }
+            if (form != null && form.containsHTML("captchacode")) {
+                /* captcha form as premiumuser? check status again */
+                if (!isPremium(account, br.cloneBrowser(), true)) {
+                    /* no longer premium retry */
+                    logger.info("No longer a premiumaccount, retry as normal account!");
+                    parameter.getLinkStatus().setRetryCount(parameter.getLinkStatus().getRetryCount() + 1);
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                } else {
+                    /* still premium, so something went wrong */
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
                 }
             }
             url = br.getRegex("id=\"downloadlink\">.*?<a href=\"(.*?)\"").getMatch(0);
             if (url == null) url = br.getRedirectLocation();
         } else {
+            /* direct download */
             url = br.getRedirectLocation();
         }
-        doDownload(link, url, true, 0);
+        doDownload(parameter, url, true, account);
     }
 
-    private void doDownload(DownloadLink link, String url, boolean resume, int chunks) throws Exception {
+    private synchronized static void handleWaittimeWorkaround(DownloadLink link, Browser br) throws PluginException {
+        if (br.containsHTML("gencap\\.php\\?")) {
+            /* page contains captcha */
+            if (WaittimeWorkaround == 0) {
+                /*
+                 * we tried to workaround the waittime, so lets try again with
+                 * normal waittime
+                 */
+                WaittimeWorkaround = 1;
+                logger.info("WaittimeWorkaround failed (1)");
+                link.getLinkStatus().setRetryCount(link.getLinkStatus().getRetryCount() + 1);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            } else if (WaittimeWorkaround == 1) {
+                logger.info("strange servererror: we did wait(normal) but again a captcha?");
+                /* no reset here for retry count */
+                /* retry with longer waittime */
+                WaittimeWorkaround = 2;
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            } else if (WaittimeWorkaround == 2) {
+                logger.info("strange servererror: we did wait(longer) but again a captcha?");
+                /* no reset here for retry count */
+                /* retry with normal waittime again */
+                WaittimeWorkaround = 1;
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+        } else {
+            /* something else? */
+            if (WaittimeWorkaround == 0) {
+                /* lets try again with normal waittime */
+                WaittimeWorkaround = 1;
+                logger.info("WaittimeWorkaround failed (2)");
+                link.getLinkStatus().setRetryCount(link.getLinkStatus().getRetryCount() + 1);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            } else if (WaittimeWorkaround > 1) {
+                logger.info("WaittimeWorkaround failed (3)");
+                if (++WaittimeWorkaround > 1) WaittimeWorkaround = 1;
+            }
+        }
+    }
+
+    private void doDownload(DownloadLink link, String url, boolean resume, Account account) throws Exception {
         if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         url = url.replaceFirst("megaupload\\.com/", "megaupload\\.com:" + usePort(link) + "/");
         br.setFollowRedirects(true);
         String waitb = br.getRegex("count=(\\d+);").getMatch(0);
         long waittime = 0;
         try {
-            if (link.getIntegerProperty("waitworkaround2", 0) == 0) {
+            if (WaittimeWorkaround == 0) {
                 /* try not to wait */
                 waittime = 0;
-            } else if (link.getIntegerProperty("waitworkaround2", 0) == 1) {
+            } else if (WaittimeWorkaround == 1) {
                 /* try normal waittime */
                 if (waitb != null) waittime = Long.parseLong(waitb);
             } else {
@@ -249,31 +365,18 @@ public class Megauploadcom extends PluginForHost {
             }
         } catch (Exception e) {
         }
-        if (waittime > 0) this.sleep(waittime * 1000, link);
+        if (waittime > 0) sleep(waittime * 1000, link);
         try {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, resume, chunks);
-            if (!dl.getConnection().isOK()) {
-                dl.getConnection().disconnect();
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, resume, isPremium(account, br.cloneBrowser(), false) ? 0 : 1);
+            if (!dl.getConnection().isContentDisposition()) {
+                br.followConnection();
                 if (dl.getConnection().getResponseCode() == 503) {
                     String wait = dl.getConnection().getHeaderField("Retry-After");
                     if (wait == null) wait = "120";
-                    limitReached(link, Integer.parseInt(wait.trim()));
+                    limitReached(link, Integer.parseInt(wait.trim()), "Limit Reached (2)!");
                 }
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
-            }
-            if (!dl.getConnection().isContentDisposition()) {
-                br.followConnection();
-                if (link.getIntegerProperty("waitworkaround2", 0) == 2) {
-                    link.setProperty("waitworkaround2", 0);
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
-                }
-                link.setProperty("waitworkaround2", link.getIntegerProperty("waitworkaround2", 0) + 1);
-                if (br.containsHTML("gencap\\.php\\?")) {
-                    logger.info("strange servererror: again a captcha?");
-                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                }
-                logger.info("MegaUpload Unknown Error: " + br.toString());
-                throw new PluginException(LinkStatus.ERROR_RETRY);
+                handleWaittimeWorkaround(link, br);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
             }
 
             dl.startDownload();
@@ -300,6 +403,7 @@ public class Megauploadcom extends PluginForHost {
     public void login(Account account, boolean cookielogin) throws IOException, PluginException {
         String user = account.getStringProperty("user", null);
         if (cookielogin && user != null) {
+            br.setCookie("http://" + wwwWorkaround + "megaupload.com", "l", "en");
             br.setCookie("http://" + wwwWorkaround + "megaupload.com", "user", user);
             return;
         } else {
@@ -403,10 +507,6 @@ public class Megauploadcom extends PluginForHost {
                         downloadLink.setAvailable(true);
                     } else {
                         downloadLink.setAvailable(false);
-                        /* crosscheck if api says offline */
-                        if (Dls.length < 4) {
-                            websiteFileCheck(downloadLink, null);
-                        }
                     }
                     downloadLink.setProperty("webcheck", true);
                 } catch (Exception e) {
@@ -414,22 +514,12 @@ public class Megauploadcom extends PluginForHost {
             }
         } catch (Exception e) {
         }
-        /* check files that could not checked by api */
-        if (!onlyapi) {
-            for (DownloadLink u : urls) {
-                if (urls[0].getBooleanProperty("webcheck", false) == false) {
-                    websiteFileCheck(u, null);
-                }
-            }
-        }
         return true;
     }
 
     private void websiteFileCheck(DownloadLink l, Browser br) {
         if (onlyapi) {
-            l.setAvailable(true);
-            /* api only modus, dont try to check via webpage */
-            checkLinks(new DownloadLink[] { l });
+            l.setAvailableStatus(AvailableStatus.UNCHECKABLE);
             return;
         }
         try {
@@ -442,9 +532,7 @@ public class Megauploadcom extends PluginForHost {
             if (br.containsHTML("location='http://www\\.megaupload\\.com/\\?c=msg")) br.getPage("http://www.megaupload.com/?c=msg");
             if (br.containsHTML("No htmlCode read") || br.containsHTML("This service is temporarily not available from your service area")) {
                 logger.info("It seems Megaupload is blocked! Only API may work! " + br.toString());
-                onlyapi = true;
-                l.setAvailable(true);
-                checkLinks(new DownloadLink[] { l });
+                l.setAvailableStatus(AvailableStatus.UNCHECKABLE);
                 return;
             }
             if (br.containsHTML("A temporary access restriction is place") || br.containsHTML("We have detected an elevated")) {
@@ -480,37 +568,58 @@ public class Megauploadcom extends PluginForHost {
             }
             return;
         } catch (Exception e) {
-            logger.severe(e.toString());
-            l.setAvailable(false);
+            logger.info("Megaupload blocked this IP: log" + br.toString());
+            l.setAvailableStatus(AvailableStatus.UNCHECKABLE);
         }
         return;
     }
 
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    private STATUS getFileStatus(DownloadLink link) throws MalformedURLException {
         onlyapi = false;
         checkWWWWorkaround();
         setBrowserExclusive();
         br.setCookie("http://" + wwwWorkaround + "megaupload.com", "l", "en");
-        websiteFileCheck(downloadLink, br);
-        /* in case of ip blocking, set ip blocked */
-        if (downloadLink.getAvailableStatus() == AvailableStatus.UNCHECKABLE && usepremium == false) {
-            String wait = br.getRegex("Please check back in (\\+d) minutes").getMatch(0);
-            if (wait != null) {
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait.trim()) * 60 * 1000l);
-            } else
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 25 * 60 * 1000l);
+        websiteFileCheck(link, br);
+        if (link.getAvailableStatus() == AvailableStatus.TRUE) return STATUS.ONLINE;
+        if (link.getAvailableStatus() == AvailableStatus.FALSE) return STATUS.OFFLINE;
+        if (link.getAvailableStatus() == AvailableStatus.UNCHECKABLE) {
+            if (onlyapi) {
+                /*
+                 * API only,no further check needed because its done on
+                 * downloadtry anyway
+                 */
+                return STATUS.API;
+            } else {
+                return STATUS.BLOCKED;
+            }
         }
-        if (downloadLink.getAvailableStatus() == AvailableStatus.FALSE) {
+        return STATUS.OFFLINE;
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink parameter) throws IOException, PluginException {
+        STATUS filestatus = getFileStatus(parameter);
+        switch (filestatus) {
+        case API:
+            /* api only download possible */
+            checkLinks(new DownloadLink[] { parameter });
+            return parameter.getAvailableStatus();
+        case ONLINE:
+            return AvailableStatus.TRUE;
+        case OFFLINE:
+            /* file offline */
             try {
                 logger.finest(br.getRequest().getHttpConnection() + "");
             } catch (Exception e) {
                 JDLogger.exception(e);
             }
             logger.info("DebugInfo for maybe Wrong FileNotFound: " + br.toString());
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            return AvailableStatus.FALSE;
+        case BLOCKED:
+            /* ip blocked by megauploaded */
+            return AvailableStatus.UNCHECKABLE;
         }
-        return downloadLink.getAvailableStatus();
+        return AvailableStatus.UNCHECKED;
     }
 
     public void handleWebsiteDownload(DownloadLink link, Account account) throws Exception {
@@ -522,20 +631,22 @@ public class Megauploadcom extends PluginForHost {
         String code = null;
         while (captchTries-- >= 0) {
             br.getPage("http://" + wwwWorkaround + "megaupload.com/?d=" + getDownloadID(link));
+            /* check for iplimit */
             String red = br.getRegex("document\\.location='(.*?)'").getMatch(0);
             if (red != null) {
-                logger.severe("YOur IP got banned");
+                logger.severe("Your IP got banned");
                 br.getPage(red);
                 String wait = br.getRegex("Please check back in (\\d+) minute").getMatch(0);
                 int l = 30;
                 if (wait != null) {
                     l = Integer.parseInt(wait.trim());
                 }
-                limitReached(link, l * 60);
+                limitReached(link, l * 60, "Limit Reached (1)!");
             }
+            /* free users can download filesizes up to 1gb max */
             if (br.containsHTML("trying to download is larger than")) throw new PluginException(LinkStatus.ERROR_FATAL, "File is over 1GB and needs Premium Account");
-            form = br.getForm(0);
 
+            form = br.getForm(0);
             if (form != null && form.containsHTML("logout")) form = br.getForm(1);
             if (form != null && form.containsHTML("filepassword")) {
                 String passCode;
@@ -578,7 +689,7 @@ public class Megauploadcom extends PluginForHost {
         }
         if (form != null && form.containsHTML("captchacode")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         String url = br.getRegex("id=\"downloadlink\">.*?<a href=\"(.*?)\"").getMatch(0);
-        doDownload(link, url, true, 1);
+        doDownload(link, url, true, account);
     }
 
     private void getRedirectforAPI(String url, DownloadLink downloadLink) throws PluginException, InterruptedException {
@@ -625,15 +736,15 @@ public class Megauploadcom extends PluginForHost {
         } else {
             getRedirectforAPI("http://" + wwwWorkaround + "megaupload.com/mgr_dl.php?d=" + dlID, link);
         }
-        if (br.getRedirectLocation() == null || br.getRedirectLocation().toUpperCase().contains(dlID)) limitReached(link, 10 * 60);
+        if (br.getRedirectLocation() == null || br.getRedirectLocation().toUpperCase().contains(dlID)) limitReached(link, 10 * 60, "API Limit reached!");
 
         String url = br.getRedirectLocation();
         br.getHeaders().put("Host", new URL(url).getHost());
         br.getHeaders().put("Connection", "Keep-Alive,TE");
-        doDownload(link, url, true, 1);
+        doDownload(link, url, true, account);
     }
 
-    private void limitReached(DownloadLink link, int secs) throws PluginException {
+    private void limitReached(DownloadLink link, int secs, String message) throws PluginException {
         if (this.getPluginConfig().getBooleanProperty("MU_PORTROTATION", true)) {
             /* try portrotation */
             int port = link.getIntegerProperty(MU_PARAM_PORT, 0);
@@ -643,7 +754,7 @@ public class Megauploadcom extends PluginForHost {
                 port = 0;
                 link.setProperty(MU_PARAM_PORT, port);
                 logger.info("All ports tried, throw IP_Blocked");
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "API Limit reached!", secs * 1000l);
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, message, secs * 1000l);
             } else {
                 /* try next port */
                 link.getLinkStatus().setLatestStatus(link.getLinkStatus().getRetryCount() + 1);
@@ -653,7 +764,7 @@ public class Megauploadcom extends PluginForHost {
             }
         } else {
             /* have to wait */
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "API Limit reached!", secs * 1000l);
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, message, secs * 1000l);
         }
 
     }
@@ -661,12 +772,35 @@ public class Megauploadcom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink parameter) throws Exception {
         usepremium = false;
-        requestFileInformation(parameter);
-        if (onlyapi) {
+        STATUS filestatus = getFileStatus(parameter);
+        switch (filestatus) {
+        case API:
+            /* api only download possible */
             handleAPIDownload(parameter, null);
-        } else {
+            return;
+        case ONLINE:
+            /* handle download via website */
             handleWebsiteDownload(parameter, null);
+            return;
+        case OFFLINE:
+            /* file offline */
+            try {
+                logger.finest(br.getRequest().getHttpConnection() + "");
+            } catch (Exception e) {
+                JDLogger.exception(e);
+            }
+            logger.info("DebugInfo for maybe Wrong FileNotFound: " + br.toString());
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        case BLOCKED:
+            /* ip blocked by megauploaded */
+            String wait = br.getRegex("Please check back in (\\+d) minutes").getMatch(0);
+            if (wait != null) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait.trim()) * 60 * 1000l);
+            } else
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 25 * 60 * 1000l);
         }
+        logger.severe("Ooops");
+        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
     }
 
     @Override
@@ -691,7 +825,6 @@ public class Megauploadcom extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
-        link.setProperty("waitworkaround2", 0);
         link.setProperty(MU_PARAM_PORT, 0);
     }
 

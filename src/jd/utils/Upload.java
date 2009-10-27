@@ -34,7 +34,7 @@ public class Upload {
             Browser br = new Browser();
             br.postPage("http://jdownloader.org/pastebin", "upload=1&desc=" + Encoding.urlEncode(desc) + "&log=" + Encoding.urlEncode(str));
             String path = br.getRegex("window.location = \"(.*?)\"").getMatch(0);
-            return "http://jdownloader.net:8081" + path;
+            return "http://jdownloader.org" + path;
         } catch (IOException e) {
             JDLogger.exception(e);
         }

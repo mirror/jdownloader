@@ -128,6 +128,7 @@ public class Odsiebiecom extends PluginForHost {
             br.getPage(downloadurl);
             downloadurl = br.getRegex("href=\"/download/(.*?)\"").getMatch(0);
             Form capform = br.getFormbyProperty("name", "wer1");
+            if (capform == null) capform = br.getFormbyProperty("name", "wer");
             if (capform == null) {
                 String form2search = br.getRegex("from picture\\)</small>.*?<form name=\"(.*?)\" method").getMatch(0);
                 if (form2search != null) {
@@ -138,7 +139,7 @@ public class Odsiebiecom extends PluginForHost {
                 int i = 0;
                 Browser brc = br.cloneBrowser();
                 while (capform != null) {
-                    String pagepiece = br.getRegex("<img src.*?\"(.*?)</form>").getMatch(0);
+                    String pagepiece = br.getRegex("form.*?get.*?pob.*?src.*?\"(.*?)</form>").getMatch(0);
                     if (pagepiece == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
                     String[] captchalinks = HTMLParser.getHttpLinks(pagepiece, "");
                     if (captchalinks == null || captchalinks.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
@@ -166,6 +167,7 @@ public class Odsiebiecom extends PluginForHost {
                     capform.getInputFieldByName("captcha").setValue(code);
                     br.submitForm(capform);
                     capform = br.getFormbyProperty("name", "wer1");
+                    if (capform == null) capform = br.getFormbyProperty("name", "wer");
                     i++;
                     if (i > 3) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
                 }
@@ -174,12 +176,21 @@ public class Odsiebiecom extends PluginForHost {
             br.setFollowRedirects(false);
             /* DownloadLink suchen */
             steplink = br.getRegex("href=\"/download/(.*?)\"").getMatch(0);
-            if (steplink == null) { throw new PluginException(LinkStatus.ERROR_RETRY); }
+            if (steplink == null) {
+                int i = 1;
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
             downloadurl = "http://odsiebie.com/download/" + steplink;
             br.getPage(downloadurl);
-            if (br.getRedirectLocation() == null || br.getRedirectLocation().contains("upload")) { throw new PluginException(LinkStatus.ERROR_RETRY); }
+            if (br.getRedirectLocation() == null || br.getRedirectLocation().contains("upload")) {
+                int u = 1;
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
             downloadurl = br.getRedirectLocation();
-            if (downloadurl == null) { throw new PluginException(LinkStatus.ERROR_RETRY); }
+            if (downloadurl == null) {
+                int d = 1;
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
         }
         /*
          * Leerzeichen müssen durch %20 ersetzt werden!!!!!!!!, sonst werden sie
