@@ -66,7 +66,7 @@ public class MegaFileUploadCom extends PluginForHost {
         String ipblockedcheck = br.getRegex("name=\"myform\" action=\"(.*?)\"").getMatch(0);
         if (dllink == null && ipblockedcheck != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 60 * 60 * 1001l);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
 
         dl.startDownload();
     }
@@ -75,7 +75,6 @@ public class MegaFileUploadCom extends PluginForHost {
     public void reset() {
     }
 
-    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
