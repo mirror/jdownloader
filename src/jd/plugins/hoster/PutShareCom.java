@@ -39,14 +39,12 @@ import jd.plugins.DownloadLink.AvailableStatus;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "putshare.com" }, urls = { "http://[\\w\\.]*?putshare\\.com/[0-9a-z]{12}" }, flags = { 2 })
 public class PutShareCom extends PluginForHost {
 
-    private static int simultanpremium = 1;
-    private static final Object PREMLOCK = new Object();
-
     public PutShareCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.putshare.com/premium.html");
     }
 
+    @Override
     public String getAGBLink() {
         return "http://putshare.com/tos.html";
     }
@@ -141,6 +139,7 @@ public class PutShareCom extends PluginForHost {
         dl.startDownload();
     }
 
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
@@ -207,10 +206,12 @@ public class PutShareCom extends PluginForHost {
         }
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setCookie("http://putshare.com/", "lang", "english");
@@ -224,12 +225,15 @@ public class PutShareCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @Override
     public void reset() {
     }
 
+    @Override
     public void resetPluginGlobals() {
     }
 
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 

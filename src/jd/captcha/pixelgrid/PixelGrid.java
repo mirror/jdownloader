@@ -53,8 +53,8 @@ import com.sun.image.codec.jpeg.JPEGImageEncoder;
 public class PixelGrid extends Property {
 
     private static final long serialVersionUID = 1L;
-    public void
-    autoBottomTopAlign() {
+
+    public void autoBottomTopAlign() {
         int avg = getAverage();
         double bestOL = Double.MAX_VALUE;
         int xOL = 0;
@@ -107,36 +107,38 @@ public class PixelGrid extends Property {
         double distBest = getM(xOL, xOR, yOL, yOR);
         if (distBest == 0) distBest = 0.0001;
         double dist = getM(xUL, xUR, yUL, yUR);
-        double distWBest = distBest / ((xOR - xOL+1)/4);
+        double distWBest = distBest / ((xOR - xOL + 1) / 4);
         double distW;
-        boolean skipw=(xOR - xOL)<(getWidth()/3)||yOL>getHeight()/3||yOR>getHeight()/3;
+        boolean skipw = (xOR - xOL) < (getWidth() / 3) || yOL > getHeight() / 3 || yOR > getHeight() / 3;
         if (dist == 0)
-            distW = distBest / ((xUR - xUL+1)/4);
+            distW = distBest / ((xUR - xUL + 1) / 4);
         else
-            distW = dist / ((xUR - xUL+1)/4);
-        if (skipw||Math.abs(distW) < Math.abs(distWBest)) {
+            distW = dist / ((xUR - xUL + 1) / 4);
+        if (skipw || Math.abs(distW) < Math.abs(distWBest)) {
             distWBest = distW;
             distBest = dist;
             g = 1;
         }
 
-        skipw=(xUR - xUL)<(getHeight()/3)||yUL<(getHeight()*2/3)||yUR<(getHeight()*2/3);
-        
-System.out.println(distBest);
+        skipw = (xUR - xUL) < (getHeight() / 3) || yUL < (getHeight() * 2 / 3) || yUR < (getHeight() * 2 / 3);
+
+        System.out.println(distBest);
 
         int turn = 60;
-//        if(Math.abs( Math.round(distBest * turn))>6)
+        // if(Math.abs( Math.round(distBest * turn))>6)
         if (g > 1)
             this.grid = turn((distBest * turn)).grid;
         else
             this.grid = turn((-distBest * turn)).grid;
-//        if(Math.abs( Math.round(distBest * turn))>6)
-            
-//        BasicWindow.showImage(getImage().getScaledInstance(getWidth() * 10, getHeight() * 10, 1), "Turned:" + Math.round(distBest * turn) + " G:" + g);
-        
+        // if(Math.abs( Math.round(distBest * turn))>6)
+
+        // BasicWindow.showImage(getImage().getScaledInstance(getWidth() * 10,
+        // getHeight() * 10, 1), "Turned:" + Math.round(distBest * turn) + " G:"
+        // + g);
+
     }
-    public void
-    autoAlign() {
+
+    public void autoAlign() {
         int avg = getAverage();
         double bestOL = Double.MAX_VALUE;
         int xOL = 0;
@@ -189,63 +191,64 @@ System.out.println(distBest);
         double distBest = getM(xOL, xOR, yOL, yOR);
         if (distBest == 0) distBest = 0.0001;
         double dist = getM(xUL, xUR, yUL, yUR);
-        double distWBest = distBest / ((xOR - xOL+1)/4);
+        double distWBest = distBest / ((xOR - xOL + 1) / 4);
         double distW;
-        boolean skipw=(xOR - xOL)<(getWidth()/3)||yOL>getHeight()/3||yOR>getHeight()/3;
+        boolean skipw = (xOR - xOL) < (getWidth() / 3) || yOL > getHeight() / 3 || yOR > getHeight() / 3;
         if (dist == 0)
-            distW = distBest / ((xUR - xUL+1)/4);
+            distW = distBest / ((xUR - xUL + 1) / 4);
         else
-            distW = dist / ((xUR - xUL+1)/4);
-        if (skipw||Math.abs(distW) < Math.abs(distWBest)) {
+            distW = dist / ((xUR - xUL + 1) / 4);
+        if (skipw || Math.abs(distW) < Math.abs(distWBest)) {
             distWBest = distW;
             distBest = dist;
             g = 1;
         }
 
-        skipw=(xUR - xUL)<(getHeight()/3)||yUL<(getHeight()*2/3)||yUR<(getHeight()*2/3);
+        skipw = (xUR - xUL) < (getHeight() / 3) || yUL < (getHeight() * 2 / 3) || yUR < (getHeight() * 2 / 3);
 
         dist = getM(yOL, yUL, xOL, xUL);
         if (dist == 0)
-            distW = distBest /((yUL - yOL+1)/4);
+            distW = distBest / ((yUL - yOL + 1) / 4);
         else
-            distW = dist / ((yUL - yOL+1)/4);
-        if (skipw||Math.abs(distW) < Math.abs(distWBest)) {
+            distW = dist / ((yUL - yOL + 1) / 4);
+        if (skipw || Math.abs(distW) < Math.abs(distWBest)) {
             distWBest = distW;
             distBest = dist;
             g = 2;
         }
-        skipw=(yUL - yOL)<(getHeight()/4)||xUL>(getWidth()/3)||xOL>(getWidth()/3);
+        skipw = (yUL - yOL) < (getHeight() / 4) || xUL > (getWidth() / 3) || xOL > (getWidth() / 3);
 
         dist = getM(yOR, yUR, xOR, xUR);
         if (dist == 0)
-            distW = distBest / ((yUR - yOR+1)/4);
+            distW = distBest / ((yUR - yOR + 1) / 4);
         else
-            distW = dist / ((yUR - yOR+1)/4);
+            distW = dist / ((yUR - yOR + 1) / 4);
 
-        if (skipw||Math.abs(distW) < Math.abs(distWBest)) {
-            skipw=(yUR - yOR)<(getHeight()/4)||xUR>(getHeight()*2/3)||xOR>(getWidth()*2/3);
-            if(!skipw)
-            {
-            distWBest = distW;
-            distBest = dist;
-            g = 3;
+        if (skipw || Math.abs(distW) < Math.abs(distWBest)) {
+            skipw = (yUR - yOR) < (getHeight() / 4) || xUR > (getHeight() * 2 / 3) || xOR > (getWidth() * 2 / 3);
+            if (!skipw) {
+                distWBest = distW;
+                distBest = dist;
+                g = 3;
             }
         }
 
         // System.out.println(distWBest);
-        
-        
+
         int turn = 60;
-//        if(Math.abs( Math.round(distBest * turn))>6)
+        // if(Math.abs( Math.round(distBest * turn))>6)
         if (g > 1)
             this.grid = turn((distBest * turn)).grid;
         else
             this.grid = turn((-distBest * turn)).grid;
-//        if(Math.abs( Math.round(distBest * turn))>6)
-            
-//        BasicWindow.showImage(getImage().getScaledInstance(getWidth() * 10, getHeight() * 10, 1), "Turned:" + Math.round(distBest * turn) + " G:" + g);
-        
+        // if(Math.abs( Math.round(distBest * turn))>6)
+
+        // BasicWindow.showImage(getImage().getScaledInstance(getWidth() * 10,
+        // getHeight() * 10, 1), "Turned:" + Math.round(distBest * turn) + " G:"
+        // + g);
+
     }
+
     /**
      * Dreht das PixelGrid um angle. Dabei wird breite und höhe angepasst. Das
      * drehen dauert länger als über PixelObject, leidet dafür deutlich weniger
@@ -263,7 +266,7 @@ System.out.println(distBest);
 
         int newWidth = (int) (Math.abs(Math.cos(angle * Math.PI) * getWidth()) + Math.abs(Math.sin(angle * Math.PI) * getHeight()));
         int newHeight = (int) (Math.abs(Math.sin(angle * Math.PI) * getWidth()) + Math.abs(Math.cos(angle * Math.PI) * getHeight()));
-        PixelGrid l = new PixelGrid(newWidth,newHeight);
+        PixelGrid l = new PixelGrid(newWidth, newHeight);
         int left = (newWidth - getWidth()) / 2;
         int top = (newHeight - getHeight()) / 2;
         int[][] newGrid = new int[newWidth][newHeight];
@@ -277,7 +280,6 @@ System.out.println(distBest);
 
                 newGrid[x][y] = grid[n[0]][n[1]];
 
-
             }
         }
         l.setGrid(newGrid);
@@ -288,14 +290,24 @@ System.out.println(distBest);
     double getM(int x0, int x1, int y0, int y1) {
         return ((double) (y0 - y1)) / (x0 - x1);
     }
-    public void drawLine(int x0,  int x1,int y0, int y1, int color)
-    {
+
+    public void drawLine(int x0, int x1, int y0, int y1, int color) {
         int dy = y1 - y0;
         int dx = x1 - x0;
         int stepx, stepy;
 
-        if (dy < 0) { dy = -dy;  stepy = -1; } else { stepy = 1; }
-        if (dx < 0) { dx = -dx;  stepx = -1; } else { stepx = 1; }
+        if (dy < 0) {
+            dy = -dy;
+            stepy = -1;
+        } else {
+            stepy = 1;
+        }
+        if (dx < 0) {
+            dx = -dx;
+            stepx = -1;
+        } else {
+            stepx = 1;
+        }
 
         setPixelValue(x0, y0, color);
         setPixelValue(x1, y1, color);
@@ -306,95 +318,94 @@ System.out.println(distBest);
             if (incr2 < 0) {
                 int c = dy << 1;
                 int incr1 = c << 1;
-                int d =  incr1 - dx;
+                int d = incr1 - dx;
                 for (int i = 0; i < length; i++) {
                     x0 += stepx;
                     x1 -= stepx;
-                    if (d < 0) {                        // Pattern:
+                    if (d < 0) { // Pattern:
                         setPixelValue(x1, y1, color);
 
-                        setPixelValue( x0, y0, color);           //
-                        setPixelValue( x0 += stepx, y0, color);  //  x o o
-                        setPixelValue( x1, y1, color);           //
-                        setPixelValue( x1 -= stepx, y1, color);
+                        setPixelValue(x0, y0, color); //
+                        setPixelValue(x0 += stepx, y0, color); // x o o
+                        setPixelValue(x1, y1, color); //
+                        setPixelValue(x1 -= stepx, y1, color);
                         d += incr1;
                     } else {
-                        if (d < c) {                            // Pattern:
-                            setPixelValue( x0, y0, color);               //      o
-                            setPixelValue( x0 += stepx, y0 += stepy, color);     //  x o
-                            setPixelValue( x1, y1, color);               //
-                            setPixelValue( x1 -= stepx, y1 -= stepy, color);
+                        if (d < c) { // Pattern:
+                            setPixelValue(x0, y0, color); // o
+                            setPixelValue(x0 += stepx, y0 += stepy, color); // x
+                            // o
+                            setPixelValue(x1, y1, color); //
+                            setPixelValue(x1 -= stepx, y1 -= stepy, color);
                         } else {
-                            setPixelValue( x0, y0 += stepy, color);          // Pattern:
-                            setPixelValue( x0 += stepx, y0, color);          //    o o 
-                            setPixelValue( x1, y1 -= stepy, color);          //  x
-                            setPixelValue( x1 -= stepx, y1, color);          //
+                            setPixelValue(x0, y0 += stepy, color); // Pattern:
+                            setPixelValue(x0 += stepx, y0, color); // o o
+                            setPixelValue(x1, y1 -= stepy, color); // x
+                            setPixelValue(x1 -= stepx, y1, color); //
                         }
                         d += incr2;
                     }
                 }
                 if (extras > 0) {
                     if (d < 0) {
-                        setPixelValue( x0 += stepx, y0, color);
-                        if (extras > 1) setPixelValue( x0 += stepx, y0, color);
-                        if (extras > 2) setPixelValue( x1 -= stepx, y1, color);
-                    } else
-                    if (d < c) {
-                        setPixelValue( x0 += stepx, y0, color);
-                        if (extras > 1) setPixelValue( x0 += stepx, y0 += stepy, color);
-                        if (extras > 2) setPixelValue( x1 -= stepx, y1, color);
+                        setPixelValue(x0 += stepx, y0, color);
+                        if (extras > 1) setPixelValue(x0 += stepx, y0, color);
+                        if (extras > 2) setPixelValue(x1 -= stepx, y1, color);
+                    } else if (d < c) {
+                        setPixelValue(x0 += stepx, y0, color);
+                        if (extras > 1) setPixelValue(x0 += stepx, y0 += stepy, color);
+                        if (extras > 2) setPixelValue(x1 -= stepx, y1, color);
                     } else {
-                        setPixelValue( x0 += stepx, y0 += stepy, color);
-                        if (extras > 1) setPixelValue( x0 += stepx, y0, color);
-                        if (extras > 2) setPixelValue( x1 -= stepx, y1 -= stepy, color);
+                        setPixelValue(x0 += stepx, y0 += stepy, color);
+                        if (extras > 1) setPixelValue(x0 += stepx, y0, color);
+                        if (extras > 2) setPixelValue(x1 -= stepx, y1 -= stepy, color);
                     }
                 }
             } else {
                 int c = (dy - dx) << 1;
                 int incr1 = c << 1;
-                int d =  incr1 + dx;
+                int d = incr1 + dx;
                 for (int i = 0; i < length; i++) {
                     x0 += stepx;
                     x1 -= stepx;
                     if (d > 0) {
-                        setPixelValue( x0, y0 += stepy, color);          // Pattern:
-                        setPixelValue( x0 += stepx, y0 += stepy, color);     //      o
-                        setPixelValue( x1, y1 -= stepy, color);          //    o
-                        setPixelValue( x1 -= stepx, y1 -= stepy, color);     //  x
+                        setPixelValue(x0, y0 += stepy, color); // Pattern:
+                        setPixelValue(x0 += stepx, y0 += stepy, color); // o
+                        setPixelValue(x1, y1 -= stepy, color); // o
+                        setPixelValue(x1 -= stepx, y1 -= stepy, color); // x
                         d += incr1;
                     } else {
                         if (d < c) {
-                            setPixelValue( x0, y0, color);               // Pattern:
-                            setPixelValue( x0 += stepx, y0 += stepy, color);       //      o
-                            setPixelValue( x1, y1, color);                         //  x o
-                            setPixelValue( x1 -= stepx, y1 -= stepy, color);       //
+                            setPixelValue(x0, y0, color); // Pattern:
+                            setPixelValue(x0 += stepx, y0 += stepy, color); // o
+                            setPixelValue(x1, y1, color); // x o
+                            setPixelValue(x1 -= stepx, y1 -= stepy, color); //
                         } else {
-                            setPixelValue( x0, y0 += stepy, color);          // Pattern:
-                            setPixelValue( x0 += stepx, y0, color);          //    o o
-                            setPixelValue( x1, y1 -= stepy, color);          //  x
-                            setPixelValue( x1 -= stepx, y1, color);          //
+                            setPixelValue(x0, y0 += stepy, color); // Pattern:
+                            setPixelValue(x0 += stepx, y0, color); // o o
+                            setPixelValue(x1, y1 -= stepy, color); // x
+                            setPixelValue(x1 -= stepx, y1, color); //
                         }
                         d += incr2;
                     }
                 }
                 if (extras > 0) {
                     if (d > 0) {
-                        setPixelValue( x0 += stepx, y0 += stepy, color);
-                        if (extras > 1) setPixelValue( x0 += stepx, y0 += stepy, color);
-                        if (extras > 2) setPixelValue( x1 -= stepx, y1 -= stepy, color);
-                    } else
-                    if (d < c) {
-                        setPixelValue( x0 += stepx, y0, color);
-                        if (extras > 1) setPixelValue( x0 += stepx, y0 += stepy, color);
-                        if (extras > 2) setPixelValue( x1 -= stepx, y1, color);
+                        setPixelValue(x0 += stepx, y0 += stepy, color);
+                        if (extras > 1) setPixelValue(x0 += stepx, y0 += stepy, color);
+                        if (extras > 2) setPixelValue(x1 -= stepx, y1 -= stepy, color);
+                    } else if (d < c) {
+                        setPixelValue(x0 += stepx, y0, color);
+                        if (extras > 1) setPixelValue(x0 += stepx, y0 += stepy, color);
+                        if (extras > 2) setPixelValue(x1 -= stepx, y1, color);
                     } else {
-                        setPixelValue( x0 += stepx, y0 += stepy, color);
-                        if (extras > 1) setPixelValue( x0 += stepx, y0, color);
+                        setPixelValue(x0 += stepx, y0 += stepy, color);
+                        if (extras > 1) setPixelValue(x0 += stepx, y0, color);
                         if (extras > 2) {
                             if (d > c)
-                                setPixelValue( x1 -= stepx, y1 -= stepy, color);
+                                setPixelValue(x1 -= stepx, y1 -= stepy, color);
                             else
-                                setPixelValue( x1 -= stepx, y1, color);
+                                setPixelValue(x1 -= stepx, y1, color);
                         }
                     }
                 }
@@ -406,100 +417,97 @@ System.out.println(distBest);
             if (incr2 < 0) {
                 int c = dx << 1;
                 int incr1 = c << 1;
-                int d =  incr1 - dy;
+                int d = incr1 - dy;
                 for (int i = 0; i < length; i++) {
                     y0 += stepy;
                     y1 -= stepy;
                     if (d < 0) {
-                        setPixelValue( x0, y0, color);
-                        setPixelValue( x0, y0 += stepy, color);
-                        setPixelValue( x1, y1, color);
-                        setPixelValue( x1, y1 -= stepy, color);
+                        setPixelValue(x0, y0, color);
+                        setPixelValue(x0, y0 += stepy, color);
+                        setPixelValue(x1, y1, color);
+                        setPixelValue(x1, y1 -= stepy, color);
                         d += incr1;
                     } else {
                         if (d < c) {
-                            setPixelValue( x0, y0, color);
-                            setPixelValue( x0 += stepx, y0 += stepy, color);
-                            setPixelValue( x1, y1, color);
-                            setPixelValue( x1 -= stepx, y1 -= stepy, color);
+                            setPixelValue(x0, y0, color);
+                            setPixelValue(x0 += stepx, y0 += stepy, color);
+                            setPixelValue(x1, y1, color);
+                            setPixelValue(x1 -= stepx, y1 -= stepy, color);
                         } else {
-                            setPixelValue( x0 += stepx, y0, color);
-                            setPixelValue( x0, y0 += stepy, color);
-                            setPixelValue( x1 -= stepx, y1, color);
-                            setPixelValue( x1, y1 -= stepy, color);
+                            setPixelValue(x0 += stepx, y0, color);
+                            setPixelValue(x0, y0 += stepy, color);
+                            setPixelValue(x1 -= stepx, y1, color);
+                            setPixelValue(x1, y1 -= stepy, color);
                         }
                         d += incr2;
                     }
                 }
                 if (extras > 0) {
                     if (d < 0) {
-                        setPixelValue( x0, y0 += stepy, color);
-                        if (extras > 1) setPixelValue( x0, y0 += stepy, color);
-                        if (extras > 2) setPixelValue( x1, y1 -= stepy, color);
-                    } else
-                    if (d < c) {
-                        setPixelValue( stepx, y0 += stepy, color);
-                        if (extras > 1) setPixelValue( x0 += stepx, y0 += stepy, color);
-                        if (extras > 2) setPixelValue( x1, y1 -= stepy, color);
+                        setPixelValue(x0, y0 += stepy, color);
+                        if (extras > 1) setPixelValue(x0, y0 += stepy, color);
+                        if (extras > 2) setPixelValue(x1, y1 -= stepy, color);
+                    } else if (d < c) {
+                        setPixelValue(stepx, y0 += stepy, color);
+                        if (extras > 1) setPixelValue(x0 += stepx, y0 += stepy, color);
+                        if (extras > 2) setPixelValue(x1, y1 -= stepy, color);
                     } else {
-                        setPixelValue( x0 += stepx, y0 += stepy, color);
-                        if (extras > 1) setPixelValue( x0, y0 += stepy, color);
-                        if (extras > 2) setPixelValue( x1 -= stepx, y1 -= stepy, color);
+                        setPixelValue(x0 += stepx, y0 += stepy, color);
+                        if (extras > 1) setPixelValue(x0, y0 += stepy, color);
+                        if (extras > 2) setPixelValue(x1 -= stepx, y1 -= stepy, color);
                     }
                 }
             } else {
                 int c = (dx - dy) << 1;
                 int incr1 = c << 1;
-                int d =  incr1 + dy;
+                int d = incr1 + dy;
                 for (int i = 0; i < length; i++) {
                     y0 += stepy;
                     y1 -= stepy;
                     if (d > 0) {
-                        setPixelValue( x0 += stepx, y0, color);
-                        setPixelValue( x0 += stepx, y0 += stepy, color);
-                        setPixelValue( x1 -= stepy, y1, color);
-                        setPixelValue( x1 -= stepx, y1 -= stepy, color);
+                        setPixelValue(x0 += stepx, y0, color);
+                        setPixelValue(x0 += stepx, y0 += stepy, color);
+                        setPixelValue(x1 -= stepy, y1, color);
+                        setPixelValue(x1 -= stepx, y1 -= stepy, color);
                         d += incr1;
                     } else {
                         if (d < c) {
-                            setPixelValue( x0, y0, color);
-                            setPixelValue( x0 += stepx, y0 += stepy, color);
-                            setPixelValue( x1, y1, color);
-                            setPixelValue( x1 -= stepx, y1 -= stepy, color);
+                            setPixelValue(x0, y0, color);
+                            setPixelValue(x0 += stepx, y0 += stepy, color);
+                            setPixelValue(x1, y1, color);
+                            setPixelValue(x1 -= stepx, y1 -= stepy, color);
                         } else {
-                            setPixelValue( x0 += stepx, y0, color);
-                            setPixelValue( x0, y0 += stepy, color);
-                            setPixelValue( x1 -= stepx, y1, color);
-                            setPixelValue( x1, y1 -= stepy, color);
+                            setPixelValue(x0 += stepx, y0, color);
+                            setPixelValue(x0, y0 += stepy, color);
+                            setPixelValue(x1 -= stepx, y1, color);
+                            setPixelValue(x1, y1 -= stepy, color);
                         }
                         d += incr2;
                     }
                 }
                 if (extras > 0) {
                     if (d > 0) {
-                        setPixelValue( x0 += stepx, y0 += stepy, color);
-                        if (extras > 1) setPixelValue( x0 += stepx, y0 += stepy, color);
-                        if (extras > 2) setPixelValue( x1 -= stepx, y1 -= stepy, color);
-                    } else
-                    if (d < c) {
-                        setPixelValue( x0, y0 += stepy, color);
-                        if (extras > 1) setPixelValue( x0 += stepx, y0 += stepy, color);
-                        if (extras > 2) setPixelValue( x1, y1 -= stepy, color);
+                        setPixelValue(x0 += stepx, y0 += stepy, color);
+                        if (extras > 1) setPixelValue(x0 += stepx, y0 += stepy, color);
+                        if (extras > 2) setPixelValue(x1 -= stepx, y1 -= stepy, color);
+                    } else if (d < c) {
+                        setPixelValue(x0, y0 += stepy, color);
+                        if (extras > 1) setPixelValue(x0 += stepx, y0 += stepy, color);
+                        if (extras > 2) setPixelValue(x1, y1 -= stepy, color);
                     } else {
-                        setPixelValue( x0 += stepx, y0 += stepy, color);
-                        if (extras > 1) setPixelValue( x0, y0 += stepy, color);
+                        setPixelValue(x0 += stepx, y0 += stepy, color);
+                        if (extras > 1) setPixelValue(x0, y0 += stepy, color);
                         if (extras > 2) {
                             if (d > c)
-                                setPixelValue( x1 -= stepx, y1 -= stepy, color);
+                                setPixelValue(x1 -= stepx, y1 -= stepy, color);
                             else
-                                setPixelValue( x1, y1 -= stepy, color);
+                                setPixelValue(x1, y1 -= stepy, color);
                         }
                     }
                 }
             }
         }
     }
-
 
     public static void fillLetter(Letter l) {
 
@@ -1251,9 +1259,7 @@ System.out.println(distBest);
                                     Integer[] key2 = iterator.next();
                                     PixelObject object = valsiter.next();
                                     if (Math.abs((double) (x - key2[1] - object.getWidth())) < h) {
-                                        dif = Colors.getHueColorDifference(bv, Colors
-
-                                        .hexToRgb(object.getAverage()));
+                                        dif = Colors.getHueColorDifference(bv, Colors.hexToRgb(object.getAverage()));
 
                                         if (dif < bestValue) {
                                             bestKey = key2;
@@ -1302,10 +1308,8 @@ System.out.println(distBest);
         while (keys.hasNext() && vals.hasNext()) {
             PixelObject ob = vals.next();
             els.add(new Object[] { keys.next(), ob });
-
         }
         Collections.sort(els, new Comparator<Object[]>() {
-
             public int compare(Object[] o1, Object[] o2) {
                 Letter letter1 = ((PixelObject) o1[1]).toLetter();
                 Letter letter2 = ((PixelObject) o2[1]).toLetter();
@@ -1367,11 +1371,7 @@ System.out.println(distBest);
 
                 }
                 if (bestKey != null) {
-                    dif = Colors.getHueColorDifference(Colors
-
-                    .hexToRgb(bestobj.getAverage()), Colors
-
-                    .hexToRgb(object.getAverage()));
+                    dif = Colors.getHueColorDifference(Colors.hexToRgb(bestobj.getAverage()), Colors.hexToRgb(object.getAverage()));
                     if (dif < addd) {
                         map.get(bestKey).add(object);
                         map.remove(integers);
@@ -1385,9 +1385,7 @@ System.out.println(distBest);
         ArrayList<Integer[]> ar = new ArrayList<Integer[]>();
         ar.addAll(map.keySet());
         Collections.sort(ar, new Comparator<Integer[]>() {
-
             public int compare(Integer[] o1, Integer[] o2) {
-
                 return o1[1].compareTo(o2[1]);
             }
         });
@@ -2075,22 +2073,23 @@ System.out.println(distBest);
 
         }
     }
+
     /**
      * @param contrast
      * @param objectContrast
      * @param maxSize
      */
-    public void removeSmallObjects(double contrast, double objectContrast, int maxSize, int mindistx,int mindisty) {
+    public void removeSmallObjects(double contrast, double objectContrast, int maxSize, int mindistx, int mindisty) {
         int tmp = owner.getJas().getInteger("minimumObjectArea");
 
         owner.getJas().set("minimumObjectArea", 0);
         Vector<PixelObject> ret = getObjects(contrast, objectContrast);
         owner.getJas().set("minimumObjectArea", tmp);
 
-        outer:for (int i = 0; i < ret.size(); i++) {
+        outer: for (int i = 0; i < ret.size(); i++) {
             // BasicWindow.showImage(ret.elementAt(i).toLetter().getImage(),"LL "
             // +ret.elementAt(i).getSize());
-            PixelObject el=ret.elementAt(i);
+            PixelObject el = ret.elementAt(i);
             if (el.getSize() < maxSize) {
                 for (PixelObject o : ret) {
                     if (el.getSize() >= maxSize && o.isTouching(el, true, mindistx, mindisty)) {
