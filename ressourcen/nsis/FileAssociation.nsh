@@ -190,7 +190,7 @@ ${EndIf}
   Push $1
  
 ${If} $ADMINATINSTALL > 0
-
+  DeleteRegKey HKCR $R1 ;Delete key with association name settings
   ReadRegStr $1 HKCR $R0 ""
   StrCmp $1 $R1 0 NoOwnAdmin ; only do this if we own it
   ReadRegStr $1 HKCR $R0 "backup_val"
@@ -201,11 +201,11 @@ ${If} $ADMINATINSTALL > 0
 RestoreAdmin:
   WriteRegStr HKCR $R0 "" $1
   DeleteRegValue HKCR $R0 "backup_val"
-  DeleteRegKey HKCR $R1 ;Delete key with association name settings
  
 NoOwnAdmin:
  
 ${Else}
+  DeleteRegKey HKCU "Software\Classes\$R1" ;Delete key with association name settings
   ReadRegStr $1 HKCU "Software\Classes\$R0" ""
   StrCmp $1 $R1 0 NoOwnUser ; only do this if we own it
   ReadRegStr $1 HKCU "Software\Classes\$R0" "backup_val"
@@ -216,7 +216,6 @@ ${Else}
 RestoreUser:
   WriteRegStr HKCU "Software\Classes\$R0" "" $1
   DeleteRegValue HKCU "Software\Classes\$R0" "backup_val"
-  DeleteRegKey HKCU "Software\Classes\$R1" ;Delete key with association name settings
  
 NoOwnUser:
 ${EndIf}
