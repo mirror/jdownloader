@@ -18,14 +18,16 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1gabba.com" }, urls = { "http://[\\w\\.]*?1gabba\\.com/node/[\\d]{4}" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {"1gabba.com"}, urls = {"http://[\\w\\.]*?1gabba\\.com/node/[\\d]{4}"}, flags = {0})
 public class NGbbCm extends PluginForDecrypt {
 
     public NGbbCm(PluginWrapper wrapper) {
@@ -38,17 +40,18 @@ public class NGbbCm extends PluginForDecrypt {
         String parameter = param.toString();
         br.setCookiesExclusive(true);
         br.getPage(parameter);
-
-        String links[] = br.getRegex("<pre>(.*?)</pre>").getColumn(0);
+        String linkHMTL = br.getRegex(Pattern.compile("Download links:.*?</div><div class=\"codeblock\"><pre>(.+)(</a>)?</pre></div></div></div></div>", Pattern.DOTALL)).getMatch(0);
+        String links[] = new Regex(linkHMTL, Pattern.compile("(http://.+)")).getColumn(0);
         progress.setRange(links.length);
         for (String element : links) {
+            if (element.contains("\">")) {
+                element = new Regex(element, Pattern.compile("(http://.*?)\">")).getMatch(0);
+            }
             decryptedLinks.add(createDownloadlink(element));
             progress.increase(1);
         }
 
         return decryptedLinks;
     }
-
-    // @Override
 
 }
