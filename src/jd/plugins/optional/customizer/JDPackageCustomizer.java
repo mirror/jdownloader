@@ -45,8 +45,8 @@ public class JDPackageCustomizer extends PluginOptional implements LinkGrabberPa
     public static final String PROPERTY_SETTINGS = "SETTINGS";
 
     private LinkGrabberController ctrl;
-    private final ImageIcon customIconOpen;
-    private final ImageIcon customIconClose;
+    private final ImageIcon customIcon;
+    private final String customIconText;
 
     private CustomizerView view;
 
@@ -55,15 +55,14 @@ public class JDPackageCustomizer extends PluginOptional implements LinkGrabberPa
 
     public JDPackageCustomizer(PluginWrapper wrapper) {
         super(wrapper);
-        
-        // TODO: create & use 'correct' icons
-        customIconOpen = JDTheme.II("gui.images.package_open_error_tree", 16, 16);
-        customIconClose = JDTheme.II("gui.images.package_closed_error_tree", 16, 16);
+
+        customIcon = JDTheme.II("gui.images.newpackage", 16, 16);
+        customIconText = JDL.L(JDL_PREFIX + "customized", "Customized with the Regex %s");
     }
 
     @Override
     public String getIconKey() {
-        return "gui.images.package_opened";
+        return "gui.images.newpackage";
     }
 
     @Override
@@ -162,13 +161,16 @@ public class JDPackageCustomizer extends PluginOptional implements LinkGrabberPa
                         fp = ctrl.getFPwithName(packageName);
                         if (fp == null) fp = new LinkGrabberFilePackage(packageName, ctrl);
                     }
-                    fp.setCustomIcon(customIconOpen, customIconClose);
+
                     fp.setExtractAfterDownload(setting.isExtract());
                     fp.setDownloadDirectory(setting.getDownloadDir());
                     fp.setUseSubDir(setting.isUseSubDirectory());
                     fp.setPassword(setting.getPassword());
                     fp.add(link);
                     link.setPriority(setting.getPriority());
+
+                    fp.setCustomIcon(customIcon, String.format(customIconText, setting.getRegex()));
+                    link.setCustomIcon(customIcon, String.format(customIconText, setting.getRegex()));
 
                     setting.incMatchCount();
                     return;

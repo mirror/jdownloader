@@ -33,9 +33,6 @@ import jd.utils.locale.JDL;
 
 public class StatusColumn extends JDTableColumn {
 
-    /**
-     * 
-     */
     private static final String JDL_PREFIX = "jd.gui.swing.jdgui.views.downloadview.TableRenderer.";
     private static final long serialVersionUID = 2228210790952050305L;
     private DownloadLink dLink;
@@ -55,8 +52,8 @@ public class StatusColumn extends JDTableColumn {
     private String strPriorityS;
     private String strPriority1;
     private String strPriority2;
-    private String strExtract;
     private String strPriority3;
+    private String strExtract;
     private FilePackage fp;
     private StringBuilder sb = new StringBuilder();
     private String strDownloadLinkActive;
@@ -168,6 +165,10 @@ public class StatusColumn extends JDTableColumn {
                     break;
                 }
             }
+            if (counter <= StatusLabel.ICONCOUNT && dLink.hasCustomIcon()) {
+                statuspanel.setIcon(counter, dLink.getCustomIcon(), dLink.getCustomIconText());
+                counter++;
+            }
             statuspanel.clearIcons(counter);
         }
         return statuspanel;
@@ -177,6 +178,7 @@ public class StatusColumn extends JDTableColumn {
     public void setValue(Object value, Object object) {
     }
 
+    @Override
     public Object getCellEditorValue() {
         return null;
     }

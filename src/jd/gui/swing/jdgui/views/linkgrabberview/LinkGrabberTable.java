@@ -35,6 +35,7 @@ import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 
 import jd.config.Property;
 import jd.controlling.LinkGrabberController;
@@ -415,7 +416,7 @@ public class LinkGrabberTable extends JDTable implements MouseListener, KeyListe
     }
 
     private void addPackageHighlighter() {
-        this.addJDRowHighlighter(new JDRowHighlighter(JDTheme.C("gui.color.downloadlist.package", "4c4c4c", 150)) {
+        this.addJDRowHighlighter(new JDRowHighlighter(UIManager.getColor("TableHeader.background")) {
             @Override
             public boolean doHighlight(Object o) {
                 return (o != null && o instanceof LinkGrabberFilePackage);

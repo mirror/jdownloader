@@ -35,7 +35,7 @@ public class CustomizerView extends ClosableView {
 
     @Override
     public Icon getIcon() {
-        return JDTheme.II("gui.images.package_opened", 16, 16);
+        return JDTheme.II("gui.images.newpackage", 16, 16);
     }
 
     @Override

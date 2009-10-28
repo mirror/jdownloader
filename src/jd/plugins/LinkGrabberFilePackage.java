@@ -61,15 +61,15 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
     private long lastEnabledCount = 0;
     private int lastenabled = 0;
     /**
-     * can be set via {@link #setCustomIcon(ImageIcon, ImageIcon)} to set a
-     * custom icon to be shown in the LinkGrabberTable
+     * can be set via {@link #setCustomIcon(ImageIcon, String)} to set a custom
+     * icon to be shown in the LinkGrabberTable
      */
-    private ImageIcon customIconOpen = null;
+    private ImageIcon customIcon = null;
     /**
-     * can be set via {@link #setCustomIcon(ImageIcon, ImageIcon)} to set a
-     * custom icon to be shown in the LinkGrabberTable
+     * can be set via {@link #setCustomIcon(ImageIcon, String)} to set a custom
+     * tooltip to be shown in the LinkGrabberTable
      */
-    private ImageIcon customIconClose = null;
+    private String customIconText = null;
 
     public boolean isIgnored() {
         return ignorePackage;
@@ -436,42 +436,42 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
     }
 
     /**
-     * @return the customIconOpen
-     * @see #customIconOpen
-     * @see #setCustomIcon(ImageIcon, ImageIcon)
+     * @return the customIcon
+     * @see #customIcon
+     * @see #setCustomIcon(ImageIcon, String)
      */
-    public ImageIcon getCustomIconOpen() {
-        return customIconOpen;
+    public ImageIcon getCustomIcon() {
+        return customIcon;
     }
 
     /**
-     * @return the customIconClose
-     * @see #customIconClose
-     * @see #setCustomIcon(ImageIcon, ImageIcon)
+     * @return the customIconText
+     * @see #customIconText
+     * @see #setCustomIcon(ImageIcon, String)
      */
-    public ImageIcon getCustomIconClose() {
-        return customIconClose;
+    public String getCustomIconText() {
+        return customIconText;
     }
 
     /**
-     * @param customIconOpen
-     *            the customIconOpen to set
-     * @param customIconClose
-     *            the customIconClose to set
+     * @param customIcon
+     *            the customIcon to set
+     * @param customIconText
+     *            the customIconText to set
      * @see #customIcon
      * @see #getCustomIcon()
      */
-    public void setCustomIcon(ImageIcon customIconOpen, ImageIcon customIconClose) {
-        this.customIconOpen = customIconOpen;
-        this.customIconClose = customIconClose;
+    public void setCustomIcon(ImageIcon customIcon, String customIconText) {
+        this.customIcon = customIcon;
+        this.customIconText = customIconText;
     }
 
     /**
-     * @return where custom icon's set?
-     * @see #setCustomIcon(ImageIcon, ImageIcon)
+     * @return is a custom icon set?
+     * @see #setCustomIcon(ImageIcon, String)
      */
-    public boolean hasCustomIcons() {
-        return this.customIconOpen != null && this.customIconClose != null;
+    public boolean hasCustomIcon() {
+        return this.customIcon != null && this.customIconText != null;
     }
 
 }

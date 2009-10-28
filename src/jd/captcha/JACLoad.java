@@ -40,23 +40,23 @@ public class JACLoad {
     private void go() {
         loadAppScence();
     }
-    private void loadAppScence()
-    {
+
+    private void loadAppScence() {
         final String destination = JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/captchas/" + "ppscnrg" + "/";
-       System.out.println(destination);
+        System.out.println(destination);
         for (int i = 0; i < 200; i++) {
 
             new Thread(new Runnable() {
                 public void run() {
-                 Browser br = new Browser();
-                 try {
-                    br.getPage("http://www.appscene.org/download/YrsmOt0FmJ1a7c95b941");
-                    br.getDownload(new File(destination+Math.random()*100+""+System.currentTimeMillis()+".jpg"), br.getRegex("<img src=\"(http://www.appscene.org/captcha/.*?)\" />").getMatch(0));
+                    Browser br = new Browser();
+                    try {
+                        br.getPage("http://www.appscene.org/download/YrsmOt0FmJ1a7c95b941");
+                        br.getDownload(new File(destination + Math.random() * 100 + "" + System.currentTimeMillis() + ".jpg"), br.getRegex("<img src=\"(http://www.appscene.org/captcha/.*?)\" />").getMatch(0));
 
-                 } catch (IOException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }
+                    } catch (IOException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    }
                 }
             }).start();
             try {
@@ -67,34 +67,35 @@ public class JACLoad {
             }
         }
     }
-    private void loadknt() {
-        final Browser br = new Browser();
-
-        try {
-            br.setCookie("kino.to", "_csoot", "1255453317840");
-            br.setCookie("kino.to", "_csuid", "48c78b976f126fa6");
-            br.setCookie("kino.to", "sitechrx", "1cb8625bb6a0e8a8125cb62ebf20d179");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        for (int i = 0; i < 100; i++) {
-            final int c = i;
-            new Thread(new Runnable() {
-                public void run() {
-                    String dir = "/home/dwd/.jd_home/captchas/knt/";
-                    File file = new File(dir + c + ".png");
-
-                    Browser cln = br.cloneBrowser();
-
-                    try {
-                        cln.getPage("http://kino.to/Entry/6788/Die%20Simpsons%20-%20Der%20Film.html");
-                        cln.getDownload(file, "http://kino.to" + cln.getRegex("src=\"(/res/gr/Img/Capture.php.*?)\" height").getMatch(0));
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }).start();
-        }
-        System.out.println(br);
-    }
+    // private void loadknt() {
+    // final Browser br = new Browser();
+    //
+    // try {
+    // br.setCookie("kino.to", "_csoot", "1255453317840");
+    // br.setCookie("kino.to", "_csuid", "48c78b976f126fa6");
+    // br.setCookie("kino.to", "sitechrx", "1cb8625bb6a0e8a8125cb62ebf20d179");
+    // } catch (IOException e) {
+    // e.printStackTrace();
+    // }
+    // for (int i = 0; i < 100; i++) {
+    // final int c = i;
+    // new Thread(new Runnable() {
+    // public void run() {
+    // String dir = "/home/dwd/.jd_home/captchas/knt/";
+    // File file = new File(dir + c + ".png");
+    //
+    // Browser cln = br.cloneBrowser();
+    //
+    // try {
+    // cln.getPage("http://kino.to/Entry/6788/Die%20Simpsons%20-%20Der%20Film.html");
+    // cln.getDownload(file, "http://kino.to" +
+    // cln.getRegex("src=\"(/res/gr/Img/Capture.php.*?)\" height").getMatch(0));
+    // } catch (IOException e) {
+    // e.printStackTrace();
+    // }
+    // }
+    // }).start();
+    // }
+    // System.out.println(br);
+    // }
 }

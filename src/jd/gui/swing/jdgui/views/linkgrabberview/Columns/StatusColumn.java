@@ -26,51 +26,57 @@ import javax.swing.ImageIcon;
 import jd.controlling.LinkGrabberController;
 import jd.gui.swing.components.table.JDTableColumn;
 import jd.gui.swing.components.table.JDTableModel;
+import jd.gui.swing.jdgui.components.StatusLabel;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkGrabberFilePackage;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.jdesktop.swingx.renderer.JRendererLabel;
-
 public class StatusColumn extends JDTableColumn {
 
-    /**
-     * 
-     */
     private static final long serialVersionUID = 2228210790952050305L;
+
     private DownloadLink dLink;
     private LinkGrabberFilePackage fp;
     private String strOnline;
     private String strOffline;
     private String strUnchecked;
-    private String strUnCheckable;
+    private String strUncheckable;
     private StringBuilder sb = new StringBuilder();
-    private ImageIcon imgFinished;
+    private ImageIcon imgOnline;
     private ImageIcon imgFailed;
     private ImageIcon imgPriorityS;
     private ImageIcon imgPriority1;
     private ImageIcon imgPriority2;
     private ImageIcon imgPriority3;
-    private ImageIcon imgUnknown;
-    private JRendererLabel jlr;
+    private ImageIcon imgUncheckable;
+    private String strPriorityS;
+    private String strPriority1;
+    private String strPriority2;
+    private String strPriority3;
+    private StatusLabel statuspanel;
+    private int counter = 0;
 
     public StatusColumn(String name, JDTableModel table) {
         super(name, table);
         strOnline = JDL.L("linkgrabber.onlinestatus.online", "online");
         strOffline = JDL.L("linkgrabber.onlinestatus.offline", "offline");
         strUnchecked = JDL.L("linkgrabber.onlinestatus.unchecked", "not checked");
-        strUnCheckable = JDL.L("linkgrabber.onlinestatus.uncheckable", "temp. uncheckable");
-        imgFinished = JDTheme.II("gui.images.ok", 16, 16);
+        strUncheckable = JDL.L("linkgrabber.onlinestatus.uncheckable", "temp. uncheckable");
+        imgOnline = JDTheme.II("gui.images.ok", 16, 16);
         imgFailed = JDTheme.II("gui.images.bad", 16, 16);
         imgPriorityS = JDTheme.II("gui.images.priority-1", 16, 16);
         imgPriority1 = JDTheme.II("gui.images.priority1", 16, 16);
         imgPriority2 = JDTheme.II("gui.images.priority2", 16, 16);
         imgPriority3 = JDTheme.II("gui.images.priority3", 16, 16);
-        imgUnknown = JDTheme.II("gui.images.help", 16, 16);
-        jlr = new JRendererLabel();
-        jlr.setBorder(null);
+        imgUncheckable = JDTheme.II("gui.images.help", 16, 16);
+        strPriorityS = JDL.L("gui.treetable.tooltip.priority-1", "Low Priority");
+        strPriority1 = JDL.L("gui.treetable.tooltip.priority1", "High Priority");
+        strPriority2 = JDL.L("gui.treetable.tooltip.priority2", "Higher Priority");
+        strPriority3 = JDL.L("gui.treetable.tooltip.priority3", "Highest Priority");
+        statuspanel = new StatusLabel();
+        statuspanel.setBorder(null);
     }
 
     @Override
@@ -85,72 +91,80 @@ public class StatusColumn extends JDTableColumn {
 
     @Override
     public Component myTableCellRendererComponent(JDTableModel table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-        jlr.setIcon(null);
+        counter = 0;
         if (value instanceof LinkGrabberFilePackage) {
             fp = (LinkGrabberFilePackage) value;
             int failedCount = fp.countFailedLinks(false);
             int size = fp.getDownloadLinks().size();
             if (failedCount > 0) {
-                jlr.setText(JDL.LF("gui.linkgrabber.packageofflinepercent", "%s offline", JDUtilities.getPercent(failedCount, size)));
+                statuspanel.setText(JDL.LF("gui.linkgrabber.packageofflinepercent", "%s offline", JDUtilities.getPercent(failedCount, size)));
             } else {
-                jlr.setText("");
+                statuspanel.setText("");
             }
+            if (fp.hasCustomIcon()) {
+                statuspanel.setIcon(-1, fp.getCustomIcon(), fp.getCustomIconText());
+            }
+            statuspanel.clearIcons(counter);
         } else if (value instanceof DownloadLink) {
             dLink = (DownloadLink) value;
             clearSB();
-            if (!dLink.isAvailabilityStatusChecked()) {
-                sb.append(strUnchecked);
-            } else {
-                if (dLink.isAvailable()) {
-                    sb.append(strOnline);
-                    if (dLink.getPriority() != 0) {
-                        switch (dLink.getPriority()) {
-                        case 0:
-                        default:
-                            break;
-                        case -1:
-                            jlr.setIcon(imgPriorityS);
-                            break;
-                        case 1:
-                            jlr.setIcon(imgPriority1);
-                            break;
-                        case 2:
-                            jlr.setIcon(imgPriority2);
-                            break;
-                        case 3:
-                            jlr.setIcon(imgPriority3);
-                            break;
-                        }
-                    } else {
-                        switch (dLink.getAvailableStatus()) {
-                        case UNCHECKABLE:
-                            jlr.setIcon(this.imgUnknown);
-                            clearSB();
-                            sb.append(strUnCheckable);
-                            break;
-                        default:
-                            jlr.setIcon(imgFinished);
-                        }
-                    }
-                } else {
-                    jlr.setIcon(imgFailed);
-                    sb.append(strOffline);
+            if (dLink.getLinkStatus().getErrorMessage() != null && dLink.getLinkStatus().getErrorMessage().trim().length() > 0) {
+                sb.append('>').append(dLink.getLinkStatus().getErrorMessage());
+            } else if (dLink.getLinkStatus().getStatusString() != null && dLink.getLinkStatus().getStatusString().trim().length() > 0) {
+                sb.append('>').append(dLink.getLinkStatus().getStatusString());
+            }
+            statuspanel.setText(sb.toString());
+            switch (dLink.getAvailableStatus()) {
+            case FALSE:
+                statuspanel.setText(strOffline + sb.toString());
+                statuspanel.setIcon(-1, imgFailed, strOffline);
+                break;
+            case TRUE:
+                statuspanel.setText(strOnline + sb.toString());
+                statuspanel.setIcon(-1, imgOnline, strOnline);
+                break;
+            case UNCHECKABLE:
+                statuspanel.setText(strUncheckable + sb.toString());
+                statuspanel.setIcon(-1, imgUncheckable, strUncheckable);
+                break;
+            case UNCHECKED:
+                statuspanel.setText(strUnchecked + sb.toString());
+                break;
+            }
+            if (dLink.getPriority() != 0) {
+                switch (dLink.getPriority()) {
+                case -1:
+                    statuspanel.setIcon(counter, imgPriorityS, strPriorityS);
+                    counter++;
+                    break;
+                case 1:
+                    statuspanel.setIcon(counter, imgPriority1, strPriority1);
+                    counter++;
+                    break;
+                case 2:
+                    statuspanel.setIcon(counter, imgPriority2, strPriority2);
+                    counter++;
+                    break;
+                case 3:
+                    statuspanel.setIcon(counter, imgPriority3, strPriority3);
+                    counter++;
+                    break;
                 }
             }
-            if (dLink.getLinkStatus().getErrorMessage() != null && dLink.getLinkStatus().getErrorMessage().trim().length() > 0) {
-                sb.append(">" + dLink.getLinkStatus().getErrorMessage());
-            } else if (dLink.getLinkStatus().getStatusString() != null && dLink.getLinkStatus().getStatusString().trim().length() > 0) {
-                sb.append(">" + dLink.getLinkStatus().getStatusString());
+            if (dLink.hasCustomIcon()) {
+                statuspanel.setIcon(counter, dLink.getCustomIcon(), dLink.getCustomIconText());
+                counter++;
             }
-            jlr.setText(sb.toString());
+            statuspanel.clearIcons(counter);
         }
-        return jlr;
+        return statuspanel;
     }
 
     @Override
     public void setValue(Object value, Object object) {
     }
 
+    @Override
     public Object getCellEditorValue() {
         return null;
     }

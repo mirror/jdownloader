@@ -58,6 +58,7 @@ import jd.utils.locale.JDL;
 class DownloadLinkBroadcaster extends JDBroadcaster<DownloadLinkListener, DownloadLinkEvent> {
 
     // @Override
+    @Override
     protected void fireEvent(DownloadLinkListener listener, DownloadLinkEvent event) {
         listener.onDownloadLinkEvent(event);
     }
@@ -68,17 +69,13 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     public static enum AvailableStatus {
         UNCHECKED, FALSE, UNCHECKABLE, TRUE;
-
     }
 
     public static final int LINKTYPE_CONTAINER = 1;
 
-    // public static final int LINKTYPE_JDU = 2;
-
     public static final int LINKTYPE_NORMAL = 0;
 
-    // Logger für Meldungen
-    private static Logger logger = jd.controlling.JDLogger.getLogger();
+    private transient static Logger logger = JDLogger.getLogger();
 
     private static final long serialVersionUID = 1981079856214268373L;
 
@@ -92,23 +89,23 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     private transient DownloadLinkBroadcaster broadcaster = new DownloadLinkBroadcaster();
 
-    // Containername
+    /** Containername */
     private String container;
 
-    // Dateiname des Containers
+    /** Dateiname des Containers */
     private String containerFile = null;
 
-    // Index dieses DownloadLinks innerhalb der Containerdatei
+    /** Index dieses DownloadLinks innerhalb der Containerdatei */
     private int containerIndex = -1;
 
-    // Aktuell heruntergeladene Bytes der Datei
+    /** Aktuell heruntergeladene Bytes der Datei */
     private long downloadCurrent = 0;
 
     private transient DownloadInterface downloadInstance;
 
     private transient SingleDownloadController downloadLinkController;
 
-    // Maximum der heruntergeladenen Datei (Dateilänge)
+    /** Maximum der heruntergeladenen Datei (Dateilänge) */
     private long downloadMax = 0;
 
     private String subdirectory = null;
@@ -117,15 +114,15 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     private FilePackage filePackage;
 
-    // Hoster des Downloads
+    /** Hoster des Downloads */
     private String host;
 
-    // Zeigt an, ob dieser Downloadlink aktiviert ist
+    /** Zeigt an, ob dieser Downloadlink aktiviert ist */
     private boolean isEnabled;
 
     private boolean isMirror = false;
 
-    // Lokaler Pfad zum letzten captchafile
+    /** Lokaler Pfad zum letzten captchafile */
     private File latestCaptchaFile = null;
 
     private LinkStatus linkStatus;
@@ -136,10 +133,10 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     private int globalSpeedLimit = -1;
 
-    // Beschreibung des Downloads
+    /** Beschreibung des Downloads */
     private String name;
 
-    // Das Plugin, das für diesen Download zuständig ist
+    /** Das Plugin, das für diesen Download zuständig ist */
     private transient PluginForHost plugin;
 
     /**
@@ -158,7 +155,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      */
     private String finalFileName;
 
-    // Von hier soll de Download stattfinden
+    /** Von hier soll der Download stattfinden */
     private String urlDownload;
 
     /**
@@ -184,6 +181,17 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     private long created = -1l;
 
     private long finishedDate = -1l;
+
+    /**
+     * can be set via {@link #setCustomIcon(ImageIcon, String)} to set a custom
+     * icon to be shown
+     */
+    private ImageIcon customIcon = null;
+    /**
+     * can be set via {@link #setCustomIcon(ImageIcon, String)} to set a custom
+     * tooltip to be shown
+     */
+    private String customIconText = null;
 
     /**
      * Erzeugt einen neuen DownloadLink
@@ -1064,6 +1072,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * @return STring
      */
     // @Override
+    @Override
     public String toString() {
         return getName();
     }
@@ -1168,4 +1177,44 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         }
         return hosters.keySet();
     }
+
+    /**
+     * @return the customIcon
+     * @see #customIcon
+     * @see #setCustomIcon(ImageIcon, String)
+     */
+    public ImageIcon getCustomIcon() {
+        return customIcon;
+    }
+
+    /**
+     * @return the customIconText
+     * @see #customIconText
+     * @see #setCustomIcon(ImageIcon, String)
+     */
+    public String getCustomIconText() {
+        return customIconText;
+    }
+
+    /**
+     * @param customIcon
+     *            the customIcon to set
+     * @param customIconText
+     *            the customIconText to set
+     * @see #customIcon
+     * @see #getCustomIcon()
+     */
+    public void setCustomIcon(ImageIcon customIcon, String customIconText) {
+        this.customIcon = customIcon;
+        this.customIconText = customIconText;
+    }
+
+    /**
+     * @return is a custom icon set?
+     * @see #setCustomIcon(ImageIcon, String)
+     */
+    public boolean hasCustomIcon() {
+        return this.customIcon != null && this.customIconText != null;
+    }
+
 }
