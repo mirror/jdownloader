@@ -251,7 +251,7 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
                             if (System.currentTimeMillis() - last > 100) {
                                 progress.setStatus((int) (pe.getCurrent() * 100 / pe.getMax()));
                                 last = System.currentTimeMillis();
-                                progress.setStatusText(output.getName() + ": " + (pe.getCurrent() / 1048576) + " MB merged");
+                                progress.setStatusText(JDL.LF("plugins.optional.hjsplit.merged", "%s: %s MB merged", output.getName(), pe.getCurrent() / 1048576));
                             }
                         } catch (Exception e) {
                             // TODO: handle exception
