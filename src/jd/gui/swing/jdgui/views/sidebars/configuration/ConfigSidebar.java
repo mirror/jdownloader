@@ -20,6 +20,8 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 
 import javax.swing.JTree;
+import javax.swing.event.TreeExpansionEvent;
+import javax.swing.event.TreeExpansionListener;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.TreePath;
@@ -81,6 +83,24 @@ public class ConfigSidebar extends SideBarPanel {
         tree.setRowHeight(24);
         tree.setExpandsSelectedPaths(true);
         tree.setBackground(null);
+        //        
+        // It seems that people do not dint configentries like
+        // "Languageselection" because it is hidden in a expandable treentry.
+        // No this entry gets selected if the tree expands. This should help
+        // people finding what they are looking for.
+        tree.addTreeExpansionListener(new TreeExpansionListener() {
+
+            public void treeCollapsed(TreeExpansionEvent event) {
+            }
+
+            public void treeExpanded(TreeExpansionEvent event) {
+                if (tree.getSelectionPath() == null) return;
+                TreeEntry entry = (TreeEntry) event.getPath().getLastPathComponent();
+                tree.setSelectionPath(event.getPath());
+                if (entry.getPanel() != null) view.setContent(entry.getPanel().getPanel());
+
+            }
+        });
         tree.getSelectionModel().addTreeSelectionListener(new TreeSelectionListener() {
 
             private TreeEntry entry;

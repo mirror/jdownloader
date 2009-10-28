@@ -1,12 +1,65 @@
 package jd;
 
-import java.io.File;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
 
 public class Tester {
 
     public static void main(String ss[]) throws Exception {
-        File file = new File((File)null, "file.de");
-        System.out.println(file);
-    }
+        String command = "G:\\Users\\coalado\\Desktop\\test.bat";
+//contents of test.bat: ping google.de -n 9999999
+        final OutputStream stdin;
+        final InputStream stderr;
+        final InputStream stdout;
 
+
+        Process process = Runtime.getRuntime().exec(command);
+        stdin = process.getOutputStream();
+        stderr = process.getErrorStream();
+        stdout = process.getInputStream();
+       
+        new Thread() {
+            public void run() {
+                BufferedReader brCleanUp = new BufferedReader(new InputStreamReader(stdout));
+                String line;
+                try {
+                    while ((line = brCleanUp.readLine()) != null) {
+                         System.out.println ("[Stdout] " + line);
+                    }           
+                brCleanUp.close();
+                } catch (IOException e) {
+                  
+                    e.printStackTrace();
+                }
+            }
+        }.start();
+
+
+        new Thread() {
+            public void run() {
+                BufferedReader brCleanUp = new BufferedReader(new InputStreamReader(stderr));
+                String line;
+                try {
+                    while ((line = brCleanUp.readLine()) != null) {
+                         System.out.println ("[Stderr] " + line);
+                    }           
+                brCleanUp.close();
+                } catch (IOException e) {
+                 
+                    e.printStackTrace();
+                }
+            }
+        }.start();
+        
+        
+        Thread.sleep(5000);
+
+        
+        process.destroy();
+        
+
+    }
 }

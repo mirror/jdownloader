@@ -25,13 +25,13 @@ import javax.swing.Icon;
 import jd.controlling.JDLogHandler;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
-import jd.gui.swing.jdgui.interfaces.View;
+import jd.gui.swing.jdgui.views.ClosableView;
 import jd.gui.swing.jdgui.views.info.LogInfoPanel;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-public class LogView extends View implements ControlListener {
+public class LogView extends ClosableView implements ControlListener {
 
     private static final long serialVersionUID = -4440872942373187410L;
 
@@ -41,14 +41,30 @@ public class LogView extends View implements ControlListener {
      */
     private static final String IDENT_PREFIX = "jd.gui.swing.jdgui.views.logview.";
 
+    private static LogView INSTANCE = null;
+
     private LogInfoPanel lip;
 
+    /**
+     * Logview Singleton
+     * 
+     * @return
+     */
+    public static LogView getLogView() {
+        if (INSTANCE == null) INSTANCE = new LogView();
+        return INSTANCE;
+    }
+
+    /**
+     * @see #getLogView()
+     */
     public LogView() {
         super();
         LogPane lp;
         this.setContent(lp = new LogPane());
         this.setDefaultInfoPanel(lip = new LogInfoPanel());
         lip.addActionListener(lp);
+        init();
     }
 
     @Override

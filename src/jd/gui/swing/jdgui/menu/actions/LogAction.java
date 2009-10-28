@@ -14,25 +14,37 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.gui.swing.jdgui.menu;
+package jd.gui.swing.jdgui.menu.actions;
 
-import jd.gui.swing.jdgui.menu.actions.AboutAction;
-import jd.gui.swing.jdgui.menu.actions.KnowledgeAction;
-import jd.gui.swing.jdgui.menu.actions.LatestChangesAction;
-import jd.gui.swing.jdgui.menu.actions.LogAction;
+import java.awt.event.ActionEvent;
 
-public class AboutMenu extends JStartMenu {
+import jd.gui.swing.SwingGui;
+import jd.gui.swing.jdgui.actions.ToolBarAction;
+import jd.gui.swing.jdgui.views.logview.LogView;
 
-    private static final long serialVersionUID = 1899581616146592295L;
+public class LogAction extends ToolBarAction {
 
-    public AboutMenu() {
-        super("gui.menu.about", "gui.images.help");
+    private static final long serialVersionUID = -353145605693194634L;
 
-        this.add(new LogAction());
-        this.add(new LatestChangesAction());
-        this.add(new KnowledgeAction());
-        this.addSeparator();
-        this.add(new AboutAction());
-
+    public LogAction() {
+        super("action.log", "gui.images.taskpanes.log");
     }
+
+    public void onAction(ActionEvent e) {
+
+      LogView view = LogView.getLogView();
+      System.out.println(view.isShown());
+      
+      SwingGui.getInstance().setContent(view);
+    }
+
+    @Override
+    public void init() {
+        this.setSelected(false);
+    }
+
+    @Override
+    public void initDefaults() {
+    }
+
 }

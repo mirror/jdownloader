@@ -287,10 +287,15 @@ public class Installer {
         JLabel lbl = new JLabel(JDL.L("installer.gui.message", "After Installation, JDownloader will update to the latest version."));
 
         if (OSDetector.getOSID() == OSDetector.OS_WINDOWS_VISTA || OSDetector.getOSID() == OSDetector.OS_WINDOWS_7) {
-            String dir = JDUtilities.getResourceFile("downloads").getAbsolutePath().substring(3).toLowerCase();
+            String dir = JDUtilities.getResourceFile("downloads").getParent().substring(3).toLowerCase();
 
-            if (dir.startsWith("programme\\") || dir.startsWith("program files\\")) {
+            if (!JDUtilities.getResourceFile("uninstall.exe").exists()&&(dir.startsWith("programme\\") || dir.startsWith("program files\\"))) {
                 lbl.setText(JDL.LF("installer.vistaDir.warning", "Warning! JD is installed in %s. This causes errors.", JDUtilities.getResourceFile("downloads")));
+                lbl.setForeground(Color.RED);
+                lbl.setBackground(Color.RED);
+            }
+            if (!JDUtilities.getResourceFile("tools/tinyupdate.jar").canWrite()) {
+                lbl.setText(JDL.LF("installer.nowriteDir.warning", "Warning! JD cannot write to %s. Check rights!", JDUtilities.getResourceFile("downloads")));
                 lbl.setForeground(Color.RED);
                 lbl.setBackground(Color.RED);
             }
