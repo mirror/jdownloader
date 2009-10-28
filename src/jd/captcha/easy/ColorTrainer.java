@@ -82,7 +82,7 @@ public class ColorTrainer {
     /**
      * Farbmodus wird in der Gui über eine Combobox gesetzt
      */
-    public byte colorDifferenceMode = CPoint.LAB_DIFFERENCE;
+    public byte colorDifferenceMode = CPoint.RGB_DIFFERENCE3;
 
     private void autoSetZoomFaktor() {
         if (originalCaptcha.getWidth() > 200 || originalCaptcha.getHeight() > 100)

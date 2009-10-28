@@ -282,7 +282,7 @@ public class NrDr {
                             if (px.grid[x1][y1] == 0xffffff && captcha.grid[x1][y1] != 0xffffff) {
                                 double xd = (x1 - x);
                                 double yd = (y1 - y);
-                                double diff = Math.sqrt(Math.pow(xd, 2) + Math.pow(yd, 2));
+                                double diff = Math.sqrt(xd*xd + yd*yd);
 
                                 if (diff > dmin && diff < dmax) {
                                     if (checkLine(x, x1, y, y1, captcha, 0xffffff)) {

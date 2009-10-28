@@ -128,7 +128,25 @@ public class Captcha extends PixelGrid {
         return ret;
 
     }
+    /**
+     * Resize auf newHeight. die proportionen bleiben erhalten
+     * 
+     * @param newHeight
+     */
+    public void resizetoHeight(int newHeight) {
+        double faktor = (double) newHeight / (double) getHeight();
+        int newWidth = (int) Math.ceil(getWidth() * faktor);
+        int[][] newGrid = new int[newWidth][newHeight];
+        for (int x = 0; x < newWidth; x++) {
+            for (int y = 0; y < newHeight; y++) {
+                int v = grid[(int) Math.floor(x / faktor)][(int) Math.floor(y / faktor)];
+                newGrid[x][y] = v;
 
+            }
+        }
+        setGrid(newGrid);
+    }
+    
     /**
      * Captcha.getCaptcha(Letter a, Letter b) Gibt einen captcha zurück der aus
      * a +6pxTrennlinie +b besteht. (Addiert 2 Letter)

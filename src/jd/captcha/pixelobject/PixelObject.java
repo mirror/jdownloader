@@ -815,7 +815,7 @@ public class PixelObject implements Comparable<PixelObject> {
             int xd = x - akt[0];
             int yd = y - akt[1];
             if (Math.max(Math.abs(xd), Math.abs(yd)) < bestDist) {
-                double dist = Math.sqrt(Math.pow(xd, 2) + Math.pow(yd, 2));
+                double dist = Math.sqrt(xd*xd + yd*yd);
                 if (dist < bestDist) {
                     bestDist = dist;
                     bestAKT = akt;

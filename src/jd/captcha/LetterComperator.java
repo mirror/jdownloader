@@ -865,9 +865,10 @@ public class LetterComperator {
             tmpCoverageFaktorB = 1.0 - tmpPixelBoth / ((double) b.getElementPixel() / (scanStepX * scanStepY));
             setLocalHeightPercent((double) tmpIntersectionHeight / (double) b.getHeight());
             localWidthPercent = (double) tmpIntersectionWidth / (double) b.getWidth();
-
-            tmpHeightFaktor = Math.pow(1.0 - getLocalHeightPercent(), 2);
-            tmpWidthFaktor = Math.pow(1.0 - localWidthPercent, 2);
+            double lhp = 1.0 - getLocalHeightPercent();
+            double lwp = 1.0 - localWidthPercent;
+            tmpHeightFaktor = lhp*lhp;
+            tmpWidthFaktor = lwp*lwp;
             tmpHeightAFaktor = 1.0 - (double) tmpIntersectionHeight / (double) a.getHeight();
             tmpWidthAFaktor = 1.0 - (double) tmpIntersectionWidth / (double) a.getWidth();
             // logger.info(tmpIntersectionWidth+ "/"+a.getWidth()+" =
@@ -944,8 +945,10 @@ public class LetterComperator {
             tmpErrorTotal = tmpErrorA * errorAWeight + tmpErrorB * errorbWeight;
             setLocalHeightPercent((double) tmpIntersectionHeight / (double) b.getHeight());
             localWidthPercent = (double) tmpIntersectionWidth / (double) b.getWidth();
-            tmpHeightFaktor = Math.pow(1.0 - getLocalHeightPercent(), 2);
-            tmpWidthFaktor = Math.pow(1.0 - localWidthPercent, 2);
+            double lhp = 1.0 - getLocalHeightPercent();
+            double lwp = 1.0 - localWidthPercent;
+            tmpHeightFaktor = lhp*lhp;
+            tmpWidthFaktor = lwp*lwp;
 
             // tmpHeightAFaktor = Math.pow(1.0 - (double) tmpIntersectionHeight
             // / (double) a.getHeight(), 2);

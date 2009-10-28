@@ -34,6 +34,11 @@ public class CPoint extends Point implements Serializable, Cloneable {
      */
     public final static byte RGB_DIFFERENCE1 = 2;
     /**
+     * Schnell berrechneter RGB Farbunterschied 
+     * der höchste unterschied in einem Kanal wird gewertet
+     */
+    public final static byte RGB_DIFFERENCE3 = 11;
+    /**
      * Farbunterschied im Raum
      */
     public final static byte RGB_DIFFERENCE2 = 3;
@@ -73,7 +78,7 @@ public class CPoint extends Point implements Serializable, Cloneable {
      */
     private boolean foreground = true;
 
-    private byte colorDifferenceMode = LAB_DIFFERENCE;
+    private byte colorDifferenceMode = RGB_DIFFERENCE3;
 
     /**
      * Beim CPoint wird der Point um Farbeigenschaften erweitert und stellt
@@ -193,6 +198,9 @@ public class CPoint extends Point implements Serializable, Cloneable {
             break;
         case RGB_DIFFERENCE2:
             dst = Colors.getRGBColorDifference2(color, this.color);
+            break;
+        case RGB_DIFFERENCE3:
+            dst = Colors.getRGBColorDifference3(color, this.color);
             break;
         case HUE_DIFFERENCE:
             dst = Colors.getHueColorDifference360(color, this.color);

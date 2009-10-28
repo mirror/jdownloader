@@ -66,7 +66,7 @@ public class BackGroundImageDialog implements ActionListener {
     private JSpinner thresholdSpinner;
     private JColorChooser colorChooser;
     private int threshold = 2;
-    private byte colorMode = CPoint.LAB_DIFFERENCE;
+    private byte colorMode = CPoint.RGB_DIFFERENCE3;
     private JPanel imagePanel;
 
     public BackGroundImage getNewBackGroundImage() {

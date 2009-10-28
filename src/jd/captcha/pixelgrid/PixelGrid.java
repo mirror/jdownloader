@@ -71,25 +71,33 @@ public class PixelGrid extends Property {
         for (int y = 0; y < getHeight(); y++) {
             for (int x = 0; x < getWidth(); x++) {
                 if (isElement(getPixelValue(x, y), avg)) {
-                    double diff = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
+                    int yy = y*y;
+                    int xx = x*x;
+                    int xd = getWidth() - x;
+                    int xxd = xd*xd;
+                    int yd= getHeight() - y;
+                    int yyd = yd*yd;
+                    double diff = Math.sqrt(xx + yy);
+                    
                     if (diff < bestOL) {
                         xOL = x;
                         yOL = y;
                         bestOL = diff;
                     }
-                    diff = Math.sqrt(Math.pow((getWidth() - x), 2) + Math.pow(y, 2));
+
+                    diff = Math.sqrt(xxd + yy);
                     if (diff < bestOR) {
                         xOR = x;
                         yOR = y;
                         bestOR = diff;
                     }
-                    diff = Math.sqrt(Math.pow(x, 2) + Math.pow((getHeight() - y), 2));
+                    diff = Math.sqrt(xx + yyd);
                     if (diff < bestUL) {
                         xUL = x;
                         yUL = y;
                         bestUL = diff;
                     }
-                    diff = Math.sqrt(Math.pow((getWidth() - x), 2) + Math.pow((getHeight() - y), 2));
+                    diff = Math.sqrt(xxd +yyd);
                     if (diff < bestUR) {
                         xUR = x;
                         yUR = y;
@@ -155,25 +163,33 @@ public class PixelGrid extends Property {
         for (int y = 0; y < getHeight(); y++) {
             for (int x = 0; x < getWidth(); x++) {
                 if (isElement(getPixelValue(x, y), avg)) {
-                    double diff = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
+                    int yy = y*y;
+                    int xx = x*x;
+                    int xd = getWidth() - x;
+                    int xxd = xd*xd;
+                    int yd= getHeight() - y;
+                    int yyd = yd*yd;
+                    double diff = Math.sqrt(xx + yy);
+                    
                     if (diff < bestOL) {
                         xOL = x;
                         yOL = y;
                         bestOL = diff;
                     }
-                    diff = Math.sqrt(Math.pow((getWidth() - x), 2) + Math.pow(y, 2));
+
+                    diff = Math.sqrt(xxd + yy);
                     if (diff < bestOR) {
                         xOR = x;
                         yOR = y;
                         bestOR = diff;
                     }
-                    diff = Math.sqrt(Math.pow(x, 2) + Math.pow((getHeight() - y), 2));
+                    diff = Math.sqrt(xx + yyd);
                     if (diff < bestUL) {
                         xUL = x;
                         yUL = y;
                         bestUL = diff;
                     }
-                    diff = Math.sqrt(Math.pow((getWidth() - x), 2) + Math.pow((getHeight() - y), 2));
+                    diff = Math.sqrt(xxd +yyd);
                     if (diff < bestUR) {
                         xUR = x;
                         yUR = y;
@@ -1606,6 +1622,7 @@ public class PixelGrid extends Property {
             w.setImage(0, 0, this.getImage());
         }
         int line = 1;
+        
         for (int x = 0; x < getWidth(); x++) {
             for (int y = 0; y < getHeight(); y++) {
 
@@ -1619,10 +1636,12 @@ public class PixelGrid extends Property {
 
                     dist = 100;
                     if (lastObject != null) {
-                        dist = (int) (Math.pow(x - (lastObject.getXMin() + lastObject.getWidth() / 2), 2) + Math.pow(y - (lastObject.getYMin() + lastObject.getHeight() / 2), 2));
+                        int xd = x - lastObject.getXMin() + lastObject.getWidth() / 2;
+                        int yd = y - lastObject.getYMin() + lastObject.getHeight() / 2;
+                        dist = xd*xd + yd*yd;
                     }
-
-                    if (lastObject != null && lastObject.getArea() < owner.getJas().getInteger("minimumObjectArea") && dist < Math.pow(owner.getJas().getInteger("minimumLetterWidth") / 2 + 1, 2)) {
+                    int d;
+                    if (lastObject != null && lastObject.getArea() < owner.getJas().getInteger("minimumObjectArea") && dist < (d=owner.getJas().getInteger("minimumLetterWidth") / 2 + 1)*d) {
 
                         object = lastObject;
                         for (int i = 0; i < ret.size(); i++) {

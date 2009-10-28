@@ -58,20 +58,7 @@ public class Colors {
         Y = (Y - var_K) / (1 - var_K);
         return new float[] { C * 100, M * 100, Y * 100, var_K * 100 };
     }
-
-    public static int Lab2RGB(int[] lab) {
-
-        double P = ((lab[0] + 16) / 116.0);
-        double x =  Math.pow((P + lab[1] / 500.0), 3);
-        double y =  Math.pow(P, 3);
-        double z = Math.pow((P - lab[2] / 200.0), 3);
-        double[] rgb= new double[3];
-        rgb[0] = (2.365 * x - 0.896 * y - 0.468 * z);
-        rgb[1] = (-0.515 * x + 1.425 * y + 0.088 * z);
-        rgb[2] = (0.005 * x - 0.014 * y + 1.009 * z);
-        return (((int)(rgb[0] * 255)) << 16 | ((int)(rgb[1] * 255)) << 8 | ((int)(rgb[2] * 255)));
-    }
-
+    
     /**
      * Rechnet RGB werte in den LAB Farbraum um. Der LAB Farbraum wird vor allem
      * zu Farbabstandsberechnungen verwendet Wert für L* enthält die
@@ -377,7 +364,7 @@ public class Colors {
         int dif0 = labA[0] - labB[0];
         int dif1 = labA[1] - labB[1];
         int dif2 = labA[2] - labB[2];
-        return Math.sqrt(Math.pow(dif0, 2) + Math.pow(dif1, 2) + Math.pow(dif2, 2));
+        return Math.sqrt(dif0*dif0 + dif1*dif1 + dif2*dif2);
     }
 
     public static double getColorDifference(int a, int b) {
@@ -410,9 +397,25 @@ public class Colors {
         int dif0 = c.getRed() - c2.getRed();
         int dif1 = c.getGreen() - c2.getGreen();
         int dif2 = c.getBlue() - c2.getBlue();
-        return (Math.abs(dif0) + Math.abs(dif1) + Math.abs(dif2)) / 3;
+        return (Math.abs(dif0)+ Math.abs(dif1)+Math.abs(dif2))/3;
     }
-
+    /**
+     * Schnell berrechneter Farbunterschied im RGB Raum nicht wirklich gut aber
+     * da der Farbunterschied unter umständen so berechnet wurde nützlich
+     * 
+     * @param color
+     * @param color2
+     * @return
+     */
+    public static double getRGBColorDifference3(int color, int color2) {
+        if (color == color2) return 0;
+        Color c = new Color(color);
+        Color c2 = new Color(color2);
+        int dif0 = c.getRed() - c2.getRed();
+        int dif1 = c.getGreen() - c2.getGreen();
+        int dif2 = c.getBlue() - c2.getBlue();
+        return Math.max(Math.abs(dif0), Math.max(Math.abs(dif1),Math.abs(dif2)));
+    }
     /**
      * Farbunterschied im RGB Raum
      * 
@@ -427,7 +430,7 @@ public class Colors {
         int dif0 = c.getRed() - c2.getRed();
         int dif1 = c.getGreen() - c2.getGreen();
         int dif2 = c.getBlue() - c2.getBlue();
-        return Math.sqrt(Math.pow(dif0, 2) + Math.pow(dif1, 2) + Math.pow(dif2, 2));
+        return Math.sqrt(dif0*dif0 + dif1*dif1 + dif2*dif2);
     }
 
     /**
@@ -445,6 +448,6 @@ public class Colors {
         double dif1 = cmyk1[1] - cmyk2[1];
         double dif2 = cmyk1[2] - cmyk2[2];
         double dif3 = cmyk1[3] - cmyk2[3];
-        return Math.sqrt(Math.pow(dif0, 2) + Math.pow(dif1, 2) + Math.pow(dif2, 2) + Math.pow(dif3, 2));
+        return Math.sqrt(dif0*dif0 + dif1*dif1 + dif2*dif2 + dif3*dif3);
     }
 }
