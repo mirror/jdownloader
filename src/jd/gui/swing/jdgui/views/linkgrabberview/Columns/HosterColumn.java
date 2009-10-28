@@ -68,13 +68,8 @@ public class HosterColumn extends JDTableColumn {
         } else {
             dLink = (DownloadLink) value;
             jlr.setToolTipText(strLoadingFrom + dLink.getPlugin().getHost());
-            if (dLink.getPlugin().hasHosterIcon()) {
-                jlr.setText(dLink.getPlugin().getSessionInfo());
-                jlr.setIcon(dLink.getPlugin().getHosterIcon());
-            } else {
-                jlr.setText(dLink.getPlugin().getHost());
-                jlr.setIcon(null);
-            }
+            jlr.setText(dLink.getPlugin().getHost() + dLink.getPlugin().getSessionInfo());
+            jlr.setIcon(dLink.getPlugin().getHosterIcon());
         }
         return jlr;
     }

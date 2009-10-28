@@ -36,10 +36,6 @@ import org.jdesktop.swingx.renderer.JRendererLabel;
 
 public class HosterColumn extends JDTableColumn {
 
-    /**
-     * 
-     */
-
     private static final String JDL_PREFIX = "jd.gui.swing.jdgui.views.downloadview.TableRenderer.";
 
     private static final long serialVersionUID = 2228210790952050305L;
@@ -49,7 +45,6 @@ public class HosterColumn extends JDTableColumn {
     private int counter = 0;
     private ImageIcon imgResume;
     private ImageIcon imgPremium;
-    private StringBuilder sb = new StringBuilder();
     private String strResume;
     private String strPremium;
 
@@ -93,15 +88,8 @@ public class HosterColumn extends JDTableColumn {
             if (dLink.getPlugin() == null) {
                 statuspanel.setText("plugin missing");
             } else {
-                if (dLink.getPlugin().hasHosterIcon()) {
-                    statuspanel.setText(dLink.getPlugin().getSessionInfo());
-                    statuspanel.setIcon(-1, dLink.getPlugin().getHosterIcon(), strLoadingFrom + dLink.getPlugin().getHost());
-                } else {
-                    clearSB();
-                    sb.append(dLink.getPlugin().getHost());
-                    sb.append(dLink.getPlugin().getSessionInfo());
-                    statuspanel.setText(sb.toString());
-                }
+                statuspanel.setText(dLink.getPlugin().getHost() + dLink.getPlugin().getSessionInfo());
+                statuspanel.setIcon(-1, dLink.getPlugin().getHosterIcon(), strLoadingFrom + dLink.getPlugin().getHost());
             }
             if (dLink.getTransferStatus().usesPremium()) {
                 statuspanel.setIcon(counter, imgPremium, strPremium);
@@ -177,10 +165,6 @@ public class HosterColumn extends JDTableColumn {
         }
         /* inform DownloadController that structure changed */
         DownloadController.getInstance().fireStructureUpdate();
-    }
-
-    private void clearSB() {
-        sb.delete(0, sb.capacity());
     }
 
     @Override

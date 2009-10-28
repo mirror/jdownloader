@@ -653,10 +653,6 @@ public abstract class PluginForHost extends Plugin {
         return "";
     }
 
-    public boolean hasHosterIcon() {
-        return hosterIcon != null || JDImage.getImage("hosterlogos/" + getHost()) != null;
-    }
-
     public ImageIcon getHosterIcon() {
         if (hosterIcon == null) hosterIcon = initHosterIcon();
         return hosterIcon;
