@@ -29,7 +29,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesmonster.com" }, urls = { "http://filesmonster\\.com/download.php\\?id=.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesmonster.com" }, urls = { "http://[\\w\\.\\d]*?filesmonster\\.com/download.php\\?id=.+" }, flags = { 0 })
 public class FilesMonsterCom extends PluginForHost {
 
     public FilesMonsterCom(PluginWrapper wrapper) {
@@ -40,15 +40,12 @@ public class FilesMonsterCom extends PluginForHost {
 
     public void login(Account account) throws Exception {
         this.setBrowserExclusive();
-        br.setFollowRedirects(false);
-        br.getPage("http://filesmonster.com/login.php");
-        Form form = br.getForm(0);
-        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        form.put("user", Encoding.urlEncode(account.getUser()));
-        form.put("pass", Encoding.urlEncode(account.getPass()));
         br.setFollowRedirects(true);
-        br.submitForm(form);
-        if (!br.containsHTML(">Your membership type</span></td>.*?<td>Premium</td>") || !br.containsHTML(">Expired\\?</span></td>.*?<td>No <a") || br.containsHTML("Username/Password can not be found in our database") || br.containsHTML("Try to recover your password by 'Password reminder'")) throw new PluginException(LinkStatus.ERROR_PREMIUM);
+        br.postPage("http://filesmonster.com/login.php", "act=login&user="+Encoding.urlEncode(account.getUser())+"&pass="+Encoding.urlEncode(account.getPass())/*+"&login.x=0&login.y=0&folder_autologin=1"*/);
+        if (!br.containsHTML(">Your membership type</span></td>.*?<td>Premium</td>") || !br.containsHTML(">Expired\\?</span></td>.*?<td>No <a")
+        || br.containsHTML("Username/Password can not be found in our database") || br.containsHTML("Try to recover your password by 'Password reminder'")) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM);
+        }
     }
 
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
@@ -117,6 +114,7 @@ public class FilesMonsterCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
+        br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         String filesize = br.getRegex("File size: <span class=\"em\">(.*?)</span>").getMatch(0);
         String filename = br.getRegex("File name: <span class=\"em\">(.*?)</span>").getMatch(0);
@@ -131,43 +129,38 @@ public class FilesMonsterCom extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-
+        br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         String wait = br.getRegex("You can wait for the start of downloading (\\d+) minute").getMatch(0);
         if (wait != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(wait) * 60 * 1000l); }
         wait = br.getRegex("is already in use (\\d+) free download").getMatch(0);
 
         if (wait != null) {
-
-        throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
-
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
         }
-
         /* get file id */
 
         String fileID = br.getRegex("<input type=\"hidden\" name=\"t\" value=\"(.*?)\"").getMatch(0);
+        String fmurl = br.getRegex("(http://[\\w\\.\\d]*?filesmonster\\.com/)").getMatch(0);
 
-        if (fileID == null) {
+        if (fileID == null || fmurl == null) {
+            if (br.containsHTML("UNDER MAINTENANCE")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Maintenance", 60 * 1000l);
+            } else if (fmurl == null) { /* no filesmonsterpage, retry */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Invalid page", 20 * 1000l);
+            }
 
             String isPay = br.getRegex("<input type=\"hidden\" name=\"showpayment\" value=\"(1)").getMatch(0);
-            String isFree = br.getRegex("(slowdownload)").getMatch(0);
-            String isFM = br.getRegex("(filesmonster)").getMatch(0);
-            if (isFM == null) { /* no filesmonsterpage, retry */
-
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Invalid page", 20 * 1000l);
-
-            } else if (isFree == null && isPay != null) {
-
+            Boolean isFree = br.containsHTML("slowdownload");
+            if (!isFree && isPay != null) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium");
-
             } else {
-
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
             }
 
         }
 
-        br.postPage("http://filesmonster.com/get/free/", "t=" + fileID);
+        br.postPage(fmurl+"get/free/", "t=" + fileID);
         /* now we have the data page, check for wait time and data id */
 
         String data = br.getRegex("name='data' value='(.*?)'>").getMatch(0);
@@ -176,12 +169,12 @@ public class FilesMonsterCom extends PluginForHost {
 
         /* request ticket for this file */
 
-        br.postPage("http://filesmonster.com/ajax.php", "act=rticket&data=" + data);
+        br.postPage(fmurl+"ajax.php", "act=rticket&data=" + data);
         data = br.getRegex("\\{\"text\":\"(.*?)\"").getMatch(0);
         /* wait */
         sleep(1000l * (Long.parseLong(wait) + 2), downloadLink);
         /* request download information */
-        br.postPage("http://filesmonster.com/ajax.php", "act=getdl&data=" + data);
+        br.postPage(fmurl+"ajax.php", "act=getdl&data=" + data);
         String url = br.getRegex("\\{\"url\":\"(.*?)\"").getMatch(0);
         data = br.getRegex("\"file_request\":\"(.*?)\"").getMatch(0);
         if (data == null || url == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT); }
