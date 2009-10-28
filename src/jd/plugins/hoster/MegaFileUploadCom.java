@@ -20,10 +20,12 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.BrowserAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -62,12 +64,45 @@ public class MegaFileUploadCom extends PluginForHost {
 
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        String passCode = null;
+        // Password protected links handling
+        if (br.containsHTML("name=downloadpw")) {
+            for (int i = 0; i <= 3; i++) {
+                Form pwform = br.getFormbyProperty("name", "myform");
+                if (pwform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                if (downloadLink.getStringProperty("pass", null) == null) {
+                    passCode = Plugin.getUserInput("Password?", downloadLink);
+                } else {
+                    /* gespeicherten PassCode holen */
+                    passCode = downloadLink.getStringProperty("pass", null);
+                }
+                pwform.put("downloadpw", passCode);
+                br.submitForm(pwform);
+                if (br.containsHTML("name=downloadpw")) {
+                    logger.warning("Wrong captcha or wrong password");
+                    downloadLink.setProperty("pass", null);
+                    continue;
+                }
+                break;
+            }
+        }
+        if (br.containsHTML("name=\"downloadpw\"")) {
+            logger.warning("Wrong password!");
+            downloadLink.setProperty("pass", null);
+            throw new PluginException(LinkStatus.ERROR_RETRY);
+        }
         String dllink = br.getRegex("location=\"(.*?)\"").getMatch(0);
         String ipblockedcheck = br.getRegex("name=\"myform\" action=\"(.*?)\"").getMatch(0);
         if (dllink == null && ipblockedcheck != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 60 * 60 * 1001l);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (passCode != null) {
+            downloadLink.setProperty("pass", passCode);
+        }
         BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
-
+        if (!(dl.getConnection().isContentDisposition())) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        }
         dl.startDownload();
     }
 

@@ -77,7 +77,7 @@ public class HotShareNet extends PluginForHost {
     }
 
     public int getMaxSimultanFreeDownloadNum() {
-        return 5;
+        return 20;
     }
 
     public void reset() {
