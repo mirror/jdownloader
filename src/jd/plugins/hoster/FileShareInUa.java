@@ -120,9 +120,9 @@ public class FileShareInUa extends PluginForHost {
         requestFileInformation(downloadLink);
         String freepage = downloadLink.getDownloadURL() + "?free";
         br.getPage(freepage);
-        String captchaid = br.getRegex("=\"border: 1px solid #e0e0e0;\" src=\"(.*?)\" width=\"10").getMatch(0);
-        if (captchaid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        String captchaurl = "http://fileshare.in.ua" + captchaid;
+        String captchapart = br.getRegex("id=\"capture\".*?src=\"(.*?)\"").getMatch(0);
+        if (captchapart == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        String captchaurl = "http://fileshare.in.ua" + captchapart;
         String code = getCaptchaCode(captchaurl, downloadLink);
         Form captchaForm = br.getForm(2);
         if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
