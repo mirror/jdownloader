@@ -48,23 +48,25 @@ import jd.utils.locale.JDL;
 public class JDShutdown extends PluginOptional {
 
     private static final int count = 60;
+    private static final String CONFIG_ENABLEDONSTART = "ENABLEDONSTART";
     private static final String CONFIG_MODE = "CONFIG_MODE";
     private static final String CONFIG_FORCESHUTDOWN = "FORCE";
     private static Thread shutdown = null;
-    private static boolean shutdownenabled = false;
+    private static boolean shutdownEnabled;
     private static MenuAction menuAction = null;
     private static String[] MODES_AVAIL = null;
 
     public JDShutdown(PluginWrapper wrapper) {
         super(wrapper);
         MODES_AVAIL = new String[] { JDL.L("gui.config.jdshutdown.shutdown", "Shutdown"), JDL.L("gui.config.jdshutdown.standby", "Standby (Nur einige OS)"), JDL.L("gui.config.jdshutdown.hibernate", "Ruhezustand/Hibernate (Nur einige OS)") };
+        shutdownEnabled = getPluginConfig().getBooleanProperty(CONFIG_ENABLEDONSTART, false);
         initConfig();
     }
 
     @Override
     public void controlEvent(ControlEvent event) {
         super.controlEvent(event);
-        if (shutdownenabled) {
+        if (shutdownEnabled) {
             if (event.getID() == ControlEvent.CONTROL_INTERACTION_CALL) {
                 if ((InteractionTrigger) event.getSource() == Interaction.INTERACTION_AFTER_DOWNLOAD_AND_INTERACTIONS) {
                     if (shutdown != null) {
@@ -99,13 +101,12 @@ public class JDShutdown extends PluginOptional {
                 this.setToolTipText(JDL.L("gui.jdshutdown.toggle.tooltip", "Enable/Disable Shutdown after Downloads"));
                 this.setEnabled(true);
                 setType(ToolBarAction.Types.TOGGLE);
-                this.setSelected(false);
                 this.setIcon("gui.images.logout");
                 this.addPropertyChangeListener(new PropertyChangeListener() {
                     public void propertyChange(PropertyChangeEvent evt) {
                         if (evt.getPropertyName() == SELECTED_KEY) {
-                            shutdownenabled = isSelected();
-                            if (shutdownenabled) {
+                            shutdownEnabled = isSelected();
+                            if (shutdownEnabled) {
                                 UserIO.getInstance().requestMessageDialog(JDL.L("addons.jdshutdown.statusmessage.enabled", "Das System wird nach dem Download heruntergefahren."));
                             } else {
                                 UserIO.getInstance().requestMessageDialog(JDL.L("addons.jdshutdown.statusmessage.disabled", "Das System wird nach dem Download NICHT heruntergefahren."));
@@ -116,7 +117,7 @@ public class JDShutdown extends PluginOptional {
             }
 
         };
-        menuAction.setSelected(false);
+        menuAction.setSelected(shutdownEnabled);
         JDUtilities.getController().addControlListener(this);
         logger.info("Shutdown OK");
         return true;
@@ -219,7 +220,7 @@ public class JDShutdown extends PluginOptional {
         System.exit(0);
     }
 
-    private void prepateHibernateorStandby() {
+    private void prepareHibernateOrStandby() {
         logger.info("Stop all running downloads");
         DownloadWatchDog.getInstance().stopDownloads();
         JDController.getInstance().syncDatabase();
@@ -235,7 +236,7 @@ public class JDShutdown extends PluginOptional {
         case OSDetector.OS_WINDOWS_2000:
         case OSDetector.OS_WINDOWS_NT:
             /* not so modern windows versions */
-            prepateHibernateorStandby();
+            prepareHibernateOrStandby();
             try {
                 JDUtilities.runCommand("powercfg.exe", new String[] { "hibernate on" }, null, 0);
             } catch (Exception e) {
@@ -260,7 +261,7 @@ public class JDShutdown extends PluginOptional {
             break;
         case OSDetector.OS_MAC_OTHER:
             /* mac os */
-            prepateHibernateorStandby();
+            prepareHibernateOrStandby();
             try {
                 JDUtilities.runCommand("/usr/bin/osascript", new String[] { JDUtilities.getResourceFile("jd/osx/osxhibernate.scpt").getAbsolutePath() }, null, 0);
             } catch (Exception e) {
@@ -268,7 +269,7 @@ public class JDShutdown extends PluginOptional {
             break;
         default:
             /* linux and other */
-            prepateHibernateorStandby();
+            prepareHibernateOrStandby();
             try {
                 dbusPowerState("Hibernate");
             } catch (Exception e) {
@@ -287,7 +288,7 @@ public class JDShutdown extends PluginOptional {
         case OSDetector.OS_WINDOWS_2000:
         case OSDetector.OS_WINDOWS_NT:
             /* not so modern windows versions */
-            prepateHibernateorStandby();
+            prepareHibernateOrStandby();
             try {
                 JDUtilities.runCommand("powercfg.exe", new String[] { "hibernate off" }, null, 0);
             } catch (Exception e) {
@@ -317,7 +318,7 @@ public class JDShutdown extends PluginOptional {
             break;
         default:
             /* linux and other */
-            prepateHibernateorStandby();
+            prepareHibernateOrStandby();
             try {
                 dbusPowerState("Suspend");
             } catch (Exception e) {
@@ -326,7 +327,7 @@ public class JDShutdown extends PluginOptional {
         }
     }
 
-    class ShutDown extends Thread {
+    private class ShutDown extends Thread {
         @Override
         public void run() {
             /* check for running jdunrar and wait */
@@ -398,11 +399,10 @@ public class JDShutdown extends PluginOptional {
         return "gui.images.logout";
     }
 
-    public void initConfig() {
+    private void initConfig() {
         SubConfiguration subConfig = getPluginConfig();
-        ConfigEntry ce;
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, CONFIG_ENABLEDONSTART, JDL.L("gui.config.jdshutdown.enabledOnStart", "Enabled on Start")).setDefaultValue(false));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, subConfig, CONFIG_MODE, MODES_AVAIL, JDL.L("gui.config.jdshutdown.mode", "Mode:")).setDefaultValue(0));
-        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, CONFIG_FORCESHUTDOWN, JDL.L("gui.config.jdshutdown.forceshutdown", "Herunterfahren erzwingen (Nur einige OS)")));
-        ce.setDefaultValue(false);
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, CONFIG_FORCESHUTDOWN, JDL.L("gui.config.jdshutdown.forceshutdown", "Herunterfahren erzwingen (Nur einige OS)")).setDefaultValue(false));
     }
 }
