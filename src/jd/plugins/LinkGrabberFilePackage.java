@@ -20,6 +20,8 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
+import javax.swing.ImageIcon;
+
 import jd.OptionalPluginWrapper;
 import jd.config.Configuration;
 import jd.config.Property;
@@ -58,6 +60,16 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
     private transient LinkGrabberFilePackageBroadcaster broadcaster = new LinkGrabberFilePackageBroadcaster();
     private long lastEnabledCount = 0;
     private int lastenabled = 0;
+    /**
+     * can be set via {@link #setCustomIcon(ImageIcon, ImageIcon)} to set a
+     * custom icon to be shown in the LinkGrabberTable
+     */
+    private ImageIcon customIconOpen = null;
+    /**
+     * can be set via {@link #setCustomIcon(ImageIcon, ImageIcon)} to set a
+     * custom icon to be shown in the LinkGrabberTable
+     */
+    private ImageIcon customIconClose = null;
 
     public boolean isIgnored() {
         return ignorePackage;
@@ -421,6 +433,45 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
             }
         }
         return ret;
+    }
+
+    /**
+     * @return the customIconOpen
+     * @see #customIconOpen
+     * @see #setCustomIcon(ImageIcon, ImageIcon)
+     */
+    public ImageIcon getCustomIconOpen() {
+        return customIconOpen;
+    }
+
+    /**
+     * @return the customIconClose
+     * @see #customIconClose
+     * @see #setCustomIcon(ImageIcon, ImageIcon)
+     */
+    public ImageIcon getCustomIconClose() {
+        return customIconClose;
+    }
+
+    /**
+     * @param customIconOpen
+     *            the customIconOpen to set
+     * @param customIconClose
+     *            the customIconClose to set
+     * @see #customIcon
+     * @see #getCustomIcon()
+     */
+    public void setCustomIcon(ImageIcon customIconOpen, ImageIcon customIconClose) {
+        this.customIconOpen = customIconOpen;
+        this.customIconClose = customIconClose;
+    }
+
+    /**
+     * @return where custom icon's set?
+     * @see #setCustomIcon(ImageIcon, ImageIcon)
+     */
+    public boolean hasCustomIcons() {
+        return this.customIconOpen != null && this.customIconClose != null;
     }
 
 }

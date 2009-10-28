@@ -25,6 +25,7 @@ import javax.swing.JTextField;
 import jd.gui.swing.components.table.JDTableColumn;
 import jd.gui.swing.components.table.JDTableModel;
 import jd.plugins.optional.customizer.CustomizeSetting;
+import jd.utils.locale.JDL;
 
 import org.jdesktop.swingx.renderer.JRendererLabel;
 
@@ -33,12 +34,16 @@ public class PackageNameColumn extends JDTableColumn implements ActionListener {
     private static final long serialVersionUID = -2305836770033923728L;
     private JRendererLabel jlr;
     private JTextField text;
+    private final String toolTip;
 
     public PackageNameColumn(String name, JDTableModel table) {
         super(name, table);
+        toolTip = JDL.L("jd.plugins.optional.customizer.columns.PackageNameColumn.toolTip", "The name of the filepackage, if the link matches the regex. Leave it empty to use the default name!");
         jlr = new JRendererLabel();
         jlr.setBorder(null);
+        jlr.setToolTipText(toolTip);
         text = new JTextField();
+        text.setToolTipText(toolTip);
         setClickstoEdit(2);
     }
 

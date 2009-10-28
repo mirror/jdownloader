@@ -47,7 +47,6 @@ import jd.nutils.JDFlags;
 import jd.nutils.JDImage;
 import jd.nutils.OSDetector;
 import jd.nutils.nativeintegration.LocalBrowser;
-import jd.utils.JDFileReg;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
@@ -93,7 +92,7 @@ public class Installer {
         AbstractDialog.setDefaultDimension(new Dimension(550, 400));
 
         askInstallFlashgot();
-        //JDFileReg.registerFileExts();
+        // JDFileReg.registerFileExts();
         JDUtilities.getConfiguration().save();
 
         if (OSDetector.isWindows()) {

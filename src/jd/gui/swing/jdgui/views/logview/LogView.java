@@ -58,7 +58,7 @@ public class LogView extends ClosableView implements ControlListener {
     /**
      * @see #getLogView()
      */
-    public LogView() {
+    private LogView() {
         super();
         LogPane lp;
         this.setContent(lp = new LogPane());

@@ -19,6 +19,8 @@ package jd.plugins.optional.customizer;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 
+import javax.swing.ImageIcon;
+
 import jd.PluginWrapper;
 import jd.controlling.LinkGrabberController;
 import jd.controlling.LinkGrabberPackagingEvent;
@@ -31,6 +33,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkGrabberFilePackage;
 import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
+import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 
 @OptionalPlugin(rev = "$Revision$", id = "packagecustomizer", hasGui = true, interfaceversion = 5)
@@ -42,6 +45,8 @@ public class JDPackageCustomizer extends PluginOptional implements LinkGrabberPa
     public static final String PROPERTY_SETTINGS = "SETTINGS";
 
     private LinkGrabberController ctrl;
+    private final ImageIcon customIconOpen;
+    private final ImageIcon customIconClose;
 
     private CustomizerView view;
 
@@ -50,6 +55,10 @@ public class JDPackageCustomizer extends PluginOptional implements LinkGrabberPa
 
     public JDPackageCustomizer(PluginWrapper wrapper) {
         super(wrapper);
+        
+        // TODO: create & use 'correct' icons
+        customIconOpen = JDTheme.II("gui.images.package_open_error_tree", 16, 16);
+        customIconClose = JDTheme.II("gui.images.package_closed_error_tree", 16, 16);
     }
 
     @Override
@@ -144,11 +153,16 @@ public class JDPackageCustomizer extends PluginOptional implements LinkGrabberPa
                         ctrl.getFilterPackage().add(link);
                         return;
                     }
+
                     String packageName = setting.getPackageName();
-                    LinkGrabberFilePackage fp = ctrl.getFPwithName(packageName);
-                    if (fp == null) {
-                        fp = new LinkGrabberFilePackage(packageName, ctrl);
+                    LinkGrabberFilePackage fp;
+                    if (packageName == null || packageName.equals("")) {
+                        fp = ctrl.getGeneratedPackage(link);
+                    } else {
+                        fp = ctrl.getFPwithName(packageName);
+                        if (fp == null) fp = new LinkGrabberFilePackage(packageName, ctrl);
                     }
+                    fp.setCustomIcon(customIconOpen, customIconClose);
                     fp.setExtractAfterDownload(setting.isExtract());
                     fp.setDownloadDirectory(setting.getDownloadDir());
                     fp.setUseSubDir(setting.isUseSubDirectory());

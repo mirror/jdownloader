@@ -70,7 +70,6 @@ import jd.gui.swing.jdgui.views.DownloadView;
 import jd.gui.swing.jdgui.views.LinkgrabberView;
 import jd.gui.swing.jdgui.views.TabbedPanelView;
 import jd.gui.swing.jdgui.views.linkgrabberview.LinkGrabberPanel;
-import jd.gui.swing.jdgui.views.logview.LogView;
 import jd.gui.swing.jdgui.views.sidebars.configuration.AddonConfig;
 import jd.gui.swing.jdgui.views.sidebars.configuration.ConfigSidebar;
 import jd.nutils.JDFlags;
@@ -98,7 +97,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
     private LinkgrabberView linkgrabberView;
     private ConfigurationView configurationView;
 
-//    private LogView logView;
+    // private LogView logView;
     private MainToolBar toolBar;
     private JPanel waitingPane;
     private boolean exitRequested = false;
@@ -170,14 +169,14 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         linkgrabberView = LinkgrabberView.getInstance();
         configurationView = new ConfigurationView();
 
-//        logView = new LogView();
+        // logView = new LogView();
 
         mainTabbedPane.addTab(downloadView);
 
         mainTabbedPane.addTab(linkgrabberView);
         mainTabbedPane.addTab(configurationView);
 
-//        mainTabbedPane.addTab(logView);
+        // mainTabbedPane.addTab(logView);
         mainTabbedPane.setSelectedComponent(downloadView);
         toolBar.setList(GUIUtils.getConfig().getGenericProperty("TOOLBAR", ToolBar.DEFAULT_LIST).toArray(new String[] {}));
 

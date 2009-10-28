@@ -462,15 +462,24 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
 
     public void attachToPackagesSecondStageInternal(DownloadLink link) {
         synchronized (LinkGrabberController.ControllerLock) {
+            if (this.isExtensionFiltered(link)) {
+                this.FP_FILTERED.add(link);
+                return;
+            }
+
+            LinkGrabberFilePackage fp = getGeneratedPackage(link);
+            fp.add(link);
+        }
+    }
+
+    public LinkGrabberFilePackage getGeneratedPackage(DownloadLink link) {
+        synchronized (LinkGrabberController.ControllerLock) {
             String packageName;
             boolean autoPackage = false;
-            if (link.getStringProperty("oldfp", null) != null) {
+            if (link.hasProperty("oldfp")) {
                 /* get old packagename */
                 packageName = link.getStringProperty("oldfp");
                 link.setProperty("oldfp", Property.NULL);
-            } else if (this.isExtensionFiltered(link)) {
-                this.FP_FILTERED.add(link);
-                return;
             } else if (link.getFilePackage() != FilePackage.getDefaultFilePackage()) {
                 if (link.getFilePackage().getStringProperty(DONTFORCEPACKAGENAME, null) != null) {
                     /* enable autopackaging even if filepackage is set */
@@ -483,6 +492,7 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
                 autoPackage = true;
                 packageName = LinkGrabberPackager.cleanFileName(link.getName());
             }
+
             int bestSim = 0;
             LinkGrabberFilePackage bestp = null;
             synchronized (packages) {
@@ -494,16 +504,17 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
                     }
                 }
             }
+
             if (bestSim < 99) {
-                LinkGrabberFilePackage fp = new LinkGrabberFilePackage(packageName, this);
-                fp.setPassword(link.getFilePackage().getPassword());
-                fp.setDownloadDirectory(link.getFilePackage().getDownloadDirectory());
-                fp.add(link);
+                bestp = new LinkGrabberFilePackage(packageName, this);
+                bestp.setPassword(link.getFilePackage().getPassword());
+                bestp.setDownloadDirectory(link.getFilePackage().getDownloadDirectory());
             } else {
                 String newPackageName = autoPackage ? getSimString(bestp.getName(), packageName) : packageName;
                 bestp.setName(newPackageName);
-                bestp.add(link);
             }
+
+            return bestp;
         }
     }
 

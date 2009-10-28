@@ -80,6 +80,8 @@ public class FileColumn extends JDTableColumn {
             jlr.setText(fp.getName() + " [" + fp.size() + "]");
             if (fp.countFailedLinks(false) > 0) {
                 jlr.setIcon(!fp.getBooleanProperty(LinkGrabberTable.PROPERTY_EXPANDED, false) ? icon_fp_closed_error : icon_fp_open_error);
+            } else if (fp.hasCustomIcons()) {
+                jlr.setIcon(!fp.getBooleanProperty(LinkGrabberTable.PROPERTY_EXPANDED, false) ? fp.getCustomIconClose() : fp.getCustomIconOpen());
             } else {
                 jlr.setIcon(!fp.getBooleanProperty(LinkGrabberTable.PROPERTY_EXPANDED, false) ? icon_fp_closed : icon_fp_open);
             }

@@ -55,7 +55,7 @@ public class Megauploadcom extends PluginForHost {
 
     private static enum STATUS {
         ONLINE, OFFLINE, API, BLOCKED
-    };
+    }
 
     private static final String MU_PARAM_PORT = "MU_PARAM_PORT";
     private static final String MU_PORTROTATION = "MU_PORTROTATION";
@@ -64,7 +64,7 @@ public class Megauploadcom extends PluginForHost {
     private static final Object Lock = new Object();
     private static int simultanpremium = 1;
     private boolean onlyapi = false;
-    private boolean usepremium = false;
+    // private boolean usepremium = false;
 
     /*
      * every jd session starts with 1=default, because no waittime does not work
@@ -771,7 +771,7 @@ public class Megauploadcom extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink parameter) throws Exception {
-        usepremium = false;
+        // usepremium = false;
         STATUS filestatus = getFileStatus(parameter);
         switch (filestatus) {
         case API:

@@ -115,7 +115,7 @@ public abstract class PluginWrapper implements Comparable<PluginWrapper> {
     private static URLClassLoader CL;
 
     /**
-     * Static map where all pluginwrapper register themselves with key= {@link
+     * Static map where all pluginwrapper register themselves with key =
      * {@link PluginWrapper#className}
      */
     private static final HashMap<String, PluginWrapper> WRAPPER = new HashMap<String, PluginWrapper>();

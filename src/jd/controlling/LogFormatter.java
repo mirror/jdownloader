@@ -26,47 +26,40 @@ import java.util.logging.SimpleFormatter;
  * Mit dieser Klasse können die Logmeldungen anders dargestellt werden. Der Code
  * wurde hauptsächlich aus SimpleFormatter übernommen. Lediglich die Format
  * Methode wurde ein wenig umgestellt.
- * 
- * 
  */
 public class LogFormatter extends SimpleFormatter {
 
-    Date dat = new Date();
-    DateFormat longTimestamp = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.MEDIUM);
-    // private MessageFormat formatter;
-    // Line separator string. This is the value of the line.separator
-    // property at the moment that the SimpleFormatter was created.
-    private String lineSeparator = System.getProperty("line.separator");
-    private StringBuilder sb = new StringBuilder();
+    private final Date dat = new Date();
+    private final DateFormat longTimestamp = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.MEDIUM);
+    /**
+     * Line separator string. This is the value of the line.separator property
+     * at the moment that the SimpleFormatter was created.
+     */
+    private final String lineSeparator = System.getProperty("line.separator");
+    private final StringBuilder sb = new StringBuilder();
     private int lastThreadID;
 
+    @Override
     public synchronized String format(LogRecord record) {
-
         /* clear StringBuilder buffer */
         sb.delete(0, sb.capacity());
 
         // Minimize memory allocations here.
         dat.setTime(record.getMillis());
 
-        // text = new StringBuffer();
-        // if (formatter == null) {
-        // formatter = new MessageFormat(format);
-        // }
-        // formatter.format(args, text, null);
         String message = formatMessage(record);
-        // sb.append(text);
-        // sb.append(" - ");
-       int th = record.getThreadID();
-       if(th!=lastThreadID){
-           sb.append("\r\n  ------------------------  Thread: ");
-           sb.append(th);
-           sb.append("----------------------\r\n");
-       }
-       lastThreadID=th;
+        int th = record.getThreadID();
+        if (th != lastThreadID) {
+            sb.append("\r\n------------------------  Thread: ");
+            sb.append(th);
+            sb.append("  -----------------------\r\n");
+        }
+        lastThreadID = th;
         if (JDLogger.getLogger().getLevel() == Level.ALL) {
             sb.append(record.getThreadID());
-            for(int i=0;i<(record.getThreadID()%10);i++)sb.append("  ");
-            
+            for (int i = 0; i < (record.getThreadID() % 10); i++)
+                sb.append("  ");
+
             sb.append(longTimestamp.format(dat));
             sb.append(" - ");
             sb.append(record.getLevel().getName());
@@ -77,11 +70,11 @@ public class LogFormatter extends SimpleFormatter {
                 sb.append(record.getLoggerName());
             }
             if (record.getSourceMethodName() != null) {
-                sb.append("(");
+                sb.append('(');
                 sb.append(record.getSourceMethodName());
-                sb.append(")");
+                sb.append(')');
             }
-           
+
             sb.append("] ");
 
             sb.append("-> ");
