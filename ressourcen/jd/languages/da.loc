@@ -831,6 +831,7 @@ jd.gui.swing.jdgui.menu.actions.backuplinklistaction.password = Indtast krypteri
 jd.gui.swing.jdgui.settings.configpanel.restartquestion = Denne mulighed kræver genstart af JDownloader
 jd.gui.swing.jdgui.settings.configpanel.restartquestion.ok = Genstart NU!
 jd.gui.swing.jdgui.settings.configpanel.restartquestion.title = Genstart krævet!
+jd.gui.swing.jdgui.settings.panels.addons.configpaneladdons.breadcrum = Plugins & Tilføjelser - Udvidelser
 jd.gui.swing.jdgui.settings.panels.configpaneladdons.addons.title = Udvidelser
 jd.gui.swing.jdgui.settings.panels.configpaneladdons.askafterinit = Vis %s nu?\r\Du kan åbne det senere ved at bruge Hovedmenuen->Tilføjelser
 jd.gui.swing.jdgui.settings.panels.configpanelcaptcha.breadcrum = Moduler - AntiCaptcha
