@@ -66,7 +66,7 @@ public class LoadCaptchas {
     private ArrayList<LoadImage> images;
     private LoadImage selectedImage;
     private JFrame owner;
-    public int maxHeight = 400;
+    public int maxHeight = 500;
     public boolean threaded = false;
     public int maxWeight = 600;
     /**
@@ -171,6 +171,7 @@ public class LoadCaptchas {
                 });
 
                 final ArrayList<JButton> bts = new ArrayList<JButton>();
+                System.out.println(images.size());
                 for (int j = 0; j < images.size(); j++) {
                     final LoadImage f = images.get(j);
                     if (f == null || f.file == null || !f.file.exists() || f.file.length() < 100) continue;

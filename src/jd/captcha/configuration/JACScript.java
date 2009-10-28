@@ -978,6 +978,12 @@ public class JACScript {
          */
         set("easyCaptchaRemoveSmallObjects", true);
         /**
+         * Gibt an ob bei EasyCaptcha die Buchstaben als Schwarzweiß gewertet werden sollen
+         * 
+         */
+        set("easyCaptchaBW", false);
+
+        /**
          * Gibt an ob bei der objekterenntung pixeln gefolg twerden die quer
          * liegen.
          */

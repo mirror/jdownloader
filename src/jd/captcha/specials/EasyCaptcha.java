@@ -288,7 +288,7 @@ public class EasyCaptcha {
 
     public static List<PixelObject> getRightletters(List<PixelObject> os, Captcha captcha, int[] pixels, int[] mergeInfos, int i) {
         i++;
-        if(i>captcha.owner.getLetterNum()*2)return os;
+        if (i > captcha.owner.getLetterNum() * 2) return os;
         for (Iterator<PixelObject> iterator = os.iterator(); iterator.hasNext();) {
             PixelObject elem = iterator.next();
             if (os.size() < 3 || os.size() < os.size() - 1) break;
@@ -314,10 +314,10 @@ public class EasyCaptcha {
             PixelObject[] bs = biggest.splitAt(gabBiggest[0]);
             // BasicWindow.showImage(biggest.toLetter().getImage(),"biggest"+gabBiggest[1]);
 
-            if (gabBiggest[1] != 0 &&  captcha.owner.letterDB.size()>3) {
+            if (gabBiggest[1] != 0 && captcha.owner.letterDB.size() > 3) {
                 LevenShteinLetterComperator lc = new LevenShteinLetterComperator(captcha.owner);
-                lc.detectHorizonalOffset=true;
-                lc.detectVerticalOffset=true;
+                lc.detectHorizonalOffset = true;
+                lc.detectVerticalOffset = true;
                 Letter bestBiggest = biggest.toLetter();
                 bestBiggest.toBlackAndWhite();
                 captcha.owner.jas.executeLetterPrepareCommands(bestBiggest);
@@ -339,25 +339,25 @@ public class EasyCaptcha {
                 }
                 if (bestA.detected.getValityPercent() <= bestBiggest.detected.getValityPercent() && bestA.detected.getValityPercent() < 30) {
                     os.get(os.indexOf(biggest)).detected = bestA.detected;
-                    return getRightletters(os, captcha, pixels, mergeInfos,i);
+                    return getRightletters(os, captcha, pixels, mergeInfos, i);
                 }
-                
+
                 if (bestBiggest.getDecodedValue() != null && bestBiggest.detected.getValityPercent() < 30) {
 
                     int[] offset = bestBiggest.detected.getOffset();
-//                    System.out.println(offset[0]);
+                    // System.out.println(offset[0]);
                     if (offset != null) {
-                        double bwd = (double)biggest.getWidth()/(double)bestBiggestBack.getWidth();
+                        double bwd = (double) biggest.getWidth() / (double) bestBiggestBack.getWidth();
                         int gab = 0;
                         if (be)
-                            gab = (int) (biggest.getWidth() - ((offset[0] + bestBiggest.detected.getB().getWidth())*bwd));
+                            gab = (int) (biggest.getWidth() - ((offset[0] + bestBiggest.detected.getB().getWidth()) * bwd));
                         else
-                            gab = (int) ((offset[0] + bestBiggest.detected.getB().getWidth())*bwd);
+                            gab = (int) ((offset[0] + bestBiggest.detected.getB().getWidth()) * bwd);
                         if (gab == biggest.getWidth() || gab == 0) {
                             gab = gabBiggest[0];
                         }
                         bs = biggest.splitAt(gab);
-//                         BasicWindow.showImage(biggest.toLetter().getImage(),""+gab);
+                        // BasicWindow.showImage(biggest.toLetter().getImage(),""+gab);
 
                     }
                     // BasicWindow.showImage(r.getB().getImage(),""+r.getDecodedValue());
@@ -373,7 +373,7 @@ public class EasyCaptcha {
                 }
             }
 
-            return getRightletters(os, captcha, pixels, mergeInfos,i);
+            return getRightletters(os, captcha, pixels, mergeInfos, i);
         }
         return os;
     }
@@ -410,10 +410,10 @@ public class EasyCaptcha {
         int gap = 0;
         int lastgap = -1;
         int[][] grid = captcha.grid;
-
+        boolean bw = captcha.owner.jas.getBoolean("easyCaptchaBW");
         ArrayList<PixelObject> reto = new ArrayList<PixelObject>();
         ArrayList<PixelObject> merge;
-        int nrx = (int) (captcha.getWidth()/ (captcha.owner.getLetterNum()*1.2));
+        int nrx = (int) (captcha.getWidth() / (captcha.owner.getLetterNum() * 1.2));
         int nry = captcha.getHeight();
         // farbunterscheidung durch ebenen einbauen
         for (int x = 0; x < captcha.getWidth(); x++) {
@@ -443,6 +443,8 @@ public class EasyCaptcha {
                         captcha.setPixelValue(x, y, 0xFFFFFF);
                     else {
                         add = true;
+                        if (bw) captcha.setPixelValue(x, y, 0x000000);
+
                         bcuy++;
                     }
 
@@ -451,6 +453,7 @@ public class EasyCaptcha {
                         captcha.setPixelValue(x, y, 0xFFFFFF);
                     else {
                         add = true;
+                        captcha.setPixelValue(x, y, 0xFFFFFF);
                         bcuy++;
                     }
 
@@ -465,7 +468,7 @@ public class EasyCaptcha {
                     for (PixelObject o : reto) {
                         double rgbdiff;
                         int mc = o.getMostcolor();
-                        if (o.isTouching(x, y, true, nrx, nry) &&((rgbdiff = Colors.getRGBColorDifference2(gc, mc)) < 6 || (rgbdiff < 25 && Colors.getColorDifference(gc, mc) < 8))) {
+                        if (o.isTouching(x, y, true, nrx, nry) && ((rgbdiff = Colors.getRGBColorDifference2(gc, mc)) < 6 || (rgbdiff < 25 && Colors.getColorDifference(gc, mc) < 8))) {
                             merge.add(o);
                         }
                     }
@@ -495,6 +498,9 @@ public class EasyCaptcha {
             } else
                 gap++;
 
+        }
+        if (bw) {
+            captcha.setOrgGrid(captcha.grid);
         }
         int gab = lastgap / (captcha.owner.getLetterNum());
         ArrayList<PixelObject> reto2 = new ArrayList<PixelObject>();
@@ -544,17 +550,15 @@ public class EasyCaptcha {
         int gab = pixels[2] / (captcha.owner.getLetterNum());
 
         int[] mergeInfos = mergeObjectsBasic(os, captcha, gab);
-        getRightletters(os, captcha, pixels, mergeInfos,0);
+        getRightletters(os, captcha, pixels, mergeInfos, 0);
         Collections.sort(os);
         ArrayList<Letter> ret = new ArrayList<Letter>();
         for (PixelObject pixelObject : os) {
             if (pixelObject.getArea() > (mergeInfos[0] / (captcha.owner.getLetterNum() * 3)) && pixelObject.getSize() > (mergeInfos[1] / (captcha.owner.getLetterNum() * 5))) {
 
                 Letter let = pixelObject.toLetter();
-                if(captcha.owner.jas.getBoolean("easyCaptchaRemoveSmallObjects"))
-                {
-                    let.removeSmallObjects(0.75, 0.75, pixelObject.getSize()
-                            / 10,pixelObject.getWidth()/3, pixelObject.getHeight()/3 );
+                if (captcha.owner.jas.getBoolean("easyCaptchaRemoveSmallObjects")) {
+                    let.removeSmallObjects(0.75, 0.75, pixelObject.getSize() / 10, pixelObject.getWidth() / 3, pixelObject.getHeight() / 3);
                     let = let.toPixelObject(0.75).toLetter();
                 }
                 captcha.owner.jas.executeLetterPrepareCommands(let);
@@ -564,6 +568,7 @@ public class EasyCaptcha {
         return ret.toArray(new Letter[] {});
 
     }
+
     public static Letter[] letterFilter(Letter[] org, JAntiCaptcha jac) {
         new LevenShteinLetterComperator(jac).run(org);
         return org;

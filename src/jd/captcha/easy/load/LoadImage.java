@@ -157,7 +157,7 @@ public class LoadImage {
         {file.delete(); 
         return false;}
         file.renameTo(dest);
-        file=dest;
+        this.file=dest;
         return true;
     }
     /**
