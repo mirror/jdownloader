@@ -160,6 +160,7 @@ public class Odsiebiecom extends PluginForHost {
                     // br.getRegex("<img src=\"http://odsiebie.com/v_auth.php\" style=\"display: none;\"><img src=\"(.*?)\"  style=\"display:").getMatch(0);
                     // adr = "http://odsiebie.com/v.php";
                     if (adr == null || file == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+
                     // URLConnectionAdapter con = brc.openGetConnection(adr);
                     // File file = this.getLocalCaptchaFile();
                     // Browser.download(file, con);
@@ -169,7 +170,7 @@ public class Odsiebiecom extends PluginForHost {
                     capform = br.getFormbyProperty("name", "wer1");
                     if (capform == null) capform = br.getFormbyProperty("name", "wer");
                     i++;
-                    if (i > 3) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
+                    if (i > 3) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 }
                 if (capform != null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
             }
@@ -177,20 +178,12 @@ public class Odsiebiecom extends PluginForHost {
             /* DownloadLink suchen */
             steplink = br.getRegex("href=\"/download/(.*?)\"").getMatch(0);
             if (steplink == null) {
-                int i = 1;
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            }
+
+            throw new PluginException(LinkStatus.ERROR_RETRY); }
             downloadurl = "http://odsiebie.com/download/" + steplink;
             br.getPage(downloadurl);
-            if (br.getRedirectLocation() == null || br.getRedirectLocation().contains("upload")) {
-                int u = 1;
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            }
+            if (br.getRedirectLocation() == null || !new Regex(br.getRedirectLocation(), ".*?srv.*?odsiebie.*?/.*?/.+").matches()) throw new PluginException(LinkStatus.ERROR_RETRY);
             downloadurl = br.getRedirectLocation();
-            if (downloadurl == null) {
-                int d = 1;
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            }
         }
         /*
          * Leerzeichen müssen durch %20 ersetzt werden!!!!!!!!, sonst werden sie
