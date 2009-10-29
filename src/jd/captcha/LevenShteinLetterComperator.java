@@ -15,6 +15,7 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package jd.captcha;
+
 import java.util.List;
 import jd.captcha.pixelgrid.Letter;
 
@@ -179,54 +180,58 @@ public class LevenShteinLetterComperator {
     private int[] getLevenshteinDistance(boolean[][][] ba, boolean[][][] bb, int best) {
         int res = 0;
         if (ba == null || bb == null) return null;
+        boolean[][] bba1 = ba[0];
+        boolean[][] bbb1 = bb[0];
+        boolean[][] bba2 = ba[1];
+        boolean[][] bbb2 = bb[1];
+
         int bounds1 = 0;
-        int diff1 = ba[0].length - bb[0].length;
+        int diff1 = bba1.length - bbb1.length;
         boolean swV = false;
         boolean swH = false;
 
         if (diff1 > 0) {
-            bounds1 = getBounds(ba[0], bb[0], detectVerticalOffset);
+            bounds1 = getBounds(bba1, bbb1, detectVerticalOffset);
         } else if (diff1 < 0) {
-            boolean[][] bac = bb[0];
-            bb[0] = ba[0];
-            ba[0] = bac;
+            boolean[][] bac = bbb1;
+            bbb1 = bba1;
+            bba1 = bac;
             swV = true;
-            bounds1 = getBounds(ba[0], bb[0], detectVerticalOffset);
+            bounds1 = getBounds(bba1, bbb1, detectVerticalOffset);
         } else
             bounds1 = 0;
-        res += getBoundDiff(ba[0], bounds1, bb[0].length) * costs;
+        res += getBoundDiff(bba1, bounds1, bbb1.length) * costs;
         if (best < res) return null;
 
         int bounds2 = 0;
-        int diff2 = ba[1].length - bb[1].length;
+        int diff2 = bba2.length - bbb2.length;
 
         if (diff2 > 0) {
-            bounds2 = getBounds(ba[1], bb[1], detectHorizonalOffset);
+            bounds2 = getBounds(bba2, bbb2, detectHorizonalOffset);
         } else if (diff2 < 0) {
-            boolean[][] bac = bb[1];
-            bb[1] = ba[1];
-            ba[1] = bac;
+            boolean[][] bac = bbb2;
+            bbb2 = bba2;
+            bba2 = bac;
             swH = true;
-            bounds2 = getBounds(ba[1], bb[1], detectHorizonalOffset);
+            bounds2 = getBounds(bba2, bbb2, detectHorizonalOffset);
         } else
             bounds2 = 0;
-        res += getBoundDiff(ba[1], bounds2, bb[1].length) * costs;
+        res += getBoundDiff(bba2, bounds2, bbb2.length) * costs;
 
         if (best < res) return null;
 
-        // res += (((Math.abs(ba[0].length - bb[0].length) *
-        // Math.max(ba[1].length,
-        // bb[1].length))+(Math.abs(ba[1].length - bb[1].length) *
-        // Math.max(ba[0].length, bb[0].length)))/dimension);
+        // res += (((Math.abs(bba1.length - bbb1.length) * Math.max(bba2.length,
+        // bbb2.length))+(Math.abs(bba2.length - bbb2.length) *
+        // Math.max(bba1.length, bbb1.length)))/dimension);
 
-        // System.out.println(ba[0].length+":"+bb[0].length+":"+bounds1[1]+":"+bounds1[0]);
-        for (int c = 0; c < bb[0].length; c++) {
+        // System.out.println(bba1.length+":"+bbb1.length+":"+bounds1[1]+":"+bounds1[0]);
+        for (int c = 0; c < bbb1.length; c++) {
             // System.out.println(c-bounds1[0]);
-            res += getLevenshteinDistance(ba[0][c + bounds1], bb[0][c]);
+            res += getLevenshteinDistance(bba1[c + bounds1], bbb1[c]);
             if (best < res) return null;
         }
-        for (int c = 0; c < bb[1].length; c++) {
-            res += getLevenshteinDistance(ba[1][c + bounds2], bb[1][c]);
+        for (int c = 0; c < bbb2.length; c++) {
+            res += getLevenshteinDistance(bba2[c + bounds2], bbb2[c]);
             if (best < res) return null;
         }
         return new int[] { res, swV ? -bounds1 : bounds1, swH ? -bounds2 : bounds2 };
@@ -258,8 +263,10 @@ public class LevenShteinLetterComperator {
 
         for (i = 1; i <= n; i++) {
             p[i] = i;
+            c[i] = i;
         }
-        c=p;
+
+        // c=p;
         for (j = 1; j <= m; j++) {
             j1 = j;
             j2 = --j1;
@@ -269,8 +276,8 @@ public class LevenShteinLetterComperator {
             d[0] = j;
 
             for (i = 1; i <= n; i++) {
-                i1 = i-1;
-                cost = (l1[i1] == t_j) ? 1 : 0;
+                i1 = i - 1;
+                cost = (l1[i1] == t_j) ? 0 : 1;
                 // minimum of cell to the left+1, to the top+1, diagonally left
                 // and up +cost
                 d[i] = Math.min(d[i1] + costs, Math.min(p[i] + costs, p[i1] + cost * costs));
