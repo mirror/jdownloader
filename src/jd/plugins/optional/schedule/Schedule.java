@@ -22,6 +22,9 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 
+import javax.swing.JButton;
+import javax.swing.JMenuBar;
+
 import jd.PluginWrapper;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
@@ -61,6 +64,8 @@ public class Schedule extends PluginOptional {
     private boolean running = false;
 
     private MenuAction activateAction;
+
+    protected JButton top;
 
     public static final Object LOCK = new Object();
 
@@ -152,7 +157,22 @@ public class Schedule extends PluginOptional {
 
     private void showGui() {
         if (view == null) {
-            view = new SchedulerView();
+            view = new SchedulerView()
+            {
+                /**
+                 * 
+                 */
+                private static final long serialVersionUID = -545554629733003140L;
+
+                @Override
+                protected void initMenu(JMenuBar menubar) {
+                    menubar.add(top = new JButton(""));
+                    top.setContentAreaFilled(false);
+                    top.setToolTipText("");
+
+                }
+            };
+            
             view.getBroadcaster().addListener(new SwitchPanelListener() {
 
                 @Override
