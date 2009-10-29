@@ -98,7 +98,7 @@ public class ToolBar extends JToolBar {
     private String getColConstraints(String[] list) {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < list.length; ++i) {
-            sb.append("[]");
+            sb.append("[]2");
         }
         sb.append("[grow,fill]");
         return sb.toString();
