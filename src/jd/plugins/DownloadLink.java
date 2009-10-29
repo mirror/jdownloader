@@ -220,7 +220,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         created = System.currentTimeMillis();
         finishedDate = -1l;
         this.setUrlDownload(urlDownload);
-        if (plugin != null) {
+        if (plugin != null && this.getDownloadURL() != null) {
             try {
                 plugin.correctDownloadLink(this);
             } catch (Exception e) {

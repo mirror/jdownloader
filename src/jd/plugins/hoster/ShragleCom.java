@@ -109,8 +109,9 @@ public class ShragleCom extends PluginForHost {
         }
         URLConnectionAdapter con = dl.getConnection();
         if (con.getContentType() != null && con.getContentType().contains("html")) {
-            con.disconnect();
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 60 * 60 * 1000l);
+            br.followConnection();
+            if ((br.containsHTML("Die von Ihnen angeforderte Datei") && br.containsHTML("Bitte versuchen Sie es"))) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         }
         dl.startDownload();
     }
@@ -153,17 +154,12 @@ public class ShragleCom extends PluginForHost {
         br.setFollowRedirects(true);
 
         form.setAction(form.getAction() + "?jd=1");
-        try {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, true, 1);
-        } catch (Exception e) {
-            if (dl.getConnection() != null) dl.getConnection().disconnect();
-            if (mayfail) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
-            throw e;
-        }
+
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, true, 1);
         URLConnectionAdapter con = dl.getConnection();
         if (con.getContentType() != null && con.getContentType().contains("html")) {
             br.followConnection();
-
+            if ((br.containsHTML("Die von Ihnen angeforderte Datei") && br.containsHTML("Bitte versuchen Sie es")) || mayfail) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         }
         dl.startDownload();
