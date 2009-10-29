@@ -23,8 +23,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.logging.Logger;
 
-import javax.swing.AbstractButton;
-import javax.swing.JLabel;
+import javax.swing.JCheckBox;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
@@ -60,6 +59,7 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
     private static final long serialVersionUID = -7685744533817989161L;
     private PremiumTable internalTable;
     private JScrollPane scrollPane;
+    private JCheckBox checkBox;
     private Timer Update_Async;
     protected Logger logger = JDLogger.getLogger();
 
@@ -80,7 +80,7 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
 
     @Override
     public void initPanel() {
-        panel.setLayout(new MigLayout("ins 5,wrap 1", "[fill,grow]", "[fill,grow]"));
+        panel.setLayout(new MigLayout("ins 5,wrap 1", "[fill,grow]", "[][fill,grow]"));
         initPanel(panel);
         JTabbedPane tabbed = new JTabbedPane();
         tabbed.setOpaque(false);
@@ -105,18 +105,20 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
         AccountController.getInstance().addListener(this);
         initActions();
 
-        ViewToolbar vt = new ViewToolbar() {
-            private static final long serialVersionUID = 583469943193290056L;
-
-            @Override
-            public void setDefaults(int i, AbstractButton ab) {
-                ab.setForeground(new JLabel().getForeground());
-            }
-        };
+        ViewToolbar vt = new ViewToolbar();
         vt.setList(new String[] { "action.premiumview.addacc", "action.premiumview.removeacc", "action.premium.buy" });
 
-        panel.add(vt, "dock north,gapleft 3");
+        panel.add(vt, "gapleft 3, split2");
+        panel.add(checkBox = new JCheckBox(JDL.L(JDL_PREFIX + "accountSelection", "Always select the premium account with the most traffic left for downloading")), "w min!, right");
+        checkBox.setHorizontalTextPosition(JCheckBox.LEADING);
+        checkBox.setSelected(AccountController.getInstance().getBooleanProperty(AccountController.PROPERTY_ACCOUNT_SELECTION, true));
         panel.add(scrollPane);
+    }
+
+    @Override
+    protected void saveSpecial() {
+        AccountController.getInstance().setProperty(AccountController.PROPERTY_ACCOUNT_SELECTION, checkBox.isSelected());
+        AccountController.getInstance().save();
     }
 
     @Override

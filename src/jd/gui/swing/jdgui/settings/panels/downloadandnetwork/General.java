@@ -23,7 +23,6 @@ import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
-import jd.controlling.AccountController;
 import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.jdgui.JDGuiConstants;
 import jd.gui.swing.jdgui.settings.ConfigPanel;
@@ -99,8 +98,6 @@ public class General extends ConfigPanel {
         container.addEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_SPINNER, SubConfiguration.getConfig("DOWNLOAD"), Configuration.PARAM_DOWNLOAD_PAUSE_SPEED, JDL.L("gui.config.download.pausespeed", "Speed of pause in kb/s"), 10, 500));
         conditionEntry.setDefaultValue(10);
         conditionEntry.setStep(10);
-
-        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, AccountController.getInstance(), AccountController.PROPERTY_ACCOUNT_SELECTION, JDL.L(JDL_PREFIX + "accountSelection", "Always select the premium account with the most traffic left for downloading")).setDefaultValue(true));
 
         return container;
     }

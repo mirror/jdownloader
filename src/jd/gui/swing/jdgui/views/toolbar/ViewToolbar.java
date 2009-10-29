@@ -108,11 +108,11 @@ public class ViewToolbar extends JPanel {
     public String getColConstraint(int col, String string) {
         switch (col) {
         case FIRST_COL:
-            return halign == EAST ? "[grow]" : "";
+            return halign == EAST ? "[grow]5" : "";
         case LAST_COL:
             return halign == EAST ? "" : "[grow,fill]";
         default:
-            return "[]";
+            return "[]5";
         }
 
     }
