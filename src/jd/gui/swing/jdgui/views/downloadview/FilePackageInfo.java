@@ -118,7 +118,6 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
          * wichtig: die set funktionen lösen eine action aus , welche ansonsten
          * wiederum ein updatevent aufrufen würden
          */
-
         txtSize.setText(Formatter.formatReadable(fp.getTotalEstimatedPackageSize()));
         txtName.setText(fp.getName());
         txtComment.setText(fp.getComment());
@@ -341,6 +340,7 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
     }
 
     public void onHideSave() {
+        if (fp == null) return;
         fp.setName(txtName.getText());
         fp.setComment(txtComment.getText());
         fp.setPassword(txtPassword.getText());

@@ -122,9 +122,16 @@ public class UploadBoxCom extends PluginForHost {
         if (br.containsHTML("The last download from your IP was done less than 30 minutes ago")) {
             String strWaittime = br.getRegex("(\\d{2}:\\d{2}:\\d{2}) before you can download more").getMatch(0);
             String strWaittimeArray[] = strWaittime.split(":");
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, ((Integer.parseInt(strWaittimeArray[0]) * 3600) + (Integer.parseInt(strWaittimeArray[1]) * 60) + Integer.parseInt(strWaittimeArray[2])) * 1000l);
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, ((Integer.parseInt(strWaittimeArray[0]) * 3600) + (Integer.parseInt(strWaittimeArray[1]) * 60) + Integer.parseInt(strWaittimeArray[2])) * 1000l);
+        }
+        if (br.containsHTML("The limit of traffic for you is exceeded")) {
+            String wait = br.getRegex("traffic for you is exceeded.*?Please.*?wait.*?>(\\d+)<").getMatch(0);
+            int waittime = 30;
+            if (wait != null) waittime = Integer.parseInt(wait.trim());
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waittime * 60 * 1000l);
         }
         form = br.getFormbyProperty("id", "free");
+        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         String captchaUrl = form.getRegex("captcha.*?src=\"(.*?)\"").getMatch(0);
         if (captchaUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         String code = getCaptchaCode(captchaUrl, link);

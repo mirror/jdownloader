@@ -817,11 +817,6 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
             Update_Async.restart();
             break;
         case LinkGrabberControllerEvent.REFRESH_STRUCTURE:
-            if (event.getParameter() != null) {
-                if (filePackageInfo.getPackage() != null && filePackageInfo.getPackage() == event.getParameter()) {
-                    filePackageInfo.update();
-                }
-            }
             Update_Async.restart();
             break;
         default:

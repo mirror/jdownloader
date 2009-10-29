@@ -160,7 +160,6 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
 
     public void setUseSubDir(boolean b) {
         useSubDir = b;
-        broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.UPDATE_EVENT));
     }
 
     public boolean useSubDir() {
@@ -169,7 +168,6 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
 
     public void setDownloadDirectory(String dir) {
         downloadDirectory = JDUtilities.removeEndingPoints(dir);
-        broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.UPDATE_EVENT));
     }
 
     public LinkGrabberFilePackage(String name) {
@@ -265,7 +263,6 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
 
     public void setExtractAfterDownload(boolean extractAfterDownload) {
         this.extractAfterDownload = extractAfterDownload;
-        broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.UPDATE_EVENT));
     }
 
     public void addAllAt(ArrayList<DownloadLink> links, int index) {
@@ -376,7 +373,6 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
             this.name = JDUtilities.removeEndingPoints(JDL.L("controller.packages.defaultname", "various"));
         } else
             this.name = JDUtilities.removeEndingPoints(JDIO.validateFileandPathName(name));
-        broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.UPDATE_EVENT));
     }
 
     public void setPassword(String password) {

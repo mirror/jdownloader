@@ -17,6 +17,7 @@
 package jd.controlling;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
@@ -151,14 +152,13 @@ public class SingleDownloadController extends Thread {
                 linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                 linkStatus.setErrorMessage(JDL.L("plugins.errors.disconnect", "Disconnect?"));
                 linkStatus.setValue(5 * 60 * 1000l);
+            } catch (IOException e) {
+                linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+                linkStatus.setErrorMessage(JDL.L("plugins.errors.hosterproblem", "Hoster problem?"));
+                linkStatus.setValue(10 * 60 * 1000l);
             } catch (InterruptedException e) {
                 logger.finest("Hoster Plugin Version: " + downloadLink.getPlugin().getVersion());
                 linkStatus.addStatus(LinkStatus.ERROR_FATAL);
-                linkStatus.setErrorMessage(JDL.L("plugins.errors.error", "Error: ") + JDUtilities.convertExceptionReadable(e));
-            } catch (NullPointerException e) {
-                logger.finest("Hoster Plugin Version: " + downloadLink.getPlugin().getVersion());
-                JDLogger.exception(e);
-                linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
                 linkStatus.setErrorMessage(JDL.L("plugins.errors.error", "Error: ") + JDUtilities.convertExceptionReadable(e));
             } catch (Exception e) {
                 logger.finest("Hoster Plugin Version: " + downloadLink.getPlugin().getVersion());
