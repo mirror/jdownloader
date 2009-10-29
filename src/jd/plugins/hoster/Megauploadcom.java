@@ -441,6 +441,11 @@ public class Megauploadcom extends PluginForHost {
             /* mark link being checked by api */
             id = "00000";
             try {
+                /*
+                 * reset status to uncheckable because api sometimes returns
+                 * false results
+                 */
+                u.setAvailableStatus(AvailableStatus.UNCHECKABLE);
                 id = getDownloadID(u);
                 map.put("id" + i, id);
             } catch (Exception e) {

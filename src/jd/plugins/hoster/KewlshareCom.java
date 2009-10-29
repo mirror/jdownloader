@@ -19,8 +19,11 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -28,15 +31,45 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kewlshare.com" }, urls = { "http://[\\w\\.]*?kewlshare\\.com/dl/[\\w]+/" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kewlshare.com" }, urls = { "http://[\\w\\.]*?kewlshare\\.com/dl/[\\w]+/" }, flags = { 2 })
 public class KewlshareCom extends PluginForHost {
 
     public KewlshareCom(PluginWrapper wrapper) {
         super(wrapper);
+        enablePremium("http://kewlshare.com/loginpremium.php");
     }
 
     public String getAGBLink() {
         return "http://kewlshare.com/tos";
+    }
+
+    public void login(Account account) throws Exception {
+        this.setBrowserExclusive();
+        br.getPage("http://kewlshare.com/");
+        br.postPage("http://kewlshare.com/login.php", "login=null&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&loginButton.x=51&loginButton.y=14&loginButton=Login");
+        if (br.getCookie("http://kewlshare.com/", "file_uid") == null || br.getCookie("http://kewlshare.com/", "file_logined") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        br.getPage("http://kewlshare.com/myaccount.php");
+        String type = br.getRegex("ACCOUNT TYPE<.*?class=.*?>.*?>(.*?)<").getMatch(0);
+        if (type == null || !type.equalsIgnoreCase("Premium")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    }
+
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        String expires = br.getRegex("Expire Date.*?>.*?class=.*?>.*?>(.*?)<").getMatch(0);
+        if (expires != null) {
+            /* FIXME: days and months right? */
+            ai.setValidUntil(Regex.getMilliSeconds(expires, "MM-dd-yy", null));
+            account.setValid(true);
+        } else {
+            account.setValid(false);
+        }
+        return ai;
     }
 
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
@@ -49,6 +82,20 @@ public class KewlshareCom extends PluginForHost {
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(Regex.getSize(filesize.trim()));
         return AvailableStatus.TRUE;
+    }
+
+    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+        requestFileInformation(downloadLink);
+        login(account);
+        br.getPage(downloadLink.getDownloadURL());
+        Form dlForm = br.getForm(0);
+        if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlForm, true, 1);
+        if (!dl.getConnection().isContentDisposition()) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        }
+        dl.startDownload();
     }
 
     public void handleFree(DownloadLink downloadLink) throws Exception {
@@ -70,12 +117,11 @@ public class KewlshareCom extends PluginForHost {
         br.submitForm(form);
         String dllink = br.getRegex("\"padding-right:10px;\">.*?<form action=\"(.*?)\" method").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
             if (br.containsHTML("your current parallel download")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         }
         dl.startDownload();
     }

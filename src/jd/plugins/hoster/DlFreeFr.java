@@ -37,12 +37,10 @@ public class DlFreeFr extends PluginForHost {
         super(wrapper);
     }
 
-    // @Override
     public String getAGBLink() {
         return "http://dl.free.fr/";
     }
 
-    // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -64,43 +62,40 @@ public class DlFreeFr extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    // @Override
-    /*
-     * /* public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        /* Nochmals das File überprüfen */
-        requestFileInformation(downloadLink);
-        if (br.containsHTML("Trop de slots utilis")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l); }
-        String dlLink = br.getRegex("<tr><td colspan=\"2\" style=\"text-align: center; border: 1px solid #ffffff\"><a style=\"text-decoration: underline\" href=\"(.*?free.*?fr.*?)\">").getMatch(0);
-        if (dlLink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT); }
+        this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        /* Datei herunterladen */
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlLink, true, 1);
-        if (!dl.getConnection().isContentDisposition()) {
-            dl.getConnection().disconnect();
-            if (br.getURL().contains("overload")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l); }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, 1);
+        if (dl.getConnection().isContentDisposition()) {
+            /* directdownload */
+        } else {
+            br.followConnection();
+            if (br.containsHTML("Trop de slots utilis")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l); }
+            String filename = br.getRegex(Pattern.compile("Fichier:</td>.*?<td.*?>(.*?)<", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
+            String filesize = br.getRegex(Pattern.compile("Taille:</td>.*?<td.*?>(.*?)soit", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
+            if (filename == null || filesize == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+            String dlLink = br.getRegex("<tr><td colspan=\"2\" style=\"text-align: center; border: 1px solid #ffffff\"><a style=\"text-decoration: underline\" href=\"(.*?free.*?fr.*?)\">").getMatch(0);
+            if (dlLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlLink, true, 1);
+            if (!dl.getConnection().isContentDisposition()) {
+                br.followConnection();
+                if (br.getURL().contains("overload")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l); }
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            }
         }
         dl.startDownload();
     }
 
-    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    // @Override
     public void reset() {
     }
 
-    // @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 }

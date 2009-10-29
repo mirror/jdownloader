@@ -47,13 +47,13 @@ public class DataHu extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException {
-        br.setCookiesExclusive(true);
-        br.clearCookies(getHost());
-        System.out.println(br.getPage(downloadLink.getDownloadURL()));
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.getRedirectLocation() != null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String[] dat = br.getRegex("<div class=\"download_filename\">(.*?)<\\/div>.*\\:(.*?)<div class=\"download_not_start\">").getRow(0);
-        long length = Regex.getSize(dat[1].trim());
-        downloadLink.setDownloadSize(length);
+        if (dat.length != 2) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        downloadLink.setDownloadSize(Regex.getSize(dat[1].trim()));
         downloadLink.setName(dat[0].trim());
         return AvailableStatus.TRUE;
     }
