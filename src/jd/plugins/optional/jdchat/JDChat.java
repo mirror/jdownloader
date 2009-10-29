@@ -37,6 +37,7 @@ import java.util.regex.Pattern;
 
 import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JLabel;
 import javax.swing.JMenuBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
@@ -118,7 +119,7 @@ public class JDChat extends PluginOptional implements ControlListener {
     // private static final int TEXT_BUFFER = 1024 * 600;
     public static final String USERLIST_STYLE = JDIO.readFileToString(JDUtilities.getResourceFile("plugins/jdchat/userliststyles.css"));
     private static final String CHANNEL_LNG = "CHANNEL_LNG3";
-    protected JButton top;
+    protected JLabel top;
     private boolean changed;
 
     private IRCConnection conn;
@@ -1088,6 +1089,10 @@ public class JDChat extends PluginOptional implements ControlListener {
             }
         };
         frame.setLayout(new MigLayout("ins 0, wrap 1", "[grow,fill]", "[grow,fill][]"));
+
+        top = new JLabel(JDL.L("jd.plugins.optional.jdchat.JDChat.topic.default", "Loading Message of the day"));
+        top.setToolTipText(JDL.L("jd.plugins.optional.jdchat.JDChat.topic.tooltip", "Message of the day"));
+        frame.add(top, "dock north,gapx 5px");
         closeTab = new JButton("Close Tab");
         closeTab.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent e) {
@@ -1458,19 +1463,7 @@ public class JDChat extends PluginOptional implements ControlListener {
 
             if (view == null) {
                 initGUI();
-                view = new JDChatView() {
-
-                    private static final long serialVersionUID = 3966113588850405974L;
-
-                    @Override
-                    protected void initMenu(JMenuBar menubar) {
-                        menubar.add(top = new JButton(JDL.L("jd.plugins.optional.jdchat.JDChat.topic.default", "Loading Message of the day")));
-                        top.setContentAreaFilled(false);
-                        top.setToolTipText(JDL.L("jd.plugins.optional.jdchat.JDChat.topic.tooltip", "Message of the day"));
-
-                    }
-
-                };
+                view = new JDChatView();
                 view.getBroadcaster().addListener(new SwitchPanelListener() {
 
                     @Override
