@@ -168,12 +168,6 @@ public class LinkStatus implements Serializable {
 
     private static final long serialVersionUID = 3885661829491436448L;
 
-    @Deprecated
-    public static final int VALUE_ID_PREMIUM_TEMP_DISABLE = PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE;
-
-    @Deprecated
-    public static final int VALUE_ID_PREMIUM_DISABLE = PluginException.VALUE_ID_PREMIUM_DISABLE;
-
     private DownloadLink downloadLink;
     private String errorMessage;
 

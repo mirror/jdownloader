@@ -17,7 +17,6 @@
 package jd.gui.swing.jdgui.settings;
 
 import java.util.ArrayList;
-import java.util.Vector;
 import java.util.logging.Logger;
 
 import javax.swing.JComponent;
@@ -30,6 +29,7 @@ import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
 import jd.config.SubConfiguration;
 import jd.config.ConfigEntry.PropertyType;
+import jd.controlling.JDLogger;
 import jd.gui.UserIO;
 import jd.gui.swing.Factory;
 import jd.gui.swing.jdgui.JDGui;
@@ -43,9 +43,9 @@ public class ConfigPanel extends SwitchPanel {
 
     private static final long serialVersionUID = 3383448498625377495L;
 
-    protected Vector<GUIConfigEntry> entries = new Vector<GUIConfigEntry>();
+    protected ArrayList<GUIConfigEntry> entries = new ArrayList<GUIConfigEntry>();
 
-    protected Logger logger = jd.controlling.JDLogger.getLogger();
+    protected Logger logger = JDLogger.getLogger();
 
     protected JPanel panel;
 
@@ -60,7 +60,7 @@ public class ConfigPanel extends SwitchPanel {
     }
 
     /**
-     * Constructor to display a COnfigpanel with contents of container
+     * Constructor to display a ConfigPanel with contents of container
      * 
      * @param container
      */
@@ -84,10 +84,6 @@ public class ConfigPanel extends SwitchPanel {
     }
 
     public void addGUIConfigEntry(GUIConfigEntry entry, JPanel panel) {
-
-        // JDUtilities.addToGridBag(panel, entry, GridBagConstraints.RELATIVE,
-        // GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0,
-        // insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTH);
         ConfigGroup group = entry.getConfigEntry().getGroup();
 
         if (group == null) {
@@ -206,8 +202,10 @@ public class ConfigPanel extends SwitchPanel {
         addGUIConfigEntry(entry, panel);
     }
 
+    /**
+     * Should be overwritten to initialise the contentpanel.
+     */
     public void initPanel() {
-
     }
 
     public final void load() {
@@ -297,7 +295,7 @@ public class ConfigPanel extends SwitchPanel {
     private final void saveConfigEntries() {
         ArrayList<SubConfiguration> subs = new ArrayList<SubConfiguration>();
         for (GUIConfigEntry akt : entries) {
-            if (akt.getConfigEntry().getPropertyInstance() instanceof SubConfiguration && subs.indexOf(akt.getConfigEntry().getPropertyInstance()) < 0) {
+            if (akt.getConfigEntry().getPropertyInstance() instanceof SubConfiguration && !subs.contains(akt.getConfigEntry().getPropertyInstance())) {
                 subs.add((SubConfiguration) akt.getConfigEntry().getPropertyInstance());
             }
             akt.save();

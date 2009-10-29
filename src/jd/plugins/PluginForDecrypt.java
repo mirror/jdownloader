@@ -120,7 +120,7 @@ public abstract class PluginForDecrypt extends Plugin {
     }
 
     @Override
-    public ArrayList<MenuAction> createMenuitems() {
+    public final ArrayList<MenuAction> createMenuitems() {
         return null;
     }
 
