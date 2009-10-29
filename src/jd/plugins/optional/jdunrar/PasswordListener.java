@@ -51,7 +51,6 @@ public class PasswordListener implements ProcessListener {
             JDLogger.exception(e);
             lastLine = new String(buffer.getLast(buffer.position() - lastLinePosition));
         }
-
         if (new Regex(lastLine, Pattern.compile(".*?password.{0,200}: $", Pattern.CASE_INSENSITIVE)).matches()) {
             if (!new Regex(lastLine, Pattern.compile("CRC failed in")).matches()) {
                 exec.writetoOutputStream(this.password);

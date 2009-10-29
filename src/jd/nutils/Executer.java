@@ -72,48 +72,51 @@ public class Executer extends Thread implements Runnable {
         private boolean endOfFileReceived = false;
 
         private InputStream stream;
+        /* flag to signal if underlying stream got already closed */
+        private boolean isClosed = false;
+
+        private final Object LOCK = new Object();
 
         public StreamObserver(InputStream stream, DynByteBuffer buffer) {
             this.stream = stream;
             reader = new BufferedInputStream(stream);
-
             dynbuf = buffer;
         }
 
         @Override
         public void run() {
-
             this.started = true;
             int num;
             try {
                 fireEvent(dynbuf, 0, this == Executer.this.sbeObserver ? Executer.LISTENER_ERRORSTREAM : Executer.LISTENER_STDSTREAM);
-
+                /* waitloop until we got interrupt request or data to read */
                 while (isInterrupted() || reader.available() <= 0) {
                     if (isInterrupted()) return;
                     Thread.sleep(150);
                 }
-                this.idle = false;
+                /*
+                 * this must be synchronized for correct working
+                 * requestInterrupt()
+                 */
+                synchronized (LOCK) {
+                    this.idle = false;
+                }
                 while (!endOfFileReceived) {
                     num = readLine();
-
                     String line;
-
                     try {
                         line = new String(dynbuf.getLast(num), codepage).trim();
                     } catch (UnsupportedEncodingException e) {
                         e.printStackTrace();
                         line = new String(dynbuf.getLast(num)).trim();
-
                     }
                     if (line.length() > 0) {
                         if (isDebug()) {
                             System.out.println(this + ": " + line + "");
                         }
-
                         fireEvent(line, dynbuf, this == Executer.this.sbeObserver ? Executer.LISTENER_ERRORSTREAM : Executer.LISTENER_STDSTREAM);
 
                     }
-
                 }
             } catch (IOException e) {
                 e.printStackTrace();
@@ -122,7 +125,6 @@ public class Executer extends Thread implements Runnable {
             } finally {
                 System.out.println("END");
             }
-
         }
 
         private int readLine() throws IOException, InterruptedException {
@@ -137,15 +139,10 @@ public class Executer extends Thread implements Runnable {
             // if the concerned process has finished, and the stream does not
             // provide data, we can interrupt the observer
             // use isIdle() to check observer status
-            this.idle = true;
-
             this.idle = false;
             for (;;) {
-
                 int read;
-
                 if (isInterrupted()) throw new InterruptedException();
-
                 if ((read = reader.read(buffer)) < 0) {
                     this.endOfFileReceived = true;
                     return i;
@@ -155,13 +152,10 @@ public class Executer extends Thread implements Runnable {
                     dynbuf.put(buffer, read);
                     if (buffer[0] == '\b' || buffer[0] == '\r' || buffer[0] == '\n') { return i; }
                     fireEvent(dynbuf, read, this == Executer.this.sbeObserver ? Executer.LISTENER_ERRORSTREAM : Executer.LISTENER_STDSTREAM);
-
                 } else {
                     Thread.sleep(100);
-
                 }
             }
-
         }
 
         public boolean isStarted() {
@@ -169,11 +163,25 @@ public class Executer extends Thread implements Runnable {
         }
 
         public void requestInterrupt() {
-            // use this flag to give the reader a chance to finish reading
-
-            this.interrupt();
-            // to interrupt a running read
             try {
+                /*
+                 * if there is data available to read and we never read any data
+                 * from stream yet, let the streamobserver read it, because it
+                 * can be important data (eg. it breaks unrar pw finding for
+                 * fast computers if we dont do this)
+                 */
+                /* must be synchronized */
+                synchronized (LOCK) {
+                    /*
+                     * we never read any data but there is some available, so
+                     * abort interrupt this time(its the only possible time to
+                     * abort an interrupt request) and read it
+                     */
+                    if (!isClosed && idle == true && reader.available() > 0) return;
+                }
+                /* close the stream and interrupt the observer */
+                isClosed = true;
+                this.interrupt();
                 stream.close();
             } catch (IOException e) {
                 e.printStackTrace();
@@ -215,7 +223,6 @@ public class Executer extends Thread implements Runnable {
         super("Executer: " + command);
         this.command = command;
         parameter = new ArrayList<String>();
-
         inputStreamBuffer = new DynByteBuffer(1024 * 4);
         errorStreamBuffer = new DynByteBuffer(1024 * 4);
     }
@@ -386,7 +393,6 @@ public class Executer extends Thread implements Runnable {
 
     public void writetoOutputStream(String data) {
         if (data == null || data.length() == 0) data = "";
-
         try {
             outputStream.write(data.getBytes());
             outputStream.write("\n".getBytes());

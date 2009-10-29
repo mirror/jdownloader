@@ -87,10 +87,12 @@ public class LinkGrabberPackager {
         name = getNameMatch(name, pat14);
         name = getNameMatch(name, pat15);
         name = getNameMatch(name, pat16);
-        /* replace _ with spaces */
-        name = name.replaceAll("_", " ");
-        /* if enabled, replace dots with spaces */
-        if (SubConfiguration.getConfig(LinkGrabberController.CONFIG).getBooleanProperty(LinkGrabberController.PARAM_REPLACEDOTS, false)) name = name.replaceAll("\\.", " ");
+
+        /* if enabled, replace dots and _ with spaces */
+        if (SubConfiguration.getConfig(LinkGrabberController.CONFIG).getBooleanProperty(LinkGrabberController.PARAM_REPLACECHARS, false)) {
+            name = name.replaceAll("_", " ");
+            name = name.replaceAll("\\.", " ");
+        }
         return name.trim();
     }
 
