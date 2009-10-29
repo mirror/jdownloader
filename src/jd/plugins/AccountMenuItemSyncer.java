@@ -65,10 +65,6 @@ public class AccountMenuItemSyncer implements AccountControllerListener {
 
     }
 
-    public boolean vetoAccountGetEvent(String host, Account account) {
-        return false;
-    }
-
     public MenuAction get(Account a) {
         return map.get(a);
     }

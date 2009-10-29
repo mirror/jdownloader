@@ -126,6 +126,7 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
         JDUtilities.getController().addControlListener(this);
 
         Thread updateTimer = new Thread("PremiumStatusUpdateTimer") {
+            @Override
             public void run() {
                 requestUpdate();
                 while (true) {
@@ -199,7 +200,7 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
         if (redrawinprogress) return;
         redrawinprogress = true;
         new GuiRunnable<Object>() {
-            // @Override
+            @Override
             public Object runSave() {
                 int ii = 0;
                 try {
@@ -310,6 +311,7 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
     private void doUpdate() {
         if (updateinprogress || !guiInitComplete) return;
         new Thread() {
+            @Override
             public void run() {
                 this.setName("PremiumStatus: update");
                 updateinprogress = true;
@@ -318,10 +320,6 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
                 updateinprogress = false;
             }
         }.start();
-    }
-
-    public boolean vetoAccountGetEvent(String host, Account account) {
-        return false;
     }
 
     public void actionPerformed(ActionEvent e) {

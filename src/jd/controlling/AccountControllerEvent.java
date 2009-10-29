@@ -40,7 +40,6 @@ public class AccountControllerEvent extends JDEvent {
 
     public static final byte ACCOUNT_ADDED = 10;
     public static final byte ACCOUNT_REMOVED = 11;
-    public static final byte ACCOUNT_GET = 12;
 
     public static final byte ACCOUNT_UPDATE = 20;
 

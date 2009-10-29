@@ -39,7 +39,6 @@ import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.gui.swing.menu.HosterMenu;
 import jd.nutils.JDFlags;
-import jd.plugins.Account;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
@@ -71,6 +70,7 @@ public class PremiumMenu extends JStartMenu implements ActionListener, AccountCo
 
             private static final long serialVersionUID = 4276436625882302179L;
 
+            @Override
             public void onAction(ActionEvent e) {
                 if (!this.isSelected()) {
                     int answer = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_COUNTDOWN, JDL.L("dialogs.premiumstatus.global.title", "Disable Premium?"), JDL.L("dialogs.premiumstatus.global.message", "Do you really want to disable all premium accounts?"), JDTheme.II("gui.images.warning", 32, 32), JDL.L("gui.btn_yes", "Yes"), JDL.L("gui.btn_no", "No"));
@@ -143,6 +143,7 @@ public class PremiumMenu extends JStartMenu implements ActionListener, AccountCo
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == Update_Async) {
             new GuiRunnable<Object>() {
+                @Override
                 public Object runSave() {
                     update();
                     return null;
@@ -167,10 +168,6 @@ public class PremiumMenu extends JStartMenu implements ActionListener, AccountCo
             Update_Async.restart();
             break;
         }
-    }
-
-    public boolean vetoAccountGetEvent(String host, Account account) {
-        return false;
     }
 
 }

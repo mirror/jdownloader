@@ -478,7 +478,7 @@ public abstract class PluginForHost extends Plugin {
 
             long traffic = Math.max(0, downloadLink.getDownloadCurrent() - before);
             boolean throwupdate = false;
-            synchronized (AccountController.AccountLock) {
+            synchronized (AccountController.ACCOUNT_LOCK) {
                 AccountInfo ai = account.getAccountInfo();
                 if (traffic > 0 && ai != null && !ai.isUnlimitedTraffic()) {
                     long left = Math.max(0, ai.getTrafficLeft() - traffic);

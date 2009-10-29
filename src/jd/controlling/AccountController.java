@@ -26,11 +26,9 @@ import java.util.TreeMap;
 
 import javax.swing.Timer;
 
-import jd.HostPluginWrapper;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.event.JDBroadcaster;
-import jd.event.JDEvent;
 import jd.gui.swing.components.Balloon;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -39,73 +37,24 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-class AccountControllerBroadcaster extends JDBroadcaster<AccountControllerListener, AccountControllerEvent> {
-
-    public boolean fireEvent(AccountControllerEvent event) {
-        if (event.getID() != AccountControllerEvent.ACCOUNT_GET) {
-            super.fireEvent(event);
-            return false;
-        } else {
-            synchronized (removeList) {
-                callList.removeAll(removeList);
-                removeList.clear();
-            }
-            for (int i = callList.size() - 1; i >= 0; i--) {
-                if (callList.get(i).vetoAccountGetEvent(event.getHost(), event.getAccount())) return true;
-            }
-            return false;
-        }
-    }
-
-    // @Override
-    protected void fireEvent(AccountControllerListener listener, AccountControllerEvent event) {
-        listener.onAccountControllerEvent(event);
-    }
-
-}
-
-class AccountProviderEvent extends JDEvent {
-    public AccountProviderEvent(Object source, int ID) {
-        super(source, ID);
-    }
-}
-
-class AccountProviderBroadcaster extends JDBroadcaster<AccountProvider, AccountProviderEvent> {
-    @Override
-    protected void fireEvent(AccountProvider listener, AccountProviderEvent event) {
-    }
-
-    public ArrayList<Account> collectAccountsFor(PluginForHost pluginForHost) {
-        ArrayList<Account> ret = new ArrayList<Account>();
-        if (pluginForHost == null) return ret;
-        String host = pluginForHost.getHost();
-        synchronized (removeList) {
-            callList.removeAll(removeList);
-            removeList.clear();
-        }
-        for (int i = callList.size() - 1; i >= 0; i--) {
-            ArrayList<Account> ret2 = callList.get(i).provideAccountsFor(host);
-            if (ret2 != null) ret.addAll(ret2);
-        }
-        return ret;
-    }
-}
-
 public class AccountController extends SubConfiguration implements ActionListener, AccountControllerListener {
 
-    public static enum ProviderMode {
-        FIFO, RR
-    }
-
     private static final long serialVersionUID = -7560087582989096645L;
+
+    public static final String PROPERTY_ACCOUNT_SELECTION = "ACCOUNT_SELECTION";
 
     private static TreeMap<String, ArrayList<Account>> hosteraccounts = null;
 
     private static AccountController INSTANCE = null;
 
-    private AccountControllerBroadcaster broadcaster = new AccountControllerBroadcaster();
+    private JDBroadcaster<AccountControllerListener, AccountControllerEvent> broadcaster = new JDBroadcaster<AccountControllerListener, AccountControllerEvent>() {
 
-    private AccountProviderBroadcaster provider = new AccountProviderBroadcaster();
+        @Override
+        protected void fireEvent(AccountControllerListener listener, AccountControllerEvent event) {
+            listener.onAccountControllerEvent(event);
+        }
+
+    };
 
     private Timer asyncSaveIntervalTimer;
 
@@ -115,10 +64,9 @@ public class AccountController extends SubConfiguration implements ActionListene
 
     private long waittimeAccountInfoUpdate = 15 * 60 * 1000l;
 
-    private long ballooninterval = 30 * 60 * 1000l;
-    private ProviderMode providemode = ProviderMode.RR;
+    private final long ballooninterval = 30 * 60 * 1000l;
 
-    public static final Object AccountLock = new Object();
+    public static final Object ACCOUNT_LOCK = new Object();
 
     public long getUpdateTime() {
         return waittimeAccountInfoUpdate;
@@ -128,16 +76,16 @@ public class AccountController extends SubConfiguration implements ActionListene
         this.waittimeAccountInfoUpdate = time;
     }
 
-    private static Comparator<Account> compare_RR = new Comparator<Account>() {
+    private static Comparator<Account> COMPARE_MOST_TRAFFIC_LEFT = new Comparator<Account>() {
 
         public int compare(Account o1, Account o2) {
-            AccountInfo I1 = o1.getAccountInfo();
-            AccountInfo I2 = o2.getAccountInfo();
-            if (I1 != null && I2 != null) {
-                if (I1.getTrafficLeft() < I2.getTrafficLeft()) {
+            AccountInfo ai1 = o1.getAccountInfo();
+            AccountInfo ai2 = o2.getAccountInfo();
+            if (ai1 != null && ai2 != null) {
+                if (ai1.getTrafficLeft() < ai2.getTrafficLeft()) {
                     return -1;
                 } else {
-                    return +1;
+                    return 1;
                 }
             }
             return 0;
@@ -151,7 +99,6 @@ public class AccountController extends SubConfiguration implements ActionListene
         asyncSaveIntervalTimer.setInitialDelay(2000);
         asyncSaveIntervalTimer.setRepeats(false);
         hosteraccounts = loadAccounts();
-        importOld();
         broadcaster.addListener(this);
     }
 
@@ -202,7 +149,7 @@ public class AccountController extends SubConfiguration implements ActionListene
                 this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.ACCOUNT_UPDATE, hostname, account));
                 return null;
             }
-            synchronized (AccountLock) {
+            synchronized (ACCOUNT_LOCK) {
                 account.setAccountInfo(ai);
             }
             if (ai.isExpired()) {
@@ -243,14 +190,6 @@ public class AccountController extends SubConfiguration implements ActionListene
         return null;
     }
 
-    public void setProviderMode(ProviderMode mode) {
-        this.providemode = mode;
-    }
-
-    public ProviderMode getProviderMode() {
-        return this.providemode;
-    }
-
     public synchronized static AccountController getInstance() {
         if (INSTANCE == null) INSTANCE = new AccountController();
         return INSTANCE;
@@ -264,54 +203,8 @@ public class AccountController extends SubConfiguration implements ActionListene
         broadcaster.removeListener(l);
     }
 
-    public void addAccountProvider(AccountProvider l) {
-        provider.addListener(l);
-    }
-
-    public void removeAccountProvider(AccountProvider l) {
-        provider.removeListener(l);
-    }
-
     private TreeMap<String, ArrayList<Account>> loadAccounts() {
         return getGenericProperty("accountlist", new TreeMap<String, ArrayList<Account>>());
-    }
-
-    private void importOld() {
-        try {
-            importOldAccounts();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        try {
-            importOldAccounts2();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void importOldAccounts() {
-        if (getBooleanProperty("oldimported21", false)) return;
-        for (HostPluginWrapper wrapper : HostPluginWrapper.getHostWrapper()) {
-            ArrayList<Account> list = wrapper.getPluginConfig().getGenericProperty("PREMIUM", new ArrayList<Account>());
-            for (Account acc : list) {
-                addAccount(wrapper.getHost(), acc);
-            }
-        }
-        setProperty("oldimported21", true);
-        saveSync();
-    }
-
-    private void importOldAccounts2() {
-        if (getBooleanProperty("oldimported22", false)) return;
-        SubConfiguration sub = SubConfiguration.getConfig("AccountManager");
-        for (HostPluginWrapper wrapper : HostPluginWrapper.getHostWrapper()) {
-            ArrayList<Account> list = sub.getGenericProperty(wrapper.getHost(), new ArrayList<Account>());
-            for (Account acc : list) {
-                addAccount(wrapper.getHost(), acc);
-            }
-        }
-        setProperty("oldimported22", true);
-        saveSync();
     }
 
     public void addAccount(PluginForHost pluginForHost, Account account) {
@@ -458,6 +351,7 @@ public class AccountController extends SubConfiguration implements ActionListene
     public void saveSync() {
         if (saveinprogress == true) return;
         new Thread() {
+            @Override
             public void run() {
                 saveSyncnonThread();
             }
@@ -475,34 +369,18 @@ public class AccountController extends SubConfiguration implements ActionListene
         JDController.releaseDelayExit(id);
     }
 
-    public boolean vetoAccountGetEvent(String host, Account account) {
-        return false;
-    }
-
     public Account getValidAccount(PluginForHost pluginForHost) {
         Account ret = null;
         synchronized (hosteraccounts) {
-            ArrayList<Account> accounts = new ArrayList<Account>();
-            accounts.addAll(provider.collectAccountsFor(pluginForHost));
-            accounts.addAll(getAllAccounts(pluginForHost));
-            switch (this.providemode) {
-            case FIFO:
-                break;
-            case RR:
-                Collections.sort(accounts, compare_RR);
-                break;
-            default:
-                break;
-            }
-            synchronized (accounts) {
-                for (int i = 0; i < accounts.size(); i++) {
-                    Account next = accounts.get(i);
-                    if (!next.isTempDisabled() && next.isEnabled() && next.isValid()) {
-                        if (!this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.ACCOUNT_GET, pluginForHost.getHost(), next))) {
-                            ret = next;
-                            break;
-                        }
-                    }
+            ArrayList<Account> accounts = new ArrayList<Account>(getAllAccounts(pluginForHost));
+
+            if (getBooleanProperty(PROPERTY_ACCOUNT_SELECTION, true)) Collections.sort(accounts, COMPARE_MOST_TRAFFIC_LEFT);
+
+            for (int i = 0; i < accounts.size(); i++) {
+                Account next = accounts.get(i);
+                if (!next.isTempDisabled() && next.isEnabled() && next.isValid()) {
+                    ret = next;
+                    break;
                 }
             }
         }

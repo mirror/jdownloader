@@ -276,10 +276,6 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
         }
     }
 
-    public boolean vetoAccountGetEvent(String host, Account account) {
-        return false;
-    }
-
     public void setSelectedAccount(Account param) {
         int row = ((PremiumJTableModel) internalTable.getModel()).getRowforObject(param);
         this.internalTable.getSelectionModel().setSelectionInterval(row, row);
