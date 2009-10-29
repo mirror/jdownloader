@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zero10.info" }, urls = { "http://[\\w\\.]*?((zero10\\.info|save-link\\.info|share-link\\.info|h-link\\.us|zero10\\.us|darkhorse\\.fi5\\.us|arbforce\\.com/short)/[0-9]+|url-2\\.com/[A-Z]+/)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zero10.info" }, urls = { "http://[\\w\\.]*?((zero10\\.info|save-link\\.info|share-link\\.info|h-link\\.us|zero10\\.us|darkhorse\\.fi5\\.us|arbforce\\.com/short|get\\.el3lam\\.com)/[0-9]+|url-2\\.com/[A-Z]+/)" }, flags = { 0 })
 public class Zro10BasicDecrypt extends PluginForDecrypt {
 
     public Zro10BasicDecrypt(PluginWrapper wrapper) {
@@ -63,7 +63,7 @@ public class Zro10BasicDecrypt extends PluginForDecrypt {
                 return new ArrayList<DownloadLink>();
             }
         } else {
-            String Domain = new Regex(parameter, "((zero10\\.us|save-link\\.info|share-link\\.info|h-link\\.us|zero10\\.info|darkhorse.fi5.us))/").getMatch(0);
+            String Domain = new Regex(parameter, "((zero10\\.us|save-link\\.info|share-link\\.info|h-link\\.us|zero10\\.info|darkhorse.fi5.us|get\\.el3lam\\.com))/").getMatch(0);
             String ID = new Regex(parameter, "[0-9a-z.]+/([0-9]+)").getMatch(0);
             String m1link = "http://www." + Domain + "/m1.php?id=" + ID;
             br.getPage(m1link);

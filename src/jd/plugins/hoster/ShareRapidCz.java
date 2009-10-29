@@ -76,7 +76,13 @@ public class ShareRapidCz extends PluginForHost {
             return ai;
         }
         String trafficleft = br.getMatch("Kredit:</td><td>(.*?)<a");
-        ai.setTrafficLeft(Regex.getSize(trafficleft));
+        if (trafficleft != null) {
+            ai.setTrafficLeft(Regex.getSize(trafficleft));
+        }
+        String expires = br.getMatch("Neomezený tarif vyprší</td><td><strong>([0-9]{1,2}.[0-9]{1,2}.[0-9]{2,4} - [0-9]{1,2}:[0-9]{1,2})</strong>");
+        if (expires != null){
+            ai.setValidUntil(Regex.getMilliSeconds(expires, "dd.MM.yy - HH:mm", null));
+        }
         account.setValid(true);
         return ai;
     }
@@ -109,7 +115,7 @@ public class ShareRapidCz extends PluginForHost {
         br.setCustomCharset("UTF-8");
         br.getPage(link.getDownloadURL());
         br.setFollowRedirects(true);
-        if (br.containsHTML("Nastala chyba 404")||br.containsHTML("Soubor byl smazán")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("Nastala chyba 404") || br.containsHTML("Soubor byl smazán")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
         String filename = Encoding.htmlDecode(br.getRegex("<title>(.*?) - Share-Rapid</title>").getMatch(0));
         String filesize = Encoding.htmlDecode(br.getRegex("Velikost:</td>.*?<td class=\"h\"><strong>.*?(.*?)</strong></td>").getMatch(0));
