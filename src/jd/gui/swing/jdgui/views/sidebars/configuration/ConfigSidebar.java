@@ -177,7 +177,10 @@ public class ConfigSidebar extends SideBarPanel {
         TreeEntry child = TreeEntry.getTreeByClass(class1);
         if (child == null) return;
         TreePath path = getEntry(new TreePath(root), child);
-        if (path != null) tree.setSelectionPath(path);
+        if (path != null) {
+            tree.setSelectionPath(path);
+            tree.setSelectionPath(path);
+        }
     }
 
     private TreePath getEntry(TreePath parent, TreeEntry treeEntry) {

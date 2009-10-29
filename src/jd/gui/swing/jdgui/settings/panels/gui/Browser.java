@@ -86,8 +86,6 @@ public class Browser extends ConfigPanel {
         ConfigEntry conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDGuiConstants.PARAM_CUSTOM_BROWSER_USE, JDL.L("gui.config.gui.use_custom_browser", "Use custom browser"));
         conditionEntry.setDefaultValue(false);
 
-        for (int i = 0; i < 10; ++i)
-            System.out.println(subConfig.getStringProperty(JDGuiConstants.PARAM_BROWSER));
         LocalBrowser[] lb = LocalBrowser.getBrowserList();
         addGUIConfigEntry(new GUIConfigEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, JDGuiConstants.PARAM_BROWSER, lb, JDL.L("gui.config.gui.Browser", "Browser")).setDefaultValue(lb[0])));
         ce.setEnabledCondidtion(conditionEntry, false);
