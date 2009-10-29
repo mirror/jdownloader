@@ -27,6 +27,7 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
@@ -88,7 +89,7 @@ public class CrptTo extends PluginForDecrypt {
                 } else
                     break;
             }
-            if (br.containsHTML("Passwort bitte hier") || br.containsHTML("/captcha.inc.php")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            if (br.containsHTML("Passwort bitte hier") || br.containsHTML("/captcha.inc.php")) throw new DecrypterException(DecrypterException.CAPTCHA);
             if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
 
         }

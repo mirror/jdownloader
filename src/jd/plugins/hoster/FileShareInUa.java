@@ -15,9 +15,12 @@
 
 package jd.plugins.hoster;
 
+import java.io.File;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.captcha.specials.FsIuA;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -121,11 +124,17 @@ public class FileShareInUa extends PluginForHost {
         String freepage = downloadLink.getDownloadURL() + "?free";
         br.getPage(freepage);
         String captchapart = br.getRegex("id=\"capture\".*?src=\"(.*?)\"").getMatch(0);
-        if (captchapart == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        String captchaurl = "http://fileshare.in.ua" + captchapart;
-        String code = getCaptchaCode(captchaurl, downloadLink);
         Form captchaForm = br.getForm(2);
-        if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        // This is a pard of the captcha stuff. They always have one big captcha
+        // with random letters (about 10) but only 4 are needed. With this
+        // number and an other default number the plugin knows which part of the
+        // captcha it needsa
+        String captchacut = br.getRegex("<style>.*?margin-[a-z]+:-(\\d+)px;").getMatch(0);
+        if (captchapart == null || captchaForm == null || captchacut == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        String captchaurl = "http://fileshare.in.ua" + captchapart;
+        File file = this.getLocalCaptchaFile();
+        Browser.download(file, br.cloneBrowser().openGetConnection(captchaurl));
+        String code = FsIuA.getCode(-Integer.parseInt(captchacut), 100, file);
         captchaForm.put("capture", code);
         br.submitForm(captchaForm);
         if (br.containsHTML("Цифры введены неверно")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
