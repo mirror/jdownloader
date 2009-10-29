@@ -25,6 +25,7 @@ import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -77,6 +78,8 @@ public class NarodRu extends PluginForHost {
 
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        boolean needpassword = br.containsHTML("input id=\"password");
+        String passCode = null;
         for (int i = 1; i <= 10; i++) {
             br.getPage("http://narod.ru/disk/getcapchaxml/?rnd=1");
             String captchaKey = br.getRegex(Pattern.compile("<number.*>(.*?)</number>")).getMatch(0);
@@ -87,20 +90,39 @@ public class NarodRu extends PluginForHost {
             form.setAction(downloadLink.getDownloadURL());
             form.put("key", captchaKey);
             form.put("action", "sendcapcha");
+            if (needpassword) {
+                if (downloadLink.getStringProperty("pass", null) == null) {
+                    passCode = Plugin.getUserInput("Password?", downloadLink);
+                } else {
+                    /* gespeicherten PassCode holen */
+                    passCode = downloadLink.getStringProperty("pass", null);
+                }
+                form.put("passwd", Encoding.urlEncode(passCode));
+            }
             String captchaCode = getCaptchaCode(captchaUrl, downloadLink);
 
             form.put("rep", captchaCode);
             br.submitForm(form);
+            if (br.containsHTML("input id=\"password")) {
+                downloadLink.getStringProperty("pass", null);
+                continue;
+            }
             if (br.containsHTML("href=\"/disk/start/")) break;
         }
         if (!br.containsHTML("href=\"/disk/start/")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        if (br.containsHTML("input id=\"password")) {
+            downloadLink.getStringProperty("pass", null);
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Password wrong");
+        }
 
         String downloadSuffix = br.getRegex(Pattern.compile("<a class=\"h-link\" rel=\"yandex_bar\" href=\"(.*?)\">")).getMatch(0);
         String dlLink = Encoding.htmlDecode("http://narod.ru" + downloadSuffix);
 
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlLink, true, 1);
+        if (needpassword && passCode == null) {
+            downloadLink.getStringProperty("pass", passCode);
+        }
         dl.startDownload();
-
     }
 
     @Override
