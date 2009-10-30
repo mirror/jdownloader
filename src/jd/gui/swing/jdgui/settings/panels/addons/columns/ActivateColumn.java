@@ -87,6 +87,7 @@ public class ActivateColumn extends JDTableColumn implements ActionListener {
     @Override
     public void setValue(Object value, Object object) {
         OptionalPluginWrapper plgWrapper = ((OptionalPluginWrapper) object);
+        if ((Boolean) value == plgWrapper.isEnabled()) return;
         config.setProperty(plgWrapper.getConfigParamKey(), value);
         config.save();
         if ((Boolean) value) {
