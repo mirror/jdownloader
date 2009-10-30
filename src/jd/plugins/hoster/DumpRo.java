@@ -53,7 +53,7 @@ public class DumpRo extends PluginForHost {
         br.setFollowRedirects(false);
 
         String dlform = null;
-        if (br.getRegex("download_file\\('(.*?)','(.*?)',.*?\\);").matches() == false) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (br.getRegex("download_file\\('(.*?)','(.*?)',.*?\\);").matches() == false) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dlform = "download.php?action=download&type=file&id=" + br.getRegex("download_file\\('(.*?)','(.*?)',.*?\\);").getMatch(0) + "&act=" + br.getRegex("download_file\\('(.*?)','(.*?)',.*?\\);").getMatch(1);
 
         Form forms = new Form();
@@ -90,6 +90,7 @@ public class DumpRo extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }

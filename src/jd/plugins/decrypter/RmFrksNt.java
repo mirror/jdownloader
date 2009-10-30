@@ -40,7 +40,7 @@ public class RmFrksNt extends PluginForDecrypt {
         super(wrapper);
     }
 
-    // @Override
+    @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -49,7 +49,7 @@ public class RmFrksNt extends PluginForDecrypt {
         parameter = parameter.replaceAll("(/download-|/link-1-)", "/download-");
         br.getPage(parameter);
         String dlink = br.getRegex("href=\"(link-[0-9]-.*?\\.html)\"").getMatch(0);
-        if (dlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dlink = "http://www.rom-freaks.net/" + dlink;
         String fpName = br.getRegex("class=\"aligncenter\" colspan=\"[0-9]\">(.*?)</td>").getMatch(0).trim();
         fp.setName(fpName);
@@ -59,9 +59,9 @@ public class RmFrksNt extends PluginForDecrypt {
         if (br.containsHTML("/captcha/go")) {
             captchaurl = "http://www.rom-freaks.net/captcha/go.php";
         }
-        if (captchaurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (captchaurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         Form captchaForm = br.getFormbyProperty("name", "form1");
-        if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String downlink = null;
         for (int i = 0; i <= 3; i++) {
             File file = this.getLocalCaptchaFile();
@@ -70,7 +70,7 @@ public class RmFrksNt extends PluginForDecrypt {
             if (code == null) continue;
             String[] codep = code.split(":");
             Point p = new Point(Integer.parseInt(codep[0]), Integer.parseInt(codep[1]));
-            if (p == null)continue;
+            if (p == null) continue;
             captchaForm.put("button.x", p.x + "");
             captchaForm.put("button.y", p.y + "");
             br.submitForm(captchaForm);
@@ -91,16 +91,16 @@ public class RmFrksNt extends PluginForDecrypt {
             if (downlink != null) break;
         }
         if (downlink == null && br.containsHTML("/captcha/go")) throw new DecrypterException(DecrypterException.CAPTCHA);
-        if (downlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (downlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage(downlink);
         String gotu = br.getRegex("\"(http://www.rom-freaks\\.net/goto.*?\\.html)\"").getMatch(0);
-        if (gotu == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (gotu == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage(gotu);
         String frameto = br.getRegex("\"(http://www.rom-freaks\\.net/frameto-.*?\\.html)\"").getMatch(0);
-        if (frameto == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (frameto == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage(frameto);
         String[] links0 = br.getRegex("<iframe src=\"(.*?)\"").getColumn(0);
-        if (links0 == null || links0.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (links0 == null || links0.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         progress.setRange(links0.length);
         for (String link : links0) {
             decryptedLinks.add(createDownloadlink(link));

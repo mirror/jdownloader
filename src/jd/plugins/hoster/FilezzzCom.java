@@ -38,12 +38,12 @@ public class FilezzzCom extends PluginForHost {
         this.setStartIntervall(1000l);
     }
 
-    // @Override
+    @Override
     public String getAGBLink() {
         return "http://www.filezzz.com/terms.html";
     }
 
-    // @Override
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         String url = downloadLink.getDownloadURL();
@@ -58,20 +58,15 @@ public class FilezzzCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    // @Override
-    /*
-     * /* public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    // @Override
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
         requestFileInformation(downloadLink);
         // this.sleep(4000l, downloadLink);
         /* Link holen */
         String linkurl = br.getRegex("<br>\\s+<br>\\s+<a href=\"(.*?)\"").getMatch(0);
-        if (linkurl == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT); }
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, linkurl, true, -2);
+        if (linkurl == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, true, -2);
         URLConnectionAdapter con = dl.getConnection();
         if (con.getResponseCode() != 200 && con.getResponseCode() != 206) {
             con.disconnect();
@@ -80,20 +75,20 @@ public class FilezzzCom extends PluginForHost {
         dl.startDownload();
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 3;
     }
 
-    // @Override
+    @Override
     public void reset() {
     }
 
-    // @Override
+    @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 }

@@ -51,7 +51,7 @@ public class DivShareCom extends PluginForHost {
         if (link.getDownloadURL().contains("direct")) {
             String dllink;
             dllink = br.getURL();
-            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             link.setFinalFileName(null);
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
             dl.startDownload();
@@ -64,7 +64,7 @@ public class DivShareCom extends PluginForHost {
             // infolink2)!
             if (br.containsHTML("This file is password protected.")) {
                 Form form = br.getForm(0);
-                if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 String passCode = null;
                 if (link.getStringProperty("pass", null) == null) {
                     passCode = Plugin.getUserInput("Password?", link);
@@ -88,7 +88,7 @@ public class DivShareCom extends PluginForHost {
             br.getPage(infolink2);
             String dllink;
             dllink = br.getRegex("refresh\" content=\"1; url=(.*?)\" />").getMatch(0);
-            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             link.setFinalFileName(null);
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
             dl.startDownload();
@@ -154,7 +154,7 @@ public class DivShareCom extends PluginForHost {
             if (br.containsHTML("This file is unavailable until")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             if (br.containsHTML("Sorry, we couldn't find this file.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             if (br.containsHTML("This file is secured by Divshare.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
         } else {
             // handling für die anderen Links (mit "download" bzw. "image" im

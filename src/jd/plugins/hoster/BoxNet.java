@@ -51,7 +51,7 @@ public class BoxNet extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), true, 0);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
@@ -73,10 +73,10 @@ public class BoxNet extends PluginForHost {
             br.followConnection();
             if (br.containsHTML(OUT_OF_BANDWITH_MSG)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             String originalpage = br.getRegex("please visit: <a href=\"(.*?)\"").getMatch(0);
-            if (originalpage == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (originalpage == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             br.getPage(originalpage);
             String dlpage = br.getRegex("href=\"(http://www\\.box\\.net/index\\.php\\?rm=box_download_shared_file\\&amp;file_id=.*?)\"").getMatch(0);
-            if (dlpage == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (dlpage == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             dlpage = dlpage.replace("amp;", "");
             urlConnection = br.openGetConnection(dlpage);
         }

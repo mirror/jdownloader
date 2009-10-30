@@ -39,6 +39,7 @@ public class KewlshareCom extends PluginForHost {
         enablePremium("http://kewlshare.com/loginpremium.php");
     }
 
+    @Override
     public String getAGBLink() {
         return "http://kewlshare.com/tos";
     }
@@ -53,6 +54,7 @@ public class KewlshareCom extends PluginForHost {
         if (type == null || !type.equalsIgnoreCase("Premium")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
+    @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         try {
@@ -72,6 +74,7 @@ public class KewlshareCom extends PluginForHost {
         return ai;
     }
 
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
         setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
@@ -84,25 +87,27 @@ public class KewlshareCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         requestFileInformation(downloadLink);
         login(account);
         br.getPage(downloadLink.getDownloadURL());
         Form dlForm = br.getForm(0);
-        if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlForm, true, 1);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
 
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
         Form freeform = br.getForm(1);
-        if (freeform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (freeform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         freeform.put("x", "2");
         freeform.put("y", "68");
         br.submitForm(freeform);
@@ -116,31 +121,36 @@ public class KewlshareCom extends PluginForHost {
         Form form = br.getForm(0);
         br.submitForm(form);
         String dllink = br.getRegex("\"padding-right:10px;\">.*?<form action=\"(.*?)\" method").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
             if (br.containsHTML("your current parallel download")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
+    @Override
     public int getTimegapBetweenConnections() {
         return 2500;
     }
 
+    @Override
     public void reset() {
     }
 
+    @Override
     public void resetPluginGlobals() {
 
     }
 
+    @Override
     public void resetDownloadlink(DownloadLink link) {
 
     }

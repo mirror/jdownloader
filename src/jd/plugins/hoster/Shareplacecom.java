@@ -43,10 +43,12 @@ public class Shareplacecom extends PluginForHost {
         super(wrapper);
     }
 
+    @Override
     public String getAGBLink() {
         return "http://shareplace.com/rules.php";
     }
 
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         url = downloadLink.getDownloadURL();
         setBrowserExclusive();
@@ -66,10 +68,11 @@ public class Shareplacecom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         String filename = Encoding.htmlDecode(br.getRegex(Pattern.compile("File.*?name.*?:.*?</b>(.*?)<b>", Pattern.CASE_INSENSITIVE)).getMatch(0));
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         filename = Encoding.deepHtmlDecode(filename);
         String page = Encoding.urlDecode(br.toString(), true);
         String[] links = HTMLParser.getHttpLinks(page, null);
@@ -103,23 +106,27 @@ public class Shareplacecom extends PluginForHost {
                 dl.getConnection().disconnect();
             }
         }
-        if (!found) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (!found) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         /* Workaround für fehlerhaften Filename Header */
         String name = Plugin.getFileNameFromHeader(dl.getConnection());
         if (name != null) downloadLink.setFinalFileName(Encoding.deepHtmlDecode(name));
         dl.startDownload();
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
+    @Override
     public void reset() {
     }
 
+    @Override
     public void resetPluginGlobals() {
     }
 
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 }

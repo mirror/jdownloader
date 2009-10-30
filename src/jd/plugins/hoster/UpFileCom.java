@@ -35,10 +35,12 @@ public class UpFileCom extends PluginForHost {
         super(wrapper);
     }
 
+    @Override
     public String getAGBLink() {
         return "http://up-file.com/page/terms.php";
     }
 
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         br.setCookie("http://up-file.com", "country", "EN");
@@ -53,6 +55,7 @@ public class UpFileCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
@@ -62,21 +65,25 @@ public class UpFileCom extends PluginForHost {
         br.submitForm(form[7]);
         String dllink;
         dllink = br.getRedirectLocation();
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         dl.startDownload();
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
+    @Override
     public void reset() {
     }
 
+    @Override
     public void resetPluginGlobals() {
     }
 
+    @Override
     public void resetDownloadlink(DownloadLink link) {
 
     }

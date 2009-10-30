@@ -44,7 +44,7 @@ public class SfItIn extends PluginForDecrypt {
         super(wrapper);
     }
 
-    // @Override
+    @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -71,12 +71,12 @@ public class SfItIn extends PluginForDecrypt {
         //
         if (br.containsHTML("codes/rand.php")) {
             Form captchaForm = br.getForm(0);
-            if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             String captcha = br.getRegex("wert\" type=\"hidden\" id=\"wert\" value=\"(.*?)\"").getMatch(0);
-            if (captcha == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (captcha == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             captchaForm.put("captcha", captcha);
             br.submitForm(captchaForm);
-            if (br.containsHTML("codes/rand.php")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (br.containsHTML("codes/rand.php")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
 
         // Container handling
@@ -89,7 +89,7 @@ public class SfItIn extends PluginForDecrypt {
         fp.setName(fpName);
 
         String[] links = br.getRegex("background=\"#dbf2f8\";'><a href=\"(.*?)\" target=").getColumn(0);
-        if (links == null || links.length == 0) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT); }
+        if (links == null || links.length == 0) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         progress.setRange(links.length);
         for (String link : links) {
             decryptedLinks.add(createDownloadlink(link));
@@ -116,18 +116,17 @@ public class SfItIn extends PluginForDecrypt {
                 brc.downloadConnection(file, con);
             } else {
                 con.disconnect();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
 
             if (file != null && file.exists() && file.length() > 100) {
                 ArrayList<DownloadLink> decryptedLinks = JDUtilities.getController().getContainerLinks(file);
                 if (decryptedLinks.size() > 0) return decryptedLinks;
             } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
         return null;
     }
 
-    // @Override
 }

@@ -36,7 +36,7 @@ public class FrShrdFldr extends PluginForDecrypt {
         super(wrapper);
     }
 
-    // @Override
+    @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -44,7 +44,7 @@ public class FrShrdFldr extends PluginForDecrypt {
         br.getPage(parameter);
         if (br.containsHTML("enter a password to access")) {
             Form form = br.getFormbyProperty("name", "theForm");
-            if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             for (int retry = 1; retry <= 5; retry++) {
                 pass = getUserInput("Password:", param);
                 form.put("userPass2", pass);
@@ -92,7 +92,5 @@ public class FrShrdFldr extends PluginForDecrypt {
         fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }
-
-    // @Override
 
 }

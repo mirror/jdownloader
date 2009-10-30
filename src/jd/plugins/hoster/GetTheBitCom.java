@@ -35,12 +35,12 @@ public class GetTheBitCom extends PluginForHost {
         br.setFollowRedirects(true);
     }
 
-    // @Override
+    @Override
     public String getAGBLink() {
         return "http://www.getthebit.com/index.php?s=users&ev=about";
     }
 
-    // @Override
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         br.getPage(downloadLink.getDownloadURL());
         this.setBrowserExclusive();
@@ -59,14 +59,14 @@ public class GetTheBitCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    // @Override
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         String freeurl = br.getRegex("class=\"free\"><a href=\"(.*?)\"").getMatch(0);
-        if (freeurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (freeurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage(freeurl);
         String redirectframe = br.getRegex("frame src=\"(.*?)\"").getMatch(0);
-        if (redirectframe == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (redirectframe == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage(redirectframe);
         int tt = Integer.parseInt(br.getRegex("var wtime = (\\d+);").getMatch(0));
         sleep(tt * 1001l, downloadLink);
@@ -74,7 +74,7 @@ public class GetTheBitCom extends PluginForHost {
         for (int i = 0; i <= 5; i++) {
             Form captchaForm = br.getForm(1);
             String captchaUrl = br.getRegex("\"kcapcha\">.*?nbsp;</label><img src=\"(.*?)\"").getMatch(0);
-            if (captchaForm == null || captchaUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (captchaForm == null || captchaUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             String code = getCaptchaCode(captchaUrl, downloadLink);
             captchaForm.put("kcapcha", code);
             br.submitForm(captchaForm);
@@ -83,25 +83,25 @@ public class GetTheBitCom extends PluginForHost {
         }
         if (br.containsHTML("Вы ввели неправильный код проверки")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         String dllink = br.getRegex("ссылку <a href=\"(.*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         dl.startDownload();
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    // @Override
+    @Override
     public void reset() {
     }
 
-    // @Override
+    @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 }

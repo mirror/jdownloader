@@ -41,10 +41,12 @@ public class FileSendNet extends PluginForHost {
         enablePremium("http://www.filesend.net/premium.php");
     }
 
+    @Override
     public String getAGBLink() {
         return "http://www.filesend.net/tos.php";
     }
 
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
@@ -64,6 +66,7 @@ public class FileSendNet extends PluginForHost {
         if (br.getCookie("http://www.filesend.net/", "premium") == null || br.getCookie("http://www.filesend.net/", "premium").equalsIgnoreCase("deleted")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
+    @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         try {
@@ -87,20 +90,22 @@ public class FileSendNet extends PluginForHost {
         return ai;
     }
 
+    @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         requestFileInformation(downloadLink);
         login(account);
         br.getPage(downloadLink.getDownloadURL());
         Form dlForm = br.getForm(1);
-        if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlForm, true, 1);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
 
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         // br.setDebug(true);
@@ -109,7 +114,7 @@ public class FileSendNet extends PluginForHost {
         String linkname = new Regex(linkform, "\\stype=\"hidden\"\\sname=\"(.*?)\"").getMatch(0);
         String linkvalue = new Regex(linkform, "\\sname=\"" + linkname + "\"\\svalue=\"(.*?)\"").getMatch(0);
         // System.out.println(linkform+" "+linkaction+" "+linkname+" "+linkvalue);
-        if (linkaction == null || linkname == null || linkform == null || linkvalue == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (linkaction == null || linkname == null || linkform == null || linkvalue == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setFollowRedirects(false);
         // this.sleep(24000, downloadLink); // uncomment when they find a better
         // way to force wait time
@@ -118,17 +123,20 @@ public class FileSendNet extends PluginForHost {
 
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 10;
     }
 
+    @Override
     public void reset() {
     }
 
+    @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 }

@@ -29,24 +29,24 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "data-loading.com" }, urls = { "http://[\\w\\.]*?data-loading\\.com/.{2}/file/\\d+/\\w+" }, flags = { 0 })
-
 public class DataLoadingCom extends PluginForHost {
-        
+
     public DataLoadingCom(PluginWrapper wrapper) {
         super(wrapper);
     }
-    
+
     // @Overrid
+    @Override
     public void correctDownloadLink(DownloadLink link) throws Exception {
         link.setUrlDownload(link.getDownloadURL().replaceAll("(/de/|/ru/|/es/)", "/en/"));
     }
-    
-    // @Override
+
+    @Override
     public String getAGBLink() {
         return "http://www.data-loading.com/en/rules.html";
     }
-    
-    // @Override
+
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
@@ -54,7 +54,7 @@ public class DataLoadingCom extends PluginForHost {
         if (!(br.containsHTML("Your requested file is not found") || br.containsHTML("File Not Found"))) {
             String filename = br.getRegex("<td align=left width=150px id=filename>(.*?)</td>").getMatch(0);
             String filesize = br.getRegex("<td align=left id=filezize>(.*?)</td>").getMatch(0);
-            if (!(filename == null || filesize  == null)) {
+            if (!(filename == null || filesize == null)) {
                 downloadLink.setName(filename);
                 downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
                 return AvailableStatus.TRUE;
@@ -62,24 +62,20 @@ public class DataLoadingCom extends PluginForHost {
         }
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
-    
-    // @Override
+
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        
-        if (br.containsHTML("You have got max allowed bandwidth size per hour")) {
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
-        }
+
+        if (br.containsHTML("You have got max allowed bandwidth size per hour")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED); }
         String linkurl = br.getRegex("<input.*document.location=\"(.*?)\";").getMatch(0);
-        if (linkurl == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        }
+        if (linkurl == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         br.setFollowRedirects(false);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, linkurl, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, false, 1);
         if (!(dl.getConnection().isContentDisposition())) {
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }     
+        }
         URLConnectionAdapter con = dl.getConnection();
         if (con.getResponseCode() != 200 && con.getResponseCode() != 206) {
             con.disconnect();
@@ -88,20 +84,20 @@ public class DataLoadingCom extends PluginForHost {
         dl.startDownload();
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    // @Override
+    @Override
     public void reset() {
     }
 
-    // @Override
+    @Override
     public void resetPluginGlobals() {
     }
-    
-    // @Override
+
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 }

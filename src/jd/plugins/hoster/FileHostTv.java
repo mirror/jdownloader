@@ -34,10 +34,12 @@ public class FileHostTv extends PluginForHost {
         br.setFollowRedirects(true);
     }
 
+    @Override
     public String getAGBLink() {
         return "http://filehost.tv/rules";
     }
 
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         br.setCookie("http://filehost.tv", "filehosttv_lang", "en");
@@ -51,6 +53,7 @@ public class FileHostTv extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.getPage("http://filehost.tv/get");
@@ -58,11 +61,12 @@ public class FileHostTv extends PluginForHost {
         if (br.containsHTML("You can only download one file at a time")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
         if (br.containsHTML("You have to wait at least for one hour")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 60 * 60 * 1001l);
         String dllink = br.getRegex("href=\"(http://www\\.filehost\\.tv/get.*?)\">").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         dl.startDownload();
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         // Limit set to 10 because this is the point where they should check
         // that you download more than usual :D also i coulsn't start more than
@@ -70,12 +74,15 @@ public class FileHostTv extends PluginForHost {
         return 10;
     }
 
+    @Override
     public void reset() {
     }
 
+    @Override
     public void resetPluginGlobals() {
     }
 
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 }

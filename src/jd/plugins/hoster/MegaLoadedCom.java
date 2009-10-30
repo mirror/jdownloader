@@ -52,7 +52,7 @@ public class MegaLoadedCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage("http://megaloaded.com/login.html");
         Form form = br.getForm(0);
-        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         form.put("login", Encoding.urlEncode(account.getUser()));
         form.put("password", Encoding.urlEncode(account.getPass()));
         br.submitForm(form);
@@ -113,7 +113,7 @@ public class MegaLoadedCom extends PluginForHost {
         } else {
             url = br.getRedirectLocation();
         }
-        if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, url, true, 0);
         dl.startDownload();
@@ -146,7 +146,7 @@ public class MegaLoadedCom extends PluginForHost {
         br.setFollowRedirects(true);
         // Form um auf free zu "klicken"
         Form DLForm0 = br.getForm(0);
-        if (DLForm0 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (DLForm0 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLForm0.remove("method_premium");
         br.submitForm(DLForm0);
         // Form um auf "Datei herunterladen" zu klicken
@@ -162,7 +162,7 @@ public class MegaLoadedCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
         } else {
             Form DLForm = br.getFormbyProperty("name", "F1");
-            if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             String passCode = null;
             if (br.containsHTML("<br><b>Password:</b>")) {
                 if (downloadLink.getStringProperty("pass", null) == null) {
@@ -181,7 +181,7 @@ public class MegaLoadedCom extends PluginForHost {
                     downloadLink.setProperty("pass", null);
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             if (passCode != null) {
                 downloadLink.setProperty("pass", passCode);

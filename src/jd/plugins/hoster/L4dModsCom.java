@@ -33,14 +33,17 @@ public class L4dModsCom extends PluginForHost {
         super(wrapper);
     }
 
+    @Override
     public String getAGBLink() {
         return "http://www.l4dmods.com/forums/ucp.php?mode=register";
     }
 
+    @Override
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replaceAll("(view=package|controller=package&task=download)", "view=package"));
     }
 
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setDebug(true);
@@ -53,10 +56,11 @@ public class L4dModsCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         String dllink = br.getRegex("oad\"><a href=\"(.*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dllink = "http://www.l4dmods.com" + dllink;
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
@@ -64,16 +68,20 @@ public class L4dModsCom extends PluginForHost {
         dl.startDownload();
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
+    @Override
     public void reset() {
     }
 
+    @Override
     public void resetPluginGlobals() {
     }
 
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 

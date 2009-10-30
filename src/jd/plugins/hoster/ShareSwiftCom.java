@@ -85,7 +85,7 @@ public class ShareSwiftCom extends PluginForHost {
         }
         requestFileInformation(link);
         Form DLForm = br.getFormbyProperty("name", "F1");
-        if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String passCode = null;
         if (br.containsHTML("<br><b>Password:</b>")) {
             if (link.getStringProperty("pass", null) == null) {
@@ -108,7 +108,7 @@ public class ShareSwiftCom extends PluginForHost {
             link.setProperty("pass", passCode);
         }
         String dllink = br.getRegex("This direct link will be available.*?href=\"(.*?)\">").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         BrowserAdapter.openDownload(br, link, dllink, false, -20);
         dl.startDownload();
     }
@@ -123,7 +123,8 @@ public class ShareSwiftCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        // TODO: increase value, but jiaz has to add some new functions to controller first
+        // TODO: increase value, but jiaz has to add some new functions to
+        // controller first
         return 1;
     }
 

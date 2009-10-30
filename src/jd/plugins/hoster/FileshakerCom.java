@@ -37,12 +37,12 @@ public class FileshakerCom extends PluginForHost {
         super(wrapper);
     }
 
-    // @Override
+    @Override
     public String getAGBLink() {
         return "http://www.fileshaker.com/terms.php";
     }
 
-    // @Override
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         String url = downloadLink.getDownloadURL();
@@ -57,19 +57,14 @@ public class FileshakerCom extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
-    // @Override
-    /*
-     * /* public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    // @Override
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
         requestFileInformation(downloadLink);
         /* Link holen */
         Form form = br.getForm(0);
-        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, form);
+        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form);
         URLConnectionAdapter con = dl.getConnection();
         if (con.getResponseCode() != 200 && con.getResponseCode() != 206) {
             con.disconnect();
@@ -78,20 +73,20 @@ public class FileshakerCom extends PluginForHost {
         dl.startDownload();
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 10;
     }
 
-    // @Override
+    @Override
     public void reset() {
     }
 
-    // @Override
+    @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 }

@@ -45,7 +45,7 @@ public class LnkHstD extends PluginForDecrypt {
         super(wrapper);
     }
 
-    // @Override
+    @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -72,11 +72,11 @@ public class LnkHstD extends PluginForDecrypt {
         }
         /* File package handling */
         Form captchaForm = br.getForm(0);
-        if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String passCode = null;
         String botprotect1 = br.getRegex("Gib hier \"(.*?)\" ein:").getMatch(0);
         String botprotect2 = br.getRegex("/>Rechne aus: (.*?) =").getMatch(0);
-        if (((botprotect1 == null) && br.containsHTML("Rechne aus:")) || ((botprotect2 == null) && br.containsHTML("Gib hier"))) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (((botprotect1 == null) && br.containsHTML("Rechne aus:")) || ((botprotect2 == null) && br.containsHTML("Gib hier"))) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         if (botprotect1 != null) {
             captchaForm.put("Big", botprotect1);
         }
@@ -84,14 +84,14 @@ public class LnkHstD extends PluginForDecrypt {
             String summand1 = new Regex(botprotect2, "(\\d+) [+-]{1} \\d+").getMatch(0);
             String op = new Regex(botprotect2, "\\d+ ([+-]{1}) \\d+").getMatch(0);
             String summand2 = new Regex(botprotect2, "\\d+ [+-]{1} (\\d+)").getMatch(0);
-            if ((summand1 == null) || (summand2 == null) || (op == null)) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if ((summand1 == null) || (summand2 == null) || (op == null)) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             int summe = 0;
             if (op.equals("+")) {
                 summe = Integer.parseInt(summand1) + Integer.parseInt(summand2);
             } else if (op.equals("-")) {
                 summe = Integer.parseInt(summand1) - Integer.parseInt(summand2);
             } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             captchaForm.put("rechencode", ""+summe);
         }
@@ -106,7 +106,7 @@ public class LnkHstD extends PluginForDecrypt {
             param.setProperty("pass", null);
             throw new DecrypterException(DecrypterException.PASSWORD);
         }
-        if (br.containsHTML("Verrechnet oder Vertippt")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (br.containsHTML("Verrechnet oder Vertippt")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
         // Container handling
         if (br.containsHTML("typ=dlc")) {
@@ -133,7 +133,7 @@ public class LnkHstD extends PluginForDecrypt {
             br.getPage(link);
             String finallink = br.getRegex("src=\"(&.*?;)\"").getMatch(0);
             finallink = Encoding.htmlDecode(finallink);
-            if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             DownloadLink dl = createDownloadlink(finallink);
             decryptedLinks.add(dl);
             progress.increase(1);
@@ -158,19 +158,17 @@ public class LnkHstD extends PluginForDecrypt {
                 brc.downloadConnection(file, con);
             } else {
                 con.disconnect();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
 
             if (file != null && file.exists() && file.length() > 100) {
                 ArrayList<DownloadLink> decryptedLinks = JDUtilities.getController().getContainerLinks(file);
                 if (decryptedLinks.size() > 0) return decryptedLinks;
             } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
         return null;
     }
-
-    // @Override
 
 }

@@ -40,6 +40,7 @@ public class UploadlineCom extends PluginForHost {
         super(wrapper);
     }
 
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
@@ -54,7 +55,7 @@ public class UploadlineCom extends PluginForHost {
 
         /* variation 1 for small files */
         if (br.containsHTML("for your IP next 24 hours")) {
-            if (!br.containsHTML("hours<br><br>\\s+<a\\shref=\"(.*?)\"")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (!br.containsHTML("hours<br><br>\\s+<a\\shref=\"(.*?)\"")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             dllink = br.getRegex("hours<br><br>\\s+<a\\shref=\"(.*?)\"").getMatch(0);
         }
 
@@ -77,11 +78,11 @@ public class UploadlineCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
             } else {
                 form = br.getFormbyProperty("name", "F1");
-                if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
                 /* "Captcha Method" */
                 String[][] letters = br.getRegex("<span style='position:absolute;padding-left:(\\d+)px;padding-top:\\d+px;'>(\\d)</span>").getMatches();
-                if (letters.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                if (letters.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 SortedMap<Integer, String> capMap = new TreeMap<Integer, String>();
                 for (String[] letter : letters) {
                     capMap.put(Integer.parseInt(letter[0]), letter[1]);
@@ -122,21 +123,24 @@ public class UploadlineCom extends PluginForHost {
                     logger.severe("Wrong IP!");
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl.startDownload();
         } else
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
+    @Override
     public String getAGBLink() {
         return "http://www.uploadline.com/tos.html";
     }
 
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         String filename = null;
         String filesize = null;
@@ -161,12 +165,15 @@ public class UploadlineCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @Override
     public void reset() {
     }
 
+    @Override
     public void resetPluginGlobals() {
     }
 
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 

@@ -50,9 +50,7 @@ public class ShareatorNet extends PluginForHost {
         if (br.containsHTML("No such user exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("File not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("No such file")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML("You're using all download slots for IP")) {                
-            return AvailableStatus.UNCHECKABLE;
-        }
+        if (br.containsHTML("You're using all download slots for IP")) { return AvailableStatus.UNCHECKABLE; }
         String filename = br.getRegex("<b>Filename:</b></td><td nowrap>(.*?)</b>").getMatch(0);
         String filesize = br.getRegex("<small>\\((.*?)\\)</small>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -65,11 +63,9 @@ public class ShareatorNet extends PluginForHost {
     public void handleFree(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("You're using all download slots for IP")) {                
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 1 * 60 * 1001l);
-        }
+        if (br.containsHTML("You're using all download slots for IP")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 1 * 60 * 1001l); }
         Form dlform0 = br.getFormbyProperty("name", "F1");
-        if (dlform0 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dlform0 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dlform0.remove("method_premium");
         // waittime
         int tt = Integer.parseInt(br.getRegex("countdown\">(\\d+)</span>").getMatch(0));
@@ -94,7 +90,7 @@ public class ShareatorNet extends PluginForHost {
             link.setProperty("pass", passCode);
         }
         String dllink = br.getRegex(Pattern.compile("dotted #bbb;padding:[0-9]px;\">.*?<a href=\"(.*?)\"", Pattern.DOTALL)).getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1).startDownload();
     }
 
@@ -106,7 +102,7 @@ public class ShareatorNet extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }

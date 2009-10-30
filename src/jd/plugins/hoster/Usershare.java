@@ -45,10 +45,10 @@ public class Usershare extends PluginForHost {
         String linkurl = br.getRegex("</script> -->.*?<br>.*?<a href=\"(.*?)\"><img").getMatch(0);
         if (linkurl == null) {
             linkurl = br.getRegex(".*?document.oncontextmenu=new Function.*?<a href=\"(.*?)\"><img src=\"/images/download_btn.jpg\" border=0>").getMatch(0);
-            if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,link, linkurl, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, linkurl, true, 0);
         dl.startDownload();
     }
 

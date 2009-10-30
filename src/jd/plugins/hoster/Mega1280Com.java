@@ -67,7 +67,7 @@ public class Mega1280Com extends PluginForHost {
         String captchaurl = "http://mega.1280.com/security_code.php";
         String code = getCaptchaCode(captchaurl, downloadLink);
         Form captchaForm = br.getForm(0);
-        if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // Captcha Usereingabe in die Form einfügen
         captchaForm.put("code_security", code);
         br.submitForm(captchaForm);
@@ -78,17 +78,17 @@ public class Mega1280Com extends PluginForHost {
         String dllink1 = br.getRegex("<div id=\"hdfolder\" style=\"display:none\">(.*?)</div>").getMatch(0);
         String dllink2 = br.getRegex("<div id=\"hdcode\" style=\"display:none\">(.*?)</div>").getMatch(0);
         String dllink3 = br.getRegex("<div id=\"hdfilename\" style=\"display:none\">(.*?)</div>").getMatch(0);
-        if (dllink0 == null || dllink1 == null || dllink2 == null || dllink3 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dllink0 == null || dllink1 == null || dllink2 == null || dllink3 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String downloadURL = dllink0 + dllink1 + dllink2 + "/" + dllink3;
         // Waittime
         String wait = br.getRegex("hdcountdown\" style=\"display:none\">(\\d+)</div>").getMatch(0);
-        if (wait == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (wait == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         long tt = Long.parseLong(wait.trim());
         sleep(tt * 1001l, downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadURL, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
@@ -97,7 +97,7 @@ public class Mega1280Com extends PluginForHost {
     public void reset() {
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }

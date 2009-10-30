@@ -45,7 +45,7 @@ public class TurboUploadCom extends PluginForHost {
         return "http://www.turboupload.com/tos.html";
     }
 
-    // @Override
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setCookie("http://www.turboupload.com", "lang", "english");
@@ -61,14 +61,13 @@ public class TurboUploadCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    // @Override
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
         // Form um auf free zu "klicken"
         Form DLForm0 = br.getForm(1);
-        if (DLForm0 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (DLForm0 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLForm0.remove("method_premium");
         br.submitForm(DLForm0);
         if (br.containsHTML("You have to wait")) {
@@ -84,7 +83,7 @@ public class TurboUploadCom extends PluginForHost {
         } else {
             // Form um auf "Datei herunterladen" zu klicken
             Form DLForm = br.getFormbyProperty("name", "F1");
-            if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             String passCode = null;
             if (br.containsHTML("<br><b>Password:</b>")) {
                 if (downloadLink.getStringProperty("pass", null) == null) {
@@ -96,7 +95,7 @@ public class TurboUploadCom extends PluginForHost {
                 DLForm.put("password", passCode);
             }
             String[][] letters = br.getRegex("<span style='position:absolute;padding-left:(\\d+)px;padding-top:\\d+px;'>(\\d)</span>").getMatches();
-            if (letters.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (letters.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             SortedMap<Integer, String> capMap = new TreeMap<Integer, String>();
             for (String[] letter : letters) {
                 capMap.put(Integer.parseInt(letter[0]), letter[1]);
@@ -110,7 +109,7 @@ public class TurboUploadCom extends PluginForHost {
 
             int tt = Integer.parseInt(br.getRegex("countdown\">(\\d+)</span>").getMatch(0));
             sleep(tt * 1001, downloadLink);
-            jd.plugins.BrowserAdapter.openDownload(br,downloadLink, DLForm, false, 1);
+            jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLForm, false, 1);
             if (!(dl.getConnection().isContentDisposition())) {
                 br.followConnection();
                 if (br.containsHTML("Wrong password")) {
@@ -118,7 +117,7 @@ public class TurboUploadCom extends PluginForHost {
                     downloadLink.setProperty("pass", null);
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             if (passCode != null) {
                 downloadLink.setProperty("pass", passCode);
@@ -131,7 +130,7 @@ public class TurboUploadCom extends PluginForHost {
     public void reset() {
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }

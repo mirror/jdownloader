@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -35,13 +34,13 @@ public class FlyUploadCom extends PluginForHost {
     public FlyUploadCom(PluginWrapper wrapper) {
         super(wrapper);
     }
-    
-    // @Override
+
+    @Override
     public String getAGBLink() {
         return "http://www.flyupload.com/tos";
     }
-    
-    // @Override
+
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -49,7 +48,7 @@ public class FlyUploadCom extends PluginForHost {
         if (!(br.containsHTML("The file you requested has either expired or the URL has an invalid fid"))) {
             String filename = br.getRegex("Filename:</td><td style=\"border-top: 1px none #cccccc;\">(.*?)</td>").getMatch(0);
             String filesize = br.getRegex("File Size:</td><td style=\"border-top: 1px dashed #cccccc;\">(.*?)</td>").getMatch(0);
-            if (!(filename == null || filesize  == null)) {
+            if (!(filename == null || filesize == null)) {
                 downloadLink.setName(filename);
                 downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
                 return AvailableStatus.TRUE;
@@ -57,15 +56,15 @@ public class FlyUploadCom extends PluginForHost {
         }
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
-    
-    // @Override
+
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         String linkurl = br.getRegex("<a href=\"http://www28.flyupload.com/dl\\?fid=(.*?)\">Download Now</a>").getMatch(0);
-        if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         linkurl = "http://www28.flyupload.com/dl?fid=" + linkurl;
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, linkurl, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, false, 1);
         URLConnectionAdapter con = dl.getConnection();
         if (con.getResponseCode() != 200 && con.getResponseCode() != 206) {
             con.disconnect();
@@ -74,20 +73,20 @@ public class FlyUploadCom extends PluginForHost {
         dl.startDownload();
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
-    // @Override
+    @Override
     public void reset() {
     }
 
-    // @Override
+    @Override
     public void resetPluginGlobals() {
     }
-    
-    // @Override
+
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 }

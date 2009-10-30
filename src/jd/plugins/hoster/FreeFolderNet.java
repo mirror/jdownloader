@@ -34,12 +34,12 @@ public class FreeFolderNet extends PluginForHost {
         super(wrapper);
     }
 
-    // @Override
+    @Override
     public String getAGBLink() {
         return "http://freefolder.net/support.php";
     }
 
-    // @Override
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
@@ -54,7 +54,7 @@ public class FreeFolderNet extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    // @Override
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         Regex reg = br.getRegex("<a href=\"http://freefolder\\.net/f/.*?\">(.*?)</a> \\|(.*?)</td>");
@@ -65,11 +65,10 @@ public class FreeFolderNet extends PluginForHost {
             br.getPage(downloadLink.getDownloadURL());
             br.setFollowRedirects(false);
             Form captchaForm = br.getFormbyKey("captcha");
-            if (captchaForm == null && filename1 != null && filesize != null) { throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium");
-            }
-            if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (captchaForm == null && filename1 != null && filesize != null) { throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium"); }
+            if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             String captchaurl = br.getRegex("false\"><img src=\"(.*?)\"").getMatch(0);
-            if (captchaurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (captchaurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             String code = getCaptchaCode(captchaurl, downloadLink);
             captchaForm.put("captcha", code);
             captchaForm.put("btn_free.x", "0");
@@ -82,7 +81,7 @@ public class FreeFolderNet extends PluginForHost {
         String captchacheck = br.getRedirectLocation();
         if (captchacheck != null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         String dlpage = br.getRegex("url: \"(.*?)\",").getMatch(0);
-        if (dlpage == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dlpage == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // waittime
         int tt = Integer.parseInt(br.getRegex("var timeleft = (\\d+);").getMatch(0));
         sleep(tt * 1001l, downloadLink);
@@ -90,26 +89,26 @@ public class FreeFolderNet extends PluginForHost {
         String server = br.getRegex("<server>(.*?)</server>").getMatch(0);
         String linkpart = br.getRegex("<link>(.*?)</link>").getMatch(0);
         String filename = br.getRegex("<filename>(.*?)</filename>").getMatch(0);
-        if (server == null || linkpart == null || filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (server == null || linkpart == null || filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String dllink = "http://" + server + ".freefolder.net/d/" + linkpart + "/" + filename;
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         dl.startDownload();
     }
 
-    // @Override
+    @Override
     public void reset() {
     }
 
-    // @Override
+    @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    // @Override
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 

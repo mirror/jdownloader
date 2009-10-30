@@ -42,12 +42,12 @@ public class JamendoCom extends PluginForHost {
         setConfigElements();
     }
 
-    // @Override
+    @Override
     public String getAGBLink() {
         return "http://www.jamendo.com/en/cgu_user";
     }
 
-    // @Override
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
         String TrackDownloadID = new Regex(parameter.getDownloadURL(), "/download/track/(\\d+)").getMatch(0);
@@ -86,7 +86,7 @@ public class JamendoCom extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
-    // @Override
+    @Override
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
         String dlurl = null;
@@ -109,8 +109,8 @@ public class JamendoCom extends PluginForHost {
             String TrackID = new Regex(link.getDownloadURL(), "track/(\\d+)").getMatch(0);
             dlurl = prepareDownload("track", TrackID, link);
         }
-        if (dlurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,link, dlurl, true, 1);
+        if (dlurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlurl, true, 1);
         dl.startDownload();
     }
 
@@ -152,17 +152,12 @@ public class JamendoCom extends PluginForHost {
         return dlurl;
     }
 
-    // @Override
-    /*
-     * public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
-    // @Override
+    @Override
     public void reset() {
     }
 
@@ -170,7 +165,7 @@ public class JamendoCom extends PluginForHost {
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREFER_HIGHQUALITY, JDL.L("plugins.hoster.jamendo", "Prefer High Quality Download")).setDefaultValue(true));
     }
 
-    // @Override
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 

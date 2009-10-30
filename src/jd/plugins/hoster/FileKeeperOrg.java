@@ -42,6 +42,7 @@ public class FileKeeperOrg extends PluginForHost {
         return "http://www.it7.net/contact/";
     }
 
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         URLConnectionAdapter con = br.openGetConnection(link.getDownloadURL());
@@ -72,7 +73,7 @@ public class FileKeeperOrg extends PluginForHost {
             jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, 0);
             if (!dl.getConnection().getContentType().contains("application")) {
                 br.followConnection();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
         dl.startDownload();
@@ -82,6 +83,7 @@ public class FileKeeperOrg extends PluginForHost {
     public void reset() {
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }

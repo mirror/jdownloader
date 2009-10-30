@@ -54,8 +54,8 @@ public class FilerCx extends PluginForHost {
         if (br.containsHTML("Captcha number error or expired")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
         String dllink = null;
         dllink = br.getRegex("onclick=\"highlight\\('downloadurl'\\);\" ondblclick=\"ClipBoard\\('downloadurl'\\);\">(.*?)</textarea>").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,link, dllink, false, 1);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
         dl.startDownload();
     }
 
@@ -79,6 +79,7 @@ public class FilerCx extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }

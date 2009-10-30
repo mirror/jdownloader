@@ -370,7 +370,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                      * do not reset if link is offline, finished , already exist
                      * or pluginerror (because only plugin updates can fix this)
                      */
-                    link.getLinkStatus().resetStatus(LinkStatus.ERROR_FATAL | LinkStatus.ERROR_PLUGIN_DEFEKT | LinkStatus.ERROR_ALREADYEXISTS, LinkStatus.ERROR_FILE_NOT_FOUND, LinkStatus.FINISHED);
+                    link.getLinkStatus().resetStatus(LinkStatus.ERROR_FATAL | LinkStatus.ERROR_PLUGIN_DEFECT | LinkStatus.ERROR_ALREADYEXISTS, LinkStatus.ERROR_FILE_NOT_FOUND, LinkStatus.FINISHED);
                 }
             }
         }

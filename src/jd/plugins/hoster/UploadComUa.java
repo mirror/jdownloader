@@ -41,6 +41,7 @@ public class UploadComUa extends PluginForHost {
         return "http://upload.com.ua/rules.php";
     }
 
+    @Override
     public void correctDownloadLink(DownloadLink link) throws Exception {
         String downloadlinklink = link.getDownloadURL().replaceAll("(link|get|stat)", "get");
         link.setUrlDownload(downloadlinklink + "?mode=free");
@@ -73,7 +74,7 @@ public class UploadComUa extends PluginForHost {
         String captchaurl = "http://upload.com.ua/confirm.php";
         String code = getCaptchaCode(captchaurl, downloadLink);
         Form captchaForm = br.getForm(2);
-        if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // Captcha Usereingabe in die Form einfügen
         captchaForm.put("code", code);
         br.submitForm(captchaForm);
@@ -83,13 +84,13 @@ public class UploadComUa extends PluginForHost {
         // Zeichen[+Zeilenumbrüche], die reingesetzt wurden um das Downloaden
         // per Downloadmanager zu erschweren
         String dllink0 = br.getRegex("new Array\\((.*?)\\);").getMatch(0);
-        if (dllink0 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dllink0 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String dllink = dllink0.replaceAll("(,|\"| |\r|\n)", "");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (!(dl.getConnection().isContentDisposition())) {
             br.followConnection();
             if (br.containsHTML("503 Service Temporarily Unavailable")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, null, 5 * 60 * 1001l); }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
@@ -98,7 +99,7 @@ public class UploadComUa extends PluginForHost {
     public void reset() {
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 8;
     }

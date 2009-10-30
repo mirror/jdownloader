@@ -38,14 +38,14 @@ public class XsharewareCom extends PluginForHost {
         super(wrapper);
     }
 
-    // @Override
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
         br.setDebug(true);
 
         Form form = br.getFormbyProperty("name", "F1");
-        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String captchaurl = br.getRegex(Pattern.compile("below:</b></td></tr>\\s+<tr><td><img src=\"(.*?)\"", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
         String code = getCaptchaCode(captchaurl, downloadLink);
         form.put("code", code);
@@ -69,23 +69,23 @@ public class XsharewareCom extends PluginForHost {
             }
             if (br.containsHTML("Link Generated")) dllink = br.getRegex("next\\s+\\d+\\s+hours<br><br>\\s+\\s+<a\\s+href=\"(.*?)\">").getMatch(0);
         }
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, dllink, false, 1);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         dl.startDownload();
 
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 10;
     }
 
-    // @Override
+    @Override
     public String getAGBLink() {
         return "http://www.xshareware.com/tos.html";
     }
 
-    // @Override
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
@@ -110,20 +110,15 @@ public class XsharewareCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    // @Override
-    /*
-     * public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    // @Override
+    @Override
     public void reset() {
     }
 
-    // @Override
+    @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 

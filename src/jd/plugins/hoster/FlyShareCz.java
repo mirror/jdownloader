@@ -42,7 +42,7 @@ public class FlyShareCz extends PluginForHost {
         return "http://www.flyshare.cz/jak-to-funguje";
     }
 
-    // @Override
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
@@ -55,15 +55,15 @@ public class FlyShareCz extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    // @Override
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
         Form DLForm0 = br.getForm(2);
-        if (DLForm0 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (DLForm0 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.submitForm(DLForm0);
         Form DLForm = br.getForm(1);
-        if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // br.submitForm(DLForm);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLForm, false, 1);
 
@@ -71,25 +71,25 @@ public class FlyShareCz extends PluginForHost {
             br.followConnection();
             if (br.containsHTML("error: Invalid request")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             if (br.containsHTML("Too many simultaneous downloads")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l); }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
 
-    // @Override
+    @Override
     public void reset() {
     }
 
-    // @Override
+    @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    // @Override
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 

@@ -120,7 +120,7 @@ public class UploadingCom extends PluginForHost {
             String error = dl.getConnection().getRequest().getCookies().get("error").getValue();
             br.followConnection();
             if (error != null && error.contains("wait")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 1000l * 15);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.setFilenameFix(true);
         dl.startDownload();
@@ -146,7 +146,7 @@ public class UploadingCom extends PluginForHost {
             String error = dl.getConnection().getRequest().getCookies().get("error").getValue();
             br.followConnection();
             if (error != null && error.contains("wait")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 1000l * 15);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.setFilenameFix(true);
         dl.startDownload();
@@ -204,7 +204,7 @@ public class UploadingCom extends PluginForHost {
         }
         br.setFollowRedirects(false);
         String fileID = br.getRegex("file_id: (\\d+)").getMatch(0);
-        if (fileID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (fileID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String starttimer = br.getRegex("start_timer\\((\\d+)\\);").getMatch(0);
         String redirect = null;
         if (starttimer != null) {
@@ -215,7 +215,7 @@ public class UploadingCom extends PluginForHost {
                 redirect = redirect.replaceAll("\\\\/", "/");
             } else {
                 if (br.containsHTML("Please wait")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 1000l);
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         } else {
             for (int i = 0; i < 5; i++) {
@@ -235,7 +235,7 @@ public class UploadingCom extends PluginForHost {
                 sleep(1000l, downloadLink);
             }
         }
-        if (redirect == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (redirect == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         return redirect;
     }
 

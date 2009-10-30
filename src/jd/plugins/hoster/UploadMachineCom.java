@@ -64,7 +64,7 @@ public class UploadMachineCom extends PluginForHost {
         requestFileInformation(downloadLink);
         if (br.containsHTML("downloadpw")) {
             Form pwform = br.getFormbyProperty("name", "myform");
-            if (pwform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (pwform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             String passCode = null;
             {
                 if (downloadLink.getStringProperty("pass", null) == null) {
@@ -89,7 +89,7 @@ public class UploadMachineCom extends PluginForHost {
 
         if (br.containsHTML("You have reached the maximum")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l); }
         String dllink = br.getRegex(Pattern.compile("document.location=\"(.*?)\";this.disabled=true")).getMatch(0);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, dllink, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         dl.startDownload();
     }
 

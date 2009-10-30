@@ -37,12 +37,12 @@ public class SelfLoadCom extends PluginForHost {
         super(wrapper);
     }
 
-    // @Override
+    @Override
     public String getAGBLink() {
         return "http://self-load.com/impressum.html";
     }
 
-    // @Override
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
         setBrowserExclusive();
         br.setDebug(true);
@@ -54,18 +54,13 @@ public class SelfLoadCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    // @Override
-    /*
-     * public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    // @Override
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
         Form form = br.getForm(0);
-        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         form.setAction("/redirect.php"); // *FIXME: ohne / wird eine falsche url
         // in der Form.getAction berechnet!
         // hoster schuld oder Form fixen?
@@ -73,20 +68,20 @@ public class SelfLoadCom extends PluginForHost {
         dl.startDownload();
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    // @Override
+    @Override
     public void reset() {
     }
 
-    // @Override
+    @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 

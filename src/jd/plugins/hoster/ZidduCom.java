@@ -37,7 +37,7 @@ public class ZidduCom extends PluginForHost {
         super(wrapper);
     }
 
-    // @Override
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
@@ -47,14 +47,14 @@ public class ZidduCom extends PluginForHost {
         br.submitForm(form);
         if (br.containsHTML("File.*?not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         form = br.getFormbyProperty("name", "securefrm");
-        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String capurl = form.getRegex("(/CaptchaSecurityImages\\.php\\?width=\\d+&height=\\d+&characters=\\d)").getMatch(0);
-        if (capurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (capurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String code = getCaptchaCode("http://downloads.ziddu.com" + capurl, downloadLink);
 
         form.put("securitycode", code);
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, form, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, false, 1);
         /*
          * Folgendes nicht optimal da bei .isContentDisposition == false immer
          * angenommen wird dass das Captcha falsch war.
@@ -66,18 +66,18 @@ public class ZidduCom extends PluginForHost {
         dl.startDownload();
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         // Tested up to 15
         return 15;
     }
 
-    // @Override
+    @Override
     public String getAGBLink() {
         return "http://www.ziddu.com/termsandconditions.php";
     }
 
-    // @Override
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         String Url = downloadLink.getDownloadURL();
@@ -94,20 +94,15 @@ public class ZidduCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    // @Override
-    /*
-     * public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    // @Override
+    @Override
     public void reset() {
     }
 
-    // @Override
+    @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 

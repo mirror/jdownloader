@@ -42,14 +42,17 @@ public class PrzeklejPl extends PluginForHost {
         this.setStartIntervall(5000l);
     }
 
+    @Override
     public String getAGBLink() {
         return "http://przeklej.pl/regulamin";
     }
 
+    @Override
     public void correctDownloadLink(DownloadLink link) throws Exception {
         link.setUrlDownload(link.getDownloadURL().replaceAll("_", "-"));
     }
 
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
@@ -62,12 +65,13 @@ public class PrzeklejPl extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         String passCode = null;
         if (!br.containsHTML("<span class=\"unbold\">Wprowad")) {
             String linkurl = br.getRegex("class=\"download\" href=\"(.*?)\"").getMatch(0);
-            if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             linkurl = "http://www.przeklej.pl" + linkurl;
             br.setFollowRedirects(true);
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, false, 1);
@@ -79,7 +83,7 @@ public class PrzeklejPl extends PluginForHost {
                 passCode = downloadLink.getStringProperty("pass", null);
             }
             Form form = br.getFormbyProperty("name", "haselko");
-            if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             form.put("haslo[haslo]", passCode);
             br.setFollowRedirects(true);
             URLConnectionAdapter con = br.openFormConnection(form);
@@ -89,7 +93,7 @@ public class PrzeklejPl extends PluginForHost {
                     downloadLink.setProperty("pass", null);
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 }
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } else {
                 con.disconnect();
                 downloadLink.setProperty("pass", passCode);
@@ -99,16 +103,20 @@ public class PrzeklejPl extends PluginForHost {
         }
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
+    @Override
     public void reset() {
     }
 
+    @Override
     public void resetPluginGlobals() {
     }
 
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 }

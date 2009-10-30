@@ -34,12 +34,12 @@ public class HyperFileShareCom extends PluginForHost {
         super(wrapper);
     }
 
-    // @Override
+    @Override
     public String getAGBLink() {
         return "http://download.hyperfileshare.com/terms.php";
     }
 
-    // @Override
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
@@ -59,31 +59,36 @@ public class HyperFileShareCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
         String url = br.getRegex("href=\"(download\\.php\\?code=[a-f0-9]+&sid=[a-f0-9]+&s=\\d)\"").getMatch(0);
-        if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         url = "http://download.hyperfileshare.com/" + url;
         br.getPage(url);
         url = null;
         url = br.getRegex("href=\"(download\\.php\\?code=[a-f0-9]+&sid=[a-f0-9]+&s=\\d)\"").getMatch(0);
-        if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         url = "http://download.hyperfileshare.com/" + url;
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 1);
         dl.startDownload();
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
+    @Override
     public void reset() {
     }
 
+    @Override
     public void resetPluginGlobals() {
     }
 
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 }

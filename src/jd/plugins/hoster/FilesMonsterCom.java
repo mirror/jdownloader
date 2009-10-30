@@ -45,6 +45,7 @@ public class FilesMonsterCom extends PluginForHost {
         if (!br.containsHTML(">Your membership type</span></td>.*?<td>Premium</td>") || !br.containsHTML(">Expired\\?</span></td>.*?<td>No <a") || br.containsHTML("Username/Password can not be found in our database") || br.containsHTML("Try to recover your password by 'Password reminder'")) { throw new PluginException(LinkStatus.ERROR_PREMIUM); }
     }
 
+    @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         try {
@@ -77,13 +78,14 @@ public class FilesMonsterCom extends PluginForHost {
         }
     }
 
+    @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         requestFileInformation(downloadLink);
         login(account);
         br.setDebug(true);
         br.getPage(downloadLink.getDownloadURL());
         String premlink = br.getRegex("\"(http://filesmonster\\.com/get/.*?\\./)\"").getMatch(0);
-        if (premlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (premlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage(premlink);
         if (br.containsHTML("but it has exceeded the daily limit download in total")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
         Form DLForm1 = br.getForm(0);
@@ -91,7 +93,7 @@ public class FilesMonsterCom extends PluginForHost {
         DLForm1.setAction("http://filesmonster.com/ajax.php");
         br.submitForm(DLForm1);
         String ticketID = br.getRegex("text\":\"(.*?)\"").getMatch(0);
-        if (ticketID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (ticketID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLForm1 = new Form();
         DLForm1.setMethod(Form.MethodType.POST);
         DLForm1.setAction("http://filesmonster.com/ajax.php");
@@ -99,17 +101,18 @@ public class FilesMonsterCom extends PluginForHost {
         DLForm1.put("data", ticketID);
         br.submitForm(DLForm1);
         String dllink = br.getRegex("url\":\"(http:.*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dllink = dllink.replaceAll("\\\\/", "/");
         /* max chunks to 1 , because each chunk gets calculated full size */
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (!(dl.getConnection().isContentDisposition())) {
             br.followConnection();
-            if (premlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (premlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
 
+    @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
     }
@@ -155,7 +158,7 @@ public class FilesMonsterCom extends PluginForHost {
             if (!isFree && isPay != null) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium");
             } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
 
         }
@@ -165,7 +168,7 @@ public class FilesMonsterCom extends PluginForHost {
 
         String data = br.getRegex("name='data' value='(.*?)'>").getMatch(0);
         wait = br.getRegex("'wait_sec'>(\\d+)<").getMatch(0);
-        if (data == null || wait == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT); }
+        if (data == null || wait == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
 
         /* request ticket for this file */
 
@@ -177,14 +180,14 @@ public class FilesMonsterCom extends PluginForHost {
         br.postPage(fmurl + "ajax.php", "act=getdl&data=" + data);
         String url = br.getRegex("\\{\"url\":\"(.*?)\"").getMatch(0);
         data = br.getRegex("\"file_request\":\"(.*?)\"").getMatch(0);
-        if (data == null || url == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT); }
+        if (data == null || url == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
 
         url = url.replaceAll("\\\\/", "/");
         /* start download */
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, "X-File-Request=" + data);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.setFilenameFix(true);
         dl.startDownload();

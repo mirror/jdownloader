@@ -88,7 +88,7 @@ public class DepositFiles extends PluginForHost {
             dl.startDownload();
         } else {
             Form form = br.getFormBySubmitvalue("Kostenlosen+download");
-            if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             br.submitForm(form);
             checkErrors();
             if (br.getRedirectLocation() != null && br.getRedirectLocation().indexOf("error") > 0) { throw new PluginException(LinkStatus.ERROR_RETRY); }
@@ -113,7 +113,7 @@ public class DepositFiles extends PluginForHost {
                     }
                 }
             }
-            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
             URLConnectionAdapter con = dl.getConnection();
             if (Plugin.getFileNameFromHeader(con) == null || Plugin.getFileNameFromHeader(con).indexOf("?") >= 0) {
@@ -252,7 +252,7 @@ public class DepositFiles extends PluginForHost {
 
         checkErrors();
         link = br.getRegex(PATTERN_PREMIUM_FINALURL).getMatch(0);
-        if (link == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (link == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setDebug(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, link, true, 0);
         URLConnectionAdapter con = dl.getConnection();

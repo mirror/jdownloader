@@ -35,12 +35,12 @@ public class TurboBitNet extends PluginForHost {
         super(wrapper);
     }
 
-    // @Override
+    @Override
     public String getAGBLink() {
         return "http://turbobit.net/rules";
     }
 
-    // @Override
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
@@ -56,7 +56,7 @@ public class TurboBitNet extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    // @Override
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
 
@@ -70,9 +70,9 @@ public class TurboBitNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait * 1001);
         }
         String captchaUrl = br.getRegex("<img alt=\"Captcha\" src=\"(.*?)\" width=\"150\" height=\"50\" />").getMatch(0);
-        if (captchaUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (captchaUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         Form form = br.getForm(2);
-        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         for (int i = 1; i <= 3; i++) {
             String captchaCode = getCaptchaCode(captchaUrl, downloadLink);
 
@@ -87,20 +87,20 @@ public class TurboBitNet extends PluginForHost {
         br.getPage("http://turbobit.net/download/timeout/" + id);
 
         String downloadUrl = br.getRegex("<a href='(.*?)'>").getMatch(0);
-        if (downloadUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (downloadUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadUrl, true, 1);
         dl.startDownload();
     }
 
-    // @Override
+    @Override
     public void reset() {
     }
 
-    // @Override
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }

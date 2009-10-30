@@ -50,7 +50,7 @@ public class MegaShareGr extends PluginForHost {
         br.setCookie("http://megashare.gr", "yab_mylang", "en");
         br.getPage("http://megashare.gr/login.php");
         Form form = br.getFormbyProperty("name", "lOGIN");
-        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         form.put("user", Encoding.urlEncode(account.getUser()));
         form.put("pass", Encoding.urlEncode(account.getPass()));
         br.setFollowRedirects(true);
@@ -85,7 +85,7 @@ public class MegaShareGr extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, (downloadLink.getDownloadURL()), true, 1);
         if (!(dl.getConnection().isContentDisposition())) {
             br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
@@ -124,24 +124,24 @@ public class MegaShareGr extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         Form captchaForm = br.getForm(0);
-        if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
         for (int i = 0; i < 5; i++) {
             String captchaurl = null;
             if (br.containsHTML("captcha.php")) {
                 captchaurl = "http://megashare.gr/captcha.php";
             }
-            if (captchaurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (captchaurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             String code = getCaptchaCode(captchaurl, downloadLink);
-            if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             captchaForm.put("captchacode", code);
             br.submitForm(captchaForm);
             if (br.containsHTML("You have got max allowed bandwidth size per hour")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 60 * 60 * 1001l);
             if (!br.containsHTML("captcha.php")) break;
         }
-        if (br.containsHTML("captcha.php") || br.containsHTML("Captcha number error or expired")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (br.containsHTML("captcha.php") || br.containsHTML("Captcha number error or expired")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String dllink = br.getRegex("(http://(megashare|[a-z0-9]+\\.megashare)\\.gr/getfile\\.php\\?id=.*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
 
         dl.startDownload();

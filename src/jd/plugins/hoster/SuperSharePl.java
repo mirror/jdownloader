@@ -35,12 +35,12 @@ public class SuperSharePl extends PluginForHost {
         // this.setStartIntervall(5000l);
     }
 
-    // @Override
+    @Override
     public String getAGBLink() {
         return "http://supershare.pl/rules.php";
     }
 
-    // @Override
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         br.setCookie("http://supershare.pl", "yab_mylang", "en");
@@ -54,42 +54,37 @@ public class SuperSharePl extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    // @Override
-    /*
-     * public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    // @Override
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         // br.setDebug(true);
         String filename = downloadLink.getName();
         String getlink = br.getRegex("downloadlink\\s+=\\s+'(.*?)';").getMatch(0);
         if (getlink == null) getlink = br.getRegex("file=(.*?)\"").getMatch(0);
-        if (getlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (getlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setFollowRedirects(true);
         // this.sleep(10000, downloadLink); // uncomment when they find a better
         // way to force wait time
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, getlink, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, getlink, false, 1);
         downloadLink.setFinalFileName(filename);
         dl.startDownload();
 
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 10;
     }
 
-    // @Override
+    @Override
     public void reset() {
     }
 
-    // @Override
+    @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 }

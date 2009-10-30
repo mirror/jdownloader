@@ -79,14 +79,14 @@ public class StorageTo extends PluginForHost {
         if (br.getRegex("'state' : '(.*?)'").getMatch(0).equals("failed")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE); }
         String dllink;
         dllink = br.getRegex("'link' : '(.*?)',").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setFinalFileName(null);
         br.setDebug(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
             if (br.containsHTML("File not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
@@ -111,13 +111,13 @@ public class StorageTo extends PluginForHost {
         if (sleeptime > 0) sleep((sleeptime + 1) * 1000, link);
         String dllink;
         dllink = br.getRegex("'link' : '(.*?)',").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setFinalFileName(null);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
             if (br.containsHTML("File not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }

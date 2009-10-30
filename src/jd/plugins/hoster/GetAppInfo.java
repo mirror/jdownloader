@@ -88,7 +88,7 @@ public class GetAppInfo extends PluginForHost {
         String code = getCaptchaCode("getapp.info", captchaFile, UserIO.NO_USER_INTERACTION, downloadLink, null, null);
         // br.getPage(infolink);
         Form captchaForm = br.getForm(1);
-        if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // Captcha Usereingabe in die Form einfügen
         captchaForm.put("secure", "" + getCode(code));
         // sendet die Form
@@ -104,7 +104,7 @@ public class GetAppInfo extends PluginForHost {
     public void reset() {
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 2;
     }

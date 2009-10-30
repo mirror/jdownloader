@@ -37,12 +37,12 @@ public class LeteckaPostaCz extends PluginForHost {
         // this.setStartIntervall(5000l);
     }
 
-    // @Override
+    @Override
     public String getAGBLink() {
         return "http://leteckaposta.cz/tos";
     }
 
-    // @Override
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
@@ -55,39 +55,34 @@ public class LeteckaPostaCz extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    // @Override
-    /*
-     * public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    // @Override
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         String linkurl = br.getRegex("\\s+<h1><a href='(.*?)'").getMatch(0);
-        if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         linkurl = "http://leteckaposta.cz" + linkurl;
         br.setFollowRedirects(true);
         // this.sleep(40000, downloadLink); //Remove if they find a better way
         // to force wait time
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, linkurl, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, false, 1);
         dl.startDownload();
 
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    // @Override
+    @Override
     public void reset() {
     }
 
-    // @Override
+    @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 }

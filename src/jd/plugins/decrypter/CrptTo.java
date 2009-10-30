@@ -45,7 +45,7 @@ public class CrptTo extends PluginForDecrypt {
         super(wrapper);
     }
 
-    // @Override
+    @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -90,7 +90,7 @@ public class CrptTo extends PluginForDecrypt {
                     break;
             }
             if (br.containsHTML("Passwort bitte hier") || br.containsHTML("/captcha.inc.php")) throw new DecrypterException(DecrypterException.CAPTCHA);
-            if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
         }
         // "waittime"-check
@@ -129,17 +129,16 @@ public class CrptTo extends PluginForDecrypt {
             // System.out.println(finallink);
 
             // if (finallink == null) throw new
-            // PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            // PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             decryptedLinks.add(createDownloadlink(finallink));
 
             progress.increase(1);
             Thread.sleep(200);
         }
-        if (decryptedLinks.size() == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (decryptedLinks.size() == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         return decryptedLinks;
     }
 
-    // @Override
     /**
      * 0 = dlc 1 = rsdf 2 = ccf
      */

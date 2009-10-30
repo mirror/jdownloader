@@ -44,21 +44,21 @@ public class NovaUpMovcom extends PluginForHost {
         br.setFollowRedirects(false);
         String infolink = link.getDownloadURL();
         br.getPage(infolink);
-        //Handling für Videolinks
+        // Handling für Videolinks
         if (link.getDownloadURL().contains("video")) {
             String dllink = br.getRegex("\"file\",\"(.*?)\"").getMatch(0);
-            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             link.setFinalFileName(null);
-            dl = jd.plugins.BrowserAdapter.openDownload(br,link, dllink, true, -20);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -20);
             dl.startDownload();
 
         } else {
-            //handling für "nicht"-video Links
+            // handling für "nicht"-video Links
             String dllink1 = br.getRegex("> <strong><a href=\"(.*?)\"><span class=\"dwl_novaup").getMatch(0);
             String dllink = "http://www.novaup.com" + dllink1;
-            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             link.setFinalFileName(null);
-            dl = jd.plugins.BrowserAdapter.openDownload(br,link, dllink, true, -20);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -20);
             dl.startDownload();
         }
 
@@ -68,25 +68,25 @@ public class NovaUpMovcom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
         br.getPage(parameter.getDownloadURL());
-        //onlinecheck für Videolinks
+        // onlinecheck für Videolinks
         if (parameter.getDownloadURL().contains("video")) {
             if (br.containsHTML("This file no longer exists on our servers.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             if (br.containsHTML("The file is beeing transfered to our other servers. This may take few minutes.")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             String filename1 = br.getRegex("<h3>(.*?)</h3>").getMatch(0);
-            if (filename1 == null ) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (filename1 == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             String dllink = br.getRegex("\"file\",\"(.*?)\"").getMatch(0);
-           
+
             URLConnectionAdapter con = br.openGetConnection(dllink);
-            try{
-            parameter.setDownloadSize(con.getContentLength());
-            String filename = filename1 + ".flv";
-            parameter.setName(filename.trim());
-        }finally{
-            con.disconnect();
-        }
+            try {
+                parameter.setDownloadSize(con.getContentLength());
+                String filename = filename1 + ".flv";
+                parameter.setName(filename.trim());
+            } finally {
+                con.disconnect();
+            }
 
         } else {
-          //Onlinecheck für "nicht"-video Links
+            // Onlinecheck für "nicht"-video Links
             if (br.containsHTML("This file no longer exists on our servers.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             if (br.containsHTML("The file is beeing transfered to our other servers. This may take few minutes.")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             String filename = br.getRegex("/([^/]{1,})/?\"><span class=\"dwl_novaup\">Click here to download</span>").getMatch(0);
@@ -112,6 +112,7 @@ public class NovaUpMovcom extends PluginForHost {
         return getVersion("$Revision$");
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }

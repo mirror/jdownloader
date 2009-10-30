@@ -34,12 +34,12 @@ public class PlunderCom extends PluginForHost {
         super(wrapper);
     }
 
-    // @Override
+    @Override
     public String getAGBLink() {
         return "http://www.plunder.com/x/tos";
     }
 
-    // @Override
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         br.getPage(downloadLink.getDownloadURL());
         this.setBrowserExclusive();
@@ -55,41 +55,37 @@ public class PlunderCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    // @Override
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
 
-       String dllink = br.getRegex("<BR /><a href=\"(.*?)\">Download").getMatch(0);
-       if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        String dllink = br.getRegex("<BR /><a href=\"(.*?)\">Download").getMatch(0);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -2);
         if (!(dl.getConnection().isContentDisposition())) {
             br.followConnection();
-            if (br.containsHTML("You must log in to download more this session")) {
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
-            }
+            if (br.containsHTML("You must log in to download more this session")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l); }
             String checklink = br.getURL();
-            if (checklink.contains("/error")){
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
-            }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (checklink.contains("/error")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l); }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 2;
     }
 
-    // @Override
+    @Override
     public void reset() {
     }
 
-    // @Override
+    @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 }

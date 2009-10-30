@@ -65,7 +65,7 @@ public class EvilShareCom extends PluginForHost {
         requestFileInformation(link);
         br.getPage(link.getDownloadURL());
         Form form = br.getFormBySubmitvalue("Free+Download");
-        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         form.remove("method_premium");
         br.submitForm(form);
         if (br.containsHTML("You have to wait")) {
@@ -86,9 +86,9 @@ public class EvilShareCom extends PluginForHost {
             }
         }
         form = br.getFormbyProperty("name", "F1");
-        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String captcha = br.getRegex(Pattern.compile("\"(http://evilshare.com/captchas.*?)\"", Pattern.DOTALL)).getMatch(0);
-        if (captcha == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (captcha == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String passCode = null;
         if (br.containsHTML("<br><b>Password:</b>")) {
             if (link.getStringProperty("pass", null) == null) {
@@ -113,7 +113,7 @@ public class EvilShareCom extends PluginForHost {
                 link.setProperty("pass", null);
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (passCode != null) {
             link.setProperty("pass", passCode);
@@ -129,7 +129,7 @@ public class EvilShareCom extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }

@@ -126,7 +126,7 @@ public class FileHostMecom extends PluginForHost {
         } else {
             url = br.getRedirectLocation();
         }
-        if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setFollowRedirects(true);
         /* Datei herunterladen */
         dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, url, true, 0);

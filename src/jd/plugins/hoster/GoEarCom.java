@@ -44,7 +44,7 @@ public class GoEarCom extends PluginForHost {
         br.getPage(getXmlUrl(link.getDownloadURL()));
 
         String file = br.getRegex("path=\"(.*?)\"").getMatch(0);
-        if (file == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (file == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, file);

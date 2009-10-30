@@ -56,7 +56,7 @@ public class StorePlaceOrg extends PluginForHost {
             if (!br.containsHTML("User-Agent not allowed")) break;
             Thread.sleep(250);
         }
-        if (br.containsHTML("User-Agent not allowed")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (br.containsHTML("User-Agent not allowed")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         if (br.containsHTML("Your requested file is not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = Encoding.htmlDecode(br.getRegex("File name:</b></td>.*?<td align=.*?width=[0-9]+px>(.*?)</td>").getMatch(0));
         String filesize = br.getRegex("File size:</b></td>.*?<td align=left>(.*?)</td>").getMatch(0);
@@ -72,7 +72,7 @@ public class StorePlaceOrg extends PluginForHost {
         requestFileInformation(downloadLink);
         if (br.containsHTML("downloadpw")) {
             Form pwform = br.getFormbyProperty("name", "myform");
-            if (pwform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (pwform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             String passCode = null;
             {
                 if (downloadLink.getStringProperty("pass", null) == null) {

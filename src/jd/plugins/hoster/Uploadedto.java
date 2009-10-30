@@ -171,7 +171,7 @@ public class Uploadedto extends PluginForHost {
             if (br.getRedirectLocation() == null) {
                 con.disconnect();
                 logger.severe("Endlink not found");
-                linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFECT);
                 linkStatus.setErrorMessage(JDL.L("plugins.hoster.uploadedto.errors.indirectlinkerror", "Indirect link error"));
                 return;
             }
@@ -266,7 +266,7 @@ public class Uploadedto extends PluginForHost {
         }
         if (error != null) {
             String message = JDL.L("plugins.errors.uploadedto." + error, error.replaceAll("_", " "));
-            linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFECT);
             linkStatus.setErrorMessage(message);
             return;
 
@@ -282,13 +282,13 @@ public class Uploadedto extends PluginForHost {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, false, 1);
         } else {
             String dlLink = br.getRedirectLocation();
-            if (dlLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (dlLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlLink, false, 1);
         }
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
             if (br.containsHTML("Sie laden bereits eine Datei herunter")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l); }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.fakeContentRangeHeader(false);
         dl.setFileSizeVerified(true);

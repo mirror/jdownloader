@@ -63,10 +63,12 @@ public class FilesHackCom extends PluginForHost {
         setConfigElements();
     }
 
+    @Override
     public String getAGBLink() {
         return "http://www.fileshack.com/extras/tos.x";
     }
 
+    @Override
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replaceAll("(file\\.|file_download\\.)", "file\\."));
     }
@@ -96,6 +98,7 @@ public class FilesHackCom extends PluginForHost {
         }
     }
 
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
@@ -109,6 +112,7 @@ public class FilesHackCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @Override
     public void handleFree(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -117,11 +121,11 @@ public class FilesHackCom extends PluginForHost {
         dlink = dlink.replace("file.", "file_download.");
         br.getPage(dlink);
         Form form = br.getFormbyProperty("name", "nologinform");
-        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.submitForm(form);
 
         String[] strings = br.getRegex(SERVERS_STRINGS_PATTERN).getColumn(0);
-        if (strings.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (strings.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
         List<String> serversList = Arrays.asList(strings);
         if (serversList.size() > 1) Collections.sort(serversList);
@@ -133,9 +137,9 @@ public class FilesHackCom extends PluginForHost {
             logger.warning("The configured server number [" + configuredServerNumber + "] is " + how + " the number of obtained server strings [" + numberOfObtainedServerStrings + "]");
 
             if (numberOfObtainedServerStrings > 1) {
-            	String identifier = DEFAULT_SERVER_NAME.replace("Public", "").replace("USA", "");
-            	identifier = identifier.toLowerCase().trim();
-            	
+                String identifier = DEFAULT_SERVER_NAME.replace("Public", "").replace("USA", "");
+                identifier = identifier.toLowerCase().trim();
+
                 // verify if the configured default server was found in the page
                 int which = -1;
                 for (String server : serversList) {
@@ -158,34 +162,37 @@ public class FilesHackCom extends PluginForHost {
         }
 
         String usedString = serversList.get(configuredServerNumber);
-        if (usedString == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (usedString == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
         logger.fine("Using server string '" + usedString + "'");
         br.getPage("http://www.fileshack.com" + usedString);
         String frameserver = new Regex(br.getURL(), "(http://[a-z]+\\.[a-z0-9]+\\.fileshack\\.com)").getMatch(0);
-        if (frameserver == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (frameserver == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String dlframe = br.getRegex("frameborder=\"[0-9]\" src=\"(.*?)\"").getMatch(0);
-        if (dlframe == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dlframe == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dlframe = frameserver + dlframe;
         br.getPage(dlframe);
         String nextframe = br.getRegex("\"><a href=\"(.*?)\"").getMatch(0);
-        if (nextframe == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (nextframe == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         nextframe = frameserver + nextframe;
         sleep(6000l, link);
         br.getPage(nextframe);
         String dllink = br.getRegex("downloadbutton\"><a href=\"(.*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0).startDownload();
     }
 
+    @Override
     public void reset() {
 
     }
 
+    @Override
     public void resetDownloadlink(DownloadLink link) {
 
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }

@@ -62,7 +62,7 @@ public class FileSurfRu extends PluginForHost {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
         Form captchaForm = br.getForm(0);
-        if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String passCode = null;
         if (br.containsHTML("password")) {
             if (link.getStringProperty("pass", null) == null) {
@@ -88,7 +88,7 @@ public class FileSurfRu extends PluginForHost {
             link.setProperty("pass", passCode);
         }
         String dllink = br.getRegex("<br><br>������ ��� ����������:<br><b><a href=\"(.*?)\">").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         BrowserAdapter.openDownload(br, link, dllink, true, 1);
         dl.startDownload();
     }
@@ -101,7 +101,7 @@ public class FileSurfRu extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }

@@ -36,12 +36,12 @@ public class HostUjeNet extends PluginForHost {
         super(wrapper);
     }
 
-    // @Override
+    @Override
     public String getAGBLink() {
         return "http://hostuje.net/regulamin.php";
     }
 
-    // @Override
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
@@ -53,17 +53,12 @@ public class HostUjeNet extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    // @Override
-    /*
-     * public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    // @Override
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         String code = getCaptchaCode(br.getBaseURL() + "obraz.php", downloadLink);
         Form captchaForm = br.getForm(1);
-        if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         captchaForm.put("kod", code);
         captchaForm.put("REG", "1");
         br.setFollowRedirects(false);
@@ -75,20 +70,20 @@ public class HostUjeNet extends PluginForHost {
         dl.startDownload();
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
     }
 
-    // @Override
+    @Override
     public void reset() {
     }
 
-    // @Override
+    @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 

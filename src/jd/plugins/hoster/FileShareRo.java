@@ -53,23 +53,27 @@ public class FileShareRo extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @Override
     public void handleFree(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
         String dllink = br.getRegex(Pattern.compile("action=\"(/download/.*?)\"", Pattern.DOTALL)).getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dllink = "http://www.fileshare.ro" + dllink;
         jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1).startDownload();
     }
 
+    @Override
     public void reset() {
 
     }
 
+    @Override
     public void resetDownloadlink(DownloadLink link) {
 
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }

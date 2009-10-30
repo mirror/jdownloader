@@ -63,7 +63,7 @@ public class SuperFastFileCom extends PluginForHost {
         br.setFollowRedirects(false);
         // Form um auf free zu "klicken"
         Form DLForm0 = br.getForm(0);
-        if (DLForm0 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (DLForm0 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLForm0.remove("method_premium");
         br.submitForm(DLForm0);
         if (br.containsHTML("You have to wait")) {
@@ -80,7 +80,7 @@ public class SuperFastFileCom extends PluginForHost {
         if (br.containsHTML("You have reached the download-limit")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
         // Form um auf "Datei herunterladen" zu klicken
         Form DLForm = br.getFormbyProperty("name", "F1");
-        if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String passCode = null;
         if (br.containsHTML("name=\"password\"")) {
             if (downloadLink.getStringProperty("pass", null) == null) {
@@ -92,7 +92,7 @@ public class SuperFastFileCom extends PluginForHost {
             DLForm.put("password", passCode);
         }
         String[][] letters = br.getRegex("<span style='position:absolute;padding-left:(\\d+)px;padding-top:\\d+px;'>(\\d)</span>").getMatches();
-        if (letters.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (letters.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         SortedMap<Integer, String> capMap = new TreeMap<Integer, String>();
         for (String[] letter : letters) {
             capMap.put(Integer.parseInt(letter[0]), letter[1]);
@@ -127,7 +127,7 @@ public class SuperFastFileCom extends PluginForHost {
                 downloadLink.setProperty("pass", null);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
-            if (br.containsHTML("Wrong captcha")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (br.containsHTML("Wrong captcha")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             if (dllink == null) {
                 dllink = br.getRegex("padding:[0-9]+px;\">\\s+<a\\s+href=\"(.*?)\">").getMatch(0);
             }
@@ -135,7 +135,7 @@ public class SuperFastFileCom extends PluginForHost {
         if (passCode != null) {
             downloadLink.setProperty("pass", passCode);
         }
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         dl.startDownload();
     }

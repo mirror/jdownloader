@@ -92,12 +92,12 @@ public class FileFactory extends PluginForHost {
     public void handleFree0(DownloadLink parameter) throws Exception {
         checkErrors();
         String urlWithFilename = br.getRegex("class=\"basicBtn\".*?href=\"(.*?)\"").getMatch(0);
-        if (urlWithFilename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (urlWithFilename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage("http://www.filefactory.com" + urlWithFilename);
         checkErrors();
         String downloadUrl = br.getRegex("downloadLink\".*?href=\"(http://.*?filefactory.*?)\"").getMatch(0);
         String wait = br.getRegex("id=\"startWait\" value=\"(\\d+)\"").getMatch(0);
-        if (wait == null || downloadUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (wait == null || downloadUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         long waittime = Long.parseLong(wait) * 1000l;
         if (waittime > 60000l) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waittime); }
         waittime += 1000;
@@ -120,7 +120,7 @@ public class FileFactory extends PluginForHost {
             }
             if (br.containsHTML("You are currently downloading too many files at once")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
             checkErrors();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
     }
 

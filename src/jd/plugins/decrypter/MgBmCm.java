@@ -35,7 +35,7 @@ public class MgBmCm extends PluginForDecrypt {
         super(wrapper);
     }
 
-    // @Override
+    @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -50,7 +50,7 @@ public class MgBmCm extends PluginForDecrypt {
         }
 
         String links = br.getRegex("'(http://[0-9]\\.imagebam\\.com/dl\\.php\\?ID=.*?)'").getMatch(0);
-        if (links == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (links == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         links = "directhttp://" + links;
         String decryptedlink = links;
         DownloadLink dl = createDownloadlink(decryptedlink);
@@ -58,7 +58,5 @@ public class MgBmCm extends PluginForDecrypt {
         decryptedLinks.add(dl);
         return decryptedLinks;
     }
-
-    // @Override
 
 }

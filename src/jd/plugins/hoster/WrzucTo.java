@@ -36,10 +36,12 @@ public class WrzucTo extends PluginForHost {
         br.setFollowRedirects(true);
     }
 
+    @Override
     public String getAGBLink() {
         return "http://www.wrzuc.to/strona/regulamin";
     }
 
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         br.setCookie("http://www.wrzuc.to", "language", "en");
@@ -58,24 +60,29 @@ public class WrzucTo extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         String dllink = br.getRegex(("\"(http://(wrzuc\\.to|[0-9a-z]+\\.wrzuc\\.to)/pobierz/.*?)\"")).getMatch(0);
-        if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT); }
+        if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         dl.startDownload();
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
+    @Override
     public void reset() {
     }
 
+    @Override
     public void resetPluginGlobals() {
     }
 
+    @Override
     public void resetDownloadlink(DownloadLink link) {
 
     }

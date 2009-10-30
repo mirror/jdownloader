@@ -31,10 +31,12 @@ public class MyuploadDK extends PluginForHost {
         super(wrapper);
     }
 
+    @Override
     public String getAGBLink() {
         return "http://www.myupload.dk/rules/";
     }
 
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
         br.setCookie("http://www.myupload.dk", "lang", "en");
@@ -45,19 +47,22 @@ public class MyuploadDK extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @Override
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
         String url = br.getRegex("to download <a href='(/download/.*?)'>.*?</a><br />").getMatch(0);
-        if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setFollowRedirects(true);
         br.setDebug(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,link, url);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, url);
         dl.startDownload();
     }
 
+    @Override
     public void reset() {
     }
 
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 
@@ -67,6 +72,7 @@ public class MyuploadDK extends PluginForHost {
      * }
      */
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }

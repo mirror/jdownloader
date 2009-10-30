@@ -42,10 +42,12 @@ public class FilestoreTo extends PluginForHost {
         Browser.setRequestIntervalLimitGlobal(getHost(), 500);
     }
 
+    @Override
     public String getAGBLink() {
         return "http://www.filestore.to/rules.php?setlang=en";
     }
 
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
@@ -72,6 +74,7 @@ public class FilestoreTo extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         String page = Encoding.urlDecode(br.toString(), true);
@@ -87,24 +90,29 @@ public class FilestoreTo extends PluginForHost {
             } else
                 dl.getConnection().disconnect();
         }
-        if (found == false) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (found == false) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl.startDownload();
     }
 
+    @Override
     public int getTimegapBetweenConnections() {
         return 2000;
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
+    @Override
     public void reset() {
     }
 
+    @Override
     public void resetPluginGlobals() {
     }
 
+    @Override
     public void resetDownloadlink(DownloadLink link) {
 
     }

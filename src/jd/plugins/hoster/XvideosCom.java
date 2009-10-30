@@ -32,10 +32,12 @@ public class XvideosCom extends PluginForHost {
         super(wrapper);
     }
 
+    @Override
     public String getAGBLink() {
         return "http://info.xvideos.com/contact/";
     }
 
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
         br.getPage(parameter.getDownloadURL());
@@ -54,6 +56,7 @@ public class XvideosCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @Override
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
         br.setFollowRedirects(false);
@@ -61,7 +64,7 @@ public class XvideosCom extends PluginForHost {
         br.getPage(infolink);
         String dllink = br.getRegex("flv_url=(.*?\\.flv)&").getMatch(0);
         if (dllink == null) dllink = br.getRegex("flv_url=(.*?\\.mp4)&").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setFinalFileName(null);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         dl.startDownload();
@@ -75,6 +78,7 @@ public class XvideosCom extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }

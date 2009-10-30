@@ -88,7 +88,7 @@ public class RapidShareDe extends PluginForHost {
             } catch (PluginException e2) {
                 throw e2;
             } catch (Exception es) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
 
@@ -134,7 +134,7 @@ public class RapidShareDe extends PluginForHost {
         } else {
             url = br.getRedirectLocation();
         }
-        if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setFollowRedirects(true);
         dl = BrowserAdapter.openDownload(br, downloadLink, url, true, 0);
         dl.startDownload();

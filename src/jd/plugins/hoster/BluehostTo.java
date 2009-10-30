@@ -37,7 +37,7 @@ public class BluehostTo extends PluginForHost {
 
     public BluehostTo(PluginWrapper wrapper) {
         super(wrapper);
-       
+
         this.enablePremium("http://bluehost.to/premium.php");
     }
 
@@ -93,7 +93,7 @@ public class BluehostTo extends PluginForHost {
             login(account);
             String trafficLeft = br.getCookie("http://bluehost.to", "bluehost_traffic_check");
             if (trafficLeft != null && trafficLeft.trim().equalsIgnoreCase("0")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
@@ -111,7 +111,7 @@ public class BluehostTo extends PluginForHost {
         this.sleep(2000, downloadLink);
         br.getPage(downloadLink.getDownloadURL());
         Form form = br.getForm(1);
-        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form);
         if (!dl.getConnection().isContentDisposition()) {

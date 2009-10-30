@@ -127,10 +127,10 @@ public class MegaVideo extends PluginForHost {
             String un = br.getRegex("flashvars.un = \"(.*?)\";").getMatch(0);
             String k1 = br.getRegex("flashvars.k1 = \"(\\d+)\";").getMatch(0);
             String k2 = br.getRegex("flashvars.k2 = \"(\\d+)\";").getMatch(0);
-            if (s == null || un == null || k1 == null || k2 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (s == null || un == null || k1 == null || k2 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             url = "http://www" + s + ".megavideo.com/files/" + decrypt(un, Integer.parseInt(k1), Integer.parseInt(k2)) + "/";
         }
-        if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, false, 1);
         dl.startDownload();
     }

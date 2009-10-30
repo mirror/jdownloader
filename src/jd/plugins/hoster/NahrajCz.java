@@ -40,6 +40,7 @@ public class NahrajCz extends PluginForHost {
         return "http://nahraj.cz/";
     }
 
+    @Override
     public void correctDownloadLink(DownloadLink link) throws Exception {
         String downloadlinklink = link.getDownloadURL().replaceAll("(view|download)", "view");
         link.setUrlDownload(downloadlinklink);
@@ -69,7 +70,7 @@ public class NahrajCz extends PluginForHost {
         // handling for photo-links
         if (br.containsHTML("wrapper image")) {
             String dllink = br.getRegex("<div class=\"item-content\"><a href=\"(.*?)\" rel").getMatch(0);
-            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             String filename0 = br.getRegex("<div class=\"wrapper image\">.*?<h1>(.*?)</h1>.*?<div class=\"item-content").getMatch(0);
             String filename1 = br.getRegex("item-content\"><a href=\"http://www.nahraj.cz/content/dw/[a-z|0-9]+-[a-z|0-9]+-[a-z|0-9]+-[a-z|0-9]+-[a-z|0-9]+/orig/[a-z|0-9]+(\\..*?)\" rel=\"faceb").getMatch(0);
             String filename = filename0 + filename1;
@@ -80,7 +81,7 @@ public class NahrajCz extends PluginForHost {
             String dlpage = downloadLink.getDownloadURL().replaceAll("(view|download)", "download");
             br.getPage(dlpage);
             String dllink = br.getRegex("multipart/form-data\" action=\"(.*?)\">").getMatch(0);
-            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             String filename0 = br.getRegex("class=\"title\">(.*?)</span>").getMatch(0);
             String filename1 = br.getRegex("content/dw/.*?-.*?-.*?-.*?-.*?/.*?(\\..*?)\">.*?<div id=\"widget").getMatch(0);
             String filename = filename0 + filename1;
@@ -94,7 +95,7 @@ public class NahrajCz extends PluginForHost {
     public void reset() {
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }

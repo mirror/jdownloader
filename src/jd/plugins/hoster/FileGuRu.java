@@ -67,10 +67,10 @@ public class FileGuRu extends PluginForHost {
         String id = br.getRegex("var dl = new Download\\( '(.*?)', '(.*?)', '(.*?)', (.*?) \\);").getMatch(0);
         String slot = br.getRegex("var dl = new Download\\( '(.*?)', '(.*?)', '(.*?)', (.*?) \\);").getMatch(1);
         String hash = br.getRegex("var dl = new Download\\( '(.*?)', '(.*?)', '(.*?)', (.*?) \\);").getMatch(2);
-        if (id == null || slot == null || hash == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (id == null || slot == null || hash == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage(slot + "/link/" + id + "/" + hash);
         String dllink = slot + "/link/" + id + "/" + hash;
-        dl = jd.plugins.BrowserAdapter.openDownload(br,link, dllink, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
         dl.startDownload();
 
     }
@@ -100,7 +100,7 @@ public class FileGuRu extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }

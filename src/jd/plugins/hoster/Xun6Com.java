@@ -41,12 +41,14 @@ public class Xun6Com extends PluginForHost {
         return "http://xun6.com/contact/";
     }
 
+    @Override
     public void correctDownloadLink(DownloadLink link) {
         // Links with "www." don't work so we gotta change the link before
         // accessing it
         link.setUrlDownload(link.getDownloadURL().replaceAll("www\\.", ""));
     }
 
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setCustomCharset("UTF-8");
@@ -68,9 +70,9 @@ public class Xun6Com extends PluginForHost {
         br.setFollowRedirects(false);
         Form captchaform = br.getFormbyProperty("name", "myform");
         String captchaurl = br.getRegex("\"(http://xun6\\.com/captcha.*?)\"").getMatch(0);
-        if (captchaurl == null || captchaform == null){
+        if (captchaurl == null || captchaform == null) {
             logger.warning("Captchaform or captchaurl is null");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         captchaform.remove(null);
         String passCode = null;
@@ -103,7 +105,7 @@ public class Xun6Com extends PluginForHost {
         String dllink = br.getRegex("downloadlink\" href=\"(.*?)\"").getMatch(0);
         if (dllink == null) {
             logger.warning("dllink regex is broken");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (passCode != null) {
             downloadLink.setProperty("pass", passCode);
@@ -117,7 +119,7 @@ public class Xun6Com extends PluginForHost {
         jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (!(dl.getConnection().isContentDisposition())) {
             br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
@@ -126,6 +128,7 @@ public class Xun6Com extends PluginForHost {
     public void reset() {
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 5;
     }

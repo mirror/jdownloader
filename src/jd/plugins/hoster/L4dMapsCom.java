@@ -50,6 +50,7 @@ public class L4dMapsCom extends PluginForHost {
         return "http://www.l4dmaps.com/terms-of-use.php";
     }
 
+    @Override
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replaceAll("(details|mirrors|file-download)", "mirrors"));
     }
@@ -110,17 +111,17 @@ public class L4dMapsCom extends PluginForHost {
                 br.getRegex("\">E-Frag #1<.*?\"(http://www\\.l4dmaps\\.com/file-download\\.php\\?file=[0-9]+&entry=[0-9]+)\"").getMatch(0);
             }
         }
-        if (usedServer == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (usedServer == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         logger.fine("Using link '" + usedServer + "'");
         br.getPage(usedServer);
 
         String dllink = br.getRegex("begin, <a href=\"(.*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dllink = dllink.replace("amp;", "");
         dllink = "http://www.l4dmaps.com/" + dllink;
         br.getPage(dllink);
         dllink = br.getRedirectLocation();
-        if (dllink.contains("index.php")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dllink.contains("index.php")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // You can download up to 3 files simultaneously from one server so if
         // someone knows how to make JD know that it is downloading 3 files from
         // one server you could make jd switch to the other servers so you can
@@ -137,7 +138,7 @@ public class L4dMapsCom extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }

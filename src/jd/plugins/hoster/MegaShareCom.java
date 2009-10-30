@@ -39,10 +39,12 @@ public class MegaShareCom extends PluginForHost {
         this.setStartIntervall(2000l);
     }
 
+    @Override
     public String getAGBLink() {
         return "http://www.megashare.com/tos.php";
     }
 
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
@@ -56,6 +58,7 @@ public class MegaShareCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         // Optional handling if they change the page
@@ -68,18 +71,18 @@ public class MegaShareCom extends PluginForHost {
         // } else {
         // String FREEdz = br.getRegex("name=\"(FreeDz.*?)\"").getMatch(0);
         // if (FREEdz == null) throw new
-        // PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        // PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // freedl.put(FREEdz, "FREE");
         // }
         // br.submitForm(freedl);
         // if (!br.containsHTML("security\\.php")) throw new
-        // PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        // PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         Form form = br.getFormbyProperty("name", "downloader");
-        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // Waittime handling could be useful if they check if the users are
         // really waiting
         // if (form == null) throw new
-        // PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        // PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // String wait = br.getRegex("var c = (\\d+);").getMatch(0);
         // if (wait != null) {
         // int tt = Integer.parseInt(wait);
@@ -90,7 +93,7 @@ public class MegaShareCom extends PluginForHost {
         while (i-- > 0) {
             try {
                 String captchaimg = br.getRegex("id=\"cimg\" src=\"(.*?)\"").getMatch(0);
-                if (captchaimg == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                if (captchaimg == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 captchaimg = "http://megashare.com/" + captchaimg;
                 Browser.download(captchaFile, br.cloneBrowser().openGetConnection(captchaimg));
             } catch (Exception e) {
@@ -112,7 +115,7 @@ public class MegaShareCom extends PluginForHost {
         }
         if (captchaCode.length() != 5) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         String accel = br.getRegex("name=\"(accel.*?)\"").getMatch(0);
-        if (accel == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (accel == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         form.remove(accel);
         form.remove(accel);
         form.remove(accel);
@@ -143,7 +146,7 @@ public class MegaShareCom extends PluginForHost {
                 downloadLink.setProperty("pass", null);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (passCode != null) {
             downloadLink.setProperty("pass", passCode);
@@ -151,16 +154,20 @@ public class MegaShareCom extends PluginForHost {
         dl.startDownload();
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
+    @Override
     public void reset() {
     }
 
+    @Override
     public void resetPluginGlobals() {
     }
 
+    @Override
     public void resetDownloadlink(DownloadLink link) {
 
     }

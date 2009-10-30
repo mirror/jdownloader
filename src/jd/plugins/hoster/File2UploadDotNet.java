@@ -50,7 +50,7 @@ public class File2UploadDotNet extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage("http://www.file2upload.net");
         Form form = br.getForm(0);
-        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         form.put("acc_login", Encoding.urlEncode(account.getUser()));
         form.put("acc_pass", Encoding.urlEncode(account.getPass()));
         br.submitForm(form);
@@ -99,7 +99,7 @@ public class File2UploadDotNet extends PluginForHost {
                 passCode = downloadLink.getStringProperty("pass", null);
             }
             Form pwform = br.getForm(1);
-            if (pwform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (pwform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             pwform.put("password", passCode);
             br.submitForm(pwform);
         }
@@ -113,7 +113,7 @@ public class File2UploadDotNet extends PluginForHost {
         }
         if (br.containsHTML("This file was expired")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String dllink = br.getRegex("class=\"important\" href=\"(.*?)\">Click").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         dl.startDownload();
@@ -142,7 +142,7 @@ public class File2UploadDotNet extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         Form captchaForm = br.getForm(0);
-        if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String passCode = null;
         // This host got asecurity issue, if you enter the right pssword and the
         // wrong captcha (if a password is required), you can still download and
@@ -172,7 +172,7 @@ public class File2UploadDotNet extends PluginForHost {
         }
         if (br.containsHTML("This file was expired")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String dllink = br.getRegex("class=\"important\" href=\"(.*?)\">Click to download! <").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         dl.startDownload();

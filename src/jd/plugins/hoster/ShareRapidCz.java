@@ -59,7 +59,7 @@ public class ShareRapidCz extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage("http://share-rapid.com/prihlaseni/");
         Form form = br.getForm(0);
-        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         form.put("login", Encoding.urlEncode(account.getUser()));
         form.put("pass1", Encoding.urlEncode(account.getPass()));
         br.submitForm(form);
@@ -80,7 +80,7 @@ public class ShareRapidCz extends PluginForHost {
             ai.setTrafficLeft(Regex.getSize(trafficleft));
         }
         String expires = br.getMatch("Neomezený tarif vyprší</td><td><strong>([0-9]{1,2}.[0-9]{1,2}.[0-9]{2,4} - [0-9]{1,2}:[0-9]{1,2})</strong>");
-        if (expires != null){
+        if (expires != null) {
             ai.setValidUntil(Regex.getMilliSeconds(expires, "dd.MM.yy - HH:mm", null));
         }
         account.setValid(true);
@@ -94,12 +94,12 @@ public class ShareRapidCz extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("Již Vám došel kredit a vyčerpal jste free limit")) throw new PluginException(LinkStatus.ERROR_FATAL, "Not enough traffic left to download this file!");
         String dllink = br.getRegex("\"(http://s[0-9]{1,2}\\.share-rapid\\.com/download.*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (!(dl.getConnection().isContentDisposition())) {
             br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
@@ -131,7 +131,7 @@ public class ShareRapidCz extends PluginForHost {
         requestFileInformation(downloadLink);
         String dllink = br.getRegex("class=\"important\" href=\"(.*?)\">Click to download! <").getMatch(0);
         if (dllink == null && br.containsHTML("Stahování je přístupné pouze přihlášeným uživatelům")) throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for registered users");
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT, "Please contact the support jdownloader.org");
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Please contact the support jdownloader.org");
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         dl.startDownload();

@@ -54,7 +54,7 @@ public class PutShareCom extends PluginForHost {
         br.setCookie("http://putshare.com/", "lang", "english");
         br.getPage("http://www.putshare.com/login.html");
         Form premform = br.getForm(0);
-        if (premform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (premform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         premform.put("login", account.getUser());
         premform.put("password", account.getPass());
         br.submitForm(premform);
@@ -103,7 +103,7 @@ public class PutShareCom extends PluginForHost {
             br.setFollowRedirects(true);
             dl = BrowserAdapter.openDownload(br, link, br.getRedirectLocation(), true, 0);
         } else {
-            if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             if (br.containsHTML("<b>Password:</b>")) {
                 if (link.getStringProperty("pass", null) == null) {
                     passCode = Plugin.getUserInput("Password?", link);
@@ -124,12 +124,12 @@ public class PutShareCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             } else {
                 String url = br.getRegex("direct link.*?href=\"(http:.*?)\"").getMatch(0);
-                if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 br.setFollowRedirects(true);
                 dl = BrowserAdapter.openDownload(br, link, url, true, 0);
                 if (dl.getConnection() != null && dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("html")) {
                     br.followConnection();
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
         }
@@ -145,7 +145,7 @@ public class PutShareCom extends PluginForHost {
         br.setFollowRedirects(false);
         br.setDebug(true);
         Form form = br.getFormBySubmitvalue("Free+Download");
-        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         form.remove("method_premium");
         br.submitForm(form);
         if (br.containsHTML("You have to wait")) {
@@ -164,10 +164,10 @@ public class PutShareCom extends PluginForHost {
             sleep(tt * 1001, downloadLink);
             String passCode = null;
             form = br.getFormbyProperty("name", "F1");
-            if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             /* "Captcha Method" */
             String[][] letters = br.getRegex("<span style='position:absolute;padding-left:(\\d+)px;padding-top:\\d+px;'>(\\d)</span>").getMatches();
-            if (letters.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (letters.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             SortedMap<Integer, String> capMap = new TreeMap<Integer, String>();
             for (String[] letter : letters) {
                 capMap.put(Integer.parseInt(letter[0]), letter[1]);
@@ -194,10 +194,10 @@ public class PutShareCom extends PluginForHost {
                 downloadLink.setProperty("pass", null);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
-            if (br.containsHTML("Wrong captcha")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (br.containsHTML("Wrong captcha")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             if (br.containsHTML("Download Link Generated")) dllink = br.getRegex("padding:7px;\">\\s+<a\\s+href=\"(.*?)\">").getMatch(0);
             br.setFollowRedirects(true);
-            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             if (passCode != null) {
                 downloadLink.setProperty("pass", passCode);
             }

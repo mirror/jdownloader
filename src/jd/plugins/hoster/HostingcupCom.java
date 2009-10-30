@@ -35,10 +35,12 @@ public class HostingcupCom extends PluginForHost {
         super(wrapper);
     }
 
+    @Override
     public String getAGBLink() {
         return "http://hostingcup.com/tos.html";
     }
 
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
         br.setCookie("http://hostingcup.com", "lang", "english");
@@ -51,6 +53,7 @@ public class HostingcupCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @Override
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
 
@@ -64,22 +67,23 @@ public class HostingcupCom extends PluginForHost {
         if (br.containsHTML("Expired session")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
 
         String dl_url = br.getRegex("<a href=\"([^><]*?" + link.getName() + ").+?" + "</a>").getMatch(0);
-        if (dl_url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dl_url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dl_url, true, 1);
         dl.startDownload();
     }
 
+    @Override
     public void reset() {
     }
-    
+
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 3;
     }
-    
-    
 
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 

@@ -39,7 +39,7 @@ public class EditAndShareCom extends PluginForHost {
         return "contact@editandshare.com";
     }
 
-    // @Override
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
@@ -49,7 +49,7 @@ public class EditAndShareCom extends PluginForHost {
             filename = br.getRegex("/files/[0-9]+/(.*?)';").getMatch(0);
         }
         String filesize = br.getRegex("Size:(.*?)<br").getMatch(0);
-        if (filename == null ) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         filename = filename.replaceAll("(\r|\n)", "");
         link.setName(filename);
         if (filesize != null) {
@@ -59,7 +59,6 @@ public class EditAndShareCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    // @Override
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
@@ -68,7 +67,7 @@ public class EditAndShareCom extends PluginForHost {
         if (dllink == null) {
             dllink = br.getRegex("\"image\" onClick=\"location\\.href='(.*?)';").getMatch(0);
         }
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         dl.startDownload();
     }
@@ -77,7 +76,7 @@ public class EditAndShareCom extends PluginForHost {
     public void reset() {
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }

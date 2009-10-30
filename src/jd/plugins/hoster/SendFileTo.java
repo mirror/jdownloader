@@ -36,10 +36,12 @@ public class SendFileTo extends PluginForHost {
         super(wrapper);
     }
 
+    @Override
     public String getAGBLink() {
         return "http://www.sendfile.to/tos.html";
     }
 
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setCookie("http://www.sendfile.to", "lang", "english");
@@ -55,12 +57,13 @@ public class SendFileTo extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
         // Form um auf free zu "klicken"
         Form dlForm0 = br.getForm(2);
-        if (dlForm0 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dlForm0 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dlForm0.remove("method_premium");
         br.submitForm(dlForm0);
         if (br.containsHTML("You have to wait")) {
@@ -78,7 +81,7 @@ public class SendFileTo extends PluginForHost {
         if (br.containsHTML("You can download files up to 200 Mb only")) throw new PluginException(LinkStatus.ERROR_FATAL, "Upgrade your account to download bigger files");
         Form DLForm = br.getFormbyProperty("name", "F1");
         String captchalink = br.getRegex("\"(http://www.sendfile.to/captchas/.*?)\"").getMatch(0);
-        if (DLForm == null || captchalink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (DLForm == null || captchalink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String passCode = null;
         if (br.containsHTML("<br><b>Password:</b>")) {
             if (downloadLink.getStringProperty("pass", null) == null) {
@@ -104,18 +107,21 @@ public class SendFileTo extends PluginForHost {
             downloadLink.setProperty("pass", passCode);
         }
         String dllink = br.getRegex("dotted #bbb;padding:[0-9]px;\">.*?<a href=\"(.*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         dl.startDownload();
     }
 
+    @Override
     public void reset() {
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 

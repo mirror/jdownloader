@@ -47,7 +47,7 @@ public class XXXBlg extends PluginForDecrypt {
             dLink = createDownloadlink(br.getRedirectLocation());
         } else {
             Form form = br.getForm(0);
-            if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             dLink = createDownloadlink(form.getAction(null));
         }
         dLink.addSourcePluginPassword("xxx-blog.dl.am");

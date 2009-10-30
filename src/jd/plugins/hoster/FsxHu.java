@@ -37,14 +37,17 @@ public class FsxHu extends PluginForHost {
         super(wrapper);
     }
 
+    @Override
     public String getAGBLink() {
         return "http://www.fsx.hu/index.php?m=home&o=szabalyzat";
     }
 
+    @Override
     public String getCoder() {
         return "dqdb";
     }
 
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
@@ -72,6 +75,7 @@ public class FsxHu extends PluginForHost {
         con.disconnect();
     }
 
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         br.setCookiesExclusive(true);
         br.clearCookies("www.fsx.hu");
@@ -100,7 +104,7 @@ public class FsxHu extends PluginForHost {
 
             String serverQueueLength = br.getRegex("<font color=\"#FF0000\"><strong>(\\d+?)</strong></font> felhaszn.l. van el.tted").getMatch(0);
 
-            if (serverQueueLength == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (serverQueueLength == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
             // next run of handleFree() will report the file as deleted
             // if it is really deleted because fsx.hu sometimes reports
@@ -115,24 +119,30 @@ public class FsxHu extends PluginForHost {
         }
     }
 
+    @Override
     public int getTimegapBetweenConnections() {
         return 500;
     }
 
+    @Override
     public int getMaxConnections() {
         return 1;
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
+    @Override
     public void reset() {
     }
 
+    @Override
     public void resetPluginGlobals() {
     }
 
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 }

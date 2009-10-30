@@ -71,7 +71,7 @@ public class QshareCom extends PluginForHost {
         if (error != null) throw new PluginException(LinkStatus.ERROR_FATAL, Encoding.UTF8Encode(error));
 
         String url = br.getRegex(Pattern.compile("<SCRIPT TYPE=\"text/javascript\">.*?function free\\(\\).*?window.location = \"(.*?)\";", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-        if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage(url);
 
         if (br.getRegex("(Du hast die maximal zulässige Anzahl|You have exceeded the maximum allowed)").matches()) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l);
@@ -80,7 +80,7 @@ public class QshareCom extends PluginForHost {
         if (wait != null && !downloadLink.getBooleanProperty("trywithoutwait", true)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait.trim()) * 60 * 1000l);
 
         String link = br.getRegex("writeToPage\\('<A HREF=\"(.*?)\"").getMatch(0);
-        if (link == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (link == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
         br.setFollowRedirects(false);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, link, true, 1);
@@ -119,13 +119,13 @@ public class QshareCom extends PluginForHost {
             String error = br.getRegex("<SPAN STYLE=\"font\\-size:13px;color:#BB0000;font\\-weight:bold\">(.*?)</SPAN>").getMatch(0);
             if (error != null) {
                 logger.severe(error);
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             String[] links = br.getRegex("class=\"button\" href=\"(.*?)\"><span>").getColumn(0);
-            if (links.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (links.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             br.getPage(links[1]);
             url = br.getRegex("(http://\\w{1,5}.qshare.com/\\w{1,10}/\\w{1,50}/\\w{1,50}/\\w{1,50}/\\w{1,50}/" + account.getUser() + "/" + account.getPass() + "/.*?)\"").getMatch(0);
-            if (links.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (links.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             br.setFollowRedirects(true);
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 0);
 
@@ -151,7 +151,7 @@ public class QshareCom extends PluginForHost {
             br.getRequest().setHtmlCode(br.getRequest().getHtmlCode() + "</form>");
         }
         Form form = br.getForm(0);
-        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         form.put("username", Encoding.urlEncode(account.getUser()));
         form.put("password", Encoding.urlEncode(account.getPass()));
         form.remove("cookie");

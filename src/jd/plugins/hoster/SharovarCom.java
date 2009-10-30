@@ -57,7 +57,7 @@ public class SharovarCom extends PluginForHost {
         requestFileInformation(downloadLink);
 
         Form dlform = br.getForm(3);
-        if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.submitForm(dlform);
         String dllink = br.getRegex("Now you can download file</h3><form action=\"(.*)\" method=\"post\" enctype=\"application/").getMatch(0);
         dl = BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);

@@ -56,7 +56,7 @@ public class DivxHostTo extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         String dllink = br.getRegex(Pattern.compile("name=\"src\" value=\"(.*?)\" />")).getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -20);
         if (!(dl.getConnection().getContentType().contains("octet"))) {
             /*

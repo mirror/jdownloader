@@ -37,12 +37,12 @@ public class MilleDriveCom extends PluginForHost {
         // this.setStartIntervall(5000l);
     }
 
-    // @Override
+    @Override
     public String getAGBLink() {
         return "http://milledrive.com/terms_of_service/";
     }
 
-    // @Override
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -74,12 +74,7 @@ public class MilleDriveCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    // @Override
-    /*
-     * public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    // @Override
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         if (br.containsHTML("/wait_encode.png") || br.containsHTML("This video is still being encoded")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugin.hoster.milledrive.com.stillencoding", "This video is still being encoded"), 15 * 60 * 1000);
@@ -89,16 +84,16 @@ public class MilleDriveCom extends PluginForHost {
             String firstlink = downloadLink.getDownloadURL();
             if (!firstlink.contains("/files/")) {
                 firstlink = br.getRegex("id=\"down-direct\"\\s+href=\"(.*?)\"").getMatch(0);
-                if (firstlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                if (firstlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 br.getPage(firstlink);
             }
             Form down1 = br.getFormbyProperty("id", "free-down");
-            if (down1 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (down1 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             this.sleep(30001, downloadLink);
             br.submitForm(down1);
             if (br.containsHTML("currently in use")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED); }
             String url = br.getRegex("<a href=\"(http://cache[^\"]+)").getMatch(0);
-            if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             if (br.containsHTML("The requested URL does not exist")) throw new PluginException(LinkStatus.ERROR_RETRY);
             br.setFollowRedirects(true);
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 1);
@@ -119,20 +114,20 @@ public class MilleDriveCom extends PluginForHost {
         dl.startDownload();
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    // @Override
+    @Override
     public void reset() {
     }
 
-    // @Override
+    @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 }

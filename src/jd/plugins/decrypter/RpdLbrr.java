@@ -39,7 +39,7 @@ public class RpdLbrr extends PluginForDecrypt {
         br.setCookiesExclusive(false);
     }
 
-    // @Override
+    @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
 
@@ -56,21 +56,19 @@ public class RpdLbrr extends PluginForDecrypt {
             progress.setRange(2);
             progress.setStatus(1);
             Form captchaForm = br.getForms()[1];
-            if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             captchaForm.setAction(br.getURL());
             String captchaCode = getCaptchaCode("http://rapidlibrary.com/code2.php", parameter);
             InputField nv = new InputField("c_code", captchaCode);
             captchaForm.addInputField(nv);
             br.submitForm(captchaForm);
             directLink = br.getRegex("\"(http://rapidshare\\.com.*?)\"").getMatch(0);
-            if (directLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (directLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         decryptedLinks.add(createDownloadlink(directLink));
         RpdLbrr.decryptRunning = false;
         return decryptedLinks;
     }
-
-    // @Override
 
     private void waitQueue() throws InterruptedException {
         while (RpdLbrr.decryptRunning)

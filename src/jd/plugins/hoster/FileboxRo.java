@@ -37,6 +37,7 @@ public class FileboxRo extends PluginForHost {
         super(wrapper);
     }
 
+    @Override
     public void correctDownloadLink(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setCookie(link.getDownloadURL(), "filebox_language", "en");
@@ -51,10 +52,12 @@ public class FileboxRo extends PluginForHost {
         }
     }
 
+    @Override
     public String getAGBLink() {
         return "http://www.filebox.ro/disclaimer.php?english=1";
     }
 
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -84,6 +87,7 @@ public class FileboxRo extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         String linkurl = null;
@@ -106,7 +110,7 @@ public class FileboxRo extends PluginForHost {
             linkurl = br.getRegex("(http://\\w+\\.filebox.ro/get_file.php\\?key=[0-9a-z]{32})").getMatch(0);
         }
 
-        if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setDebug(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, false, 1);
         URLConnectionAdapter con = dl.getConnection();
@@ -123,16 +127,20 @@ public class FileboxRo extends PluginForHost {
         }
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
+    @Override
     public void reset() {
     }
 
+    @Override
     public void resetPluginGlobals() {
     }
 
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 }

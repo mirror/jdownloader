@@ -36,8 +36,6 @@ public class EndlessAppsNet extends PluginForHost {
         return "http://endlessapps.net/legal.php";
     }
 
-    
-    
     @Override
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
@@ -46,17 +44,15 @@ public class EndlessAppsNet extends PluginForHost {
         br.getPage(infolink);
         String dllink;
         dllink = br.getRegex("<input type=\"submit\" class=\"button\" value=\"Download\" onClick=\"window.location='(.*?)'\" >").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setFinalFileName(null);
         br.setDebug(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,link, dllink, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
         dl.startDownload();
-        
 
     }
 
     @Override
-   
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
         br.getPage(parameter.getDownloadURL());
@@ -67,9 +63,6 @@ public class EndlessAppsNet extends PluginForHost {
         parameter.setName(filename.trim());
         return AvailableStatus.TRUE;
     }
-
-    
-    
 
     @Override
     public void reset() {
@@ -84,6 +77,7 @@ public class EndlessAppsNet extends PluginForHost {
         return getVersion("$Revision$");
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 6;
     }

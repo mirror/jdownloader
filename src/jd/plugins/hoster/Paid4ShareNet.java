@@ -45,7 +45,9 @@ public class Paid4ShareNet extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(parameter.getDownloadURL() + "?setlang=en");
-        //If this host blocks your if, you sometimes can't even reach the page (you get an empety page), for this we check if the browser even contains html code
+        // If this host blocks your if, you sometimes can't even reach the page
+        // (you get an empety page), for this we check if the browser even
+        // contains html code
         if (br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
         if (br.containsHTML("Your requested file is not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<b>File name:</b></td>.*?<td align=.*?width=[0-9]+px>(.*?)</td>").getMatch(0);
@@ -62,7 +64,7 @@ public class Paid4ShareNet extends PluginForHost {
         br.setFollowRedirects(true);
         if (br.containsHTML("downloadpw")) {
             Form pwform = br.getFormbyProperty("name", "myform");
-            if (pwform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (pwform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             String passCode = null;
             {
                 if (link.getStringProperty("pass", null) == null) {
@@ -84,10 +86,12 @@ public class Paid4ShareNet extends PluginForHost {
                 link.setProperty("pass", passCode);
             }
         }
-        //If this host blocks your if, you sometimes can't even reach the page (you get an empety page), for this we check if the browser even contains html code
+        // If this host blocks your if, you sometimes can't even reach the page
+        // (you get an empety page), for this we check if the browser even
+        // contains html code
         if (br.containsHTML("You have got max allowed download sessions from the same IP") || br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
         String dllink = br.getRegex("id=downloadfile style=\"display:none\"><h3><font color=\".*?\"><b><a href=\"(.*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
         dl.startDownload();
     }

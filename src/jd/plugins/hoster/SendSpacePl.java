@@ -35,12 +35,12 @@ public class SendSpacePl extends PluginForHost {
         super(wrapper);
     }
 
-    // @Override
+    @Override
     public String getAGBLink() {
         return "http://www.sendspace.pl/rules/";
     }
 
-    // @Override
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
@@ -52,17 +52,12 @@ public class SendSpacePl extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    // @Override
-    /*
-     * public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    // @Override
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
         requestFileInformation(downloadLink);
         String dlLink = br.getRegex("<div class=\"info\"><a href=\"(http://www.sendspace.pl/download/.*?)\" class=\"black\"><b>.*?</b></a></div>").getMatch(0);
-        if (dlLink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT); }
+        if (dlLink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         br.setFollowRedirects(true);
         /* Datei herunterladen */
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlLink, false, 1);
@@ -81,25 +76,25 @@ public class SendSpacePl extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, waitTime);
             }
 
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    // @Override
+    @Override
     public void reset() {
     }
 
-    // @Override
+    @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 }

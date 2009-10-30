@@ -40,6 +40,7 @@ public class FlyFileUs extends PluginForHost {
         return "http://flyfile.us/tos.html";
     }
 
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setCookie("http://www.flyfile.us", "lang", "english");
@@ -54,7 +55,7 @@ public class FlyFileUs extends PluginForHost {
         if (filename == null) filename = br.getRegex("<h2>Download File (.*?)</h2>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         Form DLForm0 = br.getFormBySubmitvalue("Free+Download");
-        if (DLForm0 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (DLForm0 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLForm0.remove("method_premium");
         br.submitForm(DLForm0);
         if (br.containsHTML(">File was deleted by administrator<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -70,7 +71,7 @@ public class FlyFileUs extends PluginForHost {
         br.setFollowRedirects(true);
         Form DLForm = br.getFormbyProperty("name", "F1");
         if (br.containsHTML("You have reached the download-limit")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1000l);
-        if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String passCode = null;
         if (br.containsHTML("<br><b>Password:</b>")) {
             if (downloadLink.getStringProperty("pass", null) == null) {
@@ -83,7 +84,7 @@ public class FlyFileUs extends PluginForHost {
         }
         if (br.containsHTML("flyfile.us/captchas/")) {
             String captcha = br.getRegex("\"(http://flyfile.us/captchas.*?)\"").getMatch(0);
-            if (captcha == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (captcha == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             String code = getCaptchaCode(captcha, downloadLink);
             DLForm.put("code", code);
         }
@@ -100,7 +101,7 @@ public class FlyFileUs extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
             if (br.containsHTML("404 Not Found")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 60 * 60 * 1000l);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (passCode != null) {
             downloadLink.setProperty("pass", passCode);
@@ -112,6 +113,7 @@ public class FlyFileUs extends PluginForHost {
     public void reset() {
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }

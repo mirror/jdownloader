@@ -100,7 +100,7 @@ public class TeraDepotCom extends PluginForHost {
             br.setFollowRedirects(true);
             dl = BrowserAdapter.openDownload(br, link, br.getRedirectLocation(), true, 0);
         } else {
-            if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             if (br.containsHTML("valign=top><b>Password:</b></td>")) {
                 if (link.getStringProperty("pass", null) == null) {
                     passCode = Plugin.getUserInput("Password?", link);
@@ -121,12 +121,12 @@ public class TeraDepotCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             } else {
                 String url = br.getRegex("direct link.*?href=\"(http:.*?)\"").getMatch(0);
-                if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 br.setFollowRedirects(true);
                 dl = BrowserAdapter.openDownload(br, link, url, true, 0);
                 if (dl.getConnection() != null && dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("html")) {
                     br.followConnection();
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
         }
@@ -156,7 +156,7 @@ public class TeraDepotCom extends PluginForHost {
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
         Form form = br.getForm(1);
-        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         form.remove("method_premium");
         br.submitForm(form);
         if (br.containsHTML("reached the download-limit")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 120 * 60 * 1001l); }
@@ -171,7 +171,7 @@ public class TeraDepotCom extends PluginForHost {
             }
         }
         Form captchaForm = br.getFormbyProperty("name", "F1");
-        if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String passCode = null;
         if (br.containsHTML("<br><b>Passwort:</b>")) {
             if (link.getStringProperty("pass", null) == null) {
@@ -197,7 +197,7 @@ public class TeraDepotCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
             if (br.containsHTML("Wrong captcha") || br.containsHTML("Skipped countdown")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (passCode != null) {
             link.setProperty("pass", passCode);
@@ -213,7 +213,7 @@ public class TeraDepotCom extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }

@@ -36,12 +36,12 @@ public class ZetshareCom extends PluginForHost {
         super(wrapper);
     }
 
-    // @Override
+    @Override
     public String getAGBLink() {
         return "http://www.zetshare.com/download/index.php?page=tos";
     }
 
-    // @Override
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         String url = downloadLink.getDownloadURL();
@@ -64,12 +64,7 @@ public class ZetshareCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    // @Override
-    /*
-     * public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    // @Override
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
         requestFileInformation(downloadLink);
@@ -82,26 +77,26 @@ public class ZetshareCom extends PluginForHost {
         }
         /* Link holen */
         String linkurl = Encoding.htmlDecode(new Regex(br, Pattern.compile("<a href=\"(http://www\\.zetshare\\.com/(download/|url/)*?download2\\.php\\?a=.*?)\"><", Pattern.CASE_INSENSITIVE)).getMatch(0));
-        if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, linkurl);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl);
         dl.startDownload();
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 10;
     }
 
-    // @Override
+    @Override
     public void reset() {
     }
 
-    // @Override
+    @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 }

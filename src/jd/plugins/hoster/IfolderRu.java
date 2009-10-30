@@ -75,15 +75,15 @@ public class IfolderRu extends PluginForHost {
             watchAd = "http://ints.ifolder.ru/ints/?".concat(watchAd);
             br.getPage(watchAd);
             watchAd = br.getRegex("<font size=\"\\+1\"><a href=(.*?)>").getMatch(0);
-            if (watchAd == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (watchAd == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             br.getPage(watchAd);
             watchAd = br.getRegex("\"f_top\" src=\"(.*?)\"").getMatch(0);
-            if (watchAd == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (watchAd == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             watchAd = "http://ints.ifolder.ru" + watchAd;
             br.getPage(watchAd);
             /* Tickettime */
             String ticketTimeS = br.getRegex("delay = (\\d+)").getMatch(0);
-            if (ticketTimeS == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (ticketTimeS == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             int ticketTime = Integer.parseInt(ticketTimeS) * 1000;
             this.sleep(ticketTime + 1, downloadLink);
             br.getPage(watchAd);
@@ -93,7 +93,7 @@ public class IfolderRu extends PluginForHost {
             String captchaurl = br.getRegex("(/random/images/.*?)\"").getMatch(0);
             String tag = br.getRegex("tag.value = \"(.*?)\"").getMatch(0);
             String secret = br.getRegex("var\\s+s=\\s+'(.*?)';").getMatch(0);
-            if (captchaForm == null || captchaurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (captchaForm == null || captchaurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             if (tag != null && secret != null) {
                 /* first sort of download form */
                 /* ads first, download then */
@@ -114,7 +114,7 @@ public class IfolderRu extends PluginForHost {
                     captchaForm.remove("activate_ads_free");
                     captchaForm.put("activate_ads_free", "0");
                 } else
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             captchaForm.setAction(br.getURL());
 

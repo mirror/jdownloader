@@ -36,10 +36,12 @@ public class FilesFm extends PluginForHost {
         super(wrapper);
     }
 
+    @Override
     public String getAGBLink() {
         return "http://files.fm/rules.php";
     }
 
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
 
         this.setBrowserExclusive();
@@ -60,10 +62,11 @@ public class FilesFm extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         Form captchaForm = br.getFormbyProperty("name", "myform");
-        if (!br.containsHTML("http://files.fm/captcha.php") || captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (!br.containsHTML("http://files.fm/captcha.php") || captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // password handling
         String passCode = null;
         if (br.containsHTML("name=downloadpw")) {
@@ -85,7 +88,7 @@ public class FilesFm extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
         String dllink = br.getRegex("document\\.location=\"(.*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setFollowRedirects(true);
         if (passCode != null) {
             downloadLink.setProperty("pass", passCode);
@@ -94,16 +97,20 @@ public class FilesFm extends PluginForHost {
         dl.startDownload();
     }
 
+    @Override
     public void reset() {
     }
 
+    @Override
     public void resetPluginGlobals() {
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 

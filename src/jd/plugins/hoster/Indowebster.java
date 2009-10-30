@@ -57,10 +57,10 @@ public class Indowebster extends PluginForHost {
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
         String dl_url = br.getRegex("<div id=\"buttonz\" align=\"center\"> <a href=\"(.*?)\"").getMatch(0);
-        if (dl_url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dl_url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setDebug(true);
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,link, dl_url, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dl_url, true, 1);
         dl.startDownload();
     }
 

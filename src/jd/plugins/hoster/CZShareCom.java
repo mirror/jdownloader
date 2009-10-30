@@ -50,7 +50,7 @@ public class CZShareCom extends PluginForHost {
         if (!br.containsHTML("value=\"FREE download\"")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.CZShareCom.nofreeslots", "No free slots available"), 60 * 1000);
         Form down = br.getFormBySubmitvalue("FREE+download");
         if (down == null) br.getFormbyProperty("action", Encoding.urlEncode("http://czshare.com/trust_me.php"));
-        if (down == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (down == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.submitForm(down);
         down = null;
         if (br.containsHTML("Chyba 6 / Error 6")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000);
@@ -69,7 +69,7 @@ public class CZShareCom extends PluginForHost {
         if (br.containsHTML("Chyba 6 / Error 6")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000);
         if (br.containsHTML("Nesouhlasi kontrolni kod")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         Form down2 = br.getFormbyProperty("name", "pre_download_form");
-        if (down2 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (down2 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, down2, false, 1);
         dl.startDownload();
     }
@@ -129,7 +129,7 @@ public class CZShareCom extends PluginForHost {
         requestFileInformation(downloadLink);
         Form profidown = br.getFormBySubmitvalue("PROFI+download");
         if (profidown == null) br.getFormbyProperty("action", Encoding.urlEncode("http://czshare.com/profi/profi_down.php"));
-        if (profidown == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (profidown == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String id = br.getRegex("type=\"hidden\" name=\"id\" value=\"(.*?)\"").getMatch(0);
         br.submitForm(profidown);
         Form login = br.getForm(0);
@@ -156,7 +156,7 @@ public class CZShareCom extends PluginForHost {
             }
         }
 
-        if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, true, 0);
         URLConnectionAdapter con = dl.getConnection();

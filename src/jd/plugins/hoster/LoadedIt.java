@@ -51,16 +51,17 @@ public class LoadedIt extends PluginForHost {
         this.requestFileInformation(link);
         br.setDebug(true);
         Form DLForm = br.getFormbyProperty("name", "wait");
-        if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         int tt = Integer.parseInt(br.getRegex("var time_wait = (.*?);").getMatch(0));
         sleep(tt * 1001l, link);
         br.submitForm(DLForm);
         String dllink = br.getRegex("type=\"video/divx\" src=\"(.*?)\" custommode=\"Stage6").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = BrowserAdapter.openDownload(br, link, dllink, true, 0);
         dl.startDownload();
     }
 
+    @Override
     public void reset() {
     }
 
@@ -68,6 +69,7 @@ public class LoadedIt extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }

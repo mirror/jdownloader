@@ -43,7 +43,7 @@ public class EzyFileNet extends PluginForHost {
         return "http://ezyfile.net/tou.html";
     }
 
-    // @Override
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setCookie("http://www.ezyfile.net", "lang", "english");
@@ -60,14 +60,13 @@ public class EzyFileNet extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    // @Override
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
         // Form um auf free zu "klicken"
         Form DLForm0 = br.getForm(0);
-        if (DLForm0 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (DLForm0 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLForm0.remove("method_premium");
         br.submitForm(DLForm0);
         if (br.containsHTML("You're using all download slots for IP")) {
@@ -76,7 +75,7 @@ public class EzyFileNet extends PluginForHost {
         }
         // Form um auf "Datei herunterladen" zu klicken
         Form DLForm1 = br.getFormbyProperty("name", "F1");
-        if (DLForm1 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (DLForm1 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String passCode = null;
         if (br.containsHTML("<br><b>Password:</b>")) {
             if (downloadLink.getStringProperty("pass", null) == null) {
@@ -95,7 +94,7 @@ public class EzyFileNet extends PluginForHost {
         }
         if (passCode != null) downloadLink.setProperty("pass", passCode);
         String dllink = br.getRegex("<a href=\"(http://ezy[0-9]+.*)\">http://").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         dl.startDownload();
     }
@@ -104,7 +103,7 @@ public class EzyFileNet extends PluginForHost {
     public void reset() {
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }

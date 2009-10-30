@@ -61,16 +61,16 @@ public class EdiskCz extends PluginForHost {
         br.setDebug(true);
         String posturl = br.getRegex("Naposledy st.*?hnut.*?action=\"(http://.*?)\"").getMatch(0);
         Form captchaForm = br.getForm(0);
-        if (captchaForm == null || posturl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (captchaForm == null || posturl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         captchaForm.setAction(posturl);
         String code = "";
         for (int i = 0; i < 5; i++) {
             if (!br.containsHTML("Opi.*?te text z obr.*?zku")) break;
             String captchaurl0 = br.getRegex("captchaImgWrapper.*?src=\"(.*?)\"").getMatch(0);
-            if (captchaurl0 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (captchaurl0 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             String captchaurl = "http://www.edisk.cz" + captchaurl0;
             code = getCaptchaCode(captchaurl, downloadLink);
-            if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             captchaForm.put("captchaCode", code);
             br.submitForm(captchaForm);
         }
@@ -98,7 +98,7 @@ public class EdiskCz extends PluginForHost {
     public void reset() {
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }

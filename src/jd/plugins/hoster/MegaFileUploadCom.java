@@ -64,6 +64,7 @@ public class MegaFileUploadCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         String passCode = null;
@@ -71,7 +72,7 @@ public class MegaFileUploadCom extends PluginForHost {
         if (br.containsHTML("name=downloadpw")) {
             for (int i = 0; i <= 3; i++) {
                 Form pwform = br.getFormbyProperty("name", "myform");
-                if (pwform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                if (pwform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 if (downloadLink.getStringProperty("pass", null) == null) {
                     passCode = Plugin.getUserInput("Password?", downloadLink);
                 } else {
@@ -96,14 +97,14 @@ public class MegaFileUploadCom extends PluginForHost {
         String dllink = br.getRegex("location=\"(.*?)\"").getMatch(0);
         String ipblockedcheck = br.getRegex("name=\"myform\" action=\"(.*?)\"").getMatch(0);
         if (dllink == null && ipblockedcheck != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 60 * 60 * 1001l);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         if (passCode != null) {
             downloadLink.setProperty("pass", passCode);
         }
         BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (!(dl.getConnection().isContentDisposition())) {
             br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
@@ -112,6 +113,7 @@ public class MegaFileUploadCom extends PluginForHost {
     public void reset() {
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }

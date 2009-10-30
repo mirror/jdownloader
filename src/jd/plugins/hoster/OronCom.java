@@ -44,7 +44,7 @@ public class OronCom extends PluginForHost {
         return "http://oron.com/tos.html";
     }
 
-    // @Override
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setCookie("http://www.oron.com", "lang", "english");
@@ -60,14 +60,13 @@ public class OronCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    // @Override
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
         // Form um auf free zu "klicken"
         Form DLForm0 = br.getForm(0);
-        if (DLForm0 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (DLForm0 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLForm0.remove("method_premium");
         br.submitForm(DLForm0);
         if (br.containsHTML("You have to wait")) {
@@ -108,7 +107,7 @@ public class OronCom extends PluginForHost {
             } else {
                 // No captcha handling
                 Form dlForm = br.getFormbyProperty("name", "F1");
-                if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 if (br.containsHTML("name=\"password\"")) {
                     if (downloadLink.getStringProperty("pass", null) == null) {
                         passCode = Plugin.getUserInput("Password?", downloadLink);
@@ -129,7 +128,7 @@ public class OronCom extends PluginForHost {
                 downloadLink.setProperty("pass", passCode);
             }
             String dllink = br.getRegex("height=\"[0-9]+\"><a href=\"(.*?)\"").getMatch(0);
-            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
             dl.startDownload();
         }
@@ -139,7 +138,7 @@ public class OronCom extends PluginForHost {
     public void reset() {
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }

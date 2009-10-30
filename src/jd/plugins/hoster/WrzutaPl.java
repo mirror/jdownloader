@@ -41,12 +41,12 @@ public class WrzutaPl extends PluginForHost {
         this.setStartIntervall(5000l);
     }
 
-    // @Override
+    @Override
     public String getAGBLink() {
         return "http://www.wrzuta.pl/regulamin/";
     }
 
-    // @Override
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
@@ -64,17 +64,12 @@ public class WrzutaPl extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    // @Override
-    /*
-     * public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    // @Override
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         boolean addext = true;
         String fileid = new Regex(downloadLink.getDownloadURL(), ".*?wrzuta.pl/" + filetype + "/([^/]*)").getMatch(0);
-        if (fileid == null || filetype == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (fileid == null || filetype == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String linkurl = null;
         if (filetype.equalsIgnoreCase("audio")) {
             linkurl = br.getRegex("wrzuta_flv=(.*?)&wrzuta_mini").getMatch(0);
@@ -97,10 +92,10 @@ public class WrzutaPl extends PluginForHost {
             else
                 addext = false;
         }
-        if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setDebug(true);
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, linkurl);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl);
         URLConnectionAdapter con = dl.getConnection();
         if (!con.getContentType().equalsIgnoreCase("unknown") && addext != false) {
             if (con.getContentType().contains("mpeg3") || con.getContentType().contains("audio/mpeg")) {
@@ -133,20 +128,20 @@ public class WrzutaPl extends PluginForHost {
         dl.startDownload();
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    // @Override
+    @Override
     public void reset() {
     }
 
-    // @Override
+    @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 }

@@ -44,6 +44,7 @@ public class CrptRlS extends PluginForDecrypt {
         super(wrapper);
     }
 
+    @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -54,7 +55,7 @@ public class CrptRlS extends PluginForDecrypt {
         if (br.containsHTML("/imagecreate.php") || br.containsHTML("Passwort")) {
             for (int i = 0; i <= 5; i++) {
                 Form captchaForm = br.getForm(0);
-                if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 if (br.containsHTML("/imagecreate.php")) {
                     File file = this.getLocalCaptchaFile();
                     Browser.download(file, br.cloneBrowser().openGetConnection("http://crypturl.us/imagecreate.php"));
@@ -97,7 +98,7 @@ public class CrptRlS extends PluginForDecrypt {
             link = "http://www.crypturl.us" + link;
             br.getPage(link);
             String finallink = br.getRegex("frame src=\"(.*?)\"").getMatch(0);
-            if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             DownloadLink dl = createDownloadlink(finallink);
             decryptedLinks.add(dl);
             progress.increase(1);
@@ -108,9 +109,9 @@ public class CrptRlS extends PluginForDecrypt {
     private ArrayList<DownloadLink> loadcontainer(Browser br, String format) throws IOException, PluginException {
         Browser brc = br.cloneBrowser();
         String containerlink = br.getRegex("href=\"(/cont/.*?)\"").getMatch(0);
-        if (containerlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (containerlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String containerid = new Regex(containerlink, "/cont/([a-z0-9]+)\\.").getMatch(0);
-        if (containerid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (containerid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String link = "http://crypturl.us/cont/" + containerid + "." + format;
         String test = Encoding.htmlDecode(link);
         File file = null;

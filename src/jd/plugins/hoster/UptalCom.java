@@ -38,12 +38,12 @@ public class UptalCom extends PluginForHost {
         this.setStartIntervall(100l);
     }
 
-    // @Override
+    @Override
     public String getAGBLink() {
         return "http://www.uptal.com/faq.php";
     }
 
-    // @Override
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
@@ -57,12 +57,7 @@ public class UptalCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    // @Override
-    /*
-     * public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    // @Override
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         String getlink = null;
@@ -81,11 +76,11 @@ public class UptalCom extends PluginForHost {
             getlink = br.getRegex("document\\.location=\"(.*?)\"").getMatch(0);
             if (getlink == null) getlink = br.getRegex("name=downloadurl value=\"(.*?)\"").getMatch(0);
         }
-        if (getlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (getlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setFollowRedirects(true);
         getlink = getlink.replaceAll(" ", "%20");
         this.sleep(3000, downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, getlink, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, getlink, false, 1);
         downloadLink.setFinalFileName(filename);
         URLConnectionAdapter con = dl.getConnection();
         if (!con.isOK()) {
@@ -95,20 +90,20 @@ public class UptalCom extends PluginForHost {
         dl.startDownload();
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    // @Override
+    @Override
     public void reset() {
     }
 
-    // @Override
+    @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 }

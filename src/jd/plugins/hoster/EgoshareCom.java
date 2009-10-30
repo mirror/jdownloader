@@ -91,7 +91,7 @@ public class EgoshareCom extends PluginForHost {
         String finalUrl = null;
         br.getPage(downloadLink.getDownloadURL());
         finalUrl = br.getRegex("id=downloadfile style=\"display:none\">.*?<a href=\"(http.*?egoshare\\.com/getfile.*?)\"").getMatch(0);
-        if (finalUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (finalUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalUrl, true, 1);
         dl.setFilenameFix(true);
         dl.startDownload();
@@ -171,7 +171,7 @@ public class EgoshareCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }

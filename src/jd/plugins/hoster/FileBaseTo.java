@@ -40,12 +40,12 @@ public class FileBaseTo extends PluginForHost {
         super(wrapper);
     }
 
-    // @Override
+    @Override
     public String getAGBLink() {
         return "http://filebase.to/tos/";
     }
 
-    // @Override
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         // br.setCookiesExclusive(true);
         br.clearCookies(getHost());
@@ -60,12 +60,7 @@ public class FileBaseTo extends PluginForHost {
 
     }
 
-    // @Override
-    /*
-     * /* public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    // @Override
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         String formact = downloadLink.getDownloadURL();
@@ -83,11 +78,11 @@ public class FileBaseTo extends PluginForHost {
         String dlAction = br.getRegex("<form action=\"(http.*?)\"").getMatch(0);
         try {
             if (dlAction != null) {
-                dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, dlAction, "wait=" + Encoding.urlEncode("Download - " + downloadLink.getName()));
+                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlAction, "wait=" + Encoding.urlEncode("Download - " + downloadLink.getName()));
             } else {
                 dlAction = br.getRegex("value=\"(http.*?/download/ticket.*?)\"").getMatch(0);
-                if (dlAction == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-                dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, dlAction);
+                if (dlAction == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlAction);
             }
             br.setDebug(true);
             URLConnectionAdapter con = dl.getConnection();
@@ -100,7 +95,7 @@ public class FileBaseTo extends PluginForHost {
                     con.disconnect();
                     logger.warning("Unsupported error:");
                     logger.warning(br.toString());
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT, JDL.L("plugins.hoster.filebaseto.unsupportederror", "Unsupported error"));
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, JDL.L("plugins.hoster.filebaseto.unsupportederror", "Unsupported error"));
                 }
             }
             dl.startDownload();
@@ -110,20 +105,20 @@ public class FileBaseTo extends PluginForHost {
         }
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    // @Override
+    @Override
     public void reset() {
     }
 
-    // @Override
+    @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 }

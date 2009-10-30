@@ -34,12 +34,12 @@ public class AxiFileCom extends PluginForHost {
         super(wrapper);
     }
 
-    // @Override
+    @Override
     public String getAGBLink() {
         return "http://www.axifile.com/terms.php";
     }
 
-    // @Override
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
         br.setCookiesExclusive(true);
         br.getPage(downloadLink.getDownloadURL());
@@ -50,12 +50,7 @@ public class AxiFileCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    // @Override
-    /*
-     * /* public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    // @Override
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
@@ -66,7 +61,7 @@ public class AxiFileCom extends PluginForHost {
         if (br.containsHTML("This file is password protected")) {
             String passCode = null;
             Form pwform = br.getForm(0);
-            if (pwform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (pwform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             if (downloadLink.getStringProperty("pass", null) == null) {
                 passCode = Plugin.getUserInput("Password?", downloadLink);
             } else {
@@ -85,7 +80,7 @@ public class AxiFileCom extends PluginForHost {
             }
         }
         String dllink = br.getRegex("pnlLink1\"><b>.*?</b><br> <A href=\"(.*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         sleep(13000l, downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -3);
         /*
@@ -95,20 +90,20 @@ public class AxiFileCom extends PluginForHost {
         dl.startDownload();
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 3;
     }
 
-    // @Override
+    @Override
     public void reset() {
     }
 
-    // @Override
+    @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 

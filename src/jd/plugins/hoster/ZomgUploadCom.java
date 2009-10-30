@@ -38,7 +38,7 @@ public class ZomgUploadCom extends PluginForHost {
         // TODO Auto-generated constructor stub
     }
 
-    // @Override
+    @Override
     public String getAGBLink() {
         return "http://www.zomgupload.com/tos.html";
     }
@@ -58,7 +58,7 @@ public class ZomgUploadCom extends PluginForHost {
         String[][] temp = br.getRegex("<span style='position:absolute;padding-left:([0-9]+)px;padding-top:[0-9]px;'>([0-9])</span>").getMatches();
         // COPY FROM BIGGERUPLOADCOM
         /* "Captcha Method" */
-        if (temp.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (temp.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         SortedMap<Integer, String> capMap = new TreeMap<Integer, String>();
         for (String[] letter : temp) {
             capMap.put(Integer.parseInt(letter[0]), letter[1]);
@@ -82,7 +82,7 @@ public class ZomgUploadCom extends PluginForHost {
             form.put("password", passCode);
         }
         br.submitForm(form);
-        if (br.containsHTML("Wrong captcha")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (br.containsHTML("Wrong captcha")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         if (br.containsHTML("Wrong password")) {
             logger.warning("Wrong password!");
             link.setProperty("pass", null);
@@ -92,7 +92,7 @@ public class ZomgUploadCom extends PluginForHost {
             link.setProperty("pass", passCode);
         }
         String dllink = br.getRegex("#bbb;padding:[0-9]px;\">.*?<a href=\"(.*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         dl.startDownload();
 

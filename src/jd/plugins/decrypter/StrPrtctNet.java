@@ -40,7 +40,7 @@ public class StrPrtctNet extends PluginForDecrypt {
         super(wrapper);
     }
 
-    // @Override
+    @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -58,7 +58,7 @@ public class StrPrtctNet extends PluginForDecrypt {
         if (br.containsHTML("Sicherheitscode") || br.containsHTML("Passwort")) {
             for (int i = 0; i <= 5; i++) {
                 Form captchaForm = br.getForm(0);
-                if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 if (br.containsHTML("Sicherheitscode")) {
                     String captchalink = br.getRegex("Sicherheitscode.*?img src=\"(.*?)\"").getMatch(0);
                     String code = getCaptchaCode(captchalink, param);
@@ -84,7 +84,7 @@ public class StrPrtctNet extends PluginForDecrypt {
             throw new DecrypterException(DecrypterException.PASSWORD);
         }
         String cryptframe = br.getRegex("frameborder=.*?<frame src=\"(.*?)\" name").getMatch(0);
-        if (cryptframe == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (cryptframe == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage(cryptframe);
         String[] links = br.getRegex("Hits.*?href=\"(.*?)\"").getColumn(0);
         if (links == null || links.length == 0) return null;
@@ -92,14 +92,14 @@ public class StrPrtctNet extends PluginForDecrypt {
         for (String link : links) {
             br.getPage(link);
             String clink0 = br.getRegex("topFrame\" frameborder.*?<frame src=\"(.*?)\" name=\"mainFrame").getMatch(0);
-            if (clink0 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (clink0 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             br.getPage(clink0);
             Form ajax = br.getForm(0);
-            if (ajax == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (ajax == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             ajax.setAction("http://streamprotect.net/ajax/l2ex.php");
             br.submitForm(ajax);
             String b64 = br.getRegex("\\{\"state\":\"ok\",\"data\":\"(.*?)\"\\}").getMatch(0);
-            if (b64 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (b64 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             b64 = Encoding.Base64Decode(b64);
             DownloadLink dl = createDownloadlink(b64);
             decryptedLinks.add(dl);
@@ -107,7 +107,5 @@ public class StrPrtctNet extends PluginForDecrypt {
         }
         return decryptedLinks;
     }
-
-    // @Override
 
 }

@@ -92,7 +92,7 @@ public class Recaptcha {
                 break;
             }
         }
-        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         id = form.getRegex("k=(.*?)\"").getMatch(0);
 
     }

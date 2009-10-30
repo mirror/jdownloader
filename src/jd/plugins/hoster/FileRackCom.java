@@ -53,7 +53,7 @@ public class FileRackCom extends PluginForHost {
         if (br.containsHTML("Premium member can download more than 200MB file")) throw new PluginException(LinkStatus.ERROR_FATAL, "Only Premium member can download more than 200MB file");
         if (br.containsHTML("File is deleted.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String wait = br.getRegex("Wait <span id=\"countdown\">(.*?)</span> seconds").getMatch(0);
-        if (wait == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (wait == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         int sleep = Integer.parseInt(wait);
         sleep(sleep * 1001, link);
         int retry = 0;
@@ -92,7 +92,7 @@ public class FileRackCom extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }

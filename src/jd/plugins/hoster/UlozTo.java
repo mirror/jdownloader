@@ -36,12 +36,12 @@ public class UlozTo extends PluginForHost {
         br.setFollowRedirects(true);
     }
 
-    // @Override
+    @Override
     public String getAGBLink() {
         return "http://ulozto.net/podminky/";
     }
 
-    // @Override
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         br.getPage(downloadLink.getDownloadURL());
         this.setBrowserExclusive();
@@ -62,41 +62,41 @@ public class UlozTo extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    // @Override
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
 
         String captchaUrl = br.getRegex(Pattern.compile("<img id=\"captcha\" name=\"captcha\" width=\"175\" height=\"70\" src=\"(.*?)\" alt=\"img\">")).getMatch(0);
         String code = getCaptchaCode(captchaUrl, downloadLink);
         Form captchaForm = br.getFormbyProperty("name", "dwn");
-        if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         captchaForm.put("captcha_user", code);
         br.submitForm(captchaForm);
         String dllink = br.getRedirectLocation();
         // Usually this errorhandling is not needed but in case...
         if (dllink == null) {
             if (br.containsHTML("Neopsal jsi spr.vn. text z obr.zku")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (dllink.contains("no#cpt")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         dl.startDownload();
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    // @Override
+    @Override
     public void reset() {
     }
 
-    // @Override
+    @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 }

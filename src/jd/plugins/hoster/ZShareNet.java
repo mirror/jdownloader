@@ -79,7 +79,7 @@ public class ZShareNet extends PluginForHost {
         login(account);
         br.getPage(downloadLink.getDownloadURL());
         String dllink = br.getRegex("var link_enc\\=new Array\\(\\'(.*?)\\'\\)").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dllink = dllink.replaceAll("\\'\\,\\'", "");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         dl.startDownload();
@@ -135,14 +135,14 @@ public class ZShareNet extends PluginForHost {
                 if (!dlUrl.startsWith("/")) dlUrl = "/" + dlUrl;
             }
         }
-        if (dlUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dlUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlUrl, true, 1);
 
         // Möglicherweise serverfehler...
         if (!dl.getConnection().isContentDisposition() || dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML("404 - Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }

@@ -35,10 +35,12 @@ public class AppSceneOrg extends PluginForHost {
         super(wrapper);
     }
 
+    @Override
     public String getAGBLink() {
         return "http://www.appscene.org/about.php";
     }
 
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         setBrowserExclusive();
         String url = downloadLink.getDownloadURL();
@@ -47,12 +49,13 @@ public class AppSceneOrg extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         for (int i = 0; i <= 3; i++) {
             Form captchaForm = br.getForm(0);
             String captchaurl = br.getRegex("\"(http://www.appscene.org/captcha/.*?)\"").getMatch(0);
-            if (captchaForm == null || captchaurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (captchaForm == null || captchaurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             String code = getCaptchaCode(captchaurl, downloadLink);
             captchaForm.put("captcha", code);
             br.submitForm(captchaForm);
@@ -67,16 +70,20 @@ public class AppSceneOrg extends PluginForHost {
         dl.startDownload();
     }
 
+    @Override
     public void reset() {
     }
 
+    @Override
     public void resetPluginGlobals() {
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 

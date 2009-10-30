@@ -44,6 +44,7 @@ public class DlBseWs extends PluginForDecrypt {
         super(wrapper);
     }
 
+    @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -53,7 +54,7 @@ public class DlBseWs extends PluginForDecrypt {
         // "gamereport"-links handling
         if (parameter.contains("gamereport")) {
             parameter = br.getRegex("\"(game_details\\.php\\?id=.*?)\"").getMatch(0);
-            if (parameter == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (parameter == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             parameter = "http://dlbase.ws/" + parameter;
             br.getPage(parameter);
         }
@@ -65,7 +66,7 @@ public class DlBseWs extends PluginForDecrypt {
             if (decryptedLinks != null && decryptedLinks.size() > 0) return decryptedLinks;
         }
         String[] dlinks = br.getRegex("\"((season|game|program|music|xxx|movie)_details\\.php\\?.*?&download=.*?)\"").getColumn(0);
-        if (dlinks == null || dlinks.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dlinks == null || dlinks.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         for (String dlink : dlinks) {
             dlink = "http://dlbase.ws/" + dlink;
             br.getPage(dlink);
@@ -79,7 +80,7 @@ public class DlBseWs extends PluginForDecrypt {
                 br.getPage(link);
                 /* captcha handling */
                 String downlink = null;
-                if (!br.containsHTML("kreiscaptcha.php")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                if (!br.containsHTML("kreiscaptcha.php")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 for (int i = 0; i <= 5; i++) {
                     File file = this.getLocalCaptchaFile();
                     Browser.download(file, br.cloneBrowser().openGetConnection("http://dlbase.ws/kreiscaptcha.php"));
@@ -98,7 +99,7 @@ public class DlBseWs extends PluginForDecrypt {
                     if (downlink != null) break;
                 }
                 if (downlink == null && br.containsHTML("kreiscaptcha\\.php")) throw new DecrypterException(DecrypterException.CAPTCHA);
-                if (downlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                if (downlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 DownloadLink dl_link = createDownloadlink(downlink);
                 if (password != null && !password.equals("-kein Passwort-") && !password.equals("keins") && !password.equals("n/a") && password.length() != 0) {
                     dl_link.addSourcePluginPassword(password);
@@ -131,14 +132,14 @@ public class DlBseWs extends PluginForDecrypt {
             brc.downloadConnection(file, con);
         } else {
             con.disconnect();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
 
         if (file != null && file.exists() && file.length() > 100) {
             ArrayList<DownloadLink> decryptedLinks = JDUtilities.getController().getContainerLinks(file);
             if (decryptedLinks.size() > 0) return decryptedLinks;
         } else {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         return null;
     }

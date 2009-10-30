@@ -36,12 +36,12 @@ public class FiledropperCom extends PluginForHost {
         super(wrapper);
     }
 
-    // @Override
+    @Override
     public String getAGBLink() {
         return "http://www.filedropper.com/terms.php";
     }
 
-    // @Override
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
@@ -56,7 +56,7 @@ public class FiledropperCom extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
-    // @Override
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         Form captchaForm = null;
@@ -66,7 +66,7 @@ public class FiledropperCom extends PluginForHost {
         for (int i = 0; i <= 5; i++) {
             captchaForm = br.getForm(0);
 
-            if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
             String captchaUrl = br.getRegex("src=\"(securimage/securimage_show\\.php\\?sid=[0-9a-z]{32})\"").getMatch(0);
             String code = getCaptchaCode(captchaUrl, downloadLink);
@@ -92,20 +92,20 @@ public class FiledropperCom extends PluginForHost {
         dl.startDownload();
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    // @Override
+    @Override
     public void reset() {
     }
 
-    // @Override
+    @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 }

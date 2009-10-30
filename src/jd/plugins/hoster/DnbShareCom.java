@@ -49,7 +49,7 @@ public class DnbShareCom extends PluginForHost {
         String payload = null;
         file = br.getRegex("document.write\\('<input type=hidden name=\"file\" value=\"(.*?)\" />'\\);").getMatch(0);
         payload = br.getRegex("document.write\\('<input type=hidden name=\"payload\" value=\"(.*?)\" />'\\);").getMatch(0);
-        if (file == null || payload == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (file == null || payload == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
         Form dlform = new Form();
 
@@ -60,7 +60,7 @@ public class DnbShareCom extends PluginForHost {
         br.setFollowRedirects(false);
         br.submitForm(dlform);
 
-        dl = jd.plugins.BrowserAdapter.openDownload(br,link, br.getRedirectLocation(), true, -20);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, br.getRedirectLocation(), true, -20);
         dl.startDownload();
 
     }
@@ -86,6 +86,7 @@ public class DnbShareCom extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 15;
     }

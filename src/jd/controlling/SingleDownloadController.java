@@ -163,7 +163,7 @@ public class SingleDownloadController extends Thread {
             } catch (Exception e) {
                 logger.finest("Hoster Plugin Version: " + downloadLink.getPlugin().getVersion());
                 JDLogger.exception(e);
-                linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFECT);
                 linkStatus.setErrorMessage(JDL.L("plugins.errors.error", "Error: ") + JDUtilities.convertExceptionReadable(e));
             }
 
@@ -221,7 +221,7 @@ public class SingleDownloadController extends Thread {
                 onErrorChunkloadFailed(downloadLink, currentPlugin);
                 Balloon.showIfHidden(JDL.L("ballon.download.error.title", "Error"), JDTheme.II("gui.images.bad", 32, 32), JDL.LF("ballon.download.failed.message", "<b>%s<b><hr>failed", downloadLink.getName() + " (" + Formatter.formatReadable(downloadLink.getDownloadSize()) + ")"));
                 break;
-            case LinkStatus.ERROR_PLUGIN_DEFEKT:
+            case LinkStatus.ERROR_PLUGIN_DEFECT:
                 onErrorPluginDefect(downloadLink, currentPlugin);
                 Balloon.showIfHidden(JDL.L("ballon.download.error.title", "Error"), JDTheme.II("gui.images.bad", 32, 32), JDL.LF("ballon.download.plugindefect.message", "<b>%s<b><hr>Plugin defect", downloadLink.getHost()));
                 break;
@@ -317,6 +317,7 @@ public class SingleDownloadController extends Thread {
      */
     private void showAGBDialog(final DownloadLink downloadLink2) {
         new GuiRunnable<Object>() {
+            @Override
             public Object runSave() {
                 AgbDialog.showDialog(downloadLink2);
                 return null;
@@ -569,6 +570,7 @@ public class SingleDownloadController extends Thread {
      * @see java.lang.Thread#run()
      */
     // @Override
+    @Override
     public void run() {
         try {
             /**

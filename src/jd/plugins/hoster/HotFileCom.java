@@ -90,7 +90,7 @@ public class HotFileCom extends PluginForHost {
         } else {
             finalUrl = br.getRegex("<h3 style='margin-top: 20px'><a href=\"(.*?hotfile.*?)\">Click here to download</a></h3>").getMatch(0);
         }
-        if (finalUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (finalUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalUrl, true, 0);
         dl.setFilenameFix(true);
         dl.startDownload();
@@ -148,7 +148,7 @@ public class HotFileCom extends PluginForHost {
             form = br.getForm(1);
 
             String captchaUrl = br.getRegex("<img src=\"(/captcha.php.*?)\">").getMatch(0);
-            if (captchaUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (captchaUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             captchaUrl = "http://www.hotfile.com" + captchaUrl;
             String captchaCode = getCaptchaCode(captchaUrl, link);
             form.put("captcha", captchaCode);
@@ -157,7 +157,7 @@ public class HotFileCom extends PluginForHost {
         }
 
         String dl_url = br.getRegex("<h3 style='margin-top: 20px'><a href=\"(.*?)\">Click here to download</a>").getMatch(0);
-        if (dl_url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dl_url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setFollowRedirects(true);
         br.setDebug(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dl_url, false, 1);

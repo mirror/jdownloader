@@ -41,6 +41,7 @@ public class CobraShareSk extends PluginForHost {
         return "http://www.cobrashare.sk/index.php?sid=2";
     }
 
+    @Override
     public void correctDownloadLink(DownloadLink downloadLink) throws MalformedURLException {
         if (downloadLink.getDownloadURL().contains("www.cobrashare.sk:38080")) {
             downloadLink.setUrlDownload("http://www.cobrashare.sk/downloadFile.php?id=" + downloadLink.getDownloadURL().split("\\?id=")[1]);
@@ -63,15 +64,15 @@ public class CobraShareSk extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    // @Override
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         String captchaurl = Encoding.htmlDecode(br.getRegex("id=\"overImg\" src=\"(.*?)\" width=\"100\" hei").getMatch(0));
         String code = getCaptchaCode(captchaurl, downloadLink);
         Form captchaForm = br.getForm(0);
-        if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         captchaForm.put("over", code);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, captchaForm, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, captchaForm, false, 1);
         if (!(dl.getConnection().isContentDisposition())) {
             br.followConnection();
             if (br.containsHTML("window.open")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l); }
@@ -86,7 +87,7 @@ public class CobraShareSk extends PluginForHost {
     public void reset() {
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }

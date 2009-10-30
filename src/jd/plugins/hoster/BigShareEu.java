@@ -29,22 +29,21 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bigshare.eu" }, urls = { "http://[\\w\\.]*?bigshare\\.eu/download\\.php\\?id=[0-9A-Z]+" }, flags = { 0 })
-
 public class BigShareEu extends PluginForHost {
 
     private static final String IP_BLOCKED_MSG1 = "You have got max allowed bandwidth size per hour";
     private static final String IP_BLOCKED_MSG2 = "You have got max allowed download sessions from the same IP";
-    
+
     public BigShareEu(PluginWrapper wrapper) {
         super(wrapper);
     }
-    
-    // @Override
+
+    @Override
     public String getAGBLink() {
         return "http://bigshare.eu/rules.php";
     }
-    
-    // @Override
+
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
@@ -52,7 +51,7 @@ public class BigShareEu extends PluginForHost {
         if (!(br.containsHTML("Your requested file is not found"))) {
             String filename = br.getRegex("File name:.*?<td align=left width=150px>(.*?)</td>").getMatch(0);
             String filesize = br.getRegex("File size:.*?<td align=left>(.*?)</td>").getMatch(0);
-            if (!(filename == null || filesize  == null)) {
+            if (!(filename == null || filesize == null)) {
                 downloadLink.setName(filename);
                 downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
                 return AvailableStatus.TRUE;
@@ -60,19 +59,15 @@ public class BigShareEu extends PluginForHost {
         }
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
-    
-    // @Override
+
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (br.containsHTML(IP_BLOCKED_MSG1) || br.containsHTML(IP_BLOCKED_MSG2)) {
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
-        }
+        if (br.containsHTML(IP_BLOCKED_MSG1) || br.containsHTML(IP_BLOCKED_MSG2)) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED); }
         String linkurl = br.getRegex("<input.*document.location=\"(.*?)\";").getMatch(0);
-        if (linkurl == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        }
+        if (linkurl == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         br.setFollowRedirects(false);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, linkurl, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, false, 1);
         if (!(dl.getConnection().isContentDisposition())) {
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -85,20 +80,20 @@ public class BigShareEu extends PluginForHost {
         dl.startDownload();
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
-    // @Override
+    @Override
     public void reset() {
     }
 
-    // @Override
+    @Override
     public void resetPluginGlobals() {
     }
-    
-    // @Override
+
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 }

@@ -34,10 +34,12 @@ public class FileFrontCom extends PluginForHost {
         super(wrapper);
     }
 
+    @Override
     public String getAGBLink() {
         return "http://aup.legal.filefront.com/";
     }
 
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -53,6 +55,7 @@ public class FileFrontCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
@@ -60,26 +63,30 @@ public class FileFrontCom extends PluginForHost {
         if (nextpageurl == null) {
             nextpageurl = br.getRegex("age_gate_[0-9]\" style=\"\"><a href=\"(.*?)\"").getMatch(0);
         }
-        if (nextpageurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (nextpageurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage(nextpageurl);
         String linkurl = br.getRegex("Your download will begin.*?<a href=\"(.*?)\"").getMatch(0);
-        if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, true, 0);
         dl.startDownload();
 
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
+    @Override
     public void reset() {
     }
 
+    @Override
     public void resetPluginGlobals() {
     }
 
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 }

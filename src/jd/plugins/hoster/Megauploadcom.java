@@ -261,7 +261,7 @@ public class Megauploadcom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 } else {
                     /* still premium, so something went wrong */
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
             Form form = br.getForm(0);
@@ -294,7 +294,7 @@ public class Megauploadcom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 } else {
                     /* still premium, so something went wrong */
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
             url = br.getRegex("id=\"downloadlink\">.*?<a href=\"(.*?)\"").getMatch(0);
@@ -347,7 +347,7 @@ public class Megauploadcom extends PluginForHost {
     }
 
     private void doDownload(DownloadLink link, String url, boolean resume, Account account) throws Exception {
-        if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         url = url.replaceFirst("megaupload\\.com/", "megaupload\\.com:" + usePort(link) + "/");
         br.setFollowRedirects(true);
         String waitb = br.getRegex("count=(\\d+);").getMatch(0);
@@ -376,7 +376,7 @@ public class Megauploadcom extends PluginForHost {
                     limitReached(link, Integer.parseInt(wait.trim()), "Limit Reached (2)!");
                 }
                 handleWaittimeWorkaround(link, br);
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
 
             dl.startDownload();
@@ -805,7 +805,7 @@ public class Megauploadcom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 25 * 60 * 1000l);
         }
         logger.severe("Ooops");
-        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
     @Override

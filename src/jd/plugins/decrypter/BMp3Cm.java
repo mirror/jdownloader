@@ -38,7 +38,7 @@ public class BMp3Cm extends PluginForDecrypt {
         super(wrapper);
     }
 
-    // @Override
+    @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -56,12 +56,12 @@ public class BMp3Cm extends PluginForDecrypt {
         /* Decrypt part */
         for (int i = 0; i <= 1; i++) {
             Form captchaForm = br.getFormbyKey("captcha");
-            if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             String captchalink = null;
             if (br.containsHTML("image.php")) {
                 captchalink = "http://www.bomb-mp3.com/image.php";
             }
-            if (captchalink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (captchalink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             String code = getCaptchaCode(captchalink, param);
             captchaForm.put("captcha", code);
             br.submitForm(captchaForm);
@@ -73,7 +73,7 @@ public class BMp3Cm extends PluginForDecrypt {
         if (finallink == null) {
             finallink = br.getRegex("file=((http://|ftp://).*?)&amp;").getMatch(0);
         }
-        if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String fpname = br.getRegex("Song name:.*?<strong>(.*?)</strong>").getMatch(0).trim();
         if (fpname == null) {
             fpname = br.getRegex("<title>(.*?)</title>").getMatch(0).trim();

@@ -33,18 +33,16 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4shared.com" }, urls = { "http://[\\w\\.]*?4shared.com/file/\\d+?/.*" }, flags = { 0 })
 public class FourSharedCom extends PluginForHost {
 
-    private static int COUNTER = 0;
-
     public FourSharedCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    // @Override
+    @Override
     public String getAGBLink() {
         return "http://www.4shared.com/terms.jsp";
     }
 
-    // @Override
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         try {
             this.setBrowserExclusive();
@@ -52,7 +50,7 @@ public class FourSharedCom extends PluginForHost {
             br.getPage(downloadLink.getDownloadURL());
             if (br.containsHTML("enter a password to access")) {
                 Form form = br.getFormbyProperty("name", "theForm");
-                if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 if (downloadLink.getProperty("pass") != null) downloadLink.setDecrypterPassword(downloadLink.getProperty("pass").toString());
                 if (downloadLink.getDecrypterPassword() == null) {
                     for (int retry = 1; retry <= 5; retry++) {
@@ -80,33 +78,8 @@ public class FourSharedCom extends PluginForHost {
         }
     }
 
-    // @Override
-    /*
-     * /* public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    public static synchronized void increaseCounter() {
-        COUNTER++;
-    }
-
-    public static synchronized void decreaseCounter() {
-        COUNTER--;
-    }
-
-    // @Override
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        try {
-            handleFree0(downloadLink);
-            // decreaseCounter();
-        } catch (Exception e) {
-            // decreaseCounter();
-
-            throw e;
-        }
-
-    }
-
-    public void handleFree0(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         String url = br.getRegex("<a href=\"(http://www.4shared.com/get.*?)\" class=\".*?dbtn.*?\" tabindex=\"1\">").getMatch(0);
 
@@ -122,7 +95,7 @@ public class FourSharedCom extends PluginForHost {
         // }
         // increaseCounter();
         br.setDebug(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, url, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, false, 1);
 
         String error = new Regex(dl.getConnection().getURL(), "\\?error(.*)").getMatch(0);
         if (error != null) { throw new PluginException(LinkStatus.ERROR_RETRY, error); }
@@ -130,20 +103,20 @@ public class FourSharedCom extends PluginForHost {
         dl.startDownload();
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 10;
     }
 
-    // @Override
+    @Override
     public void reset() {
     }
 
-    // @Override
+    @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 

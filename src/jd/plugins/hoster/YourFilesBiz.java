@@ -64,7 +64,7 @@ public class YourFilesBiz extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         String filename = br.getRegex("<b>File.*?name:</b></td>\\s+<td align=left width=[0-9]+%>(.*?)</td>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         filename = Encoding.deepHtmlDecode(filename);
         String page = Encoding.urlDecode(br.toString(), true);
         String[] links = HTMLParser.getHttpLinks(page, null);
@@ -96,7 +96,7 @@ public class YourFilesBiz extends PluginForHost {
                 dl.getConnection().disconnect();
             }
         }
-        if (!found) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (!found) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         /* Workaround für fehlerhaften Filename Header */
         String name = Plugin.getFileNameFromHeader(dl.getConnection());
         if (name != null) downloadLink.setFinalFileName(Encoding.deepHtmlDecode(name));

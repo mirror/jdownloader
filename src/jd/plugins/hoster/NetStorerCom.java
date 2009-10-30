@@ -59,9 +59,7 @@ public class NetStorerCom extends PluginForHost {
         br.getPage(link.getDownloadURL());
         Regex reg = br.getRegex("callback: \"showDload\\('(.*?)', '(.*?)', '(.*?)'\\)\"");
         String dllink = "http://" + reg.getMatch(0) + ".netstorer.com/download" + "/" + reg.getMatch(1) + "/" + reg.getMatch(2);
-        if (dllink.contains("null")){
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        }
+        if (dllink.contains("null")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         BrowserAdapter.openDownload(br, link, dllink, true, -20);
         dl.startDownload();
     }
@@ -74,7 +72,7 @@ public class NetStorerCom extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }

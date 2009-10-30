@@ -37,7 +37,7 @@ public class AnyFilesNet extends PluginForHost {
         super(wrapper);
     }
 
-    // @Override
+    @Override
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
         br.setFollowRedirects(true);
@@ -70,9 +70,7 @@ public class AnyFilesNet extends PluginForHost {
 
         br.submitForm(form);
         System.out.print(br.toString());
-        if (!br.containsHTML("free-link.php")) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        }
+        if (!br.containsHTML("free-link.php")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         String freepage = "http://www.anyfiles.net/free-link.php";
         br.getPage(freepage);
         System.out.print(br.toString());
@@ -82,24 +80,27 @@ public class AnyFilesNet extends PluginForHost {
         br.getPage(freepage);
         System.out.print(br.toString());
         String dllink = br.getRegex("href='(.*?)'").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (!(dl.getConnection().isContentDisposition())) {
             br.followConnection();
             System.out.print(br.toString());
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
+    @Override
     public String getAGBLink() {
         return "http://www.anyfiles.net/page/terms.php";
     }
 
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.postPage("http://anyfiles.net/", "de.x=10&de.y=9&vote_cr=de");
@@ -117,12 +118,15 @@ public class AnyFilesNet extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @Override
     public void reset() {
     }
 
+    @Override
     public void resetPluginGlobals() {
     }
 
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 

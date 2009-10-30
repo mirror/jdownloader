@@ -95,7 +95,7 @@ public class UgotFileCom extends PluginForHost {
         } else {
             finalUrl = br.getRegex("Content.*?<a.*?href='(http://.*?ugotfile.com/.*?)'>").getMatch(0);
         }
-        if (finalUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (finalUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalUrl, true, 0);
         dl.startDownload();
@@ -121,12 +121,12 @@ public class UgotFileCom extends PluginForHost {
             if (!br2.containsHTML("invalid key")) break;
             continue;
         }
-        if (br.containsHTML("invalid key")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (br.containsHTML("invalid key")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         sleep(sleep * 1001, link);
         br.getPage("http://ugotfile.com/file/get-file");
         String dllink = null;
         dllink = br.getRegex("(.*)").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
         dl.startDownload();
     }

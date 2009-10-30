@@ -38,12 +38,12 @@ public class TwoSharedCom extends PluginForHost {
         super(wrapper);
     }
 
-    // @Override
+    @Override
     public String getAGBLink() {
         return "http://www.2shared.com/terms.jsp";
     }
 
-    // @Override
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
         br.setCookiesExclusive(true);
         br.getPage(downloadLink.getDownloadURL());
@@ -62,12 +62,7 @@ public class TwoSharedCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    // @Override
-    /*
-     * public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    // @Override
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
         requestFileInformation(downloadLink);
@@ -90,7 +85,7 @@ public class TwoSharedCom extends PluginForHost {
             }
         }
         String link = br.getRegex(Pattern.compile("function startDownload.*?window.location = \"(.*?)\"", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-        if (link == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (link == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, link);
         if (dl.getConnection().getContentType().contains("text")) {
             dl.getConnection().disconnect();
@@ -99,20 +94,20 @@ public class TwoSharedCom extends PluginForHost {
         dl.startDownload();
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
-    // @Override
+    @Override
     public void reset() {
     }
 
-    // @Override
+    @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 

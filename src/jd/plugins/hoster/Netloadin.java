@@ -108,7 +108,7 @@ public class Netloadin extends PluginForHost {
             if (!br.containsHTML(DOWNLOAD_START) || url == null) {
                 linkStatus.setErrorMessage(JDL.L("plugins.hoster.netloadin.errors.dlnotfound", "Download link not found"));
                 logger.severe(br.toString());
-                linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFECT);
                 return;
             }
             url = url.replaceAll("\\&amp\\;", "&");
@@ -117,7 +117,7 @@ public class Netloadin extends PluginForHost {
 
             if (!br.containsHTML(DOWNLOAD_CAPTCHA)) {
                 linkStatus.setErrorMessage(JDL.L("plugins.hoster.netloadin.errors.captchanotfound", "Captcha not found"));
-                linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFECT);
                 return;
             }
 
@@ -130,7 +130,7 @@ public class Netloadin extends PluginForHost {
                     linkStatus.addStatus(LinkStatus.ERROR_RETRY);
                     return;
                 }
-                linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFECT);
                 return;
             }
 
@@ -211,7 +211,7 @@ public class Netloadin extends PluginForHost {
             dl.startDownload();
         } else {
             handleErrors(downloadLink);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
 
     }
@@ -315,7 +315,7 @@ public class Netloadin extends PluginForHost {
             checkErrors();
             String url = br.getRedirectLocation();
             if (url == null) url = br.getRegex("<a class=\"Orange_Link\" href=\"(.*?)\" >Alternativ klicke hier.<\\/a>").getMatch(0);
-            if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT, JDL.L("plugins.hoster.netloadin.errors.dlnotfound", "Download link not found"));
+            if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, JDL.L("plugins.hoster.netloadin.errors.dlnotfound", "Download link not found"));
 
             con = br.createRequest(url);
             /** TODO: Umbauen auf jd.plugins.BrowserAdapter.openDownload(br,...) **/

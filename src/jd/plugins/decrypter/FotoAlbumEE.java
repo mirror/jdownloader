@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {"fotoalbum.ee"}, urls = {"http://[\\w\\.]*?(pseudaholic\\.|nastazzy\\.)?fotoalbum\\.ee/photos/.+(/sets|/[0-9]+)?(/[0-9]+)?"}, flags = {0})
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fotoalbum.ee" }, urls = { "http://[\\w\\.]*?(pseudaholic\\.|nastazzy\\.)?fotoalbum\\.ee/photos/.+(/sets|/[0-9]+)?(/[0-9]+)?" }, flags = { 0 })
 public class FotoAlbumEE extends PluginForDecrypt implements ProgressControllerListener {
 
     private Pattern setNamePattern = Pattern.compile("sets/[0-9]+/\">(<b>)?(.*?)(</b>)?</a>", Pattern.DOTALL);
@@ -71,14 +71,14 @@ public class FotoAlbumEE extends PluginForDecrypt implements ProgressControllerL
             fp.setName(setName);
         }
         if (!link.contains("/sets/")) {
-            picLinks.add(link); //add single picture link
+            picLinks.add(link); // add single picture link
         } else {
             do {
                 if (abort) {
                 }
                 links = br.getRegex(singleLinksPattern).getColumn(0);
-                for (int i = 0; i < links.length; i++) {
-                    String picLink = "http://fotoalbum.ee/" + links[i];
+                for (String link2 : links) {
+                    String picLink = "http://fotoalbum.ee/" + link2;
                     picLinks.add(picLink);
                 }
                 nextPage = br.getRegex(nextPagePattern).getMatch(0);
@@ -102,10 +102,10 @@ public class FotoAlbumEE extends PluginForDecrypt implements ProgressControllerL
             br.getPage(picLink);
             picture = br.getRegex(pictureURLPattern).getMatches();
             pictureURL = picture[0][0];
-//            filename = picture[0][1];
-            if (pictureURL == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            // filename = picture[0][1];
+            if (pictureURL == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             dlLink = createDownloadlink(pictureURL);
-//            if (filename != null) dlLink.setFinalFileName(filename);
+            // if (filename != null) dlLink.setFinalFileName(filename);
             if (fp != null) dlLink.setFilePackage(fp);
             decryptedLinks.add(dlLink);
             progress.increase(1);

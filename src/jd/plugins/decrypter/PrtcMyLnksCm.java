@@ -38,7 +38,7 @@ public class PrtcMyLnksCm extends PluginForDecrypt {
         super(wrapper);
     }
 
-    // @Override
+    @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -56,11 +56,11 @@ public class PrtcMyLnksCm extends PluginForDecrypt {
         /* File package handling */
         for (int i = 0; i <= 5; i++) {
             Form captchaForm = br.getForm(1);
-            if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             String passCode = null;
             String captchalink0 = br.getRegex("src=\"(mUSystem.*?)\"").getMatch(0);
             String captchalink = "http://protect-my-links.com/" + captchalink0;
-            if (captchalink0.contains("null")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (captchalink0.contains("null")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             String code = getCaptchaCode(captchalink, param);
             captchaForm.put("captcha", code);
 
@@ -85,7 +85,5 @@ public class PrtcMyLnksCm extends PluginForDecrypt {
         fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }
-
-    // @Override
 
 }

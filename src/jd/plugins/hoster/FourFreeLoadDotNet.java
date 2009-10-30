@@ -72,7 +72,7 @@ public class FourFreeLoadDotNet extends PluginForHost {
         String captchaCode = getCaptchaCode("http://4freeload.net/captcha.php", downloadLink);
         Form form = br.getFormbyProperty("name", "myform");
         if (form == null) form = br.getForm(1);
-        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         form.setMethod(MethodType.POST);
         String passCode = null;
         if (form.containsHTML("name=downloadpw")) {
@@ -102,7 +102,7 @@ public class FourFreeLoadDotNet extends PluginForHost {
         /* PassCode war richtig, also Speichern */
         downloadLink.setProperty("pass", passCode);
         finalurl = br.getRegex("document\\.location=\"(.*?)\"").getMatch(0);
-        if (finalurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (finalurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
         // waittime not needed right now
         // sleep(20000, downloadLink);

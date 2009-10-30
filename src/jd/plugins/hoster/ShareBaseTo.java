@@ -98,7 +98,7 @@ public class ShareBaseTo extends PluginForHost {
             br.getPage("http://sharebase.to/files/" + id + "," + Encoding.urlEncode(account.getUser() + "," + Encoding.urlEncode(account.getPass())));
         } else {
             id = new Regex(downloadLink.getDownloadURL(), "/1,([\\w]+\\.html)").getMatch(0);
-            if (id == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (id == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             br.getPage("http://sharebase.to/1," + id + "," + Encoding.urlEncode(account.getUser() + "," + Encoding.urlEncode(account.getPass())));
         }
         String dlUrl = br.getRedirectLocation();
@@ -143,11 +143,11 @@ public class ShareBaseTo extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitTime);
         }
         br.setFollowRedirects(true);
-        if (br.getRedirectLocation() == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (br.getRedirectLocation() == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.getRedirectLocation(), false, 1);
         if (dl.getConnection() == null || dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }

@@ -41,6 +41,7 @@ public class DualShareCom extends PluginForHost {
         return "http://dualshare.com/tos.html";
     }
 
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setCookie("http://www.dualshare.com", "lang", "english");
@@ -76,7 +77,7 @@ public class DualShareCom extends PluginForHost {
         // Form um auf "Datei herunterladen" zu klicken
         Form dlForm = br.getFormbyProperty("name", "F1");
         String captchaurl = br.getRegex("\"(http://dualshare\\.com/captchas/.*?)\"").getMatch(0);
-        if (dlForm == null || captchaurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dlForm == null || captchaurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // Ticket Time
         String ttt = br.getRegex("countdown\">(\\d+)</span>").getMatch(0);
         if (ttt != null) {
@@ -105,7 +106,7 @@ public class DualShareCom extends PluginForHost {
         }
         if (dllink == null) dllink = br.getRegex("padding:[0-9]+px;\">\\s+<a\\s+href=\"(.*?)\">").getMatch(0);
         br.setFollowRedirects(true);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         if (passCode != null) {
             downloadLink.setProperty("pass", passCode);
         }
@@ -117,6 +118,7 @@ public class DualShareCom extends PluginForHost {
     public void reset() {
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }

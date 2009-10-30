@@ -39,7 +39,7 @@ public class BiggeruploadCom extends PluginForHost {
         super(wrapper);
     }
 
-    // @Override
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
@@ -60,11 +60,11 @@ public class BiggeruploadCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
         } else {
             form = br.getFormbyProperty("name", "F1");
-            if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
             /* "Captcha Method" */
             String[][] letters = br.getRegex("<span style='position:absolute;padding-left:(\\d+)px;padding-top:\\d+px;'>(\\d)</span>").getMatches();
-            if (letters.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (letters.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             SortedMap<Integer, String> capMap = new TreeMap<Integer, String>();
             for (String[] letter : letters) {
                 capMap.put(Integer.parseInt(letter[0]), letter[1]);
@@ -95,23 +95,23 @@ public class BiggeruploadCom extends PluginForHost {
                 }
                 if (br.containsHTML("Download Link Generated")) dllink = br.getRegex("padding:7px;\">\\s+<a\\s+href=\"(.*?)\">").getMatch(0);
             }
-            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-            dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, dllink, false, 1);
+            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
             dl.startDownload();
         }
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
-    // @Override
+    @Override
     public String getAGBLink() {
         return "http://www.biggerupload.com/tos.html";
     }
 
-    // @Override
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setCookie("http://www.biggerupload.com/", "lang", "english");
@@ -125,20 +125,15 @@ public class BiggeruploadCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    // @Override
-    /*
-     * /* public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    // @Override
+    @Override
     public void reset() {
     }
 
-    // @Override
+    @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 

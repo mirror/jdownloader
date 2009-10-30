@@ -48,7 +48,7 @@ public class UploaderPl extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         String linkurl = br.getRegex("downloadurl'\\);\">(.*?)</textarea>").getMatch(0);
-        if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setFollowRedirects(true);
         // this.sleep(30000, downloadLink); // uncomment when they find a better
         // way to force wait time
@@ -64,7 +64,7 @@ public class UploaderPl extends PluginForHost {
     public void handleFree0(DownloadLink downloadLink) throws Exception {
         br.getPage(downloadLink.getDownloadURL());
         String linkurl = br.getRegex("downloadurl'\\);\">(.*?)</textarea>").getMatch(0);
-        if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setFollowRedirects(true);
         // this.sleep(15000, downloadLink); // uncomment when they find a better
         // way to force wait time
@@ -146,7 +146,7 @@ public class UploaderPl extends PluginForHost {
             return;
         }
         String linkurl = br.getRegex("downloadurl'\\);\">(.*?)</textarea>").getMatch(0);
-        if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setFollowRedirects(true);
         // this.sleep(30000, downloadLink); // uncomment when they find a better
         // way to force wait time

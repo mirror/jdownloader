@@ -65,11 +65,11 @@ public class SaveQubeCom extends PluginForHost {
         dlform.put("free", "");
         dlform.put("x", "59");
         dlform.put("y", "31");
-        if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.submitForm(dlform);
         String dllink = br.getRegex("<span id=\"db\" style=\"display:none\">.*?<a href=\"(.*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        if (br.containsHTML("bot detected")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (br.containsHTML("bot detected")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // waittime
         int tt = Integer.parseInt(br.getRegex("\"timer\">(\\d+)<").getMatch(0));
         sleep(tt * 1001l, downloadLink);
@@ -77,7 +77,7 @@ public class SaveQubeCom extends PluginForHost {
         if (!(dl.getConnection().isContentDisposition())) {
             br.followConnection();
             System.out.print(br.toString());
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
@@ -86,6 +86,7 @@ public class SaveQubeCom extends PluginForHost {
     public void reset() {
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }

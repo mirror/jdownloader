@@ -306,8 +306,7 @@ abstract public class DownloadInterface {
             return null;
         }
 
-        // Die eigentliche Downloadfunktion
-
+        /** Die eigentliche Downloadfunktion */
         private void download() {
             long bufferSize = 1;
             if (speedDebug) {
@@ -557,6 +556,7 @@ abstract public class DownloadInterface {
 
         }
 
+        @Override
         public void finalize() {
             if (speedDebug) {
                 logger.finer("Finalized: " + downloadLink + " : " + getID());
@@ -777,6 +777,7 @@ abstract public class DownloadInterface {
         /**
          * Thread runner
          */
+        @Override
         public void run() {
             PluginForHost.setCurrentConnections(PluginForHost.getCurrentConnections() + 1);
             run0();
@@ -1902,7 +1903,7 @@ abstract public class DownloadInterface {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
         }
         if (connection.getHeaderField("Location") != null) {
-            error(LinkStatus.ERROR_PLUGIN_DEFEKT, "Sent a redirect to Downloadinterface");
+            error(LinkStatus.ERROR_PLUGIN_DEFECT, "Sent a redirect to Downloadinterface");
             return false;
         }
         if (preDownloadCheckFailed(downloadLink)) return false;

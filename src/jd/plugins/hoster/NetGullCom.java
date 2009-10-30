@@ -38,12 +38,12 @@ public class NetGullCom extends PluginForHost {
         super(wrapper);
     }
 
-    // @Override
+    @Override
     public String getAGBLink() {
         return "http://www.netgull.com/rules.php";
     }
 
-    // @Override
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
@@ -56,12 +56,7 @@ public class NetGullCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    // @Override
-    /*
-     * public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    // @Override
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         String url = downloadLink.getDownloadURL();
         /* Nochmals das File überprüfen */
@@ -71,7 +66,7 @@ public class NetGullCom extends PluginForHost {
         String captchaCode = getCaptchaCode("http://www.netgull.com/captcha.php", downloadLink);
         Form form = br.getFormbyProperty("name", "myform");
         if (form == null) form = br.getForm(1);
-        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         form.setMethod(MethodType.POST);
         String passCode = null;
         if (form.containsHTML("name=downloadpw")) {
@@ -106,7 +101,7 @@ public class NetGullCom extends PluginForHost {
         sleep(5000, downloadLink);
         br.setFollowRedirects(true);
         /* Datei herunterladen */
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, url, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, false, 1);
         if (!dl.getConnection().isContentDisposition()) {
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -114,20 +109,20 @@ public class NetGullCom extends PluginForHost {
         dl.startDownload();
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    // @Override
+    @Override
     public void reset() {
     }
 
-    // @Override
+    @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 }

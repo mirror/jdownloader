@@ -64,10 +64,10 @@ public class UploadKeepCom extends PluginForHost {
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
         Form form = br.getForm(0);
-        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         form.remove("method_premium");
         br.submitForm(form);
-        
+
         if (br.containsHTML("reached the download-limit")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 120 * 60 * 1001l); }
         if (br.containsHTML("You have to wait")) {
             if (br.containsHTML("minute")) {
@@ -102,7 +102,7 @@ public class UploadKeepCom extends PluginForHost {
                 link.setProperty("pass", null);
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (passCode != null) {
             link.setProperty("pass", passCode);
@@ -119,7 +119,7 @@ public class UploadKeepCom extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }

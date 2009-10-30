@@ -37,14 +37,17 @@ public class BigAndFreeCom extends PluginForHost {
         super(wrapper);
     }
 
+    @Override
     public String getAGBLink() {
         return "http://www.bigandfree.com/tos";
     }
 
+    @Override
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replaceAll("(megaftp|bigandfree)", "bigandfree"));
     }
 
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception, PluginException, InterruptedException {
         synchronized (LOCK) {
             if (this.isAborted(downloadLink)) return AvailableStatus.TRUE;
@@ -67,6 +70,7 @@ public class BigAndFreeCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         synchronized (LOCK) {
@@ -79,7 +83,7 @@ public class BigAndFreeCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait * 1000l * 60);
         }
         Form freeform = br.getFormbyProperty("name", "chosen");
-        if (freeform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (freeform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         freeform.setAction(downloadLink.getDownloadURL());
         freeform.remove("chosen_prem");
         br.submitForm(freeform);
@@ -88,7 +92,7 @@ public class BigAndFreeCom extends PluginForHost {
             String passCode;
             DownloadLink link = downloadLink;
             Form form = br.getFormbyProperty("name", "pswcheck");
-            if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             if (link.getStringProperty("pass", null) == null) {
                 /* Usereingabe */
                 passCode = Plugin.getUserInput(null, link);
@@ -111,9 +115,9 @@ public class BigAndFreeCom extends PluginForHost {
 
         // often they only change this form
         Form downloadForm = br.getForm(1);
-        if (downloadForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (downloadForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String current = br.getRegex("name=\"current\" value=\"(.*?)\"").getMatch(0);
-        if (current == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (current == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String wait = br.getRegex("var x = (\\d+);").getMatch(0);
         if (wait != null) sleep(Long.parseLong(wait.trim()) * 1000, downloadLink);
         downloadForm.put("current", current);
@@ -125,18 +129,21 @@ public class BigAndFreeCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadForm, false, 1);
         if (!(dl.getConnection().isContentDisposition()) && !dl.getConnection().getContentType().contains("octet")) {
             dl.getConnection().disconnect();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
+    @Override
     public void reset() {
     }
 
+    @Override
     public void resetDownloadlink(DownloadLink link) {
 
     }

@@ -34,12 +34,12 @@ public class Dataupde extends PluginForHost {
         // TODO Auto-generated constructor stub
     }
 
-    // @Override
+    @Override
     public String getAGBLink() {
         return "http://www.dataup.de/agb";
     }
 
-    // @Override
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
         correctURL(downloadLink);
         this.setBrowserExclusive();
@@ -57,12 +57,7 @@ public class Dataupde extends PluginForHost {
         }
     }
 
-    // @Override
-    /*
-     * /* public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    // @Override
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
 
         LinkStatus linkStatus = downloadLink.getLinkStatus();
@@ -86,7 +81,7 @@ public class Dataupde extends PluginForHost {
         /* 10 seks warten, kann weggelassen werden */
 
         // this.sleep(10000, downloadLink);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
 
         if (dl.getConnection().getLongContentLength() == 0) {
@@ -108,20 +103,20 @@ public class Dataupde extends PluginForHost {
 
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
-    // @Override
+    @Override
     public void reset() {
     }
 
-    // @Override
+    @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 }

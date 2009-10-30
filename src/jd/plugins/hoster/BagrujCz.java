@@ -37,7 +37,7 @@ public class BagrujCz extends PluginForHost {
         super(wrapper);
     }
 
-    // @Override
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
@@ -53,7 +53,7 @@ public class BagrujCz extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
         } else {
             Form form = br.getFormbyProperty("name", "F1");
-            if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             String captchaurl = br.getRegex(Pattern.compile("src=\"(http://bagruj.cz/captchas/.*?)\"", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
             String code = getCaptchaCode(captchaurl, downloadLink);
             form.put("code", code);
@@ -67,27 +67,25 @@ public class BagrujCz extends PluginForHost {
             int tt = Integer.parseInt(br.getRegex("countdown\">(\\d+)</span>").getMatch(0));
             sleep(tt * 1001, downloadLink);
             br.submitForm(form);
-            if (br.containsHTML("Wrong captcha") || br.containsHTML("Expired session")) {
-                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            }
+            if (br.containsHTML("Wrong captcha") || br.containsHTML("Expired session")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
             String dllink = br.getRegex("#bbb;padding:7px;\">.*?<a href=\"(.*?)\">").getMatch(0);
-            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-            dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, dllink, true, 1);
+            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
             dl.startDownload();
         }
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
-    // @Override
+    @Override
     public String getAGBLink() {
         return "http://bagruj.cz/tos.html";
     }
 
-    // @Override
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setCookie("http://bagruj.cz/", "lang", "english");
@@ -101,21 +99,15 @@ public class BagrujCz extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    // @Override
-    /*
-     * /* public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    // @Override
+    @Override
     public void reset() {
     }
-    
 
-    // @Override
+    @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 

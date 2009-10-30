@@ -35,9 +35,10 @@ public class ShareCashOrg extends PluginForHost {
         super(wrapper);
     }
 
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
-        //Jiaz keine Ahnung ob diese Cookies gesetzt werden müssen oder net...
+        // Jiaz keine Ahnung ob diese Cookies gesetzt werden müssen oder net...
         br.setCookie("http://69.93.2.170/", "done", "yeppp");
         br.setCookie("http://69.93.2.170/", "ref", Encoding.urlEncode(downloadLink.getDownloadURL()));
         br.getPage(downloadLink.getDownloadURL());
@@ -54,6 +55,7 @@ public class ShareCashOrg extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
@@ -61,29 +63,34 @@ public class ShareCashOrg extends PluginForHost {
         String oid = new Regex(downloadLink.getDownloadURL(), "sharecash\\.org/download\\.php\\?id=(\\d+)").getMatch(0);
         br.getPage("http://69.93.2.170/offer2.php?oid=" + oid);
         String refresh = br.getRegex("url=(.*?)\">").getMatch(0);
-        if (refresh == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (refresh == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage("http://69.93.2.170/" + Encoding.htmlDecode(refresh));
         String dllink0 = br.getRegex("onClick=\"document\\..*?document\\.location='(.*?)';").getMatch(0);
-        if (dllink0 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dllink0 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String dllink = "http://69.93.2.170/" + dllink0;
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         dl.startDownload();
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
+    @Override
     public String getAGBLink() {
         return "http://sharecash.org/tos.php";
     }
 
+    @Override
     public void reset() {
     }
 
+    @Override
     public void resetPluginGlobals() {
     }
 
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 

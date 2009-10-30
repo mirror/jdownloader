@@ -36,15 +36,18 @@ public class HotShareNet extends PluginForHost {
         br.setFollowRedirects(true);
     }
 
+    @Override
     public String getAGBLink() {
         return "http://www.hotshare.net/pages/tos.html";
     }
 
+    @Override
     public void correctDownloadLink(DownloadLink link) throws Exception {
         String part = new Regex(link.getDownloadURL(), "(file/.+|audio/.+|video/.+)").getMatch(0);
         link.setUrlDownload("http://www.hotshare.net/en/" + part);
     }
 
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         br.setCookie("http://www.hotshare.net/", "language", "english");
@@ -57,6 +60,7 @@ public class HotShareNet extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         Form downloadForm = br.getFormbyProperty("name", "form1");
@@ -70,22 +74,26 @@ public class HotShareNet extends PluginForHost {
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML("File not")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
         if (downloadLink.getDownloadCurrent() == 15) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
     }
 
+    @Override
     public void reset() {
     }
 
+    @Override
     public void resetPluginGlobals() {
     }
 
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 }

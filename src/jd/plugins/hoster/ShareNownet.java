@@ -65,7 +65,7 @@ public class ShareNownet extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         Form form = br.getForm(1);
-        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setDebug(true);
         /* gibts nen captcha? */
         if (br.containsHTML("Sicherheitscode eingeben")) {
@@ -85,7 +85,7 @@ public class ShareNownet extends PluginForHost {
         if (dl.getConnection().getLongContentLength() == 0 || dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.getURL().contains("download.php")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT, JDL.L("plugins.hoster.sharenownet.errors.servererror", "Server Error"));
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, JDL.L("plugins.hoster.sharenownet.errors.servererror", "Server Error"));
         }
 
         /* Datei herunterladen */

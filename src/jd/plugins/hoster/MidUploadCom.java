@@ -47,7 +47,7 @@ public class MidUploadCom extends PluginForHost {
         br.getPage(link.getDownloadURL());
         Form form = br.getFormBySubmitvalue("Kostenloser+Download");
         if (form == null) form = br.getFormBySubmitvalue("Free+Download");
-        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         form.remove("method_premium");
         br.submitForm(form);
         if (br.containsHTML("You have to wait")) {
@@ -66,13 +66,13 @@ public class MidUploadCom extends PluginForHost {
             }
         }
         form = br.getFormbyProperty("name", "F1");
-        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // waittime
         int tt = Integer.parseInt(br.getRegex("countdown\">(\\d+)</span>").getMatch(0));
         sleep(tt * 1001l, link);
         String captcha = br.getRegex(Pattern.compile("Bitte Code eingeben:</b></td></tr>.*<tr><td align=right>.*<img src=\"(.*?)\">.*class=\"captcha_code\">", Pattern.DOTALL)).getMatch(0);
         if (captcha == null) captcha = br.getRegex(Pattern.compile("Enter code below:</b></td></tr>.*<tr><td align=right>.*<img src=\"(.*?)\">.*class=\"captcha_code\">", Pattern.DOTALL)).getMatch(0);
-        if (captcha == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (captcha == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String code = getCaptchaCode(captcha, link);
         form.put("code", code);
         String passCode = null;
@@ -95,7 +95,7 @@ public class MidUploadCom extends PluginForHost {
         }
         String dllink = null;
         dllink = br.getRegex(Pattern.compile("<br>.*<a href=\"(.*?)\"><img src=\"http://www.midupload.com/images/download-button.gif\" border=\"0\">", Pattern.DOTALL)).getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1).startDownload();
     }
 
@@ -113,12 +113,15 @@ public class MidUploadCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @Override
     public void reset() {
     }
 
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }

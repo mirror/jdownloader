@@ -42,13 +42,12 @@ public class FrstLnkzNt extends PluginForDecrypt {
         super(wrapper);
     }
 
-    // @Override
+    @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.setFollowRedirects(false);
         br.getPage(parameter);
-
 
         Form captchaForm = br.getForm(0);
         if (captchaForm != null) {
@@ -59,11 +58,11 @@ public class FrstLnkzNt extends PluginForDecrypt {
             // String captchainput =
             // br.getRegex("src=\"captcha/(.*?).jpg\" border").getMatch(0);
             // if (captchainput == null) throw new
-            // PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            // PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             // captchaForm.put("captcha", captchainput);
             br.submitForm(captchaForm);
             Form checkform = br.getForm(0);
-            if (checkform != null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (checkform != null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             // // Wrong-captcha errorhandling
             // if
             // (br.containsHTML("Bitte überprüfen Sie die Eingabe des Captchas"))
@@ -71,12 +70,13 @@ public class FrstLnkzNt extends PluginForDecrypt {
             // }
         }
         // container handling (if no containers found, use webprotection)
-        //ccf is prefered because this site often got buggy dlc and rsdf containers!
+        // ccf is prefered because this site often got buggy dlc and rsdf
+        // containers!
         if (br.containsHTML("type=ccf")) {
             decryptedLinks = loadcontainer(br, "ccf");
             if (decryptedLinks != null && decryptedLinks.size() > 0) return decryptedLinks;
         }
-        
+
         if (br.containsHTML("type=dlc")) {
             decryptedLinks = loadcontainer(br, "dlc");
             if (decryptedLinks != null && decryptedLinks.size() > 0) return decryptedLinks;
@@ -96,7 +96,7 @@ public class FrstLnkzNt extends PluginForDecrypt {
             br.getPage(link2);
             System.out.print(br.toString());
             String finallink = br.getRedirectLocation();
-            if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             DownloadLink dl = createDownloadlink(finallink);
             decryptedLinks.add(dl);
             progress.increase(1);
@@ -104,9 +104,6 @@ public class FrstLnkzNt extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    // @Override
-
-    
     private ArrayList<DownloadLink> loadcontainer(Browser br, String format) throws IOException, PluginException {
         Browser brc = br.cloneBrowser();
         String[] dlclinks = br.getRegex("(http://www\\.1st-linkz\\.net/container/dl\\.php\\?type=" + format + "&id=(\\d+))\"").getColumn(0);
@@ -122,17 +119,17 @@ public class FrstLnkzNt extends PluginForDecrypt {
                 brc.downloadConnection(file, con);
             } else {
                 con.disconnect();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
 
             if (file != null && file.exists() && file.length() > 100) {
                 ArrayList<DownloadLink> decryptedLinks = JDUtilities.getController().getContainerLinks(file);
                 if (decryptedLinks.size() > 0) return decryptedLinks;
             } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
         return null;
     }
-    
+
 }

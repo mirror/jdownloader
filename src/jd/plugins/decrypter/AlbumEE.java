@@ -87,8 +87,8 @@ public class AlbumEE extends PluginForDecrypt implements ProgressControllerListe
                     return new ArrayList<DownloadLink>();
                 }
                 links = br.getRegex(singleLinksPattern).getColumn(0);
-                for (int i = 0; i < links.length; i++) {
-                    picLinks.add("http://www.album.ee/" + links[i]);
+                for (String link2 : links) {
+                    picLinks.add("http://www.album.ee/" + link2);
                 }
                 if (onePageOnly) break;
                 nextPage = br.getRegex(nextPagePattern).getMatch(0);
@@ -110,7 +110,7 @@ public class AlbumEE extends PluginForDecrypt implements ProgressControllerListe
             br.getPage(picLink);
             filename = br.getRegex(fileNamePattern).getMatch(1);
             pictureURL = br.getRegex(pictureURLPattern).getMatch(0);
-            if (pictureURL == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (pictureURL == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             dlLink = createDownloadlink(pictureURL);
             if (filename != null) dlLink.setFinalFileName(filename);
             if (fp != null) dlLink.setFilePackage(fp);

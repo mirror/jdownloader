@@ -181,7 +181,7 @@ public class MyShareAt extends PluginForHost {
         } else {
             url = br.getRedirectLocation();
         }
-        if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, url, true, 0);
         dl.startDownload();

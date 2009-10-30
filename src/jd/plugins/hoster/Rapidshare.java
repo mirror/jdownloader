@@ -646,7 +646,7 @@ public class Rapidshare extends PluginForHost {
                 br.submitForm(forms[1]);
                 handleErrorsPremium(account);
                 String postTarget = getDownloadTarget(downloadLink, br.toString());
-                if (postTarget == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                if (postTarget == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 request = br.createGetRequest(postTarget);
             } else {
                 logger.finest("Direct-Download: Server-Selection not available!");

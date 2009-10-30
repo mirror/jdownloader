@@ -41,7 +41,7 @@ public class GotUploadCom extends PluginForHost {
         return "http://www.gotupload.com/tos.html";
     }
 
-    // @Override
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setCookie("http://www.gotupload.com", "lang", "english");
@@ -57,14 +57,13 @@ public class GotUploadCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    // @Override
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
         // Form um auf free zu "klicken"
         Form dlForm0 = br.getFormBySubmitvalue("free+download");
-        if (dlForm0 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dlForm0 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dlForm0.remove("method_premium");
         br.submitForm(dlForm0);
         if (br.containsHTML("You have to wait")) {
@@ -80,7 +79,7 @@ public class GotUploadCom extends PluginForHost {
         }
         // Form um auf "Datei herunterladen" zu klicken
         Form dlForm1 = br.getFormbyProperty("name", "F1");
-        if (dlForm1 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dlForm1 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String passCode = null;
         if (br.containsHTML("type=\"password\" name=\"password\"")) {
             if (downloadLink.getStringProperty("pass", null) == null) {
@@ -102,7 +101,7 @@ public class GotUploadCom extends PluginForHost {
                 logger.warning("Wrong password!");
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (passCode != null) downloadLink.setProperty("pass", passCode);
         dl.startDownload();
@@ -112,6 +111,7 @@ public class GotUploadCom extends PluginForHost {
     public void reset() {
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }

@@ -108,7 +108,7 @@ public class UploadBoxCom extends PluginForHost {
         br.setFollowRedirects(false);
         br.getPage(parameter.getDownloadURL());
         String dlUrl = br.getRegex("title=\"Direct link\">(http://.*?)</a>").getMatch(0);
-        if (dlUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dlUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, dlUrl, true, 0);
         dl.startDownload();
     }
@@ -117,7 +117,7 @@ public class UploadBoxCom extends PluginForHost {
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
         Form form = br.getFormbyProperty("id", "free");
-        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.submitForm(form);
         if (br.containsHTML("The last download from your IP was done less than 30 minutes ago")) {
             String strWaittime = br.getRegex("(\\d{2}:\\d{2}:\\d{2}) before you can download more").getMatch(0);
@@ -131,16 +131,16 @@ public class UploadBoxCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waittime * 60 * 1000l);
         }
         form = br.getFormbyProperty("id", "free");
-        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String captchaUrl = form.getRegex("captcha.*?src=\"(.*?)\"").getMatch(0);
-        if (captchaUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (captchaUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String code = getCaptchaCode(captchaUrl, link);
         form.put("enter", code);
         br.submitForm(form);
         if (br.containsHTML("read the captcha code")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         br.setDebug(true);
         String dlUrl = br.getRegex("please <a href=\"(.*?)\">click").getMatch(0);
-        if (dlUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dlUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlUrl, true, 1);
         dl.startDownload();
     }

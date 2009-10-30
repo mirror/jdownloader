@@ -43,6 +43,7 @@ public class IFileIt extends PluginForHost {
         this.enablePremium("https://secure.ifile.it/signup");
     }
 
+    @Override
     public String getAGBLink() {
         return "http://ifile.it/tos";
     }
@@ -53,7 +54,7 @@ public class IFileIt extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage("https://secure.ifile.it/signin");
         Form form = br.getForm(0);
-        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         form.put("usernameFld", Encoding.urlEncode(account.getUser()));
         form.put("passwordFld", Encoding.urlEncode(account.getPass()));
         br.submitForm(form);
@@ -88,10 +89,10 @@ public class IFileIt extends PluginForHost {
         br.cloneBrowser().getPage("http://ifile.it/ads/adframe.js");
         String downlink = br.getRegex("var url =.*?\"(.*?)\"").getMatch(0);
         String esn = br.getRegex("var.*?esn =.*?(\\d+);<").getMatch(0);
-        if (downlink == null || esn == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (downlink == null || esn == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String finaldownlink = "http://ifile.it/" + downlink + esn;
         br.getPage(finaldownlink);
-        if (!br.containsHTML("status\":\"ok\"")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (!br.containsHTML("status\":\"ok\"")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage("http://ifile.it/dl");
         if (br.containsHTML("download:captcha")) {
             Browser br2 = br.cloneBrowser();
@@ -106,13 +107,13 @@ public class IFileIt extends PluginForHost {
             if (br2.containsHTML("\"retry\":\"retry\"")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
         String dllink = br.getRegex("req_btn\".*?href=\"(http://.*?\\.ifile\\.it/.*?)\">").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setFollowRedirects(false);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -3);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (dl.getConnection().getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
@@ -122,6 +123,7 @@ public class IFileIt extends PluginForHost {
         return 18;
     }
 
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getHeaders().put("User-Agent", useragent);
@@ -137,26 +139,31 @@ public class IFileIt extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         /* Nochmals das File überprüfen */
         requestFileInformation(downloadLink);
         if (br.containsHTML("signup for a free account in order to download this file")) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via account");
         } else {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT, "No free handling implemented yep, please contact the support");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "No free handling implemented yep, please contact the support");
         }
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
+    @Override
     public void reset() {
     }
 
+    @Override
     public void resetPluginGlobals() {
     }
 
+    @Override
     public void resetDownloadlink(DownloadLink link) {
         link.setProperty("directLink", null);
     }

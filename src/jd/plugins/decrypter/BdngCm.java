@@ -37,7 +37,7 @@ public class BdngCm extends PluginForDecrypt {
         super(wrapper);
     }
 
-    // @Override
+    @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -72,7 +72,7 @@ public class BdngCm extends PluginForDecrypt {
             }
             /* Collect Splitfiles */
             String[] partLinks = br.getRegex("<a\\shref=\"(http://www\\.badongo\\.com/de/c?(vid|file)/\\d+(/\\d)?/\\w\\w)\"").getColumn(0);
-            if (partLinks == null || partLinks.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (partLinks == null || partLinks.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             progress.setRange(partLinks.length);
             for (int i = 0; i <= partLinks.length - 1; i++) {
                 DownloadLink dlLink = createDownloadlink(partLinks[i].replaceFirst("badongo\\.com", "badongo.viajd"));
@@ -87,7 +87,5 @@ public class BdngCm extends PluginForDecrypt {
 
         return decryptedLinks;
     }
-
-    // @Override
 
 }

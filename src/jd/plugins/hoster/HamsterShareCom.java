@@ -34,6 +34,7 @@ public class HamsterShareCom extends PluginForHost {
         super(wrapper);
     }
 
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setCustomCharset("UTF-8");
@@ -48,31 +49,36 @@ public class HamsterShareCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    // @Override
+    @Override
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
         br.setFollowRedirects(false);
         String dllink = br.getRegex("window\\.document\\.location\\.href='(.*?)'\"").getMatch(0);
 
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         dl.startDownload();
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
+    @Override
     public String getAGBLink() {
         return "http://hamstershare.com/terms";
     }
 
+    @Override
     public void reset() {
     }
 
+    @Override
     public void resetPluginGlobals() {
     }
 
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 

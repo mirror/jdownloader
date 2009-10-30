@@ -41,6 +41,7 @@ public class SharingMatrixCom extends PluginForHost {
         this.enablePremium("http://sharingmatrix.com/premium");
     }
 
+    @Override
     public String getAGBLink() {
         return "http://sharingmatrix.com/contact";
     }
@@ -100,7 +101,7 @@ public class SharingMatrixCom extends PluginForHost {
                 newform.setAction("http://sharingmatrix.com/ajax_scripts/personal/settings.php");
                 newform.setMethod(Form.MethodType.GET);
                 newform.put("id", br.getCookie("http://sharingmatrix.com", "user_id"));
-                if (br.getCookie("http://sharingmatrix.com", "user_id") == null || br.getCookie("http://sharingmatrix.com", "user_id").length() == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                if (br.getCookie("http://sharingmatrix.com", "user_id") == null || br.getCookie("http://sharingmatrix.com", "user_id").length() == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 newform.put("type_membership", "premium");
                 newform.put("nickname", form.getVarsMap().get("nickname") != null ? form.getVarsMap().get("nickname") : "");
                 newform.put("email", form.getVarsMap().get("email") != null ? form.getVarsMap().get("email") : "");
@@ -121,13 +122,13 @@ public class SharingMatrixCom extends PluginForHost {
             }
             String linkid = br.getRegex("link_id = '(\\d+)';").getMatch(0);
             String link_name = br.getRegex("link_name = '([^']*')").getMatch(0);
-            if (linkid == null || link_name == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (linkid == null || link_name == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             Browser brc = br.cloneBrowser();
             brc.getPage("http://www.sharingmatrix.com/ajax_scripts/_get.php?link_id=" + linkid + "&link_name=" + link_name + "&dl_id=0&prem=1" + (passCode == null ? "" : "&password=" + Encoding.urlEncode(passCode)));
             if (brc.containsHTML("server_down")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverfailure, Please try again later!", 30 * 60 * 1000l);
             String server = brc.getRegex("serv:\"(http://.*?)\"").getMatch(0);
             String hash = brc.getRegex("hash:\"(.*?)\"").getMatch(0);
-            if (server == null || hash == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (server == null || hash == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             url = server + "/download/" + hash + "/0/" + (passCode == null ? "" : Encoding.urlEncode(passCode));
         }
         br.setFollowRedirects(true);
@@ -147,7 +148,7 @@ public class SharingMatrixCom extends PluginForHost {
                 }
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (passCode != null) {
             downloadLink.setProperty("pass", passCode);
@@ -160,10 +161,12 @@ public class SharingMatrixCom extends PluginForHost {
     // this dynamically but right now i just set it to 10 max downloads because
     // many people might now know what chunks are and then they wonder that only
     // 1 download starts^^
+    @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return 10;
     }
 
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
@@ -186,13 +189,14 @@ public class SharingMatrixCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         String passCode = null;
         if (br.containsHTML("no available free download slots left")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No free slots available for this file");
         if (br.containsHTML("daily download limit is over")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Daily limit reached", 60 * 60 * 1000l);
         String linkid = br.getRegex("link_id = '(\\d+)';").getMatch(0);
-        if (linkid == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT); }
+        if (linkid == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         String freepage = "http://sharingmatrix.com/ajax_scripts/download.php?type_membership=free&link_id=" + linkid;
         br.getPage(freepage);
         String link_name = br.getRegex("link_name = '([^']+')").getMatch(0);
@@ -225,7 +229,7 @@ public class SharingMatrixCom extends PluginForHost {
         br2.getPage("http://sharingmatrix.com/ajax_scripts/_get.php?link_id=" + linkid + "&link_name=" + link_name + "&dl_id=" + dl_id + (passCode == null ? "" : "&password=" + Encoding.urlEncode(passCode)));
         if (br2.containsHTML("server_down")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverfailure, Please try again later!", 30 * 60 * 1000l);
         linkurl = br2.getRegex("serv:\"([^\"]+)\"").getMatch(0) + "/download/" + br2.getRegex("hash:\"([^\"]+)\"").getMatch(0) + "/" + dl_id.trim() + "/" + (passCode == null ? "" : "&password=" + Encoding.urlEncode(passCode));
-        if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br2, downloadLink, linkurl, true, 1);
         if (dl.getConnection() != null && dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -234,7 +238,7 @@ public class SharingMatrixCom extends PluginForHost {
                 downloadLink.setProperty("pass", null);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (passCode != null) {
             downloadLink.setProperty("pass", passCode);
@@ -242,16 +246,20 @@ public class SharingMatrixCom extends PluginForHost {
         dl.startDownload();
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
+    @Override
     public void reset() {
     }
 
+    @Override
     public void resetPluginGlobals() {
     }
 
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 }

@@ -53,20 +53,20 @@ public class SuborySk extends PluginForHost {
         link.setDownloadSize(Regex.getSize(filesize));
         return AvailableStatus.TRUE;
     }
-    // @Override
+
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         String captchaurl0 = br.getRegex("<img class=captcha src=\"(.*?)\"><br>").getMatch(0);
         String captchaurl = "http://www.subory.sk" + captchaurl0;
         String code = getCaptchaCode(captchaurl, downloadLink);
         Form captchaForm = br.getForm(0);
-        if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         captchaForm.put("str", code);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, captchaForm, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, captchaForm, false, 1);
         if (!(dl.getConnection().isContentDisposition())) {
             br.followConnection();
-            if (br.containsHTML("Zadal si")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            }
+            if (br.containsHTML("Zadal si")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
         }
         dl.startDownload();
     }
@@ -75,7 +75,7 @@ public class SuborySk extends PluginForHost {
     public void reset() {
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }

@@ -64,7 +64,7 @@ public class BadongoCom extends PluginForHost {
         if (br.containsHTML("Diese Datei ist zur Zeit : <b>Geschützt</b>")) {
             for (int i = 0; i <= 5; i++) {
                 Form pwForm = br.getFormbyProperty("name", "pwdForm");
-                if (pwForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                if (pwForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 String pass = downloadLink.getDecrypterPassword();
                 if (pass == null) {
                     String passDlgMsg = JDL.L("plugins.hoster.general.enterpassword", "Enter password:");
@@ -86,9 +86,9 @@ public class BadongoCom extends PluginForHost {
         }
         String filesize = br.getRegex(Pattern.compile("<div class=\"ffileinfo\">Ansichten.*?\\| Dateig.*?:(.*?)</div>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
         String filename = br.getRegex("<div class=\"finfo\">(.*?)</div>").getMatch(0);
-        
+
         if (filesize == null || filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        
+
         if (downloadLink.getStringProperty("type", "single").equalsIgnoreCase("single")) {
             downloadLink.setName(filename.trim());
             downloadLink.setDownloadSize(Regex.getSize(filesize.trim()));
@@ -96,7 +96,7 @@ public class BadongoCom extends PluginForHost {
             String parts = Formatter.fillString(downloadLink.getIntegerProperty("part", 1) + "", "0", "", 3);
             downloadLink.setName(filename.trim() + "." + parts);
             if (downloadLink.getIntegerProperty("part", 1) == downloadLink.getIntegerProperty("parts", 1)) {
-            	long bytes = Regex.getSize(filesize);
+                long bytes = Regex.getSize(filesize);
                 downloadLink.setDownloadSize(bytes - (downloadLink.getIntegerProperty("parts", 1) - 1) * 102400000l);
             } else {
                 downloadLink.setDownloadSize(102400000);
@@ -126,12 +126,12 @@ public class BadongoCom extends PluginForHost {
             link = link.replaceFirst("/1$", "/0");
             br.getPage(link + "/ifr?zenc=");
         }
-        if (link == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (link == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, link, true, 0);
         if (!dl.getConnection().isContentDisposition()) {
             String page = br.loadConnection(dl.getConnection());
             br.getRequest().setHtmlCode(page);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
@@ -166,11 +166,11 @@ public class BadongoCom extends PluginForHost {
                 fileOrVid = "getVidLink";
             br.getPage(realURL + "?rs=" + fileOrVid + "&rst=&rsrnd=" + System.currentTimeMillis() + "&rsargs[]=yellow");
             link = br.getRegex("doDownload\\(.'(.*?).'").getMatch(0);
-            if (link == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (link == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             br.getPage(link + "/ifr?pr=1&zenc=");
             handleErrors(br);
             br.getPage(link + "/loc?pr=1");
-            if (br.getRedirectLocation() == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (br.getRedirectLocation() == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.getRedirectLocation(), true, 1);
             if (!dl.getConnection().isContentDisposition()) {
                 String page = br.loadConnection(dl.getConnection());
@@ -213,7 +213,7 @@ public class BadongoCom extends PluginForHost {
                 sleep(1000, downloadLink, "Waiting for host");
             }
             link = ajax.getRegex("doDownload\\(.'(.*?).'\\)").getMatch(0);
-            if (link == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (link == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             ajax.getPage((link + "/ifr?pr=1&zenc=").replace("/1/", "/0/"));
             handleErrors(ajax);
             ajax.getPage((link + "/loc?pr=1").replace("/1/", "/0/"));
@@ -237,7 +237,7 @@ public class BadongoCom extends PluginForHost {
     public boolean isPremium() throws PluginException, IOException {
         br.getPage("http://www.badongo.com/de/");
         String type = br.getRegex("Du bist zur Zeit als <b>(.*?)</b> eingeloggt").getMatch(0);
-        if (type == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (type == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         if (new Regex(type, Pattern.compile("premium", Pattern.CASE_INSENSITIVE)).matches()) return true;
         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }

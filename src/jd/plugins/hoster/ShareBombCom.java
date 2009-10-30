@@ -39,12 +39,12 @@ public class ShareBombCom extends PluginForHost {
         this.setStartIntervall(2000l);
     }
 
-    // @Override
+    @Override
     public String getAGBLink() {
         return "http://www1.sharebomb.com/tos";
     }
 
-    // @Override
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         Browser.setRequestIntervalLimitGlobal(getHost(), 500);
@@ -69,18 +69,13 @@ public class ShareBombCom extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
-    // @Override
-    /*
-     * public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    // @Override
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         /* Link holen */
         String url = new Regex(br, Pattern.compile("<a href=\"/?(files/.*)\">", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (url == null) url = new Regex(br, Pattern.compile("dlLink=unescape\\('(.*?)'\\);", Pattern.CASE_INSENSITIVE)).getMatch(0);
-        if (url == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT); }
+        if (url == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         String linkurl;
         if (url.startsWith("http")) {
             linkurl = Encoding.htmlDecode(url);
@@ -95,7 +90,7 @@ public class ShareBombCom extends PluginForHost {
         }
         /* Datei herunterladen */
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, linkurl, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, false, 1);
         URLConnectionAdapter con = dl.getConnection();
         if (con.getResponseCode() != 200 && con.getResponseCode() != 206) {
             con.disconnect();
@@ -105,30 +100,30 @@ public class ShareBombCom extends PluginForHost {
 
     }
 
-    // @Override
+    @Override
     public int getMaxRetries() {
         return 1;
     }
 
-    // @Override
+    @Override
     public int getTimegapBetweenConnections() {
         return 2000;
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 3;
     }
 
-    // @Override
+    @Override
     public void reset() {
     }
 
-    // @Override
+    @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 }

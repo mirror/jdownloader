@@ -102,7 +102,7 @@ public class Moosharenet extends PluginForHost {
             br.submitForm(form);
             dlLink = br.getRedirectLocation();
         }
-        if (dlLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dlLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlLink, false, 1);
         if (!dl.getConnection().isContentDisposition()) {
@@ -150,7 +150,7 @@ public class Moosharenet extends PluginForHost {
         Form form = br.getForm(2);
         if (form == null) {
             if (br.containsHTML("Sie haben Ihr Downloadlimit für den Moment erreicht!")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.submitForm(form);
         if (br.containsHTML("keine Dateien parallel downloaden")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
@@ -161,7 +161,7 @@ public class Moosharenet extends PluginForHost {
         } else
             sleep(15000, downloadLink);
         String captchaurl = br.getRegex("<img src=\"(http://mooshare.net/html/images/captcha.php.*?)\\{.*?\" alt=\"captcha\"").getMatch(0);
-        if (captchaurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (captchaurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         captchaurl = captchaurl + System.currentTimeMillis();
         String captchaCode = getCaptchaCode(null, captchaurl, downloadLink);
         form = br.getForm(1);
@@ -171,7 +171,7 @@ public class Moosharenet extends PluginForHost {
         String dlLink = br.getRedirectLocation();
         if (dlLink == null) {
             if (br.containsHTML("falschen Code eingegeben")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.setFollowRedirects(true);
         br.setDebug(true);
@@ -179,7 +179,7 @@ public class Moosharenet extends PluginForHost {
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
             if (br.getURL().contains("download.php")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }

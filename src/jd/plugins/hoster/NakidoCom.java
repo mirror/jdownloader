@@ -39,6 +39,7 @@ public class NakidoCom extends PluginForHost {
         return "http://www.nakido.com/contact";
     }
 
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setCookie("http://www.nakido.com", "lang", "en-us");
@@ -74,13 +75,13 @@ public class NakidoCom extends PluginForHost {
         // might break soon
         String dllink = br.getRegex("else.*?x\\.href='(.*?)'").getMatch(0);
         if (dllink == null) dllink = br.getRegex("'(/[A-Z0-9]+/[A-Z0-9]+\\?attach.*?)'").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dllink = "http://www.nakido.com" + dllink;
         jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (!(dl.getConnection().isContentDisposition())) {
             br.followConnection();
             if (br.containsHTML("You have reach concurrent connection to the server")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l); }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
@@ -89,6 +90,7 @@ public class NakidoCom extends PluginForHost {
     public void reset() {
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }

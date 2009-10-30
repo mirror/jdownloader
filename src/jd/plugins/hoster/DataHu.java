@@ -108,7 +108,7 @@ public class DataHu extends PluginForHost {
         login(account);
         br.getPage(downloadLink.getDownloadURL());
         String link = br.getRegex("window.location.href='(.*?)';").getMatch(0);
-        if (link == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (link == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, link, true, 0);
         dl.startDownload();

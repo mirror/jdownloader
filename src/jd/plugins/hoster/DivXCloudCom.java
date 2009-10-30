@@ -59,17 +59,18 @@ public class DivXCloudCom extends PluginForHost {
     public void handleFree(DownloadLink link) throws Exception {
         this.requestFileInformation(link);
         Form DLForm = br.getFormbyProperty("name", "F1");
-        if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // waittime
         int tt = Integer.parseInt(br.getRegex("countdown\">(\\d+)</span>").getMatch(0));
         sleep(tt * 1001l, link);
         br.submitForm(DLForm);
         String dllink = br.getRegex("src\" value=\"(.*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = BrowserAdapter.openDownload(br, link, dllink, true, -20);
         dl.startDownload();
     }
 
+    @Override
     public void reset() {
     }
 
@@ -77,6 +78,7 @@ public class DivXCloudCom extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }

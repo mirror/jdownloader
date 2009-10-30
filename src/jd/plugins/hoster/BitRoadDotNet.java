@@ -35,12 +35,12 @@ public class BitRoadDotNet extends PluginForHost {
         super(wrapper);
     }
 
-    // @Override
+    @Override
     public String getAGBLink() {
         return "http://bitroad.net/tmpl/terms.php";
     }
 
-    // @Override
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
@@ -55,40 +55,35 @@ public class BitRoadDotNet extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    // @Override
-    /*
-     * /* public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    // @Override
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
         if (br.containsHTML("Downloading is in process from your IP")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1001);
         Form dl1 = br.getFormbyProperty("id", "Premium");
         if (dl1 == null) dl1 = br.getFormbyProperty("name", "Premium");
-        if (dl1 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dl1 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.submitForm(dl1);
         String url = br.getRedirectLocation();
         if (url == null) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, url, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, false, 1);
         dl.startDownload();
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
-    // @Override
+    @Override
     public void reset() {
     }
 
-    // @Override
+    @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 }

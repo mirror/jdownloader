@@ -141,10 +141,10 @@ public class LinkStatus implements Serializable {
     public static final int ERROR_LOCAL_IO = 1 << 21;
 
     /**
-     * Plugins Wird bei Schwerenb Parsing fehler eingesetzt. Über diesen Code
+     * Plugins Wird bei schweren Parsing Fehler eingesetzt. Über diesen Code
      * kann das Plugin mitteilen dass es defekt ist und aktualisiert werden muss
      */
-    public static final int ERROR_PLUGIN_DEFEKT = 1 << 22;
+    public static final int ERROR_PLUGIN_DEFECT = 1 << 22;
 
     /**
      * Zeigt an, das auf User-Eingaben gewartet wird
@@ -207,7 +207,7 @@ public class LinkStatus implements Serializable {
         switch (lastestStatus) {
         case LinkStatus.ERROR_RETRY:
             return JDL.L("downloadlink.status.error.retry", "Unknown error, retrying");
-        case LinkStatus.ERROR_PLUGIN_DEFEKT:
+        case LinkStatus.ERROR_PLUGIN_DEFECT:
             return JDL.L("downloadlink.status.error.defect", "Plugin outdated");
         case LinkStatus.ERROR_PLUGIN_NEEDED:
             return JDL.L("downloadlink.status.error.no_plugin_available", "No plugin available");

@@ -42,7 +42,7 @@ public class ShareSystemsDe extends PluginForHost {
         this.enablePremium("http://sharesystems.de/index.php?vip");
     }
 
-    // @Override
+    @Override
     public String getAGBLink() {
         return "http://sharesystems.de/index.php?agb";
     }
@@ -74,6 +74,7 @@ public class ShareSystemsDe extends PluginForHost {
      * Checks if the downloadlink is valid and online. Throws a PluginException
      * if this file is likely invalid, damaged or has any other errors.
      */
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -100,7 +101,7 @@ public class ShareSystemsDe extends PluginForHost {
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
             parseError(br.toString());
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
@@ -147,27 +148,32 @@ public class ShareSystemsDe extends PluginForHost {
         }
     }
 
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         this.requestFileInformation(downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, "http://91.121.188.186/share/tool_download_free.php?hash=" + downloadLink.getMD5Hash(), true, 1);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
             parseError(br.toString());
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
+    @Override
     public void reset() {
     }
 
+    @Override
     public void resetPluginGlobals() {
     }
 
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 }

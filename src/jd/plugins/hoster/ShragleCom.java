@@ -111,7 +111,7 @@ public class ShragleCom extends PluginForHost {
         if (con.getContentType() != null && con.getContentType().contains("html")) {
             br.followConnection();
             if ((br.containsHTML("Die von Ihnen angeforderte Datei") && br.containsHTML("Bitte versuchen Sie es"))) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
@@ -160,7 +160,7 @@ public class ShragleCom extends PluginForHost {
         if (con.getContentType() != null && con.getContentType().contains("html")) {
             br.followConnection();
             if ((br.containsHTML("Die von Ihnen angeforderte Datei") && br.containsHTML("Bitte versuchen Sie es")) || mayfail) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }

@@ -43,7 +43,7 @@ public class CreaFileCom extends PluginForHost {
         return "http://creafile.com/useragree.html";
     }
 
-    // @Override
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setCookie("http://creafile.com", "creafile_lang", "en");
@@ -63,7 +63,6 @@ public class CreaFileCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    // @Override
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
@@ -71,12 +70,12 @@ public class CreaFileCom extends PluginForHost {
         String hash = new Regex(downloadLink.getDownloadURL(), "/download/(.*)").getMatch(0);
         Form DLForm = br.getForm(1);
         DLForm.setAction("http://creafile.com/handlers.php?h=loadiframe");
-        if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLForm.put("hash", hash);
         br.submitForm(DLForm);
         br.getPage("http://creafile.com/handlers.php?h=getdownloadarea");
         String dllink = br.getRegex("href=\"(http://creafile.com/d/.*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         dl.startDownload();
     }
@@ -85,7 +84,7 @@ public class CreaFileCom extends PluginForHost {
     public void reset() {
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }

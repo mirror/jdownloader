@@ -38,7 +38,7 @@ public class OnlyFourFilesCom extends PluginForHost {
         super(wrapper);
     }
 
-    // @Override
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
@@ -55,7 +55,7 @@ public class OnlyFourFilesCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
         } else {
             Form form = br.getFormbyProperty("name", "F1");
-            if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             String captchaurl = br.getRegex(Pattern.compile("code:</b></td></tr>\\s+<tr><td><img src=\"(.*?)\"", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
             String code = getCaptchaCode(captchaurl, downloadLink);
             form.put("code", code);
@@ -75,22 +75,22 @@ public class OnlyFourFilesCom extends PluginForHost {
                     }
                 }
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, form, false, 1);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, false, 1);
             dl.startDownload();
         }
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 10;
     }
 
-    // @Override
+    @Override
     public String getAGBLink() {
         return "http://only4files.com/tos.html";
     }
 
-    // @Override
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
@@ -103,20 +103,15 @@ public class OnlyFourFilesCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    // @Override
-    /*
-     * public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    // @Override
+    @Override
     public void reset() {
     }
 
-    // @Override
+    @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 

@@ -121,7 +121,7 @@ public class Odsiebiecom extends PluginForHost {
                 downloadurl = br.getRegex("onLoad=\"scaleImg\\('thepic'\\)\" src=\"(.*?)\" \\/").getMatch(0);
             }
             /* kein Link gefunden */
-            if (downloadurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (downloadurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else {
             /* Button folgen, schaun ob Link oder Captcha als nächstes kommt */
             downloadurl = "http://odsiebie.com/pobierz/" + steplink;
@@ -140,9 +140,9 @@ public class Odsiebiecom extends PluginForHost {
                 Browser brc = br.cloneBrowser();
                 while (capform != null) {
                     String pagepiece = br.getRegex("form.*?get.*?pob.*?src.*?\"(.*?)</form>").getMatch(0);
-                    if (pagepiece == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                    if (pagepiece == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     String[] captchalinks = HTMLParser.getHttpLinks(pagepiece, "");
-                    if (captchalinks == null || captchalinks.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                    if (captchalinks == null || captchalinks.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     String adr = null;
                     File file = null;
                     for (String link : captchalinks) {
@@ -159,7 +159,7 @@ public class Odsiebiecom extends PluginForHost {
                     // String adr =
                     // br.getRegex("<img src=\"http://odsiebie.com/v_auth.php\" style=\"display: none;\"><img src=\"(.*?)\"  style=\"display:").getMatch(0);
                     // adr = "http://odsiebie.com/v.php";
-                    if (adr == null || file == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                    if (adr == null || file == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
                     // URLConnectionAdapter con = brc.openGetConnection(adr);
                     // File file = this.getLocalCaptchaFile();
@@ -172,7 +172,7 @@ public class Odsiebiecom extends PluginForHost {
                     i++;
                     if (i > 3) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 }
-                if (capform != null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                if (capform != null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             br.setFollowRedirects(false);
             /* DownloadLink suchen */

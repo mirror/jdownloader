@@ -44,7 +44,7 @@ public class DropIo extends PluginForHost {
         return "http://drop.io/terms";
     }
 
-    // @Override
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -64,12 +64,11 @@ public class DropIo extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    // @Override
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         String IamAHuman = br.getRegex("save_url=\"(.*?)\"").getMatch(0);
-        if (IamAHuman == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (IamAHuman == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // check if the download starts instantly or if there is a need to type
         // in captchas
         URLConnectionAdapter con = br.openGetConnection(IamAHuman);
@@ -98,11 +97,11 @@ public class DropIo extends PluginForHost {
                     br.followConnection();
                     // Captcha errorhandling
                     if (br.containsHTML("Captcha Does Not Match")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 dl.startDownload();
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         jd.plugins.BrowserAdapter.openDownload(br, downloadLink, IamAHuman, true, -20);
         dl.startDownload();
@@ -112,7 +111,7 @@ public class DropIo extends PluginForHost {
     public void reset() {
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }

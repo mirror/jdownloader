@@ -52,7 +52,7 @@ public class FileShareInUa extends PluginForHost {
         br.setFollowRedirects(false);
         br.getPage("http://fileshare.in.ua");
         Form form = br.getFormbyKey("auto_login");
-        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         form.put("email", Encoding.urlEncode(account.getUser()));
         form.put("password", Encoding.urlEncode(account.getPass()));
         br.setFollowRedirects(true);
@@ -87,13 +87,13 @@ public class FileShareInUa extends PluginForHost {
         login(account);
         br.getPage(downloadLink.getDownloadURL());
         String getlink = br.getRegex("href=\"(/get/.*?)\"").getMatch(0);
-        if (getlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (getlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         getlink = "http://fileshare.in.ua" + getlink;
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, getlink, true, 0);
         if (!(dl.getConnection().isContentDisposition())) {
             br.followConnection();
             if (br.containsHTML("Воcстановление файла...")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
@@ -130,7 +130,7 @@ public class FileShareInUa extends PluginForHost {
         // number and an other default number the plugin knows which part of the
         // captcha it needsa
         String captchacut = br.getRegex("<style>.*?margin-[a-z]+:-(\\d+)px;").getMatch(0);
-        if (captchapart == null || captchaForm == null || captchacut == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (captchapart == null || captchaForm == null || captchacut == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String captchaurl = "http://fileshare.in.ua" + captchapart;
         File file = this.getLocalCaptchaFile();
         Browser.download(file, br.cloneBrowser().openGetConnection(captchaurl));
@@ -139,12 +139,12 @@ public class FileShareInUa extends PluginForHost {
         br.submitForm(captchaForm);
         if (br.containsHTML("Цифры введены неверно")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         Form DLForm0 = br.getForm(2);
-        if (DLForm0 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (DLForm0 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.submitForm(DLForm0);
         String dlframe = downloadLink.getDownloadURL() + "?fr";
         br.getPage(dlframe);
         String dllink0 = br.getRegex("yandex_bar\"  href=\"(.*?)\" id=\"dl_li").getMatch(0);
-        if (dllink0 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dllink0 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String dllink1 = "http://fileshare.in.ua" + dllink0;
         br.getPage(dllink1);
         String dllink = br.getRedirectLocation();
@@ -154,7 +154,7 @@ public class FileShareInUa extends PluginForHost {
             br.followConnection();
             if (br.containsHTML("временно недоступен")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             if (br.containsHTML("Воcстановление файла...")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }

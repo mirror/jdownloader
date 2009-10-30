@@ -35,12 +35,12 @@ public class ClipfishDe extends PluginForHost {
 
     private static final String AGB_LINK = "http://www.clipfish.de/agb/";
 
-    // @Override
+    @Override
     public String getAGBLink() {
         return AGB_LINK;
     }
 
-    // @Override
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) {
         /*
          * warum sollte ein video das der decrypter sagte es sei online, offline
@@ -52,22 +52,15 @@ public class ClipfishDe extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    // @Override
-    /*
-     * /* public String getVersion() {
-     * 
-     * return getVersion("$Revision$"); }
-     */
-
-    // @Override
+    @Override
     public void reset() {
     }
 
-    // @Override
+    @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
@@ -76,7 +69,7 @@ public class ClipfishDe extends PluginForHost {
         urlConnection = dl.connect();
         if (urlConnection.getLongContentLength() == 0) {
             br.followConnection();
-            linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFECT);
             return;
         }
 
@@ -92,12 +85,12 @@ public class ClipfishDe extends PluginForHost {
         }
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    // @Override
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 

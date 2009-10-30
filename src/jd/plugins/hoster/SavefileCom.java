@@ -38,12 +38,12 @@ public class SavefileCom extends PluginForHost {
         this.setStartIntervall(1000l);
     }
 
-    // @Override
+    @Override
     public String getAGBLink() {
         return "http://www.savefile.com/tos.php";
     }
 
-    // @Override
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         String url = downloadLink.getDownloadURL();
@@ -63,12 +63,7 @@ public class SavefileCom extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
-    // @Override
-    /*
-     * public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    // @Override
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
         requestFileInformation(downloadLink);
@@ -76,13 +71,13 @@ public class SavefileCom extends PluginForHost {
         br.setFollowRedirects(true);
         String fileID = br.getRegex("savefile.com/files/(.*?)\"").getMatch(0);
         String sessionID = br.getCookie("http://savefile.com", "PHPSESSID");
-        if (fileID == null || sessionID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (fileID == null || sessionID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage("http://www.savefile.com/downloadmin/" + fileID);
         String linkurl = br.getRegex("try\\s+<a href=\"(.*?)\"").getMatch(0);
-        if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         /* Datei herunterladen */
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, linkurl, true, -10);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, true, -10);
         URLConnectionAdapter con = dl.getConnection();
         if (con.getResponseCode() == 416) {
             // HTTP/1.1 416 Requested Range Not Satisfiable
@@ -96,20 +91,20 @@ public class SavefileCom extends PluginForHost {
         dl.startDownload();
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    // @Override
+    @Override
     public void reset() {
     }
 
-    // @Override
+    @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 }

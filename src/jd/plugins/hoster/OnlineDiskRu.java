@@ -35,11 +35,13 @@ public class OnlineDiskRu extends PluginForHost {
         super(wrapper);
     }
 
+    @Override
     public String getAGBLink() {
         setBrowserExclusive();
         return "http://www.onlinedisk.ru/conditions/";
     }
 
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -66,6 +68,7 @@ public class OnlineDiskRu extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         if (downloadLink.getDownloadURL().contains("/file/")) {
@@ -73,7 +76,7 @@ public class OnlineDiskRu extends PluginForHost {
             Form captchaform = null;
             for (int i = 0; i <= 5; i++) {
                 captchaform = br.getForm(0);
-                if (captchaUrl == null || captchaform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                if (captchaUrl == null || captchaform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 String code = getCaptchaCode(captchaUrl, downloadLink);
                 captchaform.put("kaptcha", code);
                 br.submitForm(captchaform);
@@ -82,7 +85,7 @@ public class OnlineDiskRu extends PluginForHost {
             }
             if (br.containsHTML("name='kaptcha'") || br.containsHTML("class='captcha'")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             Form finalform = br.getForm(0);
-            if (finalform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (finalform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalform, true, 1);
         } else {
             String dllink = "http://www.onlinedisk.ru/get_image.php?id=" + new Regex(downloadLink.getDownloadURL(), "onlinedisk\\.ru/view/([0-9]+)").getMatch(0);

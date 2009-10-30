@@ -62,7 +62,7 @@ public class Youtube extends PluginForHost {
             downloadLink.setFinalFileName(downloadLink.getStringProperty("name", "video.tmp"));
             downloadLink.setDownloadSize((Long) downloadLink.getProperty("size", Long.valueOf(0l)));
             PluginForDecrypt plugin = JDUtilities.getPluginForDecrypt("youtube.com");
-            if (plugin == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT, "cannot decrypt videolink");
+            if (plugin == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "cannot decrypt videolink");
             if (downloadLink.getStringProperty("fmt", null) == null) throw new PluginException(LinkStatus.ERROR_FATAL, "You have to add link again");
             if (downloadLink.getStringProperty("videolink", null) == null) throw new PluginException(LinkStatus.ERROR_FATAL, "You have to add link again");
             String link = ((TbCm) plugin).getLink(downloadLink.getStringProperty("videolink", null), prem, this.br);
@@ -144,7 +144,7 @@ public class Youtube extends PluginForHost {
         br.getPage("https://www.google.com/accounts/ServiceLogin?uilel=3&service=youtube&passive=true&continue=http%3A%2F%2Fwww.youtube.com%2Fsignin%3Faction_handle_signin%3Dtrue%26nomobiletemp%3D1%26hl%3Den_US%26next%3D%252Findex&hl=en_US&ltmpl=sso");
         br.setFollowRedirects(false);
         String cook = br.getCookie("http://www.google.com", "GALX");
-        if (cook == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (cook == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.postPage("https://www.google.com/accounts/ServiceLoginAuth?service=youtube", "ltmpl=sso&continue=http%3A%2F%2Fwww.youtube.com%2Fsignin%3Faction_handle_signin%3Dtrue%26nomobiletemp%3D1%26hl%3Den_US%26next%3D%252F&service=youtube&uilel=3&ltmpl=sso&hl=en_US&ltmpl=sso&GALX=" + cook + "&Email=" + Encoding.urlEncode(account.getUser()) + "&Passwd=" + Encoding.urlEncode(account.getPass()) + "&PersistentCookie=yes&rmShown=1&signIn=Sign+in&asts=");
         if (br.getRedirectLocation() == null) {
             String page = Encoding.htmlDecode(br.toString());

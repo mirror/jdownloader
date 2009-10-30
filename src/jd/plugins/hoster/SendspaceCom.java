@@ -102,7 +102,7 @@ public class SendspaceCom extends PluginForHost {
         login(account);
         br.getPage(link.getDownloadURL());
         String linkurl = br.getRegex("<a id=\"downlink\" class=\"mango\" href=\"(.*?)\"").getMatch(0);
-        if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, linkurl, true, 0);
         dl.startDownload();
@@ -137,7 +137,7 @@ public class SendspaceCom extends PluginForHost {
         if (script == null) {
             br.postPage(downloadLink.getDownloadURL(), "download=%C2%A0REGULAR+DOWNLOAD%C2%A0");
             script = br.getRegex(Pattern.compile("<script type=\"text/javascript\">(function .*?)</script>", Pattern.CASE_INSENSITIVE)).getMatch(0);
-            if (script == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (script == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         String dec = br.getRegex(Pattern.compile("base64ToText\\('(.*?)'\\)", Pattern.CASE_INSENSITIVE)).getMatch(0);
         script += new Browser().getPage("http://www.sendspace.com/jsc/download.js");
@@ -148,9 +148,9 @@ public class SendspaceCom extends PluginForHost {
         Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
         // Convert the result to a string and print it.
         String linkurl = Context.toString(result);
-        if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         linkurl = new Regex(linkurl, "href=\"(.*?)\"").getMatch(0);
-        if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         /* Datei herunterladen */
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, true, 1);
@@ -162,7 +162,7 @@ public class SendspaceCom extends PluginForHost {
             if (error == null) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.sendspacecom.errors.servererror", "Unknown server error"), 5 * 60 * 1000l);
             if (error.contains("You may now download the file")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, error, 30 * 1000l); }
             if (error.contains("full capacity")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.sendspacecom.errors.serverfull", "Free service capacity full"), 5 * 60 * 1000l); }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (con.getResponseCode() == 416) {
             // HTTP/1.1 416 Requested Range Not Satisfiable

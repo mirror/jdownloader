@@ -37,10 +37,12 @@ public class ImageHavenNet extends PluginForHost {
         super(wrapper);
     }
 
+    @Override
     public String getAGBLink() {
         return "http://imagehaven.net/index.php?page=tos";
     }
 
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         checklink = null;
@@ -50,13 +52,13 @@ public class ImageHavenNet extends PluginForHost {
             br.getPage(downloadLink.getDownloadURL());
         }
         checklink = br.getRegex("<img src='\\.(.*?)'").getMatch(0);
-        if (checklink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (checklink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         checklink = server + checklink;
         URLConnectionAdapter con = br.openGetConnection(checklink);
         if ((con.getContentType().contains("html"))) {
             br.followConnection();
             if (br.containsHTML("404 - Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else {
             downloadLink.setDownloadSize(con.getLongContentLength());
             con.disconnect();
@@ -68,22 +70,27 @@ public class ImageHavenNet extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, checklink, true, 0);
         dl.startDownload();
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
+    @Override
     public void reset() {
     }
 
+    @Override
     public void resetPluginGlobals() {
     }
 
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 }

@@ -97,6 +97,7 @@ public class FileBoxCom extends PluginForHost {
         return ai;
     }
 
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setCookie("http://www.filebox.com", "lang", "english");
@@ -138,7 +139,7 @@ public class FileBoxCom extends PluginForHost {
             br.setFollowRedirects(true);
             dl = BrowserAdapter.openDownload(br, link, br.getRedirectLocation(), true, 0);
         } else {
-            if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             if (br.containsHTML("valign=top><b>Password:</b></td>")) {
                 if (link.getStringProperty("pass", null) == null) {
                     passCode = Plugin.getUserInput("Password?", link);
@@ -163,15 +164,15 @@ public class FileBoxCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             } else if (premium) {
                 String url = br.getRegex("direct link.*?href=\"(http:.*?)\"").getMatch(0);
-                if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 br.setFollowRedirects(true);
                 dl = BrowserAdapter.openDownload(br, link, url, true, 0);
                 if (dl.getConnection() != null && dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("html")) {
                     br.followConnection();
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             } else
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (passCode != null) {
             link.setProperty("pass", passCode);
@@ -185,7 +186,7 @@ public class FileBoxCom extends PluginForHost {
         br.setFollowRedirects(true);
         // Form um auf "Datei herunterladen" zu klicken
         Form DLForm = br.getFormbyProperty("name", "F1");
-        if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String passCode = null;
         if (br.containsHTML("valign=top><b>Password:</b></td>")) {
             if (downloadLink.getStringProperty("pass", null) == null) {
@@ -207,7 +208,7 @@ public class FileBoxCom extends PluginForHost {
                 downloadLink.setProperty("pass", null);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (passCode != null) {
             downloadLink.setProperty("pass", passCode);
@@ -219,6 +220,7 @@ public class FileBoxCom extends PluginForHost {
     public void reset() {
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }

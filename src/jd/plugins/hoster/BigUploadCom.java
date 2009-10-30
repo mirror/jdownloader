@@ -66,8 +66,8 @@ public class BigUploadCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
-        Form form = br.getForm(2);        
-        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        Form form = br.getForm(2);
+        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         form.setAction("/download_frame.php");
         this.sleep(5 * 1001l, downloadLink);
         br.submitForm(form);
@@ -76,19 +76,19 @@ public class BigUploadCom extends PluginForHost {
         con.disconnect();
         // Link zum Captcha (kann bei anderen Hostern auch mit ID sein)
         String captchaid = br.getRegex("/faq\\.php\\?sid=(.*?)\">Full FAQ").getMatch(0);
-        if (captchaid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (captchaid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String captchaurl = "http://www3.bigupload.com/load_security_code.php?app=download_frame&parent=&obj=sec_img&sid=" + captchaid;
         String code = getCaptchaCode(captchaurl, downloadLink);
         this.sleep(10 * 1001l, downloadLink);
         Form captchaForm = br.getForm(1);
-        if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // Captcha Usereingabe in die Form einfügen
         captchaForm.put("sec_img", code);
         br.setFollowRedirects(false);
         br.submitForm(captchaForm);
         String dllink = br.getRedirectLocation();
         if (br.containsHTML("Enter Code")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         try {
             ((Ftp) JDUtilities.getNewPluginForHostInstance("ftp")).download(Encoding.urlDecode(dllink, true), downloadLink);
         } catch (InterruptedIOException e) {
@@ -106,7 +106,7 @@ public class BigUploadCom extends PluginForHost {
     public void reset() {
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 8;
     }

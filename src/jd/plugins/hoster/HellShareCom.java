@@ -49,7 +49,7 @@ public class HellShareCom extends PluginForHost {
         br.setFollowRedirects(false);
         br.getPage("http://www.en.hellshare.com/log-in");
         Form form = br.getForm(0);
-        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         form.put("lgnp7_lg", Encoding.urlEncode(account.getUser()));
         form.put("lgnp7_psw", Encoding.urlEncode(account.getPass()));
         br.setFollowRedirects(true);
@@ -85,7 +85,7 @@ public class HellShareCom extends PluginForHost {
         if (dllink == null) {
             dllink = br.getRegex("\"(http://data.*?\\.helldata\\.com.*?)\"").getMatch(0);
         }
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (!(dl.getConnection().isContentDisposition())) {
             br.followConnection();
@@ -140,7 +140,7 @@ public class HellShareCom extends PluginForHost {
         if (br.containsHTML("Current load 100%, take advantage of unlimited")) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "No free slots available");
         } else {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT, "Please send the log to a supporter");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Please send the log to a supporter");
         }
     }
 

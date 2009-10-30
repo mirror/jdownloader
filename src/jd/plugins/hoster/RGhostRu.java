@@ -40,6 +40,7 @@ public class RGhostRu extends PluginForHost {
         this.setStartIntervall(3500l);
     }
 
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -64,6 +65,7 @@ public class RGhostRu extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @Override
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
         br.setFollowRedirects(false);
@@ -72,7 +74,7 @@ public class RGhostRu extends PluginForHost {
         String passCode = null;
         if (dllink == null) {
             Form pwform = br.getForm(2);
-            if (pwform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (pwform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             if (link.getStringProperty("pass", null) == null) {
                 passCode = Plugin.getUserInput("Password?", link);
             } else {
@@ -96,26 +98,31 @@ public class RGhostRu extends PluginForHost {
                 sleep(20000l, link);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (passCode != null) link.setProperty("pass", passCode);
         dl.startDownload();
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
+    @Override
     public String getAGBLink() {
         return "http://rghost.ru/tos";
     }
 
+    @Override
     public void reset() {
     }
 
+    @Override
     public void resetPluginGlobals() {
     }
 
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 

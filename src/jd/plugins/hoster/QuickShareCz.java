@@ -39,12 +39,12 @@ public class QuickShareCz extends PluginForHost {
         this.setStartIntervall(5000l);
     }
 
-    // @Override
+    @Override
     public String getAGBLink() {
         return "http://www.quickshare.cz/podminky-pouziti";
     }
 
-    // @Override
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
@@ -57,12 +57,7 @@ public class QuickShareCz extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    // @Override
-    /*
-     * public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    // @Override
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         String ID1 = Encoding.formEncoding(br.getRegex("var ID1 = '(.*?)'").getMatch(0));
@@ -70,12 +65,12 @@ public class QuickShareCz extends PluginForHost {
         String ID3 = Encoding.formEncoding(br.getRegex("var ID3 = '(.*?)'").getMatch(0));
         String ID4 = Encoding.formEncoding(br.getRegex("var ID4 = '(.*?)'").getMatch(0));
         String server = br.getRegex("var server = '(.*?)'").getMatch(0);
-        if (ID1 == null || ID2 == null || ID3 == null || ID4 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (ID1 == null || ID2 == null || ID3 == null || ID4 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String param = "ID1=" + ID1 + "&ID2=" + ID2 + "&ID3=" + ID3 + "&ID4=" + ID4;
         br.setFollowRedirects(true);
         // this.sleep(10000, downloadLink); // uncomment when they find a better
         // way to force wait time
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, server + "/download.php", param);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, server + "/download.php", param);
         URLConnectionAdapter con = dl.getConnection();
         if (con.getContentType().contains("text")) {
             String herror = br.getURL();
@@ -86,20 +81,20 @@ public class QuickShareCz extends PluginForHost {
 
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
-    // @Override
+    @Override
     public void reset() {
     }
 
-    // @Override
+    @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 }

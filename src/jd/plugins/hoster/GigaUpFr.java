@@ -59,14 +59,14 @@ public class GigaUpFr extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    // @Override
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         String captchaid = (br.getRegex("<img src=\".*?uid=(.*?)\" style=\"margi").getMatch(0));
         String captchaurl = "http://www.gigaup.fr/constru/images/bot_sucker/bot_sucker.php?uid=" + captchaid;
         String code = getCaptchaCode(captchaurl, downloadLink);
         Form captchaForm = br.getForm(1);
-        if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         captchaForm.put("bot_sucker", code);
         br.submitForm(captchaForm);
         if (br.containsHTML("Le code de.*?v.*?ication.*?est incorrecte")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
@@ -88,7 +88,7 @@ public class GigaUpFr extends PluginForHost {
     public void reset() {
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 4;
     }

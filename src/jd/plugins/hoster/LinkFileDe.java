@@ -45,7 +45,7 @@ public class LinkFileDe extends PluginForHost {
         return "http://www.linkfile.de/disclaimer.php";
     }
 
-    // @Override
+    @Override
     public String getCoder() {
         return "zdolny";
     }
@@ -71,10 +71,10 @@ public class LinkFileDe extends PluginForHost {
         String code = getCaptchaCode(br.getBaseURL() + "captcha.php", downloadLink);
 
         Form captchaForm = br.getForm(0);
-        if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         captchaForm.put("captcha", code);
 
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, captchaForm, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, captchaForm, true, 1);
         if (!dl.getConnection().isContentDisposition()) {
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_CAPTCHA, JDL.L("downloadlink.status.error.captcha_wrong", "Captcha wrong"));

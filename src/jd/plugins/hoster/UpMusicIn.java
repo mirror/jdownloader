@@ -52,7 +52,7 @@ public class UpMusicIn extends PluginForHost {
             requestFileInformation(downloadLink);
             Form form1;
             form1 = br.getFormbyProperty("name", "F1");
-            if (form1 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (form1 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             String waittime = br.getRegex("Wait\\s+<span[^>]*>(.*?)</span>").getMatch(0);
             int waittimen = 0;
             waittimen = Integer.valueOf(waittime).intValue();
@@ -65,7 +65,7 @@ public class UpMusicIn extends PluginForHost {
                     String currentError = br.getRegex("err\">(.*?)</font>").getMatch(0);
                     throw new PluginException(LinkStatus.ERROR_FATAL, currentError);
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
             linkurl = linkurl.replaceAll(" ", "%20");
@@ -108,7 +108,7 @@ public class UpMusicIn extends PluginForHost {
      * br.getPage(downloadLink.getDownloadURL()); String linkurl =
      * br.getRegex("downloadurl'\\);\">(.*?)</textarea>").getMatch(0); if
      * (linkurl == null) throw new
-     * PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+     * PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
      * br.setFollowRedirects(true); // this.sleep(15000, downloadLink); //
      * uncomment when they find a better // way to force wait time dl =
      * jd.plugins.BrowserAdapter.openDownload(br,downloadLink, linkurl);
@@ -157,7 +157,7 @@ public class UpMusicIn extends PluginForHost {
      * { simultanpremium = 20; } else { simultanpremium++; } } String linkurl =
      * br.getRegex("downloadurl'\\);\">(.*?)</textarea>").getMatch(0); if
      * (linkurl == null) throw new
-     * PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+     * PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
      * br.setFollowRedirects(true); // this.sleep(30000, downloadLink); //
      * uncomment when they find a better // way to force wait time dl =
      * jd.plugins.BrowserAdapter.openDownload(br,downloadLink, linkurl);

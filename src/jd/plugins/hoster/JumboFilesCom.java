@@ -41,6 +41,7 @@ public class JumboFilesCom extends PluginForHost {
         return "http://jumbofiles.com/tos.html";
     }
 
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setCookie("http://www.jumbofiles.com", "lang", "english");
@@ -72,7 +73,7 @@ public class JumboFilesCom extends PluginForHost {
         br.setFollowRedirects(true);
         // Form um auf "Datei herunterladen" zu klicken
         Form dlForm = br.getFormbyProperty("name", "F1");
-        if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String passCode = null;
         if (br.containsHTML("<b>Password:</b>")) {
             if (downloadLink.getStringProperty("pass", null) == null) {
@@ -93,7 +94,7 @@ public class JumboFilesCom extends PluginForHost {
             downloadLink.setProperty("pass", passCode);
         }
         String dllink = br.getRegex("personal download link:</B><BR><A HREF=\"(.*?)\">").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         dl.startDownload();
     }
@@ -102,6 +103,7 @@ public class JumboFilesCom extends PluginForHost {
     public void reset() {
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }

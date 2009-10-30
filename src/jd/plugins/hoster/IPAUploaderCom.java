@@ -41,7 +41,7 @@ public class IPAUploaderCom extends PluginForHost {
         return "http://ipauploader.com/index.php#about";
     }
 
-    // @Override
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
@@ -52,15 +52,14 @@ public class IPAUploaderCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    // @Override
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
 
         Form DLForm = br.getForm(0);
-        if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
-        jd.plugins.BrowserAdapter.openDownload(br,downloadLink, DLForm, false, 1);
+        jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLForm, false, 1);
         if (!dl.getConnection().isContentDisposition()) {
             dl.getConnection().disconnect();
             logger.warning("The link you added isn't valid!");
@@ -75,7 +74,7 @@ public class IPAUploaderCom extends PluginForHost {
     public void reset() {
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }

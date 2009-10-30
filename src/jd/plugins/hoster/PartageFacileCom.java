@@ -36,10 +36,12 @@ public class PartageFacileCom extends PluginForHost {
         br.setRequestIntervalLimit(getHost(), 500);
     }
 
+    @Override
     public String getAGBLink() {
         return "http://www.partage-facile.com/cgu.php";
     }
 
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
@@ -65,34 +67,39 @@ public class PartageFacileCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         Form dlform0 = br.getForm(1);
-        if (dlform0 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dlform0 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.submitForm(dlform0);
         Form dlform1 = br.getForm(0);
-        if (dlform1 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dlform1 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dlform1.remove("u");
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlform1, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML("Taille maximum du fichier")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 1000l);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
     }
 
+    @Override
     public void reset() {
     }
 
+    @Override
     public void resetPluginGlobals() {
     }
 
+    @Override
     public void resetDownloadlink(DownloadLink link) {
 
     }

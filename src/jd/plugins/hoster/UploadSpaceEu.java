@@ -42,7 +42,7 @@ public class UploadSpaceEu extends PluginForHost {
         return "http://uploadspace.eu/tos.html";
     }
 
-    // @Override
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setCookie("http://www.uploadspace.eu", "lang", "english");
@@ -58,7 +58,6 @@ public class UploadSpaceEu extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    // @Override
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
@@ -89,7 +88,7 @@ public class UploadSpaceEu extends PluginForHost {
                     logger.warning("Wrong captcha");
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 }
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
             dl.startDownload();
@@ -100,7 +99,7 @@ public class UploadSpaceEu extends PluginForHost {
     public void reset() {
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
