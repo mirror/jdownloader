@@ -19,8 +19,6 @@ package jd.gui.swing.jdgui.views;
 import java.awt.event.ActionEvent;
 
 import javax.swing.AbstractAction;
-import javax.swing.BorderFactory;
-import javax.swing.Box;
 import javax.swing.Icon;
 import javax.swing.JMenuBar;
 import javax.swing.UIManager;
@@ -48,11 +46,6 @@ abstract public class ClosableView extends View {
         initMenu(menubar);
         closeAction = new CloseAction();
         if (menubar.getComponentCount() > count) {
-            menubar.add(Box.createHorizontalGlue());
-            Box panel = new Box(1);
-            panel.setOpaque(false);
-            panel.setBorder(BorderFactory.createEmptyBorder(0, 0, 1, 0));
-            menubar.add(panel);
             add(menubar, "dock NORTH,height 16!,gapbottom 2");
         }
     }

@@ -195,7 +195,7 @@ public class MainTabbedPane extends JTabbedPane implements MouseListener {
 
             if (rect.contains(e.getX(), e.getY())) {
                 // the tab is being closed
-                ((ClosableView) this.getComponentAt(tabNumber)).getCloseAction().actionPerformed(null);
+                ((ClosableView) this.getComponentAt(tabNumber)).close();
 
             }
         } catch (java.lang.ClassCastException e2) {

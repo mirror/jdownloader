@@ -61,7 +61,6 @@ import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.components.Balloon;
 import jd.gui.swing.components.linkbutton.JLink;
-import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelListener;
@@ -78,7 +77,7 @@ import net.miginfocom.swing.MigLayout;
 
 import org.schwering.irc.lib.IRCConnection;
 
-@OptionalPlugin(rev = "$Revision$", id = "chat", interfaceversion = 5)
+@OptionalPlugin(rev = "$Revision$", id = "chat", hasGui = true, interfaceversion = 5)
 public class JDChat extends PluginOptional implements ControlListener {
     private static final long AWAY_TIMEOUT = 15 * 60 * 1000;
     private static String CHANNEL = "#jDownloader";
@@ -119,7 +118,7 @@ public class JDChat extends PluginOptional implements ControlListener {
     // private static final int TEXT_BUFFER = 1024 * 600;
     public static final String USERLIST_STYLE = JDIO.readFileToString(JDUtilities.getResourceFile("plugins/jdchat/userliststyles.css"));
     private static final String CHANNEL_LNG = "CHANNEL_LNG3";
-    protected JLabel top;
+    private JLabel top;
     private boolean changed;
 
     private IRCConnection conn;
@@ -635,18 +634,12 @@ public class JDChat extends PluginOptional implements ControlListener {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-
-        if (((ToolBarAction) e.getSource()).isSelected()) {
-
+        if (e.getSource() == activateAction) {
             if (conn != null) conn.close();
-
-            setEnabled(true);
-
+            setGuiEnable(true);
         } else {
-            setEnabled(false);
+            setGuiEnable(false);
         }
-        // ((ToolBarAction) e.getSource()).setSelected(!((ToolBarAction)
-        // e.getSource()).isSelected());
     }
 
     public void addToText(final User user, String style, String msg) {
@@ -1090,10 +1083,6 @@ public class JDChat extends PluginOptional implements ControlListener {
             }
         };
         frame.setLayout(new MigLayout("ins 0, wrap 1", "[grow,fill]", "[grow,fill][]"));
-
-        top = new JLabel(JDL.L("jd.plugins.optional.jdchat.JDChat.topic.default", "Loading Message of the day"));
-        top.setToolTipText(JDL.L("jd.plugins.optional.jdchat.JDChat.topic.tooltip", "Message of the day"));
-        frame.add(top, "dock north,gapx 5px");
         closeTab = new JButton("Close Tab");
         closeTab.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent e) {
@@ -1446,7 +1435,7 @@ public class JDChat extends PluginOptional implements ControlListener {
                     conn.close();
                 }
             } else if (Regex.matches(cmd, CMD_EXIT)) {
-                setEnabled(false);
+                setGuiEnable(false);
             } else {
                 addToText(null, STYLE_ERROR, "Command /" + cmd + " is not available");
             }
@@ -1459,13 +1448,22 @@ public class JDChat extends PluginOptional implements ControlListener {
         textField.requestFocus();
     }
 
-    public void setEnabled(boolean b) {
-
+    @Override
+    public void setGuiEnable(boolean b) {
         if (b) {
-
             if (view == null) {
                 initGUI();
-                view = new JDChatView();
+                view = new JDChatView() {
+
+                    private static final long serialVersionUID = 3966113588850405974L;
+
+                    @Override
+                    protected void initMenu(JMenuBar menubar) {
+                        menubar.add(top = new JLabel(JDL.L("jd.plugins.optional.jdchat.JDChat.topic.default", "Loading Message of the day")));
+                        top.setToolTipText(JDL.L("jd.plugins.optional.jdchat.JDChat.topic.tooltip", "Message of the day"));
+                    }
+
+                };
                 view.getBroadcaster().addListener(new SwitchPanelListener() {
 
                     @Override

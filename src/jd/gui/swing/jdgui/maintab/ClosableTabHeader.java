@@ -16,7 +16,6 @@
 
 package jd.gui.swing.jdgui.maintab;
 
-
 import java.awt.event.MouseEvent;
 
 import javax.swing.JButton;
@@ -31,36 +30,33 @@ public class ClosableTabHeader extends JPanel {
 
     private static final long serialVersionUID = 4463352125800695922L;
 
-    private JButton closeIcon;
-
     public ClosableTabHeader(ClosableView view) {
         setLayout(new MigLayout("ins 0", "[grow,fill]"));
         JLabel l1 = new JLabel(view.getTitle());
 
-        closeIcon = new JButton(view.getCloseAction());
+        final JButton closeIcon = new JButton(view.getCloseAction());
         closeIcon.setContentAreaFilled(false);
         closeIcon.setBorderPainted(false);
         closeIcon.addMouseListener(new JDMouseAdapter() {
+            @Override
             public void mouseEntered(MouseEvent e) {
                 closeIcon.setContentAreaFilled(true);
                 closeIcon.setBorderPainted(true);
             }
 
+            @Override
             public void mouseExited(MouseEvent e) {
                 closeIcon.setContentAreaFilled(false);
                 closeIcon.setBorderPainted(false);
             }
         });
         closeIcon.setText(null);
-        // closeIcon.setVisible(false);
         putClientProperty("paintActive", Boolean.TRUE);
         l1.setIcon(view.getIcon());
-        add(l1);
-
-        add(closeIcon, "dock east, hidemode 3,gapleft 5,height 16!, width 16!");
-
-        setOpaque(false);
         l1.setOpaque(false);
 
+        add(l1);
+        add(closeIcon, "dock east, hidemode 3,gapleft 5,height 16!, width 16!");
+        setOpaque(false);
     }
 }

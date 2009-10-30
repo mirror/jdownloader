@@ -43,7 +43,7 @@ import jd.utils.locale.JDL;
  * @author Greeny
  * @author coalado
  */
-@OptionalPlugin(rev = "$Revision$", id = "langfileditor", interfaceversion = 5)
+@OptionalPlugin(rev = "$Revision$", id = "langfileditor", hasGui = true, interfaceversion = 5)
 public class LangFileEditor extends PluginOptional {
 
     private final SingletonPanel lfe;
@@ -117,13 +117,17 @@ public class LangFileEditor extends PluginOptional {
     @Override
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == activateAction) {
-            if (lfeView == null) lfeView = new LFEView(lfe.getPanel(), this);
+            setGuiEnable(activateAction.isSelected());
+        }
+    }
 
-            if (((MenuAction) e.getSource()).isSelected()) {
-                SwingGui.getInstance().setContent(lfeView);
-            } else {
-                lfeView.close();
-            }
+    @Override
+    public void setGuiEnable(boolean b) {
+        if (b) {
+            if (lfeView == null) lfeView = new LFEView(lfe.getPanel(), this);
+            SwingGui.getInstance().setContent(lfeView);
+        } else {
+            if (lfeView != null) lfeView.close();
         }
     }
 
@@ -148,11 +152,6 @@ public class LangFileEditor extends PluginOptional {
         menu.add(activateAction);
 
         return menu;
-    }
-
-    @Override
-    public String getCoder() {
-        return "Greeny";
     }
 
     @Override
