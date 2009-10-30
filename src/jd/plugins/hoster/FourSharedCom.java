@@ -20,32 +20,43 @@ import java.io.IOException;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
-import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4shared.com" }, urls = { "http://[\\w\\.]*?4shared.com/file/\\d+?/.*" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4shared.com" }, urls = { "http://[\\w\\.]*?4shared.com/file/\\d+?/.*" }, flags = { 2 })
 public class FourSharedCom extends PluginForHost {
 
     public FourSharedCom(PluginWrapper wrapper) {
         super(wrapper);
+        // enablePremium("http://www.4shared.com/ref/14368016/1");
     }
 
-    @Override
     public String getAGBLink() {
         return "http://www.4shared.com/terms.jsp";
     }
 
-    @Override
+    public void login(Account account) throws IOException, PluginException {
+        setBrowserExclusive();
+        br.getHeaders().put("4langcookie", "en");
+        br.getPage("http://www.4shared.com/login.jsp");
+        br.postPage("http://www.4shared.com/index.jsp", "afp=&afu=&df=&rdf=&cff=&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&openid=");
+        String premlogin = br.getCookie("http://www.4shared.com", "premiumLogin");
+        if (premlogin == null || !premlogin.contains("true")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (br.getCookie("http://www.4shared.com", "Password") == null || br.getCookie("http://www.4shared.com", "Login") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    }
+
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         try {
             this.setBrowserExclusive();
+            br.getHeaders().put("4langcookie", "en");
             br.setFollowRedirects(true);
             br.getPage(downloadLink.getDownloadURL());
             if (br.containsHTML("enter a password to access")) {
@@ -78,45 +89,45 @@ public class FourSharedCom extends PluginForHost {
         }
     }
 
-    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         String url = br.getRegex("<a href=\"(http://www.4shared.com/get.*?)\" class=\".*?dbtn.*?\" tabindex=\"1\">").getMatch(0);
-
-        br.getPage(url);
-        url = br.getRegex("id=\\'divDLStart\\' >.*?<a href=\\'(.*?)\'>Click here to download this file</a>.*?</div>").getMatch(0);
-        if (url.contains("linkerror.jsp")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        this.sleep(Integer.parseInt(br.getRegex(" var c = (\\d+?);").getMatch(0)) * 1000l, downloadLink);
-        downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.4sharedcom.waiting", "Waiting..."));
-        downloadLink.requestGuiUpdate();
-        // Das wartesystem lässt link b warten während link a lädt
-        // while (COUNTER > 0) {
-        // Thread.sleep(100);
-        // }
-        // increaseCounter();
+        if (url == null) {
+            /* maybe directdownload */
+            url = br.getRegex("startDownload.*?window\\.location.*?(http://.*?)\"").getMatch(0);
+            if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
+            br.getPage(url);
+            url = br.getRegex("id=\\'divDLStart\\' >.*?<a href=\\'(.*?)\'>Click here to download this file</a>.*?</div>").getMatch(0);
+            if (url.contains("linkerror.jsp")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            sleep(Integer.parseInt(br.getRegex(" var c = (\\d+?);").getMatch(0)) * 1000l, downloadLink);
+        }
         br.setDebug(true);
+
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, false, 1);
 
         String error = new Regex(dl.getConnection().getURL(), "\\?error(.*)").getMatch(0);
-        if (error != null) { throw new PluginException(LinkStatus.ERROR_RETRY, error); }
-
+        if (error != null) {
+            dl.getConnection().disconnect();
+            throw new PluginException(LinkStatus.ERROR_RETRY, error);
+        }
+        if (!dl.getConnection().isContentDisposition()) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl.startDownload();
     }
 
-    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 10;
     }
 
-    @Override
     public void reset() {
     }
 
-    @Override
     public void resetPluginGlobals() {
     }
 
-    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 

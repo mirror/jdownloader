@@ -24,6 +24,9 @@ import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -33,22 +36,67 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filebase.to" }, urls = { "http://[\\w\\.]*?filebase\\.to/files/\\d{1,}/.*" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filebase.to" }, urls = { "http://[\\w\\.]*?filebase\\.to/files/\\d{1,}/.*" }, flags = { 2 })
 public class FileBaseTo extends PluginForHost {
 
     public FileBaseTo(PluginWrapper wrapper) {
         super(wrapper);
+        /* not complete yet */
+        // enablePremium("http://filebase.to/buypremium/");
     }
 
-    @Override
     public String getAGBLink() {
         return "http://filebase.to/tos/";
     }
 
-    @Override
+    public void login(Account account) throws Exception {
+        this.setBrowserExclusive();
+        br.setCookie("http://filebase.to", "fb_language", "de");
+        br.getPage("http://filebase.to/");
+        br.postPage("http://filebase.to/index2.php", "fb_username=" + Encoding.urlEncode(account.getUser()) + "&fb_password=" + Encoding.urlEncode(account.getPass()) + "&fb_cookie=fb_cookie&login_submit=Login");
+        if (br.getCookie("http://filebase.to/", "fb_username") == null || br.getCookie("http://filebase.to/", "fb_password") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        br.getPage("http://filebase.to/user/premium/");
+        String type = br.getRegex("Account-Typ:.*?color=.*?>.*?>(.*?)<").getMatch(0);
+        if (type == null || !type.equalsIgnoreCase("Premium")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    }
+
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        String expires = br.getRegex("Expire Date.*?>.*?class=.*?>.*?>(.*?)<").getMatch(0);
+        if (expires != null) {
+            /* FIXME: days and months right? */
+            ai.setValidUntil(Regex.getMilliSeconds(expires, "MM-dd-yy", null));
+            account.setValid(true);
+        } else {
+            account.setValid(false);
+        }
+        return ai;
+    }
+
+    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+        requestFileInformation(downloadLink);
+        login(account);
+        br.getPage(downloadLink.getDownloadURL());
+        Form dlForm = br.getForm(0);
+        if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlForm, true, 1);
+        if (!dl.getConnection().isContentDisposition()) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         // br.setCookiesExclusive(true);
         br.clearCookies(getHost());
+        br.setCookie("http://filebase.to", "fb_language", "de");
         String url = downloadLink.getDownloadURL();
         br.getPage(url);
         downloadLink.setName(Plugin.extractFileNameFromURL(url).replaceAll("&dl=1", ""));
@@ -60,7 +108,6 @@ public class FileBaseTo extends PluginForHost {
 
     }
 
-    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         String formact = downloadLink.getDownloadURL();
@@ -81,8 +128,10 @@ public class FileBaseTo extends PluginForHost {
                 dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlAction, "wait=" + Encoding.urlEncode("Download - " + downloadLink.getName()));
             } else {
                 dlAction = br.getRegex("value=\"(http.*?/download/ticket.*?)\"").getMatch(0);
+
                 if (dlAction == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlAction);
+
             }
             br.setDebug(true);
             URLConnectionAdapter con = dl.getConnection();
@@ -105,20 +154,16 @@ public class FileBaseTo extends PluginForHost {
         }
     }
 
-    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    @Override
     public void reset() {
     }
 
-    @Override
     public void resetPluginGlobals() {
     }
 
-    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 }

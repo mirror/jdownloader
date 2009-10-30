@@ -38,7 +38,7 @@ public class ShareCashOrg extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
-        // Jiaz keine Ahnung ob diese Cookies gesetzt werden müssen oder net...
+        br.getCookies("http://69.93.2.170/").clear();
         br.setCookie("http://69.93.2.170/", "done", "yeppp");
         br.setCookie("http://69.93.2.170/", "ref", Encoding.urlEncode(downloadLink.getDownloadURL()));
         br.getPage(downloadLink.getDownloadURL());
@@ -69,6 +69,9 @@ public class ShareCashOrg extends PluginForHost {
         if (dllink0 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String dllink = "http://69.93.2.170/" + dllink0;
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        if (!dl.getConnection().isContentDisposition()) {
+            br.followConnection();
+        }
         dl.startDownload();
     }
 
