@@ -182,6 +182,7 @@ public class UploadingCom extends PluginForHost {
         setBrowserExclusive();
         br.getHeaders().put("User-Agent", userAgent);
         br.setFollowRedirects(true);
+        br.setCookie("http://www.uploading.com/", "lang", "1");
         br.setCookie("http://www.uploading.com/", "language", "1");
         br.setCookie("http://www.uploading.com/", "setlang", "en");
         br.setCookie("http://www.uploading.com/", "_lang", "en");
