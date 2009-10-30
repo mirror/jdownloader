@@ -55,7 +55,6 @@ public class ExternReconnect extends ReconnectMethod {
 
     // @Override
     protected boolean runCommands(ProgressController progress) {
-        int waitForReturn = configuration.getIntegerProperty(PROPERTY_IP_WAIT_FOR_RETURN, -1);
         String command = configuration.getStringProperty(PROPERTY_RECONNECT_COMMAND);
 
         File f = new File(command);
@@ -63,8 +62,12 @@ public class ExternReconnect extends ReconnectMethod {
         String executeIn = t.substring(0, t.indexOf(f.getName()) - 1);
 
         String parameter = configuration.getStringProperty(PROPERTY_RECONNECT_PARAMETER);
-
-        logger.finer("Execute Returns: " + JDUtilities.runCommand(command, Regex.getLines(parameter), executeIn, waitForReturn));
+        /*
+         * timeout set to 0 to avoid blocking streamobserver, because not every
+         * external tool will use stdin/stdout/stderr! we do not use the streams
+         * anyway so who cares
+         */
+        logger.finer("Execute Returns: " + JDUtilities.runCommand(command, Regex.getLines(parameter), executeIn, 0));
 
         return true;
     }
