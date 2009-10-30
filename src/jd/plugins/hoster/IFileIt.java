@@ -87,10 +87,13 @@ public class IFileIt extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         br.cloneBrowser().getPage("http://ifile.it/ads/adframe.js");
-        String downlink = br.getRegex("var url =.*?\"(.*?)\"").getMatch(0);
-        String esn = br.getRegex("var.*?esn =.*?(\\d+);<").getMatch(0);
-        if (downlink == null || esn == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String finaldownlink = "http://ifile.it/" + downlink + esn;
+        String downlink = br.getRegex("var.*?fsa.*?=.*?'(.*?)'").getMatch(0);
+        String downid = br.getRegex("var.*?fs =.*?'(.*?)'").getMatch(0);
+        String esn = br.getRegex("var.*?esn.*?=.*?(\\d+);<").getMatch(0);
+        if (downlink == null || esn == null || downid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // Example how current links(last updated plugin-links) look(ed) like
+        // http://ifile.it/download:dl_request?x64=741603&type=na&esn=1&b3da197159a22d301ad99f58f8137557=9bf31c7ff062936a96d3c8bd1f8f2ff3
+        String finaldownlink = "http://ifile.it/download:dl_request?" + downlink + "&type=na&esn=" + esn + "&" + downid;
         br.getPage(finaldownlink);
         if (!br.containsHTML("status\":\"ok\"")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage("http://ifile.it/dl");
@@ -98,7 +101,7 @@ public class IFileIt extends PluginForHost {
             Browser br2 = br.cloneBrowser();
             for (int i = 0; i <= 5; i++) {
                 String code = getCaptchaCode("http://ifile.it/download:captcha?0." + Math.random(), downloadLink);
-                String captchaget = "http://ifile.it/" + downlink.replace("&type=na", "") + "&type=simple&esn=" + esn + "&9c16d=" + code;
+                String captchaget = "http://ifile.it/download:dl_request?" + downlink + "&type=simple&esn=0&9c16d=" + code + "&" + downid;
                 br2.getPage(captchaget);
                 if (br2.containsHTML("\"retry\":\"retry\"")) continue;
                 br.getPage("http://ifile.it/dl");
@@ -108,6 +111,7 @@ public class IFileIt extends PluginForHost {
         }
         String dllink = br.getRegex("req_btn\".*?href=\"(http://.*?\\.ifile\\.it/.*?)\">").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.cloneBrowser().getPage("http://ifile.it/ads/adframe.js");
         br.setFollowRedirects(false);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -3);
         if (dl.getConnection().getContentType().contains("html")) {
