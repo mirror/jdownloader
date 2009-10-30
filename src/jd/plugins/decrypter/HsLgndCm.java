@@ -32,7 +32,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "houselegend.com" }, urls = { "http://[\\w\\.]*?houselegend\\.com/[0-9]+.+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {"houselegend.com"}, urls = {"http://[\\w\\.]*?houselegend\\.com/(([0-9]+.+)|(redirector.+))"}, flags = {0})
 public class HsLgndCm extends PluginForDecrypt {
 
     private Pattern sitePattern = Pattern.compile("target='_blank' href='(.*?houselegend\\.com/redirector\\.php\\?url=.*?)'>", Pattern.CASE_INSENSITIVE);
@@ -53,12 +53,18 @@ public class HsLgndCm extends PluginForDecrypt {
             if (br.containsHTML("Registration\"><b>REGISTER</b></a> before you can view this text")) {
                 getUserLogin(parameter);
             } else {
-                String[] links = br.getRegex(sitePattern).getColumn(0);
+                String[] links;
+                if (parameter.contains("redirector.php?")) {
+                    links = new String[]{parameter};
+                } else {
+                    links = br.getRegex(sitePattern).getColumn(0);
+                }
                 if (links == null || links.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 for (String link : links) {
-                    br.getPage(link);
+                    br.getPage(Encoding.htmlDecode(link));
                     decryptedLinks.add(createDownloadlink(br.getRegex(redirectorPattern).getMatch(0)));
                 }
+                return decryptedLinks;
             }
         }
         throw new DecrypterException("Login or/and password wrong");
