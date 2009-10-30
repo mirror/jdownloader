@@ -737,14 +737,19 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         this.setEnabled(true);
         this.getTransferStatus().usePremium(false);
         this.getTransferStatus().setResumeSupport(false);
-        deleteFile();
+        deleteFile(true, true);
         finalFileName = null;
         DownloadWatchDog.getInstance().resetIPBlockWaittime(getHost());
         DownloadWatchDog.getInstance().resetTempUnavailWaittime(getHost());
         if (getPlugin() != null) getPlugin().resetDownloadlink(this);
     }
 
-    public void deleteFile() {
+    /*
+     * deletes the final downloaded file if finalfile is true deletes the
+     * partfile if partfile is true deletes the downloadfolder if its emptry and
+     * NOT equal to default downloadfolder
+     */
+    public void deleteFile(boolean partfile, boolean finalfile) {
         int maxtries = 5;
         while (getLinkStatus().isPluginActive()) {
             try {
@@ -755,12 +760,12 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
             maxtries--;
             if (maxtries == 0) break;
         }
-        if (new File(this.getFileOutput()).exists()) {
+        if (finalfile && new File(this.getFileOutput()).exists()) {
             if (!new File(this.getFileOutput()).delete()) {
                 logger.severe(JDL.L("system.download.errors.couldnotdelete", "Could not delete file") + this.getFileOutput());
             }
         }
-        if (new File(this.getFileOutput() + ".part").exists()) {
+        if (partfile && new File(this.getFileOutput() + ".part").exists()) {
             if (!new File(this.getFileOutput() + ".part").delete()) {
                 logger.severe(JDL.L("system.download.errors.couldnotdelete", "Could not delete file") + this.getFileOutput());
             }

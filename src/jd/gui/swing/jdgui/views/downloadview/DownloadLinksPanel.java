@@ -605,6 +605,9 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
                     if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, JDL.L("gui.downloadlist.delete", "Ausgewählte Links wirklich entfernen?") + " (" + JDL.LF("gui.downloadlist.delete.size_packagev2", "%s links", selectedLinks.size()) + ")"), UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
                         for (int i = 0; i < selectedLinks.size(); i++) {
                             selectedLinks.get(i).setEnabled(false);
+                        }
+                        for (int i = 0; i < selectedLinks.size(); i++) {
+                            selectedLinks.get(i).deleteFile(true, false);
                             selectedLinks.get(i).getFilePackage().remove(selectedLinks.get(i));
                         }
                     }
@@ -616,7 +619,7 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
                             selectedLinks.get(i).setEnabled(false);
                         }
                         for (int i = 0; i < selectedLinks.size(); i++) {
-                            selectedLinks.get(i).deleteFile();
+                            selectedLinks.get(i).deleteFile(true, true);
                             selectedLinks.get(i).getFilePackage().remove(selectedLinks.get(i));
                         }
                     }

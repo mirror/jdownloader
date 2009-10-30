@@ -123,6 +123,12 @@ public class MainGui extends SwitchPanel implements ActionListener, MouseListene
         } else if (e.getSource() == edit) {
             if (table.getSelectedRow() < 0) return;
             Actions a = schedule.getActions().get(table.getSelectedRow());
+            for (int i = 0; i < tabs.getTabCount(); i++) {
+                if ((tabs.getComponentAt(i) instanceof AddGui) && ((AddGui) tabs.getComponentAt(i)).getActions() == a) {
+                    tabs.setSelectedIndex(i);
+                    return;
+                }
+            }
             tabs.addTab(a.getName(), new AddGui(schedule, this, a, true));
             tabs.setSelectedIndex(tabs.getTabCount() - 1);
         }
