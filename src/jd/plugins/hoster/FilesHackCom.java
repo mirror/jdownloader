@@ -118,11 +118,20 @@ public class FilesHackCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.setDebug(true);
         String dlink = link.getDownloadURL();
-        dlink = dlink.replace("file.", "file_download.");
+        String fid = new Regex(dlink, "fileshack\\.com/file\\.x/(\\d+)").getMatch(0);
+        dlink = "http://www.fileshack.com/login.x?fid=" + fid;
         br.getPage(dlink);
         Form form = br.getFormbyProperty("name", "nologinform");
         if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.submitForm(form);
+        if (br.containsHTML("FileShack Age Verification")) {
+            Form ageform = br.getForm(2);
+            if (ageform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            ageform.put("birth_month", "11");
+            ageform.put("birth_day", "15");
+            ageform.put("birth_year", "1970");
+            br.submitForm(ageform);
+        }
 
         String[] strings = br.getRegex(SERVERS_STRINGS_PATTERN).getColumn(0);
         if (strings.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
