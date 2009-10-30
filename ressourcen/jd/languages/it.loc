@@ -1175,7 +1175,6 @@ plugins.host.shareswiftcom.uncheckableduewaittime = Attendere o ricollegare il d
 plugins.host.uploadlinecom.premiumonly = Uploadline.com: file oltre 1GB sono disponibili solo per utenti Premium
 plugins.hoster.2sharedcom.errors.sessionlimit = Raggiunto il limite della sessione
 plugins.hoster.2sharedcom.errors.wrongcaptcha = CAPTCHA errato
-plugins.hoster.4sharedcom.waiting = Attesa...
 plugins.hoster.adrivecom.errors.toomanyconnections = Troppe connessioni
 plugins.hoster.bluehostto.time = BH libero consentito solo da 0 PM a 10 AM 
 plugins.hoster.czsharecom.nocreditleft = Nessun credito traffico disponibile
