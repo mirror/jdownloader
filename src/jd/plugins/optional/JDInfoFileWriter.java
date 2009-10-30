@@ -47,7 +47,7 @@ public class JDInfoFileWriter extends PluginOptional implements ControlListener 
 
     private static final String FILENAME_DEFAULT = "%LAST_FINISHED_PACKAGE.DOWNLOAD_DIRECTORY%/%LAST_FINISHED_PACKAGE.PACKAGENAME%.info";
 
-    private static final String INFO_STRING_DEFAULT = "Passwort: %LAST_FINISHED_PACKAGE.PASSWORD%\r\n%LAST_FINISHED_PACKAGE.FILELIST%\r\nFertig gestellt am %SYSTEM.DATE% um %SYSTEM.TIME% Uhr";
+    private static final String INFO_STRING_DEFAULT = "Password: %LAST_FINISHED_PACKAGE.PASSWORD%\r\n%LAST_FINISHED_PACKAGE.FILELIST%\r\nFinalized %SYSTEM.DATE% to %SYSTEM.TIME% Clock";
 
     private static final String PARAM_FILENAME = "FILENAME";
 
@@ -67,7 +67,7 @@ public class JDInfoFileWriter extends PluginOptional implements ControlListener 
         initConfig();
     }
 
-    // @Override
+    @Override
     public void controlEvent(ControlEvent event) {
         super.controlEvent(event);
         if (event.getID() == ControlEvent.CONTROL_PLUGIN_INACTIVE && event.getSource() instanceof PluginForHost) {
@@ -79,12 +79,12 @@ public class JDInfoFileWriter extends PluginOptional implements ControlListener 
         }
     }
 
-    // @Override
+    @Override
     public ArrayList<MenuAction> createMenuitems() {
         return null;
     }
 
-    // @Override
+    @Override
     public boolean initAddon() {
         JDUtilities.getController().addControlListener(this);
         return true;
@@ -100,7 +100,7 @@ public class JDInfoFileWriter extends PluginOptional implements ControlListener 
         config.addEntry(txtInfo = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, subConfig, PARAM_INFO_STRING, JDL.L("plugins.optional.infoFileWriter.content", "Content:")).setDefaultValue(INFO_STRING_DEFAULT));
     }
 
-    // @Override
+    @Override
     public void actionPerformed(ActionEvent e) {
         JComboBox cmb = ((JComboBox) ((GUIConfigEntry) cmbVars.getGuiListener()).getInput()[0]);
         if (cmb.getSelectedIndex() < 0) return;
@@ -108,7 +108,7 @@ public class JDInfoFileWriter extends PluginOptional implements ControlListener 
         txt.insert("%" + Replacer.getKey(cmb.getSelectedIndex()) + "%", txt.getCaretPosition());
     }
 
-    // @Override
+    @Override
     public void onExit() {
         JDUtilities.getController().removeControlListener(this);
     }
