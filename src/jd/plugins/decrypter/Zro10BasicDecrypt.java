@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zero10.info" }, urls = { "http://[\\w\\.]*?((zero10\\.info|save-link\\.info|share-link\\.info|h-link\\.us|zero10\\.us|darkhorse\\.fi5\\.us|arbforce\\.com/short|get\\.el3lam\\.com)/[0-9]+|url-2\\.com/[A-Z]+/)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zero10.info" }, urls = { "http://[\\w\\.]*?((zero10\\.info|save-link\\.info|share-link\\.info|h-link\\.us|zero10\\.us|(darkhorse|brg8)\\.fi5\\.us|arbforce\\.com/short|get\\.el3lam\\.com)/[0-9]+|url-2\\.com/[A-Z]+/)" }, flags = { 0 })
 public class Zro10BasicDecrypt extends PluginForDecrypt {
 
     public Zro10BasicDecrypt(PluginWrapper wrapper) {
@@ -45,7 +45,7 @@ public class Zro10BasicDecrypt extends PluginForDecrypt {
         if (parameter.contains("url-2.com/")) {
             br.getPage(parameter);
             finallink2 = br.getRegex("language='javascript'>.*?\\('(.*?)'\\)").getMatch(0);
-            //Errorhandling
+            // Errorhandling
             if (finallink2 == null && br.containsHTML("Turn this long URL") && !br.containsHTML("Click here to go")) {
                 logger.warning("The requested document was not found on this server.");
                 logger.warning(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
@@ -56,14 +56,14 @@ public class Zro10BasicDecrypt extends PluginForDecrypt {
             String redirectlink = "http://www.arbforce.com/short/2.php?" + ID;
             br.getPage(redirectlink);
             finallink2 = br.getRedirectLocation();
-            //Errorhandling
+            // Errorhandling
             if (br.getRedirectLocation() == null) {
                 logger.warning("The requested document was not found on this server.");
                 logger.warning(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
                 return new ArrayList<DownloadLink>();
             }
         } else {
-            String Domain = new Regex(parameter, "((zero10\\.us|save-link\\.info|share-link\\.info|h-link\\.us|zero10\\.info|darkhorse.fi5.us|get\\.el3lam\\.com))/").getMatch(0);
+            String Domain = new Regex(parameter, "((zero10\\.us|save-link\\.info|share-link\\.info|h-link\\.us|zero10\\.info|(darkhorse|brg8)\\.fi5\\.us|get\\.el3lam\\.com))/").getMatch(0);
             String ID = new Regex(parameter, "[0-9a-z.]+/([0-9]+)").getMatch(0);
             String m1link = "http://www." + Domain + "/m1.php?id=" + ID;
             br.getPage(m1link);
@@ -82,8 +82,5 @@ public class Zro10BasicDecrypt extends PluginForDecrypt {
         decryptedLinks.add(createDownloadlink(finallink));
 
         return decryptedLinks;
-
-        // @Override
-
     }
 }

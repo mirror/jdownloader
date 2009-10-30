@@ -30,7 +30,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidshark.pl" }, urls = { "http://[\\w\\.]*?rapidshark\\.pl/.*?[\\w]+/?" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidshark.pl" }, urls = { "http://[\\w\\.]*?rapidshark\\.pl/[a-z0-9]{12}" }, flags = { 0 })
 public class RapidSharkPl extends PluginForHost {
 
     public RapidSharkPl(PluginWrapper wrapper) {
@@ -121,20 +121,31 @@ public class RapidSharkPl extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage("http://www.rapidshark.pl/?op=change_lang&lang=english");
+        br.setCookie("http://www.rapidshark.pl", "lang", "english");
         br.getPage(downloadLink.getDownloadURL());
+        System.out.print(br.toString());
         if (br.containsHTML("No such file")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
-        String filename = Encoding.htmlDecode(br.getRegex("<h2>Datei\\sherunterladen\\s(.*?)</h2>").getMatch(0));
-        if (filename == null || filename.length() < 3) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String filename = br.getRegex("fname\" value=\"(.*?)\"").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<h2>Download File(.*?)</h2>").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("You have requested <font color=.*?>http://www\\.rapidshark\\.pl/.*?/(.*?)</font>").getMatch(0);
+            }
+        }
+        String filesize = br.getRegex("You have requested <font color=.*?>.*?</font>.*?\\((.*?)\\)</font>").getMatch(0);
+        if (filename == null) {
+            logger.warning("Filename regex is broken");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         logger.fine("Obtained file name is '" + filename + "'");
-
-        String filesize = br.getRegex(filename + "</font>\\s\\((.*?)\\)</font>").getMatch(0);
-        if (filesize == null || filesize.length() < 5) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        logger.fine("Obtained file size is '" + filesize + "'");
-
-        downloadLink.setName(filename);
-        downloadLink.setDownloadSize(Regex.getSize(filesize));
+        downloadLink.setName(filename.trim());
+        if (filesize != null) {
+            downloadLink.setDownloadSize(Regex.getSize(filesize));
+            logger.fine("Obtained file size is '" + filesize + "'");
+        } else {
+            logger.warning("Plugin damaged, no filesize recognized");
+        }
         return AvailableStatus.TRUE;
     }
 
