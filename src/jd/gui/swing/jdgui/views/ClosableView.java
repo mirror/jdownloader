@@ -16,23 +16,18 @@
 
 package jd.gui.swing.jdgui.views;
 
-import java.awt.Dimension;
 import java.awt.event.ActionEvent;
-import java.awt.event.MouseEvent;
 
 import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.Icon;
-import javax.swing.JButton;
 import javax.swing.JMenuBar;
 import javax.swing.UIManager;
 
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.MainTabbedPane;
-import jd.gui.swing.jdgui.interfaces.JDMouseAdapter;
 import jd.gui.swing.jdgui.interfaces.View;
-import jd.utils.locale.JDL;
 
 abstract public class ClosableView extends View {
 
@@ -54,31 +49,10 @@ abstract public class ClosableView extends View {
         closeAction = new CloseAction();
         if (menubar.getComponentCount() > count) {
             menubar.add(Box.createHorizontalGlue());
-
-            final JButton bt = new JButton(closeAction);
-            bt.setPreferredSize(new Dimension(closeAction.getWidth(), closeAction.getHeight()));
-            bt.setContentAreaFilled(false);
-            bt.setBorderPainted(false);
-            bt.addMouseListener(new JDMouseAdapter() {
-                public void mouseEntered(MouseEvent e) {
-                    bt.setContentAreaFilled(true);
-                    bt.setBorderPainted(true);
-                }
-
-                public void mouseExited(MouseEvent e) {
-                    bt.setContentAreaFilled(false);
-                    bt.setBorderPainted(false);
-                }
-            });
-            bt.setText(null);
-            bt.setToolTipText(JDL.LF("jd.gui.swing.jdgui.views.ClosableView.closebtn.tooltip", "Close %s", this.getTitle()));
-
             Box panel = new Box(1);
-            panel.add(bt);
             panel.setOpaque(false);
             panel.setBorder(BorderFactory.createEmptyBorder(0, 0, 1, 0));
             menubar.add(panel);
-
             add(menubar, "dock NORTH,height 16!,gapbottom 2");
         }
     }

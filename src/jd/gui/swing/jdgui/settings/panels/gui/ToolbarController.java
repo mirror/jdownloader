@@ -168,7 +168,7 @@ public class ToolbarController extends ConfigPanel {
         public void setValueAt(Object value, int row, int col) {
             if (col == 0) {
                 if ((Boolean) value) {
-                    list.add(actions.get(row).getID());
+                    if (!list.contains(actions.get(row).getID())) list.add(actions.get(row).getID());
                 } else {
                     // if there are accidently more entries
                     while (list.remove(actions.get(row).getID())) {

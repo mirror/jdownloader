@@ -43,6 +43,8 @@ public class ToolBar extends JToolBar {
 
     private static final long serialVersionUID = 7533137014274040205L;
 
+    private static final Object UPDATELOCK = new Object();
+
     public static final ArrayList<String> DEFAULT_LIST = new ArrayList<String>();
     static {
         DEFAULT_LIST.add("toolbar.control.start");
@@ -81,14 +83,14 @@ public class ToolBar extends JToolBar {
 
     public void setList(String[] newlist) {
         if (newlist == current) return;
-        synchronized (current) {
+        synchronized (UPDATELOCK) {
             if (newlist == null || newlist.length == 0) {
                 current = DEFAULT_LIST.toArray(new String[] {});
             } else {
                 current = newlist;
             }
+            this.updateToolbar();
         }
-        this.updateToolbar();
     }
 
     public String[] getList() {
@@ -226,19 +228,20 @@ public class ToolBar extends JToolBar {
      * UPdates the toolbar
      */
     public void updateToolbar() {
+        synchronized (UPDATELOCK) {
+            new GuiRunnable<Object>() {
+                @Override
+                public Object runSave() {
+                    setVisible(false);
+                    removeAll();
+                    initToolbar(current);
 
-        new GuiRunnable<Object>() {
-            @Override
-            public Object runSave() {
-                setVisible(false);
-                removeAll();
-                initToolbar(current);
-
-                setVisible(true);
-                revalidate();
-                return null;
-            }
-        }.waitForEDT();
+                    setVisible(true);
+                    revalidate();
+                    return null;
+                }
+            }.waitForEDT();
+        }
     }
 
 }

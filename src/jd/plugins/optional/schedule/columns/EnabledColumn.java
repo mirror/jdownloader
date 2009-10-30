@@ -25,7 +25,6 @@ import javax.swing.JCheckBox;
 import jd.gui.swing.components.table.JDTableColumn;
 import jd.gui.swing.components.table.JDTableModel;
 import jd.plugins.optional.schedule.Actions;
-import jd.plugins.optional.schedule.Schedule;
 
 import org.jdesktop.swingx.renderer.JRendererCheckBox;
 
@@ -34,11 +33,9 @@ public class EnabledColumn extends JDTableColumn implements ActionListener {
     private static final long serialVersionUID = 2684119930915940150L;
     private JRendererCheckBox boolrend;
     private JCheckBox checkbox;
-    private Schedule schedule;
 
-    public EnabledColumn(String name, JDTableModel table, Schedule schedule) {
+    public EnabledColumn(String name, JDTableModel table) {
         super(name, table);
-        this.schedule = schedule;
         boolrend = new JRendererCheckBox();
         boolrend.setHorizontalAlignment(JCheckBox.CENTER);
         checkbox = new JCheckBox();
@@ -82,8 +79,6 @@ public class EnabledColumn extends JDTableColumn implements ActionListener {
     @Override
     public void setValue(Object value, Object object) {
         ((Actions) object).setEnabled((Boolean) value);
-        schedule.saveActions();
-        schedule.updateTable();
     }
 
     @Override

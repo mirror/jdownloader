@@ -883,6 +883,7 @@ public class JDChat extends PluginOptional implements ControlListener {
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PARAM_USERCOLOR, JDL.L("plugins.optional.jdchat.usercolor", "Only black usernames?")));
         String[] positions = new String[] { JDL.L("plugins.jdchat.userlistposition_right", "Right"), JDL.L("plugins.jdchat.userlistposition_left", "Left") };
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, subConfig, PARAM_USERLISTPOSITION, positions, JDL.L("plugins.jdchat.userlistposition", "Userlist position: ")));
+        cfg.setDefaultValue(0);
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, subConfig, PARAM_PERFORM, JDL.L("plugins.optional.jdchat.performonstart", "Perform commands after connection estabilished")));
         ConfigContainer lngse = new ConfigContainer(JDL.L("plugins.optional.jdchat.locale", "Language settings"));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CONTAINER, lngse));
@@ -1108,6 +1109,7 @@ public class JDChat extends PluginOptional implements ControlListener {
             frame.add(tabbedPane, "split 2");
             frame.add(scrollPane_userlist, "width 180:180:180");
             break;
+        default:
         case 1:
             frame.add(scrollPane_userlist, "width 180:180:180 ,split 2");
             frame.add(tabbedPane);
