@@ -49,33 +49,38 @@ public class HsLgndCm extends PluginForDecrypt {
         String parameter = param.toString();
         br.setCookiesExclusive(false);
         br.getPage(parameter);
-        for (int i = 0; i < 4; i++) {
-            if (br.containsHTML("Registration\"><b>REGISTER</b></a> before you can view this text")) {
-                getUserLogin(parameter);
-            } else {
-                String[] links;
-                if (parameter.contains("redirector.php?")) {
-                    links = new String[]{parameter};
-                } else {
-                    links = br.getRegex(sitePattern).getColumn(0);
-                }
-                if (links == null || links.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                for (String link : links) {
-                    br.getPage(Encoding.htmlDecode(link));
-                    decryptedLinks.add(createDownloadlink(br.getRegex(redirectorPattern).getMatch(0)));
-                }
-                return decryptedLinks;
-            }
+        String[] links;
+        if (parameter.contains("redirector.php?")) {
+            links = new String[]{parameter};
+        } else {
+            if (!getUserLogin(parameter)) return new ArrayList<DownloadLink>();
+            links = br.getRegex(sitePattern).getColumn(0);
         }
-        throw new DecrypterException("Login or/and password wrong");
+        if (links == null || links.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        for (String link : links) {
+            br.getPage(Encoding.htmlDecode(link));
+            decryptedLinks.add(createDownloadlink(br.getRegex(redirectorPattern).getMatch(0)));
+        }
+        return decryptedLinks;
+
+
+
     }
 
-    private void getUserLogin(String url) throws IOException {
-        String login = UserIO.getInstance().requestInputDialog("Enter Loginname for houselegend.com :");
-        String pass = UserIO.getInstance().requestInputDialog("Enter password for houselegend.com :");
-        cookie = "login_name=" + login + "&login_password=" + Encoding.urlEncode(pass) + "&no_cookies=1&image=LOGIN&login=submit";
-        br.postPage(url, cookie);
-        br.getPage(url);
+    private boolean getUserLogin(String url) throws IOException, DecrypterException {
+        for (int i = 0; i < 3; i++) {
+            if (br.containsHTML("Registration\"><b>REGISTER</b></a> before you can view this text")) {
+                String login = UserIO.getInstance().requestInputDialog("Enter Loginname for houselegend.com :");
+                if (login == null) return false;
+                String pass = UserIO.getInstance().requestInputDialog("Enter password for houselegend.com :");
+                if (pass == null) return false;
+                cookie = "login_name=" + login + "&login_password=" + Encoding.urlEncode(pass) + "&no_cookies=1&image=LOGIN&login=submit";
+                br.postPage(url, cookie);
+                br.getPage(url);
+            } else return true;
+
+        }
+        throw new DecrypterException("Login or/and password wrong");
     }
 
 }
