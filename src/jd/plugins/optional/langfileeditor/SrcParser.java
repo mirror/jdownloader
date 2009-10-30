@@ -33,8 +33,6 @@ import jd.utils.JDUtilities;
 
 public class SrcParser {
 
-    public static final int PARSE_NEW_FILE = 0;
-    public static final int PARSE_NEW_ENTRY = 1;
     private File root;
     private JDBroadcaster<MessageListener, MessageEvent> broadcaster;
 
@@ -90,7 +88,7 @@ public class SrcParser {
     private void parseFile(File file) {
 
         this.currentFile = file;
-        broadcaster.fireEvent(new MessageEvent(this, PARSE_NEW_FILE, "Parse " + file.getAbsolutePath()));
+        broadcaster.fireEvent(new MessageEvent(this, 0, "Parse " + file.getAbsolutePath()));
 
         // find all lines containing JDL calls
         currentContent = JDIO.readFileToString(file);
@@ -355,8 +353,6 @@ public class SrcParser {
                         entries.add(entry);
 
                         print("LF  " + Formatter.fillInteger(entries.size(), 3, "0") + " " + entry);
-                        broadcaster.fireEvent(new MessageEvent(this, PARSE_NEW_ENTRY, "LF  " + Formatter.fillInteger(entries.size(), 3, "0") + " " + entry));
-
                     }
                     if (!fileEntries.contains(entry)) {
                         fileEntries.add(entry);
@@ -465,8 +461,6 @@ public class SrcParser {
                             entries.add(entry);
 
                             print("L   " + Formatter.fillInteger(entries.size(), 3, "0") + " " + entry);
-                            broadcaster.fireEvent(new MessageEvent(this, PARSE_NEW_ENTRY, "L   " + Formatter.fillInteger(entries.size(), 3, "0") + " " + entry));
-
                         }
 
                         if (!fileEntries.contains(entry)) {

@@ -1493,8 +1493,8 @@ public class JDChat extends PluginOptional implements ControlListener {
 
                 this.onExit();
             }
-
         }
+        if (activateAction != null && activateAction.isSelected() != b) activateAction.setSelected(b);
     }
 
     @Override

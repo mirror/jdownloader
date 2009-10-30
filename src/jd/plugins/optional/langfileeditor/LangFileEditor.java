@@ -129,6 +129,7 @@ public class LangFileEditor extends PluginOptional {
         } else {
             if (lfeView != null) lfeView.close();
         }
+        if (activateAction != null && activateAction.isSelected() != b) activateAction.setSelected(b);
     }
 
     @Override
