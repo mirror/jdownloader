@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.RandomUserAgent;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -37,7 +38,8 @@ public class LdT extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        br.setDebug(true);
+        this.setBrowserExclusive();
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         if (parameter.matches(patternSupported_Info)) {
             br.getPage(parameter);
             String links_page[] = br.getRegex("href=\"(/go/[0-9]+)/\"").getColumn(0);
@@ -72,6 +74,8 @@ public class LdT extends PluginForDecrypt {
         } else {
             br.getPage(parameter);
             DownloadLink dl;
+            if (br.getRedirectLocation().equalsIgnoreCase(parameter)) br.getPage(parameter);
+            if (br.getRedirectLocation().equalsIgnoreCase(parameter)) return null;
             decryptedLinks.add(dl = createDownloadlink(br.getRedirectLocation()));
             dl.addSourcePluginPassword("iload.to");
             dl.setUrlDownload(br.getRedirectLocation());
