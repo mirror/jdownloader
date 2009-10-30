@@ -57,7 +57,9 @@ public class MegaFileUploadCom extends PluginForHost {
         }
         String filesize = br.getRegex("<b>File size:</b></td>.*?<td align=left>(.*?)</td>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        link.setName(filename);
+        // This hoster taggs the files (filenames) and by setting this name as
+        // the final filename no one will ever see these tags again
+        link.setFinalFileName(filename);
         link.setDownloadSize(Regex.getSize(filesize));
         return AvailableStatus.TRUE;
     }
