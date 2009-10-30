@@ -27,7 +27,6 @@ import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.SwingConstants;
 
-import jd.config.Configuration;
 import jd.controlling.DownloadController;
 import jd.gui.swing.components.ComboBrowseFile;
 import jd.gui.swing.components.JDCollapser;
@@ -69,8 +68,6 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
     private FilePackage fp = null;
 
     private boolean hidden = false;
-
-    private JCheckBox chbUseSubdirectory;
 
     private JPanel panel;
 
@@ -165,10 +162,6 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
         chbExtract.setHorizontalTextPosition(SwingConstants.LEFT);
         chbExtract.addActionListener(this);
         chbExtract.addFocusListener(this);
-        chbUseSubdirectory = new JCheckBox(JDL.L("gui.linkgrabber.packagetab.chb.useSubdirectory", "Use Subdirectory"));
-        chbUseSubdirectory.setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, false));
-        chbUseSubdirectory.setHorizontalTextPosition(SwingConstants.LEFT);
-        chbUseSubdirectory.addActionListener(this);
 
         progressBarFilePackage = new MultiProgressBar();
         panel = new JPanel();
@@ -181,18 +174,17 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
         txtSize.putClientProperty("Synthetica.opaque", Boolean.FALSE);
 
         panel.add(new JLabel(JDL.L("gui.fileinfopanel.packagetab.lbl.name", "Paketname")));
-        panel.add(txtName, "span 2,growx,spanx");
+        panel.add(txtName, "growx, span 2");
         panel.add(new JLabel(JDL.L("gui.fileinfopanel.packagetab.lbl.saveto", "Speichern unter")));
-        panel.add(brwSaveTo.getInput(), "gapright 10,shrinkx");
-        panel.add(brwSaveTo.getButton(), "pushx,growx");
+        panel.add(brwSaveTo.getInput(), "gapright 10, shrinkx");
+        panel.add(brwSaveTo.getButton(), "pushx, growx");
         panel.add(new JLabel(JDL.L("gui.fileinfopanel.packagetab.lbl.password", "Archivpasswort")));
-        panel.add(txtPassword, " gapright 10, growx");
+        panel.add(txtPassword, "gapright 10, growx");
         panel.add(chbExtract, "alignx right");
         panel.add(new JLabel(JDL.L("gui.fileinfopanel.packagetab.lbl.password2", "Archive Password(auto)")));
-        panel.add(txtPassword2, " gapright 10, growx");
-        panel.add(chbUseSubdirectory, "alignx right");
+        panel.add(txtPassword2, "growx, span 2");
         panel.add(new JLabel(JDL.L("gui.fileinfopanel.packagetab.lbl.comment", "Kommentar")));
-        panel.add(txtComment, "gapright 10, growx");
+        panel.add(txtComment, "growx, span 2");
         return panel;
     }
 
