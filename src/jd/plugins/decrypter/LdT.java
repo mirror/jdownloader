@@ -40,8 +40,7 @@ public class LdT extends PluginForDecrypt {
         br.setDebug(true);
         if (parameter.matches(patternSupported_Info)) {
             br.getPage(parameter);
-            String links_page[] = br.getRegex("href=\"(/go/[0-9]+/)\"").getColumn(0);
-            br.getPage(parameter.replaceAll("(iload\\.to|beta\\.iload\\.to)", "beta.iload.to"));
+            String links_page[] = br.getRegex("href=\"(/go/[0-9]+)/\"").getColumn(0);
             String streamlinks[] = br.getRegex("href=\"(/go/[0-9]+/streaming/.*?/)\"").getColumn(0);
             if (links_page == null && streamlinks == null) return null;
             progress.setRange(links_page.length);
