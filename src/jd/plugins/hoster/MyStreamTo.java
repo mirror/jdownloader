@@ -27,7 +27,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
 //mystream.to by pspzockerscene
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mystream.to" }, urls = { "http://[\\w\\.]*?mystream\\.to/file-[0-9]+-[0-9|a-z]+.+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mystream.to" }, urls = { "http://[\\w\\.]*?mystream\\.to/file-[0-9]+-[0-9|a-z]+.+" }, flags = { 0 })
 public class MyStreamTo extends PluginForHost {
 
     public MyStreamTo(PluginWrapper wrapper) {
@@ -64,7 +64,7 @@ public class MyStreamTo extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return -1;
     }
 
     @Override

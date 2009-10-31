@@ -26,7 +26,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "free-beat.de" }, urls = { "http://[\\w\\.]*?free-beat\\.de/jgs_db,action-show,eintrags_id-[0-9]+,(sid-\\.|sid-[a-z0-9]+\\.)htm" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "free-beat.de" }, urls = { "http://[\\w\\.]*?free-beat\\.de/jgs_db,action-show,eintrags_id-[0-9]+,(katid-[0-9]+,sid-\\.|sid-\\.|sid-[a-z0-9]+\\.)htm" }, flags = { 2 })
 public class FreeBeatDe extends PluginForHost {
 
     public FreeBeatDe(PluginWrapper wrapper) {

@@ -45,7 +45,7 @@ public class RGhostRu extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("Access to the file was restricted") || br.containsHTML("<title>404")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("Access to the file was restricted") || br.containsHTML("<title>404")||br.containsHTML("File was deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<meta name=\"description\" content=\"(.*?). Download").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("title=\"Comments for the file (.*?)\"").getMatch(0);
