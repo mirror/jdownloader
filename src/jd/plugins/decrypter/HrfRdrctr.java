@@ -25,17 +25,16 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "forex-fileupload.co.cc", "r1one.co.cc", "crazytr.com" }, urls = { "http://[\\w\\.]*?forex-fileupload\\.co\\.cc/\\?\\w+", "http://[\\w\\.]*?r1one\\.co\\.cc/\\d+", "http://[\\w\\.]*?crazytr\\.com/url/\\d+" }, flags = { 0, 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "forex-fileupload.co.cc", "r1one.co.cc", "crazytr.com", "qurlyq.com", "url.tr59.info", "rapid-lak.co.cc", "url.bilgiportal.com" }, urls = { "http://[\\w\\.]*?forex-fileupload\\.co\\.cc/\\?\\w+", "http://[\\w\\.]*?r1one\\.co\\.cc/\\d+", "http://[\\w\\.]*?crazytr\\.com/url/\\d+", "http://[\\w\\.]*?qurlyq\\.com/[0-9a-z]+", "http://[\\w\\.]*?url\\.tr59\\.info/[0-9]+", "http://[\\w\\.]*?rapid-lak\\.co\\.cc/vault/[0-9]+/downloads/.*?\\.html", "http://[\\w\\.]*?url\\.bilgiportal\\.com/[0-9]+" }, flags = { 0, 0, 0, 0, 0, 0, 0 })
 public class HrfRdrctr extends PluginForDecrypt {
 
     /* Usage: {{regex, getMatch()-Index}, {..., ...}} */
-    Object[][] regxps = {{"<a href=\"(http://.*?)\"><img src=\".*?/(aa\\.png|dwn_btn\\.gif)\"></a>", 0}};
+    Object[][] regxps = { { "<a href=\"(http://.*?)\"><img src=\".*?/(aa\\.png|dwn_btn\\.gif)\"></a>", 0 }, { "link\" value=\"(http.*?)\">", 0 }, { "redirect\\('(.*?)'\\)", 0 }, { "</script.*?href=\"(http.*?)\"", 0 }, { "marginheight=.*?src=\"(.*?)\" ", 0 } };
 
     public HrfRdrctr(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String link = null;
@@ -44,19 +43,14 @@ public class HrfRdrctr extends PluginForDecrypt {
 
         for (int i = 0; i < regxps.length; i++) {
             if (link == null) {
-                link = br.getRegex((String)regxps[i][0]).getMatch((Integer)regxps[i][1]);
+                link = br.getRegex((String) regxps[i][0]).getMatch((Integer) regxps[i][1]);
             } else {
                 break;
             }
         }
-
         if (link == null) return null;
-
         decryptedLinks.add(createDownloadlink(link));
-
         return decryptedLinks;
     }
-
-    // @Override
 
 }
