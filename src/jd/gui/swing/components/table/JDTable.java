@@ -234,6 +234,7 @@ public class JDTable extends JXTable {
                 }
             });
             tableColumn.setPreferredWidth(tableconfig.getIntegerProperty("WIDTH_COL_" + model.getJDTableColumn(j).getID(), tableColumn.getWidth()));
+            if (model.getJDTableColumn(j).getMaxWidth() >= 0) tableColumn.setMaxWidth(model.getJDTableColumn(j).getMaxWidth());
             if (!model.isVisible(i)) continue;
             columns.put(model.getJDTableColumn(j).getID(), tableColumn);
         }

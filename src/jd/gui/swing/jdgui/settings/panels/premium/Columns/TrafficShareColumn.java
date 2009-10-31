@@ -29,6 +29,8 @@ import org.jdesktop.swingx.renderer.JRendererLabel;
 
 public class TrafficShareColumn extends JDTableColumn {
 
+    private static final long serialVersionUID = -5291590062503352550L;
+
     private JRendererLabel jlr;
 
     public TrafficShareColumn(String name, JDTableModel table) {
@@ -37,16 +39,36 @@ public class TrafficShareColumn extends JDTableColumn {
         jlr.setBorder(null);
     }
 
-    private static final long serialVersionUID = -5291590062503352550L;
-
     @Override
-    public Component myTableCellEditorComponent(JDTableModel table, Object value, boolean isSelected, int row, int column) {
+    public boolean defaultEnabled() {
+        return false;
+    }
+
+    public Object getCellEditorValue() {
         return null;
     }
 
     @Override
-    public boolean defaultEnabled() {
+    public boolean isEditable(Object obj) {
         return false;
+    }
+
+    @Override
+    public boolean isEnabled(Object obj) {
+        if (obj == null) return false;
+        if (obj instanceof Account) return ((Account) obj).isEnabled();
+        if (obj instanceof HostAccounts) return ((HostAccounts) obj).isEnabled();
+        return true;
+    }
+
+    @Override
+    public boolean isSortable(Object obj) {
+        return false;
+    }
+
+    @Override
+    public Component myTableCellEditorComponent(JDTableModel table, Object value, boolean isSelected, int row, int column) {
+        return null;
     }
 
     @Override
@@ -66,33 +88,11 @@ public class TrafficShareColumn extends JDTableColumn {
     }
 
     @Override
-    public boolean isEditable(Object obj) {
-        return false;
-    }
-
-    @Override
     public void setValue(Object value, Object object) {
-    }
-
-    public Object getCellEditorValue() {
-        return null;
-    }
-
-    @Override
-    public boolean isSortable(Object obj) {
-        return false;
     }
 
     @Override
     public void sort(Object obj, boolean sortingToggle) {
-    }
-
-    @Override
-    public boolean isEnabled(Object obj) {
-        if (obj == null) return false;
-        if (obj instanceof Account) return ((Account) obj).isEnabled();
-        if (obj instanceof HostAccounts) return ((HostAccounts) obj).isEnabled();
-        return true;
     }
 
 }

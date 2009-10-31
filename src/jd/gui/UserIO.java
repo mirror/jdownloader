@@ -209,12 +209,20 @@ public abstract class UserIO {
     abstract protected File[] showFileChooser(String id, String title, Integer fileSelectionMode, FileFilter fileFilter, Boolean multiSelection);
 
     public void requestMessageDialog(String message) {
-        requestMessageDialog(JDL.L("gui.dialogs.message.title", "Message"), message);
+        requestMessageDialog(0, JDL.L("gui.dialogs.message.title", "Message"), message);
+    }
+
+    public void requestMessageDialog(int flag, String message) {
+        requestMessageDialog(flag, JDL.L("gui.dialogs.message.title", "Message"), message);
     }
 
     public void requestMessageDialog(String title, String message) {
+        requestMessageDialog(0, title, message);
+    }
+
+    public void requestMessageDialog(int flag, String title, String message) {
         synchronized (INSTANCE) {
-            showConfirmDialog(UserIO.NO_CANCEL_OPTION, title, message, getIcon(UserIO.ICON_INFO), null, null);
+            showConfirmDialog(UserIO.NO_CANCEL_OPTION | flag, title, message, getIcon(UserIO.ICON_INFO), null, null);
         }
     }
 

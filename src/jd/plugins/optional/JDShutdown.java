@@ -103,9 +103,9 @@ public class JDShutdown extends PluginOptional {
                         if (evt.getPropertyName() == SELECTED_KEY) {
                             shutdownEnabled = isSelected();
                             if (shutdownEnabled) {
-                                UserIO.getInstance().requestMessageDialog(JDL.L("addons.jdshutdown.statusmessage.enabled", "Das System wird nach dem Download heruntergefahren."));
+                                UserIO.getInstance().requestMessageDialog(UserIO.DONT_SHOW_AGAIN, JDL.L("addons.jdshutdown.statusmessage.enabled", "Das System wird nach dem Download heruntergefahren."));
                             } else {
-                                UserIO.getInstance().requestMessageDialog(JDL.L("addons.jdshutdown.statusmessage.disabled", "Das System wird nach dem Download NICHT heruntergefahren."));
+                                UserIO.getInstance().requestMessageDialog(UserIO.DONT_SHOW_AGAIN, JDL.L("addons.jdshutdown.statusmessage.disabled", "Das System wird nach dem Download NICHT heruntergefahren."));
                             }
                         }
                     }

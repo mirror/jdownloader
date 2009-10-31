@@ -55,6 +55,14 @@ public abstract class JDTableColumn extends AbstractCellEditor implements TableC
         defaultrenderer = new DefaultTableRenderer();
     }
 
+    /**
+     * Should be overwritten when there should be a maximal width for this
+     * column (e.g. for checkboxes)
+     */
+    protected int getMaxWidth() {
+        return -1;
+    }
+
     public void setClickstoEdit(int i) {
         clickcount = Math.max(0, i);
     }
@@ -90,7 +98,7 @@ public abstract class JDTableColumn extends AbstractCellEditor implements TableC
         return true;
     }
 
-    /* obj==null for sorting on columnheader */
+    /** obj==null for sorting on columnheader */
     abstract public boolean isSortable(Object obj);
 
     protected void doSort(final Object obj) {
@@ -216,6 +224,9 @@ public abstract class JDTableColumn extends AbstractCellEditor implements TableC
         return myTableCellEditorComponent(this.table, value, isSelected, row, column);
     }
 
+    /**
+     * value should be set for object
+     */
     public abstract void setValue(Object value, Object object);
 
     public abstract boolean isEditable(Object obj);

@@ -36,7 +36,6 @@ import jd.gui.swing.SwingGui;
 import jd.gui.swing.components.ImportRouterDialog;
 import jd.gui.swing.components.JDFileChooser;
 import jd.gui.swing.components.linkbutton.JLink;
-import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelListener;
@@ -56,7 +55,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-@OptionalPlugin(rev = "$Revision$", id = "livescripter", interfaceversion = 5)
+@OptionalPlugin(rev = "$Revision$", id = "livescripter", hasGui = true, interfaceversion = 5)
 public class HTTPLiveHeaderScripter extends PluginOptional {
     public HTTPLiveHeaderScripter(PluginWrapper wrapper) {
         super(wrapper);
@@ -73,15 +72,21 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
     private MenuAction action;
 
     @Override
+    public void setGuiEnable(boolean b) {
+        if (b) {
+            initGUI();
+            SwingGui.getInstance().setContent(tabbedPanel);
+        } else {
+            tabbedPanel.close();
+        }
+        if (action != null && action.isSelected() != b) action.setSelected(b);
+    }
+
+    @Override
     @SuppressWarnings("unchecked")
     public void actionPerformed(ActionEvent e) {
-        if (e.getSource() instanceof ToolBarAction && ((ToolBarAction) e.getSource()).getActionID() == 0) {
-            if (action.isSelected()) {
-                initGUI();
-                SwingGui.getInstance().setContent(tabbedPanel);
-            } else {
-                tabbedPanel.close();
-            }
+        if (e.getSource() == action) {
+            setGuiEnable(action.isSelected());
         } else if (e.getSource() == menImportHTTPLive) {
             importFF();
         } else if (e.getSource() == menHelpWiki) {

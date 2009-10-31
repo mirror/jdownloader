@@ -32,11 +32,12 @@ import org.jdesktop.swingx.renderer.JRendererLabel;
 
 public class TrafficLeftColumn extends JDTableColumn {
 
-    private JDProgressBarRender progress;
-    private JRendererLabel jlr;
-    private Color COL_PROGRESS_NORMAL;
-    private Color COL_PROGRESS_ERROR = new Color(0xCC3300);
+    private static final long serialVersionUID = -5291590062503352550L;
     private Color COL_PROGRESS = null;
+    private Color COL_PROGRESS_ERROR = new Color(0xCC3300);
+    private Color COL_PROGRESS_NORMAL;
+    private JRendererLabel jlr;
+    private JDProgressBarRender progress;
 
     public TrafficLeftColumn(String name, JDTableModel table) {
         super(name, table);
@@ -48,8 +49,51 @@ public class TrafficLeftColumn extends JDTableColumn {
         jlr.setBorder(null);
     }
 
-    private static final long serialVersionUID = -5291590062503352550L;
-    private Component co;
+    public Object getCellEditorValue() {
+        return null;
+    }
+
+    @Override
+    public void handleSelected(Component c, JDTableModel table, Object value, boolean isSelected, int row, int column) {
+        /* customized handleSelected for ProgressBar */
+        if (c instanceof JDProgressBarRender) {
+            ((JDProgressBarRender) c).setForeground(COL_PROGRESS);
+            /* check selected state */
+            if (isSelected) {
+                ((JDProgressBarRender) c).setBackground(JDTableColumn.background);
+                return;
+            } else {
+                ((JDProgressBarRender) c).setBackground(JDTableColumn.background);
+                /* check if we have to highlight an unselected cell */
+                for (JDRowHighlighter high : table.getJDRowHighlighter()) {
+                    if (high.doHighlight(value)) {
+                        ((JDProgressBarRender) c).setBackground(high.getColor());
+                        return;
+                    }
+                }
+            }
+        } else {
+            super.handleSelected(c, table, value, isSelected, row, column);
+        }
+    }
+
+    @Override
+    public boolean isEditable(Object obj) {
+        return false;
+    }
+
+    @Override
+    public boolean isEnabled(Object obj) {
+        if (obj == null) return false;
+        if (obj instanceof Account) return ((Account) obj).isEnabled();
+        if (obj instanceof HostAccounts) return ((HostAccounts) obj).isEnabled();
+        return true;
+    }
+
+    @Override
+    public boolean isSortable(Object obj) {
+        return false;
+    }
 
     @Override
     public Component myTableCellEditorComponent(JDTableModel table, Object value, boolean isSelected, int row, int column) {
@@ -84,7 +128,7 @@ public class TrafficLeftColumn extends JDTableColumn {
                 }
             }
             progress.setString((String) value);
-            co = progress;
+            return progress;
         } else {
             HostAccounts ha = (HostAccounts) value;
             if (!ha.gotAccountInfos()) {
@@ -98,63 +142,16 @@ public class TrafficLeftColumn extends JDTableColumn {
                     jlr.setText(Formatter.formatReadable(ha.getTraffic()));
                 }
             }
-            co = jlr;
+            return jlr;
         }
-        return co;
-    }
-
-    @Override
-    public void handleSelected(Component c, JDTableModel table, Object value, boolean isSelected, int row, int column) {
-        /* customized handleSelected for ProgressBar */
-        if (c instanceof JDProgressBarRender) {
-            ((JDProgressBarRender) c).setForeground(COL_PROGRESS);
-            /* check selected state */
-            if (isSelected) {
-                ((JDProgressBarRender) c).setBackground(JDTableColumn.background);
-                return;
-            } else {
-                ((JDProgressBarRender) c).setBackground(JDTableColumn.background);
-                /* check if we have to highlight an unselected cell */
-                for (JDRowHighlighter high : table.getJDRowHighlighter()) {
-                    if (high.doHighlight(value)) {
-                        ((JDProgressBarRender) c).setBackground(high.getColor());
-                        return;
-                    }
-                }
-            }
-        } else {
-            super.handleSelected(c, table, value, isSelected, row, column);
-        }
-    }
-
-    @Override
-    public boolean isEditable(Object obj) {
-        return false;
     }
 
     @Override
     public void setValue(Object value, Object object) {
     }
 
-    public Object getCellEditorValue() {
-        return null;
-    }
-
-    @Override
-    public boolean isSortable(Object obj) {
-        return false;
-    }
-
     @Override
     public void sort(Object obj, boolean sortingToggle) {
-    }
-
-    @Override
-    public boolean isEnabled(Object obj) {
-        if (obj == null) return false;
-        if (obj instanceof Account) return ((Account) obj).isEnabled();
-        if (obj instanceof HostAccounts) return ((HostAccounts) obj).isEnabled();
-        return true;
     }
 
 }

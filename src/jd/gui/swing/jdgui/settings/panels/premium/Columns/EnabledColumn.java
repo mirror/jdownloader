@@ -16,91 +16,25 @@
 
 package jd.gui.swing.jdgui.settings.panels.premium.Columns;
 
-import java.awt.Component;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.util.ArrayList;
 
-import javax.swing.JCheckBox;
-
 import jd.controlling.AccountController;
-import jd.gui.swing.components.table.JDTableColumn;
+import jd.gui.swing.components.table.JDCheckBoxTableColumn;
 import jd.gui.swing.components.table.JDTableModel;
 import jd.gui.swing.jdgui.settings.panels.premium.HostAccounts;
-import jd.gui.swing.laf.LookAndFeelController;
 import jd.plugins.Account;
 
-import org.jdesktop.swingx.renderer.JRendererCheckBox;
+public class EnabledColumn extends JDCheckBoxTableColumn {
 
-public class EnabledColumn extends JDTableColumn implements ActionListener {
     private static final long serialVersionUID = -1043261559739746995L;
-    private JRendererCheckBox boolrend;
-    private JCheckBox checkbox;
-    boolean enabled = false;
 
     public EnabledColumn(String name, JDTableModel table) {
         super(name, table);
-        boolrend = new JRendererCheckBox();
-        boolrend.setHorizontalAlignment(JCheckBox.CENTER);
-        boolrend.setBorderPainted(false);
-        boolrend.setOpaque(true);
-        if (LookAndFeelController.isSubstance()) boolrend.setOpaque(false);
-        boolrend.setFocusable(false);
-        checkbox = new JCheckBox();
-        checkbox.setHorizontalAlignment(JCheckBox.CENTER);
-    }
-
-    @Override
-    public Component myTableCellEditorComponent(JDTableModel table, Object value, boolean isSelected, int row, int column) {
-        if (value instanceof Account) {
-            enabled = ((Account) value).isEnabled();
-        } else {
-            enabled = ((HostAccounts) value).isEnabled();
-        }
-        checkbox.removeActionListener(this);
-        checkbox.setSelected(enabled);
-        checkbox.addActionListener(this);
-        return checkbox;
-    }
-
-    @Override
-    public Component myTableCellRendererComponent(JDTableModel table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-        if (value instanceof Account) {
-            Account ac = (Account) value;
-            boolrend.setSelected(ac.isEnabled());
-        } else {
-            HostAccounts ha = (HostAccounts) value;
-            boolrend.setSelected(ha.isEnabled());
-        }
-        return boolrend;
     }
 
     @Override
     public boolean isEditable(Object obj) {
         return true;
-    }
-
-    @Override
-    public void setValue(Object value, Object o) {
-        boolean b = (Boolean) value;
-        if (o instanceof Account) {
-            ((Account) o).setEnabled(b);
-        } else if (o instanceof HostAccounts) {
-            ArrayList<Account> accs = AccountController.getInstance().getAllAccounts(((HostAccounts) o).getHost());
-            if (accs == null) return;
-            for (Account acc : accs) {
-                acc.setEnabled(b);
-            }
-        }
-    }
-
-    public Object getCellEditorValue() {
-        return checkbox.isSelected();
-    }
-
-    public void actionPerformed(ActionEvent e) {
-        checkbox.removeActionListener(this);
-        this.fireEditingStopped();
     }
 
     @Override
@@ -118,6 +52,28 @@ public class EnabledColumn extends JDTableColumn implements ActionListener {
         if (obj instanceof Account) return ((Account) obj).isEnabled();
         if (obj instanceof HostAccounts) return ((HostAccounts) obj).isEnabled();
         return true;
+    }
+
+    @Override
+    protected boolean getBooleanValue(Object value) {
+        if (value instanceof Account) {
+            return ((Account) value).isEnabled();
+        } else {
+            return ((HostAccounts) value).isEnabled();
+        }
+    }
+
+    @Override
+    protected void setBooleanValue(boolean value, Object object) {
+        if (object instanceof Account) {
+            ((Account) object).setEnabled(value);
+        } else if (object instanceof HostAccounts) {
+            ArrayList<Account> accs = AccountController.getInstance().getAllAccounts(((HostAccounts) object).getHost());
+            if (accs == null) return;
+            for (Account acc : accs) {
+                acc.setEnabled(value);
+            }
+        }
     }
 
 }

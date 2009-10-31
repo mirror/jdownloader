@@ -31,8 +31,9 @@ import org.jdesktop.swingx.renderer.JRendererLabel;
 
 public class UserColumn extends JDTableColumn implements ActionListener {
 
-    private JTextField user;
+    private static final long serialVersionUID = -5291590062503352550L;
     private JRendererLabel jlr;
+    private JTextField user;
 
     public UserColumn(String name, JDTableModel table) {
         super(name, table);
@@ -42,7 +43,33 @@ public class UserColumn extends JDTableColumn implements ActionListener {
         setClickstoEdit(2);
     }
 
-    private static final long serialVersionUID = -5291590062503352550L;
+    public void actionPerformed(ActionEvent e) {
+        user.removeActionListener(this);
+        this.fireEditingStopped();
+    }
+
+    public Object getCellEditorValue() {
+        return user.getText();
+    }
+
+    @Override
+    public boolean isEditable(Object ob) {
+        if (ob != null && ob instanceof Account) return true;
+        return false;
+    }
+
+    @Override
+    public boolean isEnabled(Object obj) {
+        if (obj == null) return false;
+        if (obj instanceof Account) return ((Account) obj).isEnabled();
+        if (obj instanceof HostAccounts) return ((HostAccounts) obj).isEnabled();
+        return true;
+    }
+
+    @Override
+    public boolean isSortable(Object obj) {
+        return false;
+    }
 
     @Override
     public Component myTableCellEditorComponent(JDTableModel table, Object value, boolean isSelected, int row, int column) {
@@ -64,41 +91,13 @@ public class UserColumn extends JDTableColumn implements ActionListener {
     }
 
     @Override
-    public boolean isEditable(Object ob) {
-        if (ob != null && ob instanceof Account) return true;
-        return false;
-    }
-
-    @Override
     public void setValue(Object value, Object o) {
         String pw = (String) value;
         if (o instanceof Account) ((Account) o).setUser(pw);
     }
 
-    public Object getCellEditorValue() {
-        return user.getText();
-    }
-
-    public void actionPerformed(ActionEvent e) {
-        user.removeActionListener(this);
-        this.fireEditingStopped();
-    }
-
-    @Override
-    public boolean isSortable(Object obj) {
-        return false;
-    }
-
     @Override
     public void sort(Object obj, boolean sortingToggle) {
-    }
-
-    @Override
-    public boolean isEnabled(Object obj) {
-        if (obj == null) return false;
-        if (obj instanceof Account) return ((Account) obj).isEnabled();
-        if (obj instanceof HostAccounts) return ((HostAccounts) obj).isEnabled();
-        return true;
     }
 
 }

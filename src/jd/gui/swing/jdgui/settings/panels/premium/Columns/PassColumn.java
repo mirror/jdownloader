@@ -44,6 +44,15 @@ class JDPasswordField extends JPasswordField implements ClipboardOwner {
     }
 
     @Override
+    public void copy() {
+        if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL) {
+            StringSelection stringSelection = new StringSelection(String.valueOf(this.getSelectedText()));
+            Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+            clipboard.setContents(stringSelection, this);
+        }
+    }
+
+    @Override
     public void cut() {
         if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL) {
             StringSelection stringSelection = new StringSelection(String.valueOf(this.getSelectedText()));
@@ -61,15 +70,6 @@ class JDPasswordField extends JPasswordField implements ClipboardOwner {
         }
     }
 
-    @Override
-    public void copy() {
-        if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL) {
-            StringSelection stringSelection = new StringSelection(String.valueOf(this.getSelectedText()));
-            Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
-            clipboard.setContents(stringSelection, this);
-        }
-    }
-
     public void lostOwnership(Clipboard arg0, Transferable arg1) {
     }
 
@@ -78,8 +78,8 @@ class JDPasswordField extends JPasswordField implements ClipboardOwner {
 public class PassColumn extends JDTableColumn implements ActionListener {
 
     private static final long serialVersionUID = -5291590062503352550L;
-    private JDPasswordField passw;
     private JRendererLabel jlr;
+    private JDPasswordField passw;
 
     public PassColumn(String name, JDTableModel table) {
         super(name, table);
@@ -87,6 +87,35 @@ public class PassColumn extends JDTableColumn implements ActionListener {
         jlr = new JRendererLabel();
         jlr.setBorder(null);
         setClickstoEdit(2);
+    }
+
+    public void actionPerformed(ActionEvent e) {
+        if (e.getSource() == passw) {
+            passw.removeActionListener(this);
+            this.fireEditingStopped();
+        }
+    }
+
+    public Object getCellEditorValue() {
+        return new String(passw.getPassword());
+    }
+
+    @Override
+    public boolean isEditable(Object ob) {
+        return ob != null && ob instanceof Account;
+    }
+
+    @Override
+    public boolean isEnabled(Object obj) {
+        if (obj == null) return false;
+        if (obj instanceof Account) return ((Account) obj).isEnabled();
+        if (obj instanceof HostAccounts) return ((HostAccounts) obj).isEnabled();
+        return true;
+    }
+
+    @Override
+    public boolean isSortable(Object obj) {
+        return false;
     }
 
     @Override
@@ -108,42 +137,13 @@ public class PassColumn extends JDTableColumn implements ActionListener {
     }
 
     @Override
-    public boolean isEditable(Object ob) {
-        return ob != null && ob instanceof Account;
-    }
-
-    @Override
     public void setValue(Object value, Object o) {
         String pw = (String) value;
         if (o instanceof Account) ((Account) o).setPass(pw);
     }
 
-    public Object getCellEditorValue() {
-        return new String(passw.getPassword());
-    }
-
-    public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == passw) {
-            passw.removeActionListener(this);
-            this.fireEditingStopped();
-        }
-    }
-
-    @Override
-    public boolean isSortable(Object obj) {
-        return false;
-    }
-
     @Override
     public void sort(Object obj, boolean sortingToggle) {
-    }
-
-    @Override
-    public boolean isEnabled(Object obj) {
-        if (obj == null) return false;
-        if (obj instanceof Account) return ((Account) obj).isEnabled();
-        if (obj instanceof HostAccounts) return ((HostAccounts) obj).isEnabled();
-        return true;
     }
 
 }

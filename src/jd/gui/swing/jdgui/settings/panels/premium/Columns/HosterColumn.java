@@ -33,14 +33,36 @@ import org.jdesktop.swingx.renderer.JRendererLabel;
 
 public class HosterColumn extends JDTableColumn {
 
-    private static final long serialVersionUID = -6741644821097309670L;
     private static Border leftGap = BorderFactory.createEmptyBorder(0, 30, 0, 0);
+    private static final long serialVersionUID = -6741644821097309670L;
     private JRendererLabel jlr;
 
     public HosterColumn(String name, JDTableModel table) {
         super(name, table);
         jlr = new JRendererLabel();
         jlr.setBorder(null);
+    }
+
+    public Object getCellEditorValue() {
+        return null;
+    }
+
+    @Override
+    public boolean isEditable(Object obj) {
+        return false;
+    }
+
+    @Override
+    public boolean isEnabled(Object obj) {
+        if (obj == null) return false;
+        if (obj instanceof Account) return ((Account) obj).isEnabled();
+        if (obj instanceof HostAccounts) return ((HostAccounts) obj).isEnabled();
+        return true;
+    }
+
+    @Override
+    public boolean isSortable(Object obj) {
+        return false;
     }
 
     @Override
@@ -67,33 +89,11 @@ public class HosterColumn extends JDTableColumn {
     }
 
     @Override
-    public boolean isEditable(Object obj) {
-        return false;
-    }
-
-    @Override
     public void setValue(Object value, Object object) {
 
     }
 
-    public Object getCellEditorValue() {
-        return null;
-    }
-
-    @Override
-    public boolean isSortable(Object obj) {
-        return false;
-    }
-
     @Override
     public void sort(Object obj, boolean sortingToggle) {
-    }
-
-    @Override
-    public boolean isEnabled(Object obj) {
-        if (obj == null) return false;
-        if (obj instanceof Account) return ((Account) obj).isEnabled();
-        if (obj instanceof HostAccounts) return ((HostAccounts) obj).isEnabled();
-        return true;
     }
 }
