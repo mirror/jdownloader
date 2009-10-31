@@ -16,34 +16,17 @@
 
 package jd.plugins.optional.schedule.columns;
 
-import java.awt.Component;
-
-import jd.gui.swing.components.table.JDTableColumn;
 import jd.gui.swing.components.table.JDTableModel;
+import jd.gui.swing.components.table.JDTextTableColumn;
 import jd.plugins.optional.schedule.Actions;
 import jd.utils.locale.JDL;
 
-import org.jdesktop.swingx.renderer.JRendererLabel;
-
-public class RepeatsColumn extends JDTableColumn {
+public class RepeatsColumn extends JDTextTableColumn {
 
     private static final long serialVersionUID = 5634248167278175584L;
-    private JRendererLabel jlr;
 
     public RepeatsColumn(String name, JDTableModel table) {
         super(name, table);
-        jlr = new JRendererLabel();
-        jlr.setBorder(null);
-    }
-
-    @Override
-    public Object getCellEditorValue() {
-        return null;
-    }
-
-    @Override
-    public boolean isEditable(Object obj) {
-        return false;
     }
 
     @Override
@@ -57,38 +40,24 @@ public class RepeatsColumn extends JDTableColumn {
     }
 
     @Override
-    public Component myTableCellEditorComponent(JDTableModel table, Object value, boolean isSelected, int row, int column) {
-        return null;
+    public void sort(Object obj, boolean sortingToggle) {
     }
 
     @Override
-    public Component myTableCellRendererComponent(JDTableModel table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+    protected String getStringValue(Object value) {
         switch (((Actions) value).getRepeat()) {
         case 0:
-            jlr.setText(JDL.L("jd.plugins.optional.schedule.MainGui.MyTableModel.add.once", "Only once"));
-            break;
+            return JDL.L("jd.plugins.optional.schedule.MainGui.MyTableModel.add.once", "Only once");
         case 60:
-            jlr.setText(JDL.L("jd.plugins.optional.schedule.MainGui.MyTableModel.add.hourly", "Hourly"));
-            break;
+            return JDL.L("jd.plugins.optional.schedule.MainGui.MyTableModel.add.hourly", "Hourly");
         case 1440:
-            jlr.setText(JDL.L("jd.plugins.optional.schedule.MainGui.MyTableModel.add.daily", "Daily"));
-            break;
+            return JDL.L("jd.plugins.optional.schedule.MainGui.MyTableModel.add.daily", "Daily");
         case 10080:
-            jlr.setText(JDL.L("jd.plugins.optional.schedule.MainGui.MyTableModel.add.weekly", "Weekly"));
-            break;
-        default:
-            int hour = ((Actions) value).getRepeat() / 60;
-            jlr.setText(JDL.LF("jd.plugins.optional.schedule.MainGui.MyTableModel.add.interval", "Interval: %sh %sm", hour, ((Actions) value).getRepeat() - (hour * 60)));
+            return JDL.L("jd.plugins.optional.schedule.MainGui.MyTableModel.add.weekly", "Weekly");
         }
-        return jlr;
-    }
+        int hour = ((Actions) value).getRepeat() / 60;
+        return JDL.LF("jd.plugins.optional.schedule.MainGui.MyTableModel.add.interval", "Interval: %sh %sm", hour, ((Actions) value).getRepeat() - (hour * 60));
 
-    @Override
-    public void setValue(Object value, Object object) {
-    }
-
-    @Override
-    public void sort(Object obj, boolean sortingToggle) {
     }
 
 }

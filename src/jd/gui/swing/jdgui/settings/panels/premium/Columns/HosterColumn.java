@@ -43,6 +43,7 @@ public class HosterColumn extends JDTableColumn {
         jlr.setBorder(null);
     }
 
+    @Override
     public Object getCellEditorValue() {
         return null;
     }

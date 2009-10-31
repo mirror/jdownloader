@@ -96,6 +96,7 @@ public class PassColumn extends JDTableColumn implements ActionListener {
         }
     }
 
+    @Override
     public Object getCellEditorValue() {
         return new String(passw.getPassword());
     }

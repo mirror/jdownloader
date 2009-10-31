@@ -77,7 +77,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
             initGUI();
             SwingGui.getInstance().setContent(tabbedPanel);
         } else {
-            tabbedPanel.close();
+            if (tabbedPanel != null) tabbedPanel.close();
         }
         if (action != null && action.isSelected() != b) action.setSelected(b);
     }

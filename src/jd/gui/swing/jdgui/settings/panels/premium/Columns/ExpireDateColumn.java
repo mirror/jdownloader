@@ -16,36 +16,19 @@
 
 package jd.gui.swing.jdgui.settings.panels.premium.Columns;
 
-import java.awt.Component;
-
-import jd.gui.swing.components.table.JDTableColumn;
 import jd.gui.swing.components.table.JDTableModel;
+import jd.gui.swing.components.table.JDTextTableColumn;
 import jd.gui.swing.jdgui.settings.panels.premium.HostAccounts;
 import jd.nutils.Formatter;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 
-import org.jdesktop.swingx.renderer.JRendererLabel;
-
-public class ExpireDateColumn extends JDTableColumn {
+public class ExpireDateColumn extends JDTextTableColumn {
 
     private static final long serialVersionUID = -5291590062503352550L;
 
-    private JRendererLabel jlr;
-
     public ExpireDateColumn(String name, JDTableModel table) {
         super(name, table);
-        jlr = new JRendererLabel();
-        jlr.setBorder(null);
-    }
-
-    public Object getCellEditorValue() {
-        return null;
-    }
-
-    @Override
-    public boolean isEditable(Object obj) {
-        return false;
     }
 
     @Override
@@ -62,40 +45,29 @@ public class ExpireDateColumn extends JDTableColumn {
     }
 
     @Override
-    public Component myTableCellEditorComponent(JDTableModel table, Object value, boolean isSelected, int row, int column) {
-        return null;
+    public void sort(Object obj, boolean sortingToggle) {
     }
 
     @Override
-    public Component myTableCellRendererComponent(JDTableModel table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+    protected String getStringValue(Object value) {
         if (value instanceof Account) {
             Account ac = (Account) value;
             AccountInfo ai = ac.getAccountInfo();
             if (!ac.isValid()) {
-                jlr.setText("Invalid account");
+                return "Invalid account";
             } else if (ai == null) {
-                jlr.setText("Unkown");
+                return "Unkown";
             } else {
                 if (ai.getValidUntil() == -1) {
-                    jlr.setText("Unlimited");
+                    return "Unlimited";
                 } else if (ai.isExpired()) {
-                    jlr.setText("Expired");
+                    return "Expired";
                 } else {
-                    jlr.setText(Formatter.formatTime(ai.getValidUntil()));
+                    return Formatter.formatTime(ai.getValidUntil());
                 }
             }
-        } else {
-            jlr.setText("");
         }
-        return jlr;
-    }
-
-    @Override
-    public void setValue(Object value, Object object) {
-    }
-
-    @Override
-    public void sort(Object obj, boolean sortingToggle) {
+        return "";
     }
 
 }

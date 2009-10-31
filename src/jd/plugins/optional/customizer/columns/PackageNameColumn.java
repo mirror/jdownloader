@@ -16,40 +16,33 @@
 
 package jd.plugins.optional.customizer.columns;
 
-import java.awt.Component;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-
 import javax.swing.JTextField;
 
-import jd.gui.swing.components.table.JDTableColumn;
 import jd.gui.swing.components.table.JDTableModel;
+import jd.gui.swing.components.table.JDTextEditorTableColumn;
 import jd.plugins.optional.customizer.CustomizeSetting;
 import jd.utils.locale.JDL;
 
 import org.jdesktop.swingx.renderer.JRendererLabel;
 
-public class PackageNameColumn extends JDTableColumn implements ActionListener {
+public class PackageNameColumn extends JDTextEditorTableColumn {
 
     private static final long serialVersionUID = -2305836770033923728L;
-    private JRendererLabel jlr;
-    private JTextField text;
     private final String toolTip;
 
     public PackageNameColumn(String name, JDTableModel table) {
         super(name, table);
         toolTip = JDL.L("jd.plugins.optional.customizer.columns.PackageNameColumn.toolTip", "The name of the filepackage, if the link matches the regex. Leave it empty to use the default name!");
-        jlr = new JRendererLabel();
-        jlr.setBorder(null);
-        jlr.setToolTipText(toolTip);
-        text = new JTextField();
-        text.setToolTipText(toolTip);
-        setClickstoEdit(2);
     }
 
     @Override
-    public Object getCellEditorValue() {
-        return text.getText();
+    protected void prepareTableCellEditorComponent(JTextField text) {
+        text.setToolTipText(toolTip);
+    }
+
+    @Override
+    protected void prepareTableCellRendererComponent(JRendererLabel jlr) {
+        jlr.setToolTipText(toolTip);
     }
 
     @Override
@@ -68,33 +61,17 @@ public class PackageNameColumn extends JDTableColumn implements ActionListener {
     }
 
     @Override
-    public Component myTableCellEditorComponent(JDTableModel table, Object value, boolean isSelected, int row, int column) {
-        text.removeActionListener(this);
-        text.setText(((CustomizeSetting) value).getPackageName());
-        text.addActionListener(this);
-        return text;
-    }
-
-    @Override
-    public Component myTableCellRendererComponent(JDTableModel table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-        jlr.setText(((CustomizeSetting) value).getPackageName());
-        return jlr;
-    }
-
-    @Override
-    public void setValue(Object value, Object object) {
-        ((CustomizeSetting) object).setPackageName((String) value);
-    }
-
-    @Override
     public void sort(Object obj, boolean sortingToggle) {
     }
 
-    public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == text) {
-            text.removeActionListener(this);
-            this.fireEditingStopped();
-        }
+    @Override
+    protected String getStringValue(Object value) {
+        return ((CustomizeSetting) value).getPackageName();
+    }
+
+    @Override
+    protected void setStringValue(String value, Object object) {
+        ((CustomizeSetting) object).setPackageName(value);
     }
 
 }

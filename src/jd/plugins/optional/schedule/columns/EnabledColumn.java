@@ -54,7 +54,7 @@ public class EnabledColumn extends JDCheckBoxTableColumn {
 
     @Override
     protected void setBooleanValue(boolean value, Object object) {
-        ((Actions) object).setEnabled((Boolean) value);
+        ((Actions) object).setEnabled(value);
     }
 
 }
