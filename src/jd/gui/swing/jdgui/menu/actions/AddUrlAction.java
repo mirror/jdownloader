@@ -37,22 +37,23 @@ public class AddUrlAction extends ToolBarAction {
         super("action.addurl", "gui.images.url");
     }
 
+    @Override
     public void onAction(ActionEvent e) {
-        String def = "";
+        StringBuilder def = new StringBuilder();
         try {
             String newText = (String) Toolkit.getDefaultToolkit().getSystemClipboard().getData(DataFlavor.stringFlavor);
             String[] links = HTMLParser.getHttpLinks(newText, null);
             ArrayList<String> pws = HTMLParser.findPasswords(newText);
             for (String l : links)
-                def += l + "\r\n";
+                def.append(l).append("\r\n");
             for (String pw : pws) {
-                def += "password: " + pw + "\r\n";
+                def.append("password: ").append(pw).append("\r\n");
             }
         } catch (Exception e2) {
         }
-        String link = UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN | UserIO.STYLE_LARGE, JDL.L("gui.dialog.addurl.title", "Add URL(s)"), JDL.L("gui.dialog.addurl.message", "Add a URL(s). JDownloader will load and parse them for further links."), def, JDTheme.II("gui.images.taskpanes.linkgrabber", 32, 32), JDL.L("gui.dialog.addurl.okoption_parse", "Parse URL(s)"), null);
+        String link = UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN | UserIO.STYLE_LARGE, JDL.L("gui.dialog.addurl.title", "Add URL(s)"), JDL.L("gui.dialog.addurl.message", "Add a URL(s). JDownloader will load and parse them for further links."), def.toString(), JDTheme.II("gui.images.taskpanes.linkgrabber", 32, 32), JDL.L("gui.dialog.addurl.okoption_parse", "Parse URL(s)"), null);
         if (link == null || link.length() == 0) return;
-        if(CNL2.checkText(link))return;
+        if (CNL2.checkText(link)) return;
         DistributeData tmp = new DistributeData(link, false);
         tmp.setDisableDeepEmergencyScan(false);
         tmp.start();

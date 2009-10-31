@@ -52,7 +52,6 @@ import jd.config.SubConfiguration;
 import jd.controlling.DynamicPluginInterface;
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
-import jd.controlling.interaction.Interaction;
 import jd.event.ControlEvent;
 import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
@@ -307,9 +306,6 @@ public class Main {
                 }
             }
 
-            LOGGER.info("init Eventmanager");
-            Interaction.initTriggers();
-            LOGGER.info("init Localisation");
             start(args);
         } else {
             if (args.length > 0) {

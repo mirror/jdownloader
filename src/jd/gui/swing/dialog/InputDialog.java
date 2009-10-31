@@ -16,7 +16,6 @@
 
 package jd.gui.swing.dialog;
 
-import java.awt.Dimension;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
@@ -37,6 +36,7 @@ import net.miginfocom.swing.MigLayout;
 
 public class InputDialog extends AbstractDialog implements KeyListener, MouseListener {
 
+    private static final long serialVersionUID = 9206575398715006581L;
     private String defaultMessage;
     private String message;
     private JTextPane messageArea;
@@ -44,13 +44,12 @@ public class InputDialog extends AbstractDialog implements KeyListener, MouseLis
 
     public InputDialog(int flag, String title, String message, String defaultMessage, ImageIcon icon, String okOption, String cancelOption) {
         super(flag, title, icon, okOption, cancelOption);
+
         this.defaultMessage = defaultMessage;
         this.message = message;
-       
+
         init();
     }
-
-    private static final long serialVersionUID = 9206575398715006581L;
 
     @Override
     public JComponent contentInit() {
@@ -66,49 +65,32 @@ public class InputDialog extends AbstractDialog implements KeyListener, MouseLis
         contentpane.add(messageArea);
         if (JDFlags.hasAllFlags(flag, UserIO.STYLE_LARGE)) {
             input = new JTextPane();
-
             input.setText(this.defaultMessage);
             input.addKeyListener(this);
             input.addMouseListener(this);
-
-            JScrollPane sp;
-            contentpane.add(sp = new JScrollPane(input), "height 20:60:n,pushy,growy");
-            if (AbstractDialog.getDefaultDimension() != null) {
-                sp.setBounds(0, 0, (int) AbstractDialog.getDefaultDimension().getWidth(), (int) AbstractDialog.getDefaultDimension().getHeight());
-                sp.setMaximumSize(AbstractDialog.getDefaultDimension());
-            } else {
-                sp.setBounds(0, 0, 450, 600);
-                sp.setMaximumSize(new Dimension(450, 600));
-            }
+            contentpane.add(new JScrollPane(input), "height 20:60:n,pushy,growy");
         } else {
             input = new JTextField();
             input.setBorder(BorderFactory.createEtchedBorder());
             input.setText(this.defaultMessage);
             input.addKeyListener(this);
             input.addMouseListener(this);
-            if (AbstractDialog.getDefaultDimension() != null) {
-                input.setBounds(0, 0, (int) AbstractDialog.getDefaultDimension().getWidth(), (int) AbstractDialog.getDefaultDimension().getHeight());
-                input.setMaximumSize(AbstractDialog.getDefaultDimension());
-            } else {
-                input.setBounds(0, 0, 450, 600);
-                input.setMaximumSize(new Dimension(450, 600));
-            }
             contentpane.add(input, "pushy,growy, width n:n:450");
         }
-        
+
         return contentpane;
     }
 
+    @Override
     protected void packed() {
         input.selectAll();
         requestFocus();
         input.requestFocusInWindow();
-
     }
- 
+
     public String getReturnID() {
-        if ((this.getReturnValue() & (UserIO.RETURN_OK|UserIO.RETURN_COUNTDOWN_TIMEOUT)) == 0) { return null; }
-        if(input.getText()==null||input.getText().equals(""))return null;
+        if ((this.getReturnValue() & (UserIO.RETURN_OK | UserIO.RETURN_COUNTDOWN_TIMEOUT)) == 0) { return null; }
+        if (input.getText() == null || input.getText().equals("")) return null;
         return input.getText();
     }
 

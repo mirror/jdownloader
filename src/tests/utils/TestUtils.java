@@ -30,7 +30,6 @@ import jd.OptionalPluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
-import jd.controlling.interaction.Interaction;
 import jd.event.ControlEvent;
 import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
@@ -185,8 +184,6 @@ public abstract class TestUtils {
             System.setProperty("apple.laf.useScreenMenuBar", "true");
             new MacOSController();
         }
-
-        Interaction.initTriggers();
 
         JDTheme.setTheme("default");
 
