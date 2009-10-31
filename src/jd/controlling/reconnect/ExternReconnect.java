@@ -36,8 +36,6 @@ public class ExternReconnect extends ReconnectMethod {
 
     private Configuration configuration;
 
-    private static final String PROPERTY_IP_WAIT_FOR_RETURN = "WAIT_FOR_RETURN4";
-
     private static final String PROPERTY_RECONNECT_COMMAND = "InteractionExternReconnect_Command";
 
     private static final String PROPERTY_RECONNECT_PARAMETER = "EXTERN_RECONNECT__PARAMETER";
@@ -46,14 +44,11 @@ public class ExternReconnect extends ReconnectMethod {
         configuration = JDUtilities.getConfiguration();
     }
 
-    // @Override
-    public void initConfig() {
+    protected void initConfig() {
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFILE, configuration, PROPERTY_RECONNECT_COMMAND, JDL.L("interaction.externreconnect.command", "Befehl (absolute Pfade verwenden)")));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, configuration, PROPERTY_RECONNECT_PARAMETER, JDL.L("interaction.externreconnect.parameter", "Parameter (1 Parameter/Zeile)")));
-
     }
 
-    // @Override
     protected boolean runCommands(ProgressController progress) {
         String command = configuration.getStringProperty(PROPERTY_RECONNECT_COMMAND);
 
@@ -70,11 +65,6 @@ public class ExternReconnect extends ReconnectMethod {
         logger.finer("Execute Returns: " + JDUtilities.runCommand(command, Regex.getLines(parameter), executeIn, 0));
 
         return true;
-    }
-
-    // @Override
-    public String toString() {
-        return JDL.L("interaction.externreconnect.toString", "Externes Reconnectprogramm aufrufen");
     }
 
 }

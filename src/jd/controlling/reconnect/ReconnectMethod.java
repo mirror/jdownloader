@@ -141,7 +141,7 @@ public abstract class ReconnectMethod {
 
     protected abstract boolean runCommands(ProgressController progress);
 
-    public abstract void initConfig();
+    protected abstract void initConfig();
 
     public final ConfigContainer getConfig() {
         if (config == null) {

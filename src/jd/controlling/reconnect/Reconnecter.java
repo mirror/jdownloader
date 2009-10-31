@@ -224,7 +224,7 @@ public class Reconnecter {
         return ret;
     }
 
-    /* reset ipblocked links */
+    /** reset ipblocked links */
     private static void resetAllLinks() {
         ArrayList<FilePackage> packages = JDUtilities.getController().getPackages();
         /* reset hoster ipblock waittimes */
@@ -241,8 +241,8 @@ public class Reconnecter {
         }
     }
 
-    /*
-     * doit will start reconnectrequest even if user disabled autoreconnect
+    /**
+     * do it will start reconnectrequest even if user disabled autoreconnect
      */
     public static boolean waitForNewIP(long i, boolean doit) {
         if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true) == false && doit == false) return false;
@@ -298,7 +298,7 @@ public class Reconnecter {
     }
 
     /**
-     * @param RECONNECT_REQUESTED
+     * @param reconnectRequested
      *            the RECONNECT_REQUESTED to set
      */
     public static void setReconnectRequested(boolean reconnectRequested) {

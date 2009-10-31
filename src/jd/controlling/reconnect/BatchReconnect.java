@@ -41,8 +41,7 @@ public class BatchReconnect extends ReconnectMethod {
         configuration = SubConfiguration.getConfig("BATCHRECONNECT");
     }
 
-    // @Override
-    public void initConfig() {
+    protected void initConfig() {
         ConfigEntry cfg;
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, configuration, PROPERTY_TERMINAL, JDL.L("interaction.batchreconnect.terminal", "Interpreter")));
         if (OSDetector.isWindows()) {
@@ -51,12 +50,9 @@ public class BatchReconnect extends ReconnectMethod {
             cfg.setDefaultValue("/bin/bash");
         }
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, configuration, PROPERTY_BATCHTEXT, JDL.L("interaction.batchreconnect.batch", "Batch Script")));
-
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, configuration, PROPERTY_RECONNECT_EXECUTE_FOLDER, JDL.L("interaction.batchreconnect.executeIn", "Ausführen in (Ordner der Anwendung)")));
-
     }
 
-    // @Override
     protected boolean runCommands(ProgressController progress) {
         int waitForReturn = configuration.getIntegerProperty(PROPERTY_IP_WAIT_FOR_RETURN, -1);
         String executeIn = configuration.getStringProperty(PROPERTY_RECONNECT_EXECUTE_FOLDER);
@@ -82,11 +78,6 @@ public class BatchReconnect extends ReconnectMethod {
         }
 
         return true;
-    }
-
-    // @Override
-    public String toString() {
-        return JDL.L("interaction.batchreconnect.toString", "Batch reconnect durchführen");
     }
 
 }

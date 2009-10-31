@@ -47,8 +47,6 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-
-
 /**
  * Diese Klasse kann mehrere HTTPrequests durchführen. Um damit einen reconnect
  * zu simulieren
@@ -193,7 +191,7 @@ public class HTTPLiveHeader extends ReconnectMethod {
                     }
 
                     if (toDo.getNodeName().equalsIgnoreCase("PARSE")) {
-                        String[] parseLines = HTTPLiveHeader.splitLines(toDo.getChildNodes().item(0).getNodeValue().trim());
+                        String[] parseLines = Regex.getLines(toDo.getChildNodes().item(0).getNodeValue().trim());
                         for (String parseLine : parseLines) {
                             String varname = new Regex(parseLine, "(.*?):").getMatch(0);
                             String pattern = new Regex(parseLine, ".*?:(.+)").getMatch(0);
@@ -338,7 +336,7 @@ public class HTTPLiveHeader extends ReconnectMethod {
 
                 request = req.toString();
             }
-            String[] requestLines = HTTPLiveHeader.splitLines(request);
+            String[] requestLines = Regex.getLines(request);
             if (requestLines.length == 0) {
                 logger.severe("Parse Fehler:" + request);
                 return null;
@@ -429,10 +427,6 @@ public class HTTPLiveHeader extends ReconnectMethod {
         return ret;
     }
 
-    private static String[] splitLines(String source) {
-        return source.split("\r\n|\r|\n");
-    }
-
     private String getModifiedVariable(String key) {
 
         if (key.indexOf(":::") == -1 && headerProperties.containsKey(key)) { return headerProperties.get(key); }
@@ -486,13 +480,7 @@ public class HTTPLiveHeader extends ReconnectMethod {
 
     }
 
-    // @Override
-    public void initConfig() {
-    }
-
-    // @Override
-    public String toString() {
-        return JDL.L("interaction.liveHeader.name", "HTTP Live Header");
+    protected void initConfig() {
     }
 
 }
