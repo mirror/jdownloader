@@ -27,7 +27,6 @@ import jd.controlling.ByteBufferController;
 import jd.controlling.DownloadController;
 import jd.controlling.JDController;
 import jd.controlling.PasswordListController;
-import jd.controlling.interaction.Interaction;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.MacOSController;
 import jd.gui.swing.SwingGui;
@@ -64,23 +63,6 @@ public class StartUp {
     }
 
     @Test
-    public void Interactions() {
-        Interaction.initTriggers();
-
-        assertTrue(Interaction.INTERACTION_AFTER_DOWNLOAD_AND_INTERACTIONS != null);
-        assertTrue(Interaction.INTERACTION_AFTER_RECONNECT != null);
-        assertTrue(Interaction.INTERACTION_ALL_DOWNLOADS_FINISHED != null);
-        assertTrue(Interaction.INTERACTION_APPSTART != null);
-        assertTrue(Interaction.INTERACTION_BEFORE_DOWNLOAD != null);
-        assertTrue(Interaction.INTERACTION_BEFORE_RECONNECT != null);
-        assertTrue(Interaction.INTERACTION_CONTAINER_DOWNLOAD != null);
-        assertTrue(Interaction.INTERACTION_DOWNLOAD_FAILED != null);
-        assertTrue(Interaction.INTERACTION_DOWNLOAD_PACKAGE_FINISHED != null);
-        assertTrue(Interaction.INTERACTION_EXIT != null);
-        assertTrue(Interaction.INTERACTION_LINKLIST_STRUCTURE_CHANGED != null);
-    }
-
-    @Test
     public void setTheme() {
         JDTheme.setTheme("default");
 
@@ -106,13 +88,11 @@ public class StartUp {
 
     @Test
     public void Decrypter() {
-
         assertTrue(DecryptPluginWrapper.getDecryptWrapper().size() > 0);
     }
 
     @Test
     public void Host() {
-
         assertTrue(HostPluginWrapper.getHostWrapper().size() > 0);
     }
 

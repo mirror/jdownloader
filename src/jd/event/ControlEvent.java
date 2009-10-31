@@ -25,10 +25,39 @@ import java.awt.AWTEvent;
  */
 public class ControlEvent extends AWTEvent {
 
+    private static final long serialVersionUID = 1639354503246054870L;
+
     /**
      * Alle Downloads wurden bearbeitet. Und der download wird angehalten
      */
-    public final static int CONTROL_ALL_DOWNLOADS_FINISHED = 1;
+    public static final int CONTROL_ALL_DOWNLOADS_FINISHED = 1;
+
+    /**
+     * A Reconnect was requested and will be performed.
+     */
+    public static final int CONTROL_BEFORE_RECONNECT = 2;
+
+    /**
+     * The requested Reconnect was performed.
+     */
+    public static final int CONTROL_AFTER_RECONNECT = 3;
+
+    /**
+     * Ein PLugin wird beendet. Source: ist jeweils das PLugin Parameter:
+     * Decrypter: decrypted Links Vector
+     */
+    public static final int CONTROL_PLUGIN_INACTIVE = 4;
+
+    /**
+     * Ein Plugin fängt an zu arbeiten. Source ist das PLugin selbst Parameter:
+     * Decrypter: encryptedLinks
+     */
+    public static final int CONTROL_PLUGIN_ACTIVE = 5;
+
+    /**
+     * Wird aufgerufen sobald der Downloadvorgang komplett gestoppt ist
+     */
+    public static final int CONTROL_DOWNLOAD_STOP = 6;
 
     /**
      * Gibt an, dass der Downloadvorgang gestartet wurde
@@ -36,18 +65,10 @@ public class ControlEvent extends AWTEvent {
     public static final int CONTROL_DOWNLOAD_START = 13;
 
     /**
-     * Wird aufgerufen sobald der Downloadvorgang komplett gestoppt ist
+     * wird verschickt wenn das Kontextmenü der Downloadlinks geöffnet wird
+     * (oder package); soiu7rce: link/packlage parameter:menuitem arraylist
      */
-    public static final int CONTROL_DOWNLOAD_STOP = 6;
-
-    public static final int CONTROL_INTERACTION_CALL = 28;
-
-    /**
-     * 
-     */
-    public static final int CONTROL_JDPROPERTY_CHANGED = 27;
-
-    public static final int CONTROL_LOG_OCCURED = 29;
+    public static final int CONTROL_LINKLIST_CONTEXT_MENU = 22;
 
     /**
      * Gibt an dass ein plugin, eine INteraction etc. einen Forschritt gemacht
@@ -57,37 +78,18 @@ public class ControlEvent extends AWTEvent {
     public static final int CONTROL_ON_PROGRESS = 24;
 
     /**
-     * Ein Plugin fängt an zu arbeiten. Source ist das PLugin selbst Parameter:
-     * Decrypter: encryptedLinks
-     */
-    public final static int CONTROL_PLUGIN_ACTIVE = 5;
-    /**
-     * Ein PLugin wird beendet. Source: ist jeweils das PLugin Parameter:
-     * Decrypter: decrypted Links Vector
-     * 
-     */
-
-    public final static int CONTROL_PLUGIN_INACTIVE = 4;
-
-    /**
      * Wird vom Controller vor dem beeenden des Programms aufgerufen
      */
     public static final int CONTROL_SYSTEM_EXIT = 26;
-    /**
-     * prepareShutDown is complete
-     */
-    public static final int CONTROL_SYSTEM_SHUTDOWN_PREPARED = 261;
+
+    public static final int CONTROL_JDPROPERTY_CHANGED = 27;
+
+    public static final int CONTROL_INTERACTION_CALL = 28;
+
+    public static final int CONTROL_LOG_OCCURED = 29;
+
     public static final int CONTROL_INIT_COMPLETE = 30;
 
-    /**
-     * serialVersionUID
-     */
-    private static final long serialVersionUID = 1639354503246054870L;
-    /**
-     * wird verschickt wenn das Kontextmenü der Downloadlinks geöffnet wird
-     * (oder package); soiu7rce: link/packlage parameter:menuitem arraylist
-     */
-    public static final int CONTROL_LINKLIST_CONTEXT_MENU = 22;
     /**
      * Wird verwendet wenn eine datei verarbeitet wurde.z.B. eine datei entpackt
      * wurde. Andere plugins und addons können dieses event abrufen und
@@ -95,10 +97,16 @@ public class ControlEvent extends AWTEvent {
      * werden als File[] parameter übergeben
      */
     public static final int CONTROL_ON_FILEOUTPUT = 33;
+
     /**
      * Sammelt über DataBox.java daten ein
      */
     public static final int CONTROL_COLLECT_DATA = 34;
+
+    /**
+     * prepareShutDown is complete
+     */
+    public static final int CONTROL_SYSTEM_SHUTDOWN_PREPARED = 261;
 
     /**
      * Die ID des Ereignisses
@@ -120,7 +128,7 @@ public class ControlEvent extends AWTEvent {
         this.parameter = parameter;
     }
 
-    // @Override
+    @Override
     public int getID() {
         return controlID;
     }
@@ -129,7 +137,7 @@ public class ControlEvent extends AWTEvent {
         return parameter;
     }
 
-    // @Override
+    @Override
     public String toString() {
         return "[source:" + source + ", controlID:" + controlID + ", parameter:" + parameter + "]";
     }

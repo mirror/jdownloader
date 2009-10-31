@@ -25,7 +25,6 @@ import java.util.logging.Logger;
 
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
-import jd.controlling.interaction.Interaction;
 import jd.event.ControlEvent;
 import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
@@ -284,9 +283,7 @@ public class SingleDownloadController extends Thread {
         downloadLink.setProperty(DownloadLink.STATIC_OUTPUTFILE, downloadLink.getFileOutput());
 
         DownloadController.getInstance().fireDownloadLinkUpdate(downloadLink);
-        Interaction.handleInteraction(Interaction.INTERACTION_SINGLE_DOWNLOAD_FINISHED, downloadLink);
         if (JDUtilities.getController().isContainerFile(new File(downloadLink.getFileOutput()))) {
-            Interaction.handleInteraction(Interaction.INTERACTION_CONTAINER_DOWNLOAD, downloadLink);
             if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_RELOADCONTAINER, true)) {
                 JDUtilities.getController().loadContainerFile(new File(downloadLink.getFileOutput()));
             }
@@ -588,7 +585,6 @@ public class SingleDownloadController extends Thread {
                 downloadLink.getLinkStatus().setErrorMessage(JDL.L("controller.status.containererror", "Container Error"));
                 downloadLink.setEnabled(false);
                 fireControlEvent(new ControlEvent(currentPlugin, ControlEvent.CONTROL_PLUGIN_INACTIVE, this));
-                Interaction.handleInteraction(Interaction.INTERACTION_DOWNLOAD_FAILED, this);
                 return;
             }
             /* check ob Datei existiert oder bereits geladen wird */

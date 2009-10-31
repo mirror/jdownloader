@@ -18,34 +18,23 @@ package jd.controlling.interaction;
 
 import java.io.Serializable;
 
-import jd.utils.locale.JDL;
-
-/**
- * Diese Interaktion beendet den JDownloader.
- * 
- * @author JD-Team
- */
 public class JDExit extends Interaction implements Serializable {
 
     private static final long serialVersionUID = -4825002404662625527L;
 
-    @Override
     public boolean doInteraction(Object arg) {
         return false;
     }
 
-    @Override
     public String getInteractionName() {
-        return JDL.L("interaction.jdexit.name", "JD Beenden");
+        return null;
     }
 
-    @Override
     public void initConfig() {
     }
 
-    @Override
     public String toString() {
-        return JDL.L("interaction.jdexit.name", "JD Beenden");
+        return null;
     }
 
 }

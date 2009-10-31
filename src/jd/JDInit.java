@@ -35,7 +35,6 @@ import jd.controlling.DownloadController;
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.controlling.PasswordListController;
-import jd.controlling.interaction.Interaction;
 import jd.event.ControlEvent;
 import jd.gui.UserIF;
 import jd.gui.UserIO;
@@ -83,9 +82,6 @@ public class JDInit {
             UserIO.getInstance().requestTextAreaDialog("Error", "Failed Update detected!", "It seems that the previous webupdate failed.\r\nPlease ensure that your java-version is equal- or above 1.5.\r\nMore infos at http://www.syncom.org/projects/jdownloader/wiki/FAQ.\r\n\r\nErrorcode: \r\n" + JDIO.readFileToString(JDUtilities.getResourceFile("webcheck.tmp")));
             JDUtilities.getResourceFile("webcheck.tmp").delete();
             JDUtilities.getConfiguration().setProperty(Configuration.PARAM_WEBUPDATE_AUTO_RESTART, false);
-        } else {
-
-            Interaction.handleInteraction(Interaction.INTERACTION_APPSTART, false);
         }
         if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL_JARED) {
             String old = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_UPDATE_VERSION, "");
@@ -207,6 +203,7 @@ public class JDInit {
         ByteBufferController.getInstance();
         /* add ShutdownHook so we have chance to save database properly */
         Runtime.getRuntime().addShutdownHook(new Thread() {
+            @Override
             public void run() {
                 try {
                     if (DatabaseConnector.isDatabaseShutdown()) {

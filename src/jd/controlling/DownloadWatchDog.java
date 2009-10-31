@@ -23,7 +23,6 @@ import java.util.logging.Logger;
 
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
-import jd.controlling.interaction.Interaction;
 import jd.controlling.reconnect.Reconnecter;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
@@ -711,7 +710,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                                 DownloadController.getInstance().fireDownloadLinkUpdate(updates);
                             }
                             int ret = 0;
-                            if (Interaction.areInteractionsInProgress() && activeDownloads < getSimultanDownloadNum()) {
+                            if (activeDownloads < getSimultanDownloadNum()) {
                                 if (!reachedStopMark()) ret = setDownloadActive();
                             }
                             if (ret == 0) {
@@ -767,7 +766,6 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                     }
                     JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED, this));
                     JDUtilities.getController().removeControlListener(INSTANCE);
-                    Interaction.handleInteraction(Interaction.INTERACTION_ALL_DOWNLOADS_FINISHED, this);
                     DownloadWatchDog.getInstance().stopDownloads();
                 }
             };
@@ -832,7 +830,6 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
 
     private void startDownloadThread(DownloadLink dlink) {
         dlink.getLinkStatus().setActive(true);
-        Interaction.handleInteraction(Interaction.INTERACTION_BEFORE_DOWNLOAD, dlink);
         SingleDownloadController download = new SingleDownloadController(dlink);
         logger.info("Start new Download: " + dlink.getHost());
         this.activateDownload(dlink, download);

@@ -23,11 +23,10 @@ import java.util.logging.Logger;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.DownloadWatchDog;
-import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.controlling.LinkCheck;
 import jd.controlling.ProgressController;
-import jd.controlling.interaction.Interaction;
+import jd.event.ControlEvent;
 import jd.gui.UserIF;
 import jd.gui.UserIO;
 import jd.nrouter.IPCheck;
@@ -87,13 +86,11 @@ public class Reconnecter {
      *         <code>false</code>
      */
     public static boolean doReconnect() {
-        JDController controller = JDUtilities.getController();
         boolean ipChangeSuccess = false;
         if (System.currentTimeMillis() - LAST_UP_UPDATE_TIME > (1000 * 60) * SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty("EXTERNAL_IP_CHECK_INTERVAL2", 10)) {
             if (Reconnecter.checkExternalIPChange()) return true;
         }
-
-        Interaction.handleInteraction(Interaction.INTERACTION_BEFORE_RECONNECT, controller);
+        JDUtilities.getController().fireControlEvent(new ControlEvent(JDUtilities.getController(), ControlEvent.CONTROL_BEFORE_RECONNECT, null));
         int type = JDUtilities.getConfiguration().getIntegerProperty(ReconnectMethod.PARAM_RECONNECT_TYPE, ReconnectMethod.LIVEHEADER);
         logger.info("Try to reconnect...");
         /* laufende downloads stoppen */
@@ -163,7 +160,7 @@ public class Reconnecter {
             ret = doReconnectIfRequestedInternal(doit);
             if (ret) {
                 Reconnecter.resetAllLinks();
-                Interaction.handleInteraction(Interaction.INTERACTION_AFTER_RECONNECT, JDUtilities.getController());
+                JDUtilities.getController().fireControlEvent(new ControlEvent(JDUtilities.getController(), ControlEvent.CONTROL_AFTER_RECONNECT, null));
             }
         } catch (Exception e) {
         }

@@ -53,7 +53,6 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
-import jd.controlling.interaction.Interaction;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.UserIO;
@@ -745,29 +744,20 @@ public class JDChat extends PluginOptional implements ControlListener {
 
     @Override
     public void controlEvent(ControlEvent e) {
-
-        if (e.getID() == ControlEvent.CONTROL_INTERACTION_CALL) {
-
-            if (e.getSource() == Interaction.INTERACTION_AFTER_RECONNECT) {
-                if (SwingGui.getInstance().getMainFrame().isActive() && !nickaway) {
-                    initIRC();
-                } else {
-                    addToText(null, STYLE_ERROR, "You got disconnected because of a reconnect. <a href='intern:reconnect|reconnect'><b>[RECONNECT NOW]</b></a>");
-
-                }
-
+        if (e.getID() == ControlEvent.CONTROL_AFTER_RECONNECT) {
+            if (SwingGui.getInstance().getMainFrame().isActive() && !nickaway) {
+                initIRC();
+            } else {
+                addToText(null, STYLE_ERROR, "You got disconnected because of a reconnect. <a href='intern:reconnect|reconnect'><b>[RECONNECT NOW]</b></a>");
             }
-            if (e.getSource() == Interaction.INTERACTION_BEFORE_RECONNECT) {
-                // sendMessage(CHANNEL, "/me is reconnecting...");
-                if (conn != null && conn.isConnected()) {
-                    addToText(null, STYLE_SYSTEM_MESSAGE, "closing connection due to requested reconnect.");
-                    conn.doPart(CHANNEL, "reconnecting...");
-                    conn.close();
-                    conn = null;
-                }
-
+        } else if (e.getID() == ControlEvent.CONTROL_BEFORE_RECONNECT) {
+            // sendMessage(CHANNEL, "/me is reconnecting...");
+            if (conn != null && conn.isConnected()) {
+                addToText(null, STYLE_SYSTEM_MESSAGE, "closing connection due to requested reconnect.");
+                conn.doPart(CHANNEL, "reconnecting...");
+                conn.close();
+                conn = null;
             }
-
         }
     }
 

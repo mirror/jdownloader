@@ -31,8 +31,6 @@ import jd.config.SubConfiguration;
 import jd.controlling.DownloadWatchDog;
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
-import jd.controlling.interaction.Interaction;
-import jd.controlling.interaction.InteractionTrigger;
 import jd.event.ControlEvent;
 import jd.gui.UserIO;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
@@ -67,17 +65,15 @@ public class JDShutdown extends PluginOptional {
     public void controlEvent(ControlEvent event) {
         super.controlEvent(event);
         if (shutdownEnabled) {
-            if (event.getID() == ControlEvent.CONTROL_INTERACTION_CALL) {
-                if ((InteractionTrigger) event.getSource() == Interaction.INTERACTION_AFTER_DOWNLOAD_AND_INTERACTIONS) {
-                    if (shutdown != null) {
-                        if (!shutdown.isAlive()) {
-                            shutdown = new ShutDown();
-                            shutdown.start();
-                        }
-                    } else {
+            if (event.getID() == ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED) {
+                if (shutdown != null) {
+                    if (!shutdown.isAlive()) {
                         shutdown = new ShutDown();
                         shutdown.start();
                     }
+                } else {
+                    shutdown = new ShutDown();
+                    shutdown.start();
                 }
             }
         }

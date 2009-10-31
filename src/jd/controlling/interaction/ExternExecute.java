@@ -16,36 +16,25 @@
 
 package jd.controlling.interaction;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.Serializable;
 
-import jd.utils.locale.JDL;
-
-public class ExternExecute extends Interaction implements Serializable, ActionListener {
+public class ExternExecute extends Interaction implements Serializable {
 
     private static final long serialVersionUID = 4793649294489149258L;
 
-    public void actionPerformed(ActionEvent e) {
-        doInteraction(null);
-    }
-
-    // @Override
     public boolean doInteraction(Object arg) {
         return false;
     }
 
-    // @Override
     public String getInteractionName() {
-        return JDL.L("interaction.externExecute.name", "Extern Execute");
+        return null;
     }
 
-    // @Override
     public void initConfig() {
     }
 
-    // @Override
     public String toString() {
-        return JDL.L("interaction.externExecute.toString", "Externes Programm aufrufen");
+        return null;
     }
+
 }

@@ -16,37 +16,25 @@
 
 package jd.controlling.interaction;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.Serializable;
 
-import jd.utils.locale.JDL;
-
-public class SimpleExecute extends Interaction implements Serializable, ActionListener {
+public class SimpleExecute extends Interaction implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    public void actionPerformed(ActionEvent e) {
-
-    }
-
-    // @Override
     public boolean doInteraction(Object arg) {
         return false;
     }
 
-    // @Override
     public String getInteractionName() {
-        return JDL.L("interaction.simpleExecute.name", "Programm/Script ausführen");
+        return null;
     }
 
-    // @Override
     public void initConfig() {
     }
 
-    // @Override
     public String toString() {
-        return JDL.L("interaction.simpleExecute.name", "Programm/Script ausführen");
+        return null;
     }
 
 }

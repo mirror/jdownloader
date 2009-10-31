@@ -30,7 +30,6 @@ import jd.Main;
 import jd.config.Configuration;
 import jd.config.DatabaseConnector;
 import jd.config.SubConfiguration;
-import jd.controlling.interaction.Interaction;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.UserIO;
@@ -271,8 +270,6 @@ public class JDController implements ControlListener {
 
             // Prüfen ob das Paket fertig ist und entfernt werden soll
             if (lastDownloadFinished.getFilePackage().getRemainingLinks() == 0) {
-                Interaction.handleInteraction(Interaction.INTERACTION_DOWNLOAD_PACKAGE_FINISHED, this);
-
                 if (JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_FINISHED_DOWNLOADS_ACTION, 3) == 2) {
                     JDUtilities.getDownloadController().removePackage(lastDownloadFinished.getFilePackage());
                     break;
@@ -351,7 +348,6 @@ public class JDController implements ControlListener {
             HTACCESSController.getInstance().saveSync();
             if (!quickmode) {
                 logger.info("Call Exit interactions");
-                Interaction.handleInteraction(Interaction.INTERACTION_EXIT, null);
                 logger.info("Wait for delayExit");
                 waitDelayExit();
             }
