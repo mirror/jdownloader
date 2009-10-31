@@ -277,7 +277,7 @@ gui.config.jdshutdown.shutdown = Kapat
 gui.config.jdshutdown.standby = Beklemede (Her işletim sisteminde çalışmaz)
 gui.config.linkgrabber.cnl2 = Tıkla'v'Yükle desteğini etkinleştir
 gui.config.linkgrabber.controlposition = Link yakalayıcı butonlarını tablonun üstüne yerleştir
-gui.config.linkgrabber.infopanel.onlinkgrab = Link yaklandığı vakit dosya bilgi panelini göster
+gui.config.linkgrabber.infopanel.onlinkgrab = Link yakalandığı vakit dosya bilgi panelini göster
 gui.config.linkgrabber.iognorelist = Link filtreleme normal ifadelerden oluşan linkleri filtrelemek için kullanılır.
 gui.config.linkgrabber.onlincheck = Link bilgilerini ve çevrimiçi durumunu denetle
 gui.config.linkgrabber.replacechars = (otoPaketleyici) Noktalar ve _ yerine boşluklar kullanılsın? 
@@ -834,26 +834,18 @@ installer.vistadir.warning = Dikkat! JD bu konuma yüklendi %s. Bu bazı hatalar
 interaction.batchreconnect.batch = Batch Script (betik)
 interaction.batchreconnect.executein = Burada çalıştır (uygulamanın bulunduğu dizini seç)
 interaction.batchreconnect.terminal = Yorumlayıcı
-interaction.batchreconnect.tostring = Batch Tekrar bağlan parametreleri
-interaction.externexecute.name = Harici (dışardan) yürüt
-interaction.externexecute.tostring = Harici uygulama çalıştır
 interaction.externreconnect.command = Komut (salt dizin yolları kullan)
 interaction.externreconnect.parameter = Parametre (her satır için tek parametre)
-interaction.externreconnect.tostring = Harici Tekrar Bağlantı uygulaması çalıştır
 interaction.jdchat.deslanguage = buna:
 interaction.jdchat.native = buna:
-interaction.jdexit.name = JD Çıkış
-interaction.liveheader.name = HTTP Live Header
 interaction.liveheader.progress.3_step = (Adım) HTTP LiveHeader :
 interaction.liveheader.progress.4_step = (%s) HTTP LiveHeader
-interaction.resetlink.name = İndirme linkini sıfırla (Dikkat:Dosya silinecektir!)
 interaction.shutdown.dialog.msg.hibernate = <h2><font color="red">Sisteminiz uyku moduna (hazırda beklemeye) geçirilecek!</font></h2>
 interaction.shutdown.dialog.msg.shutdown = <h2><font color="red">Sisteminiz kapatılacak!</font></h2>
 interaction.shutdown.dialog.msg.standby = <h2><font color="red">Sisteminiz bekleme moduna geçirilecek!</font></h2>
 interaction.shutdown.dialog.title.hibernate = Uyku modu (Hazırda Beklet)?
 interaction.shutdown.dialog.title.shutdown = Sistemi Kapat?
 interaction.shutdown.dialog.title.standby = Beklemede?
-interaction.simpleexecute.name = Program/Betik yürüt
 interaction.trigger.after_reconnect = Tekrar bağlanınca
 interaction.trigger.after_reconnect.desc = Tekrar bağlandıktan sonra yürüt 
 interaction.trigger.all_downloads_finished = Bütün indirmeler tamamlandığında 
