@@ -99,6 +99,7 @@ public class ShareRapidCz extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (!(dl.getConnection().isContentDisposition())) {
             br.followConnection();
+            if (br.containsHTML("was not found on this server")) throw new PluginException(LinkStatus.ERROR_FATAL, "Server error");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
