@@ -25,6 +25,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornhost.com" }, urls = { "http://[\\w\\.]*?pornhost\\.com/[0-9]+" }, flags = { 0 })
 public class PrnHstComFldr extends PluginForDecrypt {
@@ -39,6 +40,11 @@ public class PrnHstComFldr extends PluginForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(true);
         br.getPage(parameter);
+        if (br.containsHTML("gallery not found") || br.containsHTML("You will be redirected to")) {
+            logger.warning("Wrong link");
+            logger.warning(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+            return new ArrayList<DownloadLink>();
+        }
         if (br.containsHTML("(moviecontainer|flashmovie|play this movie|createPlayer)")) {
             String finallink = br.getURL();
             decryptedLinks.add(createDownloadlink(finallink.replace("pornhost", "GhtjGEuzrjTU")));

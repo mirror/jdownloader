@@ -93,7 +93,7 @@ public class ZomgUploadCom extends PluginForHost {
         }
         String dllink = br.getRegex("#bbb;padding:[0-9]px;\">.*?<a href=\"(.*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -2);
         dl.startDownload();
 
     }
@@ -126,9 +126,6 @@ public class ZomgUploadCom extends PluginForHost {
     }
 
     @Override
-    /*
-     * public String getVersion() { return getVersion("$Revision$"); }
-     */
     public int getMaxSimultanFreeDownloadNum() {
         return 2;
     }

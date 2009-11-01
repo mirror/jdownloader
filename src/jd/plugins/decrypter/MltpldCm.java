@@ -33,22 +33,20 @@ public class MltpldCm extends PluginForDecrypt {
         super(wrapper);
     }
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-
         br.getPage(param.toString());
-
         String[] redirectLinks = br.getRegex(Pattern.compile("id=\"urlhref_.*?\">(.*?)</a></div>")).getColumn(0);
-
+        progress.setRange(redirectLinks.length);
         for (String redirectLink : redirectLinks) {
             br.getPage(redirectLink);
-            decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
+            String finallink = br.getRedirectLocation();
+            if (finallink == null) return null;
+            if (finallink.contains("mediafire")) finallink = finallink.replace("mediafire.com?", "mediafire.com/?");
+            decryptedLinks.add(createDownloadlink(finallink));
+            progress.increase(1);
         }
 
         return decryptedLinks;
     }
-
-    // @Override
-
 }
