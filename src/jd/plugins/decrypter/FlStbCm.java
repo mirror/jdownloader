@@ -21,6 +21,7 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -55,9 +56,9 @@ public class FlStbCm extends PluginForDecrypt {
             }
         }
         fp.setName(fpName);
-        String temp = br.getRegex(Pattern.compile("und:#fff;overflow: auto\">(.*?)<br /></pre></", Pattern.DOTALL)).getMatch(0);
+        String temp = br.getRegex(Pattern.compile("overflow(.*?)/pre>", Pattern.DOTALL)).getMatch(0);
         if (temp == null) return null;
-        String[] links = temp.split("<br />");
+        String[] links = HTMLParser.getHttpLinks(temp, "");
         if (links == null || links.length == 0) return null;
         progress.setRange(links.length);
         for (String data : links) {
