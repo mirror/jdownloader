@@ -85,7 +85,6 @@ public class FilesMonsterCom extends PluginForHost {
         br.setDebug(true);
         br.getPage(downloadLink.getDownloadURL());
         String premlink = br.getRegex("\"(http://filesmonster\\.com/get/.*?)\"").getMatch(0);
-        System.out.print(br.toString());
         if (premlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage(premlink);
         if (br.containsHTML("but it has exceeded the daily limit download in total")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
