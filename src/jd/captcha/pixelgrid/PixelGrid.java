@@ -614,8 +614,9 @@ public class PixelGrid extends Property {
 
     }
 
+    /** Why not simple return grid.clone(); ? */
     public static int[][] getGridCopy(int[][] grid) {
-        if (grid.length == 0) { return null; }
+        if (grid.length == 0) return null;
         int[][] ret = new int[grid.length][grid[0].length];
         for (int x = 0; x < grid.length; x++) {
             for (int y = 0; y < grid[0].length; y++) {

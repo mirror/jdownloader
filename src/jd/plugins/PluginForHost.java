@@ -212,7 +212,7 @@ public abstract class PluginForHost extends Plugin {
         }
     }
 
-    /* default fetchAccountInfo, set account valid to true */
+    /** default fetchAccountInfo, set account valid to true */
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         account.setValid(true);
         return null;
@@ -232,14 +232,19 @@ public abstract class PluginForHost extends Plugin {
         if (!enablePremium) return null;
         ArrayList<MenuAction> menuList = new ArrayList<MenuAction>();
         MenuAction account;
-        MenuAction m = new MenuAction("plugins.configs", 1);
-        m.setActionListener(this);
-        if (config == null || config.getEntries().size() == 0) m.setEnabled(false);
+        MenuAction m;
+
+        if (config != null && config.getEntries().size() > 0) {
+            m = new MenuAction("plugins.configs", 1);
+            m.setActionListener(this);
+            menuList.add(m);
+            menuList.add(new MenuAction(Types.SEPARATOR));
+        }
 
         if (config != null) config.setGroup(new ConfigGroup(getHost(), getHosterIcon()));
-        menuList.add(m);
+
         if (premiumAction == null) {
-            premiumAction = new MenuAction(JDL.L("plugins.menu.accounts", "Accounts"), 0);
+            premiumAction = new MenuAction("accounts", 0);
             premiumAction.setType(Types.CONTAINER);
             ArrayList<Account> accounts = getPremiumAccounts();
 

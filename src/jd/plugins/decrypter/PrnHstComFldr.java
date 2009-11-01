@@ -33,6 +33,7 @@ public class PrnHstComFldr extends PluginForDecrypt {
         super(wrapper);
     }
 
+    @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -51,14 +52,14 @@ public class PrnHstComFldr extends PluginForDecrypt {
             }
             for (String dl : links) {
                 decryptedLinks.add(createDownloadlink(dl.replace("pornhost", "GhtjGEuzrjTU")));
-                // If the plugin knows the name/number of the gallery we cann
-                // add all pics to one package...looks nicer and makes it easier
-                // for the user
-                if (fpName != null) {
-                    FilePackage fp = FilePackage.getInstance();
-                    fp.setName("Gallery " + fpName.trim());
-                    fp.addLinks(decryptedLinks);
-                }
+            }
+            // If the plugin knows the name/number of the gallery we cann
+            // add all pics to one package...looks nicer and makes it easier
+            // for the user
+            if (fpName != null) {
+                FilePackage fp = FilePackage.getInstance();
+                fp.setName("Gallery " + fpName.trim());
+                fp.addLinks(decryptedLinks);
             }
         }
 
