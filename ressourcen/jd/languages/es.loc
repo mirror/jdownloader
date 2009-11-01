@@ -758,23 +758,18 @@ installer.vistadir.warning = Advertencia! JD está instalado en %s. Esto causa e
 interaction.batchreconnect.batch = Lote de Script
 interaction.batchreconnect.executein = Iniciar en (carpeta de la aplicación)
 interaction.batchreconnect.terminal = Interprete
-interaction.externexecute.name = Ejecución externa
-interaction.externexecute.tostring = Ejecutar aplicación externa
 interaction.externreconnect.command = Comando (usa rutas de directorio absolutas)
 interaction.externreconnect.parameter = Parámetro (1 parámetro cada línea)
 interaction.jdchat.deslanguage = idioma: 
 interaction.jdchat.native = idioma: 
-interaction.jdexit.name = Salir de JD
 interaction.liveheader.progress.3_step = (Paso) Cabecera HTTP en directo :
 interaction.liveheader.progress.4_step = (%s) Cabecera HTTP en directo
-interaction.resetlink.name = Reiniciar enlace de descarga (¡Atención: el archivo sera eliminado!)
 interaction.shutdown.dialog.msg.hibernate = <h2><font color="red">Atencion! El sistema se pondrá en modo de Hibernación!</font></h2>
 interaction.shutdown.dialog.msg.shutdown = <h2><font color="red">Atencion! El sistema será Apagado!</font></h2>
 interaction.shutdown.dialog.msg.standby = <h2><font color="red">Atencion! El sistema se pondrá en el modo Suspender!</font></h2>
 interaction.shutdown.dialog.title.hibernate = Hibernar?
 interaction.shutdown.dialog.title.shutdown = Apagar?
 interaction.shutdown.dialog.title.standby = Suspender?
-interaction.simpleexecute.name = Ejecutar Programa/Script
 interaction.trigger.after_reconnect = Despues de Reconectar
 interaction.trigger.after_reconnect.desc = Se ejecuta después de la Reconexión
 interaction.trigger.all_downloads_finished = Finalizadas todas las descargas
