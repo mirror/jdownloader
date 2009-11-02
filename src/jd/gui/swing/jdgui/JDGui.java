@@ -359,7 +359,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
             Balloon.showIfHidden(JDL.L("ballon.download.title", "Download"), JDTheme.II("gui.images.next", 32, 32), JDL.L("ballon.download.finished.started", "Download started"));
             break;
         case ControlEvent.CONTROL_DOWNLOAD_STOP:
-            Balloon.showIfHidden(JDL.L("ballon.download.title", "Download"), JDTheme.II("gui.images.next", 32, 32), JDL.L("ballon.download.finished.stopped", "Download stopped"));
+            Balloon.showIfHidden(JDL.L("ballon.download.title", "Download"), JDTheme.II("gui.images.stop", 32, 32), JDL.L("ballon.download.finished.stopped", "Download stopped"));
             break;
         }
     }
