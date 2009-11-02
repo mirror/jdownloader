@@ -100,7 +100,7 @@ public class HosterColumn extends JDTableColumn {
                 statuspanel.setText("plugin missing");
             } else {
                 String s = dLink.getPlugin().getHost()+ dLink.getPlugin().getSessionInfo();
-                if (table.getJDTable().getWidthOfColumn(this) > (counter + 2) * 16 + fontmetrics.stringWidth(s)) {
+                if (getCurWidth() > (counter + 2) * 16 + fontmetrics.stringWidth(s)) {
                     statuspanel.setText(s);
                 } else {
                     statuspanel.setText("");

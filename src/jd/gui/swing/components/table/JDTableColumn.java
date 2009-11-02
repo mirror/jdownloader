@@ -48,6 +48,7 @@ public abstract class JDTableColumn extends AbstractCellEditor implements TableC
     private Color currentforeground = null;
     private StatusLabel sl = null;
     private int clickcount = 1;
+    private int curWidth = -1;
 
     public JDTableColumn(String name, JDTableModel table) {
         this.name = name;
@@ -236,5 +237,13 @@ public abstract class JDTableColumn extends AbstractCellEditor implements TableC
     public abstract Component myTableCellRendererComponent(JDTableModel table, Object value, boolean isSelected, boolean hasFocus, int row, int column);
 
     public abstract Object getCellEditorValue();
+
+    public int getCurWidth() {
+        return curWidth;
+    }
+
+    public void setCurWidth(int curWidth) {
+        this.curWidth = curWidth;
+    }
 
 }
