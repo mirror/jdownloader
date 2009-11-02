@@ -51,6 +51,7 @@ import jd.nutils.httpserver.HttpServer;
 import jd.nutils.httpserver.Request;
 import jd.nutils.httpserver.Response;
 import jd.parser.Regex;
+import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -380,18 +381,18 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                 response.addContent("newmax=" + newsimdl);
             } else if (request.getRequestUrl().matches("(?is).*/action/add/links/((grabber[01]{1}/)?|(start[01]{1}/grabber[01]{1}/)?)?[\\s\\S]+")) {
                 // Add Link(s)
-                String link = new Regex(request.getRequestUrl(), "[\\s\\S]*?/action/add/links/((grabber[01]{1}/)?|(start[01]{1}/grabber[01]{1}/)?)?([\\s\\S]+)").getMatch(3);
-
+                String link = new Regex(request.getRequestUrl(), "[\\s\\S]*?/action/add/links/([\\s\\S]+)").getMatch(0);
+                ArrayList<String> links = new ArrayList<String>();
+                for (String tlink : HTMLParser.getHttpLinks(link, null)) {
+                    links.add(tlink);
+                }
                 if (request.getParameters().size() > 0) {
-                    link += "?";
                     Iterator<String> it = request.getParameters().keySet().iterator();
                     while (it.hasNext()) {
                         String help = it.next();
-                        link += help;
                         if (!request.getParameter(help).equals("")) {
-                            link += "=" + request.getParameter(help);
+                            links.add(request.getParameter(help));
                         }
-                        if (it.hasNext()) link += "&";
                     }
                 }
 
@@ -404,13 +405,19 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                     showgrab = Integer.parseInt(new Regex(request.getRequestUrl(), ".+grabber([01]{1}).+").getMatch(0));
                     start = Integer.parseInt(new Regex(request.getRequestUrl(), ".+start([01]{1}).+").getMatch(0));
                 } catch (Exception e) {
-                    JDLogger.exception(e);
                 }
 
                 if ((showgrab != null) && (showgrab == 0)) {
                     hidegrabber = true;
                 }
-
+                StringBuilder ret = new StringBuilder();
+                char tmp[] = new char[] { '"', '\r', '\n' };
+                for (String element : links) {
+                    ret.append('\"');
+                    ret.append(element.trim());
+                    ret.append(tmp);
+                }
+                link = ret.toString();
                 new DistributeData(link, hidegrabber).start();
 
                 // will start downloads in list if parameter is set

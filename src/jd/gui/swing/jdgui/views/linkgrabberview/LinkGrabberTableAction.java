@@ -47,6 +47,7 @@ public class LinkGrabberTableAction extends AbstractAction {
     public static final int SAVE_DLC = 20;
     public static final int BROWSE_LINK = 7;
     public static final int COPY_LINK = 8;
+    public static final int CHECK_LINK = 120;
 
     private int actionID;
     private ActionListener actionListener;

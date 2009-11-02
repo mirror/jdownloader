@@ -614,7 +614,11 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
                     return;
                 }
                 case TableAction.DELETEFILE: {
-                    if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, JDL.L("gui.downloadlist.delete2", "Delete links from downloadlist and disk?") + " (" + JDL.LF("gui.downloadlist.delete.size_packagev2", "%s links", selectedLinks.size()) + ")"), UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
+                    int counter = 0;
+                    for (DownloadLink tmp : selectedLinks) {
+                        if (tmp.existsFile()) counter++;
+                    }
+                    if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, JDL.L("gui.downloadlist.delete2", "Delete links from downloadlist and disk?") + " (" + JDL.LF("gui.downloadlist.delete.links", "%s links", selectedLinks.size()) + " / " + " " + JDL.LF("gui.downloadlist.delete.files", "%s files", counter) + ")"), UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
                         for (int i = 0; i < selectedLinks.size(); i++) {
                             selectedLinks.get(i).setEnabled(false);
                         }

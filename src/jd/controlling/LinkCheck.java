@@ -75,6 +75,12 @@ public class LinkCheck implements ActionListener, ProgressControllerListener {
         return this.broadcaster;
     }
 
+    public void removefromWaitingList(ArrayList<DownloadLink> links) {
+        synchronized (linksToCheck) {
+            linksToCheck.removeAll(links);
+        }
+    }
+
     public synchronized void checkLinks(ArrayList<DownloadLink> links, boolean resetLinkCheck) {
         if (links == null || links.size() == 0) return;
         checkRunning = true;

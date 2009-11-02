@@ -778,6 +778,12 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         }
     }
 
+    /* returns if partfile or completed file exists on disk */
+    public boolean existsFile() {
+        if (new File(this.getFileOutput()).exists() || new File(this.getFileOutput() + ".part").exists()) return true;
+        return false;
+    }
+
     /**
      * Kann mit setAborted(true) den Download abbrechen
      * 

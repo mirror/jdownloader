@@ -23,8 +23,8 @@ import jd.parser.Regex;
 import jd.plugins.hoster.HTTPAllgemein;
 
 public class LinkGrabberPackager {
-    public static final Pattern pat0 = Pattern.compile("(.*)(\\.|_|-)pa?r?t?[0-9]+.rar$", Pattern.CASE_INSENSITIVE);
-    public static final Pattern pat1 = Pattern.compile("(.*)(\\.|_|-)part[0]*[1].rar$", Pattern.CASE_INSENSITIVE);
+    public static final Pattern pat0 = Pattern.compile("(.*)(\\.|_|-)pa?r?t?\\.?[0-9]+.rar$", Pattern.CASE_INSENSITIVE);
+    public static final Pattern pat1 = Pattern.compile("(.*)(\\.|_|-)part\\.?[0]*[1].rar$", Pattern.CASE_INSENSITIVE);
     public static final Pattern pat3 = Pattern.compile("(.*)\\.rar$", Pattern.CASE_INSENSITIVE);
     public static final Pattern pat4 = Pattern.compile("(.*)\\.r\\d+$", Pattern.CASE_INSENSITIVE);
     public static final Pattern pat5 = Pattern.compile("(.*)(\\.|_|-)\\d+$", Pattern.CASE_INSENSITIVE);

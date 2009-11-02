@@ -63,6 +63,7 @@ public class UploadingCom extends PluginForHost {
     public void login(Account account) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getHeaders().put("User-Agent", userAgent);
+        br.setCookie("http://www.uploading.com/", "lang", "1");
         br.setCookie("http://www.uploading.com/", "language", "1");
         br.setCookie("http://www.uploading.com/", "setlang", "en");
         br.setCookie("http://www.uploading.com/", "_lang", "en");
@@ -97,16 +98,16 @@ public class UploadingCom extends PluginForHost {
         br.setDebug(true);
         synchronized (PREMLOCK) {
             login(account);
-            // if (!isPremium()) {
-            // simultanpremium = 1;
-            // free = true;
-            // } else {
-            // if (simultanpremium + 1 > 20) {
-            // simultanpremium = 20;
-            // } else {
-            // simultanpremium++;
-            // }
-            // }
+            if (!isPremium()) {
+                simultanpremium = 1;
+                free = true;
+            } else {
+                if (simultanpremium + 1 > 20) {
+                    simultanpremium = 20;
+                } else {
+                    simultanpremium++;
+                }
+            }
             fileCheck(link);
         }
         if (free) {
@@ -126,19 +127,24 @@ public class UploadingCom extends PluginForHost {
         dl.startDownload();
     }
 
-    public void handleFree0(DownloadLink link) throws Exception {
+    public void checkErrors() throws PluginException {
         if (br.containsHTML("YOU REACHED YOUR COUNTRY DAY LIMIT")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, JDL.L("plugins.hoster.uploadingcom.errors.countrylimitreached", "You reached your country daily limit"), 60 * 60 * 1000l);
+        if (br.containsHTML("you have reached your daily download limi")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 1 * 60 * 60 * 1000l);
+        if (br.containsHTML("Your IP address is currently downloading a file")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
+        if (br.containsHTML("Only Premium users can download files larger than")) throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium");
+        if (br.containsHTML("You have reached the daily downloads limit")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 1 * 60 * 60 * 1000l);
+    }
+
+    public void handleFree0(DownloadLink link) throws Exception {
+        checkErrors();
         Form form = br.getFormbyProperty("id", "downloadform");
         try {
             Thread.sleep(2000);
         } catch (InterruptedException e) {
             return;
         }
+        checkErrors();
         br.submitForm(form);
-        if (br.containsHTML("you have reached your daily download limi")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 1 * 60 * 60 * 1000l);
-        if (br.containsHTML("Your IP address is currently downloading a file")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
-        if (br.containsHTML("Only Premium users can download files larger than")) throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium");
-        if (br.containsHTML("You have reached the daily downloads limit")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 1 * 60 * 60 * 1000l);
         String redirect = getDownloadUrl(br, link);
         br.setFollowRedirects(false);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, redirect, true, 1);
@@ -156,7 +162,7 @@ public class UploadingCom extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("but due to abuse or through deletion by")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filesize = br.getRegex("File size: <b>(.*?)</b>").getMatch(0);
-        String filename = br.getRegex(">Download(.*?)for free on uploading.com").getMatch(0).trim();
+        String filename = br.getRegex(">Download(.*?)for free on uploading.com").getMatch(0);
         if (filename == null) {
             filename = br.getRegex(">File download</h2><br/>.*?<h2>(.*?)</h2>").getMatch(0);
             if (filename == null) {
@@ -209,31 +215,14 @@ public class UploadingCom extends PluginForHost {
         String redirect = null;
         if (starttimer != null) {
             sleep((Long.parseLong(starttimer) + 2) * 1000l, downloadLink);
-            br.postPage("http://uploading.com/files/get/?JsHttpRequest=" + System.currentTimeMillis() + "-xml", "file_id=" + fileID + "&action=get_link&pass=");
-            redirect = br.getRegex("link\": \"(http.*?)\"").getMatch(0);
-            if (redirect != null) {
-                redirect = redirect.replaceAll("\\\\/", "/");
-            } else {
-                if (br.containsHTML("Please wait")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 1000l);
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
+        }
+        br.postPage("http://uploading.com/files/get/?JsHttpRequest=" + System.currentTimeMillis() + "-xml", "file_id=" + fileID + "&action=get_link&pass=");
+        redirect = br.getRegex("link\": \"(http.*?)\"").getMatch(0);
+        if (redirect != null) {
+            redirect = redirect.replaceAll("\\\\/", "/");
         } else {
-            for (int i = 0; i < 5; i++) {
-                br.postPage("http://uploading.com/files/get/?JsHttpRequest=" + System.currentTimeMillis() + "-xml", "file_id=" + fileID + "&action=step_1");
-                String wait = br.getRegex("\"answer\": \"(\\d+)\"").getMatch(0);
-                if (wait != null) {
-                    sleep(1000l * Long.parseLong(wait.trim()), downloadLink);
-                } else {
-                    sleep(1000l, downloadLink);
-                }
-                br.postPage("http://uploading.com/files/get/?JsHttpRequest=" + System.currentTimeMillis() + "-xml", "file_id=" + fileID + "&action=step_2");
-                redirect = br.getRegex("redirect\": \"(http.*?)\"").getMatch(0);
-                if (redirect != null) {
-                    redirect = redirect.replaceAll("\\\\/", "/");
-                    break;
-                }
-                sleep(1000l, downloadLink);
-            }
+            if (br.containsHTML("Please wait")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (redirect == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         return redirect;

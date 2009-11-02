@@ -144,7 +144,6 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
         initActions();
         if (!SubConfiguration.getConfig(LinkGrabberController.CONFIG).getBooleanProperty(LinkGrabberController.PARAM_CONTROLPOSITION, false)) {
             toolbar = new LinkGrabberToolbar();
-
             this.add(toolbar, "gapbottom 3,DOCK SOUTH");
         }
     }
@@ -297,6 +296,36 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
         }
         checkAlreadyinList(element);
         LGINSTANCE.attachToPackagesFirstStage(element);
+    }
+
+    public void recheckLinks(final ArrayList<DownloadLink> links) {
+        new Thread() {
+            @Override
+            public void run() {
+                synchronized (waitingList) {
+                    /* remove links from waitinglist, so we can check again */
+                    waitingList.removeAll(links);
+                }
+                /* remove from waittinglist of linkchecker */
+                lc.removefromWaitingList(links);
+                synchronized (LinkGrabberController.ControllerLock) {
+                    synchronized (LGINSTANCE.getPackages()) {
+                        for (DownloadLink link : links) {
+                            LinkGrabberFilePackage fp = LGINSTANCE.getFPwithLink(link);
+                            if (fp != null) {
+                                /*
+                                 * remove link from linkgrabbercontroller and
+                                 * reset availablestatus
+                                 */
+                                fp.remove(link);
+                                link.setAvailableStatus(DownloadLink.AvailableStatus.UNCHECKED);
+                            }
+                        }
+                    }
+                }
+                addLinks(links);
+            }
+        }.start();
     }
 
     private void stopLinkGatherer() {
@@ -458,6 +487,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
                             case LinkGrabberTableAction.SAVE_DLC:
                             case LinkGrabberTableAction.ADD_SELECTED_LINKS:
                             case LinkGrabberTableAction.COPY_LINK:
+                            case LinkGrabberTableAction.CHECK_LINK:
                                 selected_links = (ArrayList<DownloadLink>) ((LinkGrabberTableAction) ((JMenuItem) arg0.getSource()).getAction()).getProperty().getProperty("links");
                                 break;
                             case LinkGrabberTableAction.BROWSE_LINK:
@@ -476,6 +506,10 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
                             }
                         }
                         switch (arg0.getID()) {
+                        case LinkGrabberTableAction.CHECK_LINK: {
+                            recheckLinks(selected_links);
+                        }
+                            break;
                         case LinkGrabberTableAction.ADD_SELECTED_LINKS:
                             ArrayList<LinkGrabberFilePackage> selected_packages2 = new ArrayList<LinkGrabberFilePackage>();
                             while (selected_links.size() > 0) {

@@ -18,8 +18,10 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -101,6 +103,7 @@ public class HotFileCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
+        br.setCookie("http://hotfile.com", "lang", "en");
         br.getPage(parameter.getDownloadURL());
         String filename = br.getRegex("Downloading <b>(.+?)</b>").getMatch(0);
         String filesize = br.getRegex("<span class=\"size\">(.*?)</span>").getMatch(0);
@@ -155,7 +158,6 @@ public class HotFileCom extends PluginForHost {
             rc.setCode(c);
             if (!br.containsHTML("Click here to download")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
-
         String dl_url = br.getRegex("<h3 style='margin-top: 20px'><a href=\"(.*?)\">Click here to download</a>").getMatch(0);
         if (dl_url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setFollowRedirects(true);
@@ -163,6 +165,58 @@ public class HotFileCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dl_url, false, 1);
         dl.setFilenameFix(true);
         dl.startDownload();
+    }
+
+    @Override
+    public boolean checkLinks(DownloadLink[] urls) {
+        if (urls == null || urls.length == 0) { return false; }
+        try {
+            Browser br = new Browser();
+            br.setCookiesExclusive(true);
+            br.setCookie("http://hotfile.com", "lang", "en");
+            StringBuilder sb = new StringBuilder();
+            ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
+            int index = 0;
+            while (true) {
+                br.getPage("http://hotfile.com/checkfiles.html");
+                links.clear();
+                while (true) {
+                    if (index == urls.length || links.size() > 25) break;
+                    links.add(urls[index]);
+                    index++;
+                }
+                sb.delete(0, sb.capacity());
+                sb.append("files=");
+                int c = 0;
+                for (DownloadLink dl : links) {
+                    /*
+                     * append fake filename, because api will not report
+                     * anything else
+                     */
+                    if (c > 0) sb.append("%0D%0A");
+                    sb.append(Encoding.urlEncode(dl.getDownloadURL() + "filecheck.html"));
+                    c++;
+                }
+                sb.append("&but=+Check+Urls+");
+                br.postPage("http://hotfile.com/checkfiles.html", sb.toString());
+                for (DownloadLink dl : links) {
+                    String size = br.getRegex("<b>Results</b>.*?<a href=.*?\"" + dl.getDownloadURL() + ".*?\".*?/td.*?<td>(.*?)<").getMatch(0);
+                    String name = br.getRegex("<b>Results</b>.*?<a href=.*?\"" + dl.getDownloadURL() + "(.*?)\"").getMatch(0);
+                    if (name != null && size != null) {
+                        name = name.replaceAll("\\.html", "").trim();
+                        dl.setName(name);
+                        dl.setDownloadSize(Regex.getSize(size.trim()));
+                        dl.setAvailable(true);
+                    } else {
+                        dl.setAvailable(false);
+                    }
+                }
+                if (index == urls.length) break;
+            }
+        } catch (Exception e) {
+            return false;
+        }
+        return true;
     }
 
     @Override

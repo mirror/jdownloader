@@ -177,7 +177,7 @@ public class RandomUserAgent {
         /* Get optional strings */
         if (system.get(i).osName.equalsIgnoreCase("Windows")) {
             winAddon = dotNetString();
-            if (winAddon.trim().length()>0) winAddon = (" (" + winAddon.trim() + ")").replace("(; ", "(");
+            if (winAddon.trim().length() > 0) winAddon = (" (" + winAddon.trim() + ")").replace("(; ", "(");
         } else if (system.get(i).osName.equalsIgnoreCase("Linux")) {
             linuxAddon = linuxAddons.get(rand.nextInt(linuxAddons.size()));
             if (linuxAddon != " ") linuxAddon = " " + linuxAddon.trim() + " ";
@@ -250,7 +250,9 @@ public class RandomUserAgent {
         long cTime = new GregorianCalendar().getTimeInMillis();
 
         Random rand = new Random();
-        long randTime = rand.nextInt((int) ((cTime - rTime) / (60 * 1000))) + ((int) (rTime / (60 * 1000)));
+        int temp = (int) ((cTime - rTime) / (60 * 1000)) + (int) (rTime / (60 * 1000));
+        if (temp < 0) temp = -temp;
+        long randTime = rand.nextInt(temp);
         rCal.setTimeInMillis(randTime * (60 * 1000));
 
         int year = rCal.get(Calendar.YEAR);
