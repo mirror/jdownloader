@@ -43,7 +43,7 @@ public abstract class JDTableModel extends AbstractTableModel {
      * Should be overwritten to initialize the columns of the JDTable
      */
     protected abstract void initColumns();
-    
+
     public void setJDTable(JDTable table) {
         this.table = table;
     }
@@ -139,6 +139,15 @@ public abstract class JDTableModel extends AbstractTableModel {
 
     public JDTableColumn getJDTableColumn(int columnIndex) {
         return columns.get(columnIndex);
+    }
+
+    public void setWidthOfColumn(Class<? extends JDTableColumn> clazz, Object newValue) {
+        config.setProperty("WIDTH_COL_" + clazz.getSimpleName(), newValue);
+        config.save();
+    }
+
+    public int getWidthOfColumn(Class<? extends JDTableColumn> clazz, int defValue) {
+        return config.getIntegerProperty("WIDTH_COL_" + clazz.getSimpleName(), defValue);
     }
 
 }

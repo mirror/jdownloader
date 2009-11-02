@@ -17,6 +17,7 @@
 package jd.gui.swing.jdgui.views.downloadview.Columns;
 
 import java.awt.Component;
+import java.awt.FontMetrics;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -42,6 +43,7 @@ public class HosterColumn extends JDTableColumn {
     private DownloadLink dLink;
     private FilePackage fp;
     private StatusLabel statuspanel;
+    private FontMetrics fontmetrics;
     private int counter = 0;
     private ImageIcon imgResume;
     private ImageIcon imgPremium;
@@ -56,6 +58,7 @@ public class HosterColumn extends JDTableColumn {
         super(name, table);
         statuspanel = new StatusLabel();
         statuspanel.setBorder(null);
+        fontmetrics = statuspanel.getFontMetrics(statuspanel.getFont());
         jlr = new JRendererLabel();
         jlr.setBorder(null);
         imgResume = JDTheme.II("gui.images.resume", 16, 16);
@@ -85,12 +88,6 @@ public class HosterColumn extends JDTableColumn {
             dLink = (DownloadLink) value;
             statuspanel.setText(dLink.getLinkStatus().getStatusString());
             counter = 0;
-            if (dLink.getPlugin() == null) {
-                statuspanel.setText("plugin missing");
-            } else {
-                statuspanel.setText(dLink.getPlugin().getHost() + dLink.getPlugin().getSessionInfo());
-                statuspanel.setIcon(-1, dLink.getPlugin().getHosterIcon(), strLoadingFrom + dLink.getPlugin().getHost());
-            }
             if (dLink.getTransferStatus().usesPremium()) {
                 statuspanel.setIcon(counter, imgPremium, strPremium);
                 counter++;
@@ -98,6 +95,17 @@ public class HosterColumn extends JDTableColumn {
             if (dLink.getTransferStatus().supportsResume()) {
                 statuspanel.setIcon(counter, imgResume, strResume);
                 counter++;
+            }
+            if (dLink.getPlugin() == null) {
+                statuspanel.setText("plugin missing");
+            } else {
+                String s = dLink.getPlugin().getHost()+ dLink.getPlugin().getSessionInfo();
+                if (table.getWidthOfColumn(this.getClass(), -1) > (counter + 2) * 16 + fontmetrics.stringWidth(s)) {
+                    statuspanel.setText(s);
+                } else {
+                    statuspanel.setText("");
+                }
+                statuspanel.setIcon(-1, dLink.getPlugin().getHosterIcon(), strLoadingFrom + dLink.getPlugin().getHost());
             }
             statuspanel.clearIcons(counter);
         }
@@ -108,6 +116,7 @@ public class HosterColumn extends JDTableColumn {
     public void setValue(Object value, Object object) {
     }
 
+    @Override
     public Object getCellEditorValue() {
         return null;
     }

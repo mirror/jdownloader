@@ -228,12 +228,11 @@ public class JDTable extends JXTable {
             tableColumn.addPropertyChangeListener(new PropertyChangeListener() {
                 public void propertyChange(PropertyChangeEvent evt) {
                     if (evt.getPropertyName().equals("width")) {
-                        tableconfig.setProperty("WIDTH_COL_" + model.getJDTableColumn(j).getID(), evt.getNewValue());
-                        tableconfig.save();
+                        model.setWidthOfColumn(model.getJDTableColumn(j).getClass(), evt.getNewValue());
                     }
                 }
             });
-            tableColumn.setPreferredWidth(tableconfig.getIntegerProperty("WIDTH_COL_" + model.getJDTableColumn(j).getID(), tableColumn.getWidth()));
+            tableColumn.setPreferredWidth(model.getWidthOfColumn(model.getJDTableColumn(j).getClass(), tableColumn.getWidth()));
             if (model.getJDTableColumn(j).getMaxWidth() >= 0) tableColumn.setMaxWidth(model.getJDTableColumn(j).getMaxWidth());
             if (!model.isVisible(i)) continue;
             columns.put(model.getJDTableColumn(j).getID(), tableColumn);
