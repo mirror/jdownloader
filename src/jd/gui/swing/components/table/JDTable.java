@@ -228,11 +228,12 @@ public class JDTable extends JXTable {
             tableColumn.addPropertyChangeListener(new PropertyChangeListener() {
                 public void propertyChange(PropertyChangeEvent evt) {
                     if (evt.getPropertyName().equals("width")) {
-                        model.setWidthOfColumn(model.getJDTableColumn(j).getClass(), evt.getNewValue());
+                        tableconfig.setProperty("WIDTH_COL_" + model.getJDTableColumn(j).getID(), evt.getNewValue());
+                        tableconfig.save();
                     }
                 }
             });
-            tableColumn.setPreferredWidth(model.getWidthOfColumn(model.getJDTableColumn(j).getClass(), tableColumn.getWidth()));
+            tableColumn.setPreferredWidth(tableconfig.getIntegerProperty("WIDTH_COL_" + model.getJDTableColumn(j).getID(), tableColumn.getWidth()));
             if (model.getJDTableColumn(j).getMaxWidth() >= 0) tableColumn.setMaxWidth(model.getJDTableColumn(j).getMaxWidth());
             if (!model.isVisible(i)) continue;
             columns.put(model.getJDTableColumn(j).getID(), tableColumn);
@@ -277,6 +278,13 @@ public class JDTable extends JXTable {
         Point p = new Point();
         p.setLocation(x.getX() - cellPosition.getX(), x.getY() - cellPosition.getY());
         return p;
+    }
+
+    public int getWidthOfColumn(JDTableColumn column) {
+        for (TableColumn c : getColumns()) {
+            if (c.getHeaderValue().toString().equals(column.getName())) return c.getWidth();
+        }
+        return -1;
     }
 
 }

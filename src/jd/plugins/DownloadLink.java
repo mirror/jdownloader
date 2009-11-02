@@ -700,7 +700,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * 
      * @return
      */
-    public boolean isLimited() {
+    public static boolean isSpeedLimited() {
         return SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0) != 0;
     }
 
@@ -712,7 +712,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         DownloadController.getInstance().fireDownloadLinkUpdate(this);
     }
 
-    // Setzt alle DownloadWErte zurück
+    /** Setzt alle DownloadWErte zurück */
     public void reset() {
         if (getLinkStatus().isPluginActive()) {
             setAborted(true);
@@ -744,7 +744,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         if (getPlugin() != null) getPlugin().resetDownloadlink(this);
     }
 
-    /*
+    /**
      * deletes the final downloaded file if finalfile is true deletes the
      * partfile if partfile is true deletes the downloadfolder if its emptry and
      * NOT equal to default downloadfolder
@@ -1078,7 +1078,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * 
      * @return STring
      */
-    // @Override
     @Override
     public String toString() {
         return getName();

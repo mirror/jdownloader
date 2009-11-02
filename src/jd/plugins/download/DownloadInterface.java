@@ -481,7 +481,7 @@ abstract public class DownloadInterface {
                         if (speedDebug) {
                             logger.finer("Wait " + addWait + " " + ti);
                         }
-                        if (addWait > 0 && downloadLink.isLimited()) {
+                        if (addWait > 0 && DownloadLink.isSpeedLimited()) {
                             Thread.sleep(addWait);
                         }
                     } catch (Exception e) {
@@ -573,7 +573,7 @@ abstract public class DownloadInterface {
             if (speedDebug) {
                 logger.finer("speed " + maxspeed);
             }
-            if (!downloadLink.isLimited()) { return (int) MAX_BUFFERSIZE; }
+            if (!DownloadLink.isSpeedLimited()) return (int) MAX_BUFFERSIZE;
             maxspeed *= TIME_BASE / 1000;
             long max = Math.max(MIN_BUFFERSIZE, maxspeed);
             long bufferSize = Math.min(MAX_BUFFERSIZE, max);
@@ -682,9 +682,8 @@ abstract public class DownloadInterface {
          * @return
          */
         private int getTimeInterval() {
-            if (!downloadLink.isLimited()) { return TIME_BASE; }
+            if (!DownloadLink.isSpeedLimited()) return TIME_BASE;
             return Math.min(TIME_BASE * 5, (int) (TIME_BASE * bufferTimeFaktor));
-
         }
 
         /**

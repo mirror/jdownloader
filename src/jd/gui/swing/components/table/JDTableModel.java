@@ -141,13 +141,4 @@ public abstract class JDTableModel extends AbstractTableModel {
         return columns.get(columnIndex);
     }
 
-    public void setWidthOfColumn(Class<? extends JDTableColumn> clazz, Object newValue) {
-        config.setProperty("WIDTH_COL_" + clazz.getSimpleName(), newValue);
-        config.save();
-    }
-
-    public int getWidthOfColumn(Class<? extends JDTableColumn> clazz, int defValue) {
-        return config.getIntegerProperty("WIDTH_COL_" + clazz.getSimpleName(), defValue);
-    }
-
 }
