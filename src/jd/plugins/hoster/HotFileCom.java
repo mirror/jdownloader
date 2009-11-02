@@ -16,6 +16,7 @@
 
 package jd.plugins.hoster;
 
+import java.io.File;
 import java.io.IOException;
 
 import jd.PluginWrapper;
@@ -30,6 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.pluginUtils.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hotfile.com" }, urls = { "http://[\\w\\.]*?hotfile\\.com/dl/\\d+/[0-9a-zA-Z]+/" }, flags = { 2 })
 public class HotFileCom extends PluginForHost {
@@ -145,14 +147,12 @@ public class HotFileCom extends PluginForHost {
         }
         // captcha
         if (!br.containsHTML("Click here to download")) {
-            form = br.getForm(1);
-
-            String captchaUrl = br.getRegex("<img src=\"(/captcha.php.*?)\">").getMatch(0);
-            if (captchaUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            captchaUrl = "http://www.hotfile.com" + captchaUrl;
-            String captchaCode = getCaptchaCode(captchaUrl, link);
-            form.put("captcha", captchaCode);
-            br.submitForm(form);
+            Recaptcha rc = new Recaptcha(br);
+            rc.parse();
+            rc.load();
+            File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+            String c = getCaptchaCode(cf, link);
+            rc.setCode(c);
             if (!br.containsHTML("Click here to download")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
 
