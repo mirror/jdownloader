@@ -53,7 +53,7 @@ public class AddGui extends JPanel implements ActionListener, ChangeListener, Do
     private Schedule schedule;
     private MyTableModel tableModel;
     private JXTable table;
-    private Actions act;
+    private Actions orgact;
     private JComboBox cboActions;
     private JButton add;
     private JTextField parameter;
@@ -76,12 +76,21 @@ public class AddGui extends JPanel implements ActionListener, ChangeListener, Do
     private JSpinner repeathour;
     private JSpinner repeatminute;
     private boolean edit;
+    private Actions editact;
 
     public AddGui(Schedule schedule, MainGui gui, Actions act, boolean edit) {
         this.schedule = schedule;
         this.gui = gui;
-        this.act = act;
-
+        this.orgact = act;
+        /* copy orginal action to edit action */
+        this.editact = new Actions(orgact.getName());
+        editact.setDate(orgact.getDate());
+        editact.setRepeat(orgact.getRepeat());
+        editact.setEnabled(orgact.isEnabled());
+        editact.setAlreadyHandled(orgact.wasAlreadyHandled());
+        for (Executions e : orgact.getExecutions()) {
+            editact.addExecutions(new Executions(e.getModule(), e.getParameter()));
+        }
         this.edit = edit;
 
         setLayout(new MigLayout("wrap 1, fill", "[fill, grow]"));
@@ -283,15 +292,15 @@ public class AddGui extends JPanel implements ActionListener, ChangeListener, Do
         }
 
         public int getRowCount() {
-            return act.getExecutions().size();
+            return editact.getExecutions().size();
         }
 
         public Object getValueAt(int rowIndex, int columnIndex) {
             switch (columnIndex) {
             case 0:
-                return act.getExecutions().get(rowIndex).getModule().getTranslation();
+                return editact.getExecutions().get(rowIndex).getModule().getTranslation();
             case 1:
-                return act.getExecutions().get(rowIndex).getParameter();
+                return editact.getExecutions().get(rowIndex).getParameter();
             }
 
             return null;
@@ -313,7 +322,7 @@ public class AddGui extends JPanel implements ActionListener, ChangeListener, Do
             if (name.getText().equals("")) {
                 problems.setText(JDL.L("plugin.optional.scheduler.add.problem.emptyname", "Name is empty"));
                 return;
-            } else if (act.getExecutions().size() == 0) {
+            } else if (editact.getExecutions().size() == 0) {
                 problems.setText(JDL.L("plugin.optional.scheduler.add.problem.nochanges", "No changes made"));
                 return;
                 // Check for Zero repeat
@@ -326,28 +335,30 @@ public class AddGui extends JPanel implements ActionListener, ChangeListener, Do
                 return;
             }
 
-            act.setName(name.getText());
-            act.setDate(d);
+            orgact.setName(name.getText());
+            orgact.setDate(d);
 
             if (optDate.isSelected()) {
-                act.setRepeat(0);
+                orgact.setRepeat(0);
             } else if (optHourly.isSelected()) {
-                act.setRepeat(60);
+                orgact.setRepeat(60);
             } else if (optDaily.isSelected()) {
-                act.setRepeat(1440);
+                orgact.setRepeat(1440);
             } else if (optWeekly.isSelected()) {
-                act.setRepeat(10080);
+                orgact.setRepeat(10080);
             } else if (optSpecific.isSelected()) {
-                act.setRepeat(((Integer) repeathour.getValue() * 60) + (Integer) repeatminute.getValue());
+                orgact.setRepeat(((Integer) repeathour.getValue() * 60) + (Integer) repeatminute.getValue());
             }
-            act.setAlreadyHandled(false);
+            orgact.getExecutions().clear();
+            orgact.getExecutions().addAll(editact.getExecutions());
+            orgact.setAlreadyHandled(false);
             if (edit) {
                 gui.updateActions(this);
             } else {
-                schedule.addAction(act);
+                schedule.addAction(orgact);
                 gui.updateActions(this);
             }
-
+            editact = null;
             return;
         } else if (e.getSource() == cboActions) {
             for (SchedulerModuleInterface smi : schedule.getModules()) {
@@ -369,21 +380,21 @@ public class AddGui extends JPanel implements ActionListener, ChangeListener, Do
                         return;
                     }
                     if (parameter.getText().equals(JDL.L("plugin.optional.scheduler.add.noparameter", "No Parameter needed")))
-                        act.addExecutions(new Executions(smi, ""));
+                        editact.addExecutions(new Executions(smi, ""));
                     else
-                        act.addExecutions(new Executions(smi, parameter.getText()));
-                    tableModel.fireTableRowsInserted(act.getExecutions().size(), act.getExecutions().size());
+                        editact.addExecutions(new Executions(smi, parameter.getText()));
+                    tableModel.fireTableRowsInserted(editact.getExecutions().size(), editact.getExecutions().size());
                     fillComboBox();
                     return;
                 }
             }
         } else if (e.getSource() == delete) {
-            act.removeExecution(table.getSelectedRow());
+            editact.removeExecution(table.getSelectedRow());
             tableModel.fireTableRowsDeleted(table.getSelectedRow(), table.getSelectedRow());
             delete.setEnabled(false);
             fillComboBox();
         } else if (e.getSource() == cancel) {
-            gui.removeTab(act);
+            gui.removeTab(orgact);
         }
     }
 
@@ -392,7 +403,7 @@ public class AddGui extends JPanel implements ActionListener, ChangeListener, Do
 
         for (int i = 0; i < schedule.getModules().size(); i++) {
             boolean found = false;
-            for (Executions e : act.getExecutions()) {
+            for (Executions e : editact.getExecutions()) {
                 if (e.getModule().getTranslation().equals(schedule.getModules().get(i).getTranslation())) {
                     found = true;
                     break;
@@ -408,7 +419,7 @@ public class AddGui extends JPanel implements ActionListener, ChangeListener, Do
     }
 
     public void changedUpdate(DocumentEvent e) {
-        gui.changeTabText(act, name.getText());
+        gui.changeTabText(orgact, name.getText());
     }
 
     public void insertUpdate(DocumentEvent e) {
@@ -437,7 +448,7 @@ public class AddGui extends JPanel implements ActionListener, ChangeListener, Do
     public void mouseReleased(MouseEvent e) {
     }
 
-    public Actions getActions() {
-        return act;
+    public Actions getAction() {
+        return orgact;
     }
 }

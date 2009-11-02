@@ -66,6 +66,16 @@ public class UpFileCom extends PluginForHost {
         String dllink;
         dllink = br.getRedirectLocation();
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink.contains("free.php")) br.getPage("http://up-file.com/free-link.php");
+        if (br.containsHTML("please wait")) {
+            String waittime = br.getRegex("please wait -.*?(\\d+).*?se").getMatch(0);
+            int wait = 60;
+            if (waittime != null) wait = Integer.parseInt(waittime.trim());
+            sleep(wait * 1000l, downloadLink);
+            br.getPage("http://up-file.com/free-link.php");
+        }
+        dllink = br.getRegex("href='(http:.*?)'").getMatch(0);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         dl.startDownload();
     }

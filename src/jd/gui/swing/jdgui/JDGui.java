@@ -481,7 +481,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
                 }
                 return null;
             }
-        }.waitForEDT();
+        }.start();
     }
 
     /**

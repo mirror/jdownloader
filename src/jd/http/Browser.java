@@ -229,7 +229,7 @@ public class Browser {
         return ret;
     }
 
-    private void updateCookies(Request request) throws MalformedURLException {
+    public void updateCookies(Request request) throws MalformedURLException {
         if (request == null) { return; }
         String host = Browser.getHost(request.getUrl());
         Cookies cookies = getCookies().get(host);

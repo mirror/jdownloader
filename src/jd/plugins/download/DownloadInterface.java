@@ -1323,7 +1323,8 @@ abstract public class DownloadInterface {
     public URLConnectionAdapter connect(Browser br) throws Exception {
         br.setRequest(request);
         URLConnectionAdapter ret = connect();
-
+        /* we have to update cookie for used browser instance here */
+        br.updateCookies(request);
         return ret;
     }
 

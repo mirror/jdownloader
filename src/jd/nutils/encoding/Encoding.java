@@ -16,7 +16,6 @@
 
 package jd.nutils.encoding;
 
-
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
@@ -52,14 +51,14 @@ public class Encoding {
         } catch (Exception e) {
             JDLogger.exception(e);
         }
-       str=HTMLEntities.unhtmlentities(str);
-       
-       str=HTMLEntities.unhtmlAmpersand(str);
-       str=HTMLEntities.unhtmlAngleBrackets(str);
-       str=HTMLEntities.unhtmlDoubleQuotes(str);
-       str=HTMLEntities.unhtmlQuotes(str);
-       str=HTMLEntities.unhtmlSingleQuotes(str);
-       return str;
+        str = HTMLEntities.unhtmlentities(str);
+
+        str = HTMLEntities.unhtmlAmpersand(str);
+        str = HTMLEntities.unhtmlAngleBrackets(str);
+        str = HTMLEntities.unhtmlDoubleQuotes(str);
+        str = HTMLEntities.unhtmlQuotes(str);
+        str = HTMLEntities.unhtmlSingleQuotes(str);
+        return str;
     }
 
     public static String urlEncode(String str) {
@@ -188,7 +187,7 @@ public class Encoding {
     public static String Base64Decode(String base64) {
         if (base64 == null) { return null; }
         try {
-            
+
             byte[] plain = Base64.decode(base64);
             if (Encoding.filterString(new String(plain)).length() < plain.length / 1.5) { return base64; }
             return new String(plain);
@@ -200,10 +199,9 @@ public class Encoding {
     public static String Base64Encode(String plain) {
 
         if (plain == null) { return null; }
-        
-        
-//        String base64 = new BASE64Encoder().encode(plain.getBytes());
-      String  base64 = new String(Base64.encodeToByte(plain.getBytes(), false));
+
+        // String base64 = new BASE64Encoder().encode(plain.getBytes());
+        String base64 = new String(Base64.encodeToByte(plain.getBytes(), false));
         return base64;
     }
 
