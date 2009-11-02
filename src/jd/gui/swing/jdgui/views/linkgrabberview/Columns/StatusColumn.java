@@ -114,22 +114,26 @@ public class StatusColumn extends JDTableColumn {
                 sb.append('>').append(dLink.getLinkStatus().getStatusString());
             }
             statuspanel.setText(sb.toString());
-            switch (dLink.getAvailableStatus()) {
-            case FALSE:
-                statuspanel.setText(strOffline + sb.toString());
-                statuspanel.setIcon(-1, imgFailed, strOffline);
-                break;
-            case TRUE:
-                statuspanel.setText(strOnline + sb.toString());
-                statuspanel.setIcon(-1, imgOnline, strOnline);
-                break;
-            case UNCHECKABLE:
-                statuspanel.setText(strUncheckable + sb.toString());
-                statuspanel.setIcon(-1, imgUncheckable, strUncheckable);
-                break;
-            case UNCHECKED:
+            if (!dLink.isAvailabilityStatusChecked()) {
                 statuspanel.setText(strUnchecked + sb.toString());
-                break;
+            } else {
+                switch (dLink.getAvailableStatus()) {
+                case FALSE:
+                    statuspanel.setText(strOffline + sb.toString());
+                    statuspanel.setIcon(-1, imgFailed, strOffline);
+                    break;
+                case TRUE:
+                    statuspanel.setText(strOnline + sb.toString());
+                    statuspanel.setIcon(-1, imgOnline, strOnline);
+                    break;
+                case UNCHECKABLE:
+                    statuspanel.setText(strUncheckable + sb.toString());
+                    statuspanel.setIcon(-1, imgUncheckable, strUncheckable);
+                    break;
+                case UNCHECKED:
+                    statuspanel.setText(strUnchecked + sb.toString());
+                    break;
+                }
             }
             if (dLink.getPriority() != 0) {
                 switch (dLink.getPriority()) {

@@ -597,7 +597,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * @return Link wurde schon getestet (true) nicht getestet(false)
      */
     public boolean isAvailabilityStatusChecked() {
-
         return availableStatus != AvailableStatus.UNCHECKED;
 
     }

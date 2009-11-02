@@ -58,7 +58,7 @@ public class Megauploadcom extends PluginForHost {
     }
 
     private static final String MU_PARAM_PORT = "MU_PARAM_PORT";
-    private static final String MU_PORTROTATION = "MU_PORTROTATION";
+    private static final String MU_PORTROTATION = "MU_PORTROTATION2";
     private final static String[] ports = new String[] { "80", "800", "1723" };
     private static String wwwWorkaround = null;
     private static final Object Lock = new Object();
@@ -92,6 +92,7 @@ public class Megauploadcom extends PluginForHost {
         int port = this.getPluginConfig().getIntegerProperty(MU_PARAM_PORT, 0);
         if (this.getPluginConfig().getBooleanProperty("MU_PORTROTATION", true)) {
             port += link.getIntegerProperty(MU_PARAM_PORT, 0);
+            if (port > 2) port -= 2;
         }
         switch (port) {
         case 1:
@@ -368,13 +369,17 @@ public class Megauploadcom extends PluginForHost {
         if (waittime > 0) sleep(waittime * 1000, link);
         try {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, resume, isPremium(account, br.cloneBrowser(), false) ? 0 : 1);
-            if (!dl.getConnection().isContentDisposition()) {
-                br.followConnection();
+            if (!dl.getConnection().isOK()) {
+                dl.getConnection().disconnect();
                 if (dl.getConnection().getResponseCode() == 503) {
                     String wait = dl.getConnection().getHeaderField("Retry-After");
                     if (wait == null) wait = "120";
                     limitReached(link, Integer.parseInt(wait.trim()), "Limit Reached (2)!");
                 }
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            if (!dl.getConnection().isContentDisposition()) {
+                br.followConnection();
                 handleWaittimeWorkaround(link, br);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -442,8 +447,8 @@ public class Megauploadcom extends PluginForHost {
             id = "00000";
             try {
                 /*
-                 * reset status to uncheckable because api sometimes returns
-                 * false results
+                 * reset status to unchecked because api sometimes returns false
+                 * results
                  */
                 u.setAvailableStatus(AvailableStatus.UNCHECKABLE);
                 id = getDownloadID(u);
@@ -515,9 +520,13 @@ public class Megauploadcom extends PluginForHost {
                     }
                     downloadLink.setProperty("webcheck", true);
                 } catch (Exception e) {
+                    JDLogger.exception(e);
+                    return false;
                 }
             }
         } catch (Exception e) {
+            JDLogger.exception(e);
+            return false;
         }
         return true;
     }
@@ -541,7 +550,7 @@ public class Megauploadcom extends PluginForHost {
                 return;
             }
             if (br.containsHTML("A temporary access restriction is place") || br.containsHTML("We have detected an elevated")) {
-                logger.info("Megaupload blocked this IP: log" + br.toString());
+                logger.info("Megaupload blocked this IP(1)");
                 l.setAvailableStatus(AvailableStatus.UNCHECKABLE);
                 return;
             }
@@ -573,7 +582,7 @@ public class Megauploadcom extends PluginForHost {
             }
             return;
         } catch (Exception e) {
-            logger.info("Megaupload blocked this IP: log" + br.toString());
+            logger.info("Megaupload blocked this IP(2)");
             l.setAvailableStatus(AvailableStatus.UNCHECKABLE);
         }
         return;
@@ -613,11 +622,6 @@ public class Megauploadcom extends PluginForHost {
             return AvailableStatus.TRUE;
         case OFFLINE:
             /* file offline */
-            try {
-                logger.finest(br.getRequest().getHttpConnection() + "");
-            } catch (Exception e) {
-                JDLogger.exception(e);
-            }
             logger.info("DebugInfo for maybe Wrong FileNotFound: " + br.toString());
             return AvailableStatus.FALSE;
         case BLOCKED:
@@ -750,7 +754,7 @@ public class Megauploadcom extends PluginForHost {
     }
 
     private void limitReached(DownloadLink link, int secs, String message) throws PluginException {
-        if (this.getPluginConfig().getBooleanProperty("MU_PORTROTATION", true)) {
+        if (this.getPluginConfig().getBooleanProperty(MU_PORTROTATION, true)) {
             /* try portrotation */
             int port = link.getIntegerProperty(MU_PARAM_PORT, 0);
             port++;
@@ -789,11 +793,6 @@ public class Megauploadcom extends PluginForHost {
             return;
         case OFFLINE:
             /* file offline */
-            try {
-                logger.finest(br.getRequest().getHttpConnection() + "");
-            } catch (Exception e) {
-                JDLogger.exception(e);
-            }
             logger.info("DebugInfo for maybe Wrong FileNotFound: " + br.toString());
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         case BLOCKED:
@@ -835,7 +834,7 @@ public class Megauploadcom extends PluginForHost {
 
     private void setConfigElements() {
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, this.getPluginConfig(), MU_PARAM_PORT, ports, JDL.L("plugins.host.megaupload.ports", "Use this port:")).setDefaultValue(0));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), MU_PORTROTATION, ports, JDL.L("plugins.host.megaupload.portrotation", "Use Portrotation to increase downloadlimit?")).setDefaultValue(true));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), MU_PORTROTATION, ports, JDL.L("plugins.host.megaupload.portrotation", "Use Portrotation to increase downloadlimit?")).setDefaultValue(false));
     }
 
 }

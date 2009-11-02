@@ -330,6 +330,7 @@ public class MegaPornCom extends PluginForHost {
                         downloadLink.setAvailable(false);
                     }
                 } catch (Exception e) {
+                    return false;
                 }
             }
         } catch (Exception e) {
