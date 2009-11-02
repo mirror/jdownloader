@@ -385,6 +385,7 @@ gui.javacheck.html = <link href='http://jdownloader.org/jdcss.css' rel='styleshe
 gui.javacheck.newerjavaavailable.msg = Mặc dù jD vẫn chạy tốt trên phiên bản JE hiện tại của bạn, chúng tôi vẫn khuyên bạn nên cài đặt Java bản mới nhất. \r\nJDownloadersẽ chạy ổn định hơn, nhanh hơn, và sẽ muợt mà hơn. \r\n\r\nGhé thăm trang: http://jdownloader.org/download.
 gui.javacheck.newerjavaavailable.title = Phát hiện Java phiên bản lỗi thời: %s!
 gui.javacheck.title = Phiên bản Java không đúng
+gui.jdshutdown.toggle = Kiểm soát Tắt máy
 gui.jdshutdown.toggle.tooltip = Bật/Tắt chế độ Tắt máy sau khi Tải về
 gui.linkgrabber.aborted = Đã hủy
 gui.linkgrabber.adding = Đang thêm %s liên kết tải về vào Bộ Thu/Bắt liên kết
@@ -466,6 +467,7 @@ gui.menu.action.backup.mnem = B
 gui.menu.action.backup.name = Sao lưu
 gui.menu.action.backuplinklist.accel = -
 gui.menu.action.backuplinklist.mnem = -
+gui.menu.action.backuplinklist.name = Sao lưu danh sách Liên kết tải về
 gui.menu.action.break2.desc = Tạm dừng các tải về. Giới hạn tốc độ tổng thể ở %s kb/s
 gui.menu.action.changes.accel = CTRL+SHIFT+C
 gui.menu.action.changes.mnem = C
