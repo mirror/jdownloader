@@ -19,7 +19,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
@@ -82,7 +81,7 @@ public class GotUploadCom extends PluginForHost {
         Form dlForm1 = br.getFormbyProperty("name", "F1");
         if (dlForm1 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String passCode = null;
-        if (br.containsHTML("type=\"password\" name=\"password\"")) {
+        if (br.containsHTML("<br><b>Password:</b>")) {
             if (downloadLink.getStringProperty("pass", null) == null) {
                 passCode = Plugin.getUserInput("Password?", downloadLink);
             } else {
@@ -96,32 +95,25 @@ public class GotUploadCom extends PluginForHost {
         sleep(tt * 1001l, downloadLink);
         br.submitForm(dlForm1);
         String dllink = br.getRedirectLocation();
-        URLConnectionAdapter con2 = br.getHttpConnection();
-        if (con2.getContentType().contains("html")) {
-            String error = br.getRegex("class=\"err\">(.*?)</font>").getMatch(0);
+        if (dllink != null) dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        if (dllink == null || dl.getConnection().getContentType().contains("html")) {
+            if (dllink != null) br.followConnection();
+            String error = br.getRegex("class=\"err\">(.*?)<").getMatch(0);
             if (error != null) {
-                logger.warning(error);
-                con2.disconnect();
-                if (error.equalsIgnoreCase("Wrong captcha") || error.equalsIgnoreCase("Expired session")) {
-                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, error, 10000);
+                if (error.equalsIgnoreCase("Wrong password")) {
+                    logger.warning("Wrong password!");
+                    downloadLink.setProperty("pass", null);
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
+                if (error.equalsIgnoreCase("Wrong captcha") || error.equalsIgnoreCase("Expired session")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
-            if (br.containsHTML("Wrong password") || br.containsHTML("name=\"password\"")) {
-                logger.warning("Wrong password!");
-                downloadLink.setProperty("pass", null);
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            }
-            if (dllink == null) {
-                dllink = br.getRegex("padding:[0-9]+px;\">\\s+<a\\s+href=\"(.*?)\">").getMatch(0);
-            }
+            dllink = br.getRegex("padding:[0-9]+px;\">\\s+<a\\s+href=\"(.*?)\">").getMatch(0);
+            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         }
         if (passCode != null) {
             downloadLink.setProperty("pass", passCode);
         }
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false,1);
         dl.startDownload();
     }
 

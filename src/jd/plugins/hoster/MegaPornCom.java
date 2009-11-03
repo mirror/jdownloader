@@ -253,13 +253,18 @@ public class MegaPornCom extends PluginForHost {
     @Override
     public boolean checkLinks(DownloadLink[] urls) {
         if (urls == null) return false;
-
+        Browser br = new Browser();
         LinkedHashMap<String, String> map = new LinkedHashMap<String, String>();
         int i = 0;
         String id;
         for (DownloadLink u : urls) {
             id = "00000";
             try {
+                /*
+                 * reset status to unchecked because api sometimes returns false
+                 * results
+                 */
+                u.setAvailableStatus(AvailableStatus.UNCHECKABLE);
                 id = getDownloadID(u);
             } catch (Exception e) {
                 logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
@@ -309,9 +314,8 @@ public class MegaPornCom extends PluginForHost {
         br.getHeaders().put("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1)");
         br.getHeaders().put("Content-Length", "12");
         br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
-
+        int checked = 0;
         try {
-
             String[] Dls = br.postPage("http://megaporn.com/mgr_linkcheck.php", map).split("&?(?=id[\\d]+=)");
             br.getHeaders().clear();
             br.getHeaders().setDominant(false);
@@ -321,6 +325,7 @@ public class MegaPornCom extends PluginForHost {
                 try {
                     int d = Integer.parseInt(string.substring(2, string.indexOf('=')));
                     String name = queryQ.get("n");
+                    checked++;
                     DownloadLink downloadLink = urls[d];
                     if (name != null) {
                         downloadLink.setFinalFileName(name);
@@ -330,13 +335,12 @@ public class MegaPornCom extends PluginForHost {
                         downloadLink.setAvailable(false);
                     }
                 } catch (Exception e) {
-                    return false;
                 }
             }
         } catch (Exception e) {
             return false;
         }
-        return true;
+        return checked == urls.length;
     }
 
     @Override

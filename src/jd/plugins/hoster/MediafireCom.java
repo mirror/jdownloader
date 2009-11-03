@@ -108,6 +108,7 @@ public class MediafireCom extends PluginForHost {
         if (br.getRegex(offlinelink).matches()) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         String filename = br.getRegex("<title>(.*?)<\\/title>").getMatch(0);
         String filesize = br.getRegex("<input type=\"hidden\" id=\"sharedtabsfileinfo1-fs\" value=\"(.*?)\">").getMatch(0);
+        if (filesize == null) filesize = br.getRegex("<input type=\"hidden\" id=\"sharedtabsfileinfo-fs\" value=\"(.*?)\">").getMatch(0);
         if (filename == null || filesize == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         downloadLink.setFinalFileName(filename.trim());
         downloadLink.setDownloadSize(Regex.getSize(filesize));
