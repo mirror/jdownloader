@@ -86,33 +86,7 @@ public class AddonsMenu extends JStartMenu {
                 config = true;
             }
             if (mis != null) {
-                if (plg.getPlugin().getConfig() != null && plg.getPlugin().getConfig().getEntries().size() > 0) {
-                    // ToolBarAction mi;
-                    // mis.add(0, mi = new
-                    // ToolBarAction(JDL.LF("gui.startmenu.addons.config2",
-                    // "%s's settings", plg.getHost()), -10000));
-                    // mi.setProperty("PLUGIN", plg.getPlugin());
-                    // mi.setIcon(JDTheme.II(plg.getPlugin().getIconKey(), 16,
-                    // 16));
-                    // mi.setActionListener(new ActionListener() {
-                    //
-                    // public void actionPerformed(ActionEvent e) {
-                    //
-                    // ConfigContainer cfg = ((Plugin) ((ToolBarAction)
-                    // e.getSource()).getProperty("PLUGIN")).getConfig();
-                    // cfg.setTitle(plg.getPlugin().getHost());
-                    // UserIF.getInstance().requestPanel(UserIF.Panels.CONFIGPANEL,
-                    // cfg);
-                    // // SimpleGUI.displayConfig(((Plugin) ((ToolBarAction)
-                    // // e.getSource()).getProperty("PLUGIN")).getConfig(),
-                    // // false);
-                    // }
-                    //
-                    // });
-
-                }
                 if (mis.size() > 1) {
-
                     MenuAction m = new MenuAction(plg.getID(), 0);
                     m.setTitle(plg.getHost());
                     m.setIcon(JDTheme.II(plg.getPlugin().getIconKey(), 16, 16));

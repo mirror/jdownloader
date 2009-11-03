@@ -94,9 +94,7 @@ public class PremiumMenu extends JStartMenu implements ActionListener, AccountCo
                         if (evt.getPropertyName() == SELECTED_KEY) {
                             setIcon((Boolean) evt.getNewValue() ? "gui.images.premium_enabled" : "gui.images.premium_disabled");
                         }
-
                     }
-
                 });
                 JDController.getInstance().addControlListener(new ConfigPropertyListener(Configuration.PARAM_USE_GLOBAL_PREMIUM) {
                     @Override

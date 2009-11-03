@@ -29,10 +29,9 @@ public class AboutAction extends ToolBarAction {
         super("action.about", "gui.images.about");
     }
 
+    @Override
     public void onAction(ActionEvent e) {
-
         new AboutDialog();
-
     }
 
     @Override

@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 
 public class RemoveDupesAction extends ThreadedAction {
 
-    private static final long serialVersionUID = -4068088102973973923L;
+    private static final long serialVersionUID = 3088399063634025074L;
 
     public RemoveDupesAction() {
         super("action.remove_dupes", "gui.images.remove_dupes");

@@ -29,6 +29,7 @@ public class ExitAction extends ToolBarAction {
         super("action.exit", "gui.images.exit");
     }
 
+    @Override
     public void onAction(ActionEvent e) {
         SwingGui.getInstance().closeWindow();
     }

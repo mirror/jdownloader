@@ -30,12 +30,13 @@ public class LogAction extends ToolBarAction {
         super("action.log", "gui.images.taskpanes.log");
     }
 
+    @Override
     public void onAction(ActionEvent e) {
 
-      LogView view = LogView.getLogView();
-      System.out.println(view.isShown());
-      
-      SwingGui.getInstance().setContent(view);
+        LogView view = LogView.getLogView();
+        System.out.println(view.isShown());
+
+        SwingGui.getInstance().setContent(view);
     }
 
     @Override

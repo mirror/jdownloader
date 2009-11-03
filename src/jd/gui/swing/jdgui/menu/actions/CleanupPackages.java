@@ -32,6 +32,7 @@ public class CleanupPackages extends ToolBarAction {
         super("action.remove.packages", "gui.images.delete");
     }
 
+    @Override
     public void onAction(ActionEvent e) {
         DownloadController dlc = DownloadController.getInstance();
         Vector<FilePackage> packagestodelete = new Vector<FilePackage>();

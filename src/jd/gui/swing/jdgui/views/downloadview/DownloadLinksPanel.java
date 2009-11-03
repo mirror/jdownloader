@@ -216,7 +216,6 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
     public void showFilePackageInfo(FilePackage fp) {
         filePackageInfo.setPackage(fp);
         new GuiRunnable<Object>() {
-            // @Override
             public Object runSave() {
                 DownloadView.getInstance().setInfoPanel(filePackageInfo);
                 return null;
@@ -227,7 +226,6 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
     public void showDownloadLinkInfo(DownloadLink downloadLink) {
         filePackageInfo.setDownloadLink(downloadLink);
         new GuiRunnable<Object>() {
-            // @Override
             public Object runSave() {
                 DownloadView.getInstance().setInfoPanel(filePackageInfo);
                 return null;
@@ -237,7 +235,6 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
 
     public void hideFilePackageInfo() {
         new GuiRunnable<Object>() {
-            // @Override
             public Object runSave() {
                 DownloadView.getInstance().setInfoPanel(null);
                 return null;

@@ -32,6 +32,7 @@ public class RemoveDisabledAction extends ToolBarAction {
         super("action.remove_disabled", "gui.images.remove_disabled");
     }
 
+    @Override
     public void onAction(ActionEvent e) {
         DownloadController dlc = DownloadController.getInstance();
         Vector<DownloadLink> downloadstodelete = new Vector<DownloadLink>();

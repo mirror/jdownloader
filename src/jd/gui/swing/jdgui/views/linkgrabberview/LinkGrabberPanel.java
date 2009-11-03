@@ -506,9 +506,8 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
                             }
                         }
                         switch (arg0.getID()) {
-                        case LinkGrabberTableAction.CHECK_LINK: {
+                        case LinkGrabberTableAction.CHECK_LINK:
                             recheckLinks(selected_links);
-                        }
                             break;
                         case LinkGrabberTableAction.ADD_SELECTED_LINKS:
                             ArrayList<LinkGrabberFilePackage> selected_packages2 = new ArrayList<LinkGrabberFilePackage>();

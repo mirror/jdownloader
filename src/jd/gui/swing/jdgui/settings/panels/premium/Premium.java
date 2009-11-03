@@ -144,7 +144,6 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
             public void threadedActionPerformed(final ActionEvent e) {
                 internalTable.editingStopped(null);
                 new GuiRunnable<Object>() {
-
                     @Override
                     public Object runSave() {
                         if (e.getSource() instanceof PluginForHost) {
@@ -156,7 +155,6 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
                         return null;
                     }
                 }.start();
-
             }
         };
         new ThreadedAction("action.premiumview.removeacc", "gui.images.delete") {

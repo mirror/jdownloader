@@ -66,6 +66,5 @@ public class AddUrlAction extends ToolBarAction {
 
     @Override
     public void init() {
-
     }
 }

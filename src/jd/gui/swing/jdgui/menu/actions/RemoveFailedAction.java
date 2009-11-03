@@ -32,6 +32,7 @@ public class RemoveFailedAction extends ToolBarAction {
         super("action.remove_failed", "gui.images.remove_failed");
     }
 
+    @Override
     public void onAction(ActionEvent e) {
         DownloadController dlc = DownloadController.getInstance();
         ArrayList<DownloadLink> downloadstodelete = new ArrayList<DownloadLink>();

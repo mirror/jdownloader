@@ -29,6 +29,7 @@ public class LatestChangesAction extends ToolBarAction {
         super("action.changes", "gui.images.help");
     }
 
+    @Override
     public void onAction(ActionEvent e) {
         try {
             JLink.openURL("http://jdownloader.org/changes/index");

@@ -33,6 +33,7 @@ public class CleanupDownloads extends ToolBarAction {
         super("action.remove.links", "gui.images.delete");
     }
 
+    @Override
     public void onAction(ActionEvent e) {
         DownloadController dlc = DownloadController.getInstance();
         Vector<DownloadLink> downloadstodelete = new Vector<DownloadLink>();

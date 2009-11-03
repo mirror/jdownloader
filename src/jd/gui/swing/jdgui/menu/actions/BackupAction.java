@@ -26,9 +26,6 @@ import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 
 public class BackupAction extends ThreadedAction {
-    /**
-     * 
-     */
 
     private static final long serialVersionUID = 823930266263085474L;
 

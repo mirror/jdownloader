@@ -176,8 +176,9 @@ public class SrcParser {
 
             for (String k : keys) {
                 currentContent += "\r\nJDL.L(\"gui.menu." + k + ".name\",\"gui.menu." + k + ".name\");";
-                currentContent += "\r\nJDL.L(\"gui.menu." + k + ".mnem\",\"gui.menu." + k + ".mnem\");";
+                currentContent += "\r\nJDL.L(\"gui.menu." + k + ".mnem\",\"-\");";
                 currentContent += "\r\nJDL.L(\"gui.menu." + k + ".accel\",\"-\");";
+                currentContent += "\r\nJDL.L(\"gui.menu." + k + ".tooltip\",\"gui.menu." + k + ".tooltip\");";
             }
         }
         if (this.currentContent.contains("extends PluginOptional")) {

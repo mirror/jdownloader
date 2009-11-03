@@ -36,6 +36,7 @@ public class RestoreAction extends ToolBarAction {
         super("action.restore", "gui.images.edit");
     }
 
+    @Override
     public void onAction(ActionEvent e) {
         if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(0, JDL.L("sys.ask.rlyrestore", "This will restart JDownloader and do a FULL-Update. Continue?")), UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
             final Executer exec = new Executer("java");

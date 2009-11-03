@@ -29,6 +29,7 @@ public class KnowledgeAction extends ToolBarAction {
         super("action.help", "gui.images.help");
     }
 
+    @Override
     public void onAction(ActionEvent e) {
         try {
             JLink.openURL("http://jdownloader.org/knowledge/index");

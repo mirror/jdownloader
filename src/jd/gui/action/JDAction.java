@@ -33,16 +33,14 @@ import jd.utils.JDTheme;
  * This abstract class is the parent class for all actions in JDownloader
  * 
  * @author Coalado
- * 
  */
 public abstract class JDAction extends AbstractAction {
-    /**
-     * 
-     */
+
     private static final long serialVersionUID = -2332356042161170120L;
     public static final String IMAGE_KEY = "IMAGE_KEY";
     private ActionListener actionListener;
     private int actionID = -1;
+
     public void setActionID(int actionID) {
         this.actionID = actionID;
     }
@@ -59,11 +57,9 @@ public abstract class JDAction extends AbstractAction {
     public JDAction(String title, int actionID) {
         super(title);
         this.actionID = actionID;
-
     }
 
     /**
-     * 
      * @param l
      *            name of the action
      * @param ii
@@ -71,25 +67,15 @@ public abstract class JDAction extends AbstractAction {
      */
     public JDAction(String l, ImageIcon ii) {
         super(l, ii);
-
     }
 
     /**
-     * 
      * @param l
      *            Name of the Action
      */
-
     public JDAction(String l) {
         this(l, -1);
-
     }
-
-    // public String getAccelerator() {
-    // KeyStroke stroke = ((KeyStroke) getValue(ACCELERATOR_KEY));
-    // if (stroke == null) return null;
-    // return stroke.getKeyChar() + "";
-    // }
 
     /**
      * @param key
@@ -186,7 +172,6 @@ public abstract class JDAction extends AbstractAction {
      * @return
      */
     public int getActionID() {
-
         return actionID;
     }
 
@@ -216,13 +201,8 @@ public abstract class JDAction extends AbstractAction {
      */
     public boolean isSelected() {
         Object value = getValue(SELECTED_KEY);
-        if (value == null) {
-            
-//            putValue(SELECTED_KEY, false);
-            return false;
-        }
+        if (value == null) return false;
         return (Boolean) value;
-
     }
 
     /**
@@ -233,7 +213,6 @@ public abstract class JDAction extends AbstractAction {
      */
     public JDAction setActionListener(ActionListener actionListener) {
         this.actionListener = actionListener;
-
         return this;
     }
 
@@ -245,7 +224,6 @@ public abstract class JDAction extends AbstractAction {
      */
     public void setSelected(boolean selected) {
         putValue(SELECTED_KEY, selected);
-      
     }
 
     /**
@@ -295,28 +273,15 @@ public abstract class JDAction extends AbstractAction {
     }
 
     /**
-     * A action uses an intern jd.config.Property see jd.config.Property for
-     * infos about this delegate
+     * A action uses an intern {@link Property}
      * 
      * @param string
      * @param value
+     * @see Property
      */
     public Object getProperty(String string) {
         if (properties == null) properties = new Property();
         return properties.getProperty(string);
-    }
-
-    /**
-     * A action uses an intern jd.config.Property see jd.config.Property for
-     * infos about this delegate
-     * 
-     * @param string
-     * @param value
-     */
-    public <E> E getGenericProperty(String key, E def) {
-
-        if (properties == null) properties = new Property();
-        return properties.getGenericProperty(key, def);
     }
 
 }

@@ -48,7 +48,6 @@ import jd.utils.locale.JDL;
  * Class to control toolbar actions
  * 
  * @author Coalado
- * 
  */
 public class ActionController {
     public static final String JDL_PREFIX = "jd.gui.swing.jdgui.actions.ActionController.";
