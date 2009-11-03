@@ -29,7 +29,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dualshare.com" }, urls = { "http://[\\w\\.]*?dualshare\\.com/[0-9a-z]{12}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dualshare.com" }, urls = { "http://[\\w\\.]*?dualshare\\.com/[0-9a-z]{12}" }, flags = { 0 })
 public class DualShareCom extends PluginForHost {
 
     public DualShareCom(PluginWrapper wrapper) {
