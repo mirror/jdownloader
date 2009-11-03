@@ -80,7 +80,7 @@ public class ShareSystemsDe extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         String hash = new Regex(downloadLink.getDownloadURL().toLowerCase(), "hash=([0-9a-f]{32})").getMatch(0);
-        downloadLink.setMD5Hash(hash);
+
         // method returns either the filename or an errorid.
         String name = br.getPage("http://91.121.188.186/share/tool_download_free.php?hash=" + hash + "&get_filename").trim();
         // throws an appripriate exception of name is an errorid
@@ -88,6 +88,9 @@ public class ShareSystemsDe extends PluginForHost {
         String size = br.getPage("http://91.121.188.186/share/tool_download_free.php?hash=" + hash + "&get_filesize").trim();
         downloadLink.setFinalFileName(name);
         downloadLink.setDownloadSize(Long.parseLong(size));
+        String md5hash = br.getPage("http://91.121.188.186/share/tool_download_free.php?hash=" + hash + "&get_md5").trim();
+        downloadLink.setMD5Hash(md5hash);
+
         return AvailableStatus.TRUE;
     }
 
