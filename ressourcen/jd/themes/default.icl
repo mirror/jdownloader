@@ -61,7 +61,6 @@ gui.images.terminal = default/utilities-terminal
 gui.images.update_manager = default/software-update-available
 gui.images.help = default/help-browser
 gui.images.about = logo/jd_logo_64_64
-gui.images.reset = default/system-software-update
 gui.images.update = default/system-software-update
 gui.images.exit = default/system-log-out
 gui.images.restart = default/go-jump

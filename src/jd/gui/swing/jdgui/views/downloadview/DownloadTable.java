@@ -358,7 +358,7 @@ public class DownloadTable extends JDTable implements MouseListener, KeyListener
                 popup.add(tmp = new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.resume", 16, 16), JDL.L("gui.table.contextmenu.resume", "fortsetzen") + " (" + resumlinks.size() + ")", TableAction.DOWNLOAD_RESUME, new Property("links", resumlinks))));
                 if (resumlinks.size() == 0) tmp.setEnabled(false);
                 if (notrunning.size() > 0 && DownloadWatchDog.getInstance().getDownloadStatus() == DownloadWatchDog.STATE.RUNNING) popup.add(new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.next", 16, 16), JDL.L("gui.table.contextmenu.tryforce", "Force download") + " (" + notrunning.size() + ")", TableAction.FORCE_DOWNLOAD, new Property("links", notrunning))));
-                popup.add(new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.reset", 16, 16), JDL.L("gui.table.contextmenu.reset", "zurücksetzen") + " (" + alllinks.size() + ")", TableAction.DOWNLOAD_RESET, new Property("links", alllinks))));
+                popup.add(new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.undo", 16, 16), JDL.L("gui.table.contextmenu.reset", "zurücksetzen") + " (" + alllinks.size() + ")", TableAction.DOWNLOAD_RESET, new Property("links", alllinks))));
                 popup.addSeparator();
                 propItem.setObject(obj);
                 popup.add(propItem);
@@ -373,6 +373,7 @@ public class DownloadTable extends JDTable implements MouseListener, KeyListener
             if (link.existsFile()) counter++;
         }
         JMenu pop = new JMenu(JDL.L("gui.table.contextmenu.delete", "entfernen"));
+        pop.setIcon(JDTheme.II("gui.images.delete", 16, 16));
         pop.add(new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.delete", 16, 16), JDL.L("gui.table.contextmenu.deletelist", "from list") + " (" + alllinks.size() + ")", TableAction.DELETE, new Property("links", alllinks))));
         pop.add(new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.delete", 16, 16), JDL.L("gui.table.contextmenu.deletelistdisk", "from list and disk") + " (" + alllinks.size() + "/" + counter + ")", TableAction.DELETEFILE, new Property("links", alllinks))));
         return pop;
@@ -401,15 +402,11 @@ public class DownloadTable extends JDTable implements MouseListener, KeyListener
     }
 
     private JMenu createExtrasMenu(Object obj) {
+        if (!(obj instanceof FilePackage || obj instanceof DownloadLink)) return null;
         JMenu pluginPopup = new JMenu(JDL.L("gui.table.contextmenu.extrasSubmenu", "Extras"));
+        pluginPopup.setIcon(JDTheme.II("gui.images.config.packagemanager", 16, 16));
         ArrayList<MenuAction> entries = new ArrayList<MenuAction>();
-        if (obj instanceof FilePackage) {
-            JDUtilities.getController().fireControlEventDirect(new ControlEvent(obj, ControlEvent.CONTROL_LINKLIST_CONTEXT_MENU, entries));
-        } else if (obj instanceof DownloadLink) {
-            JDUtilities.getController().fireControlEventDirect(new ControlEvent(obj, ControlEvent.CONTROL_LINKLIST_CONTEXT_MENU, entries));
-        } else {
-            return null;
-        }
+        JDUtilities.getController().fireControlEventDirect(new ControlEvent(obj, ControlEvent.CONTROL_LINKLIST_CONTEXT_MENU, entries));
         if (entries != null && entries.size() > 0) {
             for (MenuAction next : entries) {
                 JMenuItem mi = Menu.getJMenuItem(next);

@@ -366,9 +366,9 @@ public class LinkGrabberTable extends JDTable implements MouseListener, KeyListe
 
     private JMenu builddeletemenu(ArrayList<DownloadLink> alllinks) {
         JMenu popup = new JMenu(JDL.L("gui.table.contextmenu.remove", "Remove"));
+        popup.setIcon(JDTheme.II("gui.images.delete", 16, 16));
         popup.add(new JMenuItem(new LinkGrabberTableAction(linkgrabber, JDTheme.II("gui.images.removefailed", 16, 16), JDL.L("gui.linkgrabberv2.lg.rmoffline", "Remove all Offline"), LinkGrabberTableAction.DELETE_OFFLINE)));
         popup.add(new JMenuItem(new LinkGrabberTableAction(linkgrabber, JDTheme.II("gui.images.delete", 16, 16), JDL.L("gui.linkgrabberv2.lg.rmdups", "Remove all Duplicates"), LinkGrabberTableAction.DELETE_DUPS)));
-
         if (alllinks != null && alllinks.size() > 0) popup.add(new JMenuItem(new LinkGrabberTableAction(linkgrabber, JDTheme.II("gui.images.delete", 16, 16), JDL.L("gui.table.contextmenu.remove", "Remove") + " (" + alllinks.size() + ")", LinkGrabberTableAction.DELETE, new Property("links", alllinks))));
         popup.add(new JMenuItem(ActionController.getToolBarAction("action.linkgrabber.clearlist")));
         return popup;

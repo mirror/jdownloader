@@ -79,19 +79,20 @@ public class Updater {
         Browser.setGlobalConnectTimeout(500000);
         Browser.setGlobalReadTimeout(500000);
         Updater upd = new Updater();
-//
+        //
         WebUpdater.getConfig("WEBUPDATE").save();
-        System.out.println("STATUS: Webupdate");
-
-        upd.webupdate();
+        // System.out.println("STATUS: Webupdate");
+        //
+        // upd.webupdate();
         System.out.println("STATUS: move plugins");
 
         upd.movePlugins(getCFG("plugins_dir"));
         upd.moveJars(getCFG("dist_dir"));
         upd.removeFileOverhead();
-       upd.cleanUp();
+        upd.cleanUp();
         JOptionPane.showConfirmDialog(upd.frame, "Check " + upd.updateDir + " and remove files you do NOT want to update.");
-//        JOptionPane.showConfirmDialog(upd.frame, "Check " + upd.workingDir + " and remove files that should not be in the hashlist.");
+        // JOptionPane.showConfirmDialog(upd.frame, "Check " + upd.workingDir +
+        // " and remove files that should not be in the hashlist.");
         upd.merge();
         upd.pack();
 
@@ -163,7 +164,7 @@ public class Updater {
             }
         }
 
-        String[] rest = new String[] {/* "libs/svnkit.jar" */"windows_createlog.bat~",".junique","info.txt", "jd/img/default/flags", "plugins/JDPremium.jar", "tools/Windows/recycle.exe", "tools/Windows/recycle.cpp", "jd/img/screenshots", "jd/img/synthetica", "updateLog.txt", "jdupdate.jar"
+        String[] rest = new String[] {/* "libs/svnkit.jar" */"windows_createlog.bat~", ".junique", "info.txt", "jd/img/default/flags", "plugins/JDPremium.jar", "tools/Windows/recycle.exe", "tools/Windows/recycle.cpp", "jd/img/screenshots", "jd/img/synthetica", "updateLog.txt", "jdupdate.jar"
 
         };
         for (String path : rest) {
@@ -626,36 +627,25 @@ public class Updater {
      * 
      * @throws Exception
      */
-    private void webupdate() {
-        // try {
-        // FileUpdate.WAITTIME_ON_ERROR = 1;
-        // webupdater = new WebUpdater();
-        // webupdater.setIgnorePlugins(false);
-        // webupdater.setWorkingdir(workingDir);
-        // webupdater.setOSFilter(false);
-        // remoteFileList = webupdater.getAvailableFiles();
-        //
-        // ArrayList<FileUpdate> update = (ArrayList<FileUpdate>) remoteFileList
-        // .clone();
-        // webupdater.filterAvailableUpdates(update);
-        // System.out.println("UPdate: " + update);
-        // webupdater.updateFiles(update, null);
-        // webupdater.getBroadcaster().addListener(new MessageListener() {
-        //
-        // public void onMessage(MessageEvent event) {
-        // System.out.println(event.getMessage());
-        //
-        // }
-        //
-        // });
-        // //Restarter.main(new String[] { "-nolog" });
-        //
-        // } catch (Exception e) {
-        // JDLogger.exception(e);
-        // remoteFileList = new ArrayList<FileUpdate>();
-        // }
-
-    }
+    /*
+     * private void webupdate() { // try { // FileUpdate.WAITTIME_ON_ERROR = 1;
+     * // webupdater = new WebUpdater(); // webupdater.setIgnorePlugins(false);
+     * // webupdater.setWorkingdir(workingDir); //
+     * webupdater.setOSFilter(false); // remoteFileList =
+     * webupdater.getAvailableFiles(); // // ArrayList<FileUpdate> update =
+     * (ArrayList<FileUpdate>) remoteFileList // .clone(); //
+     * webupdater.filterAvailableUpdates(update); //
+     * System.out.println("UPdate: " + update); //
+     * webupdater.updateFiles(update, null); //
+     * webupdater.getBroadcaster().addListener(new MessageListener() { // //
+     * public void onMessage(MessageEvent event) { //
+     * System.out.println(event.getMessage()); // // } // // }); //
+     * //Restarter.main(new String[] { "-nolog" }); // // } catch (Exception e)
+     * { // JDLogger.exception(e); // remoteFileList = new
+     * ArrayList<FileUpdate>(); // }
+     * 
+     * }
+     */
 
     /*
      * * checks if file f is oart of the hashlist * private boolean

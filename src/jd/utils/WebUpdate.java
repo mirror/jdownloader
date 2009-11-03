@@ -176,7 +176,7 @@ public class WebUpdate {
      */
     public synchronized void doUpdateCheck(final boolean forceguiCall) {
         if (UPDATE_IN_PROGRESS) {
-            logger.info("UPdate is already running");
+            logger.info("Update is already running");
             Balloon.show(JDL.L("jd.utils.webupdate.ballon.title", "Update"), UserIO.getInstance().getIcon(UserIO.ICON_WARNING), JDL.L("jd.utils.webupdate.ballon.message.updateinprogress", "There is already an update in progress."));
             return;
         }
@@ -471,7 +471,7 @@ public class WebUpdate {
                         });
                         pc.increase(10);
 
-                        System.out.println("UPdate: " + files);
+                        System.out.println("Update: " + files);
                         updater.cleanUp();
                         // removes all .extract files that have no entry in the
                         // hashlist
