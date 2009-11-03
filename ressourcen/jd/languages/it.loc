@@ -1286,6 +1286,7 @@ plugins.optional.langfileeditor.adoptdefaults = Adotta predefinito(i)
 plugins.optional.langfileeditor.analyzingsource.ready = Analisi cartella sorgente: completata
 plugins.optional.langfileeditor.analyzingsource1 = Analisi cartella sorgente
 plugins.optional.langfileeditor.clearvalues = Cancella valori
+plugins.optional.langfileeditor.completereload = Ricaricamento completo (azzera cache)
 plugins.optional.langfileeditor.deletekeys = Elimina chiave
 plugins.optional.langfileeditor.deleteold.message = Eliminare tutte le %s chiavi obsolete?
 plugins.optional.langfileeditor.deleteold.message2 = Ci sono ancora %s chiavi obsolete nel file linguaggio. Eliminare le chiavi obsolete proma di salvare?
