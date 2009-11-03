@@ -347,13 +347,12 @@ public class JDController implements ControlListener {
             logger.info("Save HTACCESSlist");
             HTACCESSController.getInstance().saveSync();
             if (!quickmode) {
-                logger.info("Call Exit interactions");
                 logger.info("Wait for delayExit");
                 waitDelayExit();
             }
             logger.info("Shutdown Database");
             JDUtilities.getDatabaseConnector().shutdownDatabase();
-            logger.info("Release JUnique LOCK");
+            logger.info("Release JUnique Lock");
             JUnique.releaseLock(Main.instanceID);
             fireControlEventDirect(new ControlEvent(this, ControlEvent.CONTROL_SYSTEM_SHUTDOWN_PREPARED, this));
         }

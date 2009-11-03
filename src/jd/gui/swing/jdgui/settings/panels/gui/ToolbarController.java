@@ -22,8 +22,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 
-import javax.swing.JCheckBox;
-import javax.swing.JLabel;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTable;
@@ -47,6 +45,7 @@ import net.miginfocom.swing.MigLayout;
 
 import org.jdesktop.swingx.JXTable;
 import org.jdesktop.swingx.renderer.DefaultTableRenderer;
+import org.jdesktop.swingx.renderer.JRendererLabel;
 
 public class ToolbarController extends ConfigPanel {
     private static final ArrayList<String> WHITELIST = new ArrayList<String>();
@@ -109,6 +108,7 @@ public class ToolbarController extends ConfigPanel {
     }
     private static final long serialVersionUID = -7024581410075950497L;
 
+    @Override
     public String getBreadcrum() {
         return JDL.L(this.getClass().getName() + ".breadcrum", this.getClass().getSimpleName());
     }
@@ -130,7 +130,7 @@ public class ToolbarController extends ConfigPanel {
         }
 
         public int getColumnCount() {
-            return 4;
+            return 3;
         }
 
         @Override
@@ -142,20 +142,16 @@ public class ToolbarController extends ConfigPanel {
                 return JDL.L(JDL_PREFIX + ".column.name", "Name");
             case 2:
                 return JDL.L(JDL_PREFIX + ".column.desc", "Description");
-            case 3:
-                return JDL.L(JDL_PREFIX + ".column.icon", "Icon");
             }
             return super.getColumnName(column);
         }
 
         public int getRowCount() {
-
             return actions.size();
         }
 
         public Object getValueAt(final int rowIndex, final int columnIndex) {
             if (columnIndex == 0) return list.contains(actions.get(rowIndex).getID());
-
             return actions.get(rowIndex);
         }
 
@@ -170,21 +166,16 @@ public class ToolbarController extends ConfigPanel {
                 if ((Boolean) value) {
                     if (!list.contains(actions.get(row).getID())) list.add(actions.get(row).getID());
                 } else {
-                    // if there are accidently more entries
                     while (list.remove(actions.get(row).getID())) {
                     }
                 }
                 GUIUtils.getConfig().setProperty("TOOLBAR", list);
                 GUIUtils.getConfig().save();
                 Collections.sort(list, new Comparator<String>() {
-
                     public int compare(String o1, String o2) {
                         int ia = WHITELIST.indexOf(o1);
-
                         int ib = WHITELIST.indexOf(o2);
-
                         return ia < ib ? -1 : 1;
-
                     }
                 });
                 while (list.remove("toolbar.separator")) {
@@ -223,10 +214,10 @@ public class ToolbarController extends ConfigPanel {
         load();
     }
 
+    @Override
     public void onShow() {
         super.onShow();
         setActions(ActionController.getActions());
-
     }
 
     /**
@@ -237,14 +228,10 @@ public class ToolbarController extends ConfigPanel {
     private void setActions(ArrayList<ToolBarAction> actions2) {
 
         Collections.sort(actions2, new Comparator<ToolBarAction>() {
-
             public int compare(ToolBarAction o1, ToolBarAction o2) {
                 int ia = WHITELIST.indexOf(o1.getID());
-
                 int ib = WHITELIST.indexOf(o2.getID());
-
                 return ia < ib ? -1 : 1;
-
             }
         });
 
@@ -270,13 +257,10 @@ public class ToolbarController extends ConfigPanel {
             @Override
             public Object runSave() {
                 tableModel.fireTableDataChanged();
-
-                // table.getSelectionModel().setSelectionInterval(0, 0);
                 return null;
             }
 
         }.start();
-
     }
 
     @Override
@@ -293,26 +277,12 @@ public class ToolbarController extends ConfigPanel {
         };
         table.setSortable(false);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-
         table.getTableHeader().setReorderingAllowed(false);
 
-        TableColumn column = null;
-
-        for (int c = 0; c < tableModel.getColumnCount(); c++) {
-            column = table.getColumnModel().getColumn(c);
-            switch (c) {
-            case 0:
-                column.setPreferredWidth(40);
-                column.setMaxWidth(40);
-                break;
-
-            case 3:
-                column.setPreferredWidth(40);
-                column.setMaxWidth(40);
-                break;
-
-            }
-        }
+        TableColumn column = table.getColumnModel().getColumn(0);
+        column.setMinWidth(50);
+        column.setPreferredWidth(50);
+        column.setMaxWidth(50);
 
         panel.setLayout(new MigLayout("ins 5,wrap 1", "[fill,grow]", "[fill,grow][]"));
         panel.add(new JScrollPane(table));
@@ -329,45 +299,30 @@ public class ToolbarController extends ConfigPanel {
         return PropertyType.NONE;
     }
 
-    class TableRenderer extends DefaultTableRenderer {
+    private class TableRenderer extends DefaultTableRenderer {
 
         private static final long serialVersionUID = 1L;
 
-        private Component co;
-        private JCheckBox checkbox;
-        private JLabel label;
+        private JRendererLabel label;
 
         public TableRenderer() {
-            checkbox = new JCheckBox();
-
-            label = new JLabel();
+            label = new JRendererLabel();
         }
 
+        @Override
         public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-            co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-            ToolBarAction action;
+            ToolBarAction action = (ToolBarAction) value;
             switch (column) {
-            case 0:
-                checkbox.setSelected((Boolean) value);
-                return checkbox;
             case 1:
-                action = (ToolBarAction) value;
-                label.setIcon(null);
+                label.setIcon(JDTheme.II(action.getValue(ToolBarAction.IMAGE_KEY) + "", 16, 16));
                 label.setText(action.getTitle());
                 return label;
             case 2:
-                action = (ToolBarAction) value;
                 label.setIcon(null);
                 label.setText(action.getTooltipText());
                 return label;
-            case 3:
-                action = (ToolBarAction) value;
-                label.setIcon(JDTheme.II(action.getValue(ToolBarAction.IMAGE_KEY) + "", 16, 16));
-                label.setText("");
-                return label;
-
             }
-            return co;
+            return super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
         }
 
     }

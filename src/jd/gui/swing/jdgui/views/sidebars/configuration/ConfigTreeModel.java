@@ -31,10 +31,6 @@ import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.SingletonPanel;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.settings.ConfigPanel;
-import jd.gui.swing.jdgui.settings.panels.ConfigPanelGeneral;
-import jd.gui.swing.jdgui.settings.panels.addons.ConfigPanelAddons;
-import jd.gui.swing.jdgui.settings.panels.hoster.ConfigPanelPluginForHost;
-import jd.gui.swing.jdgui.settings.panels.premium.Premium;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
@@ -56,7 +52,7 @@ public class ConfigTreeModel implements TreeModel {
 
         root.add(basics = new TreeEntry(JDL.L(JDL_PREFIX + "basics.title", "Basics")).setIcon("gui.images.config.home"));
 
-        basics.add(new TreeEntry(ConfigPanelGeneral.class, ConfigPanelGeneral.getTitle()).setIcon("gui.images.config.home"));
+        basics.add(new TreeEntry(jd.gui.swing.jdgui.settings.panels.ConfigPanelGeneral.class, jd.gui.swing.jdgui.settings.panels.ConfigPanelGeneral.getTitle()).setIcon("gui.images.config.home"));
 
         basics.add(dl = new TreeEntry(jd.gui.swing.jdgui.settings.panels.downloadandnetwork.General.class, jd.gui.swing.jdgui.settings.panels.downloadandnetwork.General.getTitle()).setIcon("gui.images.config.network_local"));
         dl.add(new TreeEntry(jd.gui.swing.jdgui.settings.panels.downloadandnetwork.InternetAndNetwork.class, jd.gui.swing.jdgui.settings.panels.downloadandnetwork.InternetAndNetwork.getTitle()).setIcon("gui.images.networkerror"));
@@ -81,11 +77,11 @@ public class ConfigTreeModel implements TreeModel {
 
         root.add(plugins = new TreeEntry(JDL.L(JDL_PREFIX + "plugins.title", "Plugins & Add-ons")).setIcon("gui.images.config.packagemanager"));
 
-        plugins.add(hoster = new TreeEntry(ConfigPanelPluginForHost.class, ConfigPanelPluginForHost.getTitle()).setIcon("gui.images.config.host"));
+        plugins.add(hoster = new TreeEntry(jd.gui.swing.jdgui.settings.panels.hoster.ConfigPanelPluginForHost.class, jd.gui.swing.jdgui.settings.panels.hoster.ConfigPanelPluginForHost.getTitle()).setIcon("gui.images.config.host"));
 
-        hoster.add(new TreeEntry(Premium.class, Premium.getTitle()).setIcon("gui.images.premium"));
+        hoster.add(new TreeEntry(jd.gui.swing.jdgui.settings.panels.premium.Premium.class, jd.gui.swing.jdgui.settings.panels.premium.Premium.getTitle()).setIcon("gui.images.premium"));
 
-        plugins.add(addons = new TreeEntry(ConfigPanelAddons.class, ConfigPanelAddons.getTitle()).setIcon("gui.images.config.packagemanager"));
+        plugins.add(addons = new TreeEntry(jd.gui.swing.jdgui.settings.panels.addons.ConfigPanelAddons.class, jd.gui.swing.jdgui.settings.panels.addons.ConfigPanelAddons.getTitle()).setIcon("gui.images.config.packagemanager"));
 
         initExtensions(addons);
     }
