@@ -42,9 +42,9 @@ import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {}, flags = {})
 public class CMS extends PluginForDecrypt {
-    public static final String[] ANNOTATION_NAMES = new String[] { "romhood.com", "indexxx.us", "turk-crew.com", "musicfarm.in", "warezhunters.org", "uwarez.ws", "ddl-kingz.in", "oxygen-warez.com", "filefox.in", "alphawarez.us", "pirate-loads.com", "fettrap.com", "omega-music.com", "hardcoremetal.biz", "flashload.org", "twin-warez.com", "oneload.org", "steelwarez.com", "fullstreams.info", "lionwarez.com", "1dl.in", "chrome-database.com", "oneload.org", "youwarez.biz", "saugking.net", "leetpornz.com", "freefiles4u.com", "dark-load.net", "crimeland.de", "get-warez.in", "meinsound.com", "projekt-tempel-news.de.vu", "datensau.org", "musik.am", "spreaded.net", "relfreaks.com", "babevidz.com", "serien24.com", "porn-freaks.net", "xxx-4-free.net", "porn-traffic.net", "chili-warez.net", "game-freaks.net", "isos.at",
-            "your-load.com", "mov-world.net", "xtreme-warez.net", "sceneload.to", "epicspeedload.in", "serienfreaks.to", "serienfreaks.in", "warez-load.com", "ddl-scene.com", "mp3king.cinipac-hosting.biz", "ddl-base.ws", "sauggirls.com", "pornfox.in", "xflat24.com", "alben.ws", "worldofxxx.org", "gamegalaxy.ws", "ddl.byte.to", "interload.biz", "xwebb.extra.hu/1dl", "jokermovie.org", "xtreme-warez.biz", "your-load.com", "top-hitz.com", "wii-reloaded.ath.cx/sites/epic", "wankingking.com", "projekt-tempel-news.org", "porn-ox.in", "music-dome.cc", "sound-load.com", "hoerspiele.to", "jim2008.extra.hu", "ex-yu.extra.hu", "firefiles.in", "gez-load.net", "wrzunlimited.1gb.in", "streamload.in", "toxic.to", "mp3z.to", "sexload.to", "sound-load.com", "sfulc.exofire.net/cms", "fickdiehure.com", "dream-team.bz/cms", "omega-warez.com", "ddl-scene.cc", "xxxstreams.org", "scene-warez.com", "dokuh.tv",
-            "titanload.to", "ddlshock.com", "xtreme-warez.us", "crunkwarez.com", "serienking.in", "stream.szenepic.us", "gate-warez.com", "gateload.info", "hot-porn-ddl.com" };
+    public static final String[] ANNOTATION_NAMES = new String[] { "romhood.com", "indexxx.us", "turk-crew.com", "musicfarm.in", "warezhunters.org", "uwarez.ws", "ddl-kingz.in", "oxygen-warez.com", "filefox.in", "alphawarez.us", "pirate-loads.com", "fettrap.com", "omega-music.com", "hardcoremetal.biz", "flashload.org", "twin-warez.com", "oneload.org", "steelwarez.com", "fullstreams.info", "lionwarez.com", "1dl.in", "chrome-database.com", "oneload.org", "youwarez.biz", "saugking.net", "leetpornz.com", "freefiles4u.com", "dark-load.net", "crimeland.de", "get-warez.in", "meinsound.com", "projekt-tempel-news.de.vu", "datensau.org", "musik.am", "spreaded.net", "relfreaks.com", "babevidz.com", "serien24.com", "porn-freaks.net", "xxx-4-free.net", "porn-traffic.net", "chili-warez.net", "game-freaks.net", "isos.at", "your-load.com", "mov-world.net", "xtreme-warez.net", "sceneload.to",
+            "epicspeedload.in", "serienfreaks.to", "serienfreaks.in", "warez-load.com", "ddl-scene.com", "mp3king.cinipac-hosting.biz", "ddl-base.ws", "sauggirls.com", "pornfox.in", "xflat24.com", "alben.ws", "worldofxxx.org", "gamegalaxy.ws", "ddl.byte.to", "interload.biz", "xwebb.extra.hu/1dl", "jokermovie.org", "xtreme-warez.biz", "your-load.com", "top-hitz.com", "wii-reloaded.ath.cx/sites/epic", "wankingking.com", "projekt-tempel-news.org", "porn-ox.in", "music-dome.cc", "sound-load.com", "hoerspiele.to", "jim2008.extra.hu", "ex-yu.extra.hu", "firefiles.in", "gez-load.net", "wrzunlimited.1gb.in", "streamload.in", "toxic.to", "mp3z.to", "sexload.to", "sound-load.com", "sfulc.exofire.net/cms", "fickdiehure.com", "dream-team.bz/cms", "omega-warez.com", "ddl-scene.cc", "xxxstreams.org", "scene-warez.com", "dokuh.tv", "titanload.to", "ddlshock.com", "xtreme-warez.us", "crunkwarez.com",
+            "serienking.in", "stream.szenepic.us", "gate-warez.com", "gateload.info", "hot-porn-ddl.com" };
 
     /**
      * Returns the annotations names array
@@ -111,7 +111,6 @@ public class CMS extends PluginForDecrypt {
             if (!host.startsWith("http")) {
                 host = "http://" + host;
             }
-
             String pass = br.getRegex(Pattern.compile("CopyToClipboard\\(this\\)\\; return\\(false\\)\\;\">(.*?)<\\/a>", Pattern.CASE_INSENSITIVE)).getMatch(0);
             if (pass == null) pass = br.getRegex("<B>Passwort:</B> <input value=\"(.*?)\".*?<").getMatch(0);
 
@@ -133,9 +132,12 @@ public class CMS extends PluginForDecrypt {
                             String captchaAdress = host + new Regex(element[2], Pattern.compile("<IMG SRC=\"(/.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
                             captchaFile = getLocalCaptchaFile();
                             br.cloneBrowser().getDownload(captchaFile, captchaAdress);
-                            capTxt = getCaptchaCode("cms", captchaFile, param);
-                            captchaFile.renameTo(new File(captchaFile.getParentFile(),capTxt+".gif"));
-                            
+                            if (host.toLowerCase().contains("mov-world.net"))
+                                capTxt = getCaptchaCode("mov-world.net", captchaFile, param);
+                            else
+                                capTxt = getCaptchaCode("cms", captchaFile, param);
+                            captchaFile.renameTo(new File(captchaFile.getParentFile(), capTxt + ".gif"));
+
                             String posthelp = HTMLParser.getFormInputHidden(element[2]);
                             if (element[0].startsWith("http")) {
                                 br.postPage(element[0], posthelp + "&code=" + capTxt);
@@ -222,9 +224,12 @@ public class CMS extends PluginForDecrypt {
                             String captchaAdress = host + tform.getRegex(Pattern.compile("<img src=\"(/captcha/.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
                             captchaFile = getLocalCaptchaFile();
                             brc.getDownload(captchaFile, captchaAdress);
-                            capTxt = getCaptchaCode("cms", captchaFile, UserIO.NO_JAC, param, null, null);
-                            captchaFile.renameTo(new File(captchaFile.getParentFile(),capTxt+".gif"));
-                            
+                            if (host.toLowerCase().contains("mov-world.net"))
+                                capTxt = getCaptchaCode("mov-world.net", captchaFile, param);
+                            else
+                                capTxt = getCaptchaCode("cms", captchaFile, UserIO.NO_JAC, param, null, null);
+                            captchaFile.renameTo(new File(captchaFile.getParentFile(), capTxt + ".gif"));
+
                             tform.put("code", capTxt);
                             brc.submitForm(tform);
                         } else {
