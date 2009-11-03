@@ -36,6 +36,16 @@ public class SrcParser {
     private File root;
     private JDBroadcaster<MessageListener, MessageEvent> broadcaster;
 
+    public static void deleteCache() {
+        File dir = JDUtilities.getResourceFile("tmp/lfe/cache/");
+        if (dir == null) return;
+        File[] files = dir.listFiles();
+        if (files == null || files.length == 0) return;
+        for (File file : files) {
+            file.delete();
+        }
+    }
+
     public SrcParser(File resourceFile) {
         this.root = resourceFile;
         this.entries = new ArrayList<LngEntry>();
@@ -164,6 +174,7 @@ public class SrcParser {
                 currentContent += "\r\nJDL.L(\"gui.menu." + menukey + ".name\",\"" + menukey + "\");";
                 currentContent += "\r\nJDL.L(\"gui.menu." + menukey + ".mnem\",\"-\");";
                 currentContent += "\r\nJDL.L(\"gui.menu." + menukey + ".accel\",\"-\");";
+                currentContent += "\r\nJDL.L(\"gui.menu." + menukey + ".tooltip\",\"gui.menu." + menukey + ".tooltip\");";
             }
         }
         if (this.currentContent.contains("jd.gui.swing.jdgui.menu;")) {

@@ -99,7 +99,7 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
 
     private JMenuBar menubar;
     private JMenu mnuFile, mnuLoad, mnuKey, mnuTest;
-    private JMenuItem mnuSave, mnuSaveLocal, mnuReload;
+    private JMenuItem mnuSave, mnuSaveLocal, mnuReload, mnuCompleteReload;
     private JMenuItem mnuAdd, mnuAdopt, mnuClear, mnuDelete, mnuDeleteOld, mnuOpenSearchDialog;
     private JMenuItem mnuCurrent, mnuKeymode;
     private JPopupMenu mnuContextPopup;
@@ -322,35 +322,38 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
         mnuContextAdopt.addActionListener(this);
     }
 
-    public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == mnuReload) {
+    public void actionPerformed(final ActionEvent e) {
+        if (e.getSource() == mnuCompleteReload || e.getSource() == mnuReload) {
             saveChanges();
 
             new Thread(new Runnable() {
                 public void run() {
-                    try {
-                        getSourceEntries();
+                    SwingUtilities.invokeLater(new Runnable() {
 
-                        updateSVN(true);
-                        populateLngMenu();
-                        initLocaleData();
-                    } finally {
+                        public void run() {
+                            mnuKey.setEnabled(false);
+                            mnuCurrent.setEnabled(false);
+                            mnuSave.setEnabled(false);
+                            mnuSaveLocal.setEnabled(false);
+                        }
 
-                    }
+                    });
+                    if (e.getSource() == mnuCompleteReload) SrcParser.deleteCache();
+                    getSourceEntries();
+                    updateSVN(true);
+                    populateLngMenu();
+                    initLocaleData();
                 }
             }).start();
-
         } else if (e.getSource() == mnuSaveLocal) {
-
             saveLanguageFile(languageFile, false);
         } else if (e.getSource() == mnuSave) {
-
             saveLanguageFile(languageFile, true);
-        } else if (e.getSource() == this.mnuCurrent) {
+        } else if (e.getSource() == mnuCurrent) {
             saveLanguageFile(languageFile, false);
             startNewInstance(new String[] { "-n", "-lng", languageFile.getAbsolutePath() });
             UserIO.getInstance().requestMessageDialog("Started JDownloader using " + languageFile);
-        } else if (e.getSource() == this.mnuKeymode) {
+        } else if (e.getSource() == mnuKeymode) {
 
             startNewInstance(new String[] { "-n", "-trdebug" });
             UserIO.getInstance().requestMessageDialog("Started JDownloader in KEY DEBUG Mode");
@@ -534,9 +537,7 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
         }
 
         try {
-            Subversion svn;
-
-            svn = new Subversion(LANGUAGE_SVN, subConfig.getStringProperty(PROPERTY_SVN_ACCESS_USER), subConfig.getStringProperty(PROPERTY_SVN_ACCESS_PASS));
+            Subversion svn = new Subversion(LANGUAGE_SVN, subConfig.getStringProperty(PROPERTY_SVN_ACCESS_USER), subConfig.getStringProperty(PROPERTY_SVN_ACCESS_PASS));
 
             ArrayList<SVNInfo> info = svn.getInfo(file);
             if (info.get(0).getConflictWrkFile() != null) {
@@ -551,9 +552,7 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
                 String message = UserIO.getInstance().requestInputDialog(0, "Enter change description", "Please enter a short description for your changes (in english).", "", null, null, null);
                 if (message == null) message = "Updated language file (" + lngKey + ")";
                 if (!commit(file, message, null)) {
-
                     UserIO.getInstance().requestMessageDialog("Could not upload changes. Please send the file " + file.getAbsolutePath() + " to support@jdownloader.org");
-
                     return;
                 }
             }
@@ -613,7 +612,6 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
                 mnuCurrent.setEnabled(true);
                 mnuSave.setEnabled(true);
                 mnuSaveLocal.setEnabled(true);
-                mnuFile.setEnabled(true);
             }
 
         });
@@ -818,13 +816,14 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
         mnuFile.add(mnuSave = new JMenuItem(JDL.L(LOCALE_PREFIX + "saveandupload", "Save & Upload")));
         mnuFile.addSeparator();
         mnuFile.add(mnuReload = new JMenuItem(JDL.L(LOCALE_PREFIX + "reload", "Revert/Reload")));
+        mnuFile.add(mnuCompleteReload = new JMenuItem(JDL.L(LOCALE_PREFIX + "completeReload", "Complete Reload (Deletes Cache)")));
 
-        mnuReload.addActionListener(this);
         mnuSaveLocal.addActionListener(this);
+        mnuSave.addActionListener(this);
+        mnuReload.addActionListener(this);
+        mnuCompleteReload.addActionListener(this);
 
         mnuSaveLocal.setEnabled(false);
-        mnuSave.addActionListener(this);
-
         mnuSave.setEnabled(false);
 
         mnuSave.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, KeyEvent.CTRL_DOWN_MASK));
