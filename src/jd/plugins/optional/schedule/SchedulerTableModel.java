@@ -22,7 +22,6 @@ import jd.plugins.optional.schedule.columns.DateColumn;
 import jd.plugins.optional.schedule.columns.EnabledColumn;
 import jd.plugins.optional.schedule.columns.NameColumn;
 import jd.plugins.optional.schedule.columns.NextExeColumn;
-import jd.plugins.optional.schedule.columns.NumberColumn;
 import jd.plugins.optional.schedule.columns.RepeatsColumn;
 import jd.plugins.optional.schedule.columns.TimeColumn;
 import jd.utils.locale.JDL;
@@ -47,7 +46,6 @@ public class SchedulerTableModel extends JDTableModel {
         this.addColumn(new TimeColumn(JDL.L(JDL_PREFIX + "time", "Time"), this));
         this.addColumn(new NextExeColumn(JDL.L(JDL_PREFIX + "nextexecution", "Next Execution"), this));
         this.addColumn(new RepeatsColumn(JDL.L(JDL_PREFIX + "repeats", "Repeats"), this));
-        this.addColumn(new NumberColumn(JDL.L(JDL_PREFIX + "number", "# of actions"), this));
     }
 
     @Override
