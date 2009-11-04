@@ -31,9 +31,11 @@ import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
 import jd.plugins.optional.schedule.modules.DisablePremium;
+import jd.plugins.optional.schedule.modules.DisablePremiumForHost;
 import jd.plugins.optional.schedule.modules.DisableReconnect;
 import jd.plugins.optional.schedule.modules.DoReconnect;
 import jd.plugins.optional.schedule.modules.EnablePremium;
+import jd.plugins.optional.schedule.modules.EnablePremiumForHost;
 import jd.plugins.optional.schedule.modules.EnableReconnect;
 import jd.plugins.optional.schedule.modules.PauseDownloads;
 import jd.plugins.optional.schedule.modules.SchedulerModuleInterface;
@@ -96,6 +98,8 @@ public class Schedule extends PluginOptional {
         modules.add(new DoReconnect());
         modules.add(new SetStopMark());
         modules.add(new UnSetStopMark());
+        modules.add(new EnablePremiumForHost());
+        modules.add(new DisablePremiumForHost());
     }
 
     public ArrayList<SchedulerModuleInterface> getModules() {
