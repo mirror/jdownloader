@@ -32,7 +32,7 @@ public class TrafficShareColumn extends JDTextTableColumn {
     }
 
     @Override
-    public boolean defaultEnabled() {
+    public boolean defaultVisible() {
         return false;
     }
 

@@ -72,7 +72,7 @@ public abstract class JDTableColumn extends AbstractCellEditor implements TableC
         return name;
     }
 
-    public boolean defaultEnabled() {
+    public boolean defaultVisible() {
         return true;
     }
 
@@ -118,7 +118,17 @@ public abstract class JDTableColumn extends AbstractCellEditor implements TableC
         sortThread.start();
     }
 
-    abstract public void sort(Object obj, final boolean sortingToggle);
+    /**
+     * Overwrite to implement the sorting for this column
+     * 
+     * @param obj
+     *            the object on which the sorting process was called
+     * @param sortingToggle
+     *            the toggle of the sorting
+     */
+    public void sort(Object obj, boolean sortingToggle) {
+
+    }
 
     public boolean isCellEditable(int rowIndex, int columnIndex) {
         Object obj = table.getValueAt(rowIndex, columnIndex);

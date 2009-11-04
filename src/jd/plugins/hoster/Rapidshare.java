@@ -502,12 +502,12 @@ public class Rapidshare extends PluginForHost {
     }
 
     @Override
-    public HosterInfo getHosterInfo() {
+    public HosterInfo getHosterInfoInternal() {
         HosterInfo ret = new HosterInfo(this.getHost());
         ret.setFreeMaxWaittime(60 * 2 * 1000);
         ret.setFreeIPBlockWaittime(15 * 60 * 1000);
         ret.setFreeResumable(false);
-        ret.setFreeParalellDownloads(1);
+        ret.setFreeParallelDownloads(1);
         ret.setFreeChunks(1);
         ret.setFreeMaxSpeed(200 * 1024);
         return ret;

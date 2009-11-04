@@ -45,7 +45,7 @@ public class HosterInfo extends Property {
     /**
      * allowed paralell downloads in freemode
      */
-    private int freeParalellDownloads = 1;
+    private int freeParallelDownloads = 1;
     /**
      * Resumable in free mode?
      */
@@ -75,8 +75,8 @@ public class HosterInfo extends Property {
         return freeMaxWaittime;
     }
 
-    public int getFreeParalellDownloads() {
-        return freeParalellDownloads;
+    public int getFreeParallelDownloads() {
+        return freeParallelDownloads;
     }
 
     public String getHost() {
@@ -103,8 +103,8 @@ public class HosterInfo extends Property {
         this.freeMaxWaittime = i;
     }
 
-    public void setFreeParalellDownloads(int i) {
-        this.freeParalellDownloads = i;
+    public void setFreeParallelDownloads(int i) {
+        this.freeParallelDownloads = i;
     }
 
     public void setFreeResumable(boolean b) {

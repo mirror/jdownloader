@@ -50,7 +50,7 @@ public class PartColumn extends JDTableColumn {
     }
 
     @Override
-    public boolean defaultEnabled() {
+    public boolean defaultVisible() {
         return false;
     }
 

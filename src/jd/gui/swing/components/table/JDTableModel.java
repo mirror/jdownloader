@@ -108,7 +108,7 @@ public abstract class JDTableModel extends AbstractTableModel {
 
     public boolean isVisible(int column) {
         JDTableColumn col = getJDTableColumn(column);
-        return config.getBooleanProperty("VISABLE_COL_" + col.getName(), col.defaultEnabled());
+        return config.getBooleanProperty("VISABLE_COL_" + col.getName(), col.defaultVisible());
     }
 
     public void setVisible(int column, boolean visible) {

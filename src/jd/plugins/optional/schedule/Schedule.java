@@ -93,13 +93,13 @@ public class Schedule extends PluginOptional {
         modules.add(new UnPauseDownloads());
         modules.add(new EnablePremium());
         modules.add(new DisablePremium());
+        modules.add(new EnablePremiumForHost());
+        modules.add(new DisablePremiumForHost());
         modules.add(new EnableReconnect());
         modules.add(new DisableReconnect());
         modules.add(new DoReconnect());
         modules.add(new SetStopMark());
         modules.add(new UnSetStopMark());
-        modules.add(new EnablePremiumForHost());
-        modules.add(new DisablePremiumForHost());
     }
 
     public ArrayList<SchedulerModuleInterface> getModules() {
