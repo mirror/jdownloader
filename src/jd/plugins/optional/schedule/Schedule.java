@@ -23,6 +23,7 @@ import java.util.Calendar;
 import java.util.Date;
 
 import jd.PluginWrapper;
+import jd.controlling.JDLogger;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelListener;
@@ -253,57 +254,62 @@ public class Schedule extends PluginOptional {
 
         @Override
         public void run() {
-            logger.finest("Scheduler: start");
-            while (running) {
-                logger.finest("Scheduler: checking");
-                /* getting current date and time */
-                long currenttime = System.currentTimeMillis();
-                today = new Date(currenttime);
-                String todaydate = date.format(today);
-                String todaytime = time.format(today);
-                boolean savechanges = false;
-                /* check all scheduler actions */
-                synchronized (LOCK) {
-                    tmpactions.clear();
-                    tmpactions.addAll(actions);
-                }
-                for (Actions a : tmpactions) {
-                    /* check if we have to start the scheduler action */
-                    if (a.isEnabled() && todaydate.equals(date.format(a.getDate())) && todaytime.equals(time.format(a.getDate()))) {
-                        if (!a.wasAlreadyHandled()) {
-                            a.setAlreadyHandled(true);
-                            /* lets execute the action */
-                            synchronized (LOCK) {
-                                tmpexe.clear();
-                                tmpexe.addAll(a.getExecutions());
-                            }
-                            for (Executions e : tmpexe) {
-                                logger.finest("Execute: " + e.getModule().getTranslation());
-                                e.exceute();
+            try {
+                logger.finest("Scheduler: start");
+                while (running) {
+                    logger.finest("Scheduler: checking");
+                    /* getting current date and time */
+                    long currenttime = System.currentTimeMillis();
+                    today = new Date(currenttime);
+                    String todaydate = date.format(today);
+                    String todaytime = time.format(today);
+                    boolean savechanges = false;
+                    /* check all scheduler actions */
+                    synchronized (LOCK) {
+                        tmpactions.clear();
+                        tmpactions.addAll(actions);
+                    }
+                    for (Actions a : tmpactions) {
+                        /* check if we have to start the scheduler action */
+                        if (a.isEnabled() && todaydate.equals(date.format(a.getDate())) && todaytime.equals(time.format(a.getDate()))) {
+                            if (!a.wasAlreadyHandled()) {
+                                a.setAlreadyHandled(true);
+                                /* lets execute the action */
+                                synchronized (LOCK) {
+                                    tmpexe.clear();
+                                    tmpexe.addAll(a.getExecutions());
+                                }
+                                for (Executions e : tmpexe) {
+                                    logger.finest("Execute: " + e.getModule().getTranslation());
+                                    e.exceute();
+                                }
                             }
                         }
+                        /* update timer */
+                        if (updateTimer(a, currenttime)) savechanges = true;
                     }
-                    /* update timer */
-                    if (updateTimer(a, currenttime)) savechanges = true;
+                    if (savechanges) {
+                        saveActions();
+                    } else {
+                        updateTable();
+                    }
+                    /* wait a minute and check again */
+                    synchronized (this) {
+                        sleeping = true;
+                    }
+                    try {
+                        sleep(60000);
+                    } catch (InterruptedException e) {
+                    }
+                    synchronized (this) {
+                        sleeping = false;
+                    }
                 }
-                if (savechanges) {
-                    saveActions();
-                } else {
-                    updateTable();
-                }
-                /* wait a minute and check again */
-                synchronized (this) {
-                    sleeping = true;
-                }
-                try {
-                    sleep(60000);
-                } catch (InterruptedException e) {
-                }
-                synchronized (this) {
-                    sleeping = false;
-                }
+                logger.finest("Scheduler: stop");
+            } catch (Exception e) {
+                logger.severe("Scheduler: died!!");
+                JDLogger.exception(e);
             }
-            logger.finest("Scheduler: stop");
         }
     }
 }

@@ -36,74 +36,65 @@ public class SlingFileCom extends PluginForHost {
         br.setFollowRedirects(true);
     }
 
-    // @Override
     public String getAGBLink() {
         return "http://www.slingfile.com/pages/tos.html";
     }
 
-    // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
-
         this.setBrowserExclusive();
-        br.setCookie("http://www.slingfile.com/", "language", "deutsch");
+        /*
+         * cookie settings does not work because hoster checks ip and sets
+         * language then so the regex has to match good enough to find info but
+         * not use words
+         */
         br.getPage(downloadLink.getDownloadURL().replaceAll("video", "file").replaceAll("audio", "file"));
-        String filename = br.getRegex(Pattern.compile("Dateiname : <strong>(.*?)</strong>")).getMatch(0);
-        String filesize = br.getRegex(Pattern.compile("Dateigr&ouml;&szlig;e : (.*?)</p>")).getMatch(0);
+        String filename = br.getRegex(Pattern.compile("<p class=\"info8\">.*?alt=\"arrow\".*?<strong>(.*?)<")).getMatch(0);
+        String filesize = br.getRegex(Pattern.compile("<p class=\"info8\">.*?<p class=\"info8\">.*?/>.*? : (.*?)<", Pattern.DOTALL)).getMatch(0);
         if (filesize == null || filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(Regex.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
-    // @Override
-    /*
-     * public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         Form downloadForm = br.getFormbyProperty("name", "form1");
         downloadForm.put("download", "1");
-
         br.submitForm(downloadForm);
         long waittime = 0;
         try {
             waittime = Long.parseLong(br.getRegex("var seconds\\=(\\d+)").getMatch(0)) * 1000l;
         } catch (Exception e) {
-
         }
         if (waittime > 31000) {
-
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waittime);
         } else {
             // this.sleep(waittime, downloadLink);
         }
 
         String downloadUrl = br.getRegex(Pattern.compile("<a class=\"link_v3\" href=\"(.*?)\">here</a>")).getMatch(0);
-
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadUrl, true, 0);
         if (dl.getConnection().getResponseCode() == 410) {
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60000l);
         }
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl.startDownload();
     }
 
-    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
     }
 
-    // @Override
     public void reset() {
     }
 
-    // @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 }

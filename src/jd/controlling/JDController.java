@@ -353,7 +353,14 @@ public class JDController implements ControlListener {
             logger.info("Shutdown Database");
             JDUtilities.getDatabaseConnector().shutdownDatabase();
             logger.info("Release JUnique Lock");
-            JUnique.releaseLock(Main.instanceID);
+            try {
+                /*
+                 * try catch errors in case when lock has not been aquired (eg
+                 * firewall prevent junique server creation)
+                 */
+                JUnique.releaseLock(Main.instanceID);
+            } catch (Exception e) {
+            }
             fireControlEventDirect(new ControlEvent(this, ControlEvent.CONTROL_SYSTEM_SHUTDOWN_PREPARED, this));
         }
     }

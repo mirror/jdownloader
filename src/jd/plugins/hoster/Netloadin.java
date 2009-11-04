@@ -395,6 +395,7 @@ public class Netloadin extends PluginForHost {
             }
             if (page == null && ex != null) throw ex;
             if (page == null || Regex.matches(page, "unknown file_data") || Regex.matches(page, "unknown_file_data")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (page != null && Regex.matches(page, "unknown_server_data")) return AvailableStatus.UNCHECKABLE;
 
             String[] entries = br.getRegex("(.*?);(.*?);(.*?);(.*?);(.*)").getRow(0);
 

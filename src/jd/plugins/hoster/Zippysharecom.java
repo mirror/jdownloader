@@ -93,7 +93,7 @@ public class Zippysharecom extends PluginForHost {
             // replace[0].substring(0, replace[0].length() - 2);
             // page = page.replace(replace[0], replace[1]);
             // }
-            page = page.replaceAll("xxx", "zzz").replaceAll("zzz", "www").replaceAll("seven", "6").replaceAll("unh", "v").replaceAll("unf", "d");
+            page = page.replaceAll("zzz", "www").replaceAll("una", "d");
             String[] links = HTMLParser.getHttpLinks(page, null);
             if (index > links.length - 1) break;
             String curlink = links[index];

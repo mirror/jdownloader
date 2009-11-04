@@ -281,6 +281,7 @@ public class Main {
             LOGGER.info("existing jD instance found!");
             instanceStarted = false;
         } catch (Exception e) {
+            JDLogger.exception(e);
             LOGGER.severe("Instance Handling not possible!");
             instanceStarted = true;
         }

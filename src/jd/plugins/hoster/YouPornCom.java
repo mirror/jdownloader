@@ -19,58 +19,60 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
-import jd.plugins.Plugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youporn.com" }, urls = { "http://download\\.youporn\\.com/download/\\d+.*" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youporn.com" }, urls = { "http://[\\w\\.]*?youporn\\.com/watch/\\d+/?.+/?" }, flags = { 0 })
 public class YouPornCom extends PluginForHost {
+
+    String dlLink = null;
 
     public YouPornCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    // @Override
     public String getAGBLink() {
         return "http://youporn.com/terms";
     }
 
-    // @Override
-    public AvailableStatus requestFileInformation(DownloadLink parameter) throws IOException {
+    public AvailableStatus requestFileInformation(DownloadLink parameter) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.openGetConnection(parameter.getDownloadURL());
-        parameter.setName(Plugin.getFileNameFromHeader(br.getHttpConnection()));
-        parameter.setDownloadSize(br.getHttpConnection().getLongContentLength());
-        br.getHttpConnection().disconnect();
+        br.postPage(parameter.getDownloadURL(), "user_choice=Enter");
+        String matches = br.getRegex("addVariable\\('file', encodeURIComponent\\('(.*?)'\\)\\);").getMatch(0);
+        if (matches == null) matches = br.getRegex("var file_url.*?=.*?'(.*?)'").getMatch(0);
+        String filename = br.getRegex("<title>(.*?)- Free Porn Videos - YouPorn.com Lite \\(BETA\\)</title>").getMatch(0);
+        if (matches == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        br.getPage(matches);
+        dlLink = br.getRegex("location>(http://.*?)<").getMatch(0);
+        if (dlLink == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filename != null) parameter.setFinalFileName(filename.trim().replaceAll(" ", "-") + ".flv");
         return AvailableStatus.TRUE;
     }
 
-    // @Override
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
-        jd.plugins.BrowserAdapter.openDownload(br,link, link.getDownloadURL()).startDownload();
+        dlLink = Encoding.htmlDecode(dlLink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlLink, true, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
-    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    // @Override
     public void reset() {
     }
 
-    // @Override
-    /*
-     * public String getVersion() {
-     * 
-     * return getVersion("$Revision$"); }
-     */
-
-    // @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 }
