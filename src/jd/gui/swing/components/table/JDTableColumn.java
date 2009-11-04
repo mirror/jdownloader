@@ -122,7 +122,8 @@ public abstract class JDTableColumn extends AbstractCellEditor implements TableC
      * Overwrite to implement the sorting for this column
      * 
      * @param obj
-     *            the object on which the sorting process was called
+     *            the object on which the sorting process was called or
+     *            <code>null</code> when sorting on columnheader
      * @param sortingToggle
      *            the toggle of the sorting
      */
