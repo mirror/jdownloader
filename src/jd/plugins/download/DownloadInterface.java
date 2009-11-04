@@ -1661,20 +1661,26 @@ abstract public class DownloadInterface {
             return false;
         }
         if (this.doFileSizeCheck && (totaleLinkBytesLoaded <= 0 || totaleLinkBytesLoaded != fileSize && fileSize > 0)) {
-
-            logger.severe("DOWNLOAD INCOMPLETE DUE TO FILESIZECHECK");
-
-            error(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, JDL.L("download.error.message.incomplete", "Download unvollständig"));
-
             if (totaleLinkBytesLoaded > fileSize) {
+                /*
+                 * workaround for old bug deep in this downloadsystem. more data
+                 * got loaded (maybe just counting bug) than filesize. but in
+                 * most cases the file is okay! WONTFIX because new
+                 * downloadsystem is on its way
+                 */
                 logger.severe("loaded more than requested. filesize: " + fileSize + " loaded: " + totaleLinkBytesLoaded + ". This might be  a logic chunk setup error!");
+                if (!linkStatus.isFailed()) {
+                    linkStatus.setStatus(LinkStatus.FINISHED);
+                }
+                return true;
             }
+            logger.severe("DOWNLOAD INCOMPLETE DUE TO FILESIZECHECK");
+            error(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, JDL.L("download.error.message.incomplete", "Download unvollständig"));
             return false;
         }
 
         if (getExceptions() != null && getExceptions().size() > 0) {
             error(LinkStatus.ERROR_RETRY, JDL.L("download.error.message.incomplete", "Download unvollständig"));
-
             return false;
         }
         if (!linkStatus.isFailed()) {

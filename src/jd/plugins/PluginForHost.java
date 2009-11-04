@@ -705,8 +705,8 @@ public abstract class PluginForHost extends Plugin {
         try {
             File imageFile = JDUtilities.getResourceFile("jd/img/hosterlogos/" + getHost() + ".png", true);
             ImageIO.write(image, "png", imageFile);
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (Exception e) {
+            JDLogger.exception(e);
         }
         return image;
     }
