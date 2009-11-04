@@ -164,28 +164,30 @@ public class LookAndFeelController {
      */
     public static void setUIManager() {
         if (uiInitated) return;
-
         uiInitated = true;
 
         install();
         try {
+            String laf = getPlaf().getClassName();
 
-            JDLogger.getLogger().info("Use Look & Feel: " + getPlaf().getClassName());
+            JDLogger.getLogger().info("Use Look & Feel: " + laf);
 
-            preSetup(getPlaf().getClassName());
+            preSetup(laf);
 
             UIManager.put("ClassLoader", JDUtilities.getJDClassLoader());
-            String laf = getPlaf().getClassName();
             if (laf.contains("Synthetica")) {
 
                 // Sets the Synthetica Look and feel and avoids errors if the
                 // synth laf is not loaded (no imports)
                 try {
+//                    LookAndFeelController.setUIManager();
 
                     Class<?> slaf = Class.forName("de.javasoft.plaf.synthetica.SyntheticaLookAndFeel");
 
                     Method method = slaf.getMethod("setLookAndFeel", new Class[] { String.class, boolean.class, boolean.class });
+
                     method.invoke(null, new Object[] { laf, false, false });
+
                     // disable extended filechooser. jd cares itself for setting
                     // the latestlocation
                     slaf.getMethod("setExtendedFileChooserEnabled", new Class[] { boolean.class }).invoke(null, false);
@@ -198,7 +200,7 @@ public class LookAndFeelController {
                     // this the synthetica lafs work
                     JDLogger.exception(e);
                     try {
-                        UIManager.setLookAndFeel(getPlaf().getClassName());
+                        UIManager.setLookAndFeel(laf);
                     } catch (Exception e2) {
                         GUIUtils.getConfig().setProperty(JDGuiConstants.PARAM_SHOW_SPLASH, false);
                         GUIUtils.getConfig().save();
@@ -211,7 +213,7 @@ public class LookAndFeelController {
 
                 // SyntheticaLookAndFeel#setLookAndFeel(String className),
             } else {
-                UIManager.setLookAndFeel(getPlaf().getClassName());
+                UIManager.setLookAndFeel(laf);
             }
 
             UIManager.put("ClassLoader", JDUtilities.getJDClassLoader());
@@ -219,9 +221,9 @@ public class LookAndFeelController {
             // UIManager.setLookAndFeel(new SyntheticaStandardLookAndFeel());
 
             // overwrite defaults
-            SubConfiguration cfg = SubConfiguration.getConfig(DEFAULT_PREFIX + "." + LookAndFeelController.getPlaf().getClassName());
+            SubConfiguration cfg = SubConfiguration.getConfig(DEFAULT_PREFIX + "." + laf);
 
-            postSetup(getPlaf().getClassName());
+            postSetup(laf);
 
             for (Iterator<Entry<String, Object>> it = cfg.getProperties().entrySet().iterator(); it.hasNext();) {
                 Entry<String, Object> next = it.next();
