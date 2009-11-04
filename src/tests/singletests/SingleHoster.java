@@ -34,7 +34,6 @@ import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
-import jd.plugins.HosterInfo;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -209,10 +208,6 @@ public class SingleHoster {
 
             download.start();
             long waittimeuntilstart = 60 * 3 * 1000;
-            HosterInfo pluginInfo = dlink.getPlugin().getHosterInfo();
-            if (pluginInfo != null && pluginInfo.getFreeMaxWaittime() > 0) {
-                waittimeuntilstart = pluginInfo.getFreeMaxWaittime() + 5000;
-            }
 
             long start = System.currentTimeMillis();
             while (true) {

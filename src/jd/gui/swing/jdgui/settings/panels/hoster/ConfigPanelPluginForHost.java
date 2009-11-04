@@ -39,12 +39,6 @@ import jd.gui.swing.components.table.JDTable;
 import jd.gui.swing.components.table.JDTableModel;
 import jd.gui.swing.jdgui.settings.ConfigPanel;
 import jd.gui.swing.jdgui.settings.panels.hoster.columns.AcceptColumn;
-import jd.gui.swing.jdgui.settings.panels.hoster.columns.FreeChunksColumn;
-import jd.gui.swing.jdgui.settings.panels.hoster.columns.FreeIPBlockWaittimeColumn;
-import jd.gui.swing.jdgui.settings.panels.hoster.columns.FreeMaxSpeedColumn;
-import jd.gui.swing.jdgui.settings.panels.hoster.columns.FreeMaxWaittimeColumn;
-import jd.gui.swing.jdgui.settings.panels.hoster.columns.FreeParallelDownloadsColumn;
-import jd.gui.swing.jdgui.settings.panels.hoster.columns.FreeResumableColumn;
 import jd.gui.swing.jdgui.settings.panels.hoster.columns.HostColumn;
 import jd.gui.swing.jdgui.settings.panels.hoster.columns.PremiumColumn;
 import jd.gui.swing.jdgui.settings.panels.hoster.columns.SettingsColumn;
@@ -86,12 +80,6 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
             this.addColumn(new SettingsColumn(JDL.L("gui.column_settings", "Settings"), this));
             this.addColumn(new AcceptColumn(JDL.L("gui.column_agbChecked", "akzeptieren"), this));
             this.addColumn(new UseColumn(JDL.L("gui.column_usePlugin", "verwenden"), this));
-            this.addColumn(new FreeResumableColumn(JDL.L(JDL_PREFIX + "freeResumable", "Resumable (Free)"), this));
-            this.addColumn(new FreeChunksColumn(JDL.L(JDL_PREFIX + "freeChunks", "# of Chunks (Free)"), this));
-            this.addColumn(new FreeIPBlockWaittimeColumn(JDL.L(JDL_PREFIX + "freeIPBlockWaittime", "IP-Block Waittime (Free)"), this));
-            this.addColumn(new FreeMaxSpeedColumn(JDL.L(JDL_PREFIX + "freeMaxSpeed", "Max. Speed (Free)"), this));
-            this.addColumn(new FreeMaxWaittimeColumn(JDL.L(JDL_PREFIX + "freeMaxWaittime", "Max. Waittime (Free)"), this));
-            this.addColumn(new FreeParallelDownloadsColumn(JDL.L(JDL_PREFIX + "freeParallelDownloads", "# of Parallel Downloads (Free)"), this));
         }
 
         @Override

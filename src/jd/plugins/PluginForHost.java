@@ -711,30 +711,4 @@ public abstract class PluginForHost extends Plugin {
         return image;
     }
 
-    /**
-     * Caches the HosterInfo object for this hoster
-     * 
-     * @see HosterInfo
-     * @see #getHosterInfo()
-     */
-    private HosterInfo hi = null;
-
-    private boolean gotHosterInfo = false;
-
-    /**
-     * Returns the {@link HosterInfo} object for this hoster which will be
-     * served via the {@link #getHosterInfoInternal()} method if the hoster
-     * implements this interface
-     * 
-     * @return the cached {@link HosterInfo} object
-     */
-    public final HosterInfo getHosterInfo() {
-        if (gotHosterInfo) return hi;
-        gotHosterInfo = true;
-        return hi = getHosterInfoInternal();
-    }
-
-    protected HosterInfo getHosterInfoInternal() {
-        return null;
-    }
 }
