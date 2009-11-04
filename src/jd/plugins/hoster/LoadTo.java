@@ -34,8 +34,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "load.to" }, urls = { "http://(\\w*\\.)?load\\.to/[\\?d=]?[\\w]+.*" }, flags = { 0 })
 public class LoadTo extends PluginForHost {
 
-    private int error_count = 0;
-
     public LoadTo(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -73,11 +71,13 @@ public class LoadTo extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, true, 1);
         URLConnectionAdapter con = dl.getConnection();
         /* Überprüfung auf serverprobleme, nach 6 versuchen geben wir auf */
-        if (con.getContentType().equals("text/html")) {
-            error_count++;
+        if (con.getContentType().contains("text/html")) {
+            int count = downloadLink.getIntegerProperty("error", 0);
+            count++;
+            downloadLink.setProperty("error", count);
             con.disconnect();
-            if (error_count > 6) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, error_count * 600 * 1000l);
+            if (count > 6) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, count * 600 * 1000l);
         }
         if (con.getResponseCode() != 200 && con.getResponseCode() != 206) {
             con.disconnect();
@@ -107,5 +107,6 @@ public class LoadTo extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
+        link.setProperty("error", 0);
     }
 }
