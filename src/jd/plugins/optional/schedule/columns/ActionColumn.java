@@ -17,7 +17,6 @@
 package jd.plugins.optional.schedule.columns;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 
 import jd.gui.swing.components.table.JDTableModel;
 import jd.gui.swing.components.table.JDTextTableColumn;
@@ -48,16 +47,14 @@ public class ActionColumn extends JDTextTableColumn {
 
     @Override
     protected String getStringValue(Object value) {
-        String actions = "";
+        StringBuilder actions = new StringBuilder();
         ArrayList<Executions> data = ((Actions) value).getExecutions();
-        Iterator<Executions> itr = data.iterator();
-        while (itr.hasNext()) {
-            Executions element = itr.next();
-            actions = actions.concat(element.getModule().getTranslation());
-            if (itr.hasNext()) actions = actions.concat("/");
+        for (Executions element : data) {
+            if (actions.length() > 0) actions.append('/');
+            actions.append(element.getModule().getTranslation());
         }
 
-        return actions;
+        return actions.toString();
     }
 
 }
