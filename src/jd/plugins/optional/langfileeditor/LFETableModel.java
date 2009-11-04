@@ -24,7 +24,6 @@ import jd.plugins.optional.langfileeditor.columns.EnglishColumn;
 import jd.plugins.optional.langfileeditor.columns.KeyColumn;
 import jd.plugins.optional.langfileeditor.columns.LanguageColumn;
 import jd.plugins.optional.langfileeditor.columns.SourceColumn;
-import jd.plugins.optional.langfileeditor.columns.TypeColumn;
 import jd.utils.locale.JDL;
 
 public class LFETableModel extends JDTableModel {
@@ -60,7 +59,6 @@ public class LFETableModel extends JDTableModel {
 
     @Override
     protected void initColumns() {
-        this.addColumn(new TypeColumn(JDL.L(LOCALE_PREFIX + "id", "ID"), this));
         this.addColumn(new KeyColumn(JDL.L(LOCALE_PREFIX + "key", "Key"), this));
         this.addColumn(new SourceColumn(JDL.L(LOCALE_PREFIX + "sourceValue", "Default Value"), this));
         this.addColumn(new EnglishColumn(JDL.L(LOCALE_PREFIX + "english", "en.loc"), this));

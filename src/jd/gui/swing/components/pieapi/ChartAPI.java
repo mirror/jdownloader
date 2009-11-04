@@ -173,7 +173,7 @@ public abstract class ChartAPI extends JComponent {
         }
 
         g.drawImage(image, 0, 0, null);
-        g.drawString(JDL.LF("plugins.config.premium.chartapi.caption.error", "%s Chart is loading or not available", caption), 0, 10);
+        g.drawString(JDL.L("plugins.config.premium.chartapi.caption.error2", "Chart is loading or not available"), 0, 10);
     }
 
     public abstract String createDataString();

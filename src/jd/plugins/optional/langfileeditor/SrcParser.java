@@ -30,6 +30,7 @@ import jd.nutils.JDHash;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 public class SrcParser {
 
@@ -98,7 +99,7 @@ public class SrcParser {
     private void parseFile(File file) {
 
         this.currentFile = file;
-        broadcaster.fireEvent(new MessageEvent(this, 0, "Parse " + file.getAbsolutePath()));
+        broadcaster.fireEvent(new MessageEvent(this, 0, JDL.LF("jd.plugins.optional.langfileeditor.SrcParser.parse", "Parse %s", file.getAbsolutePath())));
 
         // find all lines containing JDL calls
         currentContent = JDIO.readFileToString(file);
