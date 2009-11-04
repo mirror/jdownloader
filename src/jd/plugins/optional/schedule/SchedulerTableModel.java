@@ -17,6 +17,7 @@
 package jd.plugins.optional.schedule;
 
 import jd.gui.swing.components.table.JDTableModel;
+import jd.plugins.optional.schedule.columns.ActionColumn;
 import jd.plugins.optional.schedule.columns.DateColumn;
 import jd.plugins.optional.schedule.columns.EnabledColumn;
 import jd.plugins.optional.schedule.columns.NameColumn;
@@ -41,6 +42,7 @@ public class SchedulerTableModel extends JDTableModel {
     protected void initColumns() {
         this.addColumn(new EnabledColumn(JDL.L(JDL_PREFIX + "onoff", "On/Off"), this));
         this.addColumn(new NameColumn(JDL.L(JDL_PREFIX + "name", "Name"), this));
+        this.addColumn(new ActionColumn(JDL.L(JDL_PREFIX + "action", "Action"), this));
         this.addColumn(new DateColumn(JDL.L(JDL_PREFIX + "date", "Date"), this));
         this.addColumn(new TimeColumn(JDL.L(JDL_PREFIX + "time", "Time"), this));
         this.addColumn(new NextExeColumn(JDL.L(JDL_PREFIX + "nextexecution", "Next Execution"), this));
