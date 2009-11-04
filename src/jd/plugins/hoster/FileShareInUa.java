@@ -121,8 +121,7 @@ public class FileShareInUa extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        String freepage = downloadLink.getDownloadURL() + "?free";
-        br.getPage(freepage);
+        if (br.containsHTML("Именно эта ссылка битая. Однако, это не значит, что вам нечего тут искать")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
         String captchapart = br.getRegex("id=\"capture\".*?src=\"(.*?)\"").getMatch(0);
         Form captchaForm = br.getForm(2);
         // This is a pard of the captcha stuff. They always have one big captcha

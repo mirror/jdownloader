@@ -32,7 +32,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {"remixshare.com"}, urls = {"http://[\\w\\.]*?remixshare\\.com/.*?\\?file=[a-z0-9]+"}, flags = {0})
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "remixshare.com" }, urls = { "http://[\\w\\.]*?remixshare\\.com/.*?\\?file=[a-z0-9]+" }, flags = { 0 })
 public class RemixShareCom extends PluginForHost {
 
     public RemixShareCom(PluginWrapper wrapper) {
@@ -40,36 +40,33 @@ public class RemixShareCom extends PluginForHost {
         this.setStartIntervall(500l);
     }
 
-    // @Override
     public String getAGBLink() {
         return "http://remixshare.com/information/";
     }
 
-    // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         br.setCookie("http://remixshare.com", "lang_en", "english");
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         br.setFollowRedirects(false);
-        if (br.containsHTML("Error Code: 500.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("Error Code: 500.") || br.containsHTML("Please check the downloadlink")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = Encoding.htmlDecode(br.getRegex(Pattern.compile("<span title='(.*?)'>", Pattern.CASE_INSENSITIVE)).getMatch(0));
-        String filesize = br.getRegex("</span><span class='light'><br />([0-9\\.]+&nbsp;MB)&").getMatch(0);
+        if (filename == null) filename = Encoding.htmlDecode(br.getRegex(Pattern.compile("<title>(.*?)Download at remiXshare Filehosting", Pattern.CASE_INSENSITIVE)).getMatch(0));
+        String filesize = br.getRegex(">\\&nbsp;\\((.*?)\\)<").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
-        if(filesize != null) {
-            filesize = filesize.replaceAll("&nbsp;", " ");
-            downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
+        if (filesize != null) {
+            filesize = filesize.replace("&nbsp;", " ");
+            downloadLink.setDownloadSize(Regex.getSize(filesize.replace(",", ".")));
+        }
+        String md5Hash = br.getRegex("/>MD5:(.*?)</span>").getMatch(0);
+        if (md5Hash != null) {
+            downloadLink.setMD5Hash(md5Hash.trim());
         }
         return AvailableStatus.TRUE;
     }
 
-    // @Override
-    /*
-     * public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
@@ -88,32 +85,30 @@ public class RemixShareCom extends PluginForHost {
                 downloadLink.setProperty("pass", pass);
             }
         }
-
-        Form down = br.getFormbyProperty("name", "downform");
+        Form down = br.getForm(0);
+        if (down == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // this.sleep(12000, downloadLink); // uncomment when they find a better
         // way to force wait time
-        br.submitForm(down);
-        // br.openGetConnection(downloadLink.getDownloadURL());
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.getRedirectLocation(), false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, down, false, 1);
+        if (!(dl.getConnection().isContentDisposition())) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl.startDownload();
 
     }
 
-    // @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 10;
+        return 20;
     }
 
-    // @Override
     public void reset() {
     }
 
-    // @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 

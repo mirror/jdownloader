@@ -28,34 +28,33 @@ import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mirrorcreator.com" }, urls = { "http://[\\w\\.]*?mirrorcreator\\.com/files/[0-9A-Z]{8}/" }, flags = { 0 })
-public class MrrrCrtrCm extends PluginForDecrypt {
+public class MirrorCreatorCom extends PluginForDecrypt {
 
-    public MrrrCrtrCm(PluginWrapper wrapper) {
-      super(wrapper);
+    public MirrorCreatorCom(PluginWrapper wrapper) {
+        super(wrapper);
     }
-    
+
     // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-      ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-      String parameter = param.toString();
-      String id = new Regex(parameter, "files/([0-9A-Z]{8})").getMatch(0);
-      parameter = "http://mirrorcreator.com/status.php?uid=" + id;
-      br.getPage(parameter);
-      /* Error handling */
-      if (br.containsHTML("Unfortunately, the link you have clicked is not available")|| br.containsHTML("Invalid link. Please check the URL")) {
-          logger.warning("The requested document was not found on this server.");
-          logger.warning(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-          return new ArrayList<DownloadLink>();
-      }
-      
-      String[] redirectLinks = br.getRegex("href=\"(.*?)\"").getColumn(0);
-      
-      if (redirectLinks.length == 0) return null;
-      for (String link : redirectLinks) {
-          decryptedLinks.add(createDownloadlink(link));
-      }
-          
-      return decryptedLinks;
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        String parameter = param.toString();
+        br.setFollowRedirects(false);
+        String id = new Regex(parameter, "files/([0-9A-Z]{8})").getMatch(0);
+        parameter = "http://www.mirrorcreator.com/status.php?uid=" + id;
+        br.getPage(parameter);
+        /* Error handling */
+        if (br.containsHTML("the link you have clicked is not available") || br.containsHTML("has been removed")) {
+            logger.warning("Wrong link");
+            logger.warning(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+            return new ArrayList<DownloadLink>();
+        }
+        String[] redirectLinks = br.getRegex("<td><a href=\"(.*?)\"").getColumn(0);
+        if (redirectLinks.length == 0) return null;
+        for (String link : redirectLinks) {
+            decryptedLinks.add(createDownloadlink(link));
+        }
+
+        return decryptedLinks;
     }
-    
+
 }
