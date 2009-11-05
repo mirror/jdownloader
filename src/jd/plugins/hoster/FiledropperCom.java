@@ -59,6 +59,7 @@ public class FiledropperCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        br.setFollowRedirects(true);
         Form captchaForm = null;
         URLConnectionAdapter con = null;
         boolean valid = false;
@@ -73,13 +74,13 @@ public class FiledropperCom extends PluginForHost {
             captchaForm.put("code", code);
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, captchaForm, false, 1);
             con = dl.getConnection();
-
-            if (dl.getConnection().isContentDisposition()) {
-                valid = true;
-                break;
-            } else {
-                con.disconnect();
+            if (dl.getConnection().getContentType().contains("html")) {
+                valid = false;
+                br.getPage(downloadLink.getDownloadURL());
+                continue;
             }
+            valid = true;
+            break;
         }
 
         if (valid == false) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
