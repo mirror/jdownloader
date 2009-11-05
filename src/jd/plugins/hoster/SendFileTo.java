@@ -77,6 +77,9 @@ public class SendFileTo extends PluginForHost {
             long waittime = ((3600 * hours) + (60 * minutes) + seconds + 1) * 1000l;
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
         }
+        // Experimental, dunno if this fixed the plugin error that some guys
+        // reported!
+        if (br.containsHTML("You have reached the")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
         // Form um auf "Datei herunterladen" zu klicken
         if (br.containsHTML("You can download files up to 200 Mb only")) throw new PluginException(LinkStatus.ERROR_FATAL, "Upgrade your account to download bigger files");
         Form DLForm = br.getFormbyProperty("name", "F1");

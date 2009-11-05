@@ -22,7 +22,10 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.RandomUserAgent;
 import jd.nutils.JDHash;
+import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -37,11 +40,106 @@ public class MegaShareCom extends PluginForHost {
     public MegaShareCom(PluginWrapper wrapper) {
         super(wrapper);
         this.setStartIntervall(2000l);
+//        this.enablePremium("http://www.megashare.com/premium.php");
     }
 
     @Override
     public String getAGBLink() {
         return "http://www.megashare.com/tos.php";
+    }
+
+    public void login(Account account) throws Exception {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.getPage("http://www.megashare.com/login.php");
+        Form form = br.getForm(0);
+        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        form.put("loginid", Encoding.urlEncode(account.getUser()));
+        form.put("passwd", Encoding.urlEncode(account.getPass()));
+        br.submitForm(form);
+        br.setFollowRedirects(false);
+        if (!br.containsHTML("You are logged in as a PREMIUM Member") || br.containsHTML("Invalid Username or Password") || br.getCookie("http://www.megashare.com", "username") == null || br.getCookie("http://www.megashare.com", "username") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        account.setValid(true);
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+        requestFileInformation(downloadLink);
+        login(account);
+        br.getPage(downloadLink.getDownloadURL());
+        Form premform = br.getForm(0);
+        if (premform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        premform.setPreferredSubmit(1);
+
+        br.submitForm(premform);
+        if (br.containsHTML("This File has been DELETED")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        Form form = br.getFormbyProperty("name", "downloader");
+        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String accel = br.getRegex("name=\"(accel.*?)\"").getMatch(0);
+        if (accel == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        form.remove(accel);
+        form.remove(accel);
+        form.remove(accel);
+        form.remove("yesss");
+        form.remove("yesss");
+        form.remove("yesss");
+        form.remove("yesss");
+        form.remove("yesss");
+        form.remove("yesss");
+        form.remove("user_val");
+        form.remove("captcha_code");
+        form.remove("email");
+        form.put(accel, "Get+Direct+Link");
+        form.setAction(downloadLink.getDownloadURL());
+        String passCode = null;
+        if (br.containsHTML("This file is password protected.")) {
+            if (downloadLink.getStringProperty("pass", null) == null) {
+                passCode = Plugin.getUserInput("Password?", downloadLink);
+            } else {
+                /* gespeicherten PassCode holen */
+                passCode = downloadLink.getStringProperty("pass", null);
+            }
+            form.put("auth_nm", passCode);
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, true, -3);
+        if (!dl.getConnection().isContentDisposition()) {
+            br.followConnection();
+            System.out.print(br.toString());
+            if (br.containsHTML("Invalid Captcha Value")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            if (br.containsHTML("This file is password protected.")) {
+                logger.warning("Wrong password!");
+                downloadLink.setProperty("pass", null);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (passCode != null) {
+            downloadLink.setProperty("pass", passCode);
+        }
+        dl.startDownload();
+
+        String dllink = br.getRegex("class=\"important\" href=\"(.*?)\">Click").getMatch(0);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.setFollowRedirects(true);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        dl.startDownload();
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -61,33 +159,8 @@ public class MegaShareCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        // Optional handling if they change the page
-
-        // Form freedl = new Form();
-        // freedl.setMethod(Form.MethodType.POST);
-        // // form.setAction(downloadLink.getDownloadURL());
-        // if (br.containsHTML("FreePremDz")) {
-        // freedl.put("FreePremDz", "free premium");
-        // } else {
-        // String FREEdz = br.getRegex("name=\"(FreeDz.*?)\"").getMatch(0);
-        // if (FREEdz == null) throw new
-        // PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // freedl.put(FREEdz, "FREE");
-        // }
-        // br.submitForm(freedl);
-        // if (!br.containsHTML("security\\.php")) throw new
-        // PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         Form form = br.getFormbyProperty("name", "downloader");
         if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // Waittime handling could be useful if they check if the users are
-        // really waiting
-        // if (form == null) throw new
-        // PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // String wait = br.getRegex("var c = (\\d+);").getMatch(0);
-        // if (wait != null) {
-        // int tt = Integer.parseInt(wait);
-        // sleep(tt * 1001l, downloadLink);
-        // }
         File captchaFile = getLocalCaptchaFile();
         int i = 15;
         while (i-- > 0) {
@@ -156,7 +229,7 @@ public class MegaShareCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return -1;
     }
 
     @Override

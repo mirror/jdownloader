@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zero10.info" }, urls = { "http://[\\w\\.]*?((zero10\\.info|save-link\\.info|share-link\\.info|h-link\\.us|zero10\\.us|(darkhorse|brg8)\\.fi5\\.us|arbforce\\.com/short|(get\\.el3lam|pp9p)\\.com)/[0-9]+|url-2\\.com/[A-Z]+/)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zero10.info" }, urls = { "http://[\\w\\.]*?((zero10\\.info|save-link\\.info|share-link\\.info|h-link\\.us|zero10\\.us|(darkhorse|brg8)\\.fi5\\.us|arbforce\\.com/short|(get\\.el3lam|pp9p|2utop)\\.com|get\\.i44i\\.net)/[0-9]+|url-2\\.com/[A-Z]+/)" }, flags = { 0 })
 public class Zro10BasicDecrypt extends PluginForDecrypt {
 
     public Zro10BasicDecrypt(PluginWrapper wrapper) {
@@ -37,7 +37,9 @@ public class Zro10BasicDecrypt extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        parameter = parameter.replace("pp9p.com", "get.el3lam.com");
+        // 3l3lam workaround, they got double redirect if i don't replace all
+        // their domains with the main domain!
+        parameter = parameter.replaceAll("(pp9p\\.com|2utop|get\\.i44i\\.net)", "get.el3lam.com");
         br.setFollowRedirects(false);
         // finallink2 is used for unusual zero10 crypters like arbforce and
         // url-2
