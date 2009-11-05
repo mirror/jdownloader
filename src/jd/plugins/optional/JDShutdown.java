@@ -65,7 +65,7 @@ public class JDShutdown extends PluginOptional {
     public void controlEvent(ControlEvent event) {
         super.controlEvent(event);
         if (shutdownEnabled) {
-            if (event.getID() == ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED) {
+            if (event.getID() == ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED && DownloadWatchDog.getInstance().getDownloadssincelastStart() > 0) {
                 if (shutdown != null) {
                     if (!shutdown.isAlive()) {
                         shutdown = new ShutDown();

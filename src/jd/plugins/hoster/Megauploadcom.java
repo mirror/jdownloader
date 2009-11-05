@@ -64,7 +64,7 @@ public class Megauploadcom extends PluginForHost {
     private static final Object Lock = new Object();
     private static int simultanpremium = 1;
     private boolean onlyapi = false;
-    // private boolean usepremium = false;
+    private String wait = null;
 
     /*
      * every jd session starts with 1=default, because no waittime does not work
@@ -191,12 +191,10 @@ public class Megauploadcom extends PluginForHost {
     public void handlePremium(DownloadLink parameter, Account account) throws Exception {
         boolean free = false;
         STATUS filestatus = null;
-        String wait = null;
         synchronized (PREMLOCK) {
             filestatus = getFileStatus(parameter);
             if (filestatus != STATUS.API && filestatus != STATUS.OFFLINE) {
                 if (filestatus == STATUS.BLOCKED) {
-                    wait = br.getRegex("Please check back in (\\+d) minutes").getMatch(0);
                     /* we are blocked, so we have to login again */
                     login(account, false);
                 } else {
@@ -545,11 +543,14 @@ public class Megauploadcom extends PluginForHost {
             if (br.containsHTML("location='http://www\\.megaupload\\.com/\\?c=msg")) br.getPage("http://www.megaupload.com/?c=msg");
             if (br.containsHTML("No htmlCode read") || br.containsHTML("This service is temporarily not available from your service area")) {
                 logger.info("It seems Megaupload is blocked! Only API may work! " + br.toString());
+                onlyapi = true;
                 l.setAvailableStatus(AvailableStatus.UNCHECKABLE);
                 return;
             }
             if (br.containsHTML("A temporary access restriction is place") || br.containsHTML("We have detected an elevated")) {
-                logger.info("Megaupload blocked this IP(1)");
+                /* ip blocked by megauploaded */
+                wait = br.getRegex("Please check back in (\\+d) minutes").getMatch(0);
+                logger.info("Megaupload blocked this IP(1): " + wait + " mins");
                 l.setAvailableStatus(AvailableStatus.UNCHECKABLE);
                 return;
             }
@@ -581,7 +582,7 @@ public class Megauploadcom extends PluginForHost {
             }
             return;
         } catch (Exception e) {
-            logger.info("Megaupload blocked this IP(2)");
+            logger.info("Megaupload blocked this IP(2): 25 mins");
             l.setAvailableStatus(AvailableStatus.UNCHECKABLE);
         }
         return;
@@ -795,8 +796,6 @@ public class Megauploadcom extends PluginForHost {
             logger.info("DebugInfo for maybe Wrong FileNotFound: " + br.toString());
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         case BLOCKED:
-            /* ip blocked by megauploaded */
-            String wait = br.getRegex("Please check back in (\\+d) minutes").getMatch(0);
             if (wait != null) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait.trim()) * 60 * 1000l);
             } else

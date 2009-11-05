@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Date;
 
 import jd.PluginWrapper;
+import jd.controlling.DownloadWatchDog;
 import jd.controlling.SingleDownloadController;
 import jd.event.ControlEvent;
 import jd.gui.swing.jdgui.menu.MenuAction;
@@ -73,7 +74,7 @@ public class JDGrowlNotification extends PluginOptional {
             growlNotification(JDL.L(JDL_PREFIX + "started", "jDownloader started..."), getDateAndTime(), JDL.L(JDL_PREFIX + "started.title", "Programstart"));
             break;
         case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
-            growlNotification(JDL.L(JDL_PREFIX + "allfinished", "All downloads stopped"), "", JDL.L(JDL_PREFIX + "allfinished.title", "All downloads finished"));
+            if (DownloadWatchDog.getInstance().getDownloadssincelastStart() > 0) growlNotification(JDL.L(JDL_PREFIX + "allfinished", "All downloads stopped"), "", JDL.L(JDL_PREFIX + "allfinished.title", "All downloads finished"));
             break;
         case ControlEvent.CONTROL_PLUGIN_INACTIVE:
             if (!(event.getSource() instanceof PluginForHost)) return;
