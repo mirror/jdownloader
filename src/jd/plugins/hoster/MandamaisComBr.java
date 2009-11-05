@@ -62,7 +62,7 @@ public class MandamaisComBr extends PluginForHost {
         String dlfree = "http://www.mandamais.com.br/get/getdownload/" + id;
         br.setFollowRedirects(true);
         br.getPage(dlfree);
-        if (br.containsHTML("Limite de download por hora excedido")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 60 * 60 * 1001l); }
+        if (br.containsHTML("Limite de download por hora excedido")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1001l);
         String dllink = br.getRegex("link11-azul\"><strong>(.*?)</strong>").getMatch(0);
         if (dllink == null) dllink = br.getRegex("\"(http://download\\.mandamais\\.com\\.br/.*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

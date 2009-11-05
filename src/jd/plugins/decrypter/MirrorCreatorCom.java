@@ -22,6 +22,7 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
@@ -34,7 +35,6 @@ public class MirrorCreatorCom extends PluginForDecrypt {
         super(wrapper);
     }
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -43,18 +43,12 @@ public class MirrorCreatorCom extends PluginForDecrypt {
         parameter = "http://www.mirrorcreator.com/status.php?uid=" + id;
         br.getPage(parameter);
         /* Error handling */
-        if (br.containsHTML("the link you have clicked is not available") || br.containsHTML("has been removed")) {
-            logger.warning("Wrong link");
-            logger.warning(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-            return new ArrayList<DownloadLink>();
-        }
+        if (br.containsHTML("the link you have clicked is not available") || br.containsHTML("has been removed")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         String[] redirectLinks = br.getRegex("<td><a href=\"(.*?)\"").getColumn(0);
         if (redirectLinks.length == 0) return null;
         for (String link : redirectLinks) {
             decryptedLinks.add(createDownloadlink(link));
         }
-
         return decryptedLinks;
     }
-
 }

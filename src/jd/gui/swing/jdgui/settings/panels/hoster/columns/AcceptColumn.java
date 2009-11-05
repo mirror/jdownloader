@@ -19,7 +19,6 @@ package jd.gui.swing.jdgui.settings.panels.hoster.columns;
 import jd.HostPluginWrapper;
 import jd.gui.swing.components.table.JDCheckBoxTableColumn;
 import jd.gui.swing.components.table.JDTableModel;
-import jd.gui.swing.dialog.AgbDialog;
 
 public class AcceptColumn extends JDCheckBoxTableColumn {
 
@@ -55,11 +54,7 @@ public class AcceptColumn extends JDCheckBoxTableColumn {
 
     @Override
     protected void setBooleanValue(boolean value, Object object) {
-        if (value) {
-            AgbDialog.showDialog(((HostPluginWrapper) object).getPlugin());
-        } else {
-            ((HostPluginWrapper) object).setAGBChecked(false);
-        }
+        ((HostPluginWrapper) object).setAGBChecked(value);
     }
 
 }

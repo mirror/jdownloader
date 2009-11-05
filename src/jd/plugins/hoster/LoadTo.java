@@ -40,7 +40,6 @@ public class LoadTo extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-
         Browser.setRequestIntervalLimitGlobal(getHost(), 500);
         this.setStartIntervall(2000l);
         return "http://www.load.to/terms.php";
@@ -54,7 +53,6 @@ public class LoadTo extends PluginForHost {
         String filename = Encoding.htmlDecode(br.getRegex("<head><title>(.*?) // Load.to Uploadservice</title>").getMatch(0));
         String filesize = br.getRegex("Size:</div>.*?download_table_right\">(.*?)</div>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-
         link.setName(filename);
         link.setDownloadSize(Regex.getSize(filesize));
         return AvailableStatus.TRUE;
@@ -68,22 +66,25 @@ public class LoadTo extends PluginForHost {
         String linkurl = Encoding.htmlDecode(new Regex(br, Pattern.compile("action=\"(http.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0));
         if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setFollowRedirects(true);
+        br.setDebug(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, true, 1);
         URLConnectionAdapter con = dl.getConnection();
         /* Überprüfung auf serverprobleme, nach 6 versuchen geben wir auf */
-        if (con.getContentType().contains("text/html")) {
+        if (con.getContentType().contains("html")) {
             int count = downloadLink.getIntegerProperty("error", 0);
             count++;
             downloadLink.setProperty("error", count);
             con.disconnect();
-            if (count > 6) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (count > 6) {
+                logger.info("file failed too often, so its offline ;)");
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, count * 600 * 1000l);
         }
-        if (con.getResponseCode() != 200 && con.getResponseCode() != 206) {
-            con.disconnect();
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 1000l);
+        if (!con.isContentDisposition()) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-
         dl.startDownload();
     }
 

@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
@@ -33,25 +34,19 @@ public class MultiShareXCom extends PluginForDecrypt {
         super(wrapper);
     }
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.setFollowRedirects(false);
         br.getPage(parameter);
         /* Error handling */
-        if (br.containsHTML("No such file exists")) {
-            logger.warning("Wrong link");
-            logger.warning(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-            return new ArrayList<DownloadLink>();
-        }
+        if (br.containsHTML("No such file exists")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+
         String[] redirectLinks = br.getRegex("><a href='(.*?)'").getColumn(0);
         if (redirectLinks.length == 0) return null;
         for (String link : redirectLinks) {
             decryptedLinks.add(createDownloadlink(link));
         }
-
         return decryptedLinks;
     }
-
 }
