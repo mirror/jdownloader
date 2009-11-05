@@ -21,9 +21,11 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -49,6 +51,9 @@ public class DataLoadingCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
+        // Atm we don't need the cookie but maybe in the future so you can just
+        // "activate" it here then
+        // br.setCookie("http://data-loading.com", "yab_mylang", "en");
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
         if (!(br.containsHTML("Your requested file is not found") || br.containsHTML("File Not Found"))) {
@@ -66,10 +71,53 @@ public class DataLoadingCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        String passCode = null;
+        for (int i = 0; i <= 3; i++) {
+            Form captchaform = br.getFormbyProperty("name", "myform");
+            String captchaurl = "http://data-loading.com/captcha.php";
+            if (captchaform == null || !br.containsHTML("captcha.php")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (br.containsHTML("downloadpw")) {
+                if (downloadLink.getStringProperty("pass", null) == null) {
+                    passCode = Plugin.getUserInput("Password?", downloadLink);
 
-        if (br.containsHTML("You have got max allowed bandwidth size per hour")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED); }
+                } else {
+                    /* gespeicherten PassCode holen */
+                    passCode = downloadLink.getStringProperty("pass", null);
+                }
+                captchaform.put("downloadpw", passCode);
+            }
+            String code = getCaptchaCode(captchaurl, downloadLink);
+            captchaform.put("captchacode", code);
+            br.submitForm(captchaform);
+            System.out.print(br.toString());
+            if (br.containsHTML("Password Error")) {
+                logger.warning("Wrong password!");
+                downloadLink.setProperty("pass", null);
+                continue;
+            }
+            if (br.containsHTML("Captcha number error") || br.containsHTML("captcha.php") && !br.containsHTML("You have got max allowed bandwidth size per hour")) {
+                logger.warning("Wrong captcha or wrong password!");
+                downloadLink.setProperty("pass", null);
+                continue;
+            }
+            break;
+        }
+        if (br.containsHTML("Password Error")) {
+            logger.warning("Wrong password!");
+            downloadLink.setProperty("pass", null);
+            throw new PluginException(LinkStatus.ERROR_RETRY);
+        }
+        if (br.containsHTML("Captcha number error") || br.containsHTML("captcha.php") && !br.containsHTML("You have got max allowed bandwidth size per hour")) {
+            logger.warning("Wrong captcha or wrong password!");
+            downloadLink.setProperty("pass", null);
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        }
+        if (passCode != null) {
+            downloadLink.setProperty("pass", passCode);
+        }
+        if (br.containsHTML("You have got max allowed bandwidth size per hour")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
         String linkurl = br.getRegex("<input.*document.location=\"(.*?)\";").getMatch(0);
-        if (linkurl == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setFollowRedirects(false);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, false, 1);
         if (!(dl.getConnection().isContentDisposition())) {
