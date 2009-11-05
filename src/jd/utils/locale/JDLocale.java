@@ -33,20 +33,16 @@ public class JDLocale implements Serializable {
         codes = JDGeoCode.parseLanguageCode(lngGeoCode);
     }
 
-    public String getCountryCode() {
-        return codes[1];
-    }
-
-    public String getExtensionCode() {
-        return codes[1];
+    public String getLngGeoCode() {
+        return lngGeoCode;
     }
 
     public String getLanguageCode() {
         return codes[0];
     }
 
-    public String getLngGeoCode() {
-        return lngGeoCode;
+    public String getCountryCode() {
+        return codes[1];
     }
 
     @Override

@@ -17,6 +17,7 @@
 package jd.captcha;
 
 import java.util.List;
+
 import jd.captcha.pixelgrid.Letter;
 
 public class LevenShteinLetterComperator {

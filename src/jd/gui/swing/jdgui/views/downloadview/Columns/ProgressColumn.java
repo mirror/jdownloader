@@ -38,18 +38,14 @@ import org.jdesktop.swingx.renderer.JRendererLabel;
 
 public class ProgressColumn extends JDTableColumn {
 
-    /**
-     * 
-     */
     private static final long serialVersionUID = 2228210790952050305L;
     private DownloadLink dLink;
     private JDProgressBarRender progress;
-
-    private String strPluginDisabled;
-
-    private String strPluginError;
-    private Color COL_PROGRESS_ERROR = new Color(0xCC3300);
-    private Color COL_PROGRESS_NORMAL = null;
+    private final String strPluginDisabled;
+    private final String strPluginError;
+    private final String strUnknownFilesize;
+    private final Color COL_PROGRESS_ERROR = new Color(0xCC3300);
+    private final Color COL_PROGRESS_NORMAL;
     private StringBuilder sb = new StringBuilder();
     private Color COL_PROGRESS = null;
     private FilePackage fp;
@@ -64,6 +60,7 @@ public class ProgressColumn extends JDTableColumn {
         COL_PROGRESS_NORMAL = progress.getForeground();
         strPluginDisabled = JDL.L("gui.downloadlink.plugindisabled", "[Plugin disabled]");
         strPluginError = JDL.L("gui.treetable.error.plugin", "Plugin error");
+        strUnknownFilesize = JDL.L("jd.gui.swing.jdgui.views.downloadview.Columns.ProgressColumn.unknownFilesize", "Unknown FileSize");
         jlr = new JRendererLabel();
         jlr.setBorder(null);
     }
@@ -136,7 +133,7 @@ public class ProgressColumn extends JDTableColumn {
                 return progress;
             }
         }
-        jlr.setText("Unknown FileSize");
+        jlr.setText(strUnknownFilesize);
         return jlr;
     }
 

@@ -3,6 +3,7 @@ package jd.captcha.specials;
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
+
 import jd.captcha.pixelgrid.PixelGrid;
 import jd.captcha.pixelobject.PixelObject;
 import jd.nutils.ColorSpaceConverter;

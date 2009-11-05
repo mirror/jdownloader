@@ -17,8 +17,8 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-
 import java.util.regex.Pattern;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
