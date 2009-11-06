@@ -78,7 +78,7 @@ public class CPoint extends Point implements Serializable, Cloneable {
      */
     private boolean foreground = true;
 
-    private byte colorDifferenceMode = RGB_DIFFERENCE3;
+    private byte colorDifferenceMode = LAB_DIFFERENCE;
 
     /**
      * Beim CPoint wird der Point um Farbeigenschaften erweitert und stellt
