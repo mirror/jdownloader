@@ -37,7 +37,6 @@ import jd.gui.swing.jdgui.JDGuiConstants;
 import jd.gui.swing.jdgui.interfaces.JDMouseAdapter;
 import jd.nutils.JDImage;
 import jd.nutils.Screen;
-import jd.utils.JDTheme;
 import net.miginfocom.swing.MigLayout;
 
 import org.jdesktop.swingworker.SwingWorker;
@@ -48,14 +47,6 @@ public class Balloon {
     private static ArrayList<JWindow> WINDOWS = null;
     public static int COUNTDOWN = 10 * 1000;
     private static String LASTSTRING;
-
-    public static void main(String args[]) throws InterruptedException {
-        Balloon.show("AccountController", JDTheme.II("gui.images.accounts", 32, 32), "Premiumaccounts are globally disabled!<br/>Click <a href='http://jdownloader.org/knowledge/wiki/gui/premiummenu'>here</a> for help.");
-
-        Thread.sleep(2 * 1000);
-
-        Balloon.show("title", null, JDTheme.II("gui.images.help", 32, 32), "This is <b>just dummy</b><br/> text.<a href='http://www.google.de'>LINK</a> you added 5 links");
-    }
 
     /**
      * Displays only if mainframe is hidden
@@ -95,12 +86,14 @@ public class Balloon {
                     private static final long serialVersionUID = 8925461815465551749L;
                     private transient SwingWorker<Object, Object> timer;
 
+                    @Override
                     public void dispose() {
                         Balloon.remove(this);
                         super.dispose();
 
                     }
 
+                    @Override
                     public void setVisible(boolean b) {
 
                         if (b) {
@@ -114,6 +107,7 @@ public class Balloon {
                                     return null;
                                 }
 
+                                @Override
                                 public void done() {
                                     try {
                                         if (isVisible()) {
@@ -141,6 +135,7 @@ public class Balloon {
 
                 JLabel bt = new JLabel("[X]");
                 bt.addMouseListener(new JDMouseAdapter() {
+                    @Override
                     public void mouseClicked(MouseEvent e) {
                         w.setVisible(false);
                         w.dispose();
@@ -149,6 +144,7 @@ public class Balloon {
 
                 JPanel titlePanel = new JPanel(new MigLayout("ins 0", "[grow,fill][]"));
                 titlePanel.addMouseListener(new JDMouseAdapter() {
+                    @Override
                     public void mouseClicked(MouseEvent e) {
                         SwingGui.getInstance().getMainFrame().setVisible(true);
                         SwingGui.getInstance().getMainFrame().toFront();

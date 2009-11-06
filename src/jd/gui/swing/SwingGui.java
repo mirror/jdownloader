@@ -137,7 +137,6 @@ public abstract class SwingGui extends UserIF implements ControlListener, Window
         INSTANCE = ins;
     }
 
-    // TODO
     abstract public void setWaiting(boolean b);
 
     abstract public void closeWindow();

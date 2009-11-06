@@ -265,29 +265,6 @@ public class Subversion implements ISVNEventHandler {
         getWCClient().doInfo(wcPath, revision, isRecursive, new InfoEventHandler());
     }
 
-    public static void main(String[] args) throws SVNException {
-
-        Subversion svn = new Subversion("svn://svn.jdownloader.org/jdownloader/trunk/ressourcen/jd/languages", "", "");
-
-        File file;
-        file = new File("C:\\Users\\Coalado\\.jd_home\\tmp\\lfe\\lng\\en.loc");
-        // svn.commit(file, "");
-        svn.update(file, SVNRevision.HEAD);
-        svn.resolveConflicts(file.getParentFile(), new ResolveHandler() {
-
-            public String resolveConflict(SVNInfo info, File file, String contents, int startMine, int endMine, int startTheirs, int endTheirs) {
-
-                String mine = contents.substring(startMine, endMine).trim();
-                // String theirs = contents.substring(startTheirs,
-                // endTheirs).trim();
-
-                return mine;
-            }
-
-        });
-        svn.commit(file, "resolved");
-    }
-
     public void resolveConflicts(File file, final ResolveHandler handler) throws SVNException {
 
         getWCClient().doInfo(file, SVNRevision.UNDEFINED, SVNRevision.WORKING, SVNDepth.getInfinityOrEmptyDepth(true), null, new ISVNInfoHandler() {

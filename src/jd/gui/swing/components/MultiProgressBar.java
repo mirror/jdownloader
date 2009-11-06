@@ -26,11 +26,8 @@ import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.util.ArrayList;
 
-import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.LineBorder;
-
-import net.miginfocom.swing.MigLayout;
 
 public class MultiProgressBar extends JPanel {
 
@@ -46,20 +43,7 @@ public class MultiProgressBar extends JPanel {
         this.setBorder(b);
     }
 
-    public static void main(String[] args) {
-        MultiProgressBar pm = new MultiProgressBar();
-        pm.setMaximums(10, 20, 30, 10, 20, 15, 5, 25);
-        pm.setValues(3, 12, 11, 4, 19, 10, 1, 22);
-        // pm.setValues(10, 20, 30, 10, 20, 15, 5, 25);
-
-        JFrame f = new JFrame();
-        f.setLayout(new MigLayout("ins 10"));
-        f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        f.add(pm, "w 400!");
-        f.pack();
-        f.setVisible(true);
-    }
-
+    @Override
     public Dimension getPreferredSize() {
         return new Dimension(100, 30);
     }
@@ -72,6 +56,7 @@ public class MultiProgressBar extends JPanel {
         return maximum / (double) Math.max(1, (getWidth()));
     }
 
+    @Override
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
         int width = this.getWidth();

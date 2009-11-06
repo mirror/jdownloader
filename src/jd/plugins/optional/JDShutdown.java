@@ -56,7 +56,7 @@ public class JDShutdown extends PluginOptional {
 
     public JDShutdown(PluginWrapper wrapper) {
         super(wrapper);
-        MODES_AVAIL = new String[] { JDL.L("gui.config.jdshutdown.shutdown", "Shutdown"), JDL.L("gui.config.jdshutdown.standby", "Standby (Nur einige OS)"), JDL.L("gui.config.jdshutdown.hibernate", "Ruhezustand/Hibernate (Nur einige OS)") };
+        MODES_AVAIL = new String[] { JDL.L("gui.config.jdshutdown.shutdown", "Shutdown"), JDL.L("gui.config.jdshutdown.standby", "Standby (Nur einige OS)"), JDL.L("gui.config.jdshutdown.hibernate", "Ruhezustand/Hibernate (Nur einige OS)"), JDL.L("gui.config.jdshutdown.close", "Close JD") };
         shutdownEnabled = getPluginConfig().getBooleanProperty(CONFIG_ENABLEDONSTART, false);
         initConfig();
     }
@@ -122,6 +122,11 @@ public class JDShutdown extends PluginOptional {
     @Override
     public void onExit() {
         JDUtilities.getController().removeControlListener(this);
+    }
+
+    private void closejd() {
+        logger.info("close jd");
+        JDUtilities.getController().exit();
     }
 
     private void shutdown() {
@@ -378,6 +383,18 @@ public class JDShutdown extends PluginOptional {
                 logger.info("Return code: " + ret2);
                 if (JDFlags.hasSomeFlags(ret2, UserIO.RETURN_OK, UserIO.RETURN_COUNTDOWN_TIMEOUT)) {
                     hibernate();
+                }
+                break;
+            case 3:
+                /* try to standby */
+                logger.info("ask user about closing");
+                message = JDL.L("interaction.shutdown.dialog.msg.closejd", "<h2><font color=\"red\">JDownloader will be closed!</font></h2>");
+                UserIO.setCountdownTime(count);
+                ret2 = UserIO.getInstance().requestConfirmDialog(UserIO.STYLE_HTML, JDL.L("interaction.shutdown.dialog.title.closejd", "Close JD?"), message, UserIO.getInstance().getIcon(UserIO.ICON_WARNING), null, null);
+                UserIO.setCountdownTime(-1);
+                logger.info("Return code: " + ret2);
+                if (JDFlags.hasSomeFlags(ret2, UserIO.RETURN_OK, UserIO.RETURN_COUNTDOWN_TIMEOUT)) {
+                    closejd();
                 }
                 break;
             default:
