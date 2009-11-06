@@ -105,11 +105,14 @@ public class FileBoxCom extends PluginForHost {
         if (br.containsHTML("No such file")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("No such user exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("File Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = Encoding.htmlDecode(br.getRegex("<td nowrap>(.*?)</b></td>").getMatch(0));
-        String filesize = br.getRegex("Size:.*?<small>\\((.*?)\\)</small>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("fname\" value=\"(.*?)\"").getMatch(0);
+        if (filename == null) filename = br.getRegex("Filename</label>.*?title=\"(.*?)\"").getMatch(0);
+        String filesize = br.getRegex("File size</label>.*?\\((.*?)\\)").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         link.setName(filename);
-        link.setDownloadSize(Regex.getSize(filesize));
+        if (filesize != null) {
+            link.setDownloadSize(Regex.getSize(filesize));
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -184,11 +187,15 @@ public class FileBoxCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
-        // Form um auf "Datei herunterladen" zu klicken
-        Form DLForm = br.getFormbyProperty("name", "F1");
-        if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String passCode = null;
-        if (br.containsHTML("valign=top><b>Password:</b></td>")) {
+        //Outcommented stuff is the captcha handling which isn't needed right now because their captcha system is buggy so you don't have
+        //to enter anything and still you can start downloading...in case they repair that just "activate" the following outcommented lines!
+//        String captchaurl = br.getRegex("\"(/captchas/.*?)\"").getMatch(0);
+//        if (captchaurl == null ) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+//        captchaurl = "https://www.filebox.com" + captchaurl;
+        Form DLForm = br.getFormbyKey("fname");
+        if (DLForm == null ) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (br.containsHTML("splash_Pasword")) {
             if (downloadLink.getStringProperty("pass", null) == null) {
                 passCode = Plugin.getUserInput("Password?", downloadLink);
             } else {
@@ -197,17 +204,31 @@ public class FileBoxCom extends PluginForHost {
             }
             DLForm.put("password", passCode);
         }
-        // waittime
-        int tt = Integer.parseInt(br.getRegex("countdown\">(\\d+)</span>").getMatch(0));
-        sleep(tt * 1001, downloadLink);
-        jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLForm, false, 1);
+//        String code = getCaptchaCode(captchaurl, downloadLink);
+//        logger.info("Entered captcha code is||" + code + "|| from captchalink||" + captchaurl + "||");
+//        DLForm.put("code", code);
+        br.submitForm(DLForm);
+        if (br.containsHTML("Wrong captcha")) {
+            logger.warning("Wrong captcha or wrong password!");
+            downloadLink.setProperty("pass", null);
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        }
+        if (br.containsHTML("Wrong password")) {
+            logger.warning("Wrong password!");
+            downloadLink.setProperty("pass", null);
+            throw new PluginException(LinkStatus.ERROR_RETRY);
+        }
+        Form finalform = br.getFormbyProperty("name", "F1");
+        if (finalform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // Waittime...is skipable right now but in case they change it just use the following code (tested)
+//        String ttt = br.getRegex("countdown\">(\\d+)</span>").getMatch(0);
+//        if (ttt != null) {
+//            int tt = Integer.parseInt(ttt);
+//            sleep(tt * 1001, downloadLink);
+//        }
+        jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalform, false, 1);
         if (!(dl.getConnection().isContentDisposition())) {
             br.followConnection();
-            if (br.containsHTML("Wrong password")) {
-                logger.warning("Wrong password!");
-                downloadLink.setProperty("pass", null);
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (passCode != null) {
@@ -222,7 +243,7 @@ public class FileBoxCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return -1;
     }
 
     @Override

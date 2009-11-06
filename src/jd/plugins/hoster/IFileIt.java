@@ -24,6 +24,7 @@ import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -109,8 +110,26 @@ public class IFileIt extends PluginForHost {
             }
             if (br2.containsHTML("\"retry\":\"retry\"")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
-        String dllink = br.getRegex("req_btn\".*?href=\"(http://.*?\\.ifile\\.it/.*?)\">").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String dllink = br.getRegex("req_btn.*?target=\".*?\" href=\"(http.*?)\"").getMatch(0);
+        if (dllink == null) {
+            logger.info("first try getting dllink failed");
+            dllink = br.getRegex("\"(http://s[0-9]+\\.ifile\\.it/.*?/.*?/.*?/.*?)\"").getMatch(0);
+            if (dllink == null) {
+                logger.info("second try getting dllink failed");
+                String pp = br.getRegex("<br /><br />(.*?)</div>").getMatch(0);
+                String[] lol = HTMLParser.getHttpLinks(pp, "");
+                if (lol.length != 1) {
+                } else {
+                    for (String link : lol) {
+                        dllink = link;
+                    }
+                }
+            }
+        }
+        if (dllink == null){
+            logger.info("last try getting dllink failed, plugin must be defect!");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         br.cloneBrowser().getPage("http://ifile.it/ads/adframe.js");
         br.setFollowRedirects(false);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -3);

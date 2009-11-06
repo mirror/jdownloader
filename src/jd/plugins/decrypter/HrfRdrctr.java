@@ -25,7 +25,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "forex-fileupload.co.cc", "r1one.co.cc", "crazytr.com", "qurlyq.com", "url.tr59.info", "rapid-lak.co.cc", "url.bilgiportal.com" }, urls = { "http://[\\w\\.]*?forex-fileupload\\.co\\.cc/\\?\\w+", "http://[\\w\\.]*?r1one\\.co\\.cc/\\d+", "http://[\\w\\.]*?crazytr\\.com/url/\\d+", "http://[\\w\\.]*?qurlyq\\.com/[0-9a-z]+", "http://[\\w\\.]*?url\\.tr59\\.info/[0-9]+", "http://[\\w\\.]*?rapid-lak\\.co\\.cc/vault/[0-9]+/downloads/.*?\\.html", "http://[\\w\\.]*?url\\.bilgiportal\\.com/[0-9]+" }, flags = { 0, 0, 0, 0, 0, 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "forex-fileupload.co.cc", "r1one.co.cc", "crazytr.com", "qurlyq.com", "url.tr59.info", "rapid-lak.co.cc", "url.bilgiportal.com", "teklink.tk" }, urls = { "http://[\\w\\.]*?forex-fileupload\\.co\\.cc/\\?\\w+", "http://[\\w\\.]*?r1one\\.co\\.cc/\\d+", "http://[\\w\\.]*?crazytr\\.com/url/\\d+", "http://[\\w\\.]*?qurlyq\\.com/[0-9a-z]+", "http://[\\w\\.]*?url\\.tr59\\.info/[0-9]+", "http://[\\w\\.]*?rapid-lak\\.co\\.cc/vault/[0-9]+/downloads/.*?\\.html", "http://[\\w\\.]*?url\\.bilgiportal\\.com/[0-9]+", "http://[\\w\\.]*?teklink\\.tk/[0-9]+" }, flags = { 0, 0, 0, 0, 0, 0, 0, 0 })
 public class HrfRdrctr extends PluginForDecrypt {
 
     /* Usage: {{regex, getMatch()-Index}, {..., ...}} */
@@ -40,7 +40,12 @@ public class HrfRdrctr extends PluginForDecrypt {
         String link = null;
         String parameter = param.toString();
         br.getPage(parameter);
-
+        //Workaround for teklink links
+        if (parameter.contains("teklink.tk")) {
+            String frame = br.getRegex("frameborder=.*?src=\"(.*?)\"").getMatch(0);
+            if (frame == null) return null;
+            br.getPage(frame);
+        }
         for (int i = 0; i < regxps.length; i++) {
             if (link == null) {
                 link = br.getRegex((String) regxps[i][0]).getMatch((Integer) regxps[i][1]);
