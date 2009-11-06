@@ -57,6 +57,7 @@ public class LogFormatter extends SimpleFormatter {
         lastThreadID = th;
         if (JDLogger.getLogger().getLevel() == Level.ALL) {
             sb.append(record.getThreadID());
+            sb.append(' ');
             for (int i = 0; i < (record.getThreadID() % 10); i++)
                 sb.append("  ");
 

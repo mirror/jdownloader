@@ -15,6 +15,7 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package jd.plugins.decrypter;
+
 import java.io.File;
 import java.util.ArrayList;
 
@@ -41,22 +42,20 @@ public class PrtctTOg extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        LoadImage li = LoadImage.loadFile("protect-it.org");
-        li.baseUrl=parameter;
+        LoadImage li = LoadImage.loadFile("prtctt");
+        li.baseUrl = parameter;
         li.load(getHost());
-        String[] p=null;
+        String[] p = null;
         try {
             p = getCaptchaCode(li, param).split(":");
         } catch (Exception e) {
-            throw new DecrypterException(DecrypterException.CAPTCHA); 
+            throw new DecrypterException(DecrypterException.CAPTCHA);
         }
-        if(p==null||p.length!=2)
-            throw new DecrypterException(DecrypterException.CAPTCHA); 
-        br=li.br;
+        if (p == null || p.length != 2) throw new DecrypterException(DecrypterException.CAPTCHA);
+        br = li.br;
         Form form = br.getForm(0);
         InputField pass = form.getInputField("pass");
-        if(pass!=null)
-        {
+        if (pass != null) {
             pass.setValue(getUserInput("Besucherpasswort", param));
 
         }
@@ -74,7 +73,7 @@ public class PrtctTOg extends PluginForDecrypt {
         String[] container = br.getRegex("document\\.location='(http://protect-it\\.org//?\\?fetchcrypt=.*?)'").getColumn(0);
         if (decryptedLinks.size() == 0 && container != null && container.length > 0) {
             for (String c : container) {
-                File file = JDUtilities.getResourceFile("tmp/"+this.getHost()+"/" +System.currentTimeMillis()+"."+ c.replaceFirst(".*type=.", ""));
+                File file = JDUtilities.getResourceFile("tmp/" + this.getHost() + "/" + System.currentTimeMillis() + "." + c.replaceFirst(".*type=.", ""));
                 br.getDownload(file, c);
                 if (file != null && file.exists() && file.length() > 100) {
                     decryptedLinks = JDUtilities.getController().getContainerLinks(file);
