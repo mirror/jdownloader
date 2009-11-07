@@ -29,7 +29,7 @@ public class BatchReconnect extends ReconnectMethod {
 
     private SubConfiguration configuration;
 
-    private static final String PROPERTY_IP_WAIT_FOR_RETURN = "WAIT_FOR_RETURN4";
+    private static final String PROPERTY_IP_WAIT_FOR_RETURN = "WAIT_FOR_RETURN5";
 
     private static final String PROPERTY_RECONNECT_EXECUTE_FOLDER = "RECONNECT_EXECUTE_FOLDER";
 

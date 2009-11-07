@@ -47,11 +47,7 @@ public class Paste2Org extends PluginForDecrypt {
         }
         br.getPage(parameter);
         /* Error handling */
-        if (br.containsHTML("Page Not Found")) {
-            logger.warning("Wrong link");
-            logger.warning(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-            return new ArrayList<DownloadLink>();
-        }
+        if (br.containsHTML("Page Not Found")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or there are no links to add"));
         String plaintxt = br.getRegex("main-container(.*?)footer-contents").getMatch(0);
         if (plaintxt == null) return null;
         String[] links = HTMLParser.getHttpLinks(plaintxt, "");

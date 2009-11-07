@@ -16,12 +16,16 @@
 
 package jd.controlling.reconnect;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
+import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
+import jd.nutils.OSDetector;
 import jd.parser.Regex;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
@@ -40,6 +44,8 @@ public class ExternReconnect extends ReconnectMethod {
 
     private static final String PROPERTY_RECONNECT_PARAMETER = "EXTERN_RECONNECT__PARAMETER";
 
+    private static final String PROPERTY_IP_WAIT_FOR_RETURN = "WAIT_FOR_RETURN5";
+
     public ExternReconnect() {
         configuration = JDUtilities.getConfiguration();
     }
@@ -50,21 +56,74 @@ public class ExternReconnect extends ReconnectMethod {
     }
 
     protected boolean runCommands(ProgressController progress) {
-        String command = configuration.getStringProperty(PROPERTY_RECONNECT_COMMAND);
+        int waitForReturn = configuration.getIntegerProperty(PROPERTY_IP_WAIT_FOR_RETURN, 0);
+        String command = configuration.getStringProperty(PROPERTY_RECONNECT_COMMAND, "").trim();
 
         File f = new File(command);
+        if (!f.exists()) return false;
         String t = f.getAbsolutePath();
-        String executeIn = t.substring(0, t.indexOf(f.getName()) - 1);
-
-        String parameter = configuration.getStringProperty(PROPERTY_RECONNECT_PARAMETER);
-        /*
-         * timeout set to 0 to avoid blocking streamobserver, because not every
-         * external tool will use stdin/stdout/stderr! we do not use the streams
-         * anyway so who cares
-         */
-        logger.finer("Execute Returns: " + JDUtilities.runCommand(command, Regex.getLines(parameter), executeIn, 0));
-
+        String executeIn = t.substring(0, t.indexOf(f.getName()) - 1).trim();
+        if (OSDetector.isWindows() || true) {
+            /*
+             * for windows we create a temporary batchfile that calls our
+             * external tool and redirect its streams to nul
+             */
+            File bat = getDummyBat();
+            if (bat == null) return false;
+            try {
+                BufferedWriter output = new BufferedWriter(new FileWriter(bat));
+                if (executeIn.contains(" ")) {
+                    output.write("cd \"" + executeIn + "\"\r\n");
+                } else {
+                    output.write("cd " + executeIn + "\r\n");
+                }
+                String parameter = configuration.getStringProperty(PROPERTY_RECONNECT_PARAMETER);
+                String[] params = Regex.getLines(parameter);
+                StringBuilder sb = new StringBuilder();
+                for (String param : params) {
+                    sb.append(param);
+                    sb.append(" ");
+                }
+                if (executeIn.contains(" ")) {
+                    output.write("\"" + command + "\"" + " " + sb.toString() + ">nul 2>nul");
+                } else {
+                    output.write(command + " " + sb.toString() + ">nul 2>nul");
+                }
+                output.close();
+            } catch (Exception e) {
+                JDLogger.exception(e);
+                return false;
+            }
+            logger.finer("Execute Returns: " + JDUtilities.runCommand(bat.toString(), Regex.getLines(""), executeIn, waitForReturn));
+        } else {
+            /* other os, normal handling */
+            String parameter = configuration.getStringProperty(PROPERTY_RECONNECT_PARAMETER);
+            logger.finer("Execute Returns: " + JDUtilities.runCommand(command, Regex.getLines(parameter), executeIn, waitForReturn));
+        }
         return true;
+    }
+
+    /**
+     * get next available DummyBat for reconnect
+     * 
+     * @return
+     */
+    private File getDummyBat() {
+        int number = 0;
+        while (true) {
+            if (number == 100) {
+                logger.severe("Cannot create dummy Bat file, please delete all recon_*.bat files in tmp folder!");
+                return null;
+            }
+            File tmp = JDUtilities.getResourceFile("tmp/recon_" + number + ".bat", true);
+            if (tmp.exists()) {
+                if (tmp.delete()) return tmp;
+                tmp.deleteOnExit();
+            } else {
+                return tmp;
+            }
+            number++;
+        }
     }
 
 }

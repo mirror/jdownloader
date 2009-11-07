@@ -52,7 +52,6 @@ public class FiledropperCom extends PluginForHost {
             downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
             return AvailableStatus.TRUE;
         }
-
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
@@ -66,7 +65,6 @@ public class FiledropperCom extends PluginForHost {
 
         for (int i = 0; i <= 5; i++) {
             captchaForm = br.getForm(0);
-
             if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
             String captchaUrl = br.getRegex("src=\"(securimage/securimage_show\\.php\\?sid=[0-9a-z]{32})\"").getMatch(0);
@@ -75,6 +73,7 @@ public class FiledropperCom extends PluginForHost {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, captchaForm, false, 1);
             con = dl.getConnection();
             if (dl.getConnection().getContentType().contains("html")) {
+                dl.getConnection().disconnect();
                 valid = false;
                 br.getPage(downloadLink.getDownloadURL());
                 continue;
@@ -82,14 +81,11 @@ public class FiledropperCom extends PluginForHost {
             valid = true;
             break;
         }
-
         if (valid == false) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-
         if (con.getResponseCode() != 200 && con.getResponseCode() != 206) {
             con.disconnect();
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 1000l);
         }
-
         dl.startDownload();
     }
 
