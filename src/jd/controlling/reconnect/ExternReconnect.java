@@ -63,7 +63,7 @@ public class ExternReconnect extends ReconnectMethod {
         if (!f.exists()) return false;
         String t = f.getAbsolutePath();
         String executeIn = t.substring(0, t.indexOf(f.getName()) - 1).trim();
-        if (OSDetector.isWindows() || true) {
+        if (OSDetector.isWindows()) {
             /*
              * for windows we create a temporary batchfile that calls our
              * external tool and redirect its streams to nul
