@@ -68,6 +68,7 @@ public class Reconnecter {
     }
 
     private static boolean checkExternalIPChange() {
+        if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) return false;
         LAST_UP_UPDATE_TIME = System.currentTimeMillis();
         String tmp = CURRENT_IP;
         CURRENT_IP = IPCheck.getIPAddress();

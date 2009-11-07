@@ -63,7 +63,7 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
 
     private static final long serialVersionUID = 7290466989514173719L;
     private static final int BARCOUNT = 15;
-    private static final long ACCOUNT_UPDATE_DELAY = 15 * 60 * 1000;
+    private static final long ACCOUNT_UPDATE_DELAY = 30 * 60 * 1000;
     private TinyProgressBar[] bars;
     private JLabel lbl;
 

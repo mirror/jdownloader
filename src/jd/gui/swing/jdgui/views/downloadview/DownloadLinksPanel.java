@@ -52,7 +52,6 @@ import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.jdgui.JDGuiConstants;
 import jd.gui.swing.jdgui.MainTabbedPane;
 import jd.gui.swing.jdgui.actions.ActionController;
-import jd.gui.swing.jdgui.actions.ThreadedAction;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.views.DownloadView;
 import jd.nutils.JDFlags;
@@ -77,6 +76,8 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
 
     private final static int UPDATE_TIMING = 250;
 
+    private static DownloadLinksPanel INSTANCE = null;
+
     private int jobID = REFRESH_DATA_AND_STRUCTURE_CHANGED;
     private ArrayList<Object> jobObjects = new ArrayList<Object>();
 
@@ -94,7 +95,9 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
 
     private JScrollPane scrollPane;
 
-    public DownloadLinksPanel() {
+    private boolean notvisible = true;
+
+    private DownloadLinksPanel() {
         super(new MigLayout("ins 0, wrap 1", "[grow, fill]", "[grow, fill]"));
         internalTable = new DownloadTable(this);
         scrollPane = new JScrollPane(internalTable);
@@ -127,7 +130,15 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
         MainTabbedPane.getInstance().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).remove(ActionController.getToolBarAction("action.downloadview.moveup").getKeyStroke());
         MainTabbedPane.getInstance().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).remove(ActionController.getToolBarAction("action.downloadview.movedown").getKeyStroke());
         MainTabbedPane.getInstance().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).remove(ActionController.getToolBarAction("action.downloadview.movetobottom").getKeyStroke());
+    }
 
+    public boolean isNotVisible() {
+        return notvisible;
+    }
+
+    public static synchronized DownloadLinksPanel getDownloadLinksPanel() {
+        if (INSTANCE == null) INSTANCE = new DownloadLinksPanel();
+        return INSTANCE;
     }
 
     public DownloadTable getInternalTable() {
@@ -135,71 +146,7 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
     }
 
     public void initActions() {
-        new ThreadedAction("action.downloadview.movetobottom", "gui.images.go_bottom") {
-            private static final long serialVersionUID = 6181260839200699153L;
 
-            @Override
-            public void initDefaults() {
-                this.setToolTipText(JDL.L("action.downloadview.movetobottom.tooltip", "Move to bottom"));
-            }
-
-            @Override
-            public void init() {
-            }
-
-            public void threadedActionPerformed(ActionEvent e) {
-                move(DownloadController.MOVE_BOTTOM);
-            }
-        };
-        new ThreadedAction("action.downloadview.movetotop", "gui.images.go_top") {
-            private static final long serialVersionUID = 6181260839200699153L;
-
-            @Override
-            public void initDefaults() {
-                this.setToolTipText(JDL.L("action.downloadview.movetotop.tooltip", "Move to top"));
-            }
-
-            @Override
-            public void init() {
-            }
-
-            public void threadedActionPerformed(ActionEvent e) {
-                move(DownloadController.MOVE_TOP);
-            }
-        };
-
-        new ThreadedAction("action.downloadview.moveup", "gui.images.up") {
-            private static final long serialVersionUID = 6181260839200699153L;
-
-            @Override
-            public void initDefaults() {
-                this.setToolTipText(JDL.L("action.downloadview.moveup.tooltip", "Move up"));
-            }
-
-            @Override
-            public void init() {
-            }
-
-            public void threadedActionPerformed(ActionEvent e) {
-                move(DownloadController.MOVE_UP);
-            }
-        };
-        new ThreadedAction("action.downloadview.movedown", "gui.images.down") {
-            private static final long serialVersionUID = 6181260839200699153L;
-
-            @Override
-            public void initDefaults() {
-                this.setToolTipText(JDL.L("action.downloadview.movedown.tooltip", "Move down"));
-            }
-
-            @Override
-            public void init() {
-            }
-
-            public void threadedActionPerformed(ActionEvent e) {
-                move(DownloadController.MOVE_DOWN);
-            }
-        };
     }
 
     public void move(byte mode) {
@@ -259,9 +206,11 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
         JDUtilities.getDownloadController().addListener(this);
         internalTable.removeKeyListener(internalTable);
         internalTable.addKeyListener(internalTable);
+        notvisible = false;
     }
 
     public void onHide() {
+        notvisible = true;
         JDUtilities.getDownloadController().removeListener(this);
         asyncUpdate.stop();
         internalTable.removeKeyListener(internalTable);

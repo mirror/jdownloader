@@ -39,7 +39,7 @@ public class DownloadView extends View {
 
     private DownloadView() {
         super();
-        this.setContent(new DownloadLinksPanel());
+        this.setContent(DownloadLinksPanel.getDownloadLinksPanel());
         this.setDefaultInfoPanel(new DownloadInfoPanel());
     }
 
@@ -73,7 +73,6 @@ public class DownloadView extends View {
 
     @Override
     protected void onShow() {
-
         ActionController.getToolBarAction("action.downloadview.movetotop").setEnabled(true);
         ActionController.getToolBarAction("action.downloadview.moveup").setEnabled(true);
         ActionController.getToolBarAction("action.downloadview.movedown").setEnabled(true);

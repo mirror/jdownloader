@@ -31,6 +31,7 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
 import jd.config.Configuration;
+import jd.config.SubConfiguration;
 import jd.config.ConfigEntry.PropertyType;
 import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
@@ -142,15 +143,27 @@ public class MethodSelection extends ConfigPanel implements ActionListener {
                 public void run() {
                     JDUtilities.getConfiguration().setProperty(ReconnectMethod.PARAM_RETRIES, 0);
                     if (Reconnecter.doManualReconnect()) {
-                        progress.setStatusText(JDL.L("gui.warning.reconnectSuccess", "Reconnect successfull"));
+                        if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
+                            progress.setStatusText(JDL.L("gui.warning.reconnectunknown", "Reconnect unknown"));
+                        } else {
+                            progress.setStatusText(JDL.L("gui.warning.reconnectSuccess", "Reconnect successfull"));
+                        }
                         new GuiRunnable<Object>() {
 
                             @Override
                             public Object runSave() {
-                                message.setText(JDL.L("gui.warning.reconnectSuccess", "Reconnect successfull"));
+                                if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
+                                    message.setText(JDL.L("gui.warning.reconnectunknown", "Reconnect unknown"));
+                                } else {
+                                    message.setText(JDL.L("gui.warning.reconnectSuccess", "Reconnect successfull"));
+                                }
                                 success.setIcon(JDTheme.II("gui.images.selected", 32, 32));
                                 success.setEnabled(true);
-                                currentip.setText(IPCheck.getIPAddress());
+                                if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
+                                    currentip.setText("?");
+                                } else {
+                                    currentip.setText(IPCheck.getIPAddress());
+                                }
                                 return null;
                             }
                         }.start();
@@ -164,7 +177,11 @@ public class MethodSelection extends ConfigPanel implements ActionListener {
                                 message.setText(JDL.L("gui.warning.reconnectFailed", "Reconnect failed!"));
                                 success.setIcon(JDTheme.II("gui.images.unselected", 32, 32));
                                 success.setEnabled(true);
-                                currentip.setText(IPCheck.getIPAddress());
+                                if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
+                                    currentip.setText("?");
+                                } else {
+                                    currentip.setText(IPCheck.getIPAddress());
+                                }
                                 return null;
                             }
                         }.start();
@@ -225,17 +242,19 @@ public class MethodSelection extends ConfigPanel implements ActionListener {
         beforeIPLabel.setEnabled(false);
         beforeIP.setEnabled(false);
 
-        new Thread() {
-            @Override
-            public void run() {
-                final String ip = IPCheck.getIPAddress();
-                SwingUtilities.invokeLater(new Runnable() {
-                    public void run() {
-                        currentip.setText(ip);
-                    }
-                });
-            }
-        }.start();
+        if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false) == false) {
+            new Thread() {
+                @Override
+                public void run() {
+                    final String ip = IPCheck.getIPAddress();
+                    SwingUtilities.invokeLater(new Runnable() {
+                        public void run() {
+                            currentip.setText(ip);
+                        }
+                    });
+                }
+            }.start();
+        }
 
         // maintabbed.addTab(JDL.L("gui.config.reconnect.methodtab",
         // "Reconnect method"), JDTheme.II("gui.images.config.network_local",

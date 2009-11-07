@@ -24,6 +24,7 @@ import jd.controlling.LinkGrabberControllerEvent;
 import jd.controlling.LinkGrabberControllerListener;
 import jd.gui.UserIF;
 import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.interfaces.View;
 import jd.gui.swing.jdgui.views.info.LinkGrabberInfoPanel;
 import jd.gui.swing.jdgui.views.linkgrabberview.LinkGrabberPanel;
@@ -87,12 +88,18 @@ public class LinkgrabberView extends View {
 
     @Override
     protected void onHide() {
-
+        ActionController.getToolBarAction("action.downloadview.movetotop").setEnabled(false);
+        ActionController.getToolBarAction("action.downloadview.moveup").setEnabled(false);
+        ActionController.getToolBarAction("action.downloadview.movedown").setEnabled(false);
+        ActionController.getToolBarAction("action.downloadview.movetobottom").setEnabled(false);
     }
 
     @Override
     protected void onShow() {
-
+        ActionController.getToolBarAction("action.downloadview.movetotop").setEnabled(true);
+        ActionController.getToolBarAction("action.downloadview.moveup").setEnabled(true);
+        ActionController.getToolBarAction("action.downloadview.movedown").setEnabled(true);
+        ActionController.getToolBarAction("action.downloadview.movetobottom").setEnabled(true);
     }
 
 }

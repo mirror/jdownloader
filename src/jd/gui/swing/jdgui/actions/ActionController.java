@@ -27,6 +27,7 @@ import jd.config.Configuration;
 import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.controlling.ClipboardHandler;
+import jd.controlling.DownloadController;
 import jd.controlling.DownloadWatchDog;
 import jd.controlling.JDController;
 import jd.controlling.LinkGrabberController;
@@ -37,6 +38,7 @@ import jd.event.ControlIDListener;
 import jd.gui.UserIF;
 import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
+import jd.gui.swing.jdgui.views.downloadview.DownloadLinksPanel;
 import jd.gui.swing.jdgui.views.linkgrabberview.LinkGrabberPanel;
 import jd.nutils.JDFlags;
 import jd.plugins.LinkGrabberFilePackage;
@@ -472,6 +474,92 @@ public class ActionController {
                 if (DownloadWatchDog.getInstance().getDownloadStatus() != DownloadWatchDog.STATE.RUNNING && !DownloadWatchDog.getInstance().isStopMarkSet()) setEnabled(false);
             }
 
+        };
+
+        new ThreadedAction("action.downloadview.movetobottom", "gui.images.go_bottom") {
+            private static final long serialVersionUID = 6181260839200699153L;
+
+            @Override
+            public void initDefaults() {
+                this.setToolTipText(JDL.L("action.downloadview.movetobottom.tooltip", "Move to bottom"));
+            }
+
+            @Override
+            public void init() {
+            }
+
+            public void threadedActionPerformed(ActionEvent e) {
+                if (!LinkGrabberPanel.getLinkGrabber().isNotVisible()) {
+                    LinkGrabberPanel.getLinkGrabber().move(LinkGrabberController.MOVE_BOTTOM);
+                    LinkGrabberController.getInstance().throwRefresh();
+                } else if (!DownloadLinksPanel.getDownloadLinksPanel().isNotVisible()) {
+                    DownloadLinksPanel.getDownloadLinksPanel().move(DownloadController.MOVE_BOTTOM);
+                }
+            }
+        };
+        new ThreadedAction("action.downloadview.movetotop", "gui.images.go_top") {
+            private static final long serialVersionUID = 6181260839200699153L;
+
+            @Override
+            public void initDefaults() {
+                this.setToolTipText(JDL.L("action.downloadview.movetotop.tooltip", "Move to top"));
+            }
+
+            @Override
+            public void init() {
+            }
+
+            public void threadedActionPerformed(ActionEvent e) {
+                if (!LinkGrabberPanel.getLinkGrabber().isNotVisible()) {
+                    LinkGrabberPanel.getLinkGrabber().move(LinkGrabberController.MOVE_TOP);
+                    LinkGrabberController.getInstance().throwRefresh();
+                } else if (!DownloadLinksPanel.getDownloadLinksPanel().isNotVisible()) {
+                    DownloadLinksPanel.getDownloadLinksPanel().move(DownloadController.MOVE_TOP);
+                }
+            }
+        };
+
+        new ThreadedAction("action.downloadview.moveup", "gui.images.up") {
+            private static final long serialVersionUID = 6181260839200699153L;
+
+            @Override
+            public void initDefaults() {
+                this.setToolTipText(JDL.L("action.downloadview.moveup.tooltip", "Move up"));
+            }
+
+            @Override
+            public void init() {
+            }
+
+            public void threadedActionPerformed(ActionEvent e) {
+                if (!LinkGrabberPanel.getLinkGrabber().isNotVisible()) {
+                    LinkGrabberPanel.getLinkGrabber().move(LinkGrabberController.MOVE_UP);
+                    LinkGrabberController.getInstance().throwRefresh();
+                } else if (!DownloadLinksPanel.getDownloadLinksPanel().isNotVisible()) {
+                    DownloadLinksPanel.getDownloadLinksPanel().move(DownloadController.MOVE_UP);
+                }
+            }
+        };
+        new ThreadedAction("action.downloadview.movedown", "gui.images.down") {
+            private static final long serialVersionUID = 6181260839200699153L;
+
+            @Override
+            public void initDefaults() {
+                this.setToolTipText(JDL.L("action.downloadview.movedown.tooltip", "Move down"));
+            }
+
+            @Override
+            public void init() {
+            }
+
+            public void threadedActionPerformed(ActionEvent e) {
+                if (!LinkGrabberPanel.getLinkGrabber().isNotVisible()) {
+                    LinkGrabberPanel.getLinkGrabber().move(LinkGrabberController.MOVE_DOWN);
+                    LinkGrabberController.getInstance().throwRefresh();
+                } else if (!DownloadLinksPanel.getDownloadLinksPanel().isNotVisible()) {
+                    DownloadLinksPanel.getDownloadLinksPanel().move(DownloadController.MOVE_DOWN);
+                }
+            }
         };
     }
 

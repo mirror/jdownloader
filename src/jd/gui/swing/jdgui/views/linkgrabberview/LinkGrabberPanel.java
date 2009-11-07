@@ -270,6 +270,13 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
         Update_Async.stop();
     }
 
+    public void move(byte mode) {
+        ArrayList<LinkGrabberFilePackage> fps = internalTable.getSelectedFilePackages();
+        ArrayList<DownloadLink> links = internalTable.getSelectedDownloadLinks();
+        if (fps.size() > 0) LinkGrabberController.getInstance().move(fps, null, mode);
+        if (links.size() > 0) LinkGrabberController.getInstance().move(links, null, mode);
+    }
+
     public void addLinks(final ArrayList<DownloadLink> linkList) {
         addinginprogress = true;
         new Thread() {

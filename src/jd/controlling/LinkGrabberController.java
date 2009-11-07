@@ -56,6 +56,8 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
     public static final byte MOVE_END = 4;
     public static final byte MOVE_TOP = 5;
     public static final byte MOVE_BOTTOM = 6;
+    public static final byte MOVE_UP = 7;
+    public static final byte MOVE_DOWN = 8;
 
     public static final String PARAM_ONLINECHECK = "PARAM_ONLINECHECK";
     public static final String PARAM_REPLACECHARS = "PARAM_REPLACECHARS";
@@ -697,11 +699,84 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
                     if (type) {
                         /* src:LinkGrabberFilePackage */
                         switch (mode) {
+                        case MOVE_UP: {
+                            int curpos = 0;
+                            for (LinkGrabberFilePackage item : (ArrayList<LinkGrabberFilePackage>) src) {
+                                curpos = indexOf(item);
+                                addPackageAt(item, curpos - 1, 0);
+                            }
+                        }
+                            return;
+                        case MOVE_DOWN: {
+                            int curpos = 0;
+                            ArrayList<LinkGrabberFilePackage> fps = ((ArrayList<LinkGrabberFilePackage>) src);
+                            for (int i = fps.size() - 1; i >= 0; i--) {
+                                curpos = indexOf(fps.get(i));
+                                addPackageAt(fps.get(i), curpos + 2, 0);
+                            }
+                        }
+                            return;
                         case MOVE_TOP:
                             addAllAt((ArrayList<LinkGrabberFilePackage>) src, 0);
                             return;
                         case MOVE_BOTTOM:
                             addAllAt((ArrayList<LinkGrabberFilePackage>) src, size() + 1);
+                            return;
+                        default:
+                            logger.warning("Unsupported mode, cannot move!");
+                            return;
+                        }
+                    } else {
+                        /* src:DownloadLinks */
+                        switch (mode) {
+                        case MOVE_UP: {
+                            int curpos = 0;
+                            for (DownloadLink item : (ArrayList<DownloadLink>) src) {
+                                fp = getFPwithLink(item);
+                                curpos = fp.indexOf(item);
+                                fp.add(curpos - 1, item, 0);
+                                if (curpos == 0) {
+                                    curpos = indexOf(fp);
+                                    addPackageAt(fp, curpos - 1, 0);
+                                }
+                            }
+                        }
+                            return;
+                        case MOVE_DOWN: {
+                            int curpos = 0;
+                            ArrayList<DownloadLink> links = ((ArrayList<DownloadLink>) src);
+                            for (int i = links.size() - 1; i >= 0; i--) {
+                                fp = getFPwithLink(links.get(i));
+                                curpos = fp.indexOf(links.get(i));
+                                fp.add(curpos + 2, links.get(i), 0);
+                                if (curpos == fp.size() - 1) {
+                                    curpos = indexOf(fp);
+                                    addPackageAt(fp, curpos + 2, 0);
+                                }
+                            }
+                        }
+                            return;
+                        case MOVE_TOP: {
+                            ArrayList<ArrayList<DownloadLink>> split = splitByFilePackage((ArrayList<DownloadLink>) src);
+                            for (ArrayList<DownloadLink> links : split) {
+                                fp = getFPwithLink(links.get(0));
+                                if (fp.indexOf(links.get(0)) == 0) {
+                                    addPackageAt(fp, 0, 0);
+                                }
+                                fp.addAllAt(links, 0);
+                            }
+                        }
+                            return;
+                        case MOVE_BOTTOM: {
+                            ArrayList<ArrayList<DownloadLink>> split = splitByFilePackage((ArrayList<DownloadLink>) src);
+                            for (ArrayList<DownloadLink> links : split) {
+                                fp = getFPwithLink(links.get(0));
+                                if (fp.indexOf(links.get(links.size() - 1)) == fp.size() - 1) {
+                                    addPackageAt(fp, size() + 1, 0);
+                                }
+                                fp.addAllAt(links, fp.size() + 1);
+                            }
+                        }
                             return;
                         default:
                             logger.warning("Unsupported mode, cannot move!");
@@ -713,4 +788,31 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
         }
     }
 
+    public static ArrayList<ArrayList<DownloadLink>> splitByFilePackage(ArrayList<DownloadLink> links) {
+        ArrayList<ArrayList<DownloadLink>> ret = new ArrayList<ArrayList<DownloadLink>>();
+        boolean added = false;
+        for (DownloadLink link : links) {
+            LinkGrabberFilePackage fp1 = INSTANCE.getFPwithLink(link);
+            if (ret.size() == 0) {
+                ArrayList<DownloadLink> tmp = new ArrayList<DownloadLink>();
+                tmp.add(link);
+                ret.add(tmp);
+            } else {
+                added = false;
+                for (ArrayList<DownloadLink> check : ret) {
+                    LinkGrabberFilePackage fp2 = INSTANCE.getFPwithLink(check.get(0));
+                    if (fp1 == fp2) {
+                        added = true;
+                        check.add(link);
+                    }
+                }
+                if (added == false) {
+                    ArrayList<DownloadLink> tmp = new ArrayList<DownloadLink>();
+                    tmp.add(link);
+                    ret.add(tmp);
+                }
+            }
+        }
+        return ret;
+    }
 }

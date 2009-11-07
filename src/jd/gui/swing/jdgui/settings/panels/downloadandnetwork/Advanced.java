@@ -63,6 +63,17 @@ public class Advanced extends ConfigPanel {
 
         extended.setGroup(new ConfigGroup(JDL.L("gui.config.download.ipcheck", "Reconnect IP-Check"), JDTheme.II("gui.images.network", 32, 32)));
 
+        extended.addEntry(conditionEntry2 = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, Configuration.PARAM_GLOBAL_IP_DISABLE, JDL.L("gui.config.download.ipcheck.disable", "Disable IP-Check")) {
+            private static final long serialVersionUID = 1L;
+
+            @Override
+            public void valueChanged(Object newValue) {
+                super.valueChanged(newValue);
+                /* here a warning please */
+            }
+        });
+        conditionEntry2.setDefaultValue(false);
+
         extended.addEntry(conditionEntry2 = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, Configuration.PARAM_GLOBAL_IP_BALANCE, JDL.L("gui.config.download.ipcheck.balance", "Use balanced IP-Check")));
         conditionEntry2.setDefaultValue(true);
 
