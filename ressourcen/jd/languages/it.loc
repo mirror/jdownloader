@@ -270,6 +270,7 @@ gui.config.jdrr.savereconnect = Riconnessione avvenuta. Salvare?
 gui.config.jdrr.status.title = Stato registrazione
 gui.config.jdrr.success = Completato!
 gui.config.jdrr.title = Registratore riconnessioni
+gui.config.jdshutdown.close = Chiudi JD
 gui.config.jdshutdown.enabledonstart = Abilita all'avvio
 gui.config.jdshutdown.forceshutdown = Arresta il sistema  (non in tutti i S.O.)
 gui.config.jdshutdown.hibernate = Iberna (non in tutti i S.O.)
@@ -771,9 +772,11 @@ interaction.jdchat.deslanguage = in:
 interaction.jdchat.native = in:
 interaction.liveheader.progress.3_step = HTTP LiveHeader :
 interaction.liveheader.progress.4_step = (%s) HTTP LiveHeader
+interaction.shutdown.dialog.msg.closejd = <h2><font color="red">JDownloader verrà chiuso!</font></h2>
 interaction.shutdown.dialog.msg.hibernate = <h2><font color="red">Il sistema verra posto in ibernazione!</font></h2>
 interaction.shutdown.dialog.msg.shutdown = <h2><font color="red">Il sistema verrà spento!</font></h2>
 interaction.shutdown.dialog.msg.standby = <h2><font color="red">Il sistema verrà posto in standby!</font></h2>
+interaction.shutdown.dialog.title.closejd = Chiudere JD?
 interaction.shutdown.dialog.title.hibernate = Ibernare?
 interaction.shutdown.dialog.title.shutdown = Spegnere?
 interaction.shutdown.dialog.title.standby = Standby?
