@@ -79,13 +79,13 @@ public class ExternReconnect extends ReconnectMethod {
                 }
                 String parameter = configuration.getStringProperty(PROPERTY_RECONNECT_PARAMETER);
                 String[] params = Regex.getLines(parameter);
-                StringBuilder sb = new StringBuilder();
+                StringBuilder sb = new StringBuilder(" ");
                 for (String param : params) {
                     sb.append(param);
                     sb.append(" ");
                 }
                 if (executeIn.contains(" ")) {
-                    output.write("\"" + command + "\"" + " " + sb.toString() + ">nul 2>nul");
+                    output.write("\"" + command + "\"" + sb.toString() + " >nul 2>nul");
                 } else {
                     output.write(command + " " + sb.toString() + ">nul 2>nul");
                 }
