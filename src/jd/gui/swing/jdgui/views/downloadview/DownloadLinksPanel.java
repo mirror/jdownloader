@@ -112,7 +112,7 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
         asyncUpdate.setInitialDelay(UPDATE_TIMING);
         asyncUpdate.setRepeats(false);
         asyncUpdate.restart();
-        initActions();
+
         internalTable.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).remove(ActionController.getToolBarAction("action.downloadview.movetotop").getKeyStroke());
         internalTable.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).remove(ActionController.getToolBarAction("action.downloadview.moveup").getKeyStroke());
         internalTable.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).remove(ActionController.getToolBarAction("action.downloadview.movedown").getKeyStroke());
@@ -143,10 +143,6 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
 
     public DownloadTable getInternalTable() {
         return internalTable;
-    }
-
-    public void initActions() {
-
     }
 
     public void move(byte mode) {

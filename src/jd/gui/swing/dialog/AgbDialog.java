@@ -91,7 +91,7 @@ public class AgbDialog extends AbstractDialog {
 
     @Override
     public JComponent contentInit() {
-        JPanel panel = new JPanel(new MigLayout("wrap 1", "[fill,grow,center]"));
+        JPanel panel = new JPanel(new MigLayout("wrap 1", "[center]"));
 
         JLabel labelInfo = new JLabel(JDL.LF("gui.dialogs.agb_tos.description", "Die Allgemeinen Geschäftsbedingungen (AGB) von %s wurden nicht gelesen und akzeptiert.", plugin.getHost()));
 
@@ -105,7 +105,7 @@ public class AgbDialog extends AbstractDialog {
 
         panel.add(labelInfo);
         panel.add(linkAgb);
-        panel.add(checkAgbAccepted);
+        panel.add(checkAgbAccepted, "left");
 
         return panel;
     }

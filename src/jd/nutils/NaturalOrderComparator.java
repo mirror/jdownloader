@@ -28,14 +28,11 @@ package jd.nutils;
 import java.io.Serializable;
 import java.util.Comparator;
 
-@SuppressWarnings("unchecked")
-public class NaturalOrderComparator implements Comparator, Serializable {
-    /**
-     * 
-     */
+public class NaturalOrderComparator implements Comparator<String>, Serializable {
+
     private static final long serialVersionUID = 8464361289407836078L;
 
-    int compareRight(String a, String b) {
+    public int compareRight(String a, String b) {
         int bias = 0;
         int ia = 0;
         int ib = 0;
@@ -60,14 +57,11 @@ public class NaturalOrderComparator implements Comparator, Serializable {
                 }
             } else if (ca > cb) {
                 if (bias == 0) bias = +1;
-            } else if (ca == 0 && cb == 0) { return bias; }
+            } else if (ca == 0 && cb == 0) return bias;
         }
     }
 
-    public int compare(Object o1, Object o2) {
-        String a = o1.toString();
-        String b = o2.toString();
-
+    public int compare(String a, String b) {
         int ia = 0, ib = 0;
         int nza = 0, nzb = 0;
         char ca, cb;
@@ -114,16 +108,15 @@ public class NaturalOrderComparator implements Comparator, Serializable {
                 return nza - nzb;
             }
 
-            if (ca < cb) {
-                return -1;
-            } else if (ca > cb) { return +1; }
+            if (ca < cb) return -1;
+            if (ca > cb) return +1; 
 
             ++ia;
             ++ib;
         }
     }
 
-    static char charAt(String s, int i) {
+    public static char charAt(String s, int i) {
         if (i >= s.length()) {
             return 0;
         } else {
