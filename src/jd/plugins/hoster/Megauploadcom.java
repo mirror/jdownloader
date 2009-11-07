@@ -58,7 +58,7 @@ public class Megauploadcom extends PluginForHost {
     }
 
     private static final String MU_PARAM_PORT = "MU_PARAM_PORT";
-    private static final String MU_PORTROTATION = "MU_PORTROTATION2";
+    private static final String MU_PORTROTATION = "MU_PORTROTATION3";
     private final static String[] ports = new String[] { "80", "800", "1723" };
     private static String wwwWorkaround = null;
     private static final Object Lock = new Object();
@@ -754,7 +754,7 @@ public class Megauploadcom extends PluginForHost {
     }
 
     private void limitReached(DownloadLink link, int secs, String message) throws PluginException {
-        if (this.getPluginConfig().getBooleanProperty(MU_PORTROTATION, true)) {
+        if (this.getPluginConfig().getBooleanProperty(MU_PORTROTATION, false)) {
             /* try portrotation */
             int port = link.getIntegerProperty(MU_PARAM_PORT, 0);
             port++;

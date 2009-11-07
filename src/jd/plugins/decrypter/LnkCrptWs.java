@@ -45,7 +45,6 @@ public class LnkCrptWs extends PluginForDecrypt {
         super(wrapper);
     }
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -53,6 +52,7 @@ public class LnkCrptWs extends PluginForDecrypt {
         String containerId = new Regex(parameter, "dir/([a-zA-Z0-9]+)").getMatch(0);
 
         br.getPage("http://linkcrypt.ws/dlc/" + containerId);
+        if (br.containsHTML("Error 404 - Ordner nicht gefunden")) return decryptedLinks;
         // check for a password. STore latest password in DB
         Form password = br.getForm(0);
         if (password != null && password.hasInputFieldByName("password")) {
@@ -219,6 +219,5 @@ public class LnkCrptWs extends PluginForDecrypt {
         // webdecryption
         return decryptedLinks;
     }
-    // @Override
 
 }

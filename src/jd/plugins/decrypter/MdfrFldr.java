@@ -33,12 +33,12 @@ public class MdfrFldr extends PluginForDecrypt {
         super(wrapper);
     }
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
         br.getPage(parameter);
+        if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
         if (br.containsHTML("The page cannot be found")) return decryptedLinks;
         Thread.sleep(500);
         String reqlink = br.getRegex(Pattern.compile("script language=\"JavaScript\" src=\"/js/myfiles\\.php/(.*?)\"")).getMatch(0);
@@ -60,7 +60,5 @@ public class MdfrFldr extends PluginForDecrypt {
 
         return decryptedLinks;
     }
-
-    // @Override
 
 }
