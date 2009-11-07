@@ -51,13 +51,16 @@ public class FileBoxCom extends PluginForHost {
         return "http://www.filebox.com/tos.html";
     }
 
-    public void login(Account account) throws IOException, PluginException {
+    public void login(Account account) throws Exception {
         this.setBrowserExclusive();
+        br.setFollowRedirects(true);
         br.setCookie("http://www.filebox.com", "lang", "english");
         br.getPage("http://www.filebox.com/");
-        br.postPage("http://www.filebox.com/member/account/login", "op=login&redirect=&data%5Baccount%5D%5Busr_login%5D=" + Encoding.urlEncode(account.getUser()) + "&data%5Baccount%5D%5Busr_password%5D=" + Encoding.urlEncode(account.getPass()) + "&x=20&y=11");
-        br.getPage("http://www.filebox.com/?op=my_account");
-        if (!br.containsHTML("Registered User") && !br.containsHTML("Premium User")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        Form loginform = br.getFormbyProperty("name", "FL");
+        if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        loginform.put("login", Encoding.urlEncode(account.getUser()));
+        loginform.put("password", Encoding.urlEncode(account.getPass()));
+        br.submitForm(loginform);
         if (br.getCookie("http://www.filebox.com/", "login") == null || br.getCookie("http://www.filebox.com/", "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
@@ -71,27 +74,24 @@ public class FileBoxCom extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        String space = br.getRegex(Pattern.compile("Used space:</TD><TD><b>(.*?) of", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
-        if (space != null) ai.setUsedSpace(space + " Mb");
-        String points = br.getRegex(Pattern.compile("You have collected:</TD><TD><b>(\\d+) premium ", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
-        if (points != null) ai.setPremiumPoints(Long.parseLong(points));
+        String space = br.getRegex(Pattern.compile("Files Stored.*?\\((.*?)\\)<br>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
+        if (space != null) ai.setUsedSpace(space.trim());
+        String hostedFiles = br.getRegex("Files Stored :.*?(\\d+).*?\\(").getMatch(0);
+        if (hostedFiles != null) ai.setFilesNum(Long.parseLong(hostedFiles));
         account.setValid(true);
         ai.setUnlimitedTraffic();
         if (br.containsHTML("Registered User")) {
             ai.setStatus("Registered User");
         } else {
             ai.setStatus("Premium User");
-            String balance = br.getRegex("Balance</td>.*?<b>.(.*?)</b></td>").getMatch(0);
-            if (balance != null) {
-                ai.setAccountBalance(balance);
-            }
-            String expire = br.getRegex("Premium-Account expire:</TD><TD><b>(.*?)</b>").getMatch(0);
+            String expire = br.getRegex("You Premium membership expires on (.*?[0-9]{4})").getMatch(0);
+            if (expire == null) expire = br.getRegex("Expires.*?: (.*?[0-9]{4}).*?<br>").getMatch(0);
             if (expire == null) {
                 ai.setExpired(true);
                 account.setValid(false);
                 return ai;
             } else {
-                ai.setValidUntil(Regex.getMilliSeconds(expire, "dd MMMM yyyy", null));
+                ai.setValidUntil(Regex.getMilliSeconds(expire, "MMMM dd, yyyy", null));
             }
         }
         return ai;
@@ -119,7 +119,6 @@ public class FileBoxCom extends PluginForHost {
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         boolean premium = false;
-        String passCode = null;
         synchronized (PREMLOCK) {
             requestFileInformation(link);
             login(account);
@@ -134,51 +133,43 @@ public class FileBoxCom extends PluginForHost {
                 }
             }
         }
+        String passCode = null;
+        br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
-        br.setFollowRedirects(true);
-        // Form um auf "Datei herunterladen" zu klicken
-        Form DLForm = br.getFormbyProperty("name", "F1");
-        if (DLForm == null && br.getRedirectLocation() != null && premium) {
-            br.setFollowRedirects(true);
-            dl = BrowserAdapter.openDownload(br, link, br.getRedirectLocation(), true, 0);
-        } else {
-            if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            if (br.containsHTML("valign=top><b>Password:</b></td>")) {
+        String dllink = br.getRedirectLocation();
+        if (dllink == null) {
+            Form pwform = null;
+            if (br.containsHTML("splash_Pasword")) {
+                pwform = br.getFormbyKey("fname");
+                if (pwform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 if (link.getStringProperty("pass", null) == null) {
                     passCode = Plugin.getUserInput("Password?", link);
                 } else {
                     /* gespeicherten PassCode holen */
                     passCode = link.getStringProperty("pass", null);
                 }
-                DLForm.put("password", passCode);
-            }
-            br.setFollowRedirects(true);
-            if (premium) {
-                dl = BrowserAdapter.openDownload(br, link, DLForm, true, 0);
-            } else {
-                dl = BrowserAdapter.openDownload(br, link, DLForm, false, 1);
-            }
-        }
-        if (dl.getConnection() != null && dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+                pwform.put("password", passCode);
+            } else
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            br.submitForm(pwform);
             if (br.containsHTML("Wrong password")) {
                 logger.warning("Wrong password!");
                 link.setProperty("pass", null);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
-            } else if (premium) {
-                String url = br.getRegex("direct link.*?href=\"(http:.*?)\"").getMatch(0);
-                if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                br.setFollowRedirects(true);
-                dl = BrowserAdapter.openDownload(br, link, url, true, 0);
-                if (dl.getConnection() != null && dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("html")) {
-                    br.followConnection();
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-            } else
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            Form dlform = br.getFormbyProperty("name", "F1");
+            if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            br.submitForm(dlform);
+            dllink = br.getRedirectLocation();
         }
         if (passCode != null) {
             link.setProperty("pass", passCode);
+        }
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = BrowserAdapter.openDownload(br, link, dllink, false, 1);
+        if (dl.getConnection() != null && dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
@@ -188,13 +179,16 @@ public class FileBoxCom extends PluginForHost {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
         String passCode = null;
-        //Outcommented stuff is the captcha handling which isn't needed right now because their captcha system is buggy so you don't have
-        //to enter anything and still you can start downloading...in case they repair that just "activate" the following outcommented lines!
-//        String captchaurl = br.getRegex("\"(/captchas/.*?)\"").getMatch(0);
-//        if (captchaurl == null ) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-//        captchaurl = "https://www.filebox.com" + captchaurl;
+        // Outcommented stuff is the captcha handling which isn't needed right
+        // now because their captcha system is buggy so you don't have
+        // to enter anything and still you can start downloading...in case they
+        // repair that just "activate" the following outcommented lines!
+        // String captchaurl = br.getRegex("\"(/captchas/.*?)\"").getMatch(0);
+        // if (captchaurl == null ) throw new
+        // PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // captchaurl = "https://www.filebox.com" + captchaurl;
         Form DLForm = br.getFormbyKey("fname");
-        if (DLForm == null ) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         if (br.containsHTML("splash_Pasword")) {
             if (downloadLink.getStringProperty("pass", null) == null) {
                 passCode = Plugin.getUserInput("Password?", downloadLink);
@@ -204,9 +198,10 @@ public class FileBoxCom extends PluginForHost {
             }
             DLForm.put("password", passCode);
         }
-//        String code = getCaptchaCode(captchaurl, downloadLink);
-//        logger.info("Entered captcha code is||" + code + "|| from captchalink||" + captchaurl + "||");
-//        DLForm.put("code", code);
+        // String code = getCaptchaCode(captchaurl, downloadLink);
+        // logger.info("Entered captcha code is||" + code +
+        // "|| from captchalink||" + captchaurl + "||");
+        // DLForm.put("code", code);
         br.submitForm(DLForm);
         if (br.containsHTML("Wrong captcha")) {
             logger.warning("Wrong captcha or wrong password!");
@@ -220,19 +215,20 @@ public class FileBoxCom extends PluginForHost {
         }
         Form finalform = br.getFormbyProperty("name", "F1");
         if (finalform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // Waittime...is skipable right now but in case they change it just use the following code (tested)
-//        String ttt = br.getRegex("countdown\">(\\d+)</span>").getMatch(0);
-//        if (ttt != null) {
-//            int tt = Integer.parseInt(ttt);
-//            sleep(tt * 1001, downloadLink);
-//        }
+        // Waittime...is skipable right now but in case they change it just use
+        // the following code (tested)
+        // String ttt = br.getRegex("countdown\">(\\d+)</span>").getMatch(0);
+        // if (ttt != null) {
+        // int tt = Integer.parseInt(ttt);
+        // sleep(tt * 1001, downloadLink);
+        // }
+        if (passCode != null) {
+            downloadLink.setProperty("pass", passCode);
+        }
         jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalform, false, 1);
         if (!(dl.getConnection().isContentDisposition())) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (passCode != null) {
-            downloadLink.setProperty("pass", passCode);
         }
         dl.startDownload();
     }

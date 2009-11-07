@@ -86,7 +86,6 @@ public class IFileIt extends PluginForHost {
         login(account);
         br.setDebug(true);
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
         br.cloneBrowser().getPage("http://ifile.it/ads/adframe.js");
         String downlink = br.getRegex("var.*?fsa.*?=.*?'(.*?)'").getMatch(0);
         String downid = br.getRegex("var.*?fs =.*?'(.*?)'").getMatch(0);
@@ -126,7 +125,7 @@ public class IFileIt extends PluginForHost {
                 }
             }
         }
-        if (dllink == null){
+        if (dllink == null) {
             logger.info("last try getting dllink failed, plugin must be defect!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -166,11 +165,70 @@ public class IFileIt extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         /* Nochmals das File überprüfen */
         requestFileInformation(downloadLink);
-        if (br.containsHTML("signup for a free account in order to download this file")) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via account");
-        } else {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "No free handling implemented yep, please contact the support");
+        br.cloneBrowser().getPage("http://static.ifile.it/themes/default/css/common-guest.css?v=1");
+        br.cloneBrowser().getPage("http://static.ifile.it/themes/default/js/common.js?v=1");
+        br.cloneBrowser().getPage("http://ifile.it/ads/adframe.js");
+        br.cloneBrowser().getPage("http://static.ifile.it/libraries/recaptcha_1.10/recaptcha_ajax.js");
+        br.setDebug(true);
+        br.setFollowRedirects(true);
+        String downlink = br.getRegex("var.*?fsa.*?=.*?'(.*?)'").getMatch(0);
+        String downid = br.getRegex("var.*?fs =.*?'(.*?)'").getMatch(0);
+        String esn = br.getRegex("var.*?esn.*?=.*?(\\d+);<").getMatch(0);
+        if (downlink == null || esn == null || downid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // Example how current links(last updated plugin-links) look(ed)
+        // like
+        // http://ifile.it/download:dl_request?x64=741603&type=na&esn=1&b3da197159a22d301ad99f58f8137557=9bf31c7ff062936a96d3c8bd1f8f2ff3
+        String finaldownlink = "http://ifile.it/download:dl_request?" + downlink + "&type=na&esn=" + esn + "&" + downid;
+        br.getPage(finaldownlink);
+        if (!br.containsHTML("status\":\"ok\"")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.getPage("http://ifile.it/dl");
+//        br.cloneBrowser().getPage("http://static.ifile.it/themes/default/css/common-guest.css?v=1");
+//        br.cloneBrowser().getPage("http://static.ifile.it/themes/default/js/common.js?v=1");
+//        br.cloneBrowser().getPage("http://ifile.it/ads/adframe.js");
+        if (br.containsHTML("download:captcha")) {
+            Browser br2 = br.cloneBrowser();
+            for (int i = 0; i <= 5; i++) {
+                String code = getCaptchaCode("http://ifile.it/download:captcha?0." + Math.random(), downloadLink);
+                String captchaget = "http://ifile.it/download:dl_request?" + downlink + "&type=simple&esn=0&9c16d=" + code + "&" + downid;
+                br2.getPage(captchaget);
+                if (br2.containsHTML("\"retry\":\"retry\"")) continue;
+                br.getPage("http://ifile.it/dl");
+                break;
+            }
+            if (br2.containsHTML("\"retry\":\"retry\"")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
+        br.cloneBrowser().getPage("http://static.ifile.it/themes/default/css/common-guest.css?v=1");
+        br.cloneBrowser().getPage("http://static.ifile.it/themes/default/js/common.js?v=1");
+        br.cloneBrowser().getPage("http://ifile.it/ads/adframe.js");
+        String dllink = br.getRegex("req_btn.*?target=\".*?\" href=\"(http.*?)\"").getMatch(0);
+        if (dllink == null) {
+            logger.info("first try getting dllink failed");
+            dllink = br.getRegex("\"(http://s[0-9]+\\.ifile\\.it/.*?/.*?/.*?/.*?)\"").getMatch(0);
+            if (dllink == null) {
+                logger.info("second try getting dllink failed");
+                String pp = br.getRegex("<br /><br />(.*?)</div>").getMatch(0);
+                String[] lol = HTMLParser.getHttpLinks(pp, "");
+                if (lol.length != 1) {
+                } else {
+                    for (String link : lol) {
+                        dllink = link;
+                    }
+                }
+            }
+        }
+        if (dllink == null) {
+            logger.info("last try getting dllink failed, plugin must be defect!");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        br.cloneBrowser().getPage("http://ifile.it/ads/adframe.js");
+        br.setFollowRedirects(false);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -3);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            if (dl.getConnection().getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     @Override
