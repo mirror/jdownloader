@@ -21,9 +21,12 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.controlling.JDLogger;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.InputField;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -38,7 +41,7 @@ import org.mozilla.javascript.Context;
 import org.mozilla.javascript.EvaluatorException;
 import org.mozilla.javascript.Scriptable;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mediafire.com" }, urls = { "http://[\\w\\.]*?mediafire\\.com/(download\\.php\\?.+|\\?(?!sharekey).+|file/.+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mediafire.com" }, urls = { "http://[\\w\\.]*?mediafire\\.com/(download\\.php\\?.+|\\?(?!sharekey).+|file/.+)" }, flags = { 2 })
 public class MediafireCom extends PluginForHost {
 
     static private final String offlinelink = "tos_aup_violation";
@@ -54,6 +57,7 @@ public class MediafireCom extends PluginForHost {
 
     public MediafireCom(PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium("https://www.mediafire.com/register.php");
     }
 
     @Override
@@ -64,6 +68,101 @@ public class MediafireCom extends PluginForHost {
     @Override
     public void correctDownloadLink(DownloadLink link) throws Exception {
         link.setUrlDownload(link.getDownloadURL().replaceFirst("http://media", "http://www.media"));
+    }
+
+    public void login(Account account) throws Exception {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(false);
+        br.getPage("http://www.mediafire.com/");
+        Form form = br.getFormbyProperty("name", "form_login1");
+        if (form == null) form = br.getFormBySubmitvalue("login_email");
+        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        form.put("login_email", Encoding.urlEncode(account.getUser()));
+        form.put("login_pass", Encoding.urlEncode(account.getPass()));
+        br.submitForm(form);
+        br.getPage("http://www.mediafire.com/myfiles.php");
+        String acc = br.getRegex("Account:.*?style=\"margin.*?\">(.*?)</").getMatch(0);
+        if (br.getCookie("http://www.mediafire.com", "user").equals("x") || !acc.equals("MediaPro")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        account.setValid(true);
+        br.getPage("http://www.mediafire.com/myaccount.php");
+        String hostedFiles = br.getRegex("> From.*?(\\d+).*?total files <").getMatch(0);
+        if (hostedFiles != null) ai.setFilesNum(Long.parseLong(hostedFiles));
+        String usedspace = br.getRegex("Total Storage Used </div> <div style=\".*?div style=\"font-size.*?\">(.*?)</div").getMatch(0);
+        if (usedspace != null) ai.setUsedSpace(usedspace.trim());
+        String trafficleft = br.getRegex("Available Bandwidth </div> <div style=.*?<div style=\"font-size.*?\">(.*?)</div").getMatch(0);
+        if (trafficleft != null) ai.setTrafficLeft(Regex.getSize(trafficleft.trim()));
+        ai.setStatus("Premium User");
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+        requestFileInformation(downloadLink);
+        login(account);
+        br.getPage(downloadLink.getDownloadURL());
+        String url = null;
+        if (downloadLink.getStringProperty("type", "").equalsIgnoreCase("direct")) {
+            url = br.getRedirectLocation();
+        } else {
+
+            if (!br.containsHTML("\\s+cu\\('")) {
+                String passCode;
+                DownloadLink link = downloadLink;
+                Form form = br.getFormbyProperty("name", "form_password");
+                if (link.getStringProperty("pass", null) == null) {
+                    passCode = Plugin.getUserInput(null, link);
+                } else {
+                    /* gespeicherten PassCode holen */
+                    passCode = link.getStringProperty("pass", null);
+                }
+                form.put("downloadp", passCode);
+                br.submitForm(form);
+                form = br.getFormbyProperty("name", "form_password");
+                if (form != null && !br.containsHTML("cu\\('[a-z0-9]*'")) {
+                    link.setProperty("pass", null);
+                    throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.errors.wrongpassword", "Password wrong"));
+                } else {
+                    link.setProperty("pass", passCode);
+                }
+            }
+
+            String qk = null, pk = null, r = null;
+            String[] parameters = br.getRegex("\\s+cu\\('(.*?)','(.*?)','(.*?)'\\);").getRow(0);
+            qk = parameters[0];
+            pk = parameters[1];
+            r = parameters[2];
+
+            br.getPage("http://www.mediafire.com/dynamic/download.php?qk=" + qk + "&pk=" + pk + "&r=" + r);
+
+            String error = br.getRegex("var et=(.*?);").getMatch(0);
+            if (error != null && !error.trim().equalsIgnoreCase("15")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
+            String js = br.getRegex("'Your download is starting.*?(http://.*?)\\+'\"> Click here to start download..</a>'").getMatch(0).trim();
+            String vars = br.getRegex("<!--(.*?)function").getMatch(0).trim();
+            Context cx = Context.enter();
+            Scriptable scope = cx.initStandardObjects();
+            String eval = "function f(){\r\n" + vars + "\r\n return \"" + js + ";\r\n}\r\n f();";
+            Object result = cx.evaluateString(scope, eval, "<cmd>", 1, null);
+
+            url = Context.toString(result);
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 0);
+        dl.startDownload();
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -105,11 +204,11 @@ public class MediafireCom extends PluginForHost {
             }
         }
         if (status == AvailableStatus.FALSE) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.getRegex(offlinelink).matches()) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (br.getRegex(offlinelink).matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>(.*?)<\\/title>").getMatch(0);
         String filesize = br.getRegex("<input type=\"hidden\" id=\"sharedtabsfileinfo1-fs\" value=\"(.*?)\">").getMatch(0);
         if (filesize == null) filesize = br.getRegex("<input type=\"hidden\" id=\"sharedtabsfileinfo-fs\" value=\"(.*?)\">").getMatch(0);
-        if (filename == null || filesize == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setFinalFileName(filename.trim());
         downloadLink.setDownloadSize(Regex.getSize(filesize));
         status = AvailableStatus.TRUE;

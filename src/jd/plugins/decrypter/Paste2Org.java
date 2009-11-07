@@ -20,39 +20,45 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.parser.Regex;
+import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "easy-share.com" }, urls = { "http://[\\w\\.]*?easy-share\\.com/f/\\d+/" }, flags = { 0 })
-public class SShrFldr extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "paste2.org" }, urls = { "http://[\\w\\.]*?paste2\\.org/(p|followup)/[0-9]+" }, flags = { 0 })
+public class Paste2Org extends PluginForDecrypt {
 
-    public SShrFldr(PluginWrapper wrapper) {
+    public Paste2Org(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        br.setCookie("http://www.easy-share.com", "language", "en");
+        br.setFollowRedirects(false);
+        // Workaround for "followup" links
+        if (parameter.contains("followup")) {
+            String id = new Regex(parameter, "followup/(\\d+)").getMatch(0);
+            parameter = "http://paste2.org/p/" + id;
+        }
         br.getPage(parameter);
-        if (br.containsHTML("Folder not found")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-        String fpName = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
-        if (fpName == null) fpName = br.getRegex("<title>Download(.*?), upload").getMatch(0);
-        String[] links = br.getRegex("\"(http://www\\.easy-share\\.com/[0-9]+).*?\"").getColumn(0);
-        if (links.length == 0) return null;
-        for (String dl : links) {
+        /* Error handling */
+        if (br.containsHTML("Page Not Found")) {
+            logger.warning("Wrong link");
+            logger.warning(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+            return new ArrayList<DownloadLink>();
+        }
+        String plaintxt = br.getRegex("main-container(.*?)footer-contents").getMatch(0);
+        if (plaintxt == null) return null;
+        String[] links = HTMLParser.getHttpLinks(plaintxt, "");
+        if (links.length == 0) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or there are no links to add"));
+        for (String dl : links)
             decryptedLinks.add(createDownloadlink(dl));
-        }
-        if (fpName != null) {
-            FilePackage fp = FilePackage.getInstance();
-            fp.setName(fpName.trim());
-            fp.addLinks(decryptedLinks);
-        }
+
         return decryptedLinks;
     }
 

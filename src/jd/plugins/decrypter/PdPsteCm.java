@@ -43,12 +43,8 @@ public class PdPsteCm extends PluginForDecrypt {
         br.setFollowRedirects(false);
         br.getPage(parameter);
         /* Error handling */
-        if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("not-available")) {
-            logger.warning("Wrong link");
-            logger.warning(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-            return new ArrayList<DownloadLink>();
-        }
-        //Password handling
+        if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("not-available")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        // Password handling
         if (br.containsHTML("name=\"pass\"")) {
             for (int i = 0; i <= 3; i++) {
                 Form pwform = br.getForm(0);
@@ -67,7 +63,7 @@ public class PdPsteCm extends PluginForDecrypt {
         String plaintxt = br.getRegex("class=\"line code\"(.*?)</table>").getMatch(0);
         if (plaintxt == null) return null;
         String[] links = HTMLParser.getHttpLinks(plaintxt, "");
-        if (links.length == 0) return null;
+        if (links.length == 0) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the page doesn't contain any links to add."));
         for (String dl : links)
             decryptedLinks.add(createDownloadlink(dl));
 

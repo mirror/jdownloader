@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -40,11 +41,7 @@ public class PrnHstComFldr extends PluginForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.containsHTML("gallery not found") || br.containsHTML("You will be redirected to")) {
-            logger.warning("Wrong link");
-            logger.warning(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-            return new ArrayList<DownloadLink>();
-        }
+        if (br.containsHTML("gallery not found") || br.containsHTML("You will be redirected to")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         if (br.containsHTML("(moviecontainer|flashmovie|play this movie|createPlayer)")) {
             String finallink = br.getURL();
             decryptedLinks.add(createDownloadlink(finallink.replace("pornhost", "GhtjGEuzrjTU")));
@@ -53,13 +50,12 @@ public class PrnHstComFldr extends PluginForDecrypt {
             if (links.length == 0) links = br.getRegex("\"(http://www\\.pornhost\\.com/[0-9]+/[0-9]+\\.html)\"").getColumn(0);
             if (links.length == 0) return null;
             String fpName = br.getRegex("<title>pornhost\\.com - free file hosting with a twist - gallery(.*?)</title>").getMatch(0);
-            if (fpName == null) {
-                fpName = br.getRegex("id=\"url\" value=\"http://www\\.pornhost\\.com/(.*?)/\"").getMatch(0);
-            }
+            if (fpName == null) fpName = br.getRegex("id=\"url\" value=\"http://www\\.pornhost\\.com/(.*?)/\"").getMatch(0);
+
             for (String dl : links) {
                 decryptedLinks.add(createDownloadlink(dl.replace("pornhost", "GhtjGEuzrjTU")));
             }
-            // If the plugin knows the name/number of the gallery we cann
+            // If the plugin knows the name/number of the gallery we can
             // add all pics to one package...looks nicer and makes it easier
             // for the user
             if (fpName != null) {

@@ -29,7 +29,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 
-//cobrashare.sk by pspzockerscene
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gigaup.fr" }, urls = { "http://[\\w\\.]*?gigaup\\.fr/(\\?g=[A-Z|0-9]+|get_file/[A-Z|0-9]+/.+\\.html)" }, flags = { 0 })
 public class GigaUpFr extends PluginForHost {
 
@@ -65,12 +64,15 @@ public class GigaUpFr extends PluginForHost {
         String captchaid = (br.getRegex("<img src=\".*?uid=(.*?)\" style=\"margi").getMatch(0));
         String captchaurl = "http://www.gigaup.fr/constru/images/bot_sucker/bot_sucker.php?uid=" + captchaid;
         String code = getCaptchaCode(captchaurl, downloadLink);
-        Form captchaForm = br.getForm(1);
-        if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        Form captchaForm = br.getFormbyKey("bot_sucker");
+        if (captchaForm == null || captchaid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        captchaForm.remove("dl_file_SSL");
         captchaForm.put("bot_sucker", code);
         br.submitForm(captchaForm);
         if (br.containsHTML("Le code de.*?v.*?ication.*?est incorrecte")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
-        String dllink = (br.getRegex("link_generator\".*?<a href=\"(.*?)\">Commencer").getMatch(0));
+        String dllink = br.getRegex("padding:0px;\"><a href=\"(.*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\"(ftp://gigaup.*?:.*?)\"").getMatch(0);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         try {
             ((Ftp) JDUtilities.getNewPluginForHostInstance("ftp")).download(Encoding.urlDecode(dllink, true), downloadLink);
         } catch (InterruptedIOException e) {
