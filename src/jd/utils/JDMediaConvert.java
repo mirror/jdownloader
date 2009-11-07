@@ -37,6 +37,7 @@ public class JDMediaConvert {
             logger.info("No Conversion needed, renaming...");
             File oldone = new File(downloadlink.getFileOutput());
             File newone = new File(downloadlink.getFileOutput().replaceAll(TempExt, OutType.getExtFirst()));
+            downloadlink.setFinalFileName(downloadlink.getName().replaceAll(TempExt, OutType.getExtFirst()));
             oldone.renameTo(newone);
             return true;
         }

@@ -29,6 +29,7 @@ import jd.controlling.DownloadController;
 import jd.gui.swing.components.table.JDTableColumn;
 import jd.gui.swing.components.table.JDTableModel;
 import jd.gui.swing.jdgui.views.downloadview.DownloadTable;
+import jd.nutils.NaturalOrderComparator;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.utils.JDTheme;
@@ -117,6 +118,7 @@ public class FileColumn extends JDTableColumn {
     @Override
     public void sort(Object obj, final boolean sortingToggle) {
         ArrayList<FilePackage> packages = null;
+        final NaturalOrderComparator nc = new NaturalOrderComparator();
         synchronized (DownloadController.ControllerLock) {
             synchronized (DownloadController.getInstance().getPackages()) {
                 packages = DownloadController.getInstance().getPackages();
@@ -130,7 +132,7 @@ public class FileColumn extends JDTableColumn {
                                 aa = b;
                                 bb = a;
                             }
-                            return aa.getName().compareToIgnoreCase(bb.getName());
+                            return nc.compare(aa.getName(), bb.getName());
                         }
                     });
                 } else {
@@ -148,7 +150,7 @@ public class FileColumn extends JDTableColumn {
                                     aa = a;
                                     bb = b;
                                 }
-                                return aa.getName().compareToIgnoreCase(bb.getName());
+                                return nc.compare(aa.getName(), bb.getName());
                             }
                         });
                     }

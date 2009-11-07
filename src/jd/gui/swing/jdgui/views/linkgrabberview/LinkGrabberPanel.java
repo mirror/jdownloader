@@ -35,6 +35,7 @@ import javax.swing.JScrollPane;
 import javax.swing.Timer;
 
 import jd.config.Configuration;
+import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.controlling.ClipboardHandler;
 import jd.controlling.DownloadWatchDog;
@@ -320,6 +321,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
                                 fp.remove(link);
                                 link.setAvailableStatus(DownloadLink.AvailableStatus.UNCHECKED);
                             }
+                            link.setProperty("forcecheck", 1);
                         }
                     }
                 }
@@ -380,7 +382,19 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
                     }
                     if (!LGINSTANCE.isLinkCheckEnabled()) {
                         /* kein online check, kein multithreaded nötig */
-                        afterLinkGrabber(currentList);
+                        ArrayList<DownloadLink> currentList2 = new ArrayList<DownloadLink>();
+                        /* check for forced checks */
+                        for (DownloadLink link : currentList) {
+                            if (link.getIntegerProperty("forcecheck", 0) == 1) {
+                                currentList2.add(link);
+                            }
+                        }
+                        if (currentList2.size() > 0) {
+                            /* we have forced linkchecks */
+                            currentList.removeAll(currentList);
+                            lc.checkLinks(currentList2, false);
+                        }
+                        if (currentList.size() > 0) afterLinkGrabber(currentList);
                     } else {
                         lc.checkLinks(currentList, false);
                     }
@@ -729,7 +743,10 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
         }
         ArrayList<DownloadLink> linkList = fpv2.getDownloadLinks();
         if (linkList.isEmpty()) return;
-
+        for (DownloadLink link : linkList) {
+            /* remove forcecheck flag */
+            link.setProperty("forcecheck", Property.NULL);
+        }
         FilePackage fp = FilePackage.getInstance();
         fp.setName(fpv2.getName());
         fp.setComment(fpv2.getComment());

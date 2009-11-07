@@ -27,7 +27,6 @@ import jd.gui.swing.jdgui.components.StatusLabel;
 import jd.nutils.Formatter;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 
@@ -131,10 +130,10 @@ public class StatusColumn extends JDTableColumn {
             if (dLink.getLinkStatus().getStatusIcon() != null) {
                 statuspanel.setIcon(counter, dLink.getLinkStatus().getStatusIcon(), dLink.getLinkStatus().getStatusText());
                 counter++;
-            } else if (dLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
+            } else if (dLink.getLinkStatus().isFinished()) {
                 statuspanel.setIcon(counter, imgFinished, strFinished);
                 counter++;
-            } else if (dLink.getLinkStatus().isFailed()) {
+            } else if (dLink.getLinkStatus().isFailed() || (dLink.isAvailabilityStatusChecked() && !dLink.isAvailable())) {
                 statuspanel.setIcon(counter, imgFailed, strFailed);
                 counter++;
             }

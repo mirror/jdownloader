@@ -386,7 +386,7 @@ public class JDShutdown extends PluginOptional {
                 }
                 break;
             case 3:
-                /* try to standby */
+                /* try to close */
                 logger.info("ask user about closing");
                 message = JDL.L("interaction.shutdown.dialog.msg.closejd", "<h2><font color=\"red\">JDownloader will be closed!</font></h2>");
                 UserIO.setCountdownTime(count);

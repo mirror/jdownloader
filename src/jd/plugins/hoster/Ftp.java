@@ -78,6 +78,9 @@ public class Ftp extends PluginForHost {
             if (new File(downloadLink.getFileOutput()).exists()) throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS);
             URL url = new URL(ftpurl);
             ftp.connect(url);
+            String[] list = ftp.getFileInfo(Encoding.urlDecode(url.getPath(), false));
+            if (list == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            downloadLink.setDownloadSize(Long.parseLong(list[4]));
             String path = url.getPath().substring(0, url.getPath().lastIndexOf("/"));
             if (path.length() > 0) ftp.cwd(path);
             ftp.bin();

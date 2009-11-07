@@ -86,7 +86,6 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
     public void controlEvent(ControlEvent event) {
         super.controlEvent(event);
         DownloadLink link;
-
         switch (event.getID()) {
         case ControlEvent.CONTROL_PLUGIN_INACTIVE:
             if (!(event.getSource() instanceof PluginForHost)) return;
@@ -94,13 +93,11 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
                 link = ((SingleDownloadController) event.getParameter()).getDownloadLink();
                 File file = new File(link.getFileOutput());
 
-                if (link.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
-                    if (link.getFilePackage().isExtractAfterDownload()) {
-                        file = this.getStartFile(file);
-                        if (file == null) return;
-                        if (this.validateArchive(file)) {
-                            addFileList(new File[] { file });
-                        }
+                if (link.getLinkStatus().isFinished()) {
+                    file = this.getStartFile(file);
+                    if (file == null) return;
+                    if (this.validateArchive(file)) {
+                        addFileList(new File[] { file });
                     }
                 }
             }
@@ -359,6 +356,8 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
         ArrayList<DownloadLink> missing = JDUtilities.getController().getDownloadLinksByNamePattern(matcher);
         if (missing == null) return null;
         for (DownloadLink miss : missing) {
+            /* do not continue if we have an unfinished file here */
+            if (!miss.getLinkStatus().isFinished()) return null;
             File par1 = new File(miss.getFileOutput()).getParentFile();
             File par2 = file.getParentFile();
             if (par1.equals(par2)) {
@@ -430,6 +429,8 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
         ArrayList<DownloadLink> missing = JDUtilities.getController().getDownloadLinksByNamePattern(matcher);
         if (missing == null) return null;
         for (DownloadLink miss : missing) {
+            /* do not continue if we have an unfinished file here */
+            if (!miss.getLinkStatus().isFinished()) return null;
             if (new File(miss.getFileOutput()).exists() && new File(miss.getFileOutput()).getParentFile().equals(file.getParentFile())) continue;
             return null;
         }

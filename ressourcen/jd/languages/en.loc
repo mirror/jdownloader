@@ -821,7 +821,7 @@ jd.gui.swing.jdgui.settings.panels.downloadandnetwork.advanced.download.advanced
 jd.gui.swing.jdgui.settings.panels.downloadandnetwork.general.breadcrum = Basics - Download & Connections - General
 jd.gui.swing.jdgui.settings.panels.downloadandnetwork.general.download.title = Download & Connections
 jd.gui.swing.jdgui.settings.panels.downloadandnetwork.internetandnetwork.breadcrum = Basics - Download & Connections - Internet & Network
-jd.gui.swing.jdgui.settings.panels.downloadandnetwork.internetandnetwork.download.internetandnetwork.title = Download & Connections
+jd.gui.swing.jdgui.settings.panels.downloadandnetwork.internetandnetwork.download.internetandnetwork.title = Internet & Network
 jd.gui.swing.jdgui.settings.panels.gui.advanced.breadcrum = Basics - User Interface - Advanced
 jd.gui.swing.jdgui.settings.panels.gui.advanced.gui.advanced.title = Advanced
 jd.gui.swing.jdgui.settings.panels.gui.browser.breadcrum = Basics - User Interface - Browser
