@@ -67,19 +67,21 @@ public class Advanced extends ConfigPanel {
         extended.addEntry(conditionEntry2 = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, Configuration.PARAM_GLOBAL_IP_DISABLE, JDL.L("gui.config.download.ipcheck.disable", "Disable IP-Check")) {
             private static final long serialVersionUID = 1L;
             // assures that the user sees the warning only once
-            private boolean warned = false;
+            private boolean warned = true;
 
             // This method gets called when the user clicks the checkbox. It
             // gets also invoked at startup not only on user IO.
             @Override
             public void valueChanged(Object newValue) {
                 // get Current Databasevalue
-                Boolean currentValue = this.getPropertyInstance().getBooleanProperty(this.getPropertyName(), Boolean.FALSE);
                 super.valueChanged(newValue);
-                //Only show the warning if the newValue differs from the database stored one
-                if (!currentValue.equals(newValue) && newValue == Boolean.TRUE && !warned) {
+                // Only show the warning if the newValue differs from the
+                // database stored one
+                if (newValue == Boolean.TRUE && !warned) {
                     warned = true;
-                    UserIO.getInstance().requestMessageDialog(UserIO.ICON_WARNING, JDL.L("jd.gui.swing.jdgui.settings.panels.downloadandnetwork.Advanced.ipcheckdisable.warning.title", "Ip Check disabled!"), JDL.L("jd.gui.swing.jdgui.settings.panels.downloadandnetwork.Advanced.ipcheckdisable.warning.message", "You disabled the IPCheck. This will increase the reconnection times dramatically!\r\n\r\nSeveral further modules like Reconnect Recorder will not work properly."));
+                    UserIO.getInstance().requestMessageDialog(UserIO.ICON_WARNING, JDL.L("jd.gui.swing.jdgui.settings.panels.downloadandnetwork.Advanced.ipcheckdisable.warning.title", "Ip Check disabled!"), JDL.L("jd.gui.swing.jdgui.settings.panels.downloadandnetwork.Advanced.ipcheckdisable.warning.message", "You disabled the IPCheck. This will increase the reconnection times dramatically!\r\n\r\nSeveral further modules like Reconnect Recorder are disabled."));
+                } else if (newValue == Boolean.FALSE) {
+                    warned = false;
                 }
             }
         });

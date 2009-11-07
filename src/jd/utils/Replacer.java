@@ -19,6 +19,8 @@ package jd.utils;
 import java.util.ArrayList;
 import java.util.Calendar;
 
+import jd.config.Configuration;
+import jd.config.SubConfiguration;
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.nrouter.IPCheck;
@@ -131,7 +133,10 @@ public class Replacer {
             return dLink.isAvailable() ? "YES" : "NO";
         }
 
-        if (key.equalsIgnoreCase("SYSTEM.IP")) return IPCheck.getIPAddress();
+        if (key.equalsIgnoreCase("SYSTEM.IP")) {
+            if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) return "IPCheck disabled";
+            return IPCheck.getIPAddress();
+        }
 
         if (key.equalsIgnoreCase("SYSTEM.DATE")) {
             Calendar c = Calendar.getInstance();

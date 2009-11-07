@@ -201,7 +201,11 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                 response.addContent("\r\n</table><br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;</body></html>");
             } else if (request.getRequestUrl().equals("/get/ip")) {
                 // Get IP
-                response.addContent(IPCheck.getIPAddress());
+                if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
+                    response.addContent("IPCheck disabled");
+                } else {
+                    response.addContent(IPCheck.getIPAddress());
+                }
             } else if (request.getRequestUrl().equals("/get/randomip")) {
                 // Get Random-IP
                 Random r = new Random();

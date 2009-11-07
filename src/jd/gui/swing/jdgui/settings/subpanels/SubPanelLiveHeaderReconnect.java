@@ -27,6 +27,7 @@ import javax.swing.JTextField;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
+import jd.config.SubConfiguration;
 import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.components.ImportRouterDialog;
@@ -71,44 +72,47 @@ public class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionLi
         if (e.getSource() == btnFindIP) {
             new FindRouterIP(ip);
         } else if (e.getSource() == this.btnRouterRecorder) {
-            new Thread() {
-                @Override
-                public void run() {
-                    if (((JTextField) ip.getInput()[0]).getText() == null || ((JTextField) ip.getInput()[0]).getText().trim().equals("")) {
-                        Thread th = new Thread() {
+            if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
+                UserIO.getInstance().requestMessageDialog(UserIO.ICON_WARNING, JDL.L("jd.gui.swing.jdgui.settings.panels.downloadandnetwork.Advanced.ipcheckdisable.warning.title", "Ip Check disabled!"), JDL.L("jd.gui.swing.jdgui.settings.panels.downloadandnetwork.Advanced.ipcheckdisable.warning.message", "You disabled the IPCheck. This will increase the reconnection times dramatically!\r\n\r\nSeveral further modules like Reconnect Recorder are disabled."));
+            } else {
+                new Thread() {
+                    @Override
+                    public void run() {
+                        if (((JTextField) ip.getInput()[0]).getText() == null || ((JTextField) ip.getInput()[0]).getText().trim().equals("")) {
+                            Thread th = new Thread() {
+                                @Override
+                                public void run() {
+                                    FindRouterIP.findIP(ip);
+                                }
+                            };
+                            th.start();
+                            while (th.isAlive()) {
+                                try {
+                                    Thread.sleep(1000);
+                                } catch (InterruptedException e) {
+                                    return;
+                                }
+                            }
+                        }
+                        new GuiRunnable<Object>() {
+
                             @Override
-                            public void run() {
-                                FindRouterIP.findIP(ip);
+                            public Object runSave() {
+                                Gui jd = new Gui(((JTextField) ip.getInput()[0]).getText());
+                                if (jd.saved) {
+                                    ((JTextField) ip.getInput()[0]).setText(jd.ip);
+                                    if (jd.user != null) ((JTextField) user.getInput()[0]).setText(jd.user);
+                                    if (jd.pass != null) ((JTextField) pass.getInput()[0]).setText(jd.pass);
+                                    ((JTextArea) script.getInput()[0]).setText(jd.methode);
+                                }
+                                return null;
                             }
-                        };
-                        th.start();
-                        while (th.isAlive()) {
-                            try {
-                                Thread.sleep(1000);
-                            } catch (InterruptedException e) {
-                                return;
-                            }
-                        }
+
+                        }.start();
+
                     }
-                    new GuiRunnable<Object>() {
-
-                        @Override
-                        public Object runSave() {
-                            Gui jd = new Gui(((JTextField) ip.getInput()[0]).getText());
-                            if (jd.saved) {
-                                ((JTextField) ip.getInput()[0]).setText(jd.ip);
-                                if (jd.user != null) ((JTextField) user.getInput()[0]).setText(jd.user);
-                                if (jd.pass != null) ((JTextField) pass.getInput()[0]).setText(jd.pass);
-                                ((JTextArea) script.getInput()[0]).setText(jd.methode);
-                            }
-                            return null;
-                        }
-
-                    }.start();
-
-                }
-            }.start();
-
+                }.start();
+            }
         } else if (e.getSource() == btnSelectRouter) {
             String[] data = ImportRouterDialog.showDialog();
             if (data != null) {

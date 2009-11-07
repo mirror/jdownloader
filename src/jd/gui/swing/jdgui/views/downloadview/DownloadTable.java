@@ -370,7 +370,7 @@ public class DownloadTable extends JDTable implements MouseListener, KeyListener
     private JMenu builddeletemenu(ArrayList<DownloadLink> alllinks) {
         int counter = 0;
         for (DownloadLink link : alllinks) {
-            if (link.existsFile()) counter++;
+            if (link.existsFile() && link.getLinkStatus().hasStatus(LinkStatus.ERROR_ALREADYEXISTS)) counter++;
         }
         JMenu pop = new JMenu(JDL.L("gui.table.contextmenu.delete", "entfernen"));
         pop.setIcon(JDTheme.II("gui.images.delete", 16, 16));
