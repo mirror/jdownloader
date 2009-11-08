@@ -48,6 +48,8 @@ public class NetStorerCom extends PluginForHost {
         String filename = br.getRegex("filename\">(.*?)</span>").getMatch(0);
         String filesize = br.getRegex("filesize\">(.*?)</span>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String md5 = br.getRegex("MD5:.*?</strong>(.*?)</span>").getMatch(0);
+        if (md5 != null) parameter.setMD5Hash(md5);
         parameter.setName(filename.trim());
         parameter.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
         return AvailableStatus.TRUE;
@@ -59,8 +61,14 @@ public class NetStorerCom extends PluginForHost {
         br.getPage(link.getDownloadURL());
         Regex reg = br.getRegex("callback: \"showDload\\('(.*?)', '(.*?)', '(.*?)'\\)\"");
         String dllink = "http://" + reg.getMatch(0) + ".netstorer.com/download" + "/" + reg.getMatch(1) + "/" + reg.getMatch(2);
-        if (dllink.contains("null")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        BrowserAdapter.openDownload(br, link, dllink, true, -20);
+        if (dllink.contains("null")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // Ticket Time
+        String ttt = br.getRegex("countdown\">(\\d+)</").getMatch(0);
+        if (ttt != null) {
+            int tt = Integer.parseInt(ttt);
+            sleep(tt * 1001, link);
+        }
+        BrowserAdapter.openDownload(br, link, dllink, true, 1);
         dl.startDownload();
     }
 
@@ -74,7 +82,7 @@ public class NetStorerCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return -1;
     }
 
 }

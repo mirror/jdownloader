@@ -86,6 +86,7 @@ public class IFileIt extends PluginForHost {
         login(account);
         br.setDebug(true);
         br.setFollowRedirects(true);
+        br.getPage(downloadLink.getDownloadURL());
         br.cloneBrowser().getPage("http://ifile.it/ads/adframe.js");
         String downlink = br.getRegex("var.*?fsa.*?=.*?'(.*?)'").getMatch(0);
         String downid = br.getRegex("var.*?fs =.*?'(.*?)'").getMatch(0);
@@ -131,7 +132,7 @@ public class IFileIt extends PluginForHost {
         }
         br.cloneBrowser().getPage("http://ifile.it/ads/adframe.js");
         br.setFollowRedirects(false);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -3);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (dl.getConnection().getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
@@ -182,8 +183,8 @@ public class IFileIt extends PluginForHost {
         br.getPage(finaldownlink);
         if (!br.containsHTML("status\":\"ok\"")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage("http://ifile.it/dl");
-//        br.cloneBrowser().getPage("http://static.ifile.it/themes/default/css/common-guest.css?v=1");
-//        br.cloneBrowser().getPage("http://static.ifile.it/themes/default/js/common.js?v=1");
+        br.cloneBrowser().getPage("http://static.ifile.it/themes/default/css/common-guest.css?v=1");
+        br.cloneBrowser().getPage("http://static.ifile.it/themes/default/js/common.js?v=1");
 //        br.cloneBrowser().getPage("http://ifile.it/ads/adframe.js");
         if (br.containsHTML("download:captcha")) {
             Browser br2 = br.cloneBrowser();
@@ -199,7 +200,7 @@ public class IFileIt extends PluginForHost {
         }
         br.cloneBrowser().getPage("http://static.ifile.it/themes/default/css/common-guest.css?v=1");
         br.cloneBrowser().getPage("http://static.ifile.it/themes/default/js/common.js?v=1");
-        br.cloneBrowser().getPage("http://ifile.it/ads/adframe.js");
+//        br.cloneBrowser().getPage("http://ifile.it/ads/adframe.js");
         String dllink = br.getRegex("req_btn.*?target=\".*?\" href=\"(http.*?)\"").getMatch(0);
         if (dllink == null) {
             logger.info("first try getting dllink failed");
@@ -222,7 +223,7 @@ public class IFileIt extends PluginForHost {
         }
         br.cloneBrowser().getPage("http://ifile.it/ads/adframe.js");
         br.setFollowRedirects(false);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -3);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (dl.getConnection().getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
@@ -233,7 +234,7 @@ public class IFileIt extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return 18;
     }
 
     @Override

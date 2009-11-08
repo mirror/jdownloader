@@ -33,10 +33,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yourfiles.biz" }, urls = { "http://[\\w\\.]*?yourfiles\\.(biz|to)/\\?d=[\\w]+" }, flags = { 0 })
-public class YourFilesBiz extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yourfiles.to" }, urls = { "http://[\\w\\.]*?yourfiles\\.(biz|to)/\\?d=[\\w]+" }, flags = { 0 })
+public class YourFilesTo extends PluginForHost {
 
-    public YourFilesBiz(PluginWrapper wrapper) {
+    public YourFilesTo(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -52,18 +52,23 @@ public class YourFilesBiz extends PluginForHost {
         br.setCookie("http://yourfiles.to/", "yab_mylang", "en");
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.getPage(downloadLink.getDownloadURL());
-        String filename = br.getRegex("<b>File.*?name:</b></td>\\s+<td align=left width=[0-9]+%>(.*?)</td>").getMatch(0);
-        String filesize = br.getRegex("File.*?size:</b></td>\\s+<td align=left>(.*?)</td>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("Filename:</b></font></td>.*?<td align=.*?width=.*?>(.*?)</td>").getMatch(0);
+        if (filename == null) filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
+        String filesize = br.getRegex("File size:</b></td>.*?<td align=.*?>(.*?)</td>").getMatch(0);
+        if (filesize == null) filesize = br.getRegex("File.*?size.*?:.*?</b>(.*?)<b><br>").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
-        downloadLink.setDownloadSize(Regex.getSize(filesize.trim()));
+        if (filesize != null) {
+            downloadLink.setDownloadSize(Regex.getSize(filesize.trim()));
+        }
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        String filename = br.getRegex("<b>File.*?name:</b></td>\\s+<td align=left width=[0-9]+%>(.*?)</td>").getMatch(0);
+        String filename = br.getRegex("Filename:</b></font></td>.*?<td align=.*?width=.*?>(.*?)</td>").getMatch(0);
+        if (filename == null) filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         filename = Encoding.deepHtmlDecode(filename);
         String page = Encoding.urlDecode(br.toString(), true);

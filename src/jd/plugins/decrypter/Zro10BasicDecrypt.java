@@ -39,7 +39,7 @@ public class Zro10BasicDecrypt extends PluginForDecrypt {
         String parameter = param.toString();
         // 3l3lam workaround, they got double redirect if i don't replace all
         // their domains with the main domain!
-        parameter = parameter.replaceAll("(pp9p\\.com|2utop|get\\.i44i\\.net)", "get.el3lam.com");
+        parameter = parameter.replaceAll("(pp9p\\.com|2utop\\.com|get\\.i44i\\.net)", "get.el3lam.com");
         br.setFollowRedirects(false);
         // finallink2 is used for unusual zero10 crypters like arbforce and
         // url-2

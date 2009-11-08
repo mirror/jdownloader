@@ -56,13 +56,16 @@ public class Shareplacecom extends PluginForHost {
         br.setCustomCharset("UTF-8");
         br.setFollowRedirects(true);
         br.getPage(url);
-        if (br.containsHTML("Your requested file is not found")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         if (br.getRedirectLocation() == null) {
-            String filename = Encoding.htmlDecode(br.getRegex(Pattern.compile("File.*?name.*?:.*?</b>(.*?)<b>", Pattern.CASE_INSENSITIVE)).getMatch(0));
-            String filesize = br.getRegex("File.*?size.*?:.*?</b>(.*?)<b><br>").getMatch(0);
-            if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            String filename = br.getRegex("Filename.*?b>(.*?)<b>").getMatch(0);
+            if (filename == null) filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
+            String filesize = br.getRegex("Filesize.*?b>(.*?)<b>").getMatch(0);
+            if (filesize == null) filesize = br.getRegex("File.*?size.*?:.*?</b>(.*?)<b><br>").getMatch(0);
+            if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             downloadLink.setName(filename.trim());
-            downloadLink.setDownloadSize(Regex.getSize(filesize.trim()));
+            if (filesize != null) {
+                downloadLink.setDownloadSize(Regex.getSize(filesize.trim()));
+            }
             return AvailableStatus.TRUE;
         } else
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -71,8 +74,9 @@ public class Shareplacecom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        String filename = Encoding.htmlDecode(br.getRegex(Pattern.compile("File.*?name.*?:.*?</b>(.*?)<b>", Pattern.CASE_INSENSITIVE)).getMatch(0));
+        String filename = Encoding.htmlDecode(br.getRegex(Pattern.compile("File.*?name.*?:.*?</b>(.*?)<b>")).getMatch(0));
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        filename = Encoding.htmlDecode(filename);
         filename = Encoding.deepHtmlDecode(filename);
         String page = Encoding.urlDecode(br.toString(), true);
         String[] links = HTMLParser.getHttpLinks(page, null);
