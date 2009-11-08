@@ -36,6 +36,10 @@ import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLSession;
+
 import jd.http.requests.FormData;
 import jd.http.requests.GetRequest;
 import jd.http.requests.PostFormDataRequest;
@@ -1306,7 +1310,13 @@ public class Browser {
         Authenticator.setDefault(AUTHENTICATOR);
         CookieHandler.setDefault(null);
         XTrustProvider.install();
-
+        // Now you are telling the JRE to ignore the hostname
+        HostnameVerifier hv = new HostnameVerifier() {
+            public boolean verify(String arg0, SSLSession arg1) {
+                return false;
+            }
+        };
+        HttpsURLConnection.setDefaultHostnameVerifier(hv);
     }
 
     public void setRequestIntervalLimit(String host, int i) {

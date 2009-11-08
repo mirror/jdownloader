@@ -46,6 +46,8 @@ public class ExternReconnect extends ReconnectMethod {
 
     private static final String PROPERTY_IP_WAIT_FOR_RETURN = "WAIT_FOR_RETURN5";
 
+    private static final String PROPERTY_RECONNECT_DUMMYBAT = "PROPERTY_RECONNECT_DUMMYBAT";
+
     public ExternReconnect() {
         configuration = JDUtilities.getConfiguration();
     }
@@ -53,17 +55,18 @@ public class ExternReconnect extends ReconnectMethod {
     protected void initConfig() {
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFILE, configuration, PROPERTY_RECONNECT_COMMAND, JDL.L("interaction.externreconnect.command", "Befehl (absolute Pfade verwenden)")));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, configuration, PROPERTY_RECONNECT_PARAMETER, JDL.L("interaction.externreconnect.parameter", "Parameter (1 Parameter/Zeile)")));
+        if (OSDetector.isWindows()) config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, PROPERTY_RECONNECT_DUMMYBAT, JDL.L("interaction.externreconnect.dummybat", "Use special executer for windows")).setDefaultValue(true));
     }
 
     protected boolean runCommands(ProgressController progress) {
         int waitForReturn = configuration.getIntegerProperty(PROPERTY_IP_WAIT_FOR_RETURN, 0);
         String command = configuration.getStringProperty(PROPERTY_RECONNECT_COMMAND, "").trim();
-
+        if (command.length() == 0) return false;
         File f = new File(command);
         if (!f.exists()) return false;
         String t = f.getAbsolutePath();
         String executeIn = t.substring(0, t.indexOf(f.getName()) - 1).trim();
-        if (OSDetector.isWindows()) {
+        if (OSDetector.isWindows() && configuration.getBooleanProperty(PROPERTY_RECONNECT_DUMMYBAT, true)) {
             /*
              * for windows we create a temporary batchfile that calls our
              * external tool and redirect its streams to nul
@@ -94,7 +97,7 @@ public class ExternReconnect extends ReconnectMethod {
                 JDLogger.exception(e);
                 return false;
             }
-            logger.finer("Execute Returns: " + JDUtilities.runCommand(bat.toString(), Regex.getLines(""), executeIn, waitForReturn));
+            logger.finer("Execute Returns: " + JDUtilities.runCommand(bat.toString(), new String[0], executeIn, waitForReturn));
         } else {
             /* other os, normal handling */
             String parameter = configuration.getStringProperty(PROPERTY_RECONNECT_PARAMETER);
