@@ -63,6 +63,15 @@ public class HTTPLiveHeader extends ReconnectMethod {
         configuration = JDUtilities.getConfiguration();
     }
 
+    /*
+     * DO NOT REMOVE THIS OR REPLACE BY Regex.getLines()
+     * 
+     * REGEX ARE COMPLETE DIFFERENT AND DO NOT TRIM
+     */
+    private static String[] splitLines(String source) {
+        return source.split("\r\n|\r|\n");
+    }
+
     // @Override
     protected boolean runCommands(ProgressController progress) {
         String script;
@@ -191,7 +200,7 @@ public class HTTPLiveHeader extends ReconnectMethod {
                     }
 
                     if (toDo.getNodeName().equalsIgnoreCase("PARSE")) {
-                        String[] parseLines = Regex.getLines(toDo.getChildNodes().item(0).getNodeValue().trim());
+                        String[] parseLines = splitLines(toDo.getChildNodes().item(0).getNodeValue().trim());
                         for (String parseLine : parseLines) {
                             String varname = new Regex(parseLine, "(.*?):").getMatch(0);
                             String pattern = new Regex(parseLine, ".*?:(.+)").getMatch(0);
@@ -336,7 +345,7 @@ public class HTTPLiveHeader extends ReconnectMethod {
 
                 request = req.toString();
             }
-            String[] requestLines = Regex.getLines(request);
+            String[] requestLines = splitLines(request);
             if (requestLines.length == 0) {
                 logger.severe("Parse Fehler:" + request);
                 return null;

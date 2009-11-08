@@ -1313,7 +1313,7 @@ public class Browser {
         // Now you are telling the JRE to ignore the hostname
         HostnameVerifier hv = new HostnameVerifier() {
             public boolean verify(String arg0, SSLSession arg1) {
-                return false;
+                return true;
             }
         };
         HttpsURLConnection.setDefaultHostnameVerifier(hv);
