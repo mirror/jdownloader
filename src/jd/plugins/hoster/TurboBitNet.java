@@ -69,7 +69,7 @@ public class TurboBitNet extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait * 1001);
         }
-        String captchaUrl = br.getRegex("<img alt=\"Captcha\" src=\"(.*?)\" width=\"150\" height=\"50\" />").getMatch(0);
+        String captchaUrl = br.getRegex("\"(http://turbobit\\.net/captcha/.*?)\"").getMatch(0);
         if (captchaUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         Form form = br.getForm(2);
         if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

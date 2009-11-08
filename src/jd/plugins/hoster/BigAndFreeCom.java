@@ -35,6 +35,7 @@ public class BigAndFreeCom extends PluginForHost {
 
     public BigAndFreeCom(PluginWrapper wrapper) {
         super(wrapper);
+        this.setStartIntervall(2000l);
     }
 
     @Override
@@ -126,7 +127,7 @@ public class BigAndFreeCom extends PluginForHost {
         downloadForm.setAction(downloadLink.getDownloadURL());
         br.setFollowRedirects(true);
         br.setDebug(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadForm, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadForm, true, 0);
         if (!(dl.getConnection().isContentDisposition()) && !dl.getConnection().getContentType().contains("octet")) {
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -136,7 +137,7 @@ public class BigAndFreeCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return 20;
     }
 
     @Override
