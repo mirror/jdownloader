@@ -244,8 +244,7 @@ public abstract class TestUtils {
         } catch (Exception e1) {
             JDLogger.exception(Level.FINEST, e1);
         }
-        new WebUpdate().doUpdateCheck(false);
-        JDUtilities.getController().setInitStatus(JDController.INIT_STATUS_COMPLETE);
+        WebUpdate.doUpdateCheck(false);
         JDUtilities.getController().fireControlEvent(new ControlEvent(new Object(), ControlEvent.CONTROL_INIT_COMPLETE, null));
     }
 

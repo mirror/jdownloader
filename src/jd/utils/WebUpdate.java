@@ -52,19 +52,16 @@ import jd.utils.locale.JDL;
 
 public class WebUpdate {
     private static Logger logger = JDLogger.getLogger();
-    // private static boolean JD_INIT_COMPLETE = false;
-    protected ArrayList<FileUpdate> unfilteredList;
+    private static int waitingUpdates = 0;
 
     private static boolean DYNAMIC_PLUGINS_FINISHED = false;
-    // private static boolean LISTENER_ADDED = false;
     private static boolean UPDATE_IN_PROGRESS = false;
 
-    public static void DynamicPluginsFinished() {
+    public static void dynamicPluginsFinished() {
         DYNAMIC_PLUGINS_FINISHED = true;
     }
 
     private static String getUpdaterMD5(int trycount) {
-
         return WebUpdater.UPDATE_MIRROR[trycount % WebUpdater.UPDATE_MIRROR.length] + "jdupdate.jar.md5";
     }
 
@@ -163,10 +160,8 @@ public class WebUpdate {
         try {
             Thread.sleep(10000);
         } catch (InterruptedException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
-
     }
 
     /**
@@ -174,7 +169,7 @@ public class WebUpdate {
      *            : Updatemeldung soll erscheinen, auch wenn user updates
      *            deaktiviert hat
      */
-    public synchronized void doUpdateCheck(final boolean forceguiCall) {
+    public static synchronized void doUpdateCheck(final boolean forceguiCall) {
         if (UPDATE_IN_PROGRESS) {
             logger.info("Update is already running");
             Balloon.show(JDL.L("jd.utils.webupdate.ballon.title", "Update"), UserIO.getInstance().getIcon(UserIO.ICON_WARNING), JDL.L("jd.utils.webupdate.ballon.message.updateinprogress", "There is already an update in progress."));
@@ -193,13 +188,8 @@ public class WebUpdate {
 
         final WebUpdater updater = new WebUpdater();
 
-        // if
-        // (SubConfiguration.getConfig("WEBUPDATE").getBooleanProperty(Configuration.PARAM_WEBUPDATE_DISABLE,
-        // false)) {
         updater.ignorePlugins(false);
-        // }
         logger.finer("Checking for available updates");
-        // logger.info(files + "");
 
         final ArrayList<FileUpdate> files;
         try {
@@ -240,7 +230,7 @@ public class WebUpdate {
                             if (f.equals()) files.remove(f);
                         }
                     }
-                    JDUtilities.getController().setWaitingUpdates(files);
+                    WebUpdate.setWaitingUpdates(files.size());
 
                     if (files.size() > 0) {
                         new GuiRunnable<Object>() {
@@ -430,14 +420,14 @@ public class WebUpdate {
 
     }
 
-    private void doUpdate(final WebUpdater updater, final ArrayList<FileUpdate> files) {
+    private static void doUpdate(final WebUpdater updater, final ArrayList<FileUpdate> files) {
 
         new Thread() {
             public void run() {
                 final String id = JDController.requestDelayExit("doUpdate");
                 try {
                     int i = 0;
-                    while (DYNAMIC_PLUGINS_FINISHED == false) {
+                    while (!DYNAMIC_PLUGINS_FINISHED) {
                         try {
                             Thread.sleep(1000);
                             i++;
@@ -473,25 +463,6 @@ public class WebUpdate {
 
                         System.out.println("Update: " + files);
                         updater.cleanUp();
-                        // removes all .extract files that have no entry in the
-                        // hashlist
-                        // JDIO.removeRekursive(JDUtilities.getResourceFile("jd").getParentFile(),
-                        // new JDIO.FileSelector() {
-                        //
-                        // @Override
-                        // public boolean doIt(File file) {
-                        // if (!file.getName().endsWith(".extract") ||
-                        // unfilteredList == null) return false;
-                        // if (file.getAbsolutePath().contains("/update/") ||
-                        // file.getAbsolutePath().contains("\\update\\")) return
-                        // false;
-                        // for (FileUpdate f : unfilteredList) {
-                        // if (f.getLocalFile().equals(file)) return true;
-                        // }
-                        //
-                        // return false;
-                        // }
-                        // });
 
                         updater.updateFiles(files, pc);
                         if (updater.getErrors() > 0) {
@@ -522,6 +493,14 @@ public class WebUpdate {
 
             }
         }.start();
+    }
+
+    private static void setWaitingUpdates(int i) {
+        waitingUpdates = Math.max(0, i);
+    }
+
+    public static int getWaitingUpdates() {
+        return waitingUpdates;
     }
 
 }

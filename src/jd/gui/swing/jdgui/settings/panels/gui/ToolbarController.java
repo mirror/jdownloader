@@ -31,7 +31,6 @@ import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 
 import jd.config.Configuration;
-import jd.config.ConfigEntry.PropertyType;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.jdgui.actions.ActionController;
@@ -293,11 +292,6 @@ public class ToolbarController extends ConfigPanel {
         tabbed.add(getBreadcrum(), panel);
 
         this.add(tabbed);
-    }
-
-    @Override
-    public PropertyType hasChanges() {
-        return PropertyType.NONE;
     }
 
     private class TableRenderer extends DefaultTableRenderer {

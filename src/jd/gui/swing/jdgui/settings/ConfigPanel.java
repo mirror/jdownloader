@@ -257,8 +257,8 @@ public class ConfigPanel extends SwitchPanel {
         }
     }
 
-    public ConfigEntry.PropertyType hasChanges() {
-        PropertyType ret = ConfigEntry.PropertyType.NONE;
+    public PropertyType hasChanges() {
+        PropertyType ret = PropertyType.NONE;
         Object old;
         synchronized (entries) {
             for (GUIConfigEntry akt : entries) {
@@ -269,21 +269,10 @@ public class ConfigPanel extends SwitchPanel {
                     old = akt.getConfigEntry().getPropertyInstance().getProperty(akt.getConfigEntry().getPropertyName());
                     if (old == null && akt.getText() != null) {
                         ret = ret.getMax(akt.getConfigEntry().getPropertyType());
-                        System.out.println(akt.getConfigEntry().getPropertyName() + "1: " + ret);
-                        continue;
-                    }
-                    if (old == akt.getText()) {
-                        System.out.println(akt.getConfigEntry().getPropertyName() + "2: " + ret);
-                        continue;
-                    }
-                    if (!old.equals(akt.getText())) {
+                    } else if (!old.equals(akt.getText())) {
                         ret = ret.getMax(akt.getConfigEntry().getPropertyType());
-
-                        System.out.println(akt.getConfigEntry().getPropertyName() + "3: " + ret);
-                        continue;
                     }
                 }
-
             }
         }
         return ret;

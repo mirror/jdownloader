@@ -34,13 +34,13 @@ import javax.swing.SwingUtilities;
 import javax.swing.TransferHandler;
 
 import jd.controlling.DownloadController;
+import jd.controlling.JDController;
 import jd.controlling.LinkGrabberController;
 import jd.gui.swing.SwingGui;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkGrabberFilePackage;
 import jd.utils.JDTheme;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 public class LinkGrabberTableTransferHandler extends TransferHandler {
@@ -227,17 +227,18 @@ public class LinkGrabberTableTransferHandler extends TransferHandler {
             } else if (tr.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
                 List list = (List) tr.getTransferData(DataFlavor.javaFileListFlavor);
                 for (int t = 0; t < list.size(); t++) {
-                    JDUtilities.getController().loadContainerFile((File) list.get(t));
+                    JDController.getInstance().loadContainerFile((File) list.get(t));
                 }
             } else if (tr.isDataFlavorSupported(DataFlavor.stringFlavor)) {
                 String files = (String) tr.getTransferData(DataFlavor.stringFlavor);
                 String linuxfiles[] = new Regex(files, "file://(.*?)(\r\n|\r|\n)").getColumn(0);
                 if (linuxfiles != null && linuxfiles.length > 0) {
                     for (String file : linuxfiles) {
-                        JDUtilities.getController().loadContainerFile(new File(file.trim()));
+                        JDController.getInstance().loadContainerFile(new File(file.trim()));
                     }
-                } else
-                    JDUtilities.getController().distributeLinks(files);
+                } else {
+                    JDController.distributeLinks(files);
+                }
             }
             return true;
         } catch (Exception e) {

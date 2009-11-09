@@ -33,7 +33,6 @@ import javax.swing.event.ListSelectionListener;
 import jd.HostPluginWrapper;
 import jd.config.ConfigGroup;
 import jd.config.Configuration;
-import jd.config.ConfigEntry.PropertyType;
 import jd.gui.UserIF;
 import jd.gui.swing.components.table.JDTable;
 import jd.gui.swing.components.table.JDTableModel;
@@ -165,11 +164,6 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
     }
 
     public void mouseReleased(MouseEvent e) {
-    }
-
-    @Override
-    public PropertyType hasChanges() {
-        return PropertyType.NONE;
     }
 
 }

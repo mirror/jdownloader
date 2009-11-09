@@ -518,18 +518,6 @@ public class DistributeData extends Thread {
         return data;
     }
 
-    /**
-     * searches for links in linkstring, loads them, and parses the source for
-     * each link
-     * 
-     * @param linkstring
-     */
-    public static void loadAndParse(String linkstring) {
-
-        JDController.getInstance().distributeLinks(getLoadLinkString(linkstring));
-
-    }
-
     private static String getLoadLinkString(String linkstring) {
         StringBuffer sb = new StringBuffer();
         String[] links = HTMLParser.getHttpLinks(linkstring, null);

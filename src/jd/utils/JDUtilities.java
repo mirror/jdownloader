@@ -499,8 +499,8 @@ public class JDUtilities {
     public static String getJDTitle() {
         StringBuilder ret = new StringBuilder("JDownloader");
 
-        int i;
-        if (JDUtilities.getController() != null && JDUtilities.getController().getWaitingUpdates() != null && (i = JDUtilities.getController().getWaitingUpdates().size()) > 0) {
+        int i = WebUpdate.getWaitingUpdates();
+        if (i > 0) {
             ret.append(new char[] { ' ', '(' });
             ret.append(JDL.LF("gui.mainframe.title.updatemessage2", "%s Updates available", i));
             ret.append(')');

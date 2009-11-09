@@ -470,7 +470,6 @@ public class Main {
         }.waitForEDT();
 
         LOGGER.info("Initialisation finished");
-        controller.setInitStatus(JDController.INIT_STATUS_COMPLETE);
 
         HashMap<String, String> head = new HashMap<String, String>();
         head.put("rev", JDUtilities.getRevision());
@@ -505,12 +504,8 @@ public class Main {
             public void run() {
                 try {
                     Thread.sleep(5000);
-
-                    new WebUpdate().doUpdateCheck(false);
-
-                    // TODO
+                    WebUpdate.doUpdateCheck(false);
                 } catch (InterruptedException e) {
-                    // TODO Auto-generated catch block
                     e.printStackTrace();
                 }
             }
@@ -521,7 +516,7 @@ public class Main {
         } catch (Exception e1) {
             JDLogger.exception(Level.FINEST, e1);
         }
-        WebUpdate.DynamicPluginsFinished();
+        WebUpdate.dynamicPluginsFinished();
 
         LOGGER.info("update end");
     }

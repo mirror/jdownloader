@@ -42,7 +42,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginsC;
-import jd.update.FileUpdate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -154,11 +153,6 @@ public class JDController implements ControlListener {
     }
 
     /**
-     * Der Controller wurd fertig initialisiert
-     */
-    public static final int INIT_STATUS_COMPLETE = 0;
-
-    /**
      * Hiermit wird der Eventmechanismus realisiert. Alle hier eingetragenen
      * Listener werden benachrichtigt, wenn mittels
      * {@link #fireControlEvent(ControlEvent)} ein Event losgeschickt wird.
@@ -170,16 +164,12 @@ public class JDController implements ControlListener {
 
     private EventSender eventSender = null;
 
-    private int initStatus = -1;
-
     private DownloadLink lastDownloadFinished;
 
     /**
      * Der Logger
      */
     private Logger logger = JDLogger.getLogger();
-
-    private ArrayList<FileUpdate> waitingUpdates = new ArrayList<FileUpdate>();
 
     private boolean alreadyAutostart = false;
 
@@ -232,7 +222,6 @@ public class JDController implements ControlListener {
      * 
      * @param event
      */
-
     public void controlEvent(ControlEvent event) {
         if (event == null) {
             logger.warning("event= NULL");
@@ -244,24 +233,13 @@ public class JDController implements ControlListener {
             break;
         case ControlEvent.CONTROL_ON_FILEOUTPUT:
             File[] list = (File[]) event.getParameter();
-
             for (File file : list) {
-
                 if (isContainerFile(file)) {
                     if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_RELOADCONTAINER, true)) {
                         loadContainerFile(file);
                     }
                 }
-
             }
-
-            break;
-
-        case ControlEvent.CONTROL_LOG_OCCURED:
-
-            break;
-        case ControlEvent.CONTROL_SYSTEM_EXIT:
-
             break;
         case ControlEvent.CONTROL_PLUGIN_INACTIVE:
             // Nur Hostpluginevents auswerten
@@ -279,7 +257,6 @@ public class JDController implements ControlListener {
             // Prüfen ob der Link entfernt werden soll
             if (lastDownloadFinished.getLinkStatus().isFinished() && JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_FINISHED_DOWNLOADS_ACTION, 3) == 0) {
                 lastDownloadFinished.getFilePackage().remove(lastDownloadFinished);
-
             }
 
             break;
@@ -365,7 +342,7 @@ public class JDController implements ControlListener {
         }
     }
 
-    /* syncs all data to database */
+    /** syncs all data to database */
     public void syncDatabase() {
         if (DatabaseConnector.isDatabaseShutdown()) return;
         logger.info("Sync Downloadlist");
@@ -496,25 +473,12 @@ public class JDController implements ControlListener {
         return ret;
     }
 
-    public int getInitStatus() {
-        return initStatus;
-    }
-
     /**
      * 
      * @return Die zuletzte fertiggestellte datei
      */
     public DownloadLink getLastFinishedDownloadLink() {
         return lastDownloadFinished;
-    }
-
-    /**
-     * 
-     * @return Die zuletzte fertiggestellte datei
-     */
-    public String getLastFinishedFile() {
-        if (lastDownloadFinished == null) { return ""; }
-        return lastDownloadFinished.getFileOutput();
     }
 
     /**
@@ -533,17 +497,12 @@ public class JDController implements ControlListener {
         return DownloadWatchDog.getInstance().getTotalSpeed();
     }
 
-    public ArrayList<FileUpdate> getWaitingUpdates() {
-        return waitingUpdates;
-
-    }
-
     public boolean isContainerFile(File file) {
         ArrayList<CPluginWrapper> pluginsForContainer = CPluginWrapper.getCWrapper();
         CPluginWrapper pContainer;
         for (int i = 0; i < pluginsForContainer.size(); i++) {
             pContainer = pluginsForContainer.get(i);
-            if (pContainer.canHandle(file.getName())) { return true; }
+            if (pContainer.canHandle(file.getName())) return true;
         }
         return false;
     }
@@ -684,14 +643,6 @@ public class JDController implements ControlListener {
         UserIO.getInstance().requestMessageDialog("Container encryption failed");
     }
 
-    public void setInitStatus(int initStatus) {
-        this.initStatus = initStatus;
-    }
-
-    public void setWaitingUpdates(ArrayList<FileUpdate> files) {
-        waitingUpdates = files;
-    }
-
     /**
      * Gibt alle Downloadlinks die zu dem übergebenem Hosterplugin gehören
      * zurück.
@@ -809,7 +760,7 @@ public class JDController implements ControlListener {
         return null;
     }
 
-    public void distributeLinks(String data) {
+    public static void distributeLinks(String data) {
         new DistributeData(data).start();
     }
 

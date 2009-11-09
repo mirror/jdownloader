@@ -168,8 +168,7 @@ public class JDExternInterface extends PluginOptional {
                         WebUpdater.getConfig("WEBUPDATE").setProperty(WebUpdater.PARAM_BRANCH, branch);
                         WebUpdater.getConfig("WEBUPDATE").setProperty(WebUpdater.BRANCHINUSE, branch);
                         WebUpdater.getConfig("WEBUPDATE").save();
-                        new WebUpdate().doUpdateCheck(false);
-
+                        WebUpdate.doUpdateCheck(false);
                     }
 
                 } else if (namespace.equalsIgnoreCase("flash")) {
