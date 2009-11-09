@@ -287,11 +287,11 @@ public abstract class JDAction extends AbstractAction {
     }
 
     /**
-     * A action uses an intern jd.config.Property see jd.config.Property for
-     * infos about this delegate
+     * A action uses an intern {@link Property} for (re-)storing objects
      * 
      * @param string
      * @param value
+     * @see Property
      */
     public void setProperty(String string, Object value) {
         if (properties == null) properties = new Property();
@@ -301,10 +301,9 @@ public abstract class JDAction extends AbstractAction {
     }
 
     /**
-     * A action uses an intern {@link Property}
+     * A action uses an intern {@link Property} for (re-)storing objects
      * 
      * @param string
-     * @param value
      * @see Property
      */
     public Object getProperty(String string) {

@@ -63,7 +63,7 @@ public class ShortCuts {
      * 
      *                       Modified with translation code by JDTEam
      */
-    public static String getModifiersText(int modifiers) {
+    private static String getModifiersText(int modifiers) {
         StringBuilder buf = new StringBuilder();
 
         if ((modifiers & KeyEvent.CTRL_DOWN_MASK) != 0) {
