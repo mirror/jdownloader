@@ -41,7 +41,7 @@ public class GoogleBooks extends PluginForHost {
     @Override
     public void handleFree(DownloadLink link) throws Exception {
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("http://sorry.google.com/sorry/\\?continue=.*")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000); }
+        if (br.containsHTML("http://sorry.google.com/sorry/\\?continue=.*")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l) ;
         if (br.containsHTML("Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String dllink = br.getRegex(";preloadImg.src = \\'(.*?)\\';window").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -49,7 +49,7 @@ public class GoogleBooks extends PluginForHost {
         URLConnectionAdapter con = dl.getConnection();
         if (con.getResponseCode() == 404) {
             con.disconnect();
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
         }
         dl.startDownload();
 
