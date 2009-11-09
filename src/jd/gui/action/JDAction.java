@@ -22,11 +22,14 @@ import java.awt.event.KeyEvent;
 import java.lang.reflect.Field;
 
 import javax.swing.AbstractAction;
+import javax.swing.Action;
 import javax.swing.ImageIcon;
 import javax.swing.KeyStroke;
 
 import jd.config.Property;
 import jd.controlling.JDLogger;
+import jd.gui.swing.ShortCuts;
+import jd.parser.Regex;
 import jd.utils.JDTheme;
 
 /**
@@ -133,7 +136,7 @@ public abstract class JDAction extends AbstractAction {
      */
     public KeyStroke getKeyStroke() {
         Object ret = getValue(ACCELERATOR_KEY);
-        if (ret != null) { return (KeyStroke) ret; }
+        if (ret != null) return (KeyStroke) ret;
         return null;
     }
 
@@ -146,23 +149,38 @@ public abstract class JDAction extends AbstractAction {
      * @param accelerator
      */
     public void setAccelerator(String accelerator) {
-        String org = accelerator;
         KeyStroke ks;
+        Class<?> b;
+        Field f;
+        String[] split;
+        int mod, m;
         if (accelerator != null && accelerator.length() > 0 && !accelerator.equals("-")) {
-            Class<?> b = KeyEvent.class;
-            if (accelerator.contains("+")) accelerator = accelerator.substring(accelerator.lastIndexOf("+") + 1);
-            Field f;
+            b = KeyEvent.class;
+            split = accelerator.split("\\+");
+            mod = 0;
             try {
-                f = b.getField("VK_" + accelerator.toUpperCase());
-                int m = (Integer) f.get(null);
-
-                putValue(AbstractAction.ACCELERATOR_KEY, ks = KeyStroke.getKeyStroke(m, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
-                JDLogger.getLogger().finest(this.getTitle() + " Shortcuts: mapped " + org + " to " + ks);
+                for (int i = 0; i < split.length - 1; ++i) {
+                    if (new Regex(split[i], "(CTRL|STRG|CONTROL)").matches()) {
+                        mod = mod | KeyEvent.CTRL_DOWN_MASK;
+                    } else if (new Regex(split[i], "(SHIFT)").matches()) {
+                        mod = mod | KeyEvent.SHIFT_DOWN_MASK;
+                    } else if (new Regex(split[i], "(ALT_GR|ALTGR|ALT GR)").matches()) {
+                        mod = mod | KeyEvent.ALT_GRAPH_DOWN_MASK;
+                    } else if (new Regex(split[i], "(ALT)").matches()) {
+                        mod = mod | KeyEvent.ALT_DOWN_MASK;
+                    } else if (new Regex(split[i], "(META)").matches()) {
+                        mod = mod | KeyEvent.META_DOWN_MASK;
+                    }
+                }
+                f = b.getField("VK_" + split[split.length - 1].toUpperCase());
+                m = (Integer) f.get(null);
+                putValue(AbstractAction.ACCELERATOR_KEY, ks = KeyStroke.getKeyStroke(m, mod));
+                JDLogger.getLogger().finest(this.getTitle() + " Shortcuts: mapped " + accelerator + " to " + ks);
             } catch (Exception e) {
+                JDLogger.exception(e);
                 putValue(AbstractAction.ACCELERATOR_KEY, ks = KeyStroke.getKeyStroke(accelerator.charAt(accelerator.length() - 1), Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
-                JDLogger.getLogger().finest(this.getTitle() + "Shortcuts: mapped " + org + " to " + ks);
+                JDLogger.getLogger().finest(this.getTitle() + " Shortcuts: mapped " + accelerator + " to " + ks + " (Exception)");
             }
-
         }
     }
 
@@ -256,6 +274,16 @@ public abstract class JDAction extends AbstractAction {
      */
     public ImageIcon getIcon() {
         return (ImageIcon) getValue(SMALL_ICON);
+    }
+
+    public String getShortCutString() {
+        if (getValue(Action.ACCELERATOR_KEY) != null) {
+            return ShortCuts.getAcceleratorString((KeyStroke) getValue(Action.ACCELERATOR_KEY));
+        } else if (getValue(Action.MNEMONIC_KEY) != null) {
+            return "Alt+" + new String(new byte[] { ((Integer) getValue(Action.MNEMONIC_KEY)).byteValue() });
+        } else {
+            return null;
+        }
     }
 
     /**

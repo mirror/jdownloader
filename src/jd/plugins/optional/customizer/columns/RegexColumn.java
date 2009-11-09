@@ -20,13 +20,17 @@ import java.awt.Color;
 import java.awt.Component;
 import java.util.regex.Pattern;
 
+import javax.swing.JComponent;
+
 import jd.gui.swing.components.table.JDTableModel;
 import jd.gui.swing.components.table.JDTextEditorTableColumn;
 import jd.plugins.optional.customizer.CustomizeSetting;
+import jd.utils.locale.JDL;
 
 public class RegexColumn extends JDTextEditorTableColumn {
 
     private static final long serialVersionUID = -2305836770033923728L;
+    private static final String JDL_PREFIX = "jd.plugins.optional.customizer.columns.RegexColumn.";
 
     public RegexColumn(String name, JDTableModel table) {
         super(name, table);
@@ -53,15 +57,16 @@ public class RegexColumn extends JDTextEditorTableColumn {
 
     @Override
     public void postprocessCell(Component c, JDTableModel table, Object value, boolean isSelected, int row, int column) {
-        if (((CustomizeSetting) value).getRegex() == null) return;
-        if (((CustomizeSetting) value).getRegex().equals("")) {
+        if (((CustomizeSetting) value).getRegex() == null || ((CustomizeSetting) value).getRegex().equals("")) {
             c.setBackground(new Color(221, 34, 34));
+            ((JComponent) c).setToolTipText(JDL.L(JDL_PREFIX + "regex.empty", "Regex shouldn't be empty!"));
             return;
         }
         try {
             Pattern.compile(((CustomizeSetting) value).getRegex());
         } catch (Exception e) {
             c.setBackground(new Color(221, 34, 34));
+            ((JComponent) c).setToolTipText(JDL.LF(JDL_PREFIX + "regex.malformed", "Malformed Regex: %s", e.getMessage()));
         }
     }
 

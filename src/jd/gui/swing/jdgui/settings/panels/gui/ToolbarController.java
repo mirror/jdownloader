@@ -39,7 +39,6 @@ import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.gui.swing.jdgui.components.toolbar.MainToolBar;
 import jd.gui.swing.jdgui.components.toolbar.ToolBar;
 import jd.gui.swing.jdgui.settings.ConfigPanel;
-import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
@@ -130,7 +129,7 @@ public class ToolbarController extends ConfigPanel {
         }
 
         public int getColumnCount() {
-            return 3;
+            return 4;
         }
 
         @Override
@@ -142,6 +141,8 @@ public class ToolbarController extends ConfigPanel {
                 return JDL.L(JDL_PREFIX + ".column.name", "Name");
             case 2:
                 return JDL.L(JDL_PREFIX + ".column.desc", "Description");
+            case 3:
+                return JDL.L(JDL_PREFIX + ".column.hotkey", "Hotkey");
             }
             return super.getColumnName(column);
         }
@@ -314,12 +315,16 @@ public class ToolbarController extends ConfigPanel {
             ToolBarAction action = (ToolBarAction) value;
             switch (column) {
             case 1:
-                label.setIcon(JDTheme.II(action.getValue(ToolBarAction.IMAGE_KEY) + "", 16, 16));
+                label.setIcon(action.getIcon());
                 label.setText(action.getTitle());
                 return label;
             case 2:
                 label.setIcon(null);
                 label.setText(action.getTooltipText());
+                return label;
+            case 3:
+                label.setIcon(null);
+                label.setText(action.getShortCutString());
                 return label;
             }
             return super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);

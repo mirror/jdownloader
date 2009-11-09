@@ -32,7 +32,6 @@ import javax.swing.KeyStroke;
 
 import jd.controlling.JDLogger;
 import jd.gui.swing.GuiRunnable;
-import jd.gui.swing.ShortCuts;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
@@ -200,25 +199,14 @@ public class ToolBar extends JToolBar {
                 if (ab != null) {
                     if (JDUtilities.getJavaVersion() < 1.6) {
                         if (action.getValue(Action.LARGE_ICON_KEY) != null) ab.setIcon((Icon) action.getValue(Action.LARGE_ICON_KEY));
-
                     }
-                    KeyStroke ks = (KeyStroke) (action.getValue(Action.ACCELERATOR_KEY));
+                    KeyStroke ks = (KeyStroke) action.getValue(Action.ACCELERATOR_KEY);
                     rootpane.getInputMap(JButton.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(ks, action);
                     rootpane.getInputMap(JButton.WHEN_IN_FOCUSED_WINDOW).put(ks, action);
                     rootpane.getActionMap().put(action, action);
-                    // this.mainFrame.getRootPane().getActionMap().
 
-                    // getInputMap(JButton.WHEN_IN_FOCUSED_WINDOW).put(ks,
-                    // action);
-
-                    if (action.getValue(Action.ACCELERATOR_KEY) != null) {
-                        ab.setToolTipText(action.getTooltipText() + " [" + ShortCuts.getAcceleratorString((KeyStroke) action.getValue(Action.ACCELERATOR_KEY)) + "]");
-                    } else if (action.getValue(Action.MNEMONIC_KEY) != null) {
-                        ab.setToolTipText(action.getTooltipText() + " [Alt+" + new String(new byte[] { ((Integer) action.getValue(Action.MNEMONIC_KEY)).byteValue() }) + "]");
-                    } else {
-                        ab.setToolTipText(action.getTooltipText());
-                    }
-
+                    String shortCut = action.getShortCutString();
+                    ab.setToolTipText(action.getTooltipText() + (shortCut != null ? " [" + shortCut + "]" : ""));
                 }
             }
         }
