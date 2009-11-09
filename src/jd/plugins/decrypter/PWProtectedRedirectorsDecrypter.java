@@ -45,15 +45,15 @@ public class PWProtectedRedirectorsDecrypter extends PluginForDecrypt {
         br.setFollowRedirects(false);
         br.getPage(parameter);
         String domain = new Regex(parameter, "([a-z-]+)\\.").getMatch(0);
-        if (br.containsHTML("(non ci sono URL|There is no such URL in our database|Esa url no se encuentra|Taki skrót nie istnieje bądź został usunięty|Witaj na l-x.pl)") || br.getRedirectLocation().contains(domain)) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        if (br.containsHTML("(non ci sono URL|There is no such URL in our database|Esa url no se encuentra|Taki skrót nie istnieje bądź został usunięty|Witaj na l-x.pl)") || (br.getRedirectLocation() != null && br.getRedirectLocation().contains(domain))) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         String finallink = br.getRedirectLocation();
         if (finallink == null) {
             // For iframe stuff
             finallink = br.getRegex("id=\"frame\" src=\"(.*?)\"").getMatch(0);
             // Handling for ncane adult links
             if (finallink == null) finallink = br.getRegex("or older, click <a href=\"(.*?)\"").getMatch(0);
-            //Handling for xlurl.com links
-            if(finallink == null)finallink = br.getRegex("window\\.location = \"(.*?)\"").getMatch(0);
+            // Handling for xlurl.com links
+            if (finallink == null) finallink = br.getRegex("window\\.location = \"(.*?)\"").getMatch(0);
             if (finallink == null && (br.containsHTML("(name=\"pass\"|name=\"p\"|name=\"shortcut_password\")"))) {
                 for (int i = 0; i <= 2; i++) {
                     Form pwform = br.getForm(0);
