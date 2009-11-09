@@ -70,6 +70,7 @@ public class Xun6Com extends PluginForHost {
         br.setFollowRedirects(false);
         Form captchaform = br.getFormbyProperty("name", "myform");
         String captchaurl = br.getRegex("\"(http://xun6\\.com/captcha.*?)\"").getMatch(0);
+        if(captchaurl == null)captchaurl = br.getRegex("\"(http://[a-zA-Z0-9]+\\.xun6\\.com/captcha.*?)\"").getMatch(0);
         if (captchaurl == null || captchaform == null) {
             logger.warning("Captchaform or captchaurl is null");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
