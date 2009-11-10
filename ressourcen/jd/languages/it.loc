@@ -594,7 +594,6 @@ gui.menu.optional.jdunrar.linkmenu.package.extract.tooltip = Estrai archivi RAR
 gui.menu.optional.jdunrar.linkmenu.setextract.accel = -
 gui.menu.optional.jdunrar.linkmenu.setextract.mnem = -
 gui.menu.optional.jdunrar.linkmenu.setextract.name = Seleziona la cartella di estrazione
-gui.menu.optional.jdunrar.linkmenu.setextract.tooltip = Imposta cartella estrazione
 gui.menu.optional.jdunrar.menu.extract.singlefils.accel = -
 gui.menu.optional.jdunrar.menu.extract.singlefils.mnem = -
 gui.menu.optional.jdunrar.menu.extract.singlefils.name = Estrai archivio(i)
