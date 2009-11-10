@@ -160,11 +160,11 @@ public abstract class JDAction extends AbstractAction {
             mod = 0;
             try {
                 for (int i = 0; i < split.length - 1; ++i) {
-                    if (new Regex(split[i], "(CTRL|STRG|CONTROL)").matches()) {
+                    if (new Regex(split[i], "(CTRL)").matches()) {
                         mod = mod | KeyEvent.CTRL_DOWN_MASK;
                     } else if (new Regex(split[i], "(SHIFT)").matches()) {
                         mod = mod | KeyEvent.SHIFT_DOWN_MASK;
-                    } else if (new Regex(split[i], "(ALT_GR|ALTGR|ALT GR)").matches()) {
+                    } else if (new Regex(split[i], "(ALTGR)").matches()) {
                         mod = mod | KeyEvent.ALT_GRAPH_DOWN_MASK;
                     } else if (new Regex(split[i], "(ALT)").matches()) {
                         mod = mod | KeyEvent.ALT_DOWN_MASK;

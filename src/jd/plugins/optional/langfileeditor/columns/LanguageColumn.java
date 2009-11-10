@@ -18,15 +18,20 @@ package jd.plugins.optional.langfileeditor.columns;
 
 import java.awt.Component;
 
+import javax.swing.JComponent;
+
 import jd.gui.swing.components.table.JDTableModel;
 import jd.gui.swing.components.table.JDTextEditorTableColumn;
+import jd.parser.Regex;
 import jd.plugins.optional.langfileeditor.KeyInfo;
 import jd.plugins.optional.langfileeditor.LFEGui;
 import jd.plugins.optional.langfileeditor.LFETableModel;
+import jd.utils.locale.JDL;
 
 public class LanguageColumn extends JDTextEditorTableColumn {
 
     private static final long serialVersionUID = -2305836770033923728L;
+    private static final String JDL_PREFIX = "jd.plugins.optional.langfileeditor.columns.LanguageColumn.";
 
     public LanguageColumn(String name, JDTableModel table) {
         super(name, table);
@@ -56,6 +61,22 @@ public class LanguageColumn extends JDTextEditorTableColumn {
     public void postprocessCell(Component c, JDTableModel table, Object value, boolean isSelected, int row, int column) {
         if (((KeyInfo) value).hasWrongParameterCount()) {
             c.setBackground(LFEGui.COLOR_MISSING);
+            ((JComponent) c).setToolTipText(JDL.L(JDL_PREFIX + "tooltip.wrongParameterCount", "Your translated String contains a wrong count of placeholders!"));
+            return;
+        }
+        String match = new Regex(((KeyInfo) value).getKey(), "gui\\.menu\\.(.*?)\\.accel").getMatch(0);
+        if (match != null) {
+            StringBuilder toolTip = new StringBuilder();
+
+            toolTip.append(JDL.LF(JDL_PREFIX + "tooltip.accelerator", "Insert the hotkey for the action %s here. Allowed modifiers are CTRL, ALTGR, ALT, META, SHIFT", match));
+            String match2 = new Regex(((KeyInfo) value).getLanguage(), "(CONTROL|STRG|UMSCHALT|ALT GR|ALT_GR)").getMatch(0);
+            if (match2 != null) {
+                toolTip.append(new char[] { ' ', '[' }).append(JDL.LF(JDL_PREFIX + "tooltip.accelerator.wrong", "The modifier %s isn't allowed!")).append(']');
+                c.setBackground(LFEGui.COLOR_MISSING);
+            }
+            ((JComponent) c).setToolTipText(toolTip.toString());
+        } else {
+            ((JComponent) c).setToolTipText(null);
         }
     }
 
