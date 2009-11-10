@@ -25,7 +25,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "books.google.com" }, urls = { "http://books.google.de/books\\?id=.*" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "books.google.com" }, urls = { "http://books.google.[a-z]+/books\\?id=.*&pg=.*" }, flags = { 0 })
 public class GoogleBooks extends PluginForHost {
 
     public GoogleBooks(PluginWrapper wrapper) {
