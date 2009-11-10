@@ -1,4 +1,4 @@
 <jDownloader>
-<method name="turbobit.net" author="DwD"  services="turbobit.net" /> 
+<method name="turbobit.netOUTDATED" author="DwD"  services="turbobitOUTDATED" /> 
 <format type="png" letterNum="4" />
 </jDownloader>

@@ -33,8 +33,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-//quickupload by pspzockerscene
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "quickupload.net" }, urls = { "http://[\\w\\.]*?quickupload\\.net/[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "quickupload.net" }, urls = { "http://[\\w\\.]*?(quickupload|ezyfile)\\.net/[a-z0-9]{12}" }, flags = { 0 })
 public class QuickUploadDotNet extends PluginForHost {
 
     public QuickUploadDotNet(PluginWrapper wrapper) {
@@ -44,6 +43,12 @@ public class QuickUploadDotNet extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://quickupload.net/tos.html";
+    }
+
+    // ezyfile went down so the userswill see that ezyfile is now quickupload
+    // een if all old ezyfile links are down
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("ezyfile.net", "quickupload.net"));
     }
 
     @Override
