@@ -26,7 +26,6 @@ import jd.controlling.JDLogger;
 import jd.nutils.OSDetector;
 import jd.nutils.io.JDIO;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -53,7 +52,6 @@ public class JACMethod implements Comparable<JACMethod> {
         if (methods != null) return methods;
         ArrayList<JACMethod> methods = new ArrayList<JACMethod>();
         for (File methodDir : getMethodDirs()) {
-            System.out.println(methodDir);
             ArrayList<JACMethod> meths = parseJACInfo(methodDir);
             if (meths != null) {
                 methods.addAll(meths);
@@ -88,7 +86,6 @@ public class JACMethod implements Comparable<JACMethod> {
         if (doc == null) return null;
 
         String[] services = null;
-        String author = null;
 
         NodeList nl = doc.getFirstChild().getChildNodes();
         for (int i = 0; i < nl.getLength(); i++) {
@@ -102,13 +99,6 @@ public class JACMethod implements Comparable<JACMethod> {
                     services = new String[] { JDUtilities.getAttribute(childNode, "name") };
                 }
 
-                String extern = JDUtilities.getAttribute(childNode, "type");
-                if (extern != null && extern.equalsIgnoreCase("extern")) {
-                    author = JDL.L("gui.config.jac.extern", "Externe Methode");
-                } else {
-                    author = JDUtilities.getAttribute(childNode, "author");
-                }
-
                 break;
             }
         }
@@ -116,7 +106,7 @@ public class JACMethod implements Comparable<JACMethod> {
         ArrayList<JACMethod> methods = new ArrayList<JACMethod>();
         if (services != null) {
             for (String service : services) {
-                methods.add(new JACMethod(dir.getName(), service, author));
+                methods.add(new JACMethod(dir.getName(), service));
             }
         }
         return methods;
@@ -146,12 +136,9 @@ public class JACMethod implements Comparable<JACMethod> {
 
     private String servicename;
 
-    private String author;
-
-    public JACMethod(String filename, String servicename, String author) {
+    public JACMethod(String filename, String servicename) {
         this.filename = filename;
         if (servicename != null) this.servicename = servicename.toLowerCase();
-        this.author = author;
     }
 
     public String getFileName() {
@@ -160,10 +147,6 @@ public class JACMethod implements Comparable<JACMethod> {
 
     public String getServiceName() {
         return servicename;
-    }
-
-    public String getAuthor() {
-        return author;
     }
 
     public int compareTo(JACMethod o) {
