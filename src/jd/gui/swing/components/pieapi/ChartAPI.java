@@ -69,10 +69,8 @@ public abstract class ChartAPI extends JComponent {
     private int height;
     protected Image image;
     private PictureLoader loader;
-    private String caption;
 
-    public ChartAPI(String caption, int width, int height) {
-        this.caption = caption;
+    public ChartAPI(int width, int height) {
         this.width = width;
         this.height = height;
         setPreferredSize(new Dimension(width, height));
@@ -168,7 +166,6 @@ public abstract class ChartAPI extends JComponent {
             int x = (getWidth() - image.getWidth(null)) / 2;
             int y = (getHeight() - image.getHeight(null)) / 2;
             g.drawImage(image, x, y, this);
-            g.drawString(caption, 0, 10);
             return;
         }
 

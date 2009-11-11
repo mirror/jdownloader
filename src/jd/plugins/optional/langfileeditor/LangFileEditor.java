@@ -54,7 +54,7 @@ public class LangFileEditor extends PluginOptional {
 
     public LangFileEditor(PluginWrapper wrapper) {
         super(wrapper);
-        lfe = new SingletonPanel(LFEGui.class, this.getPluginConfig(), this);
+        lfe = new SingletonPanel(LFEGui.class, this);
         initConfigEntries();
     }
 

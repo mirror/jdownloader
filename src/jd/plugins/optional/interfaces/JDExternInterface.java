@@ -165,9 +165,9 @@ public class JDExternInterface extends PluginOptional {
                     }.waitForEDT();
 
                     if (UserIO.isOK(UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN | UserIO.DONT_SHOW_AGAIN, JDL.L("updater.beta.rlyupdate.title", "Update to beta now?"), JDL.LF("updater.beta.rlyupdate.message", "Do you want to update to JD-%s", branch)))) {
-                        WebUpdater.getConfig("WEBUPDATE").setProperty(WebUpdater.PARAM_BRANCH, branch);
-                        WebUpdater.getConfig("WEBUPDATE").setProperty(WebUpdater.BRANCHINUSE, branch);
-                        WebUpdater.getConfig("WEBUPDATE").save();
+                        SubConfiguration.getConfig("WEBUPDATE").setProperty(WebUpdater.PARAM_BRANCH, branch);
+                        SubConfiguration.getConfig("WEBUPDATE").setProperty(WebUpdater.BRANCHINUSE, branch);
+                        SubConfiguration.getConfig("WEBUPDATE").save();
                         WebUpdate.doUpdateCheck(false);
                     }
 

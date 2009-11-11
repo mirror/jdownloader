@@ -26,6 +26,7 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
+import jd.config.SubConfiguration;
 import jd.gui.UserIO;
 import jd.gui.swing.Factory;
 import jd.gui.swing.components.linkbutton.JLink;
@@ -50,6 +51,7 @@ public class AboutDialog extends AbstractDialog {
 
     private static final long serialVersionUID = -7647771640756844691L;
 
+    @Override
     public JComponent contentInit() {
         JPanel cp = new JPanel(new MigLayout("ins 10 10 0 10, wrap 2"));
 
@@ -58,7 +60,7 @@ public class AboutDialog extends AbstractDialog {
         JLabel lbl;
         cp.add(lbl = new JLabel(JDL.L(JDL_PREFIX + "name", "JDownloader")), "gaptop 15");
         lbl.setFont(lbl.getFont().deriveFont(lbl.getFont().getSize() * 2.0f));
-        String branch = WebUpdater.getConfig("WEBUPDATE").getStringProperty(WebUpdater.BRANCHINUSE, null);
+        String branch = SubConfiguration.getConfig("WEBUPDATE").getStringProperty(WebUpdater.BRANCHINUSE, null);
         if (branch == null) {
             branch = "";
         } else {
@@ -75,7 +77,7 @@ public class AboutDialog extends AbstractDialog {
 
             public void actionPerformed(ActionEvent e) {
                 String license = JDIO.readFileToString(JDUtilities.getResourceFile("licenses/jdownloader.license"));
-                UserIO.getInstance().requestConfirmDialog(UserIO.NO_CANCEL_OPTION | UserIO.STYLE_LARGE | UserIO.NO_ICON, JDL.L(JDL_PREFIX + "license.title", "JDownloader License"), license, null, null, null);
+                UserIO.getInstance().requestConfirmDialog(UserIO.NO_CANCEL_OPTION | UserIO.STYLE_LARGE | UserIO.NO_ICON | UserIO.NO_COUNTDOWN, JDL.L(JDL_PREFIX + "license.title", "JDownloader License"), license, null, null, null);
             }
 
         }), "gaptop 15, spanx, split 4");
@@ -92,6 +94,7 @@ public class AboutDialog extends AbstractDialog {
         return cp;
     }
 
+    @Override
     protected void packed() {
         this.remove(countDownLabel);
         this.pack();

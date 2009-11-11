@@ -55,8 +55,6 @@ import jd.event.MessageListener;
 import jd.gui.UserIF;
 import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
-import jd.gui.swing.components.pieapi.ChartAPIEntity;
-import jd.gui.swing.components.pieapi.PieChartAPI;
 import jd.gui.swing.components.table.JDRowHighlighter;
 import jd.gui.swing.components.table.JDTable;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
@@ -91,11 +89,10 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
 
     private static final String MISSING_KEY = "~MISSING KEY/REMOVED~";
 
+    private LFEInfoPanel infoPanel;
     private LFETableModel tableModel;
     private JDTable table;
     private File languageFile;
-    private PieChartAPI keyChart;
-    private ChartAPIEntity entDone, entMissing, entOld;
 
     private JMenuBar menubar;
     private JMenu mnuFile, mnuLoad, mnuKey, mnuTest;
@@ -110,6 +107,7 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
     private ArrayList<KeyInfo> data = new ArrayList<KeyInfo>();
     private String lngKey = null;
     private boolean changed = false;
+    private int numOld = 0;
     private final File dirLanguages, dirWorkingCopy;
 
     public static final Color COLOR_DONE = new Color(204, 255, 170);
@@ -124,25 +122,25 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
 
     private LangFileEditor plugin;
 
-    public LFEGui(SubConfiguration cfg, LangFileEditor plg) {
-        subConfig = cfg;
-        plugin = plg;
+    public LFEGui(LangFileEditor plugin) {
+        this.plugin = plugin;
+        this.subConfig = plugin.getPluginConfig();
+        this.infoPanel = LFEInfoPanel.getInstance();
         this.setName(JDL.L(LOCALE_PREFIX + "title", "Language Editor"));
         dirLanguages = JDUtilities.getResourceFile("tmp/lfe/lng/");
         dirWorkingCopy = JDUtilities.getResourceFile("tmp/lfe/src/");
         dirLanguages.mkdirs();
         dirWorkingCopy.mkdirs();
-        showGui();
+        initGui();
     }
 
     public ArrayList<KeyInfo> getData() {
         return data;
     }
 
-    private void showGui() {
+    private void initGui() {
         tableModel = new LFETableModel(this);
         table = new JDTable(tableModel);
-
         table.setEnabled(false);
         table.addMouseListener(this);
         table.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
@@ -165,12 +163,7 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
 
         });
 
-        keyChart = new PieChartAPI("", 350, 50);
-        keyChart.addEntity(entDone = new ChartAPIEntity(JDL.L(LOCALE_PREFIX + "keychart.done", "Done"), 0, COLOR_DONE));
-        keyChart.addEntity(entMissing = new ChartAPIEntity(JDL.L(LOCALE_PREFIX + "keychart.missing", "Missing"), 0, COLOR_MISSING));
-        keyChart.addEntity(entOld = new ChartAPIEntity(JDL.L(LOCALE_PREFIX + "keychart.old", "Old"), 0, COLOR_OLD));
-
-        this.setLayout(new MigLayout("wrap 3", "[grow, fill]", "[][grow, fill][]"));
+        this.setLayout(new MigLayout("ins 0, wrap 1", "[grow, fill]", "[][grow, fill]"));
         warning = new JButton(JDL.L(LOCALE_PREFIX + "account.warning", "SVN Account missing. Click here to read more."));
         warning.setVisible(false);
         warning.addActionListener(new ActionListener() {
@@ -187,7 +180,6 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
         });
         this.add(warning, "grow, spanx,hidemode 2");
         this.add(new JScrollPane(table), "grow, spanx");
-        this.add(keyChart, "h 50!, w 350!");
 
         updater = new Thread(new Runnable() {
 
@@ -250,7 +242,8 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
     }
 
     private void updateKeyChart() {
-        int numMissing = 0, numOld = 0;
+        int numMissing = 0;
+        numOld = 0;
 
         for (KeyInfo entry : data) {
             if (entry.isOld()) {
@@ -260,13 +253,7 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
             }
         }
 
-        entDone.setData(data.size() - numMissing - numOld);
-        entDone.setCaption(JDL.L(LOCALE_PREFIX + "keychart.done", "Done") + " [" + entDone.getData() + "]");
-        entMissing.setData(numMissing);
-        entMissing.setCaption(JDL.L(LOCALE_PREFIX + "keychart.missing", "Missing") + " [" + entMissing.getData() + "]");
-        entOld.setData(numOld);
-        entOld.setCaption(JDL.L(LOCALE_PREFIX + "keychart.old", "Old") + " [" + entOld.getData() + "]");
-        keyChart.fetchImage();
+        infoPanel.updateInfo(data.size() - numMissing - numOld, numMissing, numOld);
     }
 
     private void populateLngMenu() {
@@ -397,8 +384,7 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
 
         } else if (e.getSource() == mnuDeleteOld) {
 
-            int old = Integer.valueOf(entOld.getData());
-            if (old > 0 && JDFlags.hasAllFlags(UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN | UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, JDL.L(LOCALE_PREFIX + "deleteOld.title", "Delete Old Key(s)?"), JDL.LF(LOCALE_PREFIX + "deleteOld.message", "Delete all %s old Key(s)?", old)), UserIO.RETURN_OK)) {
+            if (numOld > 0 && JDFlags.hasAllFlags(UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN | UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, JDL.L(LOCALE_PREFIX + "deleteOld.title", "Delete Old Key(s)?"), JDL.LF(LOCALE_PREFIX + "deleteOld.message", "Delete all %s old Key(s)?", numOld)), UserIO.RETURN_OK)) {
                 deleteOldKeys();
             }
 
@@ -527,8 +513,7 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
 
         Collections.sort(data);
 
-        int old = Integer.valueOf(entOld.getData());
-        if (old > 0 && JDFlags.hasAllFlags(UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN | UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_OK, JDL.L(LOCALE_PREFIX + "deleteOld.title", "Delete Old Key(s)?"), JDL.LF(LOCALE_PREFIX + "deleteOld.message2", "There are still %s old keys in the LanguageFile. Delete them before saving?", old)), UserIO.RETURN_OK)) {
+        if (numOld > 0 && JDFlags.hasAllFlags(UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN | UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_OK, JDL.L(LOCALE_PREFIX + "deleteOld.title", "Delete Old Key(s)?"), JDL.LF(LOCALE_PREFIX + "deleteOld.message2", "There are still %s old keys in the LanguageFile. Delete them before saving?", numOld)), UserIO.RETURN_OK)) {
             deleteOldKeys();
         }
 

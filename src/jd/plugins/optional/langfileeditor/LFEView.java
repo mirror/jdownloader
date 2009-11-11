@@ -30,23 +30,20 @@ public class LFEView extends ClosableView {
 
     private static final long serialVersionUID = -1676038853735547928L;
     private static final String JDL_PREFIX = "jd.plugins.optional.langfileeditor.LFEView.";
-    private LangFileEditor lfe;
     private LFEGui lfeGui;
 
-    public LFEView(SwitchPanel panel, LangFileEditor langFileEditor) {
+    public LFEView(SwitchPanel panel, final LangFileEditor langFileEditor) {
         super();
         this.setContent(panel);
+        this.setInfoPanel(LFEInfoPanel.getInstance());
         this.lfeGui = (LFEGui) panel;
-        lfe = langFileEditor;
         this.getBroadcaster().addListener(new SwitchPanelListener() {
 
             @Override
             public void onPanelEvent(SwitchPanelEvent event) {
-                switch (event.getID()) {
-                case SwitchPanelEvent.ON_REMOVE:
-                    lfe.activateAction.setSelected(false);
+                if (event.getID() == SwitchPanelEvent.ON_REMOVE) {
+                    langFileEditor.activateAction.setSelected(false);
                 }
-
             }
 
         });
@@ -60,7 +57,7 @@ public class LFEView extends ClosableView {
 
     @Override
     public Icon getIcon() {
-        return JDTheme.II(lfe.getIconKey(), 16, 16);
+        return JDTheme.II("gui.splash.languages", 16, 16);
     }
 
     @Override
@@ -75,12 +72,10 @@ public class LFEView extends ClosableView {
 
     @Override
     protected void onHide() {
-
     }
 
     @Override
     protected void onShow() {
-
     }
 
 }

@@ -116,8 +116,8 @@ public class Main {
                 } else if (p.trim().equalsIgnoreCase("-branch")) {
                     String br = args[++i];
                     if (br.equalsIgnoreCase("reset")) br = null;
-                    WebUpdater.getConfig("WEBUPDATE").setProperty(WebUpdater.PARAM_BRANCH, br);
-                    WebUpdater.getConfig("WEBUPDATE").save();
+                    SubConfiguration.getConfig("WEBUPDATE").setProperty(WebUpdater.PARAM_BRANCH, br);
+                    SubConfiguration.getConfig("WEBUPDATE").save();
                     System.out.println("Switched branch: " + br);
                 } else if (p.trim().equalsIgnoreCase("-clone")) {
 
@@ -130,13 +130,13 @@ public class Main {
 
             Browser.init();
 
-            guiConfig = WebUpdater.getConfig("WEBUPDATE");
+            guiConfig = SubConfiguration.getConfig("WEBUPDATE");
 
             log.append("Update JDownloader  at " + JDUtilities.getResourceFile(".") + "\r\n");
-            log.append(WebUpdater.getConfig("WEBUPDATE").getProperties() + "\r\n");
-            System.out.println(WebUpdater.getConfig("WEBUPDATE").getProperties() + "\r\n");
-            System.out.println(WebUpdater.getConfig("PACKAGEMANAGER").getProperties() + "\r\n");
-            log.append(WebUpdater.getConfig("PACKAGEMANAGER").getProperties() + "\r\n");
+            log.append(SubConfiguration.getConfig("WEBUPDATE").getProperties() + "\r\n");
+            System.out.println(SubConfiguration.getConfig("WEBUPDATE").getProperties() + "\r\n");
+            System.out.println(SubConfiguration.getConfig("PACKAGEMANAGER").getProperties() + "\r\n");
+            log.append(SubConfiguration.getConfig("PACKAGEMANAGER").getProperties() + "\r\n");
 
             initGUI();
 
@@ -521,6 +521,7 @@ public class Main {
         frame.setVisible(true);
 
         new Thread() {
+            @Override
             public void run() {
                 while (true) {
                     logWindow.setText(log.toString());

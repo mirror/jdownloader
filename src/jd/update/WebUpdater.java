@@ -28,7 +28,6 @@ import java.util.Vector;
 
 import javax.swing.JProgressBar;
 
-import jd.config.CFGConfig;
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
@@ -65,24 +64,6 @@ public class WebUpdater implements Serializable {
     private static final String UPDATE_ZIP_LOCAL_PATH = "tmp/update.zip";
     public static final String PARAM_BRANCH = "BRANCH";
     public static final String BRANCHINUSE = "BRANCHINUSE";
-
-    /**
-     * Funktion übertragt alle werte aus den alten Config files in die datenbank
-     * 
-     * @param string
-     * @return
-     */
-    public static SubConfiguration getConfig(String string) {
-        SubConfiguration guiConfig = SubConfiguration.getConfig(string);
-        CFGConfig gui = CFGConfig.getConfig(string);
-        if (gui.getProperties().size() != 0) {
-            guiConfig.getProperties().putAll(gui.getProperties());
-            gui.getProperties().clear();
-            gui.save();
-        }
-        guiConfig.save();
-        return guiConfig;
-    }
 
     public static HashMap<String, File> getFileMap() {
         return fileMap;
@@ -199,15 +180,9 @@ public class WebUpdater implements Serializable {
         return ret;
     }
 
-    @SuppressWarnings("unchecked")
     private ArrayList<Server> getAvailableServers() {
         if (Main.clone) return Main.clonePrefix;
-        try {
-            return (ArrayList<Server>) WebUpdater.getConfig("WEBUPDATE").getProperty("SERVERLIST");
-        } catch (Exception e) {
-            WebUpdater.getConfig("WEBUPDATE").setProperty("SERVERLIST", new ArrayList<Server>());
-            return (ArrayList<Server>) WebUpdater.getConfig("WEBUPDATE").getProperty("SERVERLIST");
-        }
+        return SubConfiguration.getConfig("WEBUPDATE").getGenericProperty("SERVERLIST", new ArrayList<Server>());
     }
 
     /**
@@ -219,13 +194,12 @@ public class WebUpdater implements Serializable {
         try {
             String latestBranch = getLatestBranch();
 
-            String ret = WebUpdater.getConfig("WEBUPDATE").getStringProperty(WebUpdater.PARAM_BRANCH);
+            String ret = SubConfiguration.getConfig("WEBUPDATE").getStringProperty(WebUpdater.PARAM_BRANCH);
 
             if (ret == null) ret = latestBranch;
 
-            WebUpdater.getConfig("WEBUPDATE").setProperty(WebUpdater.BRANCHINUSE, ret);
-            WebUpdater.getConfig("WEBUPDATE").save();
-            if (ret == null) { return null; }
+            SubConfiguration.getConfig("WEBUPDATE").setProperty(WebUpdater.BRANCHINUSE, ret);
+            SubConfiguration.getConfig("WEBUPDATE").save();
             return ret;
         } catch (Exception e) {
             return null;
@@ -264,13 +238,13 @@ public class WebUpdater implements Serializable {
                     branches = ret.toArray(new String[] {});
                     System.out.println("Found branches on " + serv + ":\r\n" + br);
 
-                    String savedBranch = WebUpdater.getConfig("WEBUPDATE").getStringProperty(WebUpdater.PARAM_BRANCH);
+                    String savedBranch = SubConfiguration.getConfig("WEBUPDATE").getStringProperty(WebUpdater.PARAM_BRANCH);
 
                     if (branches.length > 0 && savedBranch != null && isBetaBranch(savedBranch)) {
 
                         if (betaBranch == null || !savedBranch.equals(betaBranch)) {
-                            WebUpdater.getConfig("WEBUPDATE").setProperty(WebUpdater.PARAM_BRANCH, branches[0]);
-                            WebUpdater.getConfig("WEBUPDATE").save();
+                            SubConfiguration.getConfig("WEBUPDATE").setProperty(WebUpdater.PARAM_BRANCH, branches[0]);
+                            SubConfiguration.getConfig("WEBUPDATE").save();
                             JDLogger.getLogger().severe("RESETTED BRANCH; SINCE BETA branch " + savedBranch + " is not available any more");
                         }
 
@@ -500,6 +474,7 @@ public class WebUpdater implements Serializable {
         this.workingdir = workingdir;
     }
 
+    @Override
     public String toString() {
         return "Updater";
     }
@@ -541,7 +516,7 @@ public class WebUpdater implements Serializable {
 
                 }
                 if (servers.size() > 0) {
-                    WebUpdater.getConfig("WEBUPDATE").setProperty("SERVERLIST", servers);
+                    SubConfiguration.getConfig("WEBUPDATE").setProperty("SERVERLIST", servers);
                 }
                 return getAvailableServers();
             } catch (Exception e) {
@@ -554,10 +529,10 @@ public class WebUpdater implements Serializable {
                 continue;
             }
         }
-        if (fnf && WebUpdater.getConfig("WEBUPDATE").getStringProperty(WebUpdater.PARAM_BRANCH) != null) {
-            System.err.println("Branch " + WebUpdater.getConfig("WEBUPDATE").getStringProperty(WebUpdater.PARAM_BRANCH) + " is not available any more. Reset to default");
-            WebUpdater.getConfig("WEBUPDATE").setProperty(WebUpdater.PARAM_BRANCH, null);
-            WebUpdater.getConfig("WEBUPDATE").save();
+        if (fnf && SubConfiguration.getConfig("WEBUPDATE").getStringProperty(WebUpdater.PARAM_BRANCH) != null) {
+            System.err.println("Branch " + SubConfiguration.getConfig("WEBUPDATE").getStringProperty(WebUpdater.PARAM_BRANCH) + " is not available any more. Reset to default");
+            SubConfiguration.getConfig("WEBUPDATE").setProperty(WebUpdater.PARAM_BRANCH, null);
+            SubConfiguration.getConfig("WEBUPDATE").save();
             return updateAvailableServers();
         }
         return getAvailableServers();

@@ -27,7 +27,6 @@ import javax.swing.JLabel;
 import javax.swing.event.EventListenerList;
 
 import jd.gui.swing.SwingGui;
-import jd.gui.swing.jdgui.borders.InsideShadowBorder;
 import jd.gui.swing.jdgui.interfaces.DroppedPanel;
 import net.miginfocom.swing.MigLayout;
 
@@ -38,20 +37,14 @@ public abstract class InfoPanel extends DroppedPanel {
     protected EventListenerList listenerList;
 
     private JLabel iconContainer;
-    // private JLabel nameContainer;
-    // private JLabel descContainer;
 
-    private Color valueColor;
-    private Color titleColor;
-    private HashMap<String, JComponent> map;
+    private final Color valueColor;
+    private final Color titleColor;
+    private final HashMap<String, JComponent> map;
 
     public InfoPanel() {
         super();
         SwingGui.checkEDT();
-        InsideShadowBorder b;
-        b = new InsideShadowBorder(5, 0, 0, 0);
-        b.setBorderInsets(0, 3, 0, 0);
-        this.setBorder(b);
         listenerList = new EventListenerList();
         map = new HashMap<String, JComponent>();
         this.setLayout(new MigLayout("ins 5", "[]5[]", "[][]"));
@@ -59,13 +52,6 @@ public abstract class InfoPanel extends DroppedPanel {
         titleColor = getBackground().darker().darker();
         this.iconContainer = new JLabel();
         add(iconContainer, "spany 2,cell 0 0,gapleft 1");
-        // this.nameContainer = new JLabel("Infopane");
-        // add(nameContainer, "gapleft 10,cell 1 0");
-        // nameContainer.setForeground(valueColor);
-        // this.descContainer = new JLabel("");
-        // add(descContainer, "gapleft 10,cell 1 1");
-        // descContainer.setForeground(titleColor);
-
     }
 
     /**
@@ -97,7 +83,7 @@ public abstract class InfoPanel extends DroppedPanel {
     }
 
     /**
-     * UPdates an entry previously added my addInfoEntry. Use as key the
+     * Updates an entry previously added my addInfoEntry. Use as key the
      * previously used title
      * 
      * @param key
@@ -113,7 +99,7 @@ public abstract class InfoPanel extends DroppedPanel {
     }
 
     /**
-     * Ads an info entry at x ,y title has to be constant and value may be
+     * Adds an info entry at x ,y title has to be constant and value may be
      * updated later by using updateInfo(..)
      * 
      * @param title

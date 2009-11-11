@@ -20,8 +20,8 @@ package jd.gui.swing.components.pieapi;
 public class PieChartAPI extends ChartAPI {
     private static final long serialVersionUID = 7576517180813229367L;
 
-    public PieChartAPI(String caption, int width, int height) {
-        super(caption, width, height);
+    public PieChartAPI(int width, int height) {
+        super(width, height);
     }
 
     @Override

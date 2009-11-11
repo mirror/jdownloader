@@ -30,6 +30,7 @@ import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
 import jd.config.CFGConfig;
+import jd.config.SubConfiguration;
 import jd.http.Browser;
 import jd.nutils.JDHash;
 import jd.nutils.SimpleFTP;
@@ -38,7 +39,6 @@ import jd.nutils.io.JDIO.FileSelector;
 import jd.nutils.svn.Subversion;
 import jd.nutils.zip.Zip;
 import jd.parser.Regex;
-import jd.update.WebUpdater;
 
 import org.tmatesoft.svn.core.SVNException;
 
@@ -80,7 +80,7 @@ public class Updater {
         Browser.setGlobalReadTimeout(500000);
         Updater upd = new Updater();
         //
-        WebUpdater.getConfig("WEBUPDATE").save();
+        SubConfiguration.getConfig("WEBUPDATE").save();
         // System.out.println("STATUS: Webupdate");
         //
         // upd.webupdate();

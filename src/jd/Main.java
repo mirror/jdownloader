@@ -172,7 +172,7 @@ public class Main {
         for (int i = 0; i < args.length; i++) {
 
             if (args[i].equalsIgnoreCase("-branch")) {
-                SubConfiguration webConfig = WebUpdater.getConfig("WEBUPDATE");
+                SubConfiguration webConfig = SubConfiguration.getConfig("WEBUPDATE");
                 if (args[i + 1].equalsIgnoreCase("reset")) {
                     webConfig.setProperty(WebUpdater.PARAM_BRANCH, null);
                     if (webConfig.hasChanges()) {
@@ -294,7 +294,7 @@ public class Main {
                 if (GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_SHOW_SPLASH, true)) {
                     LOGGER.info("init Splash");
                     new GuiRunnable<Object>() {
-                        // @Override
+                        @Override
                         public Object runSave() {
                             try {
                                 new SplashScreen(JDController.getInstance());
@@ -315,8 +315,8 @@ public class Main {
             if (args.length > 0) {
                 LOGGER.info("Send parameters to existing jD instance and exit");
                 JUnique.sendMessage(instanceID, "" + args.length);
-                for (int i = 0; i < args.length; i++) {
-                    JUnique.sendMessage(instanceID, args[i]);
+                for (String arg : args) {
+                    JUnique.sendMessage(instanceID, arg);
                 }
             } else {
                 LOGGER.info("There is already a running jD instance");
@@ -462,7 +462,7 @@ public class Main {
         JDUtilities.getController().fireControlEvent(new ControlEvent(this, SplashScreen.SPLASH_PROGRESS, JDL.L("gui.splash.progress.paintgui", "Paint user interface")));
 
         new GuiRunnable<Object>() {
-            // @Override
+            @Override
             public Object runSave() {
                 init.initGUI(controller);
                 return null;
@@ -501,6 +501,7 @@ public class Main {
         LOGGER.info("update start");
 
         new Thread() {
+            @Override
             public void run() {
                 try {
                     Thread.sleep(5000);
