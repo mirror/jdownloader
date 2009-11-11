@@ -45,7 +45,7 @@ public class JACMethod implements Comparable<JACMethod> {
                 return method.getFileName();
             }
         }
-        logger.info("There is no JAC method for the service " + service);
+        logger.info("There is no JAC method for the service " + service + ", now trying default directory!");
         return service;
     }
 
@@ -53,6 +53,7 @@ public class JACMethod implements Comparable<JACMethod> {
         if (methods != null) return methods;
         ArrayList<JACMethod> methods = new ArrayList<JACMethod>();
         for (File methodDir : getMethodDirs()) {
+            System.out.println(methodDir);
             ArrayList<JACMethod> meths = parseJACInfo(methodDir);
             if (meths != null) {
                 methods.addAll(meths);

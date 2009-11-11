@@ -38,8 +38,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-//create this patterns with CMS.main
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {}, flags = {})
 public class CMS extends PluginForDecrypt {
     public static final String[] ANNOTATION_NAMES = new String[] { "romhood.com", "indexxx.us", "turk-crew.com", "musicfarm.in", "warezhunters.org", "uwarez.ws", "ddl-kingz.in", "oxygen-warez.com", "filefox.in", "alphawarez.us", "pirate-loads.com", "fettrap.com", "omega-music.com", "hardcoremetal.biz", "flashload.org", "twin-warez.com", "oneload.org", "steelwarez.com", "fullstreams.info", "lionwarez.com", "1dl.in", "chrome-database.com", "oneload.org", "youwarez.biz", "saugking.net", "leetpornz.com", "freefiles4u.com", "dark-load.net", "crimeland.de", "get-warez.in", "meinsound.com", "projekt-tempel-news.de.vu", "datensau.org", "musik.am", "spreaded.net", "relfreaks.com", "babevidz.com", "serien24.com", "porn-freaks.net", "xxx-4-free.net", "porn-traffic.net", "chili-warez.net", "game-freaks.net", "isos.at", "your-load.com", "mov-world.net", "xtreme-warez.net", "sceneload.to",
@@ -95,7 +93,7 @@ public class CMS extends PluginForDecrypt {
         super(wrapper);
     }
 
-    // @Override
+    @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -135,7 +133,7 @@ public class CMS extends PluginForDecrypt {
                             if (host.toLowerCase().contains("mov-world.net"))
                                 capTxt = getCaptchaCode("mov-world.net", captchaFile, param);
                             else
-                                capTxt = getCaptchaCode("cms", captchaFile, param);
+                                capTxt = getCaptchaCode("ucms", captchaFile, param);
                             captchaFile.renameTo(new File(captchaFile.getParentFile(), capTxt + ".gif"));
 
                             String posthelp = HTMLParser.getFormInputHidden(element[2]);
@@ -227,7 +225,7 @@ public class CMS extends PluginForDecrypt {
                             if (host.toLowerCase().contains("mov-world.net"))
                                 capTxt = getCaptchaCode("mov-world.net", captchaFile, param);
                             else
-                                capTxt = getCaptchaCode("cms", captchaFile, UserIO.NO_JAC, param, null, null);
+                                capTxt = getCaptchaCode("ucms", captchaFile, UserIO.NO_JAC, param, null, null);
                             captchaFile.renameTo(new File(captchaFile.getParentFile(), capTxt + ".gif"));
 
                             tform.put("code", capTxt);
@@ -280,7 +278,5 @@ public class CMS extends PluginForDecrypt {
 
         return decryptedLinks;
     }
-
-    // @Override
 
 }
