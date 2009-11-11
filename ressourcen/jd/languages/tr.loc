@@ -1049,7 +1049,7 @@ jd.plugins.optional.jdtrayicon.jdlighttray = JD Tepsi İkonu
 jd.plugins.optional.jdunrar.jdunrar = JD Unrar
 jd.plugins.optional.langfileeditor.columns.languagecolumn.tooltip.accelerator = Eylem %s için kısayolu buraya girin. İzin verilen değiştiriciler: CTRL, ALTGR, ALT, META, SHIFT
 jd.plugins.optional.langfileeditor.columns.languagecolumn.tooltip.accelerator.wrong = Değiştirici %s kullanılamaz! izin yok.
-jd.plugins.optional.langfileeditor.columns.languagecolumn.tooltip.wrongparametercount = Tercüme ettiğiniz dizgideki yertutucu sayısı yanlış
+jd.plugins.optional.langfileeditor.columns.languagecolumn.tooltip.wrongparametercount = Tercüme ettiğiniz dizgideki yertutucuların sayısı yanlış! yertutucu=(%'s)
 jd.plugins.optional.langfileeditor.langfileeditor = Dil Dosyası Düzenleyici
 jd.plugins.optional.langfileeditor.langfileeditor.badlogins = Oturum açma bilgisi doğru değil.\r\n Lütfen doğru oturum açma bilgisi girin.
 jd.plugins.optional.langfileeditor.langfileeditor.btn.readmore = daha fazla bilgi...
@@ -1069,7 +1069,7 @@ jd.plugins.optional.schedule.expired = süresi dolmuş
 jd.plugins.optional.schedule.maingui.edit = Düzenle
 jd.plugins.optional.schedule.maingui.mytablemodel.add.daily = Günde Bir
 jd.plugins.optional.schedule.maingui.mytablemodel.add.hourly = Saatte Bir
-jd.plugins.optional.schedule.maingui.mytablemodel.add.interval = Sıklık: %sS %sD
+jd.plugins.optional.schedule.maingui.mytablemodel.add.interval = Sıklık: %sh %sm
 jd.plugins.optional.schedule.maingui.mytablemodel.add.once = Sadece bir kere
 jd.plugins.optional.schedule.maingui.mytablemodel.add.weekly = Haftada Bir
 jd.plugins.optional.schedule.schedule = Zamanlanmış Görevler
