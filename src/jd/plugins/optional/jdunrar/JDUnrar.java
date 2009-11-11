@@ -30,7 +30,6 @@ import jd.config.ConfigEntry;
 import jd.config.ConfigPropertyListener;
 import jd.config.Property;
 import jd.config.SubConfiguration;
-import jd.controlling.DownloadController;
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.controlling.PasswordListController;
@@ -653,8 +652,6 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         ce.setEnabledCondidtion(conditionEntry, true);
         config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDUnrarConstants.CONFIG_KEY_REMVE_AFTER_EXTRACT, JDL.L("gui.config.unrar.remove_after_extract", "Delete archives after suc. extraction?")));
         ce.setDefaultValue(false);
-        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDUnrarConstants.CONFIG_KEY_REMVE_PACKAGE_AFTER_EXTRACT, JDL.L("gui.config.unrar.remove_package_after_extract", "Delete Package after suc. extraction?")));
-        ce.setDefaultValue(false);
         config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDUnrarConstants.CONFIG_KEY_OVERWRITE, JDL.L("gui.config.unrar.overwrite", "Overwrite existing files?")));
         ce.setDefaultValue(false);
 
@@ -940,28 +937,9 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
                     logger.info(infoFiles.getName() + " removed");
                 }
             }
-            if (this.getPluginConfig().getBooleanProperty(JDUnrarConstants.CONFIG_KEY_REMVE_PACKAGE_AFTER_EXTRACT, false)) {
-                removePackage(list);
-            }
             this.onFinished(wrapper);
             break;
 
-        }
-    }
-
-    private void removePackage(ArrayList<DownloadLink> list) {
-        synchronized (DownloadController.ControllerLock) {
-            synchronized (DownloadController.getInstance().getPackages()) {
-                synchronized (DownloadController.ControllerLock) {
-                    synchronized (DownloadController.getInstance().getPackages()) {
-                        ArrayList<FilePackage> packages = new ArrayList<FilePackage>(DownloadController.getInstance().getPackages());
-                        // packages.add(DownloadController.getInstance().getAllDownloadLinks());
-                        for (FilePackage fp2 : packages) {
-                            fp2.remove(list);
-                        }
-                    }
-                }
-            }
         }
     }
 
@@ -1084,10 +1062,6 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
                 if (infoFiles.exists() && infoFiles.delete()) {
                     logger.info(infoFiles.getName() + " removed");
                 }
-            }
-            if (this.getPluginConfig().getBooleanProperty(JDUnrarConstants.CONFIG_KEY_REMVE_PACKAGE_AFTER_EXTRACT, false)) {
-                ArrayList<DownloadLink> list = this.getArchiveList(wrapper.getDownloadLink());
-                removePackage(list);
             }
             this.onFinished(wrapper);
             break;
