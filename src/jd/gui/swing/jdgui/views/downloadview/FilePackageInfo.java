@@ -47,7 +47,9 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
 
     private static final long serialVersionUID = 5410296068527460629L;
 
-    private ComboBrowseFile brwSaveTo;
+    private JPanel panel;
+
+    private JTabbedPane tabbedPane;
 
     private JDTextField txtComment;
     private JDTextField txtCommentDl;
@@ -55,50 +57,39 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
     private JDTextField txtNameDl;
     private JDTextField txtPasswordDl;
     private JDTextField txtPassword;
+    private JDTextField txtPassword2;
     private JDTextField txtStatusDl;
-    private JDTextField txtSize;
-    private JDTextField txtSizeDl;
     private JDTextField txtURL;
     private JDTextField txtPathLabel;
-
+    private JLabel lblSize;
+    private JLabel lblSizeDl;
+    private JLabel lblHoster;
+    private JLabel lblType;
+    private JLabel lblETA;
+    private JLabel lblSpeed;
+    private JLabel lblFiles;
     private JCheckBox chbExtract;
-
-    private JTabbedPane tabbedPane;
+    private ComboBrowseFile brwSaveTo;
+    private MultiProgressBar progressBarFilePackage;
+    private MultiProgressBar progressBarDownloadLink;
 
     private FilePackage fp = null;
+    private DownloadLink downloadLink;
 
     private boolean hidden = false;
 
-    private JPanel panel;
-
-    private MultiProgressBar progressBarFilePackage;
-
-    private JLabel hosterlabel;
-
-    private DownloadLink downloadLink;
-
     private transient Thread updater;
-
-    private MultiProgressBar progressBarDownloadLink;
-
-    private JLabel typeicon;
-
-    private JLabel eta;
-
-    private JLabel speed;
-
-    private JDTextField txtPassword2;
 
     public FilePackageInfo() {
         super();
         buildGui();
         fp = null;
-        this.menutitle.setText(JDL.L("gui.linkgrabber.packagetab.title", "FilePackage"));
+        menutitle.setText(JDL.L("gui.linkgrabber.packagetab.title", "FilePackage"));
     }
 
     public void setPackage(FilePackage fp) {
-        this.tabbedPane.setSelectedIndex(0);
-        this.tabbedPane.setEnabledAt(1, false);
+        tabbedPane.setSelectedIndex(0);
+        tabbedPane.setEnabledAt(1, false);
         if (this.fp != null && this.fp == fp) {
             update();
             return;
@@ -115,7 +106,7 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
          * wichtig: die set funktionen lösen eine action aus , welche ansonsten
          * wiederum ein updatevent aufrufen würden
          */
-        txtSize.setText(Formatter.formatReadable(fp.getTotalEstimatedPackageSize()));
+        lblSize.setText(Formatter.formatReadable(fp.getTotalEstimatedPackageSize()));
         txtName.setText(fp.getName());
         txtComment.setText(fp.getComment());
         txtPassword.setText(fp.getPassword());
@@ -124,7 +115,6 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
         chbExtract.setSelected(fp.isExtractAfterDownload());
         /* neuzeichnen */
         revalidate();
-
     }
 
     public FilePackage getPackage() {
@@ -163,16 +153,10 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
         chbExtract.addActionListener(this);
         chbExtract.addFocusListener(this);
 
-        progressBarFilePackage = new MultiProgressBar();
-        panel = new JPanel();
-        panel.setLayout(new MigLayout("ins 10, wrap 3", "[]10[grow,fill][]", "[]5[]5[]5[]"));
-        panel.add(progressBarFilePackage, "spanx,growx,pushx,split 2,height 18!");
-        panel.add(txtSize = new JDTextField(true), "alignx right");
-        txtSize.setEditable(false);
-        txtSize.setBorder(null);
-        txtSize.setOpaque(false);
-        txtSize.putClientProperty("Synthetica.opaque", Boolean.FALSE);
-
+        panel = new JPanel(new MigLayout("ins 10, wrap 3", "[]10[grow,fill][]", "[]5[]5[]5[]"));
+        panel.add(lblFiles = new JLabel(JDL.LF("gui.fileinfopanel.packagetab.lbl.files", "%s File(s)", 0)), "spanx, split 3");
+        panel.add(progressBarFilePackage = new MultiProgressBar(), "growx,pushx,height 18!");
+        panel.add(lblSize = new JLabel("0B/0B"), "alignx right");
         panel.add(new JLabel(JDL.L("gui.fileinfopanel.packagetab.lbl.name", "Paketname")));
         panel.add(txtName, "growx, span 2");
         panel.add(new JLabel(JDL.L("gui.fileinfopanel.packagetab.lbl.saveto", "Speichern unter")));
@@ -192,17 +176,13 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
         progressBarDownloadLink = new MultiProgressBar();
         panel = new JPanel();
         panel.setLayout(new MigLayout("ins 10, wrap 3", "[]10[grow,fill][]", "[]5[]5[]5[]"));
-        panel.add(hosterlabel = new JLabel(JDTheme.II("gui.images.sort", 16, 16)), "split 2");
-        panel.add(typeicon = new JLabel(JDTheme.II("gui.images.sort", 16, 16)), "");
-        typeicon.setText(JDL.L("gui.fileinfopanel.linktab.chunks", "Chunks"));
+        panel.add(lblHoster = new JLabel(JDTheme.II("gui.images.sort", 16, 16)), "split 2");
+        panel.add(lblType = new JLabel(JDTheme.II("gui.images.sort", 16, 16)), "");
+        lblType.setText(JDL.L("gui.fileinfopanel.linktab.chunks", "Chunks"));
         panel.add(progressBarDownloadLink, "spanx,growx,pushx,split 2,height 18!");
-        panel.add(txtSizeDl = new JDTextField(true), "alignx right");
-        txtSizeDl.setOpaque(false);
-        txtSizeDl.putClientProperty("Synthetica.opaque", Boolean.FALSE);
-        txtSizeDl.setEditable(false);
-        txtSizeDl.setBorder(null);
-        panel.add(eta = new JLabel(JDL.LF("gui.fileinfopanel.linktab.eta", "ETA: %s mm:ss", "0")));
-        panel.add(speed = new JLabel(JDL.LF("gui.fileinfopanel.linktab.speed", "Speed: %s/s", "0 kb")), "skip,alignx right");
+        panel.add(lblSizeDl = new JLabel("0B/0B"), "alignx right");
+        panel.add(lblETA = new JLabel(JDL.LF("gui.fileinfopanel.linktab.eta", "ETA: %s mm:ss", "0")));
+        panel.add(lblSpeed = new JLabel(JDL.LF("gui.fileinfopanel.linktab.speed", "Speed: %s/s", "0 kb")), "skip,alignx right");
         panel.add(new JLabel(JDL.L("gui.fileinfopanel.linktab.name", "Linkname")));
         panel.add(txtNameDl = new JDTextField(true), "growx, span 2");
         txtNameDl.setEditable(false);
@@ -226,27 +206,39 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
     }
 
     public void actionPerformed(ActionEvent e) {
+        updateFilePackage(e.getSource());
+    }
+
+    public void focusGained(FocusEvent e) {
+    }
+
+    public void focusLost(FocusEvent e) {
+        updateFilePackage(e.getSource());
+    }
+
+    private void updateFilePackage(Object source) {
         if (fp == null) return;
-        if (e.getSource() == txtName) {
+        if (source == txtName) {
             fp.setName(txtName.getText());
-        } else if (e.getSource() == brwSaveTo) {
+        } else if (source == brwSaveTo) {
             fp.setDownloadDirectory(brwSaveTo.getText());
-        } else if (e.getSource() == txtComment) {
+        } else if (source == txtComment) {
             fp.setComment(txtComment.getText());
-        } else if (e.getSource() == txtPassword) {
+        } else if (source == txtPassword) {
             fp.setPassword(txtPassword.getText());
-        } else if (e.getSource() == chbExtract) {
+        } else if (source == chbExtract) {
             fp.setExtractAfterDownload(chbExtract.isSelected());
         }
         DownloadController.getInstance().fireDownloadLinkUpdate(fp.get(0));
     }
 
-    // @Override
+    @Override
     public void onShow() {
         update();
         hidden = false;
         if (updater != null && updater.isAlive()) return;
         updater = new Thread() {
+            @Override
             public void run() {
                 try {
                     while (true && !hidden) {
@@ -265,15 +257,16 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
                                 }
                                 i++;
                             }
-                            FilePackageInfo.this.progressBarFilePackage.setMaximums(max);
-                            FilePackageInfo.this.progressBarFilePackage.setValues(values);
-                            txtSize.setText(Formatter.formatReadable(fp.getTotalKBLoaded()) + "/" + Formatter.formatReadable(fp.getTotalEstimatedPackageSize()));
+                            progressBarFilePackage.setMaximums(max);
+                            progressBarFilePackage.setValues(values);
+                            lblSize.setText(Formatter.formatReadable(fp.getTotalKBLoaded()) + "/" + Formatter.formatReadable(fp.getTotalEstimatedPackageSize()));
+                            lblFiles.setText(JDL.LF("gui.fileinfopanel.packagetab.lbl.files", "%s File(s)", fp.getDownloadLinkList().size()));
                         }
                         if (downloadLink != null) {
                             if (downloadLink.getChunksProgress() != null && !downloadLink.getLinkStatus().hasStatus(LinkStatus.ERROR_FILE_NOT_FOUND)) {
                                 long fileSize = downloadLink.getDownloadSize();
                                 int chunks = downloadLink.getChunksProgress().length;
-                                typeicon.setText(chunks + " " + JDL.L("gui.fileinfopanel.linktab.chunks", "Chunks"));
+                                lblType.setText(chunks + " " + JDL.L("gui.fileinfopanel.linktab.chunks", "Chunks"));
                                 long part = fileSize / chunks;
 
                                 long[] max = new long[chunks];
@@ -284,14 +277,14 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
                                 }
                                 max[chunks - 1] = fileSize - part * (chunks - 1);
                                 values[chunks - 1] = (downloadLink.getChunksProgress()[chunks - 1] + 1) - part * (chunks - 1);
-                                FilePackageInfo.this.progressBarDownloadLink.setMaximums(max);
-                                FilePackageInfo.this.progressBarDownloadLink.setValues(values);
+                                progressBarDownloadLink.setMaximums(max);
+                                progressBarDownloadLink.setValues(values);
                             } else {
-                                FilePackageInfo.this.progressBarDownloadLink.setMaximums(new long[] { 10 });
+                                progressBarDownloadLink.setMaximums(new long[] { 10 });
                                 if (downloadLink.getLinkStatus().hasStatus(LinkStatus.ERROR_FILE_NOT_FOUND)) {
-                                    FilePackageInfo.this.progressBarDownloadLink.setValues(new long[] { -1 });
+                                    progressBarDownloadLink.setValues(new long[] { -1 });
                                 } else {
-                                    FilePackageInfo.this.progressBarDownloadLink.setValues(new long[] { 0 });
+                                    progressBarDownloadLink.setValues(new long[] { 0 });
                                 }
                             }
                             txtNameDl.setText(downloadLink.getName());
@@ -306,15 +299,15 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
                                 txtPasswordDl.setText(downloadLink.getFilePackage().getPassword());
                             }
                             txtStatusDl.setText(downloadLink.getLinkStatus().getStatusString());
-                            txtSizeDl.setText(Formatter.formatReadable(downloadLink.getDownloadCurrent()) + "/" + Formatter.formatReadable(downloadLink.getDownloadSize()));
+                            lblSizeDl.setText(Formatter.formatReadable(downloadLink.getDownloadCurrent()) + "/" + Formatter.formatReadable(downloadLink.getDownloadSize()));
                             if (downloadLink.getDownloadSpeed() <= 0) {
-                                eta.setVisible(false);
-                                speed.setVisible(false);
+                                lblETA.setVisible(false);
+                                lblSpeed.setVisible(false);
                             } else {
-                                eta.setText(JDL.LF("gui.fileinfopanel.linktab.eta2", "ETA: %s", Formatter.formatSeconds((downloadLink.getDownloadSize() - downloadLink.getDownloadCurrent()) / downloadLink.getDownloadSpeed())));
-                                speed.setText(JDL.LF("gui.fileinfopanel.linktab.speed", "Speed: %s/s", Formatter.formatReadable(Math.max(0, downloadLink.getDownloadSpeed()))));
-                                speed.setVisible(true);
-                                eta.setVisible(true);
+                                lblETA.setText(JDL.LF("gui.fileinfopanel.linktab.eta2", "ETA: %s", Formatter.formatSeconds((downloadLink.getDownloadSize() - downloadLink.getDownloadCurrent()) / downloadLink.getDownloadSpeed())));
+                                lblSpeed.setText(JDL.LF("gui.fileinfopanel.linktab.speed", "Speed: %s/s", Formatter.formatReadable(Math.max(0, downloadLink.getDownloadSpeed()))));
+                                lblSpeed.setVisible(true);
+                                lblETA.setVisible(true);
                             }
                         }
                         revalidate();
@@ -340,7 +333,7 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
         fp.setExtractAfterDownload(chbExtract.isSelected());
     }
 
-    // @Override
+    @Override
     public void onHide() {
         if (fp == null && downloadLink == null) return;
         onHideSave();
@@ -349,8 +342,8 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
             updater.interrupt();
             updater = null;
         }
-        this.progressBarFilePackage.setMaximums(null);
-        this.progressBarDownloadLink.setMaximums(null);
+        progressBarFilePackage.setMaximums(null);
+        progressBarDownloadLink.setMaximums(null);
     }
 
     public DownloadLink getDownloadLink() {
@@ -358,27 +351,27 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
     }
 
     public void setDownloadLink(DownloadLink downloadLink) {
-        this.tabbedPane.setEnabledAt(1, true);
-        this.tabbedPane.setSelectedIndex(1);
-        if (this.downloadLink != null && this.downloadLink == downloadLink) { return; }
+        tabbedPane.setEnabledAt(1, true);
+        tabbedPane.setSelectedIndex(1);
+        if (this.downloadLink != null && this.downloadLink == downloadLink) return;
         this.downloadLink = downloadLink;
         if (downloadLink != null) {
             fp = downloadLink.getFilePackage();
-            this.txtPathLabel.setText(downloadLink.getFileOutput());
-            this.typeicon.setIcon(downloadLink.getIcon());
+            txtPathLabel.setText(downloadLink.getFileOutput());
+            lblType.setIcon(downloadLink.getIcon());
             if (downloadLink.getPlugin() != null) {
-                this.hosterlabel.setIcon(downloadLink.getPlugin().getHosterIcon());
+                lblHoster.setIcon(downloadLink.getPlugin().getHosterIcon());
             } else {
-                this.hosterlabel.setIcon(null);
+                lblHoster.setIcon(null);
             }
 
-            hosterlabel.setToolTipText(downloadLink.getHost());
-            typeicon.setToolTipText(downloadLink.getHost());
-            this.txtSizeDl.setText(Formatter.formatReadable(downloadLink.getDownloadCurrent()) + "/" + Formatter.formatReadable(downloadLink.getDownloadSize()));
+            lblHoster.setToolTipText(downloadLink.getHost());
+            lblType.setToolTipText(downloadLink.getHost());
+            lblSizeDl.setText(Formatter.formatReadable(downloadLink.getDownloadCurrent()) + "/" + Formatter.formatReadable(downloadLink.getDownloadSize()));
             if (downloadLink.getLinkType() == DownloadLink.LINKTYPE_NORMAL) {
-                this.txtURL.setText(downloadLink.getBrowserUrl());
+                txtURL.setText(downloadLink.getBrowserUrl());
             } else {
-                this.txtURL.setText("**************");
+                txtURL.setText("**************");
             }
         }
         if (this.fp != null) {
@@ -390,25 +383,6 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
     @Override
     public void onClosed() {
         DownloadView.getInstance().setInfoPanel(null);
-    }
-
-    public void focusGained(FocusEvent e) {
-    }
-
-    public void focusLost(FocusEvent e) {
-        if (fp == null) return;
-        if (e.getSource() == txtName) {
-            fp.setName(txtName.getText());
-        } else if (e.getSource() == brwSaveTo) {
-            fp.setDownloadDirectory(brwSaveTo.getText());
-        } else if (e.getSource() == txtComment) {
-            fp.setComment(txtComment.getText());
-        } else if (e.getSource() == txtPassword) {
-            fp.setPassword(txtPassword.getText());
-        } else if (e.getSource() == chbExtract) {
-            fp.setExtractAfterDownload(chbExtract.isSelected());
-        }
-        DownloadController.getInstance().fireDownloadLinkUpdate(fp.get(0));
     }
 
 }

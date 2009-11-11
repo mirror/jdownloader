@@ -150,30 +150,28 @@ public abstract class JDAction extends AbstractAction {
      */
     public void setAccelerator(String accelerator) {
         KeyStroke ks;
-        Class<?> b;
-        Field f;
-        String[] split;
-        int mod, m;
         if (accelerator != null && accelerator.length() > 0 && !accelerator.equals("-")) {
-            b = KeyEvent.class;
-            split = accelerator.split("\\+");
-            mod = 0;
+            Class<?> b = KeyEvent.class;
+            String[] split = accelerator.split("\\+");
+            int mod = 0;
             try {
                 for (int i = 0; i < split.length - 1; ++i) {
-                    if (new Regex(split[i], "(CTRL)").matches()) {
+                    if (new Regex(split[i], "^CTRL$").matches()) {
                         mod = mod | KeyEvent.CTRL_DOWN_MASK;
-                    } else if (new Regex(split[i], "(SHIFT)").matches()) {
+                    } else if (new Regex(split[i], "^SHIFT$").matches()) {
                         mod = mod | KeyEvent.SHIFT_DOWN_MASK;
-                    } else if (new Regex(split[i], "(ALTGR)").matches()) {
+                    } else if (new Regex(split[i], "^ALTGR$").matches()) {
                         mod = mod | KeyEvent.ALT_GRAPH_DOWN_MASK;
-                    } else if (new Regex(split[i], "(ALT)").matches()) {
+                    } else if (new Regex(split[i], "^ALT$").matches()) {
                         mod = mod | KeyEvent.ALT_DOWN_MASK;
-                    } else if (new Regex(split[i], "(META)").matches()) {
+                    } else if (new Regex(split[i], "^META$").matches()) {
                         mod = mod | KeyEvent.META_DOWN_MASK;
+                    } else {
+                        JDLogger.getLogger().info(this.getTitle() + " Shortcuts: skipping wrong modifier " + mod + " in " + accelerator);
                     }
                 }
-                f = b.getField("VK_" + split[split.length - 1].toUpperCase());
-                m = (Integer) f.get(null);
+                Field f = b.getField("VK_" + split[split.length - 1].toUpperCase());
+                int m = (Integer) f.get(null);
                 putValue(AbstractAction.ACCELERATOR_KEY, ks = KeyStroke.getKeyStroke(m, mod));
                 JDLogger.getLogger().finest(this.getTitle() + " Shortcuts: mapped " + accelerator + " to " + ks);
             } catch (Exception e) {
