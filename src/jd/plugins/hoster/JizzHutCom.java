@@ -35,7 +35,7 @@ public class JizzHutCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.mystream.to/contact";
+        return "http://www.jizzhut.com/help.php";
     }
 
     @Override
