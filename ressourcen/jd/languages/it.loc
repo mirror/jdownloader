@@ -263,7 +263,6 @@ gui.config.httpliveheader.routerip = IP del router
 gui.config.httpliveheader.script = Script di riconnessione
 gui.config.httpliveheader.user = Utente
 gui.config.jac.column.author = Autore
-gui.config.jac.extern = Metodo esterno
 gui.config.jdrr.infolable = <span color="#4682B4"> Verifica indirizzo IP del router e premi Start <br> W si aprirà il browser con la homepage del router <br> Riconnetti premi stop e salva. <br> Maggiori informazioni sono disponibili </span> <a href="http://jdownloader.org/knowledge/wiki/reconnect/reconnect-recorder"> qui</a>
 gui.config.jdrr.popup.title = Popup riconnessione
 gui.config.jdrr.reconnectfaild = Riconnessione fallita
@@ -376,6 +375,7 @@ gui.fileinfopanel.linktab.url = URL
 gui.fileinfopanel.packagetab = Pacchetto
 gui.fileinfopanel.packagetab.chb.extractafterdownload = Estrai
 gui.fileinfopanel.packagetab.lbl.comment = Commento
+gui.fileinfopanel.packagetab.lbl.files = %s file
 gui.fileinfopanel.packagetab.lbl.name = Nome pacchetto
 gui.fileinfopanel.packagetab.lbl.password = Archivio Password
 gui.fileinfopanel.packagetab.lbl.password2 = Password archivio (auto)
