@@ -926,7 +926,6 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
             JDUtilities.getController().fireControlEvent(new ControlEvent(wrapper, ControlEvent.CONTROL_ON_FILEOUTPUT, files));
 
             for (DownloadLink link : list) {
-                System.out.println(link.getDownloadURL());
                 if (link == null) continue;
                 link.getLinkStatus().addStatus(LinkStatus.FINISHED);
                 link.getLinkStatus().removeStatus(LinkStatus.ERROR_POST_PROCESS);
