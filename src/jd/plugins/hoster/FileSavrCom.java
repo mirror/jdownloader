@@ -16,13 +16,10 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
-
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.parser.html.Form;
-import jd.plugins.DecrypterException;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -37,15 +34,13 @@ public class FileSavrCom extends PluginForHost {
         super(wrapper);
     }
 
-    // @Override
     @Override
     public String getAGBLink() {
         return "http://www.filesavr.com/terms.php";
     }
 
-    // @Override
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
 
@@ -62,7 +57,6 @@ public class FileSavrCom extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
-    // @Override
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
@@ -90,7 +84,7 @@ public class FileSavrCom extends PluginForHost {
 
         }
 
-        if (valid == false) throw new DecrypterException(DecrypterException.CAPTCHA);
+        if (valid == false) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
 
         if (con.getResponseCode() != 200 && con.getResponseCode() != 206) {
             con.disconnect();
@@ -100,23 +94,19 @@ public class FileSavrCom extends PluginForHost {
         dl.startDownload();
     }
 
-    // @Override
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    // @Override
     @Override
     public void reset() {
     }
 
-    // @Override
     @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }

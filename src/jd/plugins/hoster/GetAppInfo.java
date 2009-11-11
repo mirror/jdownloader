@@ -15,7 +15,6 @@
 package jd.plugins.hoster;
 
 import java.io.File;
-import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.gui.UserIO;
@@ -23,7 +22,6 @@ import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
-import jd.plugins.DecrypterException;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -44,7 +42,7 @@ public class GetAppInfo extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("The file requested is either invalid or may have been claimed by copyright holders.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -70,7 +68,7 @@ public class GetAppInfo extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         String infolink = downloadLink.getDownloadURL();
         br.getPage(infolink);
@@ -82,7 +80,7 @@ public class GetAppInfo extends PluginForHost {
             Browser.download(captchaFile, br.cloneBrowser().openGetConnection(captchaurl));
         } catch (Exception e) {
             logger.severe("Captcha Download fehlgeschlagen: " + captchaurl);
-            throw new DecrypterException(DecrypterException.CAPTCHA);
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
 
         String code = getCaptchaCode("getapp.info", captchaFile, UserIO.NO_USER_INTERACTION, downloadLink, null, null);
@@ -113,7 +111,4 @@ public class GetAppInfo extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
-    /*
-     * public String getVersion() { return getVersion("$Revision$"); }
-     */
 }
