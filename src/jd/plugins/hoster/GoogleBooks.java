@@ -30,6 +30,7 @@ public class GoogleBooks extends PluginForHost {
 
     public GoogleBooks(PluginWrapper wrapper) {
         super(wrapper);
+        this.setStartIntervall(2000l);
         // TODO Auto-generated constructor stub
     }
 
@@ -40,16 +41,17 @@ public class GoogleBooks extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink link) throws Exception {
+        br.setCookiesExclusive(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("http://sorry.google.com/sorry/\\?continue=.*")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l) ;
+        if (br.containsHTML("http://sorry.google.com/sorry/\\?continue=.*")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1001l);
         if (br.containsHTML("Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String dllink = br.getRegex(";preloadImg.src = \\'(.*?)\\';window").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
         URLConnectionAdapter con = dl.getConnection();
         if (con.getResponseCode() == 404) {
             con.disconnect();
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1001l);
         }
         dl.startDownload();
 
@@ -74,7 +76,7 @@ public class GoogleBooks extends PluginForHost {
 
     // @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 2;
+        return -1;
     }
 
 }
