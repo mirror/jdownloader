@@ -88,7 +88,6 @@ public class PremiumMenu extends JStartMenu implements ActionListener, AccountCo
             public void initDefaults() {
                 this.setEnabled(true);
 
-                this.setToolTipText(JDL.L("gui.menu.action.premium.desc", "Enable Premiumusage globally"));
                 this.addPropertyChangeListener(new PropertyChangeListener() {
                     public void propertyChange(PropertyChangeEvent evt) {
                         if (evt.getPropertyName() == SELECTED_KEY) {

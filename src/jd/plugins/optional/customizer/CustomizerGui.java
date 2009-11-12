@@ -76,7 +76,6 @@ public class CustomizerGui extends SwitchPanel {
 
             @Override
             public void initDefaults() {
-                this.setToolTipText(JDL.L("action.customize.addsetting.tooltip", "Add a new Setting"));
             }
 
             @Override
@@ -108,7 +107,6 @@ public class CustomizerGui extends SwitchPanel {
 
             @Override
             public void initDefaults() {
-                this.setToolTipText(JDL.L("action.customize.removesetting.tooltip", "Remove selected Setting(s)"));
             }
 
             @Override

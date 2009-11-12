@@ -61,7 +61,6 @@ public class AddUrlAction extends ToolBarAction {
 
     @Override
     public void initDefaults() {
-        this.setToolTipText(JDL.L("gui.menu.action.addurl", "Add URL(s)"));
     }
 
     @Override

@@ -133,7 +133,6 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
 
             @Override
             public void initDefaults() {
-                this.setToolTipText(JDL.L("action.premiumview.addacc.tooltip", "Add a new Account"));
             }
 
             @Override
@@ -163,7 +162,6 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
 
             @Override
             public void initDefaults() {
-                this.setToolTipText(JDL.L("action.premiumview.removeacc.tooltip", "Remove selected Account(s)"));
             }
 
             @Override
@@ -189,7 +187,6 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
 
             @Override
             public void initDefaults() {
-                this.setToolTipText(JDL.L(JDL_PREFIX + "buy.tooltip", "Buy a new premium account."));
             }
 
             @Override

@@ -45,7 +45,6 @@ public class AddContainerAction extends ToolBarAction {
 
     @Override
     public void initDefaults() {
-        this.setToolTipText(JDL.L("gui.menu.action.load", "Load Containerfile"));
     }
 
     @Override

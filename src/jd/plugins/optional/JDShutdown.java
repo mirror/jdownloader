@@ -94,7 +94,6 @@ public class JDShutdown extends PluginOptional {
             @Override
             public void initDefaults() {
                 setPriority(800);
-                this.setToolTipText(JDL.L("gui.jdshutdown.toggle.tooltip", "Enable/Disable Shutdown after Downloads"));
                 this.setEnabled(true);
                 setType(ToolBarAction.Types.TOGGLE);
                 this.setIcon("gui.images.logout");

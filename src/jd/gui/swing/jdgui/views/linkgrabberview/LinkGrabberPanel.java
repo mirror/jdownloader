@@ -156,7 +156,6 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
 
             @Override
             public void initDefaults() {
-                this.setToolTipText(JDL.L("gui.linkgrabberv2.lg.clear", "Clear List"));
             }
 
             @Override
@@ -188,7 +187,6 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
 
             @Override
             public void initDefaults() {
-                this.setToolTipText(JDL.L("gui.linkgrabberv2.lg.addall", "Add all packages"));
             }
 
             @Override

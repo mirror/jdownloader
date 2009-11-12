@@ -73,6 +73,7 @@ public class ActionController {
         new ToolBarAction("toolbar.separator", "-") {
             private static final long serialVersionUID = -4628452328096482738L;
 
+            @Override
             public void onAction(ActionEvent e) {
             }
 
@@ -94,8 +95,6 @@ public class ActionController {
             public void initDefaults() {
                 setPriority(1000);
                 this.setEnabled(true);
-
-                this.setToolTipText(JDL.L(JDL_PREFIX + "toolbar.control.start.tooltip", "Start downloads in list"));
             }
 
             @Override
@@ -103,6 +102,7 @@ public class ActionController {
                 if (inited) return;
                 this.inited = true;
                 JDUtilities.getController().addControlListener(new ControlIDListener(ControlEvent.CONTROL_DOWNLOAD_START, ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED, ControlEvent.CONTROL_DOWNLOAD_STOP) {
+                    @Override
                     public void controlIDEvent(final ControlEvent event) {
                         new GuiRunnable<Object>() {
 
@@ -147,6 +147,7 @@ public class ActionController {
         new ToolBarAction("toolbar.control.pause", "gui.images.break") {
             private static final long serialVersionUID = 7153300370492212502L;
 
+            @Override
             public void onAction(ActionEvent e) {
                 boolean b = ActionController.getToolBarAction("toolbar.control.pause").isSelected();
                 DownloadWatchDog.getInstance().pauseDownloads(b);
@@ -165,6 +166,7 @@ public class ActionController {
                 if (inited) return;
                 this.inited = true;
                 JDUtilities.getController().addControlListener(new ControlIDListener(ControlEvent.CONTROL_DOWNLOAD_START, ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED, ControlEvent.CONTROL_DOWNLOAD_STOP) {
+                    @Override
                     public void controlIDEvent(final ControlEvent event) {
                         new GuiRunnable<Object>() {
 
@@ -203,7 +205,6 @@ public class ActionController {
             public void initDefaults() {
                 setPriority(998);
                 this.setEnabled(false);
-                this.setToolTipText(JDL.L(JDL_PREFIX + "toolbar.control.stop.tooltip", "Stop all running downloads"));
             }
 
             @Override
@@ -211,6 +212,7 @@ public class ActionController {
                 if (inited) return;
                 this.inited = true;
                 JDUtilities.getController().addControlListener(new ControlIDListener(ControlEvent.CONTROL_DOWNLOAD_START, ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED, ControlEvent.CONTROL_DOWNLOAD_STOP) {
+                    @Override
                     public void controlIDEvent(final ControlEvent event) {
 
                         new GuiRunnable<Object>() {
@@ -237,6 +239,7 @@ public class ActionController {
             public void threadedActionPerformed(ActionEvent e) {
                 final ProgressController pc = new ProgressController(JDL.L("gui.downloadstop", "Stopping current downloads..."));
                 Thread test = new Thread() {
+                    @Override
                     public void run() {
                         while (true) {
                             pc.increase(1);
@@ -264,7 +267,6 @@ public class ActionController {
             public void initDefaults() {
                 setPriority(800);
                 this.setEnabled(true);
-                this.setToolTipText(JDL.L(JDL_PREFIX + "toolbar.interaction.reconnect.tooltip", "Get a new IP be resetting your internet connection"));
             }
 
             @Override
@@ -291,6 +293,7 @@ public class ActionController {
             public void threadedActionPerformed(ActionEvent e) {
 
                 new GuiRunnable<Object>() {
+                    @Override
                     public Object runSave() {
                         if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(0, JDL.L("gui.reconnect.confirm", "Wollen Sie sicher eine neue Verbindung aufbauen?")), UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
                             new Thread(new Runnable() {
@@ -313,7 +316,6 @@ public class ActionController {
             public void initDefaults() {
                 setPriority(800);
                 this.setEnabled(true);
-                this.setToolTipText(JDL.L(JDL_PREFIX + "toolbar.interaction.update.tooltip", "Check for new updates"));
             }
 
             @Override
@@ -330,6 +332,7 @@ public class ActionController {
         new ToolBarAction("toolbar.quickconfig.clipboardoberserver", "gui.images.clipboard_enabled") {
             private static final long serialVersionUID = -6442494647304101403L;
 
+            @Override
             public void onAction(ActionEvent e) {
                 ClipboardHandler.getClipboard().setEnabled(this.isSelected());
             }
@@ -339,7 +342,6 @@ public class ActionController {
                 setPriority(900);
                 this.setEnabled(true);
                 setType(ToolBarAction.Types.TOGGLE);
-                this.setToolTipText(JDL.L("gui.menu.action.clipboard.desc", "-"));
                 boolean b = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, true);
                 setSelected(b);
                 setIcon(b ? "gui.images.clipboard_enabled" : "gui.images.clipboard_disabled");
@@ -374,6 +376,7 @@ public class ActionController {
         new ToolBarAction("toolbar.quickconfig.reconnecttoggle", "gui.images.reconnect_disabled") {
             private static final long serialVersionUID = -2942320816429047941L;
 
+            @Override
             public void onAction(ActionEvent e) {
                 Reconnecter.toggleReconnect();
             }
@@ -383,7 +386,6 @@ public class ActionController {
                 setPriority(899);
                 this.setEnabled(true);
                 setType(ToolBarAction.Types.TOGGLE);
-                this.setToolTipText(JDL.L("gui.menu.action.reconnect.desc", "-"));
                 setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true));
                 setIcon(isSelected() ? "gui.images.reconnect_enabled" : "gui.images.reconnect_disabled");
             }
@@ -418,6 +420,7 @@ public class ActionController {
         new ToolBarAction("action.opendlfolder", "gui.images.package_opened") {
             private static final long serialVersionUID = -60944746807335951L;
 
+            @Override
             public void onAction(ActionEvent e) {
                 String dlDir = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY, null);
                 if (dlDir == null) return;
@@ -426,7 +429,6 @@ public class ActionController {
 
             @Override
             public void initDefaults() {
-                this.setToolTipText(JDL.L("action.opendlfolder.tooltip", "Open default Downloadfolder"));
             }
 
             @Override
@@ -480,13 +482,13 @@ public class ActionController {
 
             @Override
             public void initDefaults() {
-                this.setToolTipText(JDL.L("action.downloadview.movetobottom.tooltip", "Move to bottom"));
             }
 
             @Override
             public void init() {
             }
 
+            @Override
             public void threadedActionPerformed(ActionEvent e) {
                 if (!LinkGrabberPanel.getLinkGrabber().isNotVisible()) {
                     LinkGrabberPanel.getLinkGrabber().move(LinkGrabberController.MOVE_BOTTOM);
@@ -501,13 +503,13 @@ public class ActionController {
 
             @Override
             public void initDefaults() {
-                this.setToolTipText(JDL.L("action.downloadview.movetotop.tooltip", "Move to top"));
             }
 
             @Override
             public void init() {
             }
 
+            @Override
             public void threadedActionPerformed(ActionEvent e) {
                 if (!LinkGrabberPanel.getLinkGrabber().isNotVisible()) {
                     LinkGrabberPanel.getLinkGrabber().move(LinkGrabberController.MOVE_TOP);
@@ -523,13 +525,13 @@ public class ActionController {
 
             @Override
             public void initDefaults() {
-                this.setToolTipText(JDL.L("action.downloadview.moveup.tooltip", "Move up"));
             }
 
             @Override
             public void init() {
             }
 
+            @Override
             public void threadedActionPerformed(ActionEvent e) {
                 if (!LinkGrabberPanel.getLinkGrabber().isNotVisible()) {
                     LinkGrabberPanel.getLinkGrabber().move(LinkGrabberController.MOVE_UP);
@@ -544,13 +546,13 @@ public class ActionController {
 
             @Override
             public void initDefaults() {
-                this.setToolTipText(JDL.L("action.downloadview.movedown.tooltip", "Move down"));
             }
 
             @Override
             public void init() {
             }
 
+            @Override
             public void threadedActionPerformed(ActionEvent e) {
                 if (!LinkGrabberPanel.getLinkGrabber().isNotVisible()) {
                     LinkGrabberPanel.getLinkGrabber().move(LinkGrabberController.MOVE_DOWN);
