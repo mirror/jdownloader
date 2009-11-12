@@ -282,26 +282,43 @@ public class LookAndFeelController {
                  * note that java itself must have correct font mappings
                  */
                 Class.forName("de.javasoft.plaf.synthetica.SyntheticaLookAndFeel").getMethod("setFont", new Class[] { String.class, int.class }).invoke(null, new Object[] { GUIUtils.getConfig().getStringProperty(JDGuiConstants.PARAM_GENERAL_FONT_NAME, "Dialog"), 12 });
-            } catch (Exception e) {
-                e.printStackTrace();
+            } catch (Throwable e) {
+                JDLogger.exception(e);
             }
             try {
                 /* dynamic fontsize */
                 String font = "" + Class.forName("de.javasoft.plaf.synthetica.SyntheticaLookAndFeel").getMethod("getFontName", new Class[] {}).invoke(null, new Object[] {});
                 int fonts = (Integer) Class.forName("de.javasoft.plaf.synthetica.SyntheticaLookAndFeel").getMethod("getFontSize", new Class[] {}).invoke(null, new Object[] {});
                 Class.forName("de.javasoft.plaf.synthetica.SyntheticaLookAndFeel").getMethod("setFont", new Class[] { String.class, int.class }).invoke(null, new Object[] { font, (fonts * fontsize) / 100 });
-            } catch (Exception e) {
-                e.printStackTrace();
+            } catch (Throwable e) {
+                JDLogger.exception(e);
+            }
+        } else if (isSubstance()) {
+            try {
+                /* set default Font to Dialog and change dynamic fontsize */
+                Class.forName("jd.gui.swing.laf.SubstanceFontSet").getMethod("postSetup", new Class[] {}).invoke(null);
+            } catch (Throwable e) {
+                JDLogger.exception(e);
             }
         } else {
-            for (Enumeration<Object> e = UIManager.getDefaults().keys(); e.hasMoreElements();) {
-                Object key = e.nextElement();
-                Object value = UIManager.get(key);
+            try {
+                Font font = Font.getFont(GUIUtils.getConfig().getStringProperty(JDGuiConstants.PARAM_GENERAL_FONT_NAME, "Dialog"));
+                for (Enumeration<Object> e = UIManager.getDefaults().keys(); e.hasMoreElements();) {
+                    Object key = e.nextElement();
+                    Object value = UIManager.get(key);
 
-                if (value instanceof Font) {
-                    Font f = (Font) value;
-                    UIManager.put(key, new FontUIResource(f.getName(), f.getStyle(), (f.getSize() * fontsize) / 100));
+                    if (value instanceof Font) {
+                        Font f = null;
+                        if (font != null) {
+                            f = font;
+                        } else {
+                            f = (Font) value;
+                        }
+                        UIManager.put(key, new FontUIResource(f.getName(), f.getStyle(), (f.getSize() * fontsize) / 100));
+                    }
                 }
+            } catch (Throwable e) {
+                JDLogger.exception(e);
             }
         }
         //

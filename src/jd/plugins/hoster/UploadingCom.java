@@ -133,6 +133,12 @@ public class UploadingCom extends PluginForHost {
         if (br.containsHTML("Your IP address is currently downloading a file")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
         if (br.containsHTML("Only Premium users can download files larger than")) throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium");
         if (br.containsHTML("You have reached the daily downloads limit")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 1 * 60 * 60 * 1000l);
+        if (br.containsHTML("you can download only one file per")) {
+            int wait = 15;
+            String time = br.getRegex("you can download only one file per (\\d+) minutes").getMatch(0);
+            if (time != null) wait = Integer.parseInt(time.trim());
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait * 60 * 1000l);
+        }
     }
 
     public void handleFree0(DownloadLink link) throws Exception {
@@ -143,8 +149,9 @@ public class UploadingCom extends PluginForHost {
         } catch (InterruptedException e) {
             return;
         }
-        checkErrors();
+        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.submitForm(form);
+        checkErrors();
         String redirect = getDownloadUrl(br, link);
         br.setFollowRedirects(false);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, redirect, true, 1);

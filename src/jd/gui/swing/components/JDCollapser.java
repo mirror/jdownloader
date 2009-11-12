@@ -112,9 +112,11 @@ public abstract class JDCollapser extends DroppedPanel {
 
         public CloseAction() {
             Icon ic = UIManager.getIcon("InternalFrame.closeIcon");
-            this.height = ic.getIconHeight();
-            this.width = ic.getIconWidth();
-            this.putValue(AbstractAction.SMALL_ICON, ic);
+            if (ic != null) {
+                this.height = ic.getIconHeight();
+                this.width = ic.getIconWidth();
+                this.putValue(AbstractAction.SMALL_ICON, ic);
+            }
         }
 
         public void actionPerformed(ActionEvent e) {
