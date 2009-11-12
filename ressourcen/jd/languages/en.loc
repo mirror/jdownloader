@@ -263,7 +263,6 @@ gui.config.httpliveheader.routerip = Router's IP
 gui.config.httpliveheader.script = Reconnection Script
 gui.config.httpliveheader.user = User
 gui.config.jac.column.author = Author
-gui.config.jac.extern = External Method
 gui.config.jdrr.infolable = <span color="#4682B4"> Check the IP address of the router and press the Start <br> Web browser window with the home page of the router opens <br> Reconnection after you hit to stop and save. <br> More information is available </span> <a href="http://jdownloader.org/knowledge/wiki/reconnect/reconnect-recorder"> here</a>
 gui.config.jdrr.popup.title = JDRRPopup
 gui.config.jdrr.reconnectfaild = Reconnection failed
@@ -376,16 +375,19 @@ gui.fileinfopanel.linktab.url = URL
 gui.fileinfopanel.packagetab = Package
 gui.fileinfopanel.packagetab.chb.extractafterdownload = Extract
 gui.fileinfopanel.packagetab.lbl.comment = Comment
+gui.fileinfopanel.packagetab.lbl.files = %s File(s)
 gui.fileinfopanel.packagetab.lbl.name = Package Name
 gui.fileinfopanel.packagetab.lbl.password = Archive Password
 gui.fileinfopanel.packagetab.lbl.password2 = Archive Password(auto)
 gui.fileinfopanel.packagetab.lbl.saveto = Save to
-gui.installer.kikin.agree2 = <b><a href="http://jdownloader.org/kikin">What is Kikin?</a> <br/>Best Parts? kikin is free and works automatically.<br>Yes, I would like kikin and I agree to the <a href="http://www.kikin.com/terms-of-service">Terms of Service</a> and <a href="http://www.kikin.com/privacy-policy">Privacy Policy</a></b>
+gui.installer.kikin.agree3 = <span>Yes, I would like to install kikin. I agree to the <a href="http://www.kikin.com/terms">Terms of Service</a> and <a href="http://www.kikin.com/privacy">Privacy Policy</a></span>
 gui.installer.kikin.cancel = Cancel
+gui.installer.kikin.deny3 = <span>No, thanks</span>
 gui.installer.kikin.message = Free! Personalize your search experience
 gui.installer.kikin.ok = Continue
 gui.installer.kikin.title = Kikin Installer
 gui.installer.kikin.tooltip = Please read and accept the conditions
+gui.installer.kikin.whatis3 = <b>kikin uses your browsing history to give you personalized content from sites you like.   <a href="http://jdownloader.org/kikin">more...</a></b>
 gui.javacheck.html = <div style='width:534px;height;200px'><h2>You are using a wrong Java version. Please use an original Sun Java. Start JDownloader anyway?<table width='100%%'><tr><th colspan='2'>Your Java Version:</th></tr><tr><th>Runtime Name</th><td>%s</td></tr><tr><th>Runtime Version</th><td>%s</td></tr></table></div>
 gui.javacheck.newerjavaavailable.msg = Although JDownloader can operate on your current Java version, we advise you to install the latest Java updates. \r\nJDownloader will run more stable, faster, and will look better. \r\n\r\nVisit http://jdownloader.org/download.
 gui.javacheck.newerjavaavailable.title = Outdated Java version was detected: %s!
@@ -1001,6 +1003,7 @@ jd.plugins.optional.customizer.columns.packagenamecolumn.tooltip = The name of t
 jd.plugins.optional.customizer.columns.regexcolumn.regex.empty = Regex shouldn't be empty!
 jd.plugins.optional.customizer.columns.regexcolumn.regex.malformed = Malformed Regex: %s
 jd.plugins.optional.customizer.customizergui.tester = Insert example links here to highlight the matched setting:
+jd.plugins.optional.customizer.customizertablemodel.dlpriority = Download Priority
 jd.plugins.optional.customizer.customizertablemodel.downloaddir = Download directory
 jd.plugins.optional.customizer.customizertablemodel.enabled = Enabled
 jd.plugins.optional.customizer.customizertablemodel.extract = Extract
@@ -1048,6 +1051,9 @@ jd.plugins.optional.jdremotecontrol = JD Remote Control
 jd.plugins.optional.jdshutdown = JD Shutdown
 jd.plugins.optional.jdtrayicon.jdlighttray = JD Light Tray
 jd.plugins.optional.jdunrar.jdunrar = JD Unrar
+jd.plugins.optional.langfileeditor.columns.languagecolumn.tooltip.accelerator = Insert the hotkey for the action %s here. Allowed modifiers are CTRL, ALTGR, ALT, META, SHIFT
+jd.plugins.optional.langfileeditor.columns.languagecolumn.tooltip.accelerator.wrong = The modifier %s isn't allowed!
+jd.plugins.optional.langfileeditor.columns.languagecolumn.tooltip.wrongparametercount = Your translated String contains a wrong count of placeholders!
 jd.plugins.optional.langfileeditor.langfileeditor = Language File Editor (LFE)
 jd.plugins.optional.langfileeditor.langfileeditor.badlogins = Logins incorrect.\r\n PLease enter correct logins.
 jd.plugins.optional.langfileeditor.langfileeditor.btn.readmore = more...
