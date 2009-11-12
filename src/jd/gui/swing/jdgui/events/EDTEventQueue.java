@@ -48,6 +48,7 @@ import jd.gui.swing.components.MouseFollower;
 import jd.gui.swing.components.linkbutton.JLink;
 import jd.gui.swing.jdgui.JDGui;
 import jd.nutils.Formatter;
+import jd.nutils.encoding.Encoding;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
@@ -99,6 +100,11 @@ public class EDTEventQueue extends EventQueue {
                 lastPoint--;
                 break qh;
             } else if (e.getID() == MouseEvent.MOUSE_PRESSED && e.isControlDown() && e.isShiftDown()) {
+                // Searches down the components and tries to find the deepest
+                // component.
+                // a stringbuilder grabs the component path and tries to find
+                // the english expression.
+                // Finally it calls the jdownloaderquickhelp page
                 this.lastPoint = 2;
                 Point point = e.getPoint();
                 Component source = JDGui.getInstance().getMainFrame().getContentPane();
@@ -136,7 +142,17 @@ public class EDTEventQueue extends EventQueue {
 
                         if (source2.getName() != null) {
                             if (sb.length() > 0) sb.append(".");
-                            sb.append(source2.getName().replace(" ", "-"));
+                            String[] keys = JDL.getKeysFor(source2.getName());
+                            if (keys == null || keys.length == 0) {
+                                sb.append(source2.getName().replace(" ", "-"));
+                            } else {
+                                String def = JDL.getDefaultLocaleString(keys[0].toLowerCase().hashCode());
+                                if (def == null) {
+                                    sb.append(source2.getName().replace(" ", "-"));
+                                } else {
+                                    sb.append(Encoding.urlEncode(def.replace(" ", "-")));
+                                }
+                            }
                         }
                     }
                     source = source2;
