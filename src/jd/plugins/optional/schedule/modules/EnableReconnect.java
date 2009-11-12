@@ -24,23 +24,19 @@ import jd.utils.locale.JDL;
 public class EnableReconnect implements SchedulerModuleInterface {
     private static final long serialVersionUID = 2009958114124145334L;
 
+    public boolean checkParameter(String parameter) {
+        return false;
+    }
+
     public void execute(String parameter) {
         if (!JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true)) Reconnecter.toggleReconnect();
     }
 
-    public String getName() {
-        return "plugin.optional.schedular.module.enableReconnect";
+    public String getTranslation() {
+        return JDL.L("jd.plugins.optional.schedule.modules.enableReconnect", "Enable Reconnect");
     }
 
     public boolean needParameter() {
-        return false;
-    }
-
-    public String getTranslation() {
-        return JDL.L(getName(), "Enable Reconnect");
-    }
-
-    public boolean checkParameter(String parameter) {
         return false;
     }
 }

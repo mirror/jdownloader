@@ -30,12 +30,8 @@ public class DoReconnect implements SchedulerModuleInterface {
         Reconnecter.doManualReconnect();
     }
 
-    public String getName() {
-        return "plugin.optional.schedular.module.doReconnect";
-    }
-
     public String getTranslation() {
-        return JDL.L(getName(), "Do Reconnect");
+        return JDL.L("jd.plugins.optional.schedule.modules.doReconnect", "Do Reconnect");
     }
 
     public boolean needParameter() {

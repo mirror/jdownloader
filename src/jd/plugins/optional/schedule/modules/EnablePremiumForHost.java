@@ -27,6 +27,11 @@ import jd.utils.locale.JDL;
 public class EnablePremiumForHost implements SchedulerModuleInterface {
     private static final long serialVersionUID = -8504820074363975505L;
 
+    public boolean checkParameter(String parameter) {
+        PluginForHost plg;
+        return (plg = JDUtilities.getPluginForHost(parameter)) != null && plg.isPremiumEnabled();
+    }
+
     public void execute(String parameter) {
         ArrayList<Account> accs = AccountController.getInstance().getAllAccounts(parameter);
         for (Account acc : accs) {
@@ -34,20 +39,11 @@ public class EnablePremiumForHost implements SchedulerModuleInterface {
         }
     }
 
-    public String getName() {
-        return "plugin.optional.schedular.module.enablePremiumForHost";
+    public String getTranslation() {
+        return JDL.L("jd.plugins.optional.schedule.modules.enablePremiumForHost", "Enable Premium for specific Host");
     }
 
     public boolean needParameter() {
         return true;
-    }
-
-    public String getTranslation() {
-        return JDL.L(getName(), "Enable Premium for specific Host");
-    }
-
-    public boolean checkParameter(String parameter) {
-        PluginForHost plg;
-        return (plg = JDUtilities.getPluginForHost(parameter)) != null && plg.isPremiumEnabled();
     }
 }

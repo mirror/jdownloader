@@ -23,24 +23,20 @@ import jd.utils.locale.JDL;
 public class DisablePremium implements SchedulerModuleInterface {
     private static final long serialVersionUID = -6187873889631828704L;
 
+    public boolean checkParameter(String parameter) {
+        return false;
+    }
+
     public void execute(String parameter) {
         JDUtilities.getConfiguration().setProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, false);
         JDUtilities.getConfiguration().save();
     }
 
-    public String getName() {
-        return "plugin.optional.schedular.module.disablePremium";
+    public String getTranslation() {
+        return JDL.L("jd.plugins.optional.schedule.modules.disablePremium", "Disable Premium");
     }
 
     public boolean needParameter() {
-        return false;
-    }
-
-    public String getTranslation() {
-        return JDL.L(getName(), "Disable Premium");
-    }
-
-    public boolean checkParameter(String parameter) {
         return false;
     }
 }

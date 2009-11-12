@@ -22,23 +22,19 @@ import jd.utils.locale.JDL;
 public class StartDownloads implements SchedulerModuleInterface {
     private static final long serialVersionUID = -6031730798379292357L;
 
+    public boolean checkParameter(String parameter) {
+        return false;
+    }
+
     public void execute(String parameter) {
         DownloadWatchDog.getInstance().startDownloads();
     }
 
-    public String getName() {
-        return "plugin.optional.schedular.module.startDownloads";
+    public String getTranslation() {
+        return JDL.L("jd.plugins.optional.schedule.modules.startDownloads", "Start Downloads");
     }
 
     public boolean needParameter() {
-        return false;
-    }
-
-    public String getTranslation() {
-        return JDL.L(getName(), "Start Downloads");
-    }
-
-    public boolean checkParameter(String parameter) {
         return false;
     }
 }

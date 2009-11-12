@@ -22,23 +22,19 @@ import jd.utils.locale.JDL;
 public class UnPauseDownloads implements SchedulerModuleInterface {
     private static final long serialVersionUID = 2359797425294554626L;
 
+    public boolean checkParameter(String parameter) {
+        return false;
+    }
+
     public void execute(String parameter) {
         DownloadWatchDog.getInstance().pauseDownloads(false);
     }
 
-    public String getName() {
-        return "plugin.optional.schedular.module.unpauseDownloads";
+    public String getTranslation() {
+        return JDL.L("jd.plugins.optional.schedule.modules.unpauseDownloads", "Unpause Downloads");
     }
 
     public boolean needParameter() {
-        return false;
-    }
-
-    public String getTranslation() {
-        return JDL.L(getName(), "Unpause Downloads");
-    }
-
-    public boolean checkParameter(String parameter) {
         return false;
     }
 }

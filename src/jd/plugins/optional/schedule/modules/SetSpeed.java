@@ -23,23 +23,6 @@ import jd.utils.locale.JDL;
 public class SetSpeed implements SchedulerModuleInterface {
     private static final long serialVersionUID = -6026889777421088500L;
 
-    public void execute(String parameter) {
-        SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, Integer.valueOf(parameter));
-        SubConfiguration.getConfig("DOWNLOAD").save();
-    }
-
-    public String getName() {
-        return "plugin.optional.schedular.module.setDownloadSpeed";
-    }
-
-    public boolean needParameter() {
-        return true;
-    }
-
-    public String getTranslation() {
-        return JDL.L(getName(), "Set Downloadspeed");
-    }
-
     public boolean checkParameter(String parameter) {
         try {
             int i = Integer.parseInt(parameter);
@@ -48,5 +31,18 @@ public class SetSpeed implements SchedulerModuleInterface {
         } catch (Exception e) {
             return false;
         }
+    }
+
+    public void execute(String parameter) {
+        SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, Integer.valueOf(parameter));
+        SubConfiguration.getConfig("DOWNLOAD").save();
+    }
+
+    public String getTranslation() {
+        return JDL.L("jd.plugins.optional.schedule.modules.setDownloadSpeed", "Set Downloadspeed");
+    }
+
+    public boolean needParameter() {
+        return true;
     }
 }
