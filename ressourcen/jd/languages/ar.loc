@@ -203,7 +203,7 @@ gui.config.liveheader.autoconfig = إعداد الراوتر تلقائيا
 gui.config.liveheader.btnfindip = جلب رقم الراوتر
 gui.config.liveheader.dialog.importrouter = إستيراد رواتر 
 gui.config.liveheader.password = كلمة المرور
-gui.config.liveheader.progress.message = jDownloader يقوم الآن بإستكشاف إعداد الراوتر الخاص بك
+gui.config.liveheader.progress.message = JDownloader يقوم الآن بإستكشاف إعداد الراوتر الخاص بك
 gui.config.liveheader.retries = عدد المحاولات قبل الإجهاض (-1 = بلا حدود)
 gui.config.liveheader.routerip = رقم الأى بى الخاص بالراوتر
 gui.config.liveheader.script = HTTP نص بروتوكول 
@@ -212,7 +212,7 @@ gui.config.liveheader.user = تسجيل الدخول
 gui.config.liveheader.waitforip = إنتظر تجديد رقم الأى بى  (ثانية)
 gui.config.liveheader.waittimeforipcheck = تناوب الإنتظار بين فحص رقم الأى بى  (ثانية)
 gui.config.liveheader.warning.nocurlconvert = JD لم يتمكن من تحويل نصوص الروابط . برجا مراسلة فريق الدعم الخاص بالبرنامج لمزيد من المساعدة
-gui.config.liveheader.warning.notfound = jDownloader لم يتمكن من إستكشاف إعداد الراوتر الخاص بك .
+gui.config.liveheader.warning.notfound = JDownloader لم يتمكن من إستكشاف إعداد الراوتر الخاص بك .
 gui.config.liveheader.warning.wizard = عملية فحص الإعدادت قد تستغرق دقائق .. برجاء إدخال بيانات الراوتر الخاص بك . البدء الآن ؟
 gui.config.liveheader.warning.wizard.checkall = إستكشاف كل مسارات إتصالك  (بطئ جدا .)
 gui.config.liveheader.warning.wizard.title = قم ببدء مستكشف الراوتر التلقائى الآن ؟
@@ -230,7 +230,7 @@ gui.config.packagemanager.table.info = تعليمات
 gui.config.plugin.abg_confirm = لقد قرأت الشروط/كيفية الإستخدام/الحقوق . و انا موافق على جميع شروط الإستخدام
 gui.config.plugin.decrypt.btn_load = تحميل برامج مساعدة
 gui.config.plugin.host.btn_load = تحميل برامج مساعدة
-gui.config.plugin.host.desc = تنبيه!!\r\nThe فريق عمل البرنامج jDownloader لا يتحمل أى مسؤلية فى حالة مخالفة شروط مواقع تنزيل الملفات. \r\nمن فضلك قم بقرائة الشروط الخاصة بموقع التحميل و فعل البرنامج المساعد الخاص به\r\nإن وافقت على الشروط\r\nالبرامج المساعده "البلجنز" مرتبه على حسب نشاط عملها فى إيجاد روابط.\n\rو البرامج المساعده المفضله تكون فى الأعلى .!
+gui.config.plugin.host.desc = تنبيه!!\r\nThe فريق عمل البرنامج JDownloader لا يتحمل أى مسؤلية فى حالة مخالفة شروط مواقع تنزيل الملفات. \r\nمن فضلك قم بقرائة الشروط الخاصة بموقع التحميل و فعل البرنامج المساعد الخاص به\r\nإن وافقت على الشروط\r\nالبرامج المساعده "البلجنز" مرتبه على حسب نشاط عملها فى إيجاد روابط.\n\rو البرامج المساعده المفضله تكون فى الأعلى .!
 gui.config.plugin.host.name = برامج المضيف المساعدة
 gui.config.plugin.host.readagb = قراءة شروط الإستخدام 
 gui.config.plugin.optional.btn_opendir = فتح مجلد الملحقات
@@ -279,7 +279,7 @@ gui.dialogs.agb_tos.readagb = إقرأ شروط الإستخدام
 gui.dialogs.agb_tos.title = لم تتم الموافقه على شروط الإستخدام
 gui.dialogs.helpdialog.btn.help = مساعدة
 gui.dialogs.helpdialog.btn.stoptimer = إيقاف المؤقت
-gui.dialogs.helpdialog.defaulttitle = jDownloader Soforthilfe
+gui.dialogs.helpdialog.defaulttitle = JDownloader Soforthilfe
 gui.dialogs.progress.title = جارى العمل .. برجاء الإنتظار
 gui.download.create_connection = جارى الإتصال ....
 gui.download.filesize_unknown = (حجم الملف غير معروف)
@@ -315,7 +315,7 @@ gui.fengshuiconfig.routerpassword = كلمة المرور
 gui.fengshuiconfig.testsettings = فحص الإعدادات
 gui.fengshuiconfig.username = إسم المستخدم
 gui.fengshuiconfig.wikiurl = http://jdownloader.org/knowledge/wiki/gui/configuration/feng-shui-config
-gui.javacheck.html = <div style='width:534px;height;200px'><h2>You useses a wrong Java version. Please use a original Sun Java. Start jDownloader anyway?<table width='100%%'><tr><th colspan='2'>Your Java Version:</th></tr><tr><th>Runtime Name</th><td>%s</td></tr><tr><th>Runtime Version</th><td>%s</td></tr></table></div>
+gui.javacheck.html = <div style='width:534px;height;200px'><h2>You useses a wrong Java version. Please use a original Sun Java. Start JDownloader anyway?<table width='100%%'><tr><th colspan='2'>Your Java Version:</th></tr><tr><th>Runtime Name</th><td>%s</td></tr><tr><th>Runtime Version</th><td>%s</td></tr></table></div>
 gui.javacheck.title = خطأ فى إصدارة الجافا
 gui.linkgrabber.bar.title = جامع البيانات
 gui.linkgrabber.btn.accept = تأكيد الحزمة
@@ -389,7 +389,7 @@ gui.linklist.newpackage.message = إسم الحزمة الجديدة
 gui.linklist.status.doresume = فى إنتظار الإستئناف
 gui.logdialog.btn_uploadlog = سجل الرفع
 gui.logdialog.loglink = سجل الروابط (موافق للفتح)
-gui.logdialog.title = jDownloader سجل
+gui.logdialog.title = JDownloader سجل
 gui.logdialog.warning.uploadfailed = فشل الرفع
 gui.logdialog.yourlog = سجل الرفع.: قابل للتعديل!
 gui.logger.askquestion = برجاء قم بوصف المشكلة أو السؤال أو الخطأ الذى واجهك
@@ -505,7 +505,7 @@ gui.menu.action.viewlog.desc = حدد لإظهار نافذة السجل
 gui.menu.action.viewlog.mnem = L
 gui.menu.action.viewlog.name = إظهار نافذة السجل
 gui.menu.action.wiki.accel = CTRL+W
-gui.menu.action.wiki.desc = فتح jDownloader ويكي
+gui.menu.action.wiki.desc = فتح JDownloader ويكي
 gui.menu.action.wiki.mnem = W
 gui.menu.action.wiki.name = فتح ويكي
 gui.menu.add = إضافة
@@ -681,7 +681,7 @@ interaction.trigger.before_download.desc = تنفيذ قبل بدء تحميل �
 interaction.trigger.before_reconnect = قبل إعادة الإتصال
 interaction.trigger.before_reconnect.desc = تنفيذ قبل إعادة الإتصال
 interaction.trigger.bot_detected = Bot إكتشاف
-interaction.trigger.bot_detected.desc = jDownloader تم تصنيفه ك  bot
+interaction.trigger.bot_detected.desc = JDownloader تم تصنيفه ك  bot
 interaction.trigger.container_download = حافظة رابط التحميل
 interaction.trigger.download_download.desc = وصف حافظة رابط التحميل (DLC,RSDF,CCF,...)
 interaction.trigger.download_successfull = تم إنتهاء التحميل بنجاح
@@ -698,7 +698,7 @@ interaction.trigger.package_finished = إنتهاء الحزمة
 interaction.trigger.package_finished.desc = تنفيذ بعد إنتهاء الحزمة
 interaction.trigger.single_download_failed = فشل التحميل
 interaction.trigger.single_download_failed.desc = تنفيذ بعد فشل التحميل
-jdownloader.org = jDownloader.org
+jdownloader.org = JDownloader.org
 linkinformation.available.error = خطأ !
 linkinformation.download.aborted = تم إلغاؤه
 linkinformation.download.chunks.label = القطع
@@ -941,7 +941,7 @@ plugins.optional.langfileeditor.sourcefile = الملف المصدر:
 plugins.optional.langfileeditor.sourcefolder = المجلد المصدر: 
 plugins.optional.langfileeditor.sourcevalue = قيمة المصدر
 plugins.optional.langfileeditor.string = السلسلة
-plugins.optional.langfileeditor.title = jDownloader - محرر ملف اللغة
+plugins.optional.langfileeditor.title = JDownloader - محرر ملف اللغة
 plugins.optional.langfileeditor.translate = ترجم من جوجل
 plugins.optional.langfileeditor.translate.error.message = ملف اللغة غير مدعوم من جوجل
 plugins.optional.langfileeditor.translate.error.title = قيمة ملف اللغة غير صحيحة
@@ -1044,7 +1044,7 @@ plugins.trayicon.popup.menu.togglereconnect = تفعيل/تعطيل إعداة �
 plugins.trayicon.popup.menu.update = البدء فى التحديثات
 plugins.trayicon.popup.title = JDownloader
 showcaptcha.choose.file = إختار صورة 
-showcaptcha.chooser.title = jDownloader :: عرض كود التحقق
+showcaptcha.chooser.title = JDownloader :: عرض كود التحقق
 sys.ask.rlyclose = هل تريد إغلاق البرنامج بالفعل ؟
 sys.dlc.error_version = DLC فشل فى فك تشفير ! برجاء التأكد من تحديث البرنامج..
 sys.dlc.success = DLC تم فك التشفير بنجاح ! . هل تريد الإختبار الآن ؟
@@ -1085,6 +1085,6 @@ system.update.showchangelog = عرض التغييرات التى حدثت
 system.update.success.message = تثبيت التحديثات الجديدة<hr>%s
 system.update.success.message.infolink = %s v.%s <a href='%s'>معلومات</a><br/>
 train.choose.folder = حدد المجلد
-train.chooser.title = jDownloader :: TrainAll
+train.chooser.title = JDownloader :: TrainAll
 train.method = حدد طريقة التحقق من الكود
 wrapper.webupdate.updatefile = تحديث البرامج المساعدة %s

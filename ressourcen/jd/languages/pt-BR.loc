@@ -386,7 +386,7 @@ gui.installer.kikin.message = Livre! Personalize seus resultados de pesquisa
 gui.installer.kikin.ok = Continuar
 gui.installer.kikin.title = Instalação do Kikin
 gui.installer.kikin.tooltip = Favor ler e aceitar as condições
-gui.javacheck.html = <link href='http://jdownloader.org/jdcss.css' rel='stylesheet' type='text/css' /><div style='width:534px;height;200px'><h2>Vocês está usando uma versão antiga do Java. Use uma versão original do Sun Java. Iniciar jDownloader novamente?<table width='100%%'><tr><th colspan='2'>Sua versão do Java:</th></tr><tr><th>Nome do Runtime</th><td>%s</td></tr><tr><th>Versão do Runtime</th><td>%s</td></tr></table></div> 
+gui.javacheck.html = <link href='http://jdownloader.org/jdcss.css' rel='stylesheet' type='text/css' /><div style='width:534px;height;200px'><h2>Vocês está usando uma versão antiga do Java. Use uma versão original do Sun Java. Iniciar JDownloader novamente?<table width='100%%'><tr><th colspan='2'>Sua versão do Java:</th></tr><tr><th>Nome do Runtime</th><td>%s</td></tr><tr><th>Versão do Runtime</th><td>%s</td></tr></table></div> 
 gui.javacheck.newerjavaavailable.msg = Embora JDownloader é executado na sua versão de java, aconselhamos instalar a última atualização. \ r \ nJDownloader irá rodar mais estável, mais rápido, e irá ficar mais bonito. \ r \ n \ r \ nVisite http://jdownloader.org/download.
 gui.javacheck.newerjavaavailable.title = Versão antiga do Java foi detectada: %s!
 gui.javacheck.title = Versão do Java desconhecida
