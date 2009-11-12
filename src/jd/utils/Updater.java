@@ -31,6 +31,9 @@ import javax.swing.JOptionPane;
 
 import jd.config.CFGConfig;
 import jd.config.SubConfiguration;
+import jd.controlling.JDLogger;
+import jd.event.MessageEvent;
+import jd.event.MessageListener;
 import jd.http.Browser;
 import jd.nutils.JDHash;
 import jd.nutils.SimpleFTP;
@@ -39,13 +42,16 @@ import jd.nutils.io.JDIO.FileSelector;
 import jd.nutils.svn.Subversion;
 import jd.nutils.zip.Zip;
 import jd.parser.Regex;
+import jd.update.FileUpdate;
+import jd.update.Restarter;
+import jd.update.WebUpdater;
 
 import org.tmatesoft.svn.core.SVNException;
 
 public class Updater {
     private File pluginsDir;
 
-    // private WebUpdater webupdater;
+    //private WebUpdater webupdater;
     // private ArrayList<FileUpdate> remoteFileList;
     private File workingDir;
     private JFrame frame;
@@ -56,7 +62,17 @@ public class Updater {
     private File jars;
 
     private ArrayList<File> packedFiles;
-    public static final String BRANCH = "NIGHTLY";
+    /**
+     * this is the branch that gets updated
+     */
+    public static final String BRANCH = "brain";
+/**
+ * The base branch can be used to downgrade. most of the time, BASE_BRANCH == BRANCH works fine
+ * 
+ * Example:
+ * if you want to create a new branch, set the new branchname in {@link #BRANCH} and set the latest public branchname for {@link #BASE_BRANCH}. The new branch then will have the files of base_branch and the new files
+ */
+    private static String BASE_BRANCH = "brain";
 
     public static ArrayList<Server> SERVERLIST = new ArrayList<Server>();
     public static Server UPDATE0 = new RSYNCServer(-1, "http://update0.jdownloader.org/branches/" + BRANCH + "/", "update0.jdownloader.org", 2121, "/home/www/update/http/branches/" + BRANCH + "/", false);
@@ -79,11 +95,11 @@ public class Updater {
         Browser.setGlobalConnectTimeout(500000);
         Browser.setGlobalReadTimeout(500000);
         Updater upd = new Updater();
-        //
+    
         SubConfiguration.getConfig("WEBUPDATE").save();
         // System.out.println("STATUS: Webupdate");
         //
-        // upd.webupdate();
+         upd.webupdate();
         System.out.println("STATUS: move plugins");
 
         upd.movePlugins(getCFG("plugins_dir"));
@@ -98,6 +114,78 @@ public class Updater {
 
         ArrayList<File> list = upd.getLocalFileList(upd.workingDir, false);
         list.remove(0);
+        
+        FileUpdate.WAITTIME_ON_ERROR = 1;
+        WebUpdater  webupdater = new WebUpdater();
+        webupdater.setIgnorePlugins(false);
+        webupdater.setWorkingdir(upd.workingDir);
+ 
+        webupdater.setOSFilter(false);
+        webupdater.setBranch(BRANCH);
+       String path = webupdater.getListPath(0);
+       webupdater.getBrowser().getPage(path);
+       ArrayList<FileUpdate> remoteFileList;
+       if (webupdater.getBrowser().getRequest().getHttpConnection().getResponseCode() == 200l) {
+    
+        remoteFileList = webupdater.getAvailableFiles();
+        //webupdater.filterAvailableUpdates(remoteFileList);
+        
+        System.err.println("-------- UPDATE THIS THESE FILES ---------");
+        for(File f:list){
+            if(f.isDirectory())continue;
+            boolean update = true;
+            boolean newFile=true;
+            for(FileUpdate fu:remoteFileList){
+                if(fu.getLocalFile().equals(f)){
+                    if(fu.equals()){
+                        update=false;
+                    }
+                    newFile=false;
+                    
+                    break;
+                }
+            }
+            if(update){
+                System.err.println((newFile?" NEW FILE ":" UPDATE ")+" : "+f); 
+            }
+            
+        }
+       }
+        //if base_branch differs, check updates relativ to basebranch
+        if(!BASE_BRANCH.equalsIgnoreCase(BRANCH)){
+        FileUpdate.WAITTIME_ON_ERROR = 1;
+         webupdater = new WebUpdater();
+        webupdater.setIgnorePlugins(false);
+        webupdater.setWorkingdir(upd.workingDir);
+        webupdater.setOSFilter(false);
+        webupdater.setBranch(BASE_BRANCH);
+        
+       remoteFileList = webupdater.getAvailableFiles();
+        //webupdater.filterAvailableUpdates(remoteFileList);
+        
+        System.err.println("-------- BASE_BRANCH!! UPDATE THIS THESE FILES ---------");
+        for(File f:list){
+            if(f.isDirectory())continue;
+            boolean update = true;
+            boolean newFile=true;
+            for(FileUpdate fu:remoteFileList){
+                if(fu.getLocalFile().equals(f)){
+                    if(fu.equals()){
+                        update=false;
+                    }
+                    newFile=false;
+                    
+                    break;
+                }
+            }
+            if(update){
+                System.err.println((newFile?" NEW FILE ":" UPDATE ")+" : "+f); 
+            }
+            
+        }
+        }
+        JOptionPane.showConfirmDialog(upd.frame, "Check " + upd.updateDir + ". LAST CHANCE! See log. if there are 'bad'files. PLease restart updater.");
+        
         for (Server serv : SERVERLIST) {
             if (!serv.isManuelUpload()) upd.upload(list, serv);
         }
@@ -164,7 +252,9 @@ public class Updater {
             }
         }
 
-        String[] rest = new String[] {/* "libs/svnkit.jar" */"windows_createlog.bat~", ".junique", "info.txt", "jd/img/default/flags", "plugins/JDPremium.jar", "tools/Windows/recycle.exe", "tools/Windows/recycle.cpp", "jd/img/screenshots", "jd/img/synthetica", "updateLog.txt", "jdupdate.jar"
+
+        String[] rest = new String[] {/* "libs/svnkit.jar" */"windows_createlog.bat~",".junique","info.txt", "jd/img/default/flags", (BRANCH.equalsIgnoreCase("NIGHTLY")?"gfdgfdsgdgfsdgfdsgf":"plugins/JDPremium.jar"), "tools/Windows/recycle.exe", "tools/Windows/recycle.cpp", "jd/img/screenshots", "jd/img/synthetica", "updateLog.txt", "jdupdate.jar"
+
 
         };
         for (String path : rest) {
@@ -627,25 +717,50 @@ public class Updater {
      * 
      * @throws Exception
      */
-    /*
-     * private void webupdate() { // try { // FileUpdate.WAITTIME_ON_ERROR = 1;
-     * // webupdater = new WebUpdater(); // webupdater.setIgnorePlugins(false);
-     * // webupdater.setWorkingdir(workingDir); //
-     * webupdater.setOSFilter(false); // remoteFileList =
-     * webupdater.getAvailableFiles(); // // ArrayList<FileUpdate> update =
-     * (ArrayList<FileUpdate>) remoteFileList // .clone(); //
-     * webupdater.filterAvailableUpdates(update); //
-     * System.out.println("UPdate: " + update); //
-     * webupdater.updateFiles(update, null); //
-     * webupdater.getBroadcaster().addListener(new MessageListener() { // //
-     * public void onMessage(MessageEvent event) { //
-     * System.out.println(event.getMessage()); // // } // // }); //
-     * //Restarter.main(new String[] { "-nolog" }); // // } catch (Exception e)
-     * { // JDLogger.exception(e); // remoteFileList = new
-     * ArrayList<FileUpdate>(); // }
-     * 
-     * }
-     */
+
+    private void webupdate() {
+         ArrayList<FileUpdate> remoteFileList;
+        try {
+         FileUpdate.WAITTIME_ON_ERROR = 1;
+         WebUpdater  webupdater = new WebUpdater();
+         webupdater.setIgnorePlugins(false);
+         webupdater.setWorkingdir(workingDir);
+         webupdater.setOSFilter(false);
+        
+         webupdater.setBranch(BASE_BRANCH);
+         JDIO.removeRekursive(this.workingDir, new FileSelector(){
+
+            @Override
+            public boolean doIt(File file) {
+               return !file.getName().equalsIgnoreCase("exclude_jd_update");
+               
+            }
+             
+         });
+         remoteFileList = webupdater.getAvailableFiles();
+        
+   
+         webupdater.filterAvailableUpdates(remoteFileList);
+         System.out.println("UPdate: " + remoteFileList);
+         webupdater.getBroadcaster().addListener(new MessageListener() {
+             
+             public void onMessage(MessageEvent event) {
+             System.out.println(event.getMessage());
+            
+             }
+            
+             });
+         webupdater.updateFiles(remoteFileList, null);
+     
+         Restarter.main(new String[] { "-nolog" });
+        
+         } catch (Exception e) {
+         JDLogger.exception(e);
+         remoteFileList = new ArrayList<FileUpdate>();
+         }
+
+    }
+
 
     /*
      * * checks if file f is oart of the hashlist * private boolean
