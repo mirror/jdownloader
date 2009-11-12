@@ -24,6 +24,7 @@ public class CustomizerTable extends JDTable {
 
     public CustomizerTable() {
         super(new CustomizerTableModel("customizerview"));
+        setRowHeight(22);
     }
 
     @Override
