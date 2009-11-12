@@ -503,6 +503,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         }
         if (icon == null && container.getGroup() != null && container.getGroup().getIcon() != null) icon = container.getGroup().getIcon();
 
+        final SwitchPanel oldPanel = mainTabbedPane.getSelectedView().getInfoPanel();
         AddonConfig p = AddonConfig.getInstance(container, name, "_2");
         JDCollapser col = new JDCollapser() {
 
@@ -510,7 +511,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
 
             @Override
             public void onClosed() {
-                mainTabbedPane.getSelectedView().setInfoPanel(null);
+                mainTabbedPane.getSelectedView().setInfoPanel(oldPanel);
             }
 
             @Override

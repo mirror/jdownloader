@@ -38,7 +38,6 @@ public abstract class ToolBarAction extends JDAction {
     protected boolean inited = false;
     private static final long serialVersionUID = -7856598906795360922L;
 
-    public static final String PRIORITY = "PRIORITY";
     public static final String ID = "ID";
 
     private Types type = Types.NORMAL;
@@ -54,8 +53,8 @@ public abstract class ToolBarAction extends JDAction {
         this.putValue(ID, id);
     }
 
+    @Deprecated
     public void setPriority(int priority) {
-        this.putValue(PRIORITY, priority);
     }
 
     public ToolBarAction(String menukey, int id) {

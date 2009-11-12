@@ -93,7 +93,6 @@ public class JDShutdown extends PluginOptional {
 
             @Override
             public void initDefaults() {
-                setPriority(800);
                 this.setEnabled(true);
                 setType(ToolBarAction.Types.TOGGLE);
                 this.setIcon("gui.images.logout");

@@ -560,7 +560,6 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
 
             @Override
             public void initDefaults() {
-                setPriority(800);
                 this.setEnabled(true);
             }
 
