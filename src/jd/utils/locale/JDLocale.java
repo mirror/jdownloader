@@ -20,40 +20,74 @@ import java.io.Serializable;
 
 import jd.utils.JDGeoCode;
 
+/**
+ * This class represents a Language and is used by {@link jd.utils.locale.JDL}
+ * Locale System
+ * 
+ * @author unkown
+ * 
+ */
 public class JDLocale implements Serializable {
 
     private static final long serialVersionUID = 1116656232817008992L;
-
+    /**
+     * stores the parsed codes
+     * 
+     * @see jd.utils.JDGeoCode.parseLanguageCode(String)
+     * 
+     */
     private String[] codes;
 
     private String lngGeoCode;
 
+    /**
+     * Creates a new JDLocale INstance
+     * 
+     * @param lngGeoCode
+     *            a languagecode like de-AT-custom (language-COUNTRY-extension
+     * @see jd.utils.JDGeoCode
+     */
     public JDLocale(String lngGeoCode) {
         this.lngGeoCode = lngGeoCode;
+
         codes = JDGeoCode.parseLanguageCode(lngGeoCode);
     }
 
-    public String getLngGeoCode() {
-        return lngGeoCode;
-    }
-
+    /**
+     * returns the languageCode (e.g. de for german)
+     * 
+     * @return
+     */
     public String getLanguageCode() {
         return codes[0];
     }
 
+    /**
+     * Returns the country code or null. (e.g. "AT" for Austria)
+     * 
+     * @return
+     */
     public String getCountryCode() {
         return codes[1];
     }
 
     @Override
     public String toString() {
-        return JDGeoCode.toLongerNative(lngGeoCode);
+        return JDGeoCode.toLonger(lngGeoCode) + "(" + JDGeoCode.toLongerNative(lngGeoCode) + ")";
     }
 
     @Override
     public boolean equals(Object l) {
         if (l == null || !(l instanceof JDLocale)) return false;
         return this.getLngGeoCode().equals(((JDLocale) l).getLngGeoCode());
+    }
+
+    /**
+     * @return the {@link JDLocale#lngGeoCode}
+     * @see JDLocale#lngGeoCode
+     */
+    public String getLngGeoCode() {
+        return lngGeoCode;
     }
 
 }
