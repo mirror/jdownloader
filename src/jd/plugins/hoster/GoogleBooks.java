@@ -55,7 +55,7 @@ public class GoogleBooks extends PluginForHost {
         URLConnectionAdapter con = dl.getConnection();
         if (con.getResponseCode() == 404) {
             con.disconnect();
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1001l);
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 20 * 60 * 1001l);
         }
         dl.startDownload();
 
