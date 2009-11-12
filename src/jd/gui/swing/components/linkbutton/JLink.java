@@ -18,14 +18,11 @@ package jd.gui.swing.components.linkbutton;
 
 import java.awt.Component;
 import java.awt.Cursor;
-import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
-import java.awt.font.TextAttribute;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Map;
 
 import javax.swing.Icon;
 import javax.swing.JLabel;
@@ -38,6 +35,7 @@ import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 import jd.event.JDBroadcaster;
 import jd.event.JDEvent;
+import jd.gui.swing.components.JDUnderlinedText;
 import jd.gui.swing.jdgui.JDGuiConstants;
 import jd.gui.swing.jdgui.interfaces.JDMouseAdapter;
 import jd.nutils.Executer;
@@ -87,6 +85,7 @@ public class JLink extends JLabel {
     }
 
     private URL url;
+    private JDUnderlinedText mouseListener;
     private transient JDBroadcaster<ActionListener, JDEvent> broadcaster;
 
     public JLink() {
@@ -175,26 +174,8 @@ public class JLink extends JLabel {
         this.setBackground(null);
         setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
+        addMouseListener(mouseListener = new JDUnderlinedText(this));
         addMouseListener(new JDMouseAdapter() {
-
-            private Font originalFont;
-
-            @SuppressWarnings("unchecked")
-            @Override
-            public void mouseEntered(MouseEvent evt) {
-                originalFont = getFont();
-                if (isEnabled()) {
-                    Map attributes = originalFont.getAttributes();
-                    attributes.put(TextAttribute.UNDERLINE, TextAttribute.UNDERLINE_ON);
-
-                    setFont(originalFont.deriveFont(attributes));
-                }
-            }
-
-            @Override
-            public void mouseExited(MouseEvent evt) {
-                setFont(originalFont);
-            }
 
             public void mouseClicked(MouseEvent e) {
                 try {
@@ -207,6 +188,10 @@ public class JLink extends JLabel {
 
         });
 
+    }
+
+    public void removeMouseListener() {
+        this.removeMouseListener(mouseListener);
     }
 
     public URL getUrl() {
