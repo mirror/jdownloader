@@ -25,15 +25,19 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "books.google.com" }, urls = { "http://books.google.[a-z]+/books\\?id=.*&pg=.*" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "books.google.com" }, urls = { "http://googlebooksdecrypter.[a-z]+/books\\?id=.*&pg=.*" }, flags = { 0 })
 public class GoogleBooks extends PluginForHost {
 
     public GoogleBooks(PluginWrapper wrapper) {
         super(wrapper);
-        this.setStartIntervall(2000l);
         // TODO Auto-generated constructor stub
     }
-
+    
+    @Override
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replaceAll("googlebooksdecrypter", "books.google"));
+    }
+    
     @Override
     public String getAGBLink() {
         return "http://books.google.de/accounts/TOS";
@@ -76,7 +80,7 @@ public class GoogleBooks extends PluginForHost {
 
     // @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return 2;
     }
 
 }

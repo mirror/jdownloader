@@ -49,7 +49,7 @@ public class GglBks extends PluginForDecrypt {
         progress.setRange(links.length);
         FilePackage fp = FilePackage.getInstance();
         for (String dl : links) {
-            DownloadLink link = createDownloadlink(url + "&pg=" + dl);
+            DownloadLink link = createDownloadlink(url.replace("books.google", "googlebooksdecrypter") + "&pg=" + dl);
             link.setName(dl + ".jpg");
             decryptedLinks.add(link);
             progress.increase(1);
