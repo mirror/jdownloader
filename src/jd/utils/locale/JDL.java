@@ -189,17 +189,28 @@ public class JDL {
 
         System.out.println("Key not found: " + key2 + " Defaultvalue: " + def);
         if (def == null) {
-            // DEFAULT_DATA nur im absoluten Notfall laden
-            loadDefault();
-            if (DEFAULT_DATA.containsKey(KEY)) {
-                def = DEFAULT_DATA.get(KEY);
-            }
+
+            def = getDefaultLocaleString(KEY);
             if (def == null) def = key2;
         }
 
         DATA.put(KEY, def);
 
         return def;
+    }
+
+    /**
+     * loads the default translation(english) and returns the string for the
+     * givven key
+     * 
+     * @param key2 stringkey.toLowerCase().hashCode()
+     * @return
+     */
+    public static String getDefaultLocaleString(int key) {
+        // DEFAULT_DATA nur im absoluten Notfall laden
+        loadDefault();
+        if (DEFAULT_DATA.containsKey(key)) { return DEFAULT_DATA.get(key); }
+        return null;
     }
 
     /**
