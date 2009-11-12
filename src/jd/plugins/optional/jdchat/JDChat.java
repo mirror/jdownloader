@@ -97,10 +97,7 @@ public class JDChat extends PluginOptional implements ControlListener {
 
     private static final String PARAM_HOST = "PARAM_HOST";
     private static final String PARAM_NICK = "PARAM_NICK";
-    private static final String PARAM_DESLANGUAGE = "PARAM_DESLANGUAGE2";
-    private static final String PARAM_DOAUTOTRANSLAT = "PARAM_DOAUTOTRANSLAT";
-    private static final String PARAM_DOAUTOTRANSLATSELF = "PARAM_DOAUTOTRANSLATSELF";
-    private static final String PARAM_NATIVELANGUAGE = "PARAM_NATIVELANGUAGE2";
+
     private static final String PARAM_PERFORM = "PARAM_PERFORM";
     private static final String PARAM_PORT = "PARAM_PORT";
     private static final String PARAM_USERCOLOR = "PARAM_USERCOLOR";
@@ -125,7 +122,6 @@ public class JDChat extends PluginOptional implements ControlListener {
     private long lastAction;
     private String lastCommand;
     private boolean loggedIn;
-    private ArrayList<JDLocale> lngmap = new ArrayList<JDLocale>();
     private ArrayList<User> NAMES;
     private String nick;
     private boolean nickaway;
@@ -646,21 +642,7 @@ public class JDChat extends PluginOptional implements ControlListener {
     }
 
     public void addToText(final User user, String style, String msg, final JTextPane targetpane, final StringBuilder sb) {
-        JDLocale dest = subConfig.getGenericProperty(PARAM_NATIVELANGUAGE, new JDLocale("en"));
-        if (subConfig.getBooleanProperty(PARAM_DOAUTOTRANSLAT, false) && dest != null && !msg.contains("<")) {
 
-            for (JDLocale loc : lngmap) {
-                if (loc.getLanguageCode().equalsIgnoreCase(dest.getLanguageCode())) {
-                    String tmp = JDL.translate(loc.getLanguageCode(), msg);
-                    if (tmp != null && !tmp.equalsIgnoreCase(msg)) {
-                        tmp += "(" + msg + ")";
-                        msg = tmp;
-                    }
-                    break;
-                }
-            }
-
-        }
         final String msg2 = msg;
         boolean color = subConfig.getBooleanProperty(PARAM_USERCOLOR, true);
         Date dt = new Date();
@@ -870,45 +852,6 @@ public class JDChat extends PluginOptional implements ControlListener {
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, subConfig, PARAM_PERFORM, JDL.L("plugins.optional.jdchat.performonstart", "Perform commands after connection estabilished")));
         ConfigContainer lngse = new ConfigContainer(JDL.L("plugins.optional.jdchat.locale", "Language settings"));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CONTAINER, lngse));
-
-        lngse.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PARAM_DOAUTOTRANSLAT, JDL.L("plugins.optional.jdchat.doautotranslate", "Translate Chat")));
-
-        cfg.setDefaultValue(false);
-        ConfigEntry conditionEntry = cfg;
-
-        lngmap.add(new JDLocale("ar"));
-        lngmap.add(new JDLocale("bg"));
-        lngmap.add(new JDLocale("zh-CN"));
-        lngmap.add(new JDLocale("zh-TW"));
-        lngmap.add(new JDLocale("hr"));
-        lngmap.add(new JDLocale("cs"));
-        lngmap.add(new JDLocale("da"));
-        lngmap.add(new JDLocale("nl"));
-        lngmap.add(new JDLocale("en"));
-        lngmap.add(new JDLocale("fi"));
-        lngmap.add(new JDLocale("fr"));
-        lngmap.add(new JDLocale("de"));
-        lngmap.add(new JDLocale("el"));
-        lngmap.add(new JDLocale("hi"));
-        lngmap.add(new JDLocale("it"));
-        lngmap.add(new JDLocale("ja"));
-        lngmap.add(new JDLocale("ko"));
-        lngmap.add(new JDLocale("no"));
-        lngmap.add(new JDLocale("pl"));
-        lngmap.add(new JDLocale("pt"));
-        lngmap.add(new JDLocale("ro"));
-        lngmap.add(new JDLocale("ru"));
-        lngmap.add(new JDLocale("es"));
-        lngmap.add(new JDLocale("sv"));
-
-        lngse.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, PARAM_NATIVELANGUAGE, lngmap.toArray(new JDLocale[] {}), JDL.L("interaction.jdchat.native", "to: ")));
-        cfg.setDefaultValue(JDL.DEFAULT_LOCALE);
-
-        lngse.addEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PARAM_DOAUTOTRANSLATSELF, JDL.L("plugins.optional.jdchat.doautotranslateself", "Translate everything I say")));
-        conditionEntry.setDefaultValue(false);
-
-        lngse.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, PARAM_DESLANGUAGE, lngmap.toArray(new JDLocale[] {}), JDL.L("interaction.jdchat.deslanguage", "to: ")));
-        cfg.setDefaultValue(JDL.DEFAULT_LOCALE);
 
     }
 
@@ -1242,22 +1185,11 @@ public class JDChat extends PluginOptional implements ControlListener {
         }
     }
 
+    /**
+     * Does modifications to the text before sending it
+     * 
+     */
     private String prepareToSend(String trim) {
-        JDLocale dest = subConfig.getGenericProperty(PARAM_DESLANGUAGE, new JDLocale("en"));
-        if (subConfig.getBooleanProperty(PARAM_DOAUTOTRANSLATSELF, false) && dest != null) {
-
-            for (JDLocale loc : lngmap) {
-                if (loc.getLanguageCode().equalsIgnoreCase(dest.getLanguageCode())) {
-                    String tmp = JDL.translate(loc.getLanguageCode(), trim);
-                    if (tmp != null && !tmp.equalsIgnoreCase(trim)) {
-                        tmp += "(" + trim + ")";
-                        trim = tmp;
-                    }
-                    break;
-                }
-            }
-
-        }
         return trim;
     }
 

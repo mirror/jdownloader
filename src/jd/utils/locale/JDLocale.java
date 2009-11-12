@@ -73,7 +73,7 @@ public class JDLocale implements Serializable {
 
     @Override
     public String toString() {
-        return JDGeoCode.toLonger(lngGeoCode) + "(" + JDGeoCode.toLongerNative(lngGeoCode) + ")";
+        return JDGeoCode.toLonger(lngGeoCode) + " (" + JDGeoCode.toLongerNative(lngGeoCode) + ")";
     }
 
     @Override

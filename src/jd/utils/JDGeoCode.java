@@ -149,7 +149,7 @@ public class JDGeoCode {
         LANGUAGES.put("is", new String[] { "Icelandic", "Íslenska" });
         LANGUAGES.put("it", new String[] { "Italian", "Italiano" });
         LANGUAGES.put("iu", new String[] { "Inuktitut", "ᐃᓄᒃᑎᑐᑦ" });
-        LANGUAGES.put("ja", new String[] { "Japanese", "basa Jawa" });
+        LANGUAGES.put("ja", new String[] { "Japanese", "Nihongo" });
         LANGUAGES.put("ka", new String[] { "Georgian", "ქართული" });
         LANGUAGES.put("kg", new String[] { "Kongo", "KiKongo" });
         LANGUAGES.put("ki", new String[] { "Kikuyu", "Gĩkũyũ" });
