@@ -93,7 +93,7 @@ public class Zippysharecom extends PluginForHost {
             // replace[0].substring(0, replace[0].length() - 2);
             // page = page.replace(replace[0], replace[1]);
             // }
-            String rplces = br.getRegex("[ ]{5,1000000000}token = unescape(.*?);").getMatch(0);
+            String rplces = br.getRegex("[ ]{5,1000000000}foken = unescape(.*?);").getMatch(0);
             boolean fcku = false;
             if (rplces != null) {
                 Regex wtf = new Regex(rplces, "\\(.*?\\.replace\\(/(.*?)/, \"(.*?)\"\\)\\.replace\\(/(.*?)/.*?, \"(.*?)\"\\)\\)");
@@ -102,7 +102,7 @@ public class Zippysharecom extends PluginForHost {
                     page = page.replace(wtf.getMatch(0), wtf.getMatch(1)).replace(wtf.getMatch(2), wtf.getMatch(3));
                 }
             }
-            if (fcku != true) page = page.replaceAll("jjj", "www").replaceAll("unl", "d");
+            if (fcku != true) page = page.replaceAll("mmm", "www").replaceAll("unn", "d");
             String[] links = HTMLParser.getHttpLinks(page, null);
             if (index > links.length - 1) break;
             String curlink = links[index];
