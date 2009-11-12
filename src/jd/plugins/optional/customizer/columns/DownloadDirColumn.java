@@ -82,8 +82,4 @@ public class DownloadDirColumn extends JDTableColumn {
         ((CustomizeSetting) object).setDownloadDir((String) value);
     }
 
-    @Override
-    public void sort(Object obj, boolean sortingToggle) {
-    }
-
 }

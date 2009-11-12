@@ -108,7 +108,7 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
         ViewToolbar vt = new ViewToolbar();
         vt.setList(new String[] { "action.premiumview.addacc", "action.premiumview.removeacc", "action.premium.buy" });
 
-        panel.add(vt, "gapleft 3, split2");
+        panel.add(vt, "gapleft 3, split 2");
         panel.add(checkBox = new JCheckBox(JDL.L(JDL_PREFIX + "accountSelection", "Always select the premium account with the most traffic left for downloading")), "w min!, right");
         checkBox.setHorizontalTextPosition(JCheckBox.LEADING);
         checkBox.setSelected(AccountController.getInstance().getBooleanProperty(AccountController.PROPERTY_ACCOUNT_SELECTION, true));

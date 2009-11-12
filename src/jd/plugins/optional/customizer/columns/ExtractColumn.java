@@ -44,10 +44,6 @@ public class ExtractColumn extends JDCheckBoxTableColumn {
     }
 
     @Override
-    public void sort(Object obj, boolean sortingToggle) {
-    }
-
-    @Override
     protected boolean getBooleanValue(Object value) {
         return ((CustomizeSetting) value).isExtract();
     }

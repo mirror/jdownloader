@@ -67,6 +67,8 @@ public class JDPackageCustomizer extends PluginOptional implements LinkGrabberPa
 
     @Override
     public boolean initAddon() {
+        CustomizeSetting.setSettings(getPluginConfig().getGenericProperty(PROPERTY_SETTINGS, new ArrayList<CustomizeSetting>()));
+
         ctrl = LinkGrabberController.getInstance();
         ctrl.setCustomizedPackager(this);
 
@@ -114,7 +116,9 @@ public class JDPackageCustomizer extends PluginOptional implements LinkGrabberPa
                 }
 
             });
-            view.setContent(new CustomizerGui(getPluginConfig()));
+            CustomizerGui gui = new CustomizerGui(getPluginConfig());
+            view.setContent(gui);
+            view.setInfoPanel(gui.getInfoPanel());
         }
         showAction.setSelected(true);
         JDGui.getInstance().setContent(view);
@@ -143,49 +147,37 @@ public class JDPackageCustomizer extends PluginOptional implements LinkGrabberPa
     }
 
     public void attachToPackagesSecondStage(DownloadLink link) {
-        CustomizeSetting bestmatch = null;
         if (enableAction.isSelected()) {
-            ArrayList<CustomizeSetting> settings = getPluginConfig().getGenericProperty(PROPERTY_SETTINGS, new ArrayList<CustomizeSetting>());
-            for (CustomizeSetting setting : settings) {
-                if (setting.isEnabled() && setting.matches(link.getName())) {
-                    if (bestmatch == null) {
-                        bestmatch = setting;
-                    } else {
-                        if (bestmatch.getRegex().length() < setting.getRegex().length()) {
-                            bestmatch = setting;
-                        }
-                    }
+            CustomizeSetting setting = CustomizeSetting.getFirstMatch(link.getName());
+            if (setting != null) {
+                logger.info("Customizer: Using customization of filepackage for link " + link.getName());
+                if (ctrl.isExtensionFiltered(link)) {
+                    ctrl.getFilterPackage().add(link);
+                    return;
                 }
-            }
-        }
-        if (bestmatch != null) {
-            logger.info("Customizer: Using customization of filepackage for link " + link.getName());
-            if (ctrl.isExtensionFiltered(link)) {
-                ctrl.getFilterPackage().add(link);
+
+                String packageName = setting.getPackageName();
+                LinkGrabberFilePackage fp;
+                if (packageName == null || packageName.equals("")) {
+                    fp = ctrl.getGeneratedPackage(link);
+                } else {
+                    fp = ctrl.getFPwithName(packageName);
+                    if (fp == null) fp = new LinkGrabberFilePackage(packageName, ctrl);
+                }
+
+                fp.setExtractAfterDownload(setting.isExtract());
+                fp.setDownloadDirectory(setting.getDownloadDir());
+                fp.setUseSubDir(setting.isUseSubDirectory());
+                fp.setPassword(setting.getPassword());
+                fp.add(link);
+                link.setPriority(setting.getDLPriority());
+
+                fp.setCustomIcon(customIcon, String.format(customIconText, setting.getRegex()));
+                link.setCustomIcon(customIcon, String.format(customIconText, setting.getRegex()));
+
+                setting.incMatchCount();
                 return;
             }
-
-            String packageName = bestmatch.getPackageName();
-            LinkGrabberFilePackage fp;
-            if (packageName == null || packageName.equals("")) {
-                fp = ctrl.getGeneratedPackage(link);
-            } else {
-                fp = ctrl.getFPwithName(packageName);
-                if (fp == null) fp = new LinkGrabberFilePackage(packageName, ctrl);
-            }
-
-            fp.setExtractAfterDownload(bestmatch.isExtract());
-            fp.setDownloadDirectory(bestmatch.getDownloadDir());
-            fp.setUseSubDir(bestmatch.isUseSubDirectory());
-            fp.setPassword(bestmatch.getPassword());
-            fp.add(link);
-            link.setPriority(bestmatch.getPriority());
-
-            fp.setCustomIcon(customIcon, String.format(customIconText, bestmatch.getRegex()));
-            link.setCustomIcon(customIcon, String.format(customIconText, bestmatch.getRegex()));
-
-            bestmatch.incMatchCount();
-            return;
         }
         LinkGrabberController.getInstance().attachToPackagesSecondStageInternal(link);
     }

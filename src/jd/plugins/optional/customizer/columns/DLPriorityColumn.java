@@ -16,33 +16,35 @@
 
 package jd.plugins.optional.customizer.columns;
 
-import javax.swing.JTextField;
+import java.awt.Component;
 
+import javax.swing.JComboBox;
+
+import jd.gui.swing.components.table.JDTableColumn;
 import jd.gui.swing.components.table.JDTableModel;
-import jd.gui.swing.components.table.JDTextEditorTableColumn;
+import jd.gui.swing.jdgui.views.downloadview.DownloadTable;
 import jd.plugins.optional.customizer.CustomizeSetting;
-import jd.utils.locale.JDL;
 
 import org.jdesktop.swingx.renderer.JRendererLabel;
 
-public class PackageNameColumn extends JDTextEditorTableColumn {
+public class DLPriorityColumn extends JDTableColumn {
 
-    private static final long serialVersionUID = -2305836770033923728L;
-    private final String toolTip;
+    private static final long serialVersionUID = 4640856288557573254L;
+    private static String[] prioDescs;
+    private JRendererLabel jlr;
+    private JComboBox prio;
 
-    public PackageNameColumn(String name, JDTableModel table) {
+    public DLPriorityColumn(String name, JDTableModel table) {
         super(name, table);
-        toolTip = JDL.L("jd.plugins.optional.customizer.columns.PackageNameColumn.toolTip", "The name of the filepackage, if the link matches the regex. Leave it empty to use the default name!");
+        jlr = new JRendererLabel();
+        jlr.setBorder(null);
+        prio = new JComboBox(prioDescs = DownloadTable.prioDescs);
+        prio.setBorder(null);
     }
 
     @Override
-    protected void prepareTableCellEditorComponent(JTextField text) {
-        text.setToolTipText(toolTip);
-    }
-
-    @Override
-    protected void prepareTableCellRendererComponent(JRendererLabel jlr) {
-        jlr.setToolTipText(toolTip);
+    public Object getCellEditorValue() {
+        return prio.getSelectedIndex();
     }
 
     @Override
@@ -61,13 +63,20 @@ public class PackageNameColumn extends JDTextEditorTableColumn {
     }
 
     @Override
-    protected String getStringValue(Object value) {
-        return ((CustomizeSetting) value).getPackageName();
+    public Component myTableCellEditorComponent(JDTableModel table, Object value, boolean isSelected, int row, int column) {
+        prio.setSelectedIndex(((CustomizeSetting) value).getDLPriority() + 1);
+        return prio;
     }
 
     @Override
-    protected void setStringValue(String value, Object object) {
-        ((CustomizeSetting) object).setPackageName(value);
+    public Component myTableCellRendererComponent(JDTableModel table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+        jlr.setText(prioDescs[((CustomizeSetting) value).getDLPriority() + 1]);
+        return jlr;
+    }
+
+    @Override
+    public void setValue(Object value, Object object) {
+        ((CustomizeSetting) object).setDLPriority((Integer) value - 1);
     }
 
 }

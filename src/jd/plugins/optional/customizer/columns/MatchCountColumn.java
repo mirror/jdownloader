@@ -48,10 +48,6 @@ public class MatchCountColumn extends JDTextTableColumn {
     }
 
     @Override
-    public void sort(Object obj, boolean sortingToggle) {
-    }
-
-    @Override
     protected String getStringValue(Object value) {
         return ((CustomizeSetting) value).getMatchCount();
     }

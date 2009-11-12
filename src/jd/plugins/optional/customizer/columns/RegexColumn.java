@@ -52,10 +52,6 @@ public class RegexColumn extends JDTextEditorTableColumn {
     }
 
     @Override
-    public void sort(Object obj, boolean sortingToggle) {
-    }
-
-    @Override
     public void postprocessCell(Component c, JDTableModel table, Object value, boolean isSelected, int row, int column) {
         if (((CustomizeSetting) value).getRegex() == null || ((CustomizeSetting) value).getRegex().equals("")) {
             c.setBackground(new Color(221, 34, 34));

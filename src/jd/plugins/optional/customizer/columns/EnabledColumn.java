@@ -44,10 +44,6 @@ public class EnabledColumn extends JDCheckBoxTableColumn {
     }
 
     @Override
-    public void sort(Object obj, boolean sortingToggle) {
-    }
-
-    @Override
     protected boolean getBooleanValue(Object value) {
         return ((CustomizeSetting) value).isEnabled();
     }

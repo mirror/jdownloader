@@ -17,11 +17,32 @@
 package jd.plugins.optional.customizer;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Collections;
 
 import jd.parser.Regex;
 import jd.utils.JDUtilities;
 
-public class CustomizeSetting implements Serializable {
+public class CustomizeSetting implements Serializable, Comparable<CustomizeSetting> {
+
+    private static ArrayList<CustomizeSetting> SETTINGS = null;
+
+    public static CustomizeSetting getFirstMatch(String fileName) {
+        ArrayList<CustomizeSetting> settings = new ArrayList<CustomizeSetting>(SETTINGS);
+        Collections.sort(settings);
+        for (CustomizeSetting setting : settings) {
+            if (setting.isEnabled() && setting.matches(fileName)) return setting;
+        }
+        return null;
+    }
+
+    public static void setSettings(ArrayList<CustomizeSetting> settings) {
+        SETTINGS = settings;
+    }
+
+    public static ArrayList<CustomizeSetting> getSettings() {
+        return SETTINGS;
+    }
 
     private static final long serialVersionUID = 3295935612660256840L;
 
@@ -40,6 +61,8 @@ public class CustomizeSetting implements Serializable {
     private String password;
 
     private boolean useSubDirectory = false;
+
+    private int dlpriority = 0;
 
     private int priority = 0;
 
@@ -122,7 +145,15 @@ public class CustomizeSetting implements Serializable {
         this.useSubDirectory = useSubDirectory;
     }
 
-    public int getPriority() {
+    public int getDLPriority() {
+        return dlpriority;
+    }
+
+    public void setDLPriority(int dlpriority) {
+        this.dlpriority = dlpriority;
+    }
+
+    public Integer getPriority() {
         return priority;
     }
 
@@ -136,6 +167,10 @@ public class CustomizeSetting implements Serializable {
 
     public void incMatchCount() {
         ++matchCount;
+    }
+
+    public int compareTo(CustomizeSetting o) {
+        return -getPriority().compareTo(o.getPriority());
     }
 
 }

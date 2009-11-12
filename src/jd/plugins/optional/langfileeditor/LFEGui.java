@@ -178,8 +178,8 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
             }
 
         });
-        this.add(warning, "grow, spanx,hidemode 2");
-        this.add(new JScrollPane(table), "grow, spanx");
+        this.add(warning, "grow, hidemode 2");
+        this.add(new JScrollPane(table), "grow");
 
         updater = new Thread(new Runnable() {
 

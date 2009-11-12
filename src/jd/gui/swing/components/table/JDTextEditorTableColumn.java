@@ -35,7 +35,9 @@ public abstract class JDTextEditorTableColumn extends JDTextTableColumn implemen
     }
 
     @Override
-    public abstract boolean isEditable(Object obj);
+    public boolean isEditable(Object obj) {
+        return true;
+    }
 
     @Override
     public final Component myTableCellEditorComponent(JDTableModel table, Object value, boolean isSelected, int row, int column) {

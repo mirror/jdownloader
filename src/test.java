@@ -62,6 +62,8 @@ import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
 
 public class test extends JDialog {
+    private static final long serialVersionUID = -5382996948129094108L;
+
     protected int Closed_Option = JOptionPane.CLOSED_OPTION;
 
     protected InputList fontNameInputList = new InputList(fontNames, "Name:");
@@ -307,6 +309,8 @@ public class test extends JDialog {
 }
 
 class InputList extends JPanel implements ListSelectionListener, ActionListener {
+    private static final long serialVersionUID = 7603510855669538656L;
+
     protected JLabel label = new JLabel();
 
     protected JTextField textfield;
@@ -453,6 +457,8 @@ class InputList extends JPanel implements ListSelectionListener, ActionListener 
     }
 
     class OpelListLabel extends JLabel {
+        private static final long serialVersionUID = -6923336210021923024L;
+
         public OpelListLabel(String text, int alignment) {
             super(text, alignment);
         }
@@ -463,6 +469,8 @@ class InputList extends JPanel implements ListSelectionListener, ActionListener 
     }
 
     class OpelListText extends JTextField {
+        private static final long serialVersionUID = 1266775625819390751L;
+
         public OpelListText() {
         }
 
@@ -476,6 +484,8 @@ class InputList extends JPanel implements ListSelectionListener, ActionListener 
     }
 
     class OpelListList extends JList {
+        private static final long serialVersionUID = 3064625321186097736L;
+
         public OpelListList() {
         }
 
@@ -496,6 +506,7 @@ class InputList extends JPanel implements ListSelectionListener, ActionListener 
     }
 
     protected class AccessibleOpenList extends AccessibleJComponent {
+        private static final long serialVersionUID = -482624590009561392L;
 
         public String getAccessibleName() {
             System.out.println("getAccessibleName: " + accessibleName);
@@ -510,6 +521,8 @@ class InputList extends JPanel implements ListSelectionListener, ActionListener 
 }
 
 class FontLabel extends JLabel {
+    private static final long serialVersionUID = -3112171946676524348L;
+
     public FontLabel(String text) {
         super(text, JLabel.CENTER);
         setBackground(Color.white);
@@ -521,6 +534,7 @@ class FontLabel extends JLabel {
 }
 
 class ColorComboBox extends JComboBox {
+    private static final long serialVersionUID = 2735562143177955336L;
 
     public ColorComboBox() {
         int[] values = new int[] { 0, 128, 192, 255 };
@@ -535,6 +549,7 @@ class ColorComboBox extends JComboBox {
     }
 
     class ColorComboRenderer1 extends JPanel implements ListCellRenderer {
+        private static final long serialVersionUID = -1509913305180839737L;
         protected Color m_c = Color.black;
 
         public ColorComboRenderer1() {

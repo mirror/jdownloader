@@ -32,7 +32,6 @@ import javax.swing.JComponent;
 
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
-import jd.event.JDBroadcaster;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.io.JDFileFilter;
@@ -62,41 +61,11 @@ public class JDL {
 
     public static final JDLocale DEFAULT_LOCALE = JDL.getInstance("en");
 
-    private static JDBroadcaster<JDLListener, JDLEvent> BROADCASTER = null;
-
     private static File LOCALE_FILE;
 
     private static JDLocale LOCALE_ID;
 
     private static String STATIC_LOCALE;
-
-    private static HashMap<String, String> SETTINGS;
-
-    /**
-     * Returns SETTINGS form the current lng file
-     * 
-     * @return
-     */
-    public static HashMap<String, String> getSettings() {
-        if (SETTINGS == null) SETTINGS = new HashMap<String, String>();
-        return SETTINGS;
-    }
-
-    public static JDBroadcaster<JDLListener, JDLEvent> getBroadcaster() {
-        if (BROADCASTER == null) {
-            BROADCASTER = new JDBroadcaster<JDLListener, JDLEvent>() {
-
-                @Override
-                protected void fireEvent(JDLListener listener, JDLEvent event) {
-                    listener.onJDLEvent(event);
-
-                }
-
-            };
-
-        }
-        return BROADCASTER;
-    }
 
     /**
      * returns the correct country code
@@ -340,10 +309,6 @@ public class JDL {
                 key = line.substring(0, split).trim().toLowerCase();
                 value = line.substring(split + 1).trim() + (line.endsWith(" ") ? " " : "");
                 value = value.replace("\\r", "\r").replace("\\n", "\n");
-                if (key.startsWith("!")) {
-                    getSettings().put(key.substring(1), value);
-
-                }
                 data.put(key.hashCode(), value);
             }
             f.close();
@@ -361,7 +326,6 @@ public class JDL {
         LOCALE_FILE = STATIC_LOCALE == null ? JDUtilities.getResourceFile(LANGUAGES_DIR + LOCALE_ID.getLngGeoCode() + ".loc") : new File(STATIC_LOCALE);
         if (LOCALE_FILE.exists()) {
             JDL.parseLanguageFile(LOCALE_FILE, DATA);
-            getBroadcaster().fireEvent(new JDLEvent(lID, JDLEvent.SET_NEW_LOCALE));
         } else {
             System.out.println("Language " + LOCALE_ID + " not installed");
             return;

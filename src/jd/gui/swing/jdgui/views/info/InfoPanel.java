@@ -38,8 +38,8 @@ public abstract class InfoPanel extends DroppedPanel {
 
     private JLabel iconContainer;
 
-    private final Color valueColor;
-    private final Color titleColor;
+    protected final Color valueColor;
+    protected final Color titleColor;
     private final HashMap<String, JComponent> map;
 
     public InfoPanel() {
