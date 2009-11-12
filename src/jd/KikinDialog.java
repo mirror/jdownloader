@@ -22,10 +22,12 @@ import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
 
+import javax.swing.ButtonGroup;
 import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JRadioButton;
 import javax.swing.JSeparator;
 import javax.swing.JTextPane;
 import javax.swing.SwingConstants;
@@ -45,7 +47,19 @@ import net.miginfocom.swing.MigLayout;
 public class KikinDialog extends AbstractDialog {
 
     private JLabel label;
-    private JCheckBox checkbox;
+
+    private JTextPane textFieldAccept;
+    /**
+     * Radiobutton to accept Kikin Installadtion
+     */
+    private JRadioButton radioAccept;
+    /**
+     * Radio button to deny kikin installation
+     */
+    private JRadioButton radioDeny;
+
+    private JTextPane textFieldDeny;
+
     private JTextPane textField;
 
     public KikinDialog() {
@@ -82,11 +96,21 @@ public class KikinDialog extends AbstractDialog {
         cp.add(label, "alignx left,aligny top");
         label.setHorizontalAlignment(SwingConstants.LEFT);
         label.setVerticalAlignment(SwingConstants.TOP);
-        checkbox = new JCheckBox();
 
-        checkbox.addActionListener(new ActionListener() {
+        // Create the radio buttons using the actions
+        radioAccept = new JRadioButton();
+        radioDeny = new JRadioButton();
+        radioDeny.setSelected(true);
+        // Associate the two buttons with a button group
+        ButtonGroup group = new ButtonGroup();
+        group.add(radioAccept);
+        group.add(radioDeny);
+        
+       
+        radioAccept.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                if (checkbox.isSelected()) {
+              
+                if (radioAccept.isSelected()) {
                     btnOK.setEnabled(true);
                     btnOK.setToolTipText(null);
                 } else {
@@ -97,7 +121,6 @@ public class KikinDialog extends AbstractDialog {
             }
 
         });
-
         textField = new JTextPane();
         textField.setContentType("text/html");
 
@@ -105,9 +128,10 @@ public class KikinDialog extends AbstractDialog {
 
         textField.setOpaque(false);
         textField.putClientProperty("Synthetica.opaque", Boolean.FALSE);
-        textField.setText("<style type='text/css'> body {        font-family: Geneva, Arial, Helvetica, sans-serif; font-size:9px;}</style>" + JDL.L("gui.installer.kikin.agree2", "<b><a href=\"http://jdownloader.org/kikin\">What is Kikin?</a> <br/>Best Parts? kikin is free and works automatically.<br>Yes, I would like kikin and I agree to the <a href=\"http://www.kikin.com/terms-of-service\">Terms of Service</a> and <a href=\"http://www.kikin.com/privacy-policy\">Privacy Policy</a></b>"));
+        textField.setText("<style type='text/css'> body {        font-family: Geneva, Arial, Helvetica, sans-serif; font-size:9px;}</style>" + JDL.L("gui.installer.kikin.whatis3", "<b>kikin uses your browsing history to give you personalized content from sites you like.   <a href=\"http://jdownloader.org/kikin\">more...</a></b>"));
         textField.setEditable(false);
-        textField.addHyperlinkListener(new HyperlinkListener() {
+        HyperlinkListener hyperlinkListener;
+        textField.addHyperlinkListener(hyperlinkListener=new HyperlinkListener() {
 
             public void hyperlinkUpdate(HyperlinkEvent e) {
 
@@ -123,17 +147,44 @@ public class KikinDialog extends AbstractDialog {
             }
 
         });
+        textFieldAccept = new JTextPane();
+        textFieldAccept.setContentType("text/html");
+
+        textFieldAccept.setBorder(null);
+
+        textFieldAccept.setOpaque(false);
+        textFieldAccept.putClientProperty("Synthetica.opaque", Boolean.FALSE);
+        textFieldAccept.setText("<style type='text/css'> body {        font-family: Geneva, Arial, Helvetica, sans-serif; font-size:9px;}</style>" + JDL.L("gui.installer.kikin.agree3", "<span>Yes, I would like to install kikin. I agree to the <a href=\"http://www.kikin.com/terms\">Terms of Service</a> and <a href=\"http://www.kikin.com/privacy\">Privacy Policy</a></span>"));
+        textFieldAccept.setEditable(false);
+    
+        textFieldAccept.addHyperlinkListener(hyperlinkListener);
+        
+        textFieldDeny = new JTextPane();
+        textFieldDeny.setContentType("text/html");
+
+        textFieldDeny.setBorder(null);
+
+        textFieldDeny.setOpaque(false);
+        textFieldDeny.putClientProperty("Synthetica.opaque", Boolean.FALSE);
+        textFieldDeny.setText("<style type='text/css'> body {        font-family: Geneva, Arial, Helvetica, sans-serif; font-size:9px;}</style>" + JDL.L("gui.installer.kikin.deny3", "<span>No, thanks</span>"));
+        textFieldDeny.setEditable(false);
+        textFieldDeny.addHyperlinkListener(hyperlinkListener);
         JPanel pp = new JPanel(new MigLayout("ins 0,wrap 2", "[shrink][grow,fill]", "[]"));
-        pp.add(checkbox, "aligny bottom");
-        pp.add(textField, "aligny bottom,gapbottom 2");
+        
+        
+        pp.add(textField, "spanx");
+        pp.add(radioAccept, "aligny ");
+        pp.add(textFieldAccept, "aligny bottom,gapbottom 4");
+        pp.add(radioDeny, "aligny bottom");
+        pp.add(textFieldDeny, "aligny bottom,gapbottom 4");
         pp.add(new JSeparator(), "spanx,growx,pushx");
         cp.add(pp, "growx,pushx");
         // btnOK.setEnabled(false);
-   
+
         btnOK.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
-                if (checkbox.isSelected()) {
+                if (radioAccept.isSelected()) {
                     // KikinDialog.this.setVisible(false);
                     File file = JDUtilities.getResourceFile("tools/Windows/kikin/kikin_installer.exe");
                     // Executer exec = new Executer(file.getAbsolutePath());
