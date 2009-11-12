@@ -41,14 +41,14 @@ public class UnixSplitJoiner extends JAxeJoiner {
         super(sFile, sDir);
     }
 
-    //@Override
+    // @Override
     protected boolean checkNoOverwrite(File f) {
-        File fTemp = new File(sJoinedFile);
+        File fTemp = new File(outputFile);
 
         return !fTemp.exists();
     }
 
-    //@Override
+    // @Override
     protected void computeJobSize() {
         long lReturn = 0;
         int i = 0;
@@ -60,12 +60,12 @@ public class UnixSplitJoiner extends JAxeJoiner {
             i++;
         } while (fTemp.exists());
 
-        lJobSize = lReturn;
+        lJobSize = lReturn - (isCutkiller == true ? 8 : 0);
     }
 
-    //@Override
+    // @Override
     protected void doCleanup() {
-        new File(sJoinedFile).delete();
+        new File(outputFile).delete();
     }
 
     private String getSuffix(int n) {
@@ -77,7 +77,7 @@ public class UnixSplitJoiner extends JAxeJoiner {
         return "." + new String(ca);
     }
 
-    //@Override
+    // @Override
     public void run() {
         File fToJoin, fTemp = null;
         InputStream is = null;
@@ -93,7 +93,11 @@ public class UnixSplitJoiner extends JAxeJoiner {
             return;
         }
         sJoinedFile = UnixSplitFileFilter.getJoinedFileName(sFileToJoin);
-        System.out.println("Joined file: " + sJoinedFile);
+        if (isCutkiller) {
+            outputFile = sJoinedFile + "." + CutKillerExt;
+        } else {
+            outputFile = sJoinedFile;
+        }
 
         if (!fToJoin.exists() || fToJoin.isDirectory()) {
             dispatchEvent(new JobErrorEvent(this, "File to join does not exist or is a directory"));
@@ -106,9 +110,9 @@ public class UnixSplitJoiner extends JAxeJoiner {
         }
 
         try {
-            bos = new BufferedOutputStream(new FileOutputStream(sJoinedFile));
+            bos = new BufferedOutputStream(new FileOutputStream(outputFile));
         } catch (FileNotFoundException fnfe) {
-            dispatchEvent(new JobErrorEvent(this, "Error while opening: " + sJoinedFile + " (" + fnfe.getMessage() + ")"));
+            dispatchEvent(new JobErrorEvent(this, "Error while opening: " + outputFile + " (" + fnfe.getMessage() + ")"));
             return;
         }
 

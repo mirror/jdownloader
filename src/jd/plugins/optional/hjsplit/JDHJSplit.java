@@ -241,10 +241,12 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
                 final File output = getOutputFile(new File(link.getFileOutput()));
                 if (output == null) return;
                 final ProgressController progress = new ProgressController("Default HJMerge", 100);
-                ArrayList<File> list = getFileList(new File(link.getFileOutput()));
-                String cutKillerExt = getCutkillerExtension(new File(link.getFileOutput()), list.size());
                 JAxeJoiner join = JoinerFactory.getJoiner(new File(link.getFileOutput()));
-                join.setCutKiller(cutKillerExt);
+                ArrayList<File> list = getFileList(new File(link.getFileOutput()));
+                if (list != null) {
+                    String cutKillerExt = getCutkillerExtension(new File(link.getFileOutput()), list.size());
+                    join.setCutKiller(cutKillerExt);
+                }
                 join.setProgressEventListener(new ProgressEventListener() {
 
                     long last = System.currentTimeMillis() + 1000;
@@ -261,10 +263,7 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
                         }
                     }
                 });
-
-                if (getPluginConfig().getBooleanProperty(CONFIG_KEY_OVERWRITE, false)) {
-                    if (output.exists()) output.delete();
-                }
+                join.overwriteExistingFile(getPluginConfig().getBooleanProperty(CONFIG_KEY_OVERWRITE, false));
                 try {
                     join.run();
                     if (join.wasSuccessfull() && getPluginConfig().getBooleanProperty(CONFIG_KEY_REMOVE_MERGED, false)) {

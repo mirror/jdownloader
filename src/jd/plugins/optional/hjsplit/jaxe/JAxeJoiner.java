@@ -40,9 +40,15 @@ public class JAxeJoiner extends AxeWriterWorker {
     protected String sDestDir;
     protected String sFileToJoin;
     protected String sJoinedFile;
+    protected String outputFile;
     protected boolean successfull = false;
-    private boolean isCutkiller = false;
-    private String CutKillerExt = null;
+    protected boolean isCutkiller = false;
+    protected String CutKillerExt = null;
+    private boolean overwrite = false;
+
+    public void overwriteExistingFile(boolean b) {
+        overwrite = b;
+    }
 
     public void setCutKiller(String extension) {
         if (extension == null) {
@@ -65,8 +71,12 @@ public class JAxeJoiner extends AxeWriterWorker {
 
     // @Override
     protected boolean checkNoOverwrite(File f) {
-        File fTemp = new File(sJoinedFile);
-
+        File fTemp = new File(outputFile);
+        boolean b = fTemp.exists();
+        if (b && overwrite) {
+            fTemp.delete();
+            return true;
+        }
         return !fTemp.exists();
     }
 
@@ -75,18 +85,17 @@ public class JAxeJoiner extends AxeWriterWorker {
         long lReturn = 0;
         int i = 1;
         File fTemp;
-
         do {
             fTemp = new File(i == 1 ? sFileToJoin : sJoinedFile + "." + formatWidth(i, 3) + (bZipped ? ".zip" : ""));
             lReturn += fTemp.length();
             i++;
         } while (fTemp.exists());
 
-        lJobSize = lReturn;
+        lJobSize = lReturn - (isCutkiller == true ? 8 : 0);
     }
 
     protected void doCleanup() {
-        new File(sJoinedFile).delete();
+        new File(outputFile).delete();
     }
 
     public boolean wasSuccessfull() {
@@ -113,7 +122,9 @@ public class JAxeJoiner extends AxeWriterWorker {
         }
         sJoinedFile = SplitFileFilter.getJoinedFileName(sFileToJoin);
         if (isCutkiller) {
-            sJoinedFile = sJoinedFile + "." + CutKillerExt;
+            outputFile = sJoinedFile + "." + CutKillerExt;
+        } else {
+            outputFile = sJoinedFile;
         }
         if (!fToJoin.exists() || fToJoin.isDirectory()) {
             dispatchEvent(new JobErrorEvent(this, "File to join does not exist or is a directory"));
@@ -128,9 +139,9 @@ public class JAxeJoiner extends AxeWriterWorker {
         bZipped = SplitFileFilter.isZippedSplitFile(sFileToJoin);
 
         try {
-            bos = new BufferedOutputStream(new FileOutputStream(sJoinedFile));
+            bos = new BufferedOutputStream(new FileOutputStream(outputFile));
         } catch (FileNotFoundException fnfe) {
-            dispatchEvent(new JobErrorEvent(this, "Error while opening: " + sJoinedFile + " (" + fnfe.getMessage() + ")"));
+            dispatchEvent(new JobErrorEvent(this, "Error while opening: " + outputFile + " (" + fnfe.getMessage() + ")"));
             return;
         }
 
