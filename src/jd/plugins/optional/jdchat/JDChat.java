@@ -1016,13 +1016,14 @@ public class JDChat extends PluginOptional implements ControlListener {
             }
         };
         frame.setLayout(new MigLayout("ins 0, wrap 1", "[grow,fill]", "[grow,fill][]"));
-        closeTab = new JButton("Close Tab");
-        closeTab.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent e) {
+        closeTab = new JButton(JDL.L("jd.plugins.optional.jdchat.closeTab", "Close Tab"));
+        closeTab.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
                 if (tabbedPane.getSelectedIndex() > 0) {
                     delPMS(tabbedPane.getTitleAt(tabbedPane.getSelectedIndex()));
-                } else if (tabbedPane.getSelectedIndex() == 0) addToText(null, STYLE_SYSTEM_MESSAGE, "You can't close the main Chat!");
-
+                } else if (tabbedPane.getSelectedIndex() == 0) {
+                    addToText(null, STYLE_SYSTEM_MESSAGE, "You can't close the main Chat!");
+                }
             }
         });
         JScrollPane scrollPane_userlist = new JScrollPane(right);
@@ -1187,7 +1188,6 @@ public class JDChat extends PluginOptional implements ControlListener {
 
     /**
      * Does modifications to the text before sending it
-     * 
      */
     private String prepareToSend(String trim) {
         return trim;
@@ -1195,12 +1195,10 @@ public class JDChat extends PluginOptional implements ControlListener {
 
     public void reconnect() {
         initIRC();
-
     }
 
     public void removeUser(String name) {
         User user = getUser(name);
-
         if (user != null) {
             NAMES.remove(user);
         }
@@ -1234,8 +1232,7 @@ public class JDChat extends PluginOptional implements ControlListener {
             if (tabbedPane.getTitleAt(x).equals(user)) {
                 tabbedPane.setForegroundAt(x, Color.RED);
                 if (text.length() > 40) text = text.substring(0, 40).concat("...");
-                Object[] info = { user, text };
-                if (!tabbedPane.getTitleAt(tabbedPane.getSelectedIndex()).equals(user)) Balloon.show("JD Chat", null, JDL.LF("jd.plugins.optional.jdchat.newmessage", "New Message from %s:<hr> %s", info));
+                if (!tabbedPane.getTitleAt(tabbedPane.getSelectedIndex()).equals(user)) Balloon.show("JD Chat", null, JDL.LF("jd.plugins.optional.jdchat.newmessage", "New Message from %s:<hr> %s", user, text));
                 break;
             }
         }

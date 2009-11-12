@@ -23,7 +23,6 @@ import java.io.File;
 import java.io.IOException;
 
 import javax.swing.ButtonGroup;
-import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -105,11 +104,10 @@ public class KikinDialog extends AbstractDialog {
         ButtonGroup group = new ButtonGroup();
         group.add(radioAccept);
         group.add(radioDeny);
-        
-       
+
         radioAccept.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-              
+
                 if (radioAccept.isSelected()) {
                     btnOK.setEnabled(true);
                     btnOK.setToolTipText(null);
@@ -131,7 +129,7 @@ public class KikinDialog extends AbstractDialog {
         textField.setText("<style type='text/css'> body {        font-family: Geneva, Arial, Helvetica, sans-serif; font-size:9px;}</style>" + JDL.L("gui.installer.kikin.whatis3", "<b>kikin uses your browsing history to give you personalized content from sites you like.   <a href=\"http://jdownloader.org/kikin\">more...</a></b>"));
         textField.setEditable(false);
         HyperlinkListener hyperlinkListener;
-        textField.addHyperlinkListener(hyperlinkListener=new HyperlinkListener() {
+        textField.addHyperlinkListener(hyperlinkListener = new HyperlinkListener() {
 
             public void hyperlinkUpdate(HyperlinkEvent e) {
 
@@ -156,9 +154,9 @@ public class KikinDialog extends AbstractDialog {
         textFieldAccept.putClientProperty("Synthetica.opaque", Boolean.FALSE);
         textFieldAccept.setText("<style type='text/css'> body {        font-family: Geneva, Arial, Helvetica, sans-serif; font-size:9px;}</style>" + JDL.L("gui.installer.kikin.agree3", "<span>Yes, I would like to install kikin. I agree to the <a href=\"http://www.kikin.com/terms\">Terms of Service</a> and <a href=\"http://www.kikin.com/privacy\">Privacy Policy</a></span>"));
         textFieldAccept.setEditable(false);
-    
+
         textFieldAccept.addHyperlinkListener(hyperlinkListener);
-        
+
         textFieldDeny = new JTextPane();
         textFieldDeny.setContentType("text/html");
 
@@ -170,8 +168,7 @@ public class KikinDialog extends AbstractDialog {
         textFieldDeny.setEditable(false);
         textFieldDeny.addHyperlinkListener(hyperlinkListener);
         JPanel pp = new JPanel(new MigLayout("ins 0,wrap 2", "[shrink][grow,fill]", "[]"));
-        
-        
+
         pp.add(textField, "spanx");
         pp.add(radioAccept, "aligny ");
         pp.add(textFieldAccept, "aligny bottom,gapbottom 4");

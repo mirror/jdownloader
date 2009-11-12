@@ -16,9 +16,14 @@
 
 package jd.plugins.optional.customizer.columns;
 
+import javax.swing.JTextField;
+import javax.swing.SwingConstants;
+
 import jd.gui.swing.components.table.JDTableModel;
 import jd.gui.swing.components.table.JDTextEditorTableColumn;
 import jd.plugins.optional.customizer.CustomizeSetting;
+
+import org.jdesktop.swingx.renderer.JRendererLabel;
 
 public class PriorityColumn extends JDTextEditorTableColumn {
 
@@ -26,6 +31,16 @@ public class PriorityColumn extends JDTextEditorTableColumn {
 
     public PriorityColumn(String name, JDTableModel table) {
         super(name, table);
+    }
+
+    @Override
+    protected void prepareTableCellRendererComponent(JRendererLabel jlr) {
+        jlr.setHorizontalAlignment(SwingConstants.CENTER);
+    }
+
+    @Override
+    protected void prepareTableCellEditorComponent(JTextField text) {
+        text.setHorizontalAlignment(SwingConstants.CENTER);
     }
 
     @Override
