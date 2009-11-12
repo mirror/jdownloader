@@ -41,6 +41,17 @@ public class JAxeJoiner extends AxeWriterWorker {
     protected String sFileToJoin;
     protected String sJoinedFile;
     protected boolean successfull = false;
+    private boolean isCutkiller = false;
+    private String CutKillerExt = null;
+
+    public void setCutKiller(String extension) {
+        if (extension == null) {
+            isCutkiller = false;
+        } else {
+            CutKillerExt = extension;
+            isCutkiller = true;
+        }
+    }
 
     public JAxeJoiner(String sFile) {
         sFileToJoin = sFile;
@@ -101,7 +112,9 @@ public class JAxeJoiner extends AxeWriterWorker {
             return;
         }
         sJoinedFile = SplitFileFilter.getJoinedFileName(sFileToJoin);
-
+        if (isCutkiller) {
+            sJoinedFile = sJoinedFile + "." + CutKillerExt;
+        }
         if (!fToJoin.exists() || fToJoin.isDirectory()) {
             dispatchEvent(new JobErrorEvent(this, "File to join does not exist or is a directory"));
             return;
@@ -137,6 +150,13 @@ public class JAxeJoiner extends AxeWriterWorker {
                         break;
                     } else if (!bZipped) {
                         is = new BufferedInputStream(new FileInputStream(fTemp));
+                        if (isCutkiller && i == 1) {
+                            /*
+                             * cutkiller support, skip first 8 bytes, 3 bytes
+                             * extension, 2 byte spaces, 3 bytes number
+                             */
+                            is.read(ba, 0, 8);
+                        }
                     } else {
                         cis = new CountingInputStream(new FileInputStream(fTemp));
                         cis.setTotal(fTemp.length());

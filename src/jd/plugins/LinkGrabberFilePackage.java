@@ -373,6 +373,7 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
             this.name = JDUtilities.removeEndingPoints(JDL.L("controller.packages.defaultname", "various"));
         } else
             this.name = JDUtilities.removeEndingPoints(JDIO.validateFileandPathName(name));
+        this.name = this.name.trim();
     }
 
     public void setPassword(String password) {

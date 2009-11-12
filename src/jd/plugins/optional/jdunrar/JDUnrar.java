@@ -256,11 +256,12 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         String filename = null;
         if (type == JDUnrarConstants.MULTIPART_START_PART) {
             filename = new Regex(link.getFileOutput(), "(.*)\\.pa?r?t?\\.?[0-9]+.rar$").getMatch(0);
-            if ((file = new File(filename + ".part1.rar")).exists()) {
-            } else if ((file = new File(filename + ".part01.rar")).exists()) {
-            } else if ((file = new File(filename + ".part001.rar")).exists()) {
-            } else if ((file = new File(filename + ".part0001.rar")).exists()) {
-            } else if ((file = new File(filename + ".part000.rar")).exists()) {
+            String partid = new Regex(link.getFileOutput(), "(.*)\\.(pa?r?t?\\.?)[0-9]+.rar$").getMatch(1);
+            if ((file = new File(filename + "." + partid + "1.rar")).exists()) {
+            } else if ((file = new File(filename + "." + partid + "01.rar")).exists()) {
+            } else if ((file = new File(filename + "." + partid + "001.rar")).exists()) {
+            } else if ((file = new File(filename + "." + partid + "0001.rar")).exists()) {
+            } else if ((file = new File(filename + "." + partid + "000.rar")).exists()) {
             } else {
                 return null;
             }
@@ -932,7 +933,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
             if (this.getPluginConfig().getBooleanProperty(JDUnrarConstants.CONFIG_KEY_REMOVE_INFO_FILE, false)) {
                 File fileOutput = new File(wrapper.getDownloadLink().getFileOutput());
                 String packname = wrapper.getDownloadLink().getFilePackage().getName();
-                File infoFiles = new File(fileOutput.getParentFile(), packname.replaceFirst("(?i)(\\.part[0-9]+\\.rar|\\.rar)$", "") + ".info");
+                File infoFiles = new File(fileOutput.getParentFile(), packname.replaceFirst("(?i)(\\.pa?r?t?\\.?[0-9]+\\.rar|\\.rar)$", "") + ".info");
                 if (infoFiles.exists() && infoFiles.delete()) {
                     logger.info(infoFiles.getName() + " removed");
                 }
@@ -1058,7 +1059,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
 
             if (this.getPluginConfig().getBooleanProperty(JDUnrarConstants.CONFIG_KEY_REMOVE_INFO_FILE, false)) {
                 File fileOutput = new File(wrapper.getDownloadLink().getFileOutput());
-                File infoFiles = new File(fileOutput.getParentFile(), fileOutput.getName().replaceFirst("(?i)(\\.part[0-9]+\\.rar|\\.rar)$", "") + ".info");
+                File infoFiles = new File(fileOutput.getParentFile(), fileOutput.getName().replaceFirst("(?i)(\\.pa?r?t?\\.?[0-9]+\\.rar|\\.rar)$", "") + ".info");
                 if (infoFiles.exists() && infoFiles.delete()) {
                     logger.info(infoFiles.getName() + " removed");
                 }
@@ -1090,10 +1091,11 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         case JDUnrarConstants.MULTIPART_START_PART_V2:
             name = this.getArchiveName(downloadLink);
             String test = null;
-            if ((test = new Regex(downloadLink.getFileOutput(), "part(\\d*?)\\.").getMatch(0)) != null) {
+            String partid = new Regex(downloadLink.getFileOutput(), "(.pa?r?t?\\.?)(\\d*?)\\.").getMatch(0);
+            if ((test = new Regex(downloadLink.getFileOutput(), ".pa?r?t?\\.?(\\d*?)\\.").getMatch(0)) != null) {
                 nums = test.length();
                 i = 1;
-                while ((file = new File(new File(downloadLink.getFileOutput()).getParentFile(), name + ".part" + Formatter.fillString(i + "", "0", "", nums) + ".rar")).exists() || JDUtilities.getController().getDownloadLinkByFileOutput(file, LinkStatus.FINISHED) != null) {
+                while ((file = new File(new File(downloadLink.getFileOutput()).getParentFile(), name + partid + Formatter.fillString(i + "", "0", "", nums) + ".rar")).exists() || JDUtilities.getController().getDownloadLinkByFileOutput(file, LinkStatus.FINISHED) != null) {
                     DownloadLink dl = JDUtilities.getController().getDownloadLinkByFileOutput(file, LinkStatus.FINISHED);
                     if (dl == null) dl = JDUtilities.getController().getDownloadLinkByFileOutput(file, LinkStatus.ERROR_ALREADYEXISTS);
                     if (dl == null) dl = JDUtilities.getController().getDownloadLinkByFileOutput(file, null);
@@ -1148,10 +1150,11 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         case JDUnrarConstants.MULTIPART_START_PART_V2:
             name = this.getArchiveName(filepath);
             String test = null;
-            if ((test = new Regex(filepath, "part(\\d*?)\\.").getMatch(0)) != null) {
+            String partid = new Regex(filepath, "(.pa?r?t?\\.?)(\\d*?)\\.").getMatch(0);
+            if ((test = new Regex(filepath, ".pa?r?t?\\.?(\\d*?)\\.").getMatch(0)) != null) {
                 nums = test.length();
                 i = 1;
-                while ((file = new File(new File(filepath).getParentFile(), name + ".part" + Formatter.fillString(i + "", "0", "", nums) + ".rar")).exists() || JDUtilities.getController().getDownloadLinkByFileOutput(file, LinkStatus.FINISHED) != null) {
+                while ((file = new File(new File(filepath).getParentFile(), name + partid + Formatter.fillString(i + "", "0", "", nums) + ".rar")).exists() || JDUtilities.getController().getDownloadLinkByFileOutput(file, LinkStatus.FINISHED) != null) {
                     ret.add(file.toString());
                     i++;
                 }

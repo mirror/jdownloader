@@ -67,15 +67,19 @@ public class SizeColumn extends JDTableColumn {
             fp = (FilePackage) value;
             if (fp.getTotalEstimatedPackageSize() < 0) {
                 jlr.setText("Unknown Filesize");
+                jlr.setToolTipText(null);
             } else {
                 jlr.setText(Formatter.formatReadable(fp.getTotalEstimatedPackageSize()));
+                jlr.setToolTipText(fp.getTotalEstimatedPackageSize() + "");
             }
         } else {
             dLink = (DownloadLink) value;
             if (dLink.getDownloadSize() <= 0) {
                 jlr.setText("Unknown Filesize");
+                jlr.setToolTipText(null);
             } else {
                 jlr.setText(Formatter.formatReadable(dLink.getDownloadSize()));
+                jlr.setToolTipText(dLink.getDownloadSize() + "");
             }
         }
         return jlr;

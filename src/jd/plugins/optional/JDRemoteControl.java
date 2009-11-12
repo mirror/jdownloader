@@ -387,7 +387,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                 // Add Link(s)
                 String link = new Regex(request.getRequestUrl(), "[\\s\\S]*?/action/add/links/([\\s\\S]+)").getMatch(0);
                 ArrayList<String> links = new ArrayList<String>();
-                for (String tlink : HTMLParser.getHttpLinks(link, null)) {
+                for (String tlink : HTMLParser.getHttpLinks(Encoding.urlDecode(link, false), null)) {
                     links.add(tlink);
                 }
                 if (request.getParameters().size() > 0) {

@@ -45,9 +45,6 @@ import jd.gui.swing.jdgui.JDGuiConstants;
 import jd.nutils.OSDetector;
 import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
-import jd.utils.locale.JDLEvent;
-import jd.utils.locale.JDLListener;
 
 public class LookAndFeelController {
 
@@ -180,7 +177,7 @@ public class LookAndFeelController {
                 // Sets the Synthetica Look and feel and avoids errors if the
                 // synth laf is not loaded (no imports)
                 try {
-//                    LookAndFeelController.setUIManager();
+                    // LookAndFeelController.setUIManager();
 
                     Class<?> slaf = Class.forName("de.javasoft.plaf.synthetica.SyntheticaLookAndFeel");
 
@@ -222,59 +219,21 @@ public class LookAndFeelController {
 
             // overwrite defaults
             SubConfiguration cfg = SubConfiguration.getConfig(DEFAULT_PREFIX + "." + laf);
-
             postSetup(laf);
-
             for (Iterator<Entry<String, Object>> it = cfg.getProperties().entrySet().iterator(); it.hasNext();) {
                 Entry<String, Object> next = it.next();
                 JDLogger.getLogger().info("Use special LAF Property: " + next.getKey() + " = " + next.getValue());
                 UIManager.put(next.getKey(), next.getValue());
             }
-
         } catch (Throwable e) {
-
             JDLogger.exception(e);
         }
-
-        JDL.getBroadcaster().addListener(new JDLListener() {
-
-            @Override
-            public void onJDLEvent(JDLEvent event) {
-                if (event.getID() == JDLEvent.SET_NEW_LOCALE) {
-
-                    if (JDL.getSettings().get("font") != null) {
-                        if (isSynthetica()) {
-                            String font = JDL.getSettings().get("font");
-                            int fontsize = 12;
-                            try {
-                                fontsize = Integer.parseInt(JDL.getSettings().get("fontsize"));
-                            } catch (Exception e) {
-                            }
-
-                            try {
-                                Class.forName("de.javasoft.plaf.synthetica.SyntheticaLookAndFeel").getMethod("setFont", new Class[] { String.class, int.class }).invoke(null, new Object[] { font, fontsize });
-
-                            } catch (Exception e) {
-                                // TODO Auto-generated catch block
-                                e.printStackTrace();
-                            }
-                        }
-
-                    }
-
-                }
-
-            }
-
-        });
-
     }
 
     /**
      * INstalls all Look and feels founmd in libs/laf/
      */
     private static void install() {
-
         for (File file : JDUtilities.getJDClassLoader().getLafs()) {
             try {
                 JarInputStream jarFile = new JarInputStream(new FileInputStream(file));
@@ -289,19 +248,14 @@ public class LookAndFeelController {
                     if (!cl.toLowerCase().endsWith("lookandfeel")) continue;
                     Class<?> clazz = JDUtilities.getJDClassLoader().loadClass(cl);
                     try {
-
                         if (LookAndFeel.class.isAssignableFrom(clazz) && !Modifier.isAbstract(clazz.getModifiers())) {
-
                             String name = clazz.getSimpleName().replace("LookAndFeel", "");
                             names.add(name);
                             classes.add(cl);
-
                         }
                     } catch (Throwable t) {
-
                         t.printStackTrace();
                     }
-
                 }
                 // first collect all. Of the jar contaisn errors, an exception
                 // gets thrown and no laf is added (e.gh. substance for 1.5
@@ -312,7 +266,6 @@ public class LookAndFeelController {
                 JDLogger.exception(e);
             }
         }
-
     }
 
     /**
@@ -321,38 +274,38 @@ public class LookAndFeelController {
      * @param className
      */
     private static void postSetup(String className) {
-
         int fontsize = GUIUtils.getConfig().getIntegerProperty(JDGuiConstants.PARAM_GENERAL_FONT_SIZE, 100);
-
         if (isSynthetica()) {
             try {
-
+                /*
+                 * set default font to Dialog, so we can show japanese chars,
+                 * note that java itself must have correct font mappings
+                 */
+                Class.forName("de.javasoft.plaf.synthetica.SyntheticaLookAndFeel").getMethod("setFont", new Class[] { String.class, int.class }).invoke(null, new Object[] { GUIUtils.getConfig().getStringProperty(JDGuiConstants.PARAM_GENERAL_FONT_NAME, "Dialog"), 12 });
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            try {
+                /* dynamic fontsize */
                 String font = "" + Class.forName("de.javasoft.plaf.synthetica.SyntheticaLookAndFeel").getMethod("getFontName", new Class[] {}).invoke(null, new Object[] {});
                 int fonts = (Integer) Class.forName("de.javasoft.plaf.synthetica.SyntheticaLookAndFeel").getMethod("getFontSize", new Class[] {}).invoke(null, new Object[] {});
-
                 Class.forName("de.javasoft.plaf.synthetica.SyntheticaLookAndFeel").getMethod("setFont", new Class[] { String.class, int.class }).invoke(null, new Object[] { font, (fonts * fontsize) / 100 });
-
             } catch (Exception e) {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
             }
         } else {
-
             for (Enumeration<Object> e = UIManager.getDefaults().keys(); e.hasMoreElements();) {
                 Object key = e.nextElement();
                 Object value = UIManager.get(key);
 
                 if (value instanceof Font) {
                     Font f = (Font) value;
-
                     UIManager.put(key, new FontUIResource(f.getName(), f.getStyle(), (f.getSize() * fontsize) / 100));
                 }
             }
         }
-
         //
         // JTattooUtils.setJTattooRootPane(this);
-
     }
 
     /**

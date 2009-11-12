@@ -525,6 +525,7 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
             this.name = JDUtilities.removeEndingPoints(getDefaultFilePackage().name);
         } else
             this.name = JDUtilities.removeEndingPoints(JDIO.validateFileandPathName(name));
+        this.name = this.name.trim();
     }
 
     public void setPassword(String password) {

@@ -261,6 +261,7 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
                             progressBarFilePackage.setValues(values);
                             lblSize.setText(Formatter.formatReadable(fp.getTotalKBLoaded()) + "/" + Formatter.formatReadable(fp.getTotalEstimatedPackageSize()));
                             lblFiles.setText(JDL.LF("gui.fileinfopanel.packagetab.lbl.files", "%s File(s)", fp.getDownloadLinkList().size()));
+                            lblSize.setToolTipText(fp.getTotalKBLoaded() + " / " + fp.getTotalEstimatedPackageSize());
                         }
                         if (downloadLink != null) {
                             if (downloadLink.getChunksProgress() != null && !downloadLink.getLinkStatus().hasStatus(LinkStatus.ERROR_FILE_NOT_FOUND)) {
@@ -300,6 +301,7 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
                             }
                             txtStatusDl.setText(downloadLink.getLinkStatus().getStatusString());
                             lblSizeDl.setText(Formatter.formatReadable(downloadLink.getDownloadCurrent()) + "/" + Formatter.formatReadable(downloadLink.getDownloadSize()));
+                            lblSizeDl.setToolTipText(downloadLink.getDownloadCurrent() + " / " + downloadLink.getDownloadSize());
                             if (downloadLink.getDownloadSpeed() <= 0) {
                                 lblETA.setVisible(false);
                                 lblSpeed.setVisible(false);

@@ -725,14 +725,11 @@ public class SimpleFTP {
      * @throws IOException
      */
     public String[] getFileInfo(String path) throws IOException {
-
         String name = path.substring(path.lastIndexOf("/") + 1);
         path = path.substring(0, path.lastIndexOf("/"));
-
         this.cwd(path);
         for (String[] file : list()) {
             if (file[6].equals(name)) return file;
-
         }
         return null;
     }
@@ -751,10 +748,8 @@ public class SimpleFTP {
             String[] auth = url.getUserInfo().split(":");
             connect(host, port, auth[0], auth[1]);
         } else {
-
             connect(host, port);
         }
-
     }
 
 }

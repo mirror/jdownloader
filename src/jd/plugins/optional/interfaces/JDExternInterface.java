@@ -234,10 +234,9 @@ public class JDExternInterface extends PluginOptional {
                             } else {
                                 key = JDHexUtils.getByteArray(request.getParameters().get("k"));
                             }
-    
+
                             String decryted = decrypt(baseDecoded, key).trim();
-                     
-                           
+
                             String passwords[] = Regex.getLines(Encoding.htmlDecode(request.getParameters().get("passwords")));
                             PasswordListController.getInstance().addPasswords(passwords);
 

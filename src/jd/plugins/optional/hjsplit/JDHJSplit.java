@@ -27,6 +27,7 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.SubConfiguration;
+import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
 import jd.controlling.SingleDownloadController;
 import jd.event.ControlEvent;
@@ -37,6 +38,7 @@ import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.nutils.Formatter;
 import jd.nutils.jobber.JDRunnable;
 import jd.nutils.jobber.Jobber;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -47,6 +49,7 @@ import jd.plugins.optional.hjsplit.jaxe.JAxeJoiner;
 import jd.plugins.optional.hjsplit.jaxe.JoinerFactory;
 import jd.plugins.optional.hjsplit.jaxe.ProgressEvent;
 import jd.plugins.optional.hjsplit.jaxe.ProgressEventListener;
+import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -238,7 +241,10 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
                 final File output = getOutputFile(new File(link.getFileOutput()));
                 if (output == null) return;
                 final ProgressController progress = new ProgressController("Default HJMerge", 100);
+                ArrayList<File> list = getFileList(new File(link.getFileOutput()));
+                String cutKillerExt = getCutkillerExtension(new File(link.getFileOutput()), list.size());
                 JAxeJoiner join = JoinerFactory.getJoiner(new File(link.getFileOutput()));
+                join.setCutKiller(cutKillerExt);
                 join.setProgressEventListener(new ProgressEventListener() {
 
                     long last = System.currentTimeMillis() + 1000;
@@ -257,13 +263,11 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
                 });
 
                 if (getPluginConfig().getBooleanProperty(CONFIG_KEY_OVERWRITE, false)) {
-
                     if (output.exists()) output.delete();
                 }
                 try {
                     join.run();
                     if (join.wasSuccessfull() && getPluginConfig().getBooleanProperty(CONFIG_KEY_REMOVE_MERGED, false)) {
-                        ArrayList<File> list = getFileList(new File(link.getFileOutput()));
                         if (list != null) {
                             for (File f : list) {
                                 f.delete();
@@ -524,6 +528,34 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
     public boolean initAddon() {
         JDUtilities.getController().addControlListener(this);
         return true;
+    }
+
+    /**
+     * returns String with fileextension if we find a valid cutkiller fileheader
+     * returns null if no cutkiller fileheader found
+     * 
+     * @param file
+     * @return
+     */
+    private String getCutkillerExtension(File file, int filecount) {
+        File startFile = getStartFile(file);
+        if (startFile == null) return null;
+        String sig = null;
+        try {
+            sig = JDHexUtils.toString(FileSignatures.readFileSignature(startFile));
+        } catch (IOException e) {
+            JDLogger.exception(e);
+            return null;
+        }
+        if (new Regex(sig, "[\\w]{3}  \\d+").matches()) {
+            String count = new Regex(sig, ".*?  (\\d+)").getMatch(0);
+            if (count == null) return null;
+            if (filecount != Integer.parseInt(count)) return null;
+            String ext = new Regex(sig, "(.*?) ").getMatch(0);
+            logger.info("CutKiller Header found! Ext: ." + ext + " Parts: " + filecount);
+            return ext;
+        }
+        return null;
     }
 
     public void initConfig() {

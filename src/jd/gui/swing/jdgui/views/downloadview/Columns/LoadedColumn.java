@@ -67,15 +67,19 @@ public class LoadedColumn extends JDTableColumn {
             fp = (FilePackage) value;
             if (fp.getTotalKBLoaded() < 0) {
                 jlr.setText("0 B");
+                jlr.setToolTipText("");
             } else {
                 jlr.setText(Formatter.formatReadable(fp.getTotalKBLoaded()));
+                jlr.setToolTipText(fp.getTotalKBLoaded() + "");
             }
         } else {
             dLink = (DownloadLink) value;
             if (dLink.getDownloadCurrent() <= 0) {
                 jlr.setText("0 B");
+                jlr.setToolTipText("");
             } else {
                 jlr.setText(Formatter.formatReadable(dLink.getDownloadCurrent()));
+                jlr.setToolTipText(dLink.getDownloadCurrent() + "");
             }
         }
         return jlr;
