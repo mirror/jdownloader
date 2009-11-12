@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision", interfaceVersion = 2, names = { "books.google.com" }, urls = { "http://books.google.[a-z]+/books\\?id=[0-9a-zA-Z-]+&printsec=frontcover.*" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "books.google.com" }, urls = { "http://books.google.[a-z]+/books\\?id=[0-9a-zA-Z-]+&printsec=frontcover.*" }, flags = { 0 })
 public class GglBks extends PluginForDecrypt {
 
     public GglBks(PluginWrapper wrapper) {
