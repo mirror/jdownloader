@@ -195,8 +195,10 @@ public class ProgressColumn extends JDTableColumn {
                                 aa = b;
                                 bb = a;
                             }
-                            if (aa.getPercent() == bb.getPercent()) return 0;
-                            return aa.getPercent() < bb.getPercent() ? -1 : 1;
+                            long ap = aa.getTotalEstimatedPackageSize() - aa.getTotalKBLoaded();
+                            long bp = bb.getTotalEstimatedPackageSize() - bb.getTotalKBLoaded();
+                            if (ap == bp) return 0;
+                            return ap < bp ? -1 : 1;
                         }
                     });
                 } else {
@@ -214,8 +216,10 @@ public class ProgressColumn extends JDTableColumn {
                                     aa = a;
                                     bb = b;
                                 }
-                                if (aa.getPercent() == bb.getPercent()) return 0;
-                                return aa.getPercent() < bb.getPercent() ? -1 : 1;
+                                long ap = aa.getDownloadSize() - aa.getDownloadCurrent();
+                                long bp = bb.getDownloadSize() - bb.getDownloadCurrent();
+                                if (ap == bp) return 0;
+                                return ap < bp ? -1 : 1;
                             }
                         });
                     }
