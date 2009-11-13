@@ -37,12 +37,13 @@ import jd.utils.JDTheme;
 import net.miginfocom.swing.MigLayout;
 
 public class ViewToolbar extends JPanel {
-    public ViewToolbar() {
 
+    public ViewToolbar(String... actions) {
         ActionController.initActions();
 
-        // this.updateToolbar();
-        current = defaultlist;
+        current = actions;
+
+        this.updateToolbar();
     }
 
     private static String[] defaultlist = new String[] {};
@@ -222,7 +223,7 @@ public class ViewToolbar extends JPanel {
      * @return
      */
     public String getButtonConstraint(int i, ToolBarAction action) {
-        if (halign == EAST) { return BUTTON_CONSTRAINTS + ", alignx right"; }
+        if (halign == EAST) return BUTTON_CONSTRAINTS + ", alignx right";
         return BUTTON_CONSTRAINTS;
     }
 

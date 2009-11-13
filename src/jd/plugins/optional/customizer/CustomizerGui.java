@@ -33,6 +33,7 @@ import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.components.table.JDRowHighlighter;
 import jd.gui.swing.jdgui.actions.ThreadedAction;
+import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.gui.swing.jdgui.interfaces.DroppedPanel;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.views.toolbar.ViewToolbar;
@@ -61,13 +62,17 @@ public class CustomizerGui extends SwitchPanel {
     }
 
     private void initGUI() {
-        this.setLayout(new MigLayout("ins 5, wrap 1", "[grow,fill]", "[][grow,fill]"));
-        ViewToolbar vt = new ViewToolbar();
-        vt.setList(new String[] { "action.customize.addsetting", "action.customize.removesetting" });
+        this.setLayout(new MigLayout("ins 0, wrap 1", "[grow,fill]", "[][grow,fill]"));
+        ViewToolbar vt = new ViewToolbar("action.customize.addsetting", "action.customize.removesetting") {
+            private static final long serialVersionUID = 6729577553312763574L;
 
+            @Override
+            public String getButtonConstraint(int i, ToolBarAction action) {
+                return super.getButtonConstraint(i, action) + ", sizegroup toolbar";
+            }
+        };
         this.add(vt, "gapleft 3");
-        this.add(new JScrollPane(table), "grow, spany");
-
+        this.add(new JScrollPane(table), "grow");
     }
 
     private void initActions() {

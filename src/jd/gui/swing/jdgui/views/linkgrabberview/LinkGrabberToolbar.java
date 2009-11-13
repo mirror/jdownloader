@@ -24,17 +24,15 @@ public class LinkGrabberToolbar extends ViewToolbar {
     private static final long serialVersionUID = 1L;
 
     public LinkGrabberToolbar() {
-
-        setList(new String[] { "action.addurl", "action.load", "action.linkgrabber.addall", "action.linkgrabber.clearlist" });
-        BUTTON_CONSTRAINTS = "gaptop 2";
+        super("action.addurl", "action.load", "action.linkgrabber.addall", "action.linkgrabber.clearlist");
     }
 
     @Override
     public String getButtonConstraint(int i, ToolBarAction action) {
         if (i < 3) {
-            return BUTTON_CONSTRAINTS + ", dock west, sizegroup toolbar" + (i == 1 ? ", gapright u" : ", gapright r");
+            return "dock west, sizegroup toolbar" + (i == 1 ? ", gapright u" : ", gapright r");
         } else {
-            return BUTTON_CONSTRAINTS + ", dock east, sizegroup toolbar";
+            return "dock east, sizegroup toolbar";
         }
     }
 

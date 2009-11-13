@@ -128,10 +128,10 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
     }
 
     private LinkGrabberPanel() {
-        super(new MigLayout("ins 0,wrap 1", "[fill,grow]", "[fill,grow]"));
+        super(new MigLayout("ins 0, wrap 1", "[fill,grow]", "[fill,grow][]"));
         internalTable = new LinkGrabberTable(this);
         scrollPane = new JScrollPane(internalTable);
-        this.add(scrollPane, "cell 0 0");
+        this.add(scrollPane, "grow");
         filePackageInfo = new LinkGrabberFilePackageInfo();
         Update_Async = new Timer(250, this);
         Update_Async.setInitialDelay(250);
@@ -145,7 +145,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
         initActions();
         if (!SubConfiguration.getConfig(LinkGrabberController.CONFIG).getBooleanProperty(LinkGrabberController.PARAM_CONTROLPOSITION, false)) {
             toolbar = new LinkGrabberToolbar();
-            this.add(toolbar, "gapbottom 3,DOCK SOUTH");
+            this.add(toolbar, "gapleft 3, gapbottom 3");
         }
     }
 
