@@ -21,6 +21,7 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.controlling.JDLogger;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -58,6 +59,7 @@ public class MediafireCom extends PluginForHost {
     public MediafireCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.mediafire.com/register.php");
+        Browser.setRequestIntervalLimitGlobal(getHost(), 250);
     }
 
     @Override
@@ -157,6 +159,10 @@ public class MediafireCom extends PluginForHost {
             url = Context.toString(result);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 0);
+        if (!dl.getConnection().isContentDisposition()) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl.startDownload();
     }
 
@@ -169,7 +175,6 @@ public class MediafireCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException, InterruptedException {
         this.setBrowserExclusive();
         String url = downloadLink.getDownloadURL();
-
         AvailableStatus status = AvailableStatus.TRUE;
         for (int i = 0; i < NUMBER_OF_RETRIES; i++) {
             try {
@@ -298,6 +303,10 @@ public class MediafireCom extends PluginForHost {
                 }
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 0);
+            if (!dl.getConnection().isContentDisposition()) {
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             dl.startDownload();
         } catch (EvaluatorException e) {
             // too complexx retry
@@ -307,7 +316,7 @@ public class MediafireCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return 10;
     }
 
     @Override
