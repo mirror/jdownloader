@@ -18,7 +18,6 @@ package jd.gui.swing.jdgui.views;
 
 import javax.swing.Icon;
 
-import jd.config.SubConfiguration;
 import jd.controlling.LinkGrabberController;
 import jd.controlling.LinkGrabberControllerEvent;
 import jd.controlling.LinkGrabberControllerListener;
@@ -28,7 +27,6 @@ import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.interfaces.View;
 import jd.gui.swing.jdgui.views.info.LinkGrabberInfoPanel;
 import jd.gui.swing.jdgui.views.linkgrabberview.LinkGrabberPanel;
-import jd.gui.swing.jdgui.views.linkgrabberview.LinkGrabberToolbar;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 
@@ -55,11 +53,6 @@ public class LinkgrabberView extends View {
         this.setContent(LinkGrabberPanel.getLinkGrabber());
         this.setDefaultInfoPanel(new LinkGrabberInfoPanel());
 
-        if (SubConfiguration.getConfig(LinkGrabberController.CONFIG).getBooleanProperty(LinkGrabberController.PARAM_CONTROLPOSITION, false)) {
-            LinkGrabberToolbar toolbar = new LinkGrabberToolbar();
-            this.setToolBar(toolbar);
-
-        }
         LinkGrabberController.getInstance().addListener(new LinkGrabberControllerListener() {
             public void onLinkGrabberControllerEvent(LinkGrabberControllerEvent event) {
                 switch (event.getID()) {

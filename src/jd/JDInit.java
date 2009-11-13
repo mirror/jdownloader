@@ -444,8 +444,9 @@ public class JDInit {
                         String[] patterns = help.urls();
                         int[] flags = help.flags();
 
-                        // Needed for changing the pattern from
-                        // UCMS/Wordpress/Redirecter/...
+                        // TODO: Change this String to test the changes from
+                        // Wordpress/CMS/Redirector/... Decrypters WITHOUT
+                        // commiting
                         String dump = "";
                         // See if there are cached annotations
                         if (names.length == 0) {
@@ -464,13 +465,10 @@ public class JDInit {
                             cfg.setProperty(c.getName() + "_pattern_" + help.revision(), patterns);
                             cfg.setProperty(c.getName() + "_flags_" + help.revision(), flags);
                             cfg.save();
-
                         }
                         for (int i = 0; i < names.length; i++) {
                             try {
-
                                 new DecryptPluginWrapper(names[i], c.getSimpleName(), patterns[i], flags[i], help.revision());
-                                System.out.println("Add decrypter for " + names[i]);
                             } catch (Throwable e) {
                                 JDLogger.exception(e);
                             }

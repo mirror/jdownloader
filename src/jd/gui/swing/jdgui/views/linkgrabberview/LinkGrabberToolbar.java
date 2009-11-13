@@ -30,7 +30,7 @@ public class LinkGrabberToolbar extends ViewToolbar {
     @Override
     public String getButtonConstraint(int i, ToolBarAction action) {
         if (i < 3) {
-            return "dock west, sizegroup toolbar" + (i == 1 ? ", gapright u" : ", gapright r");
+            return "dock west, sizegroup toolbar, gapright " + (i == 1 ? "10" : "5");
         } else {
             return "dock east, sizegroup toolbar, gapright 3";
         }

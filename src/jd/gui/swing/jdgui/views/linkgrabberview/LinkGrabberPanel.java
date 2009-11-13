@@ -128,10 +128,11 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
     }
 
     private LinkGrabberPanel() {
-        super(new MigLayout("ins 0, wrap 1", "[fill,grow]", "[fill,grow][]"));
+        super();
+        initActions();
         internalTable = new LinkGrabberTable(this);
         scrollPane = new JScrollPane(internalTable);
-        this.add(scrollPane, "grow");
+        toolbar = new LinkGrabberToolbar();
         filePackageInfo = new LinkGrabberFilePackageInfo();
         Update_Async = new Timer(250, this);
         Update_Async.setInitialDelay(250);
@@ -142,9 +143,14 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
         INSTANCE = this;
         LGINSTANCE = LinkGrabberController.getInstance();
         LGINSTANCE.addListener(this);
-        initActions();
-        if (!SubConfiguration.getConfig(LinkGrabberController.CONFIG).getBooleanProperty(LinkGrabberController.PARAM_CONTROLPOSITION, false)) {
-            toolbar = new LinkGrabberToolbar();
+
+        if (SubConfiguration.getConfig(LinkGrabberController.CONFIG).getBooleanProperty(LinkGrabberController.PARAM_CONTROLPOSITION, false)) {
+            this.setLayout(new MigLayout("ins 0, wrap 1", "[fill,grow]", "[][fill,grow]"));
+            this.add(toolbar, "gapleft 3, gaptop 3");
+            this.add(scrollPane, "grow");
+        } else {
+            this.setLayout(new MigLayout("ins 0, wrap 1", "[fill,grow]", "[fill,grow][]"));
+            this.add(scrollPane, "grow");
             this.add(toolbar, "gapleft 3, gapbottom 3");
         }
     }
