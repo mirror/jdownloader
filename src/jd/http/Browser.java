@@ -353,7 +353,6 @@ public class Browser {
         } catch (InterruptedException e) {
             throw new IOException("requestIntervalTime Exception");
         }
-
         try {
             assignURLToBrowserInstance(request.getJDPUrl(), this);
             request.connect();
@@ -361,7 +360,6 @@ public class Browser {
             assignURLToBrowserInstance(request.getJDPUrl(), null);
             assignURLToBrowserInstance(request.getHttpConnection().getURL(), null);
         }
-
     }
 
     private static synchronized void waitForPageAccess(Browser browser, Request request) throws InterruptedException {

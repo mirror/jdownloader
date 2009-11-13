@@ -97,6 +97,7 @@ public class JDGrowlNotification extends PluginOptional {
             exec.addParameter(headline);
             exec.addParameter(message);
             exec.addParameter(title);
+            exec.setWaitTimeout(0);
             exec.start();
         }
     }

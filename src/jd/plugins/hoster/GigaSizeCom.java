@@ -117,12 +117,17 @@ public class GigaSizeCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage("http://www.gigasize.com/form.php");
         Form download = br.getForm(0);
+        if (download == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, download, true, 0);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl.startDownload();
+        if (dl.startDownload()) {
+            /* workaround for buggy server */
+            if (parameter.getDownloadSize() < 1000) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        }
     }
 
     @Override
@@ -157,12 +162,17 @@ public class GigaSizeCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitTime * 60 * 1000l);
         }
         Form download = br.getFormbyProperty("id", "formDownload");
+        if (download == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, download, true, 1);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl.startDownload();
+        if (dl.startDownload()) {
+            /* workaround for buggy server */
+            if (downloadLink.getDownloadSize() < 1000) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        }
     }
 
     @Override
