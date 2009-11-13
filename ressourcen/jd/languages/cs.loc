@@ -389,6 +389,7 @@ gui.installer.kikin.message = Zdarma! Přizpůsobte si vaše vyhledávací zkuš
 gui.installer.kikin.ok = Pokračovat
 gui.installer.kikin.title = Instalátor Kikin
 gui.installer.kikin.tooltip = Prosím, přečtěte si a přijměte podmínky
+gui.installer.kikin.whatis3 = <b>kikin využívá historii Vašeho prohlížeče k poskytnutí personalizovaného obsahu ze stránek, které máte rádi.   <a href="http://jdownloader.org/kikin">více...</a></b>
 gui.javacheck.html = <div style='width:534px;height;200px'><h2>Používáte špatnou verzy Javy. Použijte prosím originální Sun Javu. I přesto spustit JDownloader?<table width='100%%'><tr><th colspan='2'>Verze Vaší Javy:</th></tr><tr><th>Runtime jméno</th><td>%s</td></tr><tr><th>Runtime verze</th><td>%s</td></tr></table></div>
 gui.javacheck.newerjavaavailable.msg = Přestože JDownloader běží na Vaší verzi Java, doporučujeme instalaci nejnovějších updatů Java. \r\nJDownloader poběží stabilněji, rychleji a bude vypadat lépe. \r\n\r\nNavštivte  http://jdownloader.org/download.
 gui.javacheck.newerjavaavailable.title = Nalezena zastaralá verze Java: %s!
