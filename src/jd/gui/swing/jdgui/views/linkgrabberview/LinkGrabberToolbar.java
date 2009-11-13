@@ -32,7 +32,7 @@ public class LinkGrabberToolbar extends ViewToolbar {
         if (i < 3) {
             return "dock west, sizegroup toolbar" + (i == 1 ? ", gapright u" : ", gapright r");
         } else {
-            return "dock east, sizegroup toolbar";
+            return "dock east, sizegroup toolbar, gapright 3";
         }
     }
 

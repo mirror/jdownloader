@@ -42,7 +42,6 @@ import jd.gui.swing.components.AccountDialog;
 import jd.gui.swing.components.linkbutton.JLink;
 import jd.gui.swing.components.table.JDRowHighlighter;
 import jd.gui.swing.jdgui.actions.ThreadedAction;
-import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.gui.swing.jdgui.settings.ConfigPanel;
 import jd.gui.swing.jdgui.settings.JDLabelListRenderer;
 import jd.gui.swing.jdgui.views.toolbar.ViewToolbar;
@@ -106,16 +105,7 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
         AccountController.getInstance().addListener(this);
         initActions();
 
-        ViewToolbar vt = new ViewToolbar("action.premiumview.addacc", "action.premiumview.removeacc", "action.premium.buy") {
-            private static final long serialVersionUID = 6729577553312763574L;
-
-            @Override
-            public String getButtonConstraint(int i, ToolBarAction action) {
-                return super.getButtonConstraint(i, action) + ", sizegroup toolbar";
-            }
-        };
-
-        panel.add(vt, "gapleft 3, split 2");
+        panel.add(new ViewToolbar("action.premiumview.addacc", "action.premiumview.removeacc", "action.premium.buy"), "split 2");
         panel.add(checkBox = new JCheckBox(JDL.L(JDL_PREFIX + "accountSelection", "Always select the premium account with the most traffic left for downloading")), "w min!, right");
         checkBox.setHorizontalTextPosition(JCheckBox.LEADING);
         checkBox.setSelected(AccountController.getInstance().getBooleanProperty(AccountController.PROPERTY_ACCOUNT_SELECTION, true));

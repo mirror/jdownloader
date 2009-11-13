@@ -50,7 +50,7 @@ public class ViewToolbar extends JPanel {
 
     private static final long serialVersionUID = 7533137014274040205L;
 
-    public static String BUTTON_CONSTRAINTS = "gaptop 2, gapleft 2";
+    public static String BUTTON_CONSTRAINTS = "gaptop 2, gapleft 2, sizegroup toolbar";
 
     private static final String GUIINSTANCE = "GUI";
 
@@ -109,7 +109,7 @@ public class ViewToolbar extends JPanel {
     public String getColConstraint(int col, String string) {
         switch (col) {
         case FIRST_COL:
-            return halign == EAST ? "[grow]5" : "";
+            return halign == EAST ? "3[grow]5" : "3";
         case LAST_COL:
             return halign == EAST ? "" : "[grow,fill]";
         default:
