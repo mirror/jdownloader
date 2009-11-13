@@ -373,7 +373,7 @@ gui.fileinfopanel.packagetab.lbl.password2 = Arşiv Parolası(oto)
 gui.fileinfopanel.packagetab.lbl.saveto = Buraya kaydet
 gui.installer.kikin.agree3 = <span>Evet, Kikini yüklemek istiyorum. <a href="http://www.kikin.com/terms">Hizmet kullanım koşulları</a> ve <a href="http://www.kikin.com/privacy">Gizlilik politikasını</a>Kabul ediyorum</span>
 gui.installer.kikin.cancel = İptal
-gui.installer.kikin.deny3 = <span>Hayır, sağol</span>
+gui.installer.kikin.deny3 = <span>Hayır, teşekkür ederim</span>
 gui.installer.kikin.message = Ücretsiz! Aramalarınızı kişiselleştirin
 gui.installer.kikin.ok = Devam et
 gui.installer.kikin.title = Kikin Yükleyici
