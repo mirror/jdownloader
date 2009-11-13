@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -34,7 +33,6 @@ public class NmLdsrg extends PluginForDecrypt {
         super(wrapper);
     }
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         ArrayList<String> links = new ArrayList<String>();
@@ -49,24 +47,16 @@ public class NmLdsrg extends PluginForDecrypt {
             br.getPage(parameter);
             Thread.sleep(200);
             br.getPage(parameter);
-            String[] calls = br.getRegex("<script type=\"text/javascript\">(ALZ437tbfb466\\(.*?\\);)</script>").getColumn(0);
-
-            if (calls.length == 0) { return null; }
-
+            String[] calls = br.getRegex("(\\||')([a-z0-9]{32})(\\||')").getColumn(1);
             for (String call : calls) {
-                String a = new Regex(call, "ALZ437tbfb466\\('(.*?)', '.*?','.*?'\\);").getMatch(0);
-                String b = new Regex(call, "ALZ437tbfb466\\('.*?', '(.*?)','.*?'\\);").getMatch(0);
-                String c = new Regex(call, "ALZ437tbfb466\\('.*?', '(.*?)','(.*?)'\\);").getMatch(0);
-                links.add(getLink(a, b, c));
+                links.add(getLink(call));
             }
         }
 
         for (String link : links) {
             br.getPage(link);
             String dllink = Encoding.htmlDecode(br.getRegex("<meta http-equiv=\"refresh\" content=\"5; url=(.*?)\">").getMatch(0));
-
             if (dllink == null) { return null; }
-
             DownloadLink dl = createDownloadlink(dllink);
             dl.setSourcePluginPasswordList(passwords);
             dl.setDecrypterPassword(passwords.get(0));
@@ -76,18 +66,12 @@ public class NmLdsrg extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    /* Original algorithm unpacked (javascript): http://pastebin.com/f7120bfcc */
-    public String getLink(String a, String b, String c) {
+    public String getLink(String a) {
         String d = "";
-        for (int i = b.length() - 1; i >= 0; i--) {
-            d += b.charAt(i);
-        }
-        if (!c.isEmpty()) {
-            d = d + "&mirror=" + c;
+        for (int i = a.length() - 1; i >= 0; i--) {
+            d += a.charAt(i);
         }
         return "http://anime-loads.org/Weiterleitung/?cryptid=" + d;
     }
-
-    // @Override
 
 }

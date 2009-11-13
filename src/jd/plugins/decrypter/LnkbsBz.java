@@ -33,7 +33,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.pluginUtils.Recaptcha;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "linkbase.biz" }, urls = { "(http://[\\w\\.]*?linkbase\\.biz/\\?v=[\\w]+|http://www2\\.linkbase\\.biz//\\?v=[\\w]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "linkbase.biz" }, urls = { "http://[\\w\\.]*?linkbase\\.biz/{1,}\\?v=[\\w]+" }, flags = { 0 })
 public class LnkbsBz extends PluginForDecrypt {
 
     public static Integer Worker_Delay = 250;
@@ -118,6 +118,7 @@ public class LnkbsBz extends PluginForDecrypt {
                 try {
                     br.clearCookies(getHost());
                     br.getPage(parameter);
+                    if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
                     if (br.getRegex("Du hast.*?Du musst noch").matches()) {
                         param.getProgressController().setRange(30);
                         param.getProgressController().setStatusText("Wrong captcha, please wait 30 secs!");
