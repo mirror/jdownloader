@@ -27,7 +27,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tinypaste.com" }, urls = { "http://[\\w\\.]*?tinypaste\\.com/([0-9a-z]+$|.*?id=[0-9a-z]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tinypaste.com" }, urls = { "http://[\\w\\.]*?tinypaste\\.com/([0-9a-z]+|.*?id=[0-9a-z]+)" }, flags = { 0 })
 public class Tnypst extends PluginForDecrypt {
 
     private DownloadLink dl = null;
@@ -43,6 +43,10 @@ public class Tnypst extends PluginForDecrypt {
         String id = new Regex(link, "tinypaste\\.com/.*?id=([0-9a-z]+)").getMatch(0);
         if (id == null) id = new Regex(link, "tinypaste\\.com/([0-9a-z]+)").getMatch(0);
         if (id == null) return null;
+        /*
+         * funny fact, by useing pre.php?id, we dont have to enter sitepassword
+         * if needed ;)
+         */
         br.getPage("http://tinypaste.com/pre.php?id=" + id);
         String[] links = HTMLParser.getHttpLinks(br.toString(), null);
         ArrayList<String> pws = HTMLParser.findPasswords(br.toString());

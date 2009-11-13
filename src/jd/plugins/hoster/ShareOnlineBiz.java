@@ -131,6 +131,7 @@ public class ShareOnlineBiz extends PluginForHost {
         if (!this.isPremium()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         br.getPage(parameter.getDownloadURL());
         Form form = br.getForm(0);
+        if (br.containsHTML("You have got max allowed threads from same download session")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 5 * 60 * 1000l);
         if (form.containsHTML("name=downloadpw")) {
             String passCode = null;
             if (parameter.getStringProperty("pass", null) == null) {
@@ -231,6 +232,15 @@ public class ShareOnlineBiz extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        /*
+         * because of You have got max allowed threads from same download
+         * session
+         */
+        return 10;
     }
 
     @Override

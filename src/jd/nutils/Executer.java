@@ -181,7 +181,7 @@ public class Executer extends Thread implements Runnable {
                 }
                 /* close the stream and interrupt the observer */
                 isClosed = true;
-                this.interrupt();
+                super.interrupt();
                 stream.close();
             } catch (IOException e) {
                 e.printStackTrace();
@@ -212,6 +212,7 @@ public class Executer extends Thread implements Runnable {
 
     private int waitTimeout = 60;
     private int exitValue = -1;
+    private boolean gotInterrupted = false;
 
     private Process process;
     private StreamObserver sbeObserver;
@@ -330,7 +331,7 @@ public class Executer extends Thread implements Runnable {
                 exitValue = process.exitValue();
             } catch (InterruptedException e1) {
                 process.destroy();
-                exitValue = -1;
+                gotInterrupted = true;
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -338,12 +339,12 @@ public class Executer extends Thread implements Runnable {
             if (logger != null) logger.finer("Process returned");
             // stream did not return -1 yet, and so the observer sill still
             // waiting for data. we interrupt him
-            if (sboObserver.isIdle()) {
+            if (sboObserver != null && sboObserver.isIdle()) {
                 if (logger != null) logger.finer("sbo idle - interrupt");
                 sboObserver.requestInterrupt();
 
             }
-            if (sbeObserver.isIdle()) {
+            if (sbeObserver != null && sbeObserver.isIdle()) {
                 if (logger != null) logger.finer("sbe idle - interrupt");
                 sbeObserver.requestInterrupt();
             }
@@ -380,10 +381,10 @@ public class Executer extends Thread implements Runnable {
 
     @Override
     public void interrupt() {
+        gotInterrupted = true;
         super.interrupt();
         if (sbeObserver != null) this.sbeObserver.requestInterrupt();
         if (sboObserver != null) this.sboObserver.requestInterrupt();
-
         process.destroy();
     }
 
@@ -437,14 +438,8 @@ public class Executer extends Thread implements Runnable {
         return exitValue;
     }
 
-    /**
-     * for compatibility reasons.... can be refactored someday
-     * 
-     * @deprecated Use {@link #getExitValue()} instead
-     */
-    @Deprecated
     public boolean gotInterrupted() {
-        return getExitValue() == -1;
+        return gotInterrupted;
     }
 
     public void addProcessListener(ProcessListener listener, int flag) {

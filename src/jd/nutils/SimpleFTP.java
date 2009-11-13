@@ -52,6 +52,7 @@ import java.net.URL;
 import java.rmi.ConnectException;
 import java.util.StringTokenizer;
 
+import jd.controlling.JDLogger;
 import jd.event.JDBroadcaster;
 import jd.parser.Regex;
 
@@ -103,10 +104,17 @@ public class SimpleFTP {
      */
     public synchronized boolean ascii() throws IOException {
         sendLine("TYPE A");
-        String response = readLine();
-        boolean b = response.startsWith("200 ");
-        if (binarymode && b) binarymode = false;
-        return b;
+        try {
+            readLines(200, "could not enter ascii mode");
+            if (binarymode) binarymode = false;
+            return true;
+        } catch (IOException e) {
+            if (e.getMessage().contains("ascii")) {
+                JDLogger.exception(e);
+                return false;
+            }
+            throw e;
+        }
     }
 
     /**
@@ -114,10 +122,17 @@ public class SimpleFTP {
      */
     public synchronized boolean bin() throws IOException {
         sendLine("TYPE I");
-        String response = readLine();
-        boolean b = response.startsWith("200 ");
-        if (!binarymode && b) binarymode = true;
-        return b;
+        try {
+            readLines(200, "could not enter binary mode");
+            if (!binarymode) binarymode = true;
+            return true;
+        } catch (IOException e) {
+            if (e.getMessage().contains("binary")) {
+                JDLogger.exception(e);
+                return false;
+            }
+            throw e;
+        }
     }
 
     /**
@@ -172,17 +187,22 @@ public class SimpleFTP {
         dir = dir.replaceAll("[\\\\|//]+?", "/");
         if (dir.equals(this.dir)) return true;
         sendLine("CWD " + dir);
-        String response = readLine();
-        boolean ret = response.startsWith("250 ");
-        if (!ret) return ret;
-        if (!dir.endsWith("/") && !dir.endsWith("\\")) dir += "/";
-        if (dir.startsWith("/")) {
-            this.dir = dir;
-        } else {
-            this.dir += dir;
+        try {
+            readLines(250, "SimpleFTP was unable to change directory");
+            if (!dir.endsWith("/") && !dir.endsWith("\\")) dir += "/";
+            if (dir.startsWith("/")) {
+                this.dir = dir;
+            } else {
+                this.dir += dir;
+            }
+            return true;
+        } catch (IOException e) {
+            if (e.getMessage().contains("was unable to change")) {
+                JDLogger.exception(e);
+                return false;
+            }
+            throw e;
         }
-
-        return ret;
     }
 
     /**
@@ -202,7 +222,7 @@ public class SimpleFTP {
     public synchronized String pwd() throws IOException {
         sendLine("PWD");
         String dir = null;
-        String response = readLine();
+        String response = readLines(257, null);
         if (response.startsWith("257 ")) {
             int firstQuote = response.indexOf('\"');
             int secondQuote = response.indexOf('\"', firstQuote + 1);
@@ -214,13 +234,11 @@ public class SimpleFTP {
     }
 
     private String readLine() throws IOException {
-
         String line = reader.readLine();
         if (DEBUG) {
             System.out.println(host + " < " + line);
         }
         return line;
-
     }
 
     /* read response and check if it matches expectcode */
@@ -239,19 +257,38 @@ public class SimpleFTP {
 
     public boolean remove(String string) throws IOException {
         sendLine("DELE " + string);
-        String response = readLine();
-        if (response.startsWith("250")) { return true; }
-        return false;
+        try {
+            readLines(250, "could not remove file");
+            return true;
+        } catch (IOException e) {
+            if (e.getMessage().contains("could not remove file")) {
+                JDLogger.exception(e);
+                return false;
+            }
+            throw e;
+        }
     }
 
     public boolean rename(String from, String to) throws IOException {
         sendLine("RNFR " + from);
-        String response = readLine();
-        if (!response.startsWith("350")) { return false; }
+        try {
+            readLines(350, "RNFR failed");
+        } catch (IOException e) {
+            if (e.getMessage().contains("RNFR")) {
+                JDLogger.exception(e);
+                return false;
+            }
+        }
         sendLine("RNTO " + to);
-        response = readLine();
-        if (response.startsWith("250")) { return true; }
-        return false;
+        try {
+            readLines(250, "RNTO failed");
+        } catch (IOException e) {
+            if (e.getMessage().contains("RNTO")) {
+                JDLogger.exception(e);
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
@@ -260,7 +297,6 @@ public class SimpleFTP {
     private void sendLine(String line) throws IOException {
         if (socket == null) { throw new IOException("SimpleFTP is not connected."); }
         try {
-
             writer.write(line + "\r\n");
             writer.flush();
             if (DEBUG) {
@@ -324,7 +360,6 @@ public class SimpleFTP {
     private void cancelTransfer() {
         try {
             this.sendLine("ABOR");
-
             readLine();
         } catch (IOException e) {
             // TODO Auto-generated catch block
@@ -333,10 +368,8 @@ public class SimpleFTP {
     }
 
     private InetSocketAddress pasv() throws IOException {
-
         sendLine("PASV");
-        String response = readLine();
-        if (!response.startsWith("227 ")) { throw new IOException("SimpleFTP could not request passive mode: " + response); }
+        String response = readLines(227, "SimpleFTP could not request passive mode:");
         String ip = null;
         int port = -1;
         int opening = response.indexOf('(');
@@ -684,35 +717,25 @@ public class SimpleFTP {
      */
     public String[][] list() throws IOException {
         InetSocketAddress pasv = pasv();
-
         sendLine("LIST");
-
         Socket dataSocket = new Socket(pasv.getHostName(), pasv.getPort());
-
         BufferedReader input = new BufferedReader(new InputStreamReader(dataSocket.getInputStream(), "UTF8"));
-
         // DataOutputStream out = new DataOutputStream(new
         // FileOutputStream(file));
         //
-
         StringBuilder sb = new StringBuilder();
-        String response = readLine();
-        if (!response.startsWith("150")) { throw new IOException("Unexpected Response: " + response); }
+        readLines(150, null);
         char[] buffer = new char[4096];
         int bytesRead = 0;
         while ((bytesRead = input.read(buffer)) != -1) {
-
             sb.append(buffer, 0, bytesRead);
-
         }
-
         input.close();
         shutDownSocket(dataSocket);
-        readLine();
+        readLines(226, null);
         // if (!response.startsWith("226")) { throw new
         // IOException("Download failed: " + response); }
         // return null;
-
         String[][] matches = new Regex(sb.toString(), "(\\S+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S+\\s+\\S+\\s+\\S+)\\s+([^\r^\n]+)").getMatches();
         return matches;
     }

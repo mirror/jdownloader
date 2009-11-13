@@ -95,6 +95,10 @@ public class FourSharedCom extends PluginForHost {
         if (url == null) {
             /* maybe directdownload */
             url = br.getRegex("startDownload.*?window\\.location.*?(http://.*?)\"").getMatch(0);
+            if (url == null) {
+                /* maybe picture download */
+                url = br.getRegex("<a href=\"(http://dc\\d+\\.4shared.com/download/.*?)\" class=\".*?dbtn.*?\" tabindex=\"1\">").getMatch(0);
+            }
             if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else {
             br.getPage(url);
