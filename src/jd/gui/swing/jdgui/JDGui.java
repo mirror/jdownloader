@@ -97,7 +97,6 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
     private LinkgrabberView linkgrabberView;
     private ConfigurationView configurationView;
 
-    // private LogView logView;
     private MainToolBar toolBar;
     private JPanel waitingPane;
     private boolean exitRequested = false;
@@ -155,28 +154,21 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
     }
 
     private void initComponents() {
-        this.menuBar = createMenuBar();
+        menuBar = createMenuBar();
         statusBar = new JDStatusBar();
-        this.waitingPane = new JPanel();
+        waitingPane = new JPanel();
         waitingPane.setOpaque(false);
         mainTabbedPane = MainTabbedPane.getInstance();
-
         multiProgressBar = new TabProgress();
-        this.toolBar = MainToolBar.getInstance();
-
+        toolBar = MainToolBar.getInstance();
         toolBar.registerAccelerators(this);
         downloadView = DownloadView.getInstance();
         linkgrabberView = LinkgrabberView.getInstance();
         configurationView = new ConfigurationView();
 
-        // logView = new LogView();
-
         mainTabbedPane.addTab(downloadView);
-
         mainTabbedPane.addTab(linkgrabberView);
         mainTabbedPane.addTab(configurationView);
-
-        // mainTabbedPane.addTab(logView);
         mainTabbedPane.setSelectedComponent(downloadView);
         toolBar.setList(GUIUtils.getConfig().getGenericProperty("TOOLBAR", ToolBar.DEFAULT_LIST).toArray(new String[] {}));
 
@@ -460,15 +452,15 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
                     break;
                 case PREMIUMCONFIG:
                     ((ConfigSidebar) JDGui.this.configurationView.getSidebar()).setSelectedTreeEntry(Premium.class);
-                    mainTabbedPane.setSelectedComponent(JDGui.this.configurationView);
+                    mainTabbedPane.setSelectedComponent(configurationView);
                     if (param != null && param instanceof Account) {
                         Premium p = (Premium) configurationView.getContent();
                         p.setSelectedAccount((Account) param);
                     }
                     break;
                 case ADDON_MANAGER:
-                    ((ConfigSidebar) JDGui.this.configurationView.getSidebar()).setSelectedTreeEntry(ConfigPanelAddons.class);
-                    mainTabbedPane.setSelectedComponent(JDGui.this.configurationView);
+                    ((ConfigSidebar) configurationView.getSidebar()).setSelectedTreeEntry(ConfigPanelAddons.class);
+                    mainTabbedPane.setSelectedComponent(configurationView);
                     break;
                 case CONFIGPANEL:
                     if (param instanceof ConfigContainer) {
@@ -500,8 +492,9 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         ImageIcon icon = null;
         if (container.getIcon() != null) {
             icon = container.getIcon();
+        } else if (container.getGroup() != null && container.getGroup().getIcon() != null) {
+            icon = container.getGroup().getIcon();
         }
-        if (icon == null && container.getGroup() != null && container.getGroup().getIcon() != null) icon = container.getGroup().getIcon();
 
         final SwitchPanel oldPanel = mainTabbedPane.getSelectedView().getInfoPanel();
         AddonConfig p = AddonConfig.getInstance(container, name, "_2");

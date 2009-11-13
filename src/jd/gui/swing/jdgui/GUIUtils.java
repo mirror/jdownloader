@@ -18,7 +18,6 @@ package jd.gui.swing.jdgui;
 
 import java.awt.Component;
 import java.awt.Dimension;
-import java.awt.Frame;
 import java.awt.Point;
 import java.awt.Toolkit;
 
@@ -104,7 +103,7 @@ public class GUIUtils {
         boolean max = false;
         if (child instanceof JFrame) {
             getConfig().setProperty("MAXIMIZED_STATE_OF_" + key, ((JFrame) child).getExtendedState());
-            if (((JFrame) child).getExtendedState() != Frame.NORMAL) {
+            if (((JFrame) child).getExtendedState() != JFrame.NORMAL) {
                 max = true;
             }
         }
@@ -117,7 +116,7 @@ public class GUIUtils {
         if (getConfig() == null) return;
         if (key == null) key = parent.getName();
         // don not save location if frame is not in normal state
-        if (parent instanceof JFrame && ((JFrame) parent).getExtendedState() != Frame.NORMAL) return;
+        if (parent instanceof JFrame && ((JFrame) parent).getExtendedState() != JFrame.NORMAL) return;
         if (parent.isShowing()) {
             getConfig().setProperty("LOCATION_OF_" + key, parent.getLocationOnScreen());
             getConfig().save();

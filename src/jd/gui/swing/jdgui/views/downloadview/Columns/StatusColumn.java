@@ -17,6 +17,7 @@
 package jd.gui.swing.jdgui.views.downloadview.Columns;
 
 import java.awt.Component;
+import java.awt.FontMetrics;
 
 import javax.swing.ImageIcon;
 
@@ -36,6 +37,7 @@ public class StatusColumn extends JDTableColumn {
     private static final long serialVersionUID = 2228210790952050305L;
     private DownloadLink dLink;
     private StatusLabel statuspanel;
+    private FontMetrics fontmetrics;
     private int counter = 0;
     private ImageIcon imgFinished;
     private ImageIcon imgFailed;
@@ -62,6 +64,7 @@ public class StatusColumn extends JDTableColumn {
         super(name, table);
         statuspanel = new StatusLabel();
         statuspanel.setBorder(null);
+        fontmetrics = statuspanel.getFontMetrics(statuspanel.getFont());
         imgFinished = JDTheme.II("gui.images.ok", 16, 16);
         imgFailed = JDTheme.II("gui.images.bad", 16, 16);
         imgExtract = JDTheme.II("gui.images.update_manager", 16, 16);
@@ -96,20 +99,6 @@ public class StatusColumn extends JDTableColumn {
     public Component myTableCellRendererComponent(JDTableModel table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
         if (value instanceof FilePackage) {
             fp = (FilePackage) value;
-            if (fp.isFinished()) {
-                statuspanel.setText("");
-            } else if (fp.getTotalDownloadSpeed() > 0) {
-                clearSB();
-                sb.append('[').append(fp.getLinksInProgress()).append('/').append(fp.size()).append("] ");
-                sb.append(strETA).append(' ').append(Formatter.formatSeconds(fp.getETA())).append(" @ ").append(Formatter.formatReadable(fp.getTotalDownloadSpeed())).append("/s");
-                statuspanel.setText(sb.toString());
-            } else if (fp.getLinksInProgress() > 0) {
-                clearSB();
-                sb.append(fp.getLinksInProgress()).append('/').append(fp.size()).append(' ').append(strDownloadLinkActive);
-                statuspanel.setText(sb.toString());
-            } else {
-                statuspanel.setText("");
-            }
             counter = 0;
             if (fp.isFinished()) {
                 statuspanel.setIcon(counter, imgFinished, strFinished);
@@ -118,10 +107,24 @@ public class StatusColumn extends JDTableColumn {
                 statuspanel.setIcon(counter, imgStopMark, strStopMark);
                 counter++;
             }
+            clearSB();
+            if (fp.isFinished()) {
+            } else if (fp.getTotalDownloadSpeed() > 0) {
+                sb.append('[').append(fp.getLinksInProgress()).append('/').append(fp.size()).append("] ");
+                sb.append(strETA).append(' ').append(Formatter.formatSeconds(fp.getETA())).append(" @ ").append(Formatter.formatReadable(fp.getTotalDownloadSpeed())).append("/s");
+            } else if (fp.getLinksInProgress() > 0) {
+                clearSB();
+                sb.append(fp.getLinksInProgress()).append('/').append(fp.size()).append(' ').append(strDownloadLinkActive);
+            }
+            String s = sb.toString();
+            if (counter == 0 || getCurWidth() > (counter + 1) * 16 + fontmetrics.stringWidth(s)) {
+                statuspanel.setText(s);
+            } else {
+                statuspanel.setText("");
+            }
             statuspanel.clearIcons(counter);
         } else {
             dLink = (DownloadLink) value;
-            statuspanel.setText(dLink.getLinkStatus().getStatusString());
             counter = 0;
             if (DownloadWatchDog.getInstance().isStopMark(value)) {
                 statuspanel.setIcon(counter, imgStopMark, strStopMark);
@@ -167,6 +170,12 @@ public class StatusColumn extends JDTableColumn {
             if (counter <= StatusLabel.ICONCOUNT && dLink.hasCustomIcon()) {
                 statuspanel.setIcon(counter, dLink.getCustomIcon(), dLink.getCustomIconText());
                 counter++;
+            }
+            String s = dLink.getLinkStatus().getStatusString();
+            if (counter == 0 || getCurWidth() > (counter + 1) * 16 + fontmetrics.stringWidth(s)) {
+                statuspanel.setText(s);
+            } else {
+                statuspanel.setText("");
             }
             statuspanel.clearIcons(counter);
         }
