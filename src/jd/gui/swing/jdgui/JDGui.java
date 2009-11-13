@@ -511,7 +511,13 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
 
             @Override
             public void onClosed() {
-                mainTabbedPane.getSelectedView().setInfoPanel(oldPanel);
+                // Show the old info panel if it isn't a closable JDCollapser
+                // (e.g. used for config panels)
+                if (oldPanel != null && oldPanel instanceof JDCollapser) {
+                    mainTabbedPane.getSelectedView().setInfoPanel(null);
+                } else {
+                    mainTabbedPane.getSelectedView().setInfoPanel(oldPanel);
+                }
             }
 
             @Override
