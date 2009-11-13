@@ -102,14 +102,23 @@ public class Zippysharecom extends PluginForHost {
                     page = page.replace(wtf.getMatch(0), wtf.getMatch(1)).replace(wtf.getMatch(2), wtf.getMatch(3));
                 }
             }
-            if (fcku != true) page = page.replaceAll("mmm", "www").replaceAll("unn", "d");
+            if (fcku != true) {
+                String rpl1 = new Regex(page, "http://([a-zA-Z]+)[0-9]+\\.zippyshare").getMatch(0);
+                String rpl2 = new Regex(page, "http://.*?\\.zippyshare\\.com/(.*?)/.*?/").getMatch(0);
+                if (rpl1 != null && rpl2 != null) {
+                    page = page.replace(rpl1, "www").replace(rpl2, "d");
+                } else {
+                    page = page.replaceAll("nnn", "www").replaceAll("uss", "d");
+                }
+            }
             String[] links = HTMLParser.getHttpLinks(page, null);
             if (index > links.length - 1) break;
             String curlink = links[index];
             if (!new Regex(curlink, ".*?www\\d{1,2}\\.zippyshare\\.com/[^\\?]*\\..{1,4}$").matches()) {
                 continue;
             }
-            sleep(10000l, downloadLink);
+            // Waiting makes no sense if there is no waittime :D
+            // sleep(10000l, downloadLink);
             Browser brc = br.cloneBrowser();
             brc.setDebug(true);
             brc.getCookies(getHost()).remove(brc.getCookies(getHost()).get("zippop"));
