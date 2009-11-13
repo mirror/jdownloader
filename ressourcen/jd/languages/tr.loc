@@ -378,7 +378,7 @@ gui.installer.kikin.message = Ücretsiz! Aramalarınızı kişiselleştirin
 gui.installer.kikin.ok = Devam et
 gui.installer.kikin.title = Kikin Yükleyici
 gui.installer.kikin.tooltip = Lütfen koşulları okuyun ve kabul edin
-gui.installer.kikin.whatis3 = <b>Kikin , tarayıcı geçmişinizi kullanarak sizlere beğendiğiniz sayfalar ile ilgili kişiselleştirilmiş içerik sunmaya çalışır. <a href="http://jdownloader.org/kikin">daha fazla bilgi için bakınız...</a></b>
+gui.installer.kikin.whatis3 = <b>Kikin , sizlere beğendiğiniz siteler ile ilgili kişiselleştirilmiş içerik sunmak için tarayıcı geçmişinizi kullanır.   <a href="http://jdownloader.org/kikin">more...</a></b>
 gui.javacheck.html = <div style='width:534px;height;200px'><h2>You useses a wrong Java version. Please use a original Sun Java. Start JDownloader anyway?<table width='100%%'><tr><th colspan='2'>Java sürümünüz:</th></tr><tr><th>Runtime Name</th><td>%s</td></tr><tr><th>Runtime sürümü</th><td>%s</td></tr></table></div>
 gui.javacheck.newerjavaavailable.msg = JDownloader sizdeki java sürümü ile düzgün çalışsa  bile size son java sürmünü kullanmanızı tavsiye ederiz. \r\nJDownloader daha stabil/ hızlı çalışacaktır ve daha güzel görünecektir. \r\n\r\nZiyaret edin http://jdownloader.org/download.
 gui.javacheck.newerjavaavailable.title = Java sürmünüz ESKİ: %s!
@@ -458,7 +458,7 @@ gui.menu.action.addurl.tooltip = URL(leri) Ekleme penceresini Aç
 gui.menu.action.backup.accel = CTRL+B
 gui.menu.action.backup.mnem = B
 gui.menu.action.backup.name = Yedekle
-gui.menu.action.backup.tooltip = Yedek Oluştur 
+gui.menu.action.backup.tooltip = Yedek Oluştur
 gui.menu.action.backuplinklist.accel = -
 gui.menu.action.backuplinklist.mnem = -
 gui.menu.action.backuplinklist.name = Link Listesini Kaydet
@@ -525,7 +525,7 @@ gui.menu.action.premium.buy.accel = -
 gui.menu.action.premium.buy.mnem = B
 gui.menu.action.premium.buy.name = Premium Hesap Satın Al
 gui.menu.action.premium.buy.tooltip = Premium Hesap Satın Al
-gui.menu.action.premium.desc = Global Premium'u Etkinleştir
+gui.menu.action.premium.desc = <html>JDownloader'a eklemiş olduğunuz premium<br>hesapların tümü Etkin/Etkisiz
 gui.menu.action.premiumview.addacc.accel = Ekle
 gui.menu.action.premiumview.addacc.mnem = A
 gui.menu.action.premiumview.addacc.name = Premium Hesap Ekle
@@ -574,7 +574,7 @@ gui.menu.addons = Eklentiler
 gui.menu.addonsmenu.configuration.accel = -
 gui.menu.addonsmenu.configuration.mnem = M
 gui.menu.addonsmenu.configuration.name = Eklenti Yöneticisi
-gui.menu.addonsmenu.configuration.tooltip = Ayarlardaki Eklenti Yöneticisini Aç
+gui.menu.addonsmenu.configuration.tooltip = Ayarlardaki Eklenti Yöneticisini Açar
 gui.menu.gui.jdshutdown.toggle.accel = -
 gui.menu.gui.jdshutdown.toggle.mnem = -
 gui.menu.gui.jdshutdown.toggle.name = Sistemi Kapat
