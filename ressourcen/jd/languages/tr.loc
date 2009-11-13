@@ -123,7 +123,7 @@ exceptions.browserexception.chunkcopyerror.badrequest = Beklenmedik veri parças
 exceptions.browserexception.couldnotrenam = Çıktı dosyası adlandırılamadı
 exceptions.browserexception.rangeerror = Veri Parçası yükleme hatası
 exceptions.browserexception.redirecterror = Beklenmedik parça kopyalama hatası: tekrar yönlendir
-gui.accountcontroller.globpremdisabled = Premium hesaplar global olarak devre dışı!<br/>Yardım için <a href='http://jdownloader.org/knowledge/wiki/gui/premiummenu'>buraya</a> tıkla.
+gui.accountcontroller.globpremdisabled = Premium hesapların Tamamı devre dışı bırakıldı!<br/>Yardım için <a href='http://jdownloader.org/knowledge/wiki/gui/premiummenu'>buraya</a> tıkla.
 gui.addurls.progress = URL(leri) %s Ayrıştır
 gui.addurls.progress.found = %s URL Ayrıştırıldı. %s Link bulundu
 gui.addurls.progress.get = URL(ler) Ayrıştırılıyor %s. Linkler Alınıyor %s
