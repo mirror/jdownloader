@@ -91,6 +91,7 @@ public class GotUploadCom extends PluginForHost {
             dlForm1.put("password", passCode);
         }
         // Waittime
+        if (br.containsHTML("You have reached the download-limit")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
         int tt = Integer.parseInt(br.getRegex("countdown\">(\\d+)</span>").getMatch(0));
         sleep(tt * 1001l, downloadLink);
         br.submitForm(dlForm1);

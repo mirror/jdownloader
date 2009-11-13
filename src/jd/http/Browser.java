@@ -220,17 +220,14 @@ public class Browser {
     }
 
     public static String getHost(String url) {
-        String ret = url;
-        try {
-            ret = new URL(url + "").getHost();
-        } catch (Exception e) {
-        }
-        int id = 0;
-        while ((id = ret.indexOf(".")) != ret.lastIndexOf(".")) {
-            ret = ret.substring(id + 1);
-
-        }
-        return ret;
+        if (url == null) return null;
+        /* direct ip */
+        String ret = new Regex(url, "(.*?://)(\\d+\\.\\d+\\.\\d+\\.\\d+)(/|$|:)").getMatch(1);
+        if (ret != null) return ret;
+        /* normal url */
+        ret = new Regex(url, "(.*?://)?.*?\\.+([^\\.]+\\.[^\\.]*?)(/|$|:)").getMatch(1);
+        if (ret != null) return ret;
+        return url;
     }
 
     public void updateCookies(Request request) throws MalformedURLException {
@@ -369,17 +366,19 @@ public class Browser {
 
     private static synchronized void waitForPageAccess(Browser browser, Request request) throws InterruptedException {
         try {
+            String host = getHost(request.getUrl().getHost());
             Integer localLimit = null;
             Integer globalLimit = null;
             Long localLastRequest = null;
             Long globalLastRequest = null;
+
             if (browser.requestIntervalLimitMap != null) {
-                localLimit = browser.requestIntervalLimitMap.get(request.getUrl().getHost());
-                localLastRequest = browser.requestTimeMap.get(request.getUrl().getHost());
+                localLimit = browser.requestIntervalLimitMap.get(host);
+                localLastRequest = browser.requestTimeMap.get(host);
             }
             if (REQUEST_INTERVAL_LIMIT_MAP != null) {
-                globalLimit = REQUEST_INTERVAL_LIMIT_MAP.get(request.getUrl().getHost());
-                globalLastRequest = REQUESTTIME_MAP.get(request.getUrl().getHost());
+                globalLimit = REQUEST_INTERVAL_LIMIT_MAP.get(host);
+                globalLastRequest = REQUESTTIME_MAP.get(host);
             }
 
             if (localLimit == null && globalLimit == null) return;
@@ -400,12 +399,13 @@ public class Browser {
                 // waitForPageAccess(request);
             }
         } finally {
+            String host = getHost(request.getUrl().getHost());
             if (browser.requestTimeMap != null) {
-                browser.requestTimeMap.put(request.getUrl().getHost(), System.currentTimeMillis());
+                browser.requestTimeMap.put(host, System.currentTimeMillis());
             }
 
             if (REQUESTTIME_MAP != null) {
-                REQUESTTIME_MAP.put(request.getUrl().getHost(), System.currentTimeMillis());
+                REQUESTTIME_MAP.put(host, System.currentTimeMillis());
             }
         }
     }
@@ -1153,7 +1153,6 @@ public class Browser {
     public String getURL() {
         if (request == null) { return null; }
         return request.getUrl().toString();
-
     }
 
     public void setCookiesExclusive(boolean b) {
@@ -1320,20 +1319,24 @@ public class Browser {
     }
 
     public void setRequestIntervalLimit(String host, int i) {
+        String domain = getHost(host);
+        if (domain == null) return;
         if (this.requestIntervalLimitMap == null) {
             this.requestTimeMap = new HashMap<String, Long>();
             this.requestIntervalLimitMap = new HashMap<String, Integer>();
         }
-        requestIntervalLimitMap.put(host, i);
+        requestIntervalLimitMap.put(domain, i);
 
     }
 
     public static synchronized void setRequestIntervalLimitGlobal(String host, int i) {
+        String domain = getHost(host);
+        if (domain == null) return;
         if (REQUEST_INTERVAL_LIMIT_MAP == null) {
             REQUEST_INTERVAL_LIMIT_MAP = new HashMap<String, Integer>();
             REQUESTTIME_MAP = new HashMap<String, Long>();
         }
-        REQUEST_INTERVAL_LIMIT_MAP.put(host, i);
+        REQUEST_INTERVAL_LIMIT_MAP.put(domain, i);
     }
 
     public static boolean isVerbose() {

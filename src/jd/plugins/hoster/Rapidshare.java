@@ -510,6 +510,7 @@ public class Rapidshare extends PluginForHost {
         String error = null;
         if ((error = findError(br.toString())) != null) {
             logger.warning(error);
+            if (Regex.matches(error, Pattern.compile("Der Downloadlink wurde manipuliert und ist damit "))) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             if (Regex.matches(error, Pattern.compile("(Diese Datei steht im Verdacht illegal)"))) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
             if (Regex.matches(error, Pattern.compile("(Verletzung unserer Nutzungsbedingungen)"))) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
             if (Regex.matches(error, Pattern.compile("(weder einem Premiumaccount)"))) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
@@ -539,6 +540,8 @@ public class Rapidshare extends PluginForHost {
     private void handleErrorsFree() throws PluginException {
         String error = null;
         if ((error = findError(br.toString())) != null) {
+            logger.warning(error);
+            if (Regex.matches(error, Pattern.compile("Der Downloadlink wurde manipuliert und ist damit "))) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             if (Regex.matches(error, Pattern.compile("(Diese Datei steht im Verdacht illegal)"))) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
             if (Regex.matches(error, Pattern.compile("(Der Uploader hat diese Datei)"))) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
             if (Regex.matches(error, Pattern.compile("(als 200 Megabyte)"))) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugin.rapidshare.error.filetolarge", "This file is larger than 200 MB, you need a premium-account to download this file."));

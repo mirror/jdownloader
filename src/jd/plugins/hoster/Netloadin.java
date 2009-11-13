@@ -61,7 +61,6 @@ public class Netloadin extends PluginForHost {
         String id = new Regex(link, "\\/datei([a-zA-Z0-9]+)").getMatch(0);
         if (id == null) id = new Regex(link, "file_id=([a-zA-Z0-9]+)").getMatch(0);
         if (id == null) id = new Regex(link, "netload\\.in\\/([a-zA-Z0-9]+)\\/.+").getMatch(0);
-
         return id;
     }
 
@@ -373,6 +372,35 @@ public class Netloadin extends PluginForHost {
         return AGB_LINK;
     }
 
+    public AvailableStatus websiteFileCheck(DownloadLink downloadLink) {
+        this.setBrowserExclusive();
+        logger.info("FileCheckAPI error, try website check!");
+        br.setConnectTimeout(15000);
+        IOException ex = null;
+        String id = Netloadin.getID(downloadLink.getDownloadURL());
+        for (int i = 0; i < 5; i++) {
+            try {
+                Thread.sleep(500 + (i * 200));
+            } catch (InterruptedException e) {
+                return AvailableStatus.UNCHECKABLE;
+            }
+            ex = null;
+            try {
+                br.getPage("http://netload.in/index.php?id=10&file_id=" + id + "&lang=de");
+                break;
+            } catch (IOException e2) {
+                ex = e2;
+            }
+        }
+        if (ex != null) return AvailableStatus.UNCHECKABLE;
+        String filename = br.getRegex("<div class=\"dl_first_filename\">(.*?)<").getMatch(0);
+        String filesize = br.getRegex("<div class=\"dl_first_filename\">.*?style=.*?>.*?(\\d+.*?)<").getMatch(0);
+        if (filename == null || filesize == null) return AvailableStatus.FALSE;
+        downloadLink.setName(filename.trim());
+        downloadLink.setDownloadSize(Regex.getSize(filesize.trim()));
+        return AvailableStatus.TRUE;
+    }
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException {
         try {
@@ -395,7 +423,7 @@ public class Netloadin extends PluginForHost {
             }
             if (page == null && ex != null) throw ex;
             if (page == null || Regex.matches(page, "unknown file_data") || Regex.matches(page, "unknown_file_data")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            if (page != null && Regex.matches(page, "unknown_server_data")) return AvailableStatus.UNCHECKABLE;
+            if (page != null && Regex.matches(page, "unknown_server_data")) return websiteFileCheck(downloadLink);
 
             String[] entries = br.getRegex("(.*?);(.*?);(.*?);(.*?);(.*)").getRow(0);
 
@@ -422,7 +450,7 @@ public class Netloadin extends PluginForHost {
             throw e2;
         } catch (IOException e) {
             logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
-            return AvailableStatus.UNCHECKABLE;
+            return websiteFileCheck(downloadLink);
 
         } catch (Exception e) {
             logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);

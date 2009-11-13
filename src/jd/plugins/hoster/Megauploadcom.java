@@ -169,7 +169,7 @@ public class Megauploadcom extends PluginForHost {
         if (type != null && !type.contains("Lifetime")) {
             String days = br.getRegex("<TD><b>Premium</b>.*?\\((\\d+) days remaining - <a").getMatch(0);
             if (days != null && !days.equalsIgnoreCase("Unlimited")) {
-                ai.setValidUntil(System.currentTimeMillis() + (Long.parseLong(days) * 24 * 50 * 50 * 1000));
+                ai.setValidUntil(System.currentTimeMillis() + (Long.parseLong(days) * 24 * 60 * 60 * 1000));
             } else if (days == null || days.equals("0")) {
                 ai.setExpired(true);
                 account.setValid(false);

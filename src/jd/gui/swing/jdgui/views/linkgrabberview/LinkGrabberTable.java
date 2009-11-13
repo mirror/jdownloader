@@ -443,6 +443,7 @@ public class LinkGrabberTable extends JDTable implements MouseListener, KeyListe
     public void keyReleased(KeyEvent e) {
         if (e.getKeyCode() == KeyEvent.VK_DELETE) {
             ArrayList<DownloadLink> alllinks = getAllSelectedDownloadLinks();
+            if (alllinks.size() == 0) return;
             LinkGrabberTableAction test = new LinkGrabberTableAction(linkgrabber, JDTheme.II("gui.images.delete", 16, 16), JDL.L("gui.table.contextmenu.delete", "entfernen") + " (" + alllinks.size() + ")", LinkGrabberTableAction.DELETE, new Property("links", alllinks));
             test.actionPerformed(new ActionEvent(test, 0, ""));
         }

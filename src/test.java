@@ -19,7 +19,6 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.Graphics;
-import java.awt.GraphicsEnvironment;
 import java.awt.GridLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
@@ -60,6 +59,8 @@ import javax.swing.text.AttributeSet;
 import javax.swing.text.MutableAttributeSet;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
+
+import jd.http.Browser;
 
 public class test extends JDialog {
     private static final long serialVersionUID = -5382996948129094108L;
@@ -295,16 +296,20 @@ public class test extends JDialog {
     }
 
     public static void main(String argv[]) {
-        GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-        fontNames = ge.getAvailableFontFamilyNames();
-        fontSizes = new String[] { "8", "9", "10", "11", "12", "14", "16", "18", "20", "22", "24", "26", "28", "36", "48", "72" };
-
-        test dlg = new test(new JFrame());
-        SimpleAttributeSet a = new SimpleAttributeSet();
-        StyleConstants.setFontFamily(a, "Dialog");
-        StyleConstants.setFontSize(a, 12);
-        dlg.setAttributes(a);
-        dlg.setVisible(true);
+        // GraphicsEnvironment ge =
+        // GraphicsEnvironment.getLocalGraphicsEnvironment();
+        // fontNames = ge.getAvailableFontFamilyNames();
+        // fontSizes = new String[] { "8", "9", "10", "11", "12", "14", "16",
+        // "18", "20", "22", "24", "26", "28", "36", "48", "72" };
+        //
+        // test dlg = new test(new JFrame());
+        // SimpleAttributeSet a = new SimpleAttributeSet();
+        // StyleConstants.setFontFamily(a, "Dialog");
+        // StyleConstants.setFontSize(a, 12);
+        // dlg.setAttributes(a);
+        // dlg.setVisible(true);
+        System.out.println(Browser.getHost("http://heise.de-dsald.da:4234/dsadasd"));
+        System.out.println(Browser.getHost("http://www.127.3.3.4:4234/dsadasd"));
     }
 }
 

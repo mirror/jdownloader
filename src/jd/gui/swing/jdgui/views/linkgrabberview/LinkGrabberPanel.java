@@ -667,7 +667,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
                                 }
                             }
                             break;
-                        case LinkGrabberTableAction.SAVE_DLC:
+                        case LinkGrabberTableAction.SAVE_DLC: {
                             GuiRunnable<File> temp = new GuiRunnable<File>() {
                                 @Override
                                 public File runSave() {
@@ -682,8 +682,20 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
                             if (JDIO.getFileExtension(ret) == null || !JDIO.getFileExtension(ret).equalsIgnoreCase("dlc")) {
                                 ret = new File(ret.getAbsolutePath() + ".dlc");
                             }
+                            for (DownloadLink linktmp : selected_links) {
+                                LinkGrabberFilePackage fp3 = LGINSTANCE.getFPwithLink(linktmp);
+                                if (fp3 != null) {
+                                    if (linktmp.getFilePackage() == FilePackage.getDefaultFilePackage()) {
+                                        /* do not change default package */
+                                        FilePackage.getInstance().add(linktmp);
+                                    }
+                                    linktmp.getFilePackage().setName(fp3.getName());
+                                    linktmp.getFilePackage().setPassword(fp3.getPassword());
+                                }
+                            }
                             JDUtilities.getController().saveDLC(ret, selected_links);
                             break;
+                        }
                         case LinkGrabberTableAction.SET_PW:
                             pw = UserIO.getInstance().requestInputDialog(0, JDL.L("gui.linklist.setpw.message", "Set download password"), null);
                             for (int i = 0; i < selected_links.size(); i++) {
