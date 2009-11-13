@@ -98,15 +98,17 @@ public class SpeedMeterPanel extends JPanel implements ActionListener, MouseList
 
             @Override
             public void run() {
+                long nextCacheEntry = 0;
                 while (!this.isInterrupted()) {
-
                     update();
-
-                    try {
-                        Thread.sleep((window * 1000) / CAPACITY);
+                    if (nextCacheEntry < System.currentTimeMillis()) {
                         cache[i] = JDUtilities.getController().getSpeedMeter();
                         i++;
                         i = i % cache.length;
+                        nextCacheEntry = System.currentTimeMillis() + ((window * 1000) / CAPACITY);
+                    }
+                    try {
+                        Thread.sleep(2000);
                     } catch (InterruptedException e) {
                         return;
                     }
@@ -161,11 +163,9 @@ public class SpeedMeterPanel extends JPanel implements ActionListener, MouseList
         poly.addPoint(0, height);
 
         for (int x = 0; x < CAPACITY; x++) {
-
             poly.addPoint((x * width) / (CAPACITY - 1), height - (int) (height * cache[id] * 0.9) / max);
             id++;
             id = id % cache.length;
-
         }
         poly.addPoint(width, height);
 
