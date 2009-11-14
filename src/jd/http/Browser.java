@@ -222,10 +222,10 @@ public class Browser {
     public static String getHost(String url) {
         if (url == null) return null;
         /* direct ip */
-        String ret = new Regex(url, "(.*?://)(\\d+\\.\\d+\\.\\d+\\.\\d+)(/|$|:)").getMatch(1);
+        String ret = new Regex(url, "(.*?://)?(\\d+\\.\\d+\\.\\d+\\.\\d+)(/|$|:)").getMatch(1);
         if (ret != null) return ret;
         /* normal url */
-        ret = new Regex(url, "(.*?://)?.*?\\.+([^\\.]+\\.[^\\.]*?)(/|$|:)").getMatch(1);
+        ret = new Regex(url, ".*?([^.:/]+\\.[^.:/]+)(/|$|:)").getMatch(0);
         if (ret != null) return ret;
         return url;
     }
@@ -271,13 +271,23 @@ public class Browser {
     private static boolean VERBOSE = false;
     private static final Authenticator AUTHENTICATOR = new Authenticator() {
         protected PasswordAuthentication getPasswordAuthentication() {
-            Browser br = Browser.getAssignedBrowserInstance(this.getRequestingURL());
-            if (br == null) {
-                if (LOGGER != null) LOGGER.warning("Browser Auth Error!");
-                return null;
+            if (this.getRequestingPrompt().contains("SOCKS")) {
+                /*
+                 * Socks Authentication does only have a RequestHost(Socks
+                 * Server), so we cannot differ between URLS because we dont see
+                 * them here
+                 */
+                if (Browser.getGlobalProxy() != null) {
+                    JDProxy tmpproxy = Browser.getGlobalProxy();
+                    if (tmpproxy.getHost().contains(this.getRequestingHost())) return new PasswordAuthentication(tmpproxy.getUser(), tmpproxy.getPass().toCharArray());
+                }
+            } else if (this.getRequestingURL() != null) {
+                /* normal ProxyAuth with URL */
+                Browser br = Browser.getAssignedBrowserInstance(this.getRequestingURL());
+                if (br != null) return br.getPasswordAuthentication(this.getRequestingHost(), this.getRequestingPort());
             }
-            return br.getPasswordAuthentication(this.getRequestingHost(), this.getRequestingPort());
-
+            if (LOGGER != null) LOGGER.warning("Browser Auth Error!");
+            return null;
         }
     };
 

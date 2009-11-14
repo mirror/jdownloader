@@ -66,6 +66,7 @@ public class HTTPConnection extends sun.net.www.protocol.http.HttpURLConnection 
 
     public void connect() throws IOException {
         this.connectionnEstabilished = true;
+
         super.connect();
 
     }

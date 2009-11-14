@@ -309,7 +309,21 @@ public class test extends JDialog {
         // dlg.setAttributes(a);
         // dlg.setVisible(true);
         System.out.println(Browser.getHost("http://heise.de-dsald.da:4234/dsadasd"));
-        System.out.println(Browser.getHost("http://www.127.3.3.4:4234/dsadasd"));
+        System.out.println(Browser.getHost("http://filebase.to"));
+        System.out.println(Browser.getHost("http://heise.de-dsald.da:4234/dsadasd"));
+        System.out.println(Browser.getHost("heise.de-dsald.da:4234/dsadasd"));
+        System.out.println(Browser.getHost("heise.de/"));
+        System.out.println(Browser.getHost("heise.de:20/"));
+        System.out.println(Browser.getHost("heise.de:20"));
+        System.out.println(Browser.getHost("test.heise.de:20/"));
+        System.out.println(Browser.getHost("test.heise.de"));
+        System.out.println(Browser.getHost("http://test.heise.de"));
+        System.out.println(Browser.getHost("http://127.23.4.4"));
+        System.out.println(Browser.getHost("http://127.23.4.4:70"));
+        System.out.println(Browser.getHost("http://127.23.4.4:70/"));
+        System.out.println(Browser.getHost("http://127.23.4.4/"));
+        System.out.println(Browser.getHost("127.23.4.4/"));
+        System.out.println(Browser.getHost("127.23.4.4"));
     }
 }
 
