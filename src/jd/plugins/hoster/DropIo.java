@@ -92,7 +92,7 @@ public class DropIo extends PluginForHost {
                 Form DLForm = new Form();
                 DLForm.put("recaptcha_challenge_field", challenge);
                 DLForm.put("recaptcha_response_field", code);
-                jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLForm, true, -20);
+                jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLForm, true, 0);
                 if (!(dl.getConnection().isContentDisposition())) {
                     br.followConnection();
                     // Captcha errorhandling
@@ -103,7 +103,7 @@ public class DropIo extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        jd.plugins.BrowserAdapter.openDownload(br, downloadLink, IamAHuman, true, -20);
+        jd.plugins.BrowserAdapter.openDownload(br, downloadLink, IamAHuman, true, 0);
         dl.startDownload();
     }
 
@@ -113,7 +113,7 @@ public class DropIo extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return -1;
     }
 
     @Override

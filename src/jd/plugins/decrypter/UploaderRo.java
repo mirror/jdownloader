@@ -28,10 +28,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flameupload.com" }, urls = { "http://[\\w\\.]*?flameupload\\.com/files/[0-9A-Z]{8}/" }, flags = { 0 })
-public class FlmpldCm extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploader.ro" }, urls = { "http://[\\w\\.]*?uploader\\.ro/files/[0-9A-Z]{8}/" }, flags = { 0 })
+public class UploaderRo extends PluginForDecrypt {
 
-    public FlmpldCm(PluginWrapper wrapper) {
+    public UploaderRo(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -39,7 +39,7 @@ public class FlmpldCm extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         String id = new Regex(parameter, "files/([0-9A-Z]{8})").getMatch(0);
-        parameter = "http://flameupload.com/status.php?uid=" + id;
+        parameter = "http://uploader.ro/status.php?uid=" + id;
         br.getPage(parameter);
         /* Error handling */
         if (!br.containsHTML("<td><img src=")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
@@ -48,6 +48,7 @@ public class FlmpldCm extends PluginForDecrypt {
         progress.setRange(redirectLinks.length);
         for (String link : redirectLinks) {
             br.getPage(link);
+            System.out.print(br.toString());
             String dllink = br.getRegex("<frame name=\"main\" src=\"(.*?)\">").getMatch(0);
             if (dllink == null) return null;
             decryptedLinks.add(createDownloadlink(dllink));

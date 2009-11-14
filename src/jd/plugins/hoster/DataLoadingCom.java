@@ -72,35 +72,51 @@ public class DataLoadingCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         String passCode = null;
-        for (int i = 0; i <= 3; i++) {
-            Form captchaform = br.getFormbyProperty("name", "myform");
-            String captchaurl = "http://data-loading.com/captcha.php";
-            if (captchaform == null || !br.containsHTML("captcha.php")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // Captcha required or not ?
+        if (br.containsHTML("captcha.php")) {
+            for (int i = 0; i <= 3; i++) {
+                Form captchaform = br.getFormbyProperty("name", "myform");
+                String captchaurl = "http://data-loading.com/captcha.php";
+                if (captchaform == null || !br.containsHTML("captcha.php")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (br.containsHTML("downloadpw")) {
+                    if (downloadLink.getStringProperty("pass", null) == null) {
+                        passCode = Plugin.getUserInput("Password?", downloadLink);
+
+                    } else {
+                        /* gespeicherten PassCode holen */
+                        passCode = downloadLink.getStringProperty("pass", null);
+                    }
+                    captchaform.put("downloadpw", passCode);
+                }
+                String code = getCaptchaCode(captchaurl, downloadLink);
+                captchaform.put("captchacode", code);
+                br.submitForm(captchaform);
+                System.out.print(br.toString());
+                if (br.containsHTML("Password Error")) {
+                    logger.warning("Wrong password!");
+                    downloadLink.setProperty("pass", null);
+                    continue;
+                }
+                if (br.containsHTML("Captcha number error") || br.containsHTML("captcha.php") && !br.containsHTML("You have got max allowed bandwidth size per hour")) {
+                    logger.warning("Wrong captcha or wrong password!");
+                    downloadLink.setProperty("pass", null);
+                    continue;
+                }
+                break;
+            }
+        } else {
             if (br.containsHTML("downloadpw")) {
+                Form pwform = br.getFormbyProperty("name", "myform");
+                if (pwform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 if (downloadLink.getStringProperty("pass", null) == null) {
                     passCode = Plugin.getUserInput("Password?", downloadLink);
-
                 } else {
                     /* gespeicherten PassCode holen */
                     passCode = downloadLink.getStringProperty("pass", null);
                 }
-                captchaform.put("downloadpw", passCode);
+                pwform.put("downloadpw", passCode);
+                br.submitForm(pwform);
             }
-            String code = getCaptchaCode(captchaurl, downloadLink);
-            captchaform.put("captchacode", code);
-            br.submitForm(captchaform);
-            System.out.print(br.toString());
-            if (br.containsHTML("Password Error")) {
-                logger.warning("Wrong password!");
-                downloadLink.setProperty("pass", null);
-                continue;
-            }
-            if (br.containsHTML("Captcha number error") || br.containsHTML("captcha.php") && !br.containsHTML("You have got max allowed bandwidth size per hour")) {
-                logger.warning("Wrong captcha or wrong password!");
-                downloadLink.setProperty("pass", null);
-                continue;
-            }
-            break;
         }
         if (br.containsHTML("Password Error")) {
             logger.warning("Wrong password!");

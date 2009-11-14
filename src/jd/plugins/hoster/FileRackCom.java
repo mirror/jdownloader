@@ -28,7 +28,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "file-rack.com" }, urls = { "http://[\\w\\.]*?file-rack.com/files/[0-9A-Za-z]+/[0-9A-Za-z.-]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "file-rack.com" }, urls = { "http://[\\w\\.]*?file-rack.com/files/[0-9A-Za-z]+/[0-9A-Za-z._-]+" }, flags = { 0 })
 public class FileRackCom extends PluginForHost {
 
     public FileRackCom(PluginWrapper wrapper) {
@@ -67,7 +67,8 @@ public class FileRackCom extends PluginForHost {
             retry++;
         } while (br.containsHTML("<b>Verification Code doesn't match </b>"));
         String dllink = br.getRegex(Pattern.compile("<span id=\"btn_download2\">.*<a href=\"(.*?)\" onclick=\"disableimg\\(\\)\">", Pattern.DOTALL)).getMatch(0);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -20);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        dl.setAllowFilenameFromURL(true);
         dl.startDownload();
 
     }
@@ -76,7 +77,8 @@ public class FileRackCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
         br.getPage(parameter.getDownloadURL());
-        String filename = br.getRegex("<h2>Download File (.*?)</h2>").getMatch(0);
+        System.out.print(br.toString());
+        String filename = br.getRegex("<h2>Download File(.*?)</h2>").getMatch(0);
         String filesize = br.getRegex("\\(<b>(.*?)</b>\\)").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         parameter.setName(filename.trim());
@@ -94,6 +96,6 @@ public class FileRackCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return -1;
     }
 }

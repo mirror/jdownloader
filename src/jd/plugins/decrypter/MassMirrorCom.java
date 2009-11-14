@@ -20,7 +20,6 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
@@ -28,27 +27,27 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flameupload.com" }, urls = { "http://[\\w\\.]*?flameupload\\.com/files/[0-9A-Z]{8}/" }, flags = { 0 })
-public class FlmpldCm extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "massmirror.com" }, urls = { "http://[\\w\\.]*?massmirror\\.com/.*?\\.html" }, flags = { 0 })
+public class MassMirrorCom extends PluginForDecrypt {
 
-    public FlmpldCm(PluginWrapper wrapper) {
+    public MassMirrorCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        br.setFollowRedirects(false);
         String parameter = param.toString();
-        String id = new Regex(parameter, "files/([0-9A-Z]{8})").getMatch(0);
-        parameter = "http://flameupload.com/status.php?uid=" + id;
         br.getPage(parameter);
         /* Error handling */
-        if (!br.containsHTML("<td><img src=")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-        String[] redirectLinks = br.getRegex("(/redirect/[0-9A-Z]{8}/\\d+)").getColumn(0);
+        if (br.containsHTML("(File Not Found|The file you requested was not found|This file never existed on|Removed due to copyright violations)")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        String[] redirectLinks = br.getRegex("\"(download\\.php\\?id=.*?fileid=[a-z0-9A-Z]+)\"").getColumn(0);
         if (redirectLinks.length == 0) return null;
         progress.setRange(redirectLinks.length);
         for (String link : redirectLinks) {
-            br.getPage(link);
-            String dllink = br.getRegex("<frame name=\"main\" src=\"(.*?)\">").getMatch(0);
+            link = link.replace("amp;", "");
+            br.getPage("http://massmirror.com/" + link);
+            String dllink = br.getRedirectLocation();
             if (dllink == null) return null;
             decryptedLinks.add(createDownloadlink(dllink));
             progress.increase(1);

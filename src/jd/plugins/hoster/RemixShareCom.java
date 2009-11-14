@@ -87,12 +87,19 @@ public class RemixShareCom extends PluginForHost {
                 downloadLink.setProperty("pass", pass);
             }
         }
-        Form down = br.getForm(0);
-        if (down == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String fcku = br.getRegex("adDiv\" align=\"center\">.*?<a href=\"(http.*?)\"").getMatch(0);
+        if (fcku != null)
+            br.getPage(fcku);
+        else {
+            Form down = br.getForm(0);
+            if (down == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        String dllink = br.getRedirectLocation();
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // this.sleep(12000, downloadLink); // uncomment when they find a better
         // way to force wait time
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, down, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (!(dl.getConnection().isContentDisposition())) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -102,7 +109,7 @@ public class RemixShareCom extends PluginForHost {
     }
 
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return -1;
     }
 
     public void reset() {
