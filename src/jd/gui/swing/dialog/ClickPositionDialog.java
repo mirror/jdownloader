@@ -18,6 +18,7 @@ package jd.gui.swing.dialog;
 
 import java.awt.Cursor;
 import java.awt.Dimension;
+import java.awt.Image;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -76,12 +77,17 @@ public class ClickPositionDialog extends JCountdownDialog implements ActionListe
             imageIcon = JDTheme.II("gui.images.config.ocr");
         }
 
+        int size = SubConfiguration.getConfig("JAC").getIntegerProperty(Configuration.PARAM_CAPTCHA_SIZE, 100);
+        if (size != 100) {
+            imageIcon = new ImageIcon(imageIcon.getImage().getScaledInstance(imageIcon.getIconWidth() * (size / 100), imageIcon.getIconHeight() * (size / 100), Image.SCALE_SMOOTH));
+        }
+
         btnBAD = new JButton(JDL.L("gui.btn_cancel", "Cancel"));
         btnBAD.addActionListener(this);
 
         JLabel captcha = new JLabel(imageIcon);
         captcha.addMouseListener(this);
-        captcha.setCursor(new Cursor(Cursor.CROSSHAIR_CURSOR));
+        captcha.setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
         captcha.setToolTipText(explain);
 
         this.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
@@ -101,7 +107,7 @@ public class ClickPositionDialog extends JCountdownDialog implements ActionListe
         this.setMinimumSize(new Dimension(300, -1));
         this.pack();
         this.setResizable(false);
-        if (SwingGui.getInstance() == null || SwingGui.getInstance().getMainFrame().getExtendedState() == JFrame.ICONIFIED || !SwingGui.getInstance().getMainFrame().isVisible() ) {
+        if (SwingGui.getInstance() == null || SwingGui.getInstance().getMainFrame().getExtendedState() == JFrame.ICONIFIED || !SwingGui.getInstance().getMainFrame().isVisible()) {
             this.setLocation(Screen.getDockBottomRight(this));
         } else {
             this.setLocation(Screen.getCenterOfComponent(SwingGui.getInstance().getMainFrame(), this));
@@ -127,6 +133,7 @@ public class ClickPositionDialog extends JCountdownDialog implements ActionListe
     }
 
     // @Override
+    @Override
     protected void onCountdown() {
         this.dispose();
     }
@@ -146,6 +153,10 @@ public class ClickPositionDialog extends JCountdownDialog implements ActionListe
 
     public void mouseReleased(MouseEvent e) {
         this.result = e.getPoint();
+        int size = SubConfiguration.getConfig("JAC").getIntegerProperty(Configuration.PARAM_CAPTCHA_SIZE, 100);
+        if (size != 100) {
+            this.result.setLocation(this.result.getX() / (size / 100), this.result.getY() / (size / 100));
+        }
         dispose();
     }
 

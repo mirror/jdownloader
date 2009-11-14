@@ -33,6 +33,8 @@ public class Configuration extends SubConfiguration implements Serializable {
 
     public static final String PARAM_CAPTCHA_JAC_DISABLE = "CAPTCHA_JAC_DISBALE";
 
+    public static final String PARAM_CAPTCHA_SIZE = "CAPTCHA_SIZE";
+
     public static final String PARAM_CLIPBOARD_ALWAYS_ACTIVE = "CLIPBOARD_ALWAYS_ACTIVE2";
 
     public static final String PARAM_CURRENT_BROWSE_PATH = "CURRENT_BROWSE_PATH";
