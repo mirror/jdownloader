@@ -129,7 +129,7 @@ public class IfolderRu extends PluginForHost {
             String directLink = br.getRegex("id=\"download_file_href\".*?href=\"(.*?)\"").getMatch(0);
             if (directLink == null) {
                 Form pwform = br.getForm(2);
-                if (pwform != null) {
+                if (pwform != null && !br.getRegex("(/random/images/.*?)\"").matches()) {
                     if (downloadLink.getStringProperty("pass", null) == null) {
                         passCode = Plugin.getUserInput("Password?", downloadLink);
                     } else {
