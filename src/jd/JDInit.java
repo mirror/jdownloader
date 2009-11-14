@@ -145,6 +145,7 @@ public class JDInit {
     public void initBrowser() {
         Browser.setLogger(JDLogger.getLogger());
         Browser.init();
+        /* init default global Timeouts */
         Browser.setGlobalReadTimeout(SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_READ_TIMEOUT, 100000));
         Browser.setGlobalConnectTimeout(SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_CONNECT_TIMEOUT, 100000));
 

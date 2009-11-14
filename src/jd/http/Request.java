@@ -63,7 +63,12 @@ public abstract class Request {
         return ret;
     }
 
-    private int connectTimeout;
+    /*
+     * default timeouts, because 0 is infinite and BAD, if we need 0 then we
+     * have to set it manually
+     */
+    private int connectTimeout = 30000;
+    private int readTimeout = 60000;
     private Cookies cookies = null;
     private int followCounter = 0;
     private boolean followRedirects = false;
@@ -73,7 +78,6 @@ public abstract class Request {
     protected URLConnectionAdapter httpConnection;
 
     private long readTime = -1;
-    private int readTimeout;
     private boolean requested = false;
     private long requestTime = -1;
 
@@ -371,12 +375,9 @@ public abstract class Request {
 
         }
         if (proxy != null) {
-
             httpConnection = (URLConnectionAdapter) url.openConnection(proxy);
-
         } else {
             httpConnection = (URLConnectionAdapter) url.openConnection();
-
         }
         httpConnection.setRequest(this);
         httpConnection.setInstanceFollowRedirects(followRedirects);

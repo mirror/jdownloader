@@ -75,9 +75,7 @@ public class RAFDownload extends DownloadInterface {
     // }
 
     public RAFDownload(PluginForHost plugin, DownloadLink downloadLink, Request request) throws IOException, PluginException {
-
         super(plugin, downloadLink, request);
-
     }
 
     // @Override

@@ -100,7 +100,6 @@ public class DownloadChunk extends DownloadChunkInterface implements JDRunnable 
         if (connectionRequested) throw new IllegalStateException("Already Connected");
         this.connectionRequested = true;
         if (request.getHttpConnection() == null) {
-
             owner.getBrowser().openRequestConnection(request);
             this.connection = request.getHttpConnection();
         } else {

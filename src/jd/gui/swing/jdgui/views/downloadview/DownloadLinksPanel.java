@@ -582,14 +582,14 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
         StringBuilder build = new StringBuilder("");
         for (int i = 0; i < selectedLinks.size(); i++) {
             String pw = selectedLinks.get(i).getFilePackage().getPassword();
-            if (!List.contains(pw)) {
+            if (!List.contains(pw) && pw.length() > 0) {
                 if (List.size() > 0) build.append("\r\n");
                 List.add(pw);
                 build.append(pw);
             }
             if (selectedLinks.get(i).getStringProperty("pass", null) != null) {
                 pw = selectedLinks.get(i).getStringProperty("pass", null);
-                if (!List.contains(pw)) {
+                if (!List.contains(pw) && pw.length() > 0) {
                     if (List.size() > 0) build.append("\r\n");
                     List.add(pw);
                     build.append(pw);

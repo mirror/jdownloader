@@ -1088,7 +1088,6 @@ abstract public class DownloadInterface {
     protected PluginForHost plugin;
 
     private int readTimeout = 100000;
-
     private int requestTimeout = 100000;
 
     // private int totalLoadedBytes = 0;
@@ -1171,7 +1170,6 @@ abstract public class DownloadInterface {
     }
 
     private DownloadInterface(PluginForHost plugin, DownloadLink downloadLink) {
-
         this.downloadLink = downloadLink;
         linkStatus = downloadLink.getLinkStatus();
         linkStatus.setStatusText(JDL.L("download.connection.normal", "Download"));
@@ -1228,7 +1226,6 @@ abstract public class DownloadInterface {
      */
     public long headFake(String value) throws IOException, PluginException {
         request.getHeaders().put("Range", value == null ? "bytes=" : value);
-
         browser.openRequestConnection(request);
 
         if (this.plugin.getBrowser().isDebug()) logger.finest(request.printHeaders());
@@ -1321,6 +1318,9 @@ abstract public class DownloadInterface {
     }
 
     public URLConnectionAdapter connect(Browser br) throws Exception {
+        /* reset timeouts here, because it can be they got not set yet */
+        request.setConnectTimeout(getRequestTimeout());
+        request.setReadTimeout(getReadTimeout());
         br.setRequest(request);
         URLConnectionAdapter ret = connect();
         /* we have to update cookie for used browser instance here */
@@ -1332,9 +1332,7 @@ abstract public class DownloadInterface {
         logger.finer("Connect...");
         if (request == null) throw new IllegalStateException("Wrong Mode. Instance is in direct Connection mode");
         this.connected = true;
-
         if (this.isResume() && this.checkResumabled()) {
-
             connectResumable();
         } else {
             if (this.isFileSizeVerified()) {
@@ -1350,10 +1348,8 @@ abstract public class DownloadInterface {
                 connectFirstRange();
             } else {
                 request.getHeaders().remove("Range");
-
                 browser.connect(request);
             }
-
         }
         if (this.plugin.getBrowser().isDebug()) logger.finest(request.printHeaders());
         connection = request.getHttpConnection();

@@ -346,7 +346,10 @@ public class Megauploadcom extends PluginForHost {
     }
 
     private void doDownload(DownloadLink link, String url, boolean resume, Account account) throws Exception {
-        if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (url == null) {
+            if (br.containsHTML("The file you are trying to access is temporarily")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         url = url.replaceFirst("megaupload\\.com/", "megaupload\\.com:" + usePort(link) + "/");
         br.setFollowRedirects(true);
         String waitb = br.getRegex("count=(\\d+);").getMatch(0);
@@ -379,6 +382,7 @@ public class Megauploadcom extends PluginForHost {
             if (!dl.getConnection().isContentDisposition()) {
                 br.followConnection();
                 handleWaittimeWorkaround(link, br);
+                if (br.containsHTML("The file you are trying to access is temporarily")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
 

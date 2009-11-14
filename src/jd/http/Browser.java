@@ -242,7 +242,17 @@ public class Browser {
     }
 
     private String acceptLanguage = "de, en-gb;q=0.9, en;q=0.8";
+
+    /*
+     * -1 means use default Timeouts
+     * 
+     * 0 means infinite (DO NOT USE if not needed)
+     */
     private int connectTimeout = -1;
+    private int readTimeout = -1;
+    private static int TIMEOUT_READ = 30000;
+    private static int TIMEOUT_CONNECT = 30000;
+
     private URL currentURL;
 
     private boolean doRedirects = false;
@@ -250,9 +260,6 @@ public class Browser {
     private RequestHeader headers;
 
     private int limit = 1 * 1024 * 1024;
-
-    private int readTimeout = -1;
-
     private Request request;
     private String customCharset = null;
     private boolean cookiesExclusive = true;
@@ -262,8 +269,6 @@ public class Browser {
     private static HashMap<String, Integer> REQUEST_INTERVAL_LIMIT_MAP;
     private static HashMap<String, Long> REQUESTTIME_MAP;
     private static boolean VERBOSE = false;
-    private static int TIMEOUT_READ;
-    private static int TIMEOUT_CONNECT;
     private static final Authenticator AUTHENTICATOR = new Authenticator() {
         protected PasswordAuthentication getPasswordAuthentication() {
             Browser br = Browser.getAssignedBrowserInstance(this.getRequestingURL());
@@ -282,10 +287,6 @@ public class Browser {
 
     public String getAcceptLanguage() {
         return acceptLanguage;
-    }
-
-    public int getConnectTimeout() {
-        return connectTimeout <= 0 ? connectTimeout : TIMEOUT_CONNECT;
     }
 
     public Form[] getForms() {
@@ -331,11 +332,8 @@ public class Browser {
     }
 
     public String getPage(String string) throws IOException {
-
         this.openRequestConnection(this.createGetRequest(string));
-
         return this.loadConnection(null);
-
     }
 
     /**
@@ -449,12 +447,21 @@ public class Browser {
     }
 
     /**
-     * Returns the current readtimeout
+     * returns current ReadTimeout
      * 
      * @return
      */
     public int getReadTimeout() {
-        return readTimeout <= 0 ? TIMEOUT_READ : readTimeout;
+        return readTimeout < 0 ? TIMEOUT_READ : readTimeout;
+    }
+
+    /**
+     * returns current ConnectTimeout
+     * 
+     * @return
+     */
+    public int getConnectTimeout() {
+        return connectTimeout < 0 ? TIMEOUT_CONNECT : connectTimeout;
     }
 
     /**
@@ -611,19 +618,16 @@ public class Browser {
         request.setCustomCharset(this.customCharset);
         if (selectProxy() != null) request.setProxy(selectProxy());
         // doAuth(request);
-        if (connectTimeout > 0) {
-            request.setConnectTimeout(connectTimeout);
-        }
-        if (readTimeout > 0) {
-            request.setReadTimeout(readTimeout);
-        }
+        /* set Timeouts */
+        request.setConnectTimeout(getConnectTimeout());
+        request.setReadTimeout(getReadTimeout());
+
         request.getHeaders().put("Accept-Language", acceptLanguage);
         // request.setFollowRedirects(doRedirects);
         forwardCookies(request);
         if (sendref) request.getHeaders().put("Referer", currentURL.toString());
         if (headers != null) {
             mergeHeaders(request);
-
         }
 
         // if (this.doRedirects && request.getLocation() != null) {
@@ -672,12 +676,9 @@ public class Browser {
         if (selectProxy() != null) request.setProxy(selectProxy());
         request.setCookies(oldrequest.getCookies());
         // doAuth(request);
-        if (connectTimeout > 0) {
-            request.setConnectTimeout(connectTimeout);
-        }
-        if (readTimeout > 0) {
-            request.setReadTimeout(readTimeout);
-        }
+        /* set Timeouts */
+        request.setConnectTimeout(getConnectTimeout());
+        request.setReadTimeout(getReadTimeout());
         request.getHeaders().put("Accept-Language", acceptLanguage);
         // request.setFollowRedirects(doRedirects);
         forwardCookies(request);
@@ -773,12 +774,9 @@ public class Browser {
         // doAuth(request);
         request.getHeaders().put("Accept-Language", acceptLanguage);
         // request.setFollowRedirects(doRedirects);
-        if (connectTimeout > 0) {
-            request.setConnectTimeout(connectTimeout);
-        }
-        if (readTimeout > 0) {
-            request.setReadTimeout(readTimeout);
-        }
+        /* set Timeouts */
+        request.setConnectTimeout(getConnectTimeout());
+        request.setReadTimeout(getReadTimeout());
         forwardCookies(request);
         if (sendref) request.getHeaders().put("Referer", currentURL.toString());
         if (post != null) {
@@ -788,7 +786,6 @@ public class Browser {
             mergeHeaders(request);
         }
         return request;
-
     }
 
     public Request createPostFormDataRequest(String url) throws IOException {
@@ -805,12 +802,9 @@ public class Browser {
 
         request.getHeaders().put("Accept-Language", acceptLanguage);
 
-        if (connectTimeout > 0) {
-            request.setConnectTimeout(connectTimeout);
-        }
-        if (readTimeout > 0) {
-            request.setReadTimeout(readTimeout);
-        }
+        /* set Timeouts */
+        request.setConnectTimeout(getConnectTimeout());
+        request.setReadTimeout(getReadTimeout());
         forwardCookies(request);
         if (sendref) request.getHeaders().put("Referer", currentURL.toString());
 
@@ -845,12 +839,9 @@ public class Browser {
         // doAuth(request);
         request.getHeaders().put("Accept-Language", acceptLanguage);
         // request.setFollowRedirects(doRedirects);
-        if (connectTimeout > 0) {
-            request.setConnectTimeout(connectTimeout);
-        }
-        if (readTimeout > 0) {
-            request.setReadTimeout(readTimeout);
-        }
+        /* set Timeouts */
+        request.setConnectTimeout(getConnectTimeout());
+        request.setReadTimeout(getReadTimeout());
         forwardCookies(request);
         if (sendref) request.getHeaders().put("Referer", currentURL.toString());
         if (post != null) {
