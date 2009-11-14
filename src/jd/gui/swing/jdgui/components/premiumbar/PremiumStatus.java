@@ -47,7 +47,6 @@ import jd.gui.UserIF;
 import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.menu.MenuAction;
-import jd.gui.swing.menu.HosterMenu;
 import jd.gui.swing.menu.Menu;
 import jd.nutils.Formatter;
 import jd.nutils.JDFlags;
@@ -72,7 +71,6 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
     private boolean updating = false;
     private Timer updateIntervalTimer;
     private boolean updateinprogress = false;
-    private JPopupMenu popup;
     private boolean guiInitComplete = false;
 
     public PremiumStatus() {
@@ -105,7 +103,6 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
         premium.setBorderPainted(false);
         updatePremiumButton();
         add(premium, "hmax 20");
-        premium.addMouseListener(this);
         add(new JSeparator(JSeparator.VERTICAL), "growy");
         add(lbl, "hidemode 3");
 
@@ -329,18 +326,6 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
     }
 
     public void mouseClicked(MouseEvent e) {
-        if (e.getSource() == premium) {
-            if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
-
-                if (popup == null) {
-                    popup = new JPopupMenu();
-                    HosterMenu.update(popup);
-                }
-                popup.show(premium, e.getPoint().x, e.getPoint().y);
-
-            }
-            return;
-        }
         for (int i = 0; i < BARCOUNT; i++) {
             if (bars[i] == e.getSource()) {
                 if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {

@@ -30,16 +30,12 @@ import jd.utils.JDUtilities;
 public class Menu {
 
     public static JMenuItem getJMenuItem(MenuAction mi) {
-        JMenuItem m;
         switch (mi.getType()) {
         case SEPARATOR:
             return null;
         case NORMAL:
-
-            m = new JMenuItem(mi);
-            return m;
+            return new JMenuItem(mi);
         case TOGGLE:
-
             if (JDUtilities.getJavaVersion() >= 1.6) {
                 // Togglebuttons for 1.6
                 JCheckBoxMenuItem m2 = new JCheckBoxMenuItem(mi);
@@ -48,14 +44,11 @@ public class Menu {
                 // 1.5 togle buttons need a changelistener in the menuitem
                 final JCheckBoxMenuItem m2 = new JCheckBoxMenuItem(mi);
                 mi.addPropertyChangeListener(new PropertyChangeListener() {
-
                     public void propertyChange(PropertyChangeEvent evt) {
                         m2.setSelected(((ToolBarAction) evt.getSource()).isSelected());
                     }
                 });
-
                 return m2;
-
             }
         case CONTAINER:
             JMenu m3 = new JMenu(mi.getTitle());
@@ -63,7 +56,6 @@ public class Menu {
             JMenuItem c;
             if (mi.getSize() > 0) {
                 for (int i = 0; i < mi.getSize(); i++) {
-
                     c = getJMenuItem(mi.get(i));
                     if (c == null) {
                         m3.addSeparator();
@@ -72,32 +64,6 @@ public class Menu {
                     }
                 }
             }
-            // m3.addMenuListener(new MenuListener() {
-            //
-            // public void menuCanceled(MenuEvent e) {
-            // }
-            //
-            // public void menuDeselected(MenuEvent e) {
-            // }
-            //
-            // public void menuSelected(MenuEvent e) {
-            // JMenu m = (JMenu) e.getSource();
-            // m.removeAll();
-            // JMenuItem c;
-            // if (mi.getSize() == 0) m.setEnabled(false);
-            // for (int i = 0; i < mi.getSize(); i++) {
-            // c = getJMenuItem(mi.get(i));
-            // if (c == null) {
-            // m.addSeparator();
-            // } else {
-            // m.add(c);
-            // }
-            //
-            // }
-            // }
-            //
-            // });
-
             return m3;
         }
         return null;
