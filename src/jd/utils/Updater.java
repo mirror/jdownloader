@@ -65,14 +65,14 @@ public class Updater {
     /**
      * this is the branch that gets updated
      */
-    public static final String BRANCH = "brain";
+    public static final String BRANCH = "NIGHTLY";
 /**
  * The base branch can be used to downgrade. most of the time, BASE_BRANCH == BRANCH works fine
  * 
  * Example:
  * if you want to create a new branch, set the new branchname in {@link #BRANCH} and set the latest public branchname for {@link #BASE_BRANCH}. The new branch then will have the files of base_branch and the new files
  */
-    private static String BASE_BRANCH = "brain";
+    private static String BASE_BRANCH = "NIGHTLY";
 
     public static ArrayList<Server> SERVERLIST = new ArrayList<Server>();
     public static Server UPDATE0 = new RSYNCServer(-1, "http://update0.jdownloader.org/branches/" + BRANCH + "/", "update0.jdownloader.org", 2121, "/home/www/update/http/branches/" + BRANCH + "/", false);
@@ -321,7 +321,7 @@ public class Updater {
         }
 
         if (dojars) copyFile(new File(jars, "tinyupdate.jar"), new File(updateDir, "tools/tinyupdate.jar"));
-        copyFile(new File(jars.getParentFile(), "ressourcen/outdated.dat"), new File(updateDir, "outdated.dat"));
+        if (ask("Update outdated file ?"))copyFile(new File(jars.getParentFile(), "ressourcen/outdated.dat"), new File(updateDir, "outdated.dat"));
         if (ask("Update Addons ?")) {
             for (File f : new File(jars.getParentFile(), "ressourcen/pluginressourcen").listFiles()) {
                 copyDirectory(f, this.updateDir);
@@ -332,10 +332,10 @@ public class Updater {
             }
         }
 
-        copyDirectory(new File(jars.getParentFile(), "ressourcen/licenses"), new File(this.updateDir, "licenses"));
-        copyDirectory(new File(jars.getParentFile(), "ressourcen/jd"), new File(this.updateDir, "jd"));
-        copyDirectory(new File(jars.getParentFile(), "ressourcen/tools"), new File(this.updateDir, "tools"));
-        if (dojars) copyDirectory(new File(jars.getParentFile(), "ressourcen/libs"), new File(this.updateDir, "libs"));
+        if (ask("Update licenses ?"))copyDirectory(new File(jars.getParentFile(), "ressourcen/licenses"), new File(this.updateDir, "licenses"));
+        if (ask("Complete ./jd folder ?"))copyDirectory(new File(jars.getParentFile(), "ressourcen/jd"), new File(this.updateDir, "jd"));
+        if (ask("Update Tools ?"))copyDirectory(new File(jars.getParentFile(), "ressourcen/tools"), new File(this.updateDir, "tools"));
+        if (ask("Update Libraries ?")) copyDirectory(new File(jars.getParentFile(), "ressourcen/libs"), new File(this.updateDir, "libs"));
 
     }
 

@@ -115,6 +115,10 @@ public class WebUpdater implements Serializable {
     public byte[] sum;
     private File workingdir;
     private String betaBranch;
+    /**
+     * if this field !=null, the updater uses this branch and ignores any other branch settings
+     */
+    private String branch;
 
     /**
      * @param path
@@ -192,6 +196,7 @@ public class WebUpdater implements Serializable {
      */
     public String getBranch() {
         try {
+            if(branch!=null)return branch;
             String latestBranch = getLatestBranch();
 
             String ret = SubConfiguration.getConfig("WEBUPDATE").getStringProperty(WebUpdater.PARAM_BRANCH);
@@ -294,7 +299,7 @@ public class WebUpdater implements Serializable {
         return branches[0];
     }
 
-    private String getListPath(int trycount) {
+    public String getListPath(int trycount) {
         if (getBranch() == null) return null;
         return UPDATE_MIRROR[trycount % UPDATE_MIRROR.length] + getBranch() + "_server.list";
     }
@@ -644,5 +649,21 @@ public class WebUpdater implements Serializable {
 
     public void cleanUp() {
     }
+/**
+ * sets the branch to use. This overwrites the webupdater settings. This means that the updater uses this branch and ignores anything else
+ * @param branchtoUse
+ */
+    public void setBranch(String branchtoUse) {
+       this.branch=branchtoUse;
+        
+    }
+/**
+ * Return the internal browser object
+ * @return
+ */
+public Browser getBrowser() {
+    // TODO Auto-generated method stub
+    return br;
+}
 
 }

@@ -128,7 +128,7 @@
 			<fileset dir="${cls}">
 				<include name="jd/update/Restarter*.class" />
 				<include name="jd/nutils/OutdatedParser*.class" />
-				<include name="jd/nutils/OSDetector*.class" />	
+				<include name="jd/nutils/OSDetector*.class" />
 				<include name="jd/nutils/DynByteBuff*.class" />
 				<include name="jd/nutils/Executer*.class" />
 				<include name="jd/nutils/zip/**" />
@@ -137,7 +137,7 @@
 		</jar>
 		<delete file="Manifest.MF" failonerror="false" />
 	</target>
-	
+
 	<target name="jarOptionals">
 		<!-- Optional Plugins -->
 		<manifest file="Manifest.MF">
@@ -229,7 +229,7 @@
 				<include name="jd/plugins/optional/interfaces/**" />
 			</fileset>
 		</jar>
-		
+
 		<mkdir dir="${dist}/pluginressourcen/130__JDPremium/plugins" />
 		<jar jarfile="${dist}/pluginressourcen/130__JDPremium/plugins/JDPremium.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
@@ -243,13 +243,13 @@
 				<include name="jd/plugins/optional/JDGrowlNotification*" />
 			</fileset>
 		</jar>
-		
+
 		<mkdir dir="${dist}/pluginressourcen/132__Customizer/plugins" />
-			<jar jarfile="${dist}/pluginressourcen/132__Customizer/plugins/JDPackageCustomizer.jar" manifest="Manifest.MF">
-				<fileset dir="${cls}">
-					<include name="jd/plugins/optional/customizer/**" />
-				</fileset>
-			</jar>
+		<jar jarfile="${dist}/pluginressourcen/132__Customizer/plugins/JDPackageCustomizer.jar" manifest="Manifest.MF">
+			<fileset dir="${cls}">
+				<include name="jd/plugins/optional/customizer/**" />
+			</fileset>
+		</jar>
 
 	</target>
 
