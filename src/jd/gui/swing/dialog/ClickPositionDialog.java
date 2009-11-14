@@ -132,7 +132,6 @@ public class ClickPositionDialog extends JCountdownDialog implements ActionListe
         return result;
     }
 
-    // @Override
     @Override
     protected void onCountdown() {
         this.dispose();

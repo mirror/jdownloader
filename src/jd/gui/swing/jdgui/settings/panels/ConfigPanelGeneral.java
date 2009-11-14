@@ -68,9 +68,7 @@ public class ConfigPanelGeneral extends ConfigPanel {
         addGUIConfigEntry(new GUIConfigEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, SubConfiguration.getConfig("WEBUPDATE"), Configuration.PARAM_WEBUPDATE_DISABLE, JDL.L("gui.config.general.webupdate.disable2", "Do not inform me about important updates")).setDefaultValue(false).setGroup(update)));
         addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_WEBUPDATE_AUTO_RESTART, JDL.L("gui.config.general.webupdate.auto", "automatisch, ohne Nachfrage ausführen")).setDefaultValue(false).setEnabledCondidtion(conditionEntry, false).setGroup(update)));
         addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_WEBUPDATE_AUTO_SHOW_CHANGELOG, JDL.L("gui.config.general.changelog.auto", "Open Changelog after update")).setDefaultValue(true).setGroup(update)));
-        ConfigGroup cnl;
-       
-        cnl = new ConfigGroup(JDL.L("jd.plugins.optional.interfaces.JDExternInterface.flashgot.configgroup", "Install FlashGot Firefox Addon"), JDTheme.II("gui.images.flashgot", 16, 16));
+        ConfigGroup cnl = new ConfigGroup(JDL.L("jd.plugins.optional.interfaces.JDExternInterface.flashgot.configgroup", "Install FlashGot Firefox Addon"), JDTheme.II("gui.images.flashgot", 32, 32));
         addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
