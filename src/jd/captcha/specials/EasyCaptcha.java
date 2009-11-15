@@ -30,6 +30,7 @@ import jd.captcha.LevenShteinLetterComperator;
 import jd.captcha.easy.BackGroundImageManager;
 import jd.captcha.easy.CPoint;
 import jd.captcha.easy.ColorTrainer;
+import jd.captcha.gui.BasicWindow;
 import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.pixelgrid.Letter;
 import jd.captcha.pixelobject.PixelObject;
@@ -511,10 +512,9 @@ public class EasyCaptcha {
         // mergeColors(reto, osSize, captcha);
         for (PixelObject pixelObject : reto) {
             try {
-
                 Vector<PixelObject> co = getSWCaptcha(pixelObject).getObjects(0.5, 0.5);
                 mergeObjectsBasic(co, captcha, gab);
-
+                
                 reto2.addAll(co);
             } catch (Exception e) {
             }

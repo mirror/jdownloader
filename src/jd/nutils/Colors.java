@@ -185,7 +185,7 @@ public class Colors {
      * @return 32 BIt Farbwert
      */
     public static int rgbToHex(int[] value) {
-        return (value[0] << 16) & 0xFF + (value[1] << 8) & 0xFF + value[2] & 0xFF;
+        return (value[0] << 16) + (value[1] << 8) + value[2];
     }
 
     /**

@@ -16,13 +16,15 @@
 
 package jd.captcha;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.List;
-
+import jd.captcha.pixelgrid.BinLetters;
 import jd.captcha.pixelgrid.Letter;
+import jd.captcha.pixelgrid.LevenshteinLetter;
 
 public class LevenShteinLetterComperator {
-    private boolean[][][][] letterDB;
-    private JAntiCaptcha jac;
+    public LevenshteinLetter[] letterDB;
     public boolean onlySameWidth = false;
     public int costs = 6;
     public boolean detectVerticalOffset = false;
@@ -30,7 +32,7 @@ public class LevenShteinLetterComperator {
 
     public void run(Letter letter) {
         if (letterDB.length == 0 || letter.getWidth() == 0 || letter.getHeight() == 0) return;
-        boolean[][][] b = getBooleanArrays(letter);
+        LevenshteinLetter b = new LevenshteinLetter(letter);
 
         // dimension/=b[0].length;
         // System.out.println(this.costs+":"+dimension);
@@ -39,7 +41,7 @@ public class LevenShteinLetterComperator {
         int bestdist = Integer.MAX_VALUE;
         int[] bestOffset = null;
         for (int i = 0; i < letterDB.length; i++) {
-            if (onlySameWidth && jac.letterDB.get(i).getWidth() != letter.getWidth()) continue;
+            if (onlySameWidth && letterDB[i].getWidth() != b.getWidth()) continue;
             int[] dist = getLevenshteinDistance(b, letterDB[i], bestdist);
             if (dist != null && bestdist > dist[0]) {
                 bestOffset = dist;
@@ -48,7 +50,8 @@ public class LevenShteinLetterComperator {
             }
         }
         if (bestOffset == null) return;
-        Letter bestLetter = jac.letterDB.get(best);
+//        System.out.println(bestdist);
+        Letter bestLetter = letterDB[best].toLetter();
         // LetterComperator r = new
         // LetterComperator(letter,bestBiggest.detected.getB() );
 
@@ -97,36 +100,23 @@ public class LevenShteinLetterComperator {
     }
 
     public LevenShteinLetterComperator(JAntiCaptcha jac) {
-        letterDB = new boolean[jac.letterDB.size()][][][];
-        this.jac = jac;
-        for (int i = 0; i < letterDB.length; i++) {
-            letterDB[i] = getBooleanArrays(jac.letterDB.get(i));
-        }
-    }
-
-    private boolean[][][] getBooleanArrays(Letter letter) {
-        int w = letter.getWidth(), h = letter.getHeight();
-        if (w == 0 || h == 0) return null;
-        boolean[][] leth1 = new boolean[w][h];
-        int avg = (int) (letter.getAverage() * letter.owner.getJas().getDouble("RelativeContrast"));
-        for (int x = 0; x < leth1.length; x++) {
-            for (int y = 0; y < leth1[0].length; y++) {
-                leth1[x][y] = letter.grid[x][y] < avg;
+        File letterDBBin = jac.getResourceFile("letters.bin");
+        if (letterDBBin.exists()) {
+            try {
+                letterDB = new BinLetters(letterDBBin).readAll().toArray(new LevenshteinLetter[] {});
+            } catch (IOException e) {
             }
         }
-        boolean[][] leth12 = new boolean[h][w];
-        for (int y = 0; y < leth1[0].length; y++) {
-            for (int x = 0; x < leth1.length; x++) {
-                leth12[y][x] = leth1[x][y];
+        if (letterDB == null) {
+            letterDB = new LevenshteinLetter[jac.letterDB.size()];
+            for (int i = 0; i < letterDB.length; i++) {
+                letterDB[i] = new LevenshteinLetter(jac.letterDB.get(i));
             }
         }
-        return new boolean[][][] { leth1, leth12 };
     }
 
     public double getLevenshteinDistance(Letter a, Letter b) {
-        boolean[][][] ba = getBooleanArrays(a);
-        boolean[][][] bb = getBooleanArrays(b);
-        int[] d = getLevenshteinDistance(ba, bb, Integer.MAX_VALUE);
+        int[] d = getLevenshteinDistance(new LevenshteinLetter(a), new LevenshteinLetter(b), Integer.MAX_VALUE);
         if (d != null) {
             a.detected = new LetterComperator(a, b);
             a.detected.setOffset(new int[] { d[1], d[2] });
@@ -178,13 +168,13 @@ public class LevenShteinLetterComperator {
         return res;
     }
 
-    private int[] getLevenshteinDistance(boolean[][][] ba, boolean[][][] bb, int best) {
+    private int[] getLevenshteinDistance(LevenshteinLetter ba, LevenshteinLetter bb, int best) {
         int res = 0;
         if (ba == null || bb == null) return null;
-        boolean[][] bba1 = ba[0];
-        boolean[][] bbb1 = bb[0];
-        boolean[][] bba2 = ba[1];
-        boolean[][] bbb2 = bb[1];
+        boolean[][] bba1 = ba.horizontal;
+        boolean[][] bbb1 = bb.horizontal;
+        boolean[][] bba2 = ba.vertical;
+        boolean[][] bbb2 = bb.vertical;
 
         int bounds1 = 0;
         int diff1 = bba1.length - bbb1.length;
@@ -264,7 +254,6 @@ public class LevenShteinLetterComperator {
 
         for (i = 1; i <= n; i++) {
             p[i] = i;
-            c[i] = i;
         }
 
         // c=p;
@@ -278,17 +267,17 @@ public class LevenShteinLetterComperator {
 
             for (i = 1; i <= n; i++) {
                 i1 = i - 1;
-                cost = (l1[i1] == t_j) ? 0 : 1;
+                cost = (l1[i1] == t_j) ? 0 : costs;
                 // minimum of cell to the left+1, to the top+1, diagonally left
                 // and up +cost
-                d[i] = Math.min(d[i1] + costs, Math.min(p[i] + costs, p[i1] + cost * costs));
+                d[i] = Math.min(d[i1] + costs, Math.min(p[i] + costs, p[i1] + cost));
                 // Damerau
-                if ((i > 1) && (j > 1) && (l1[i1] == l2[j2]) && (l1[i2 = i1 - 1] == l2[j1])) {
-                    d[i] = Math.min(d[i], c[i2] + cost);
+                if (i > 1 && j > 1 && l1[i1] == l2[j2] && l1[i2 = i1 - 1] == l2[j1]) {
+                    d[i] = Math.min(d[i], c[i2] + (cost>0?1:cost));
                 }
             }
             // previous of previous for Damerau
-            for (i = 1; i <= n; i++) {
+            for (i = 0; i <= n; i++) {
                 c[i] = p[i];
             }
             // copy current distance counts to 'previous row' distance counts

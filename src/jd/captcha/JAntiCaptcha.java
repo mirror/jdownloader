@@ -50,6 +50,7 @@ import jd.captcha.configuration.JACScript;
 import jd.captcha.gui.BasicWindow;
 import jd.captcha.gui.ImageComponent;
 import jd.captcha.gui.ScrollPaneWindow;
+import jd.captcha.pixelgrid.BinLetters;
 import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.pixelgrid.Letter;
 import jd.captcha.pixelobject.PixelObject;
@@ -286,7 +287,11 @@ public class JAntiCaptcha {
         getJACInfo();
 
         jas = new JACScript(this, methodDirName);
+        long time = System.currentTimeMillis();
         loadMTHFile();
+
+        time = System.currentTimeMillis()-time;
+        System.out.println(time);
         if (Utilities.isLoggerActive()) {
             logger.fine("letter DB loaded: Buchstaben: " + letterDB.size());
         }
