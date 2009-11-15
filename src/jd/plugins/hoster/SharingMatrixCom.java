@@ -170,7 +170,10 @@ public class SharingMatrixCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
-        br.setCookie("http://sharingmatrix.com", "lang", "en");
+        // Seems not to work if you access sharingmatrix in russia for example
+        // so we just access the page t get the right language
+        // br.setCookie("http://sharingmatrix.com", "lang", "en");
+        br.getPage("http://sharingmatrix.com/en/");
         br.getPage(parameter.getDownloadURL());
         if (br.containsHTML("File not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("Filename:.*?<td>(.*?)</td>").getMatch(0);
