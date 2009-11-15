@@ -516,7 +516,6 @@ gui.menu.action.premium.buy.accel = -
 gui.menu.action.premium.buy.mnem = C
 gui.menu.action.premium.buy.name = Acquista Premium
 gui.menu.action.premium.buy.tooltip = Acquista un account premium dell'hoster selezionato
-gui.menu.action.premium.desc = Attiva utilizzo Premium globalmente
 gui.menu.action.premiumview.addacc.accel = Aggiungi
 gui.menu.action.premiumview.addacc.mnem = A
 gui.menu.action.premiumview.addacc.name = Aggiungi account
