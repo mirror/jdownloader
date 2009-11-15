@@ -1,3 +1,5 @@
+#translator# = DaniSoftware
+#version# = 0.9.734
 action.customize.addsetting.ask = Introduza o nome das novas Definições:
 action.customize.removesetting.ask = Remover Definições seleccionadas?  (%s Conta(s)) 
 action.premiumview.removeacc.accs = %s Conta(s)
