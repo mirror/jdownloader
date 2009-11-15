@@ -17,11 +17,16 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -30,14 +35,14 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "data-loading.com" }, urls = { "http://[\\w\\.]*?data-loading\\.com/.{2}/file/\\d+/\\w+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "data-loading.com" }, urls = { "http://[\\w\\.]*?data-loading\\.com/.{2}/file/\\d+/\\w+" }, flags = { 2 })
 public class DataLoadingCom extends PluginForHost {
 
     public DataLoadingCom(PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium("http://data-loading.com/en/register.php?g=3");
     }
 
-    // @Overrid
     @Override
     public void correctDownloadLink(DownloadLink link) throws Exception {
         link.setUrlDownload(link.getDownloadURL().replaceAll("(/de/|/ru/|/es/)", "/en/"));
@@ -48,12 +53,121 @@ public class DataLoadingCom extends PluginForHost {
         return "http://www.data-loading.com/en/rules.html";
     }
 
+    public void login(Account account) throws Exception {
+        setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.setCookie("http://data-loading.com", "yab_mylang", "en");
+        br.getPage("http://data-loading.com/en/login.html");
+        Form form = br.getFormbyProperty("name", "lOGIN");
+        if (form == null) form = br.getForm(0);
+        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        form.put("user", Encoding.urlEncode(account.getUser()));
+        form.put("pass", Encoding.urlEncode(account.getPass()));
+        form.put("autologin", "0");
+        br.submitForm(form);
+        String premium = br.getRegex("<b>Your Package</b></td>.*?<b>(.*?)</b></A>").getMatch(0);
+        if (br.getCookie(".data-loading.com", "yab_passhash") == null || br.getCookie(".data-loading.com", "yab_uid").equals("0")||!premium.equals("Premium")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+
+        String premium = br.getRegex("<b>Your Package</b></td>.*?<b>(.*?)</b></A>").getMatch(0);
+        if (!premium.equals("Premium")) {
+            account.setValid(true);
+            return ai;
+        }
+        String expired = br.getRegex("Expired\\?</b></td>.*?<td align=.*?>(.*?)<").getMatch(0);
+        if (expired != null) {
+            if (expired.trim().equalsIgnoreCase("No"))
+                ai.setExpired(false);
+            else if (expired.equalsIgnoreCase("Yes")) ai.setExpired(true);
+        }
+
+        String expires = br.getRegex("Package Expire Date</b></td>.*?<td align=.*?>(.*?)</td>").getMatch(0).trim();
+        if (expires != null) {
+            String[] e = expires.split("/");
+            Calendar cal = new GregorianCalendar(Integer.parseInt("20" + e[2]), Integer.parseInt(e[0]) - 1, Integer.parseInt(e[1]));
+            ai.setValidUntil(cal.getTimeInMillis());
+        }
+
+        String create = br.getRegex("Register Date</b></td>.*?<td align=.*?>(.*?)<").getMatch(0).trim();
+        if (create != null) {
+            String[] c = create.split("/");
+            Calendar cal = new GregorianCalendar(Integer.parseInt("20" + c[2]), Integer.parseInt(c[0]) - 1, Integer.parseInt(c[1]));
+            ai.setCreateTime(cal.getTimeInMillis());
+        }
+
+        ai.setFilesNum(0);
+        String files = br.getRegex("<b>Hosted Files</b></td>.*?<td align=.*?>(.*?)<").getMatch(0).trim();
+        if (files != null) {
+            ai.setFilesNum(Integer.parseInt(files.trim()));
+        }
+
+        ai.setPremiumPoints(0);
+        String points = br.getRegex("<b>Total Points</b></td>.*?<td align=.*?>(.*?)</td>").getMatch(0).trim();
+        if (points != null) {
+            ai.setPremiumPoints(Integer.parseInt(points.trim()));
+        }
+
+        ai.setStatus("Account OK");
+        account.setValid(true);
+
+        return ai;
+    }
+
+    public void handlePremium(DownloadLink parameter, Account account) throws Exception {
+        requestFileInformation(parameter);
+        login(account);
+        br.getPage(parameter.getDownloadURL());
+        String passCode = null;
+        if (br.containsHTML("downloadpw")) {
+            Form pwform = br.getFormbyProperty("name", "myform");
+            if (pwform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (parameter.getStringProperty("pass", null) == null) {
+                passCode = Plugin.getUserInput("Password?", parameter);
+            } else {
+                /* gespeicherten PassCode holen */
+                passCode = parameter.getStringProperty("pass", null);
+            }
+            pwform.put("downloadpw", passCode);
+            br.submitForm(pwform);
+        }
+        if (br.containsHTML("Password Error")) {
+            logger.warning("Wrong password!");
+            parameter.setProperty("pass", null);
+            throw new PluginException(LinkStatus.ERROR_RETRY);
+        }
+
+        if (passCode != null) {
+            parameter.setProperty("pass", passCode);
+        }
+        String linkurl = br.getRegex("<input.*document.location=\"(.*?)\";").getMatch(0);
+        if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, linkurl, true, -2);
+        if (!(dl.getConnection().isContentDisposition())) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
+    }
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
-        // Atm we don't need the cookie but maybe in the future so you can just
-        // "activate" it here then
-        // br.setCookie("http://data-loading.com", "yab_mylang", "en");
+        br.setCookie("http://data-loading.com", "yab_mylang", "en");
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
         if (!(br.containsHTML("Your requested file is not found") || br.containsHTML("File Not Found"))) {
@@ -91,7 +205,6 @@ public class DataLoadingCom extends PluginForHost {
                 String code = getCaptchaCode(captchaurl, downloadLink);
                 captchaform.put("captchacode", code);
                 br.submitForm(captchaform);
-                System.out.print(br.toString());
                 if (br.containsHTML("Password Error")) {
                     logger.warning("Wrong password!");
                     downloadLink.setProperty("pass", null);
@@ -150,7 +263,7 @@ public class DataLoadingCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return -1;
     }
 
     @Override
