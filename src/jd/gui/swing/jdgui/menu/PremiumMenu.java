@@ -21,6 +21,7 @@ import java.awt.event.ActionListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 
+import javax.swing.AbstractAction;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JMenuItem;
 import javax.swing.Timer;
@@ -82,6 +83,12 @@ public class PremiumMenu extends JStartMenu implements ActionListener, AccountCo
 
                 JDUtilities.getConfiguration().setProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, this.isSelected());
                 JDUtilities.getConfiguration().save();
+            }
+
+            @Override
+            public void setIcon(String key) {
+                putValue(AbstractAction.SMALL_ICON, JDTheme.II(key, 16, 16));
+                putValue(IMAGE_KEY, key);
             }
 
             @Override

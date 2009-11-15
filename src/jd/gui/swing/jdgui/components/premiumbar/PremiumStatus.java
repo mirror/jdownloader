@@ -44,12 +44,11 @@ import jd.controlling.JDController;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.UserIF;
-import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
+import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.gui.swing.menu.Menu;
 import jd.nutils.Formatter;
-import jd.nutils.JDFlags;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.PluginForHost;
@@ -79,29 +78,11 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
         lbl = new JLabel(JDL.L("gui.statusbar.premiumloadlabel", "< Add Accounts"));
         setName(JDL.L("quickhelp.premiumstatusbar", "Premium statusbar"));
         this.setLayout(new MigLayout("ins 0", "", "[::20, center]"));
-        premium = new JToggleButton();
-        premium.setToolTipText(JDL.L("gui.menu.action.premium.desc", "Enable Premiumusage globally"));
-
-        premium.addActionListener(new ActionListener() {
-
-            public void actionPerformed(ActionEvent e) {
-                if (!premium.isSelected()) {
-                    int answer = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_COUNTDOWN, JDL.L("dialogs.premiumstatus.global.title", "Disable Premium?"), JDL.L("dialogs.premiumstatus.global.message", "Do you really want to disable all premium accounts?"), JDTheme.II("gui.images.warning", 32, 32), JDL.L("gui.btn_yes", "Yes"), JDL.L("gui.btn_no", "No"));
-                    if (JDFlags.hasAllFlags(answer, UserIO.RETURN_CANCEL) && !JDFlags.hasAllFlags(answer, UserIO.RETURN_DONT_SHOW_AGAIN)) {
-                        premium.setSelected(true);
-                        return;
-                    }
-                }
-
-                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, premium.isSelected());
-                JDUtilities.getConfiguration().save();
-            }
-
-        });
+        premium = new JToggleButton(ActionController.getToolBarAction("premiumMenu.toggle"));
+        premium.setHideActionText(true);
         premium.setFocusPainted(false);
         premium.setContentAreaFilled(false);
         premium.setBorderPainted(false);
-        updatePremiumButton();
         add(premium, "hmax 20");
         add(new JSeparator(JSeparator.VERTICAL), "growy");
         add(lbl, "hidemode 3");
@@ -144,7 +125,6 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
 
             @Override
             public void onPropertyChanged(Property source, String valid) {
-
                 SwingUtilities.invokeLater(new Runnable() {
 
                     public void run() {
@@ -157,19 +137,7 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
         });
     }
 
-    private void updatePremiumButton() {
-        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)) {
-            premium.setSelected(true);
-            premium.setIcon(JDTheme.II("gui.images.premium_enabled", 16, 16));
-        } else {
-            premium.setSelected(false);
-            premium.setIcon(JDTheme.II("gui.images.premium_disabled", 16, 16));
-        }
-    }
-
     private void updateGUI() {
-        updatePremiumButton();
-
         for (int i = 0; i < BARCOUNT; i++) {
             if (bars[i] != null) {
                 bars[i].setEnabled(premium.isSelected());
