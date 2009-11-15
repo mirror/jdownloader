@@ -972,6 +972,7 @@ jd.gui.swing.jdgui.settings.panels.configpaneladdons.addons.title = Rozšířen�
 jd.gui.swing.jdgui.settings.panels.configpaneladdons.askafterinit = Zobrazit teď %s?\r\nPozději to můžete otevřít přes Hlavní menu -> Rozšíření
 jd.gui.swing.jdgui.settings.panels.configpanelcaptcha.breadcrum = Moduly - AntiCaptcha
 jd.gui.swing.jdgui.settings.panels.configpanelcaptcha.captcha.title = AntiCapthca
+jd.gui.swing.jdgui.settings.panels.configpanelcaptcha.captchasize = Velikost CAPTCHA obrázku v procentech:
 jd.gui.swing.jdgui.settings.panels.configpanelgeneral.breadcrum = Základní nastavení - Obecné
 jd.gui.swing.jdgui.settings.panels.configpanelgeneral.general.title = Obecné
 jd.gui.swing.jdgui.settings.panels.configpanelpluginforhost.host.title = Servery
