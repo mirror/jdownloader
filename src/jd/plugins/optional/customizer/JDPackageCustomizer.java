@@ -72,14 +72,16 @@ public class JDPackageCustomizer extends PluginOptional implements LinkGrabberPa
         ctrl = LinkGrabberController.getInstance();
         ctrl.setCustomizedPackager(this);
 
-        enableAction = new MenuAction(getWrapper().getID(), 1);
+        enableAction = new MenuAction("packagecustomizer.enable", 1);
         enableAction.setActionListener(this);
-        enableAction.setTitle(JDL.L(JDL_PREFIX + "enabled", "Enable Customizer"));
+        // enableAction.setTitle(JDL.L(JDL_PREFIX + "enabled",
+        // "Enable Customizer"));
         enableAction.setSelected(getPluginConfig().getBooleanProperty(PROPERTY_ENABLE, true));
 
-        showAction = new MenuAction(getWrapper().getID(), 0);
+        showAction = new MenuAction("packagecustomizer.showGui", 0);
         showAction.setActionListener(this);
-        showAction.setTitle(JDL.L(JDL_PREFIX + "settings", "Show Settings-GUI"));
+        // showAction.setTitle(JDL.L(JDL_PREFIX + "settings",
+        // "Show Settings-GUI"));
         showAction.setSelected(false);
 
         logger.info("Customizer OK");

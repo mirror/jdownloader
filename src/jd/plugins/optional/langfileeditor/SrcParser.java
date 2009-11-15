@@ -62,7 +62,6 @@ public class SrcParser {
 
         pattern.add("jd\\.gui\\.swing\\.ShortCuts\\.(.+?)");
         pattern.add("sys\\.warning\\.dlcerror\\.(.+?)");
-        pattern.add("!(.+?)");
     }
 
     public JDBroadcaster<MessageListener, MessageEvent> getBroadcaster() {

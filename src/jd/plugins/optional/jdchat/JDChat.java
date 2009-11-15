@@ -832,7 +832,7 @@ public class JDChat extends PluginOptional implements ControlListener {
         NAMES = new ArrayList<User>();
         sb = new StringBuilder();
         if (activateAction == null) {
-            activateAction = new MenuAction(getWrapper().getID(), 0);
+            activateAction = new MenuAction("chat", 0);
             activateAction.setActionListener(this);
             activateAction.setTitle(getHost());
             activateAction.setIcon(this.getIconKey());

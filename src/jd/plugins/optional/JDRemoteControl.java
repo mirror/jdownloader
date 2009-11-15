@@ -576,7 +576,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
         ArrayList<MenuAction> menu = new ArrayList<MenuAction>();
 
         if (activate == null) {
-            activate = new MenuAction(getWrapper().getID(), 0);
+            activate = new MenuAction("remotecontrol", 0);
             activate.setActionListener(this);
             activate.setSelected(subConfig.getBooleanProperty(PARAM_ENABLED, true));
             activate.setTitle(getHost());

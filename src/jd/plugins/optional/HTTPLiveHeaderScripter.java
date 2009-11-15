@@ -281,7 +281,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
 
     @Override
     public boolean initAddon() {
-        action = new MenuAction(getWrapper().getID(), 0);
+        action = new MenuAction("livescripter", 0);
         action.setActionListener(this);
         action.setTitle(getHost());
         action.setIcon(this.getIconKey());
