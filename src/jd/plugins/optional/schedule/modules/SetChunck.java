@@ -39,7 +39,7 @@ public class SetChunck implements SchedulerModuleInterface {
     }
 
     public String getTranslation() {
-        return JDL.L("jd.plugins.optional.schedule.modules.setChuncks", "Set Chuncks");
+        return JDL.L("jd.plugins.optional.schedule.modules.setChuncks", "Set Chunks");
     }
 
     public boolean needParameter() {
