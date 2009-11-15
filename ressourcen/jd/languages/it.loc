@@ -854,6 +854,7 @@ jd.gui.swing.jdgui.settings.panels.configpaneladdons.addons.title = Estensioni
 jd.gui.swing.jdgui.settings.panels.configpaneladdons.askafterinit = Visualizza %s adesso?\r\nPotete aprirlo in un secondo momento usando menù -> Estensioni
 jd.gui.swing.jdgui.settings.panels.configpanelcaptcha.breadcrum = Moduli - Captcha
 jd.gui.swing.jdgui.settings.panels.configpanelcaptcha.captcha.title = JD AntiCaptcha
+jd.gui.swing.jdgui.settings.panels.configpanelcaptcha.captchasize = Dimensione del Captcha in percentuale:
 jd.gui.swing.jdgui.settings.panels.configpanelgeneral.breadcrum = Base - Generale
 jd.gui.swing.jdgui.settings.panels.configpanelgeneral.general.title = Generale
 jd.gui.swing.jdgui.settings.panels.configpanelpluginforhost.host.title = Server & Premium
