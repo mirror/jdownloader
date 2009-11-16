@@ -52,12 +52,23 @@ public class LoadedIt extends PluginForHost {
         br.setDebug(true);
         Form DLForm = br.getFormbyProperty("name", "wait");
         if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        int tt = Integer.parseInt(br.getRegex("var time_wait = (.*?);").getMatch(0));
-        sleep(tt * 1001l, link);
+        // Ticket Time
+        String ttt = "10";
+        ttt = br.getRegex("var time_wait = (.*?);").getMatch(0);
+        int tt = Integer.parseInt(ttt);
+        sleep(tt * 1001, link);
         br.submitForm(DLForm);
-        String dllink = br.getRegex("type=\"video/divx\" src=\"(.*?)\" custommode=\"Stage6").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String server = br.getRegex("hostname\" value=\"(.*?)\"").getMatch(0);
+        String hash = br.getRegex("hash\" value=\"(.*?)\"").getMatch(0);
+        String filename = br.getRegex("filename\" value=\"(.*?)\"").getMatch(0);
+        if (server == null || hash == null || filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String dllink = "http://" + server + "/get/" + hash + "/" + filename;
         dl = BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        String contenttypecheck = dl.getConnection().getContentType().toString();
+        if ((contenttypecheck.contains("html"))) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl.startDownload();
     }
 

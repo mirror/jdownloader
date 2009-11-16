@@ -130,6 +130,11 @@ public class BigAndFreeCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadForm, true, 0);
         if (!(dl.getConnection().isContentDisposition()) && !dl.getConnection().getContentType().contains("octet")) {
             dl.getConnection().disconnect();
+            // If you start more downloads than allowed they block you but
+            // reconnecting makes no sense in this case because it would only
+            // cause a reconnect-loop so the plugin waits 15 minuts before
+            // retrying those downloads!
+            if (br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 15 * 60 * 1001l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

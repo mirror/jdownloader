@@ -22,43 +22,39 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "lougyl.com" }, urls = { "http://[\\w\\.]*lougyl\\.com/files/[A-Z0-9]+/.+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "lougyl.com" }, urls = { "http://[\\w\\.]*lougyl\\.com/files/[A-Z0-9]{8}" }, flags = { 0 })
 public class LGylCm extends PluginForDecrypt {
 
     public LGylCm(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
-        br.setFollowRedirects(false);
-        br.getPage(parameter);
-
-        String dlsite0 = new Regex(param, "lougyl\\.com/files/(.*?)/").getMatch(0);
+        String dlsite0 = new Regex(param, "lougyl\\.com/files/([A-Z0-9]{8})").getMatch(0);
         String dlsite1 = "http://www.lougyl.com/status.php?uid=" + dlsite0;
         br.getPage(dlsite1);
+        /* Error handling */
+        if (!br.containsHTML("<td><img src=")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         String[] links = br.getRegex(" href=(.*?) target").getColumn(0);
         if (links == null || links.length == 0) return null;
         progress.setRange(links.length);
         for (String link : links) {
             String link1 = "http://www.lougyl.com" + link;
             br.getPage(link1);
-            String finallink = br.getRegex("refresh\" content=\"[0-9]+;url=(.*?)\">").getMatch(0);
-            if (finallink == null) return decryptedLinks;
+            String finallink = br.getRegex("name=\"main\" src=\"(.*?)\"").getMatch(0);
+            if (finallink == null) return null;
             DownloadLink dl = createDownloadlink(finallink);
             decryptedLinks.add(dl);
             progress.increase(1);
         }
         return decryptedLinks;
     }
-
-
-    // @Override
 
 }
