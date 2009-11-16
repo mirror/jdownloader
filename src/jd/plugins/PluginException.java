@@ -70,4 +70,8 @@ public class PluginException extends Exception {
         if (errorMessage != null) linkStatus.setErrorMessage(errorMessage);
     }
 
+    public int getLinkStatus() {
+        return linkStatus;
+    }
+
 }

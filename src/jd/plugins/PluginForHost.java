@@ -478,6 +478,7 @@ public abstract class PluginForHost extends Plugin {
                 }
             } catch (PluginException e) {
                 e.fillLinkStatus(downloadLink.getLinkStatus());
+                if (e.getLinkStatus() == LinkStatus.ERROR_PLUGIN_DEFECT) logger.info(JDLogger.getStackTrace(e));
                 logger.info(downloadLink.getLinkStatus().getLongErrorMessage());
             }
 
@@ -526,6 +527,7 @@ public abstract class PluginForHost extends Plugin {
                 }
             } catch (PluginException e) {
                 e.fillLinkStatus(downloadLink.getLinkStatus());
+                if (e.getLinkStatus() == LinkStatus.ERROR_PLUGIN_DEFECT) logger.info(JDLogger.getStackTrace(e));
                 logger.info(downloadLink.getLinkStatus().getLongErrorMessage());
             }
         }

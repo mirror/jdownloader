@@ -154,7 +154,7 @@ public class ShareOnlineBiz extends PluginForHost {
         if (br.containsHTML("DL_GotMaxIPPerUid")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
 
         String url = br.getRegex("loadfilelink\\.decode\\(\"(.*?)\"\\);").getMatch(0);
-
+        if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setFollowRedirects(true);
         /* Datei herunterladen */
         dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, url, true, 1);
@@ -221,6 +221,7 @@ public class ShareOnlineBiz extends PluginForHost {
         // sleep(15000, downloadLink);
         br.setFollowRedirects(true);
         /* Datei herunterladen */
+        if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();

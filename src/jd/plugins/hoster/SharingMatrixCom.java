@@ -49,7 +49,10 @@ public class SharingMatrixCom extends PluginForHost {
     public void login(Account account) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
-        br.setCookie("http://sharingmatrix.com", "lang", "en");
+        /*
+         * set language for session correct
+         */
+        br.getPage("http://sharingmatrix.com/en/");
         br.getPage("http://sharingmatrix.com/login");
         br.getPage("http://sharingmatrix.com/ajax_scripts/login.php?email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember_me=true");
         String validornot = br.toString();

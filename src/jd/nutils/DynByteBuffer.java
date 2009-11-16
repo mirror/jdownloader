@@ -16,6 +16,9 @@
 
 package jd.nutils;
 
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
@@ -33,6 +36,16 @@ public class DynByteBuffer {
     public void put(byte[] buffer, int read) {
         checkBufferSize(read);
         this.buffer.put(buffer);
+    }
+
+    public void put(byte b) {
+        checkBufferSize(1);
+        this.buffer.put(b);
+    }
+
+    public void put(byte[] bytes, int off, int len) {
+        checkBufferSize(len);
+        this.buffer.put(bytes, off, len);
     }
 
     public void clear() {
@@ -71,7 +84,15 @@ public class DynByteBuffer {
 
     private void checkBufferSize(int read) {
         if (this.buffer.remaining() < read) {
+            /* first we try to double capactiy */
             ByteBuffer newbuffer = ByteBuffer.allocateDirect(this.buffer.capacity() * 2);
+            this.buffer.flip();
+            newbuffer.put(this.buffer);
+            this.buffer = newbuffer;
+        }
+        if (this.buffer.remaining() < read) {
+            /* still not enough, so lets increase even more */
+            ByteBuffer newbuffer = ByteBuffer.allocateDirect(this.buffer.capacity() + read);
             this.buffer.flip();
             newbuffer.put(this.buffer);
             this.buffer = newbuffer;
@@ -107,6 +128,32 @@ public class DynByteBuffer {
         buffer.get(b);
         buffer.position(posi);
         return b;
+    }
+
+    public static PrintStream PrintStreamforDynByteBuffer(int l) {
+        final OutputStream buf = OutputStreamforDynByteBuffer(l);
+        return new PrintStream(buf) {
+            public synchronized String toString() {
+                return buf.toString();
+            }
+        };
+    }
+
+    public static OutputStream OutputStreamforDynByteBuffer(int l) {
+        final DynByteBuffer buf = new DynByteBuffer(l);
+        return new OutputStream() {
+            public synchronized void write(int b) throws IOException {
+                buf.put((byte) b);
+            }
+
+            public synchronized void write(byte[] bytes, int off, int len) throws IOException {
+                buf.put(bytes, off, len);
+            }
+
+            public synchronized String toString() {
+                return buf.toString();
+            }
+        };
     }
 
 }

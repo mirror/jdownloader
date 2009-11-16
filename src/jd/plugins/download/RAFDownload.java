@@ -233,7 +233,7 @@ public class RAFDownload extends DownloadInterface {
         long partSize = fileSize / getChunkNum();
 
         if (connection.getRange() != null) {
-            if (connection.getRange()[1] == connection.getRange()[2] - 1) {
+            if ((connection.getRange()[1] == connection.getRange()[2] - 1) || (connection.getRange()[1] == connection.getRange()[2])) {
                 logger.warning("Chunkload protection. this may cause traffic errors");
                 partSize = fileSize / getChunkNum();
             } else {

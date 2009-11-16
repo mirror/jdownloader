@@ -66,7 +66,7 @@ public class DataLoadingCom extends PluginForHost {
         form.put("autologin", "0");
         br.submitForm(form);
         String premium = br.getRegex("<b>Your Package</b></td>.*?<b>(.*?)</b></A>").getMatch(0);
-        if (br.getCookie(".data-loading.com", "yab_passhash") == null || br.getCookie(".data-loading.com", "yab_uid").equals("0") || !premium.equals("Premium")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (br.getCookie("data-loading.com", "yab_passhash") == null || br.getCookie("data-loading.com", "yab_uid").equals("0") || !premium.equals("Premium")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
     @Override
@@ -126,9 +126,8 @@ public class DataLoadingCom extends PluginForHost {
     public void handlePremium(DownloadLink parameter, Account account) throws Exception {
         requestFileInformation(parameter);
         login(account);
-        br.setCookie("http://data-loading.com", "yab_mylang", "de");
+        br.setCookie("http://data-loading.com", "yab_mylang", "en");
         br.getPage(parameter.getDownloadURL());
-        System.out.print(br.toString());
         if (br.containsHTML("You have got max allowed download sessions from the same IP")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
         String passCode = null;
         if (br.containsHTML("downloadpw")) {
