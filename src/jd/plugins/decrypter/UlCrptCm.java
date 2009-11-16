@@ -35,7 +35,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "urlcrypt.com" }, urls = { "http://[\\w\\.]*?urlcrypt\\.com/open-[A-Za-z0-9]+(-[A-Za-z0-9]+|-[A-Za-z0-9]+-[A-Za-z0-9]+)\\.htm" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "urlcrypt.com" }, urls = { "http://[\\w\\.]*?urlcrypt\\.com/open-.*?\\.htm" }, flags = { 0 })
 public class UlCrptCm extends PluginForDecrypt {
 
     public UlCrptCm(PluginWrapper wrapper) {
@@ -47,7 +47,13 @@ public class UlCrptCm extends PluginForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(false);
         br.getPage(parameter);
-
+        // Forced Referer errorhandling
+        if (br.containsHTML("(Herkunft ungültig|Sie haben nur Zugriff auf diesen Ordner, wenn Sie von)")) {
+            String referer = br.getRegex("wenn Sie von <a href=\"(.*?)\">").getMatch(0);
+            if (referer == null) return null;
+            br.getHeaders().put("Referer", referer);
+            br.getPage(parameter);
+        }
         /* Error handling */
         if (br.containsHTML("Ordner nicht gefunden")) return decryptedLinks;
 
