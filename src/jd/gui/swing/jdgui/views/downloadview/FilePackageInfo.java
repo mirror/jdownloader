@@ -125,7 +125,7 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
         tabbedPane = new JTabbedPane();
         tabbedPane.add(createFilePackageInfo(), JDL.L("gui.fileinfopanel.packagetab", "Package"));
         tabbedPane.add(createLinkInfo(), JDL.L("gui.fileinfopanel.link", "Downloadlink"));
-        content.setLayout(new MigLayout("", "[grow]", "[]"));
+        content.setLayout(new MigLayout("ins 0", "[grow]", "[]"));
         content.add(tabbedPane, "grow");
     }
 
@@ -153,17 +153,17 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
         chbExtract.addActionListener(this);
         chbExtract.addFocusListener(this);
 
-        panel = new JPanel(new MigLayout("ins 10, wrap 3", "[]10[grow,fill][]", "[]5[]5[]5[]"));
+        panel = new JPanel(new MigLayout("ins 5, wrap 3", "[]10[grow,fill]10[]", "[]5[]5[]5[]"));
         panel.add(lblFiles = new JLabel(JDL.LF("gui.fileinfopanel.packagetab.lbl.files", "%s File(s)", 0)), "spanx, split 3");
-        panel.add(progressBarFilePackage = new MultiProgressBar(), "growx,pushx,height 18!");
+        panel.add(progressBarFilePackage = new MultiProgressBar(), "growx, pushx, h 18!");
         panel.add(lblSize = new JLabel("0B/0B"), "alignx right");
         panel.add(new JLabel(JDL.L("gui.fileinfopanel.packagetab.lbl.name", "Paketname")));
         panel.add(txtName, "growx, span 2");
         panel.add(new JLabel(JDL.L("gui.fileinfopanel.packagetab.lbl.saveto", "Speichern unter")));
-        panel.add(brwSaveTo.getInput(), "gapright 10, shrinkx");
+        panel.add(brwSaveTo.getInput(), "shrinkx");
         panel.add(brwSaveTo.getButton(), "pushx, growx");
         panel.add(new JLabel(JDL.L("gui.fileinfopanel.packagetab.lbl.password", "Archivpasswort")));
-        panel.add(txtPassword, "gapright 10, growx");
+        panel.add(txtPassword, "growx");
         panel.add(chbExtract, "alignx right");
         panel.add(new JLabel(JDL.L("gui.fileinfopanel.packagetab.lbl.password2", "Archive Password(auto)")));
         panel.add(txtPassword2, "growx, span 2");
@@ -174,32 +174,31 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
 
     private JPanel createLinkInfo() {
         progressBarDownloadLink = new MultiProgressBar();
-        panel = new JPanel();
-        panel.setLayout(new MigLayout("ins 10, wrap 3", "[]10[grow,fill][]", "[]5[]5[]5[]"));
+        panel = new JPanel(new MigLayout("ins 5, wrap 3", "[]10[grow,fill]10[]", "[]5[]5[]5[]"));
         panel.add(lblHoster = new JLabel(JDTheme.II("gui.images.sort", 16, 16)), "split 2");
-        panel.add(lblType = new JLabel(JDTheme.II("gui.images.sort", 16, 16)), "");
+        panel.add(lblType = new JLabel(JDTheme.II("gui.images.sort", 16, 16)));
         lblType.setText(JDL.L("gui.fileinfopanel.linktab.chunks", "Chunks"));
-        panel.add(progressBarDownloadLink, "spanx,growx,pushx,split 2,height 18!");
+        panel.add(progressBarDownloadLink, "spanx, growx, pushx, split 2, h 18!");
         panel.add(lblSizeDl = new JLabel("0B/0B"), "alignx right");
         panel.add(lblETA = new JLabel(JDL.LF("gui.fileinfopanel.linktab.eta", "ETA: %s mm:ss", "0")));
-        panel.add(lblSpeed = new JLabel(JDL.LF("gui.fileinfopanel.linktab.speed", "Speed: %s/s", "0 kb")), "skip,alignx right");
+        panel.add(lblSpeed = new JLabel(JDL.LF("gui.fileinfopanel.linktab.speed", "Speed: %s/s", "0 kb")), "skip");
         panel.add(new JLabel(JDL.L("gui.fileinfopanel.linktab.name", "Linkname")));
-        panel.add(txtNameDl = new JDTextField(true), "growx, span 2");
+        panel.add(txtNameDl = new JDTextField(true), "growx, spanx");
         txtNameDl.setEditable(false);
         panel.add(new JLabel(JDL.L("gui.fileinfopanel.linktab.saveto", "Save to")));
-        panel.add(txtPathLabel = new JDTextField(true), "growx, span 2");
+        panel.add(txtPathLabel = new JDTextField(true), "growx, spanx");
         txtPathLabel.setEditable(false);
         panel.add(new JLabel(JDL.L("gui.fileinfopanel.linktab.url", "URL")));
-        panel.add(txtURL = new JDTextField(true), "growx, span 2");
+        panel.add(txtURL = new JDTextField(true), "growx, spanx");
         txtURL.setEditable(false);
         panel.add(new JLabel(JDL.L("gui.fileinfopanel.linktab.comment", "Comment")));
-        panel.add(txtCommentDl = new JDTextField(true), "growx, span 2");
+        panel.add(txtCommentDl = new JDTextField(true), "growx, spanx");
         txtCommentDl.setEditable(false);
         panel.add(new JLabel(JDL.L("gui.fileinfopanel.linktab.password", "Password")));
-        panel.add(txtPasswordDl = new JDTextField(true), "growx, span 2");
+        panel.add(txtPasswordDl = new JDTextField(true), "growx, spanx");
         txtPasswordDl.setEditable(false);
         panel.add(new JLabel(JDL.L("gui.fileinfopanel.linktab.status", "Status")));
-        panel.add(txtStatusDl = new JDTextField(true), "growx, span 2");
+        panel.add(txtStatusDl = new JDTextField(true), "growx, spanx");
         txtStatusDl.setEditable(false);
 
         return panel;

@@ -124,25 +124,20 @@ public class LinkGrabberFilePackageInfo extends JDCollapser implements ActionLis
         chbUseSubdirectory.setHorizontalTextPosition(SwingConstants.LEFT);
         chbUseSubdirectory.addActionListener(this);
 
-        content.setLayout(new MigLayout("ins 10, wrap 3", "[]10[grow,fill][]", "[]5[]5[]5[]"));
-
+        content.setLayout(new MigLayout("ins 5, wrap 3", "[]10[grow,fill]10[]", "[]5[]5[]5[]"));
         content.add(new JLabel(JDL.L("gui.linkgrabber.packagetab.lbl.name", "Paketname")));
         content.add(txtName, "span 2");
         content.add(new JLabel(JDL.L("gui.linkgrabber.packagetab.lbl.saveto", "Speichern unter")));
-        content.add(brwSaveTo.getInput(), "gapright 10, growx");
-        content.add(brwSaveTo.getButton(), "pushx,growx");
-
-        content.add(new JLabel(JDL.L("gui.linkgrabber.packagetab.lbl.password", "Archivpasswort")), "newline");
-
-        content.add(txtPassword, " gapright 10, growx");
+        content.add(brwSaveTo.getInput(), "growx");
+        content.add(brwSaveTo.getButton(), "pushx, growx");
+        content.add(new JLabel(JDL.L("gui.linkgrabber.packagetab.lbl.password", "Archivpasswort")));
+        content.add(txtPassword, "growx");
         content.add(chbExtract, "alignx right");
-        content.add(new JLabel(JDL.L("gui.linkgrabber.packagetab.lbl.password2", "Archive Password(auto)")), "newline");
-        content.add(txtPassword2, " gapright 10, growx");
+        content.add(new JLabel(JDL.L("gui.linkgrabber.packagetab.lbl.password2", "Archive Password(auto)")));
+        content.add(txtPassword2, "growx");
         content.add(chbUseSubdirectory, "alignx right");
-
         content.add(new JLabel(JDL.L("gui.linkgrabber.packagetab.lbl.comment", "Kommentar")));
-        content.add(txtComment, "gapright 10, growx");
-
+        content.add(txtComment, "span 2");
     }
 
     public void actionPerformed(ActionEvent e) {
