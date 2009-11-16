@@ -14,12 +14,14 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.plugins.optional.JDAntiStandby;
 
 import java.util.logging.Logger;
-import com.sun.jna.Native;
+
 import jd.controlling.DownloadWatchDog;
+import jd.controlling.JDLogger;
+
+import com.sun.jna.Native;
 
 public class JDAntiStandbyThread implements Runnable {
 
@@ -27,77 +29,69 @@ public class JDAntiStandbyThread implements Runnable {
     private boolean run = false;
     private int sleep = 5000;
     private Logger logger;
-    JDAntiStandby jdAntiStandby = null;
-    
-    Kernel32 kernel32 = (Kernel32) Native.loadLibrary("kernel32",
-            Kernel32.class);
+    private JDAntiStandby jdAntiStandby = null;
 
-    public JDAntiStandbyThread(Logger logger, JDAntiStandby jdAntiStandby) {
+    private Kernel32 kernel32 = (Kernel32) Native.loadLibrary("kernel32", Kernel32.class);
+
+    public JDAntiStandbyThread(JDAntiStandby jdAntiStandby) {
         super();
-        this.logger = logger;
+        this.logger = JDLogger.getLogger();
         this.jdAntiStandby = jdAntiStandby;
     }
 
-    @Override
     public void run() {
         while (running) {
             try {
-                if(jdAntiStandby.isStatus()){
-                switch (jdAntiStandby.getPluginConfig().getIntegerProperty("CONFIG_MODE")) {
-                case 0:
-                    if (run) {
-                        run = false;
-                        logger.fine("AntiStandby Stop");
-                        kernel32.SetThreadExecutionState(Kernel32.ES_CONTINUOUS);
-                    }
-                    break;
-                case 1:
-                    if (DownloadWatchDog.getInstance().getDownloadStatus() == DownloadWatchDog.STATE.RUNNING) {
-                        if (!run) {                        
-                            run = true;
-                            logger.fine("AntiStandby Start");
-                        }
-                        kernel32.SetThreadExecutionState(Kernel32.ES_CONTINUOUS
-                                | Kernel32.ES_SYSTEM_REQUIRED
-                                | Kernel32.ES_DISPLAY_REQUIRED);
-                        
-                    }
-                    if ((DownloadWatchDog.getInstance().getDownloadStatus() == DownloadWatchDog.STATE.NOT_RUNNING) || (DownloadWatchDog.getInstance().getDownloadStatus() == DownloadWatchDog.STATE.STOPPING)) {
+                if (jdAntiStandby.isStatus()) {
+                    switch (jdAntiStandby.getPluginConfig().getIntegerProperty("CONFIG_MODE")) {
+                    case 0:
                         if (run) {
                             run = false;
-                            logger.fine("AntiStandby Stop");
+                            logger.fine("JDAntiStandby: Stop");
                             kernel32.SetThreadExecutionState(Kernel32.ES_CONTINUOUS);
                         }
-                    }
-                    break;
-                case 2:
-                    if (!run) {
-                        run = true;
-                        logger.fine("AntiStandby Start");
-                    }
-                    kernel32.SetThreadExecutionState(Kernel32.ES_CONTINUOUS
-                            | Kernel32.ES_SYSTEM_REQUIRED
-                            | Kernel32.ES_DISPLAY_REQUIRED);
-                    break;
-                default:
-                    logger.finest("Config error");
+                        break;
+                    case 1:
+                        if (DownloadWatchDog.getInstance().getDownloadStatus() == DownloadWatchDog.STATE.RUNNING) {
+                            if (!run) {
+                                run = true;
+                                logger.fine("JDAntiStandby: Start");
+                            }
+                            kernel32.SetThreadExecutionState(Kernel32.ES_CONTINUOUS | Kernel32.ES_SYSTEM_REQUIRED | Kernel32.ES_DISPLAY_REQUIRED);
 
-                }
-                }
-                else
-                {
+                        }
+                        if ((DownloadWatchDog.getInstance().getDownloadStatus() == DownloadWatchDog.STATE.NOT_RUNNING) || (DownloadWatchDog.getInstance().getDownloadStatus() == DownloadWatchDog.STATE.STOPPING)) {
+                            if (run) {
+                                run = false;
+                                logger.fine("JDAntiStandby: Stop");
+                                kernel32.SetThreadExecutionState(Kernel32.ES_CONTINUOUS);
+                            }
+                        }
+                        break;
+                    case 2:
+                        if (!run) {
+                            run = true;
+                            logger.fine("JDAntiStandby: Start");
+                        }
+                        kernel32.SetThreadExecutionState(Kernel32.ES_CONTINUOUS | Kernel32.ES_SYSTEM_REQUIRED | Kernel32.ES_DISPLAY_REQUIRED);
+                        break;
+                    default:
+                        logger.finest("JDAntiStandby: Config error");
+
+                    }
+                } else {
                     if (run) {
                         run = false;
-                        logger.fine("AntiStandby Stop");
+                        logger.fine("JDAntiStandby: Stop");
                         kernel32.SetThreadExecutionState(Kernel32.ES_CONTINUOUS);
                     }
                 }
                 Thread.sleep(sleep);
             } catch (InterruptedException e) {
-            } 
+            }
         }
         kernel32.SetThreadExecutionState(Kernel32.ES_CONTINUOUS);
-        logger.fine("AntiStandby Terminated");
+        logger.fine("JDAntiStandby: Terminated");
     }
 
 }

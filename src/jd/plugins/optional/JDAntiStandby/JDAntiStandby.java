@@ -23,23 +23,21 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.config.SubConfiguration;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.nutils.OSDetector;
 import jd.plugins.OptionalPlugin;
-import jd.plugins.Plugin;
 import jd.plugins.PluginOptional;
 import jd.utils.locale.JDL;
 
 @OptionalPlugin(rev = "$Revision$", defaultEnabled = false, id = "jdantistandby", interfaceversion = 5, mac = false, linux = false)
 public class JDAntiStandby extends PluginOptional {
     private static final String CONFIG_MODE = "CONFIG_MODE";
-    Thread thread;
+    private Thread thread;
     private String[] MODES_AVAIL;
     private MenuAction menuAction;
     private boolean status;
-    private JDAntiStandbyThread asthread= null;
+    private JDAntiStandbyThread asthread = null;
 
     public boolean isStatus() {
         return status;
@@ -53,19 +51,15 @@ public class JDAntiStandby extends PluginOptional {
 
     @Override
     public boolean initAddon() {
-        if (menuAction == null) menuAction = new MenuAction(JDL.L("gui.config.antistandby.toggle", "JDAntiStandby"), "gui.images.config.eventmanager") {
+        if (menuAction == null) menuAction = new MenuAction("jdantistandby", "gui.images.config.eventmanager") {
 
-            /**
-             * 
-             */
             private static final long serialVersionUID = -5269457972563036769L;
 
+            @Override
             public void initDefaults() {
                 this.setEnabled(true);
-                setType(ToolBarAction.Types.TOGGLE);
-                this.setIcon("gui.images.config.eventmanager");
+                this.setType(ToolBarAction.Types.TOGGLE);
                 this.addPropertyChangeListener(new PropertyChangeListener() {
-
                     public void propertyChange(PropertyChangeEvent evt) {
                         if (evt.getPropertyName() == SELECTED_KEY) {
                             status = isSelected();
@@ -82,11 +76,11 @@ public class JDAntiStandby extends PluginOptional {
         case OSDetector.OS_WINDOWS_7:
         case OSDetector.OS_WINDOWS_2000:
         case OSDetector.OS_WINDOWS_NT:
-            thread = new Thread(asthread = new JDAntiStandbyThread(Plugin.logger, this));
+            thread = new Thread(asthread = new JDAntiStandbyThread(this));
             thread.start();
             break;
         default:
-            logger.fine("Not supported System");
+            logger.fine("JDAntiStandby: System is not supported (" + OSDetector.getOSString() + ")");
         }
         return true;
     }
@@ -103,9 +97,8 @@ public class JDAntiStandby extends PluginOptional {
         return menu;
     }
 
-    public void initConfig() {
-        SubConfiguration subConfig = getPluginConfig();
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, subConfig, CONFIG_MODE, MODES_AVAIL, JDL.L("gui.config.antistandby.mode", "Mode:")).setDefaultValue(0));
+    private void initConfig() {
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), CONFIG_MODE, MODES_AVAIL, JDL.L("gui.config.antistandby.mode", "Mode:")).setDefaultValue(0));
     }
 
 }
