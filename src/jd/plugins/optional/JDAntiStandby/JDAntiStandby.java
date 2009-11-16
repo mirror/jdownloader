@@ -39,6 +39,7 @@ public class JDAntiStandby extends PluginOptional {
     private String[] MODES_AVAIL;
     private MenuAction menuAction;
     private boolean status;
+    private JDAntiStandbyThread asthread= null;
 
     public boolean isStatus() {
         return status;
@@ -81,7 +82,7 @@ public class JDAntiStandby extends PluginOptional {
         case OSDetector.OS_WINDOWS_7:
         case OSDetector.OS_WINDOWS_2000:
         case OSDetector.OS_WINDOWS_NT:
-            thread = new Thread(new JDAntiStandbyThread(Plugin.logger, this));
+            thread = new Thread(asthread = new JDAntiStandbyThread(Plugin.logger, this));
             thread.start();
             break;
         default:
@@ -92,6 +93,7 @@ public class JDAntiStandby extends PluginOptional {
 
     @Override
     public void onExit() {
+        asthread.running = false;
     }
 
     @Override

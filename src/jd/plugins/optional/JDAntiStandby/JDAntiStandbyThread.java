@@ -23,6 +23,7 @@ import jd.controlling.DownloadWatchDog;
 
 public class JDAntiStandbyThread implements Runnable {
 
+    public boolean running = true;
     private boolean run = false;
     private int sleep = 5000;
     private Logger logger;
@@ -39,7 +40,7 @@ public class JDAntiStandbyThread implements Runnable {
 
     @Override
     public void run() {
-        while (true) {
+        while (running) {
             try {
                 if(jdAntiStandby.isStatus()){
                 switch (jdAntiStandby.getPluginConfig().getIntegerProperty("CONFIG_MODE")) {
@@ -95,6 +96,8 @@ public class JDAntiStandbyThread implements Runnable {
             } catch (InterruptedException e) {
             } 
         }
+        kernel32.SetThreadExecutionState(Kernel32.ES_CONTINUOUS);
+        logger.fine("AntiStandby Terminated");
     }
 
 }
