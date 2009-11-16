@@ -23,13 +23,13 @@ import jd.controlling.JDLogger;
 
 import com.sun.jna.Native;
 
-public class JDAntiStandbyThread implements Runnable {
+public class JDAntiStandbyThread extends Thread implements Runnable {
 
-    public boolean running = true;
+    private boolean running = true;
     private boolean run = false;
-    private int sleep = 5000;
-    private Logger logger;
-    private JDAntiStandby jdAntiStandby = null;
+    private static final int sleep = 5000;
+    private final Logger logger;
+    private final JDAntiStandby jdAntiStandby;
 
     private Kernel32 kernel32 = (Kernel32) Native.loadLibrary("kernel32", Kernel32.class);
 
@@ -92,6 +92,10 @@ public class JDAntiStandbyThread implements Runnable {
         }
         kernel32.SetThreadExecutionState(Kernel32.ES_CONTINUOUS);
         logger.fine("JDAntiStandby: Terminated");
+    }
+
+    public void setRunning(boolean running) {
+        this.running = running;
     }
 
 }

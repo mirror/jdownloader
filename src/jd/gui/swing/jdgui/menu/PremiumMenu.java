@@ -38,6 +38,7 @@ import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
+import jd.gui.swing.jdgui.components.premiumbar.PremiumStatus;
 import jd.gui.swing.menu.HosterMenu;
 import jd.nutils.JDFlags;
 import jd.utils.JDTheme;
@@ -104,12 +105,10 @@ public class PremiumMenu extends JStartMenu implements ActionListener, AccountCo
                 });
                 JDController.getInstance().addControlListener(new ConfigPropertyListener(Configuration.PARAM_USE_GLOBAL_PREMIUM) {
                     @Override
-                    public void onPropertyChanged(Property source, final String key) {
-                        if (source.getBooleanProperty(key, true)) {
-                            setSelected(true);
-                        } else {
-                            setSelected(false);
-                        }
+                    public void onPropertyChanged(Property source, String key) {
+                        boolean b = source.getBooleanProperty(key, true);
+                        setSelected(b);
+                        PremiumStatus.getInstance().updateGUI(b);
                     }
                 });
 

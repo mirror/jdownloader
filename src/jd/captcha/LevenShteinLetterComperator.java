@@ -19,6 +19,7 @@ package jd.captcha;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+
 import jd.captcha.pixelgrid.BinLetters;
 import jd.captcha.pixelgrid.Letter;
 import jd.captcha.pixelgrid.LevenshteinLetter;

@@ -28,15 +28,12 @@ import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JSeparator;
 import javax.swing.JToggleButton;
-import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 
 import jd.HostPluginWrapper;
 import jd.Main;
 import jd.config.ConfigGroup;
-import jd.config.ConfigPropertyListener;
 import jd.config.Configuration;
-import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.controlling.AccountControllerEvent;
 import jd.controlling.AccountControllerListener;
@@ -72,12 +69,18 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
     private boolean updateinprogress = false;
     private boolean guiInitComplete = false;
 
-    public PremiumStatus() {
-        super();
+    private static PremiumStatus INSTANCE = null;
+
+    public static PremiumStatus getInstance() {
+        if (INSTANCE == null) INSTANCE = new PremiumStatus();
+        return INSTANCE;
+    }
+
+    private PremiumStatus() {
+        super(new MigLayout("ins 0", "", "[::20, center]"));
         bars = new TinyProgressBar[BARCOUNT];
         lbl = new JLabel(JDL.L("gui.statusbar.premiumloadlabel", "< Add Accounts"));
-        setName(JDL.L("quickhelp.premiumstatusbar", "Premium statusbar"));
-        this.setLayout(new MigLayout("ins 0", "", "[::20, center]"));
+        setName("Premium Statusbar");
         premium = new JToggleButton(ActionController.getToolBarAction("premiumMenu.toggle"));
         premium.setHideActionText(true);
         premium.setFocusPainted(false);
@@ -121,26 +124,12 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
         updateTimer.start();
 
         AccountController.getInstance().addListener(this);
-        JDController.getInstance().addControlListener(new ConfigPropertyListener(Configuration.PARAM_USE_GLOBAL_PREMIUM) {
-
-            @Override
-            public void onPropertyChanged(Property source, String valid) {
-                SwingUtilities.invokeLater(new Runnable() {
-
-                    public void run() {
-                        updateGUI();
-                    }
-
-                });
-            }
-
-        });
     }
 
-    private void updateGUI() {
+    public void updateGUI(boolean enabled) {
         for (int i = 0; i < BARCOUNT; i++) {
             if (bars[i] != null) {
-                bars[i].setEnabled(premium.isSelected());
+                bars[i].setEnabled(enabled);
             }
         }
     }

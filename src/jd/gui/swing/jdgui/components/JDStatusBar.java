@@ -20,7 +20,6 @@ import java.awt.Color;
 import java.awt.Point;
 import java.awt.event.MouseEvent;
 
-import javax.swing.BorderFactory;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSpinner;
@@ -114,9 +113,7 @@ public class JDStatusBar extends JPanel implements ChangeListener, ControlListen
     }
 
     private void initGUI() {
-        this.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, getBackground().darker()));
-
-        setLayout(new MigLayout("ins 0 0 0 0", "[fill,grow,left][shrink,right][shrink,right][shrink,right][shrink,right][shrink,right]", "[23px!]"));
+        setLayout(new MigLayout("ins 0", "[fill,grow,left][shrink,right][shrink,right][shrink,right]", "[22!]"));
 
         JDUtilities.getController().addControlListener(this);
 
@@ -133,7 +130,7 @@ public class JDStatusBar extends JPanel implements ChangeListener, ControlListen
         spMaxChunks.getSpinner().setModel(new SpinnerNumberModel(dlConfig.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2), 1, 20, 1));
         spMaxChunks.setToolTipText(JDL.L("gui.tooltip.statusbar.max_chunks", "Max. Connections/File"));
 
-        add(new PremiumStatus(), "gaptop 1,aligny top");
+        add(PremiumStatus.getInstance());
         add(spMaxChunks);
         add(spMaxDls);
         add(spMaxSpeed);

@@ -33,7 +33,6 @@ import jd.utils.locale.JDL;
 @OptionalPlugin(rev = "$Revision$", defaultEnabled = false, id = "jdantistandby", interfaceversion = 5, mac = false, linux = false)
 public class JDAntiStandby extends PluginOptional {
     private static final String CONFIG_MODE = "CONFIG_MODE";
-    private Thread thread;
     private String[] MODES_AVAIL;
     private MenuAction menuAction;
     private boolean status;
@@ -76,8 +75,8 @@ public class JDAntiStandby extends PluginOptional {
         case OSDetector.OS_WINDOWS_7:
         case OSDetector.OS_WINDOWS_2000:
         case OSDetector.OS_WINDOWS_NT:
-            thread = new Thread(asthread = new JDAntiStandbyThread(this));
-            thread.start();
+            asthread = new JDAntiStandbyThread(this);
+            asthread.start();
             break;
         default:
             logger.fine("JDAntiStandby: System is not supported (" + OSDetector.getOSString() + ")");
@@ -87,7 +86,7 @@ public class JDAntiStandby extends PluginOptional {
 
     @Override
     public void onExit() {
-        asthread.running = false;
+        if (asthread != null) asthread.setRunning(false);
     }
 
     @Override

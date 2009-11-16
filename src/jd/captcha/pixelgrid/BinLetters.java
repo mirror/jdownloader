@@ -7,10 +7,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import com.sun.swing.internal.plaf.basic.resources.basic;
-
 import jd.captcha.JAntiCaptcha;
-import jd.captcha.gui.BasicWindow;
 
 public class BinLetters {
     public static boolean[] fromByte(byte b) {

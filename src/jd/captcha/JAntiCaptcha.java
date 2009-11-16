@@ -50,7 +50,6 @@ import jd.captcha.configuration.JACScript;
 import jd.captcha.gui.BasicWindow;
 import jd.captcha.gui.ImageComponent;
 import jd.captcha.gui.ScrollPaneWindow;
-import jd.captcha.pixelgrid.BinLetters;
 import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.pixelgrid.Letter;
 import jd.captcha.pixelobject.PixelObject;
