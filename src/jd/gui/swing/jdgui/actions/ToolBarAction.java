@@ -70,8 +70,10 @@ public abstract class ToolBarAction extends JDAction {
         setId(menukey);
         this.setActionID(id);
         if (iconkey != null) setIcon(iconkey);
-        setMnemonic(JDL.L("gui.menu." + menukey + ".mnem", "-"));
-        setAccelerator(JDL.L("gui.menu." + menukey + ".accel", "-"));
+        if (!JDL.DEBUG) {
+            setMnemonic(JDL.L("gui.menu." + menukey + ".mnem", "-"));
+            setAccelerator(JDL.L("gui.menu." + menukey + ".accel", "-"));
+        }
         setToolTipText(JDL.L("gui.menu." + menukey + ".tooltip", menukey));
 
         initDefaults();
