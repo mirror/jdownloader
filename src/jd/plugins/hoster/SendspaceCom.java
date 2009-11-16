@@ -132,6 +132,8 @@ public class SendspaceCom extends PluginForHost {
         requestFileInformation(downloadLink);
         /* bypass captcha with retry ;) */
         if (br.containsHTML("User Verification") && br.containsHTML("Please type all the characters") || br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 1 * 60 * 1000l);
+        /* traffic limit */
+        if (br.containsHTML("Sorry, this connection has reached the")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000);
         /* Link holen */
         String script = br.getRegex(Pattern.compile("<script type=\"text/javascript\">(function .*?)</script>", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (script == null) {
@@ -162,6 +164,7 @@ public class SendspaceCom extends PluginForHost {
             if (error == null) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.sendspacecom.errors.servererror", "Unknown server error"), 5 * 60 * 1000l);
             if (error.contains("You may now download the file")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, error, 30 * 1000l); }
             if (error.contains("full capacity")) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.sendspacecom.errors.serverfull", "Free service capacity full"), 5 * 60 * 1000l); }
+            if (error.contains("this connection has reached the")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (con.getResponseCode() == 416) {

@@ -25,6 +25,7 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JProgressBar;
 
+import jd.gui.userio.DummyFrame;
 import jd.nutils.Screen;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
@@ -71,6 +72,12 @@ public class ProgressDialog extends JDialog implements ActionListener {
         setLocation(Screen.getCenterOfComponent(owner, this));
 
         pack();
+        // fixes always on top bug in windows
+        /*
+         * Bugdesc: found in svn
+         */
+        DummyFrame.getDialogParent().setAlwaysOnTop(true);
+        DummyFrame.getDialogParent().setAlwaysOnTop(false);
     }
 
     public void actionPerformed(ActionEvent e) {

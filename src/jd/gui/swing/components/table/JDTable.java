@@ -111,6 +111,13 @@ public class JDTable extends JXTable {
             }
 
         });
+        getTableHeader().addMouseMotionListener(new JDMouseAdapter() {
+            @Override
+            public void mouseMoved(MouseEvent e) {
+                int col = realColumnAtPoint(e.getPoint());
+                getTableHeader().setToolTipText(getJDTableModel().getJDTableColumn(col).getName());
+            }
+        });
         getTableHeader().setReorderingAllowed(true);
         getTableHeader().setResizingAllowed(true);
         setAutoResizeMode(JTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS);

@@ -77,16 +77,19 @@ public class JDAntiStandby extends PluginOptional {
         case OSDetector.OS_WINDOWS_NT:
             asthread = new JDAntiStandbyThread(this);
             asthread.start();
-            break;
+            return true;
         default:
             logger.fine("JDAntiStandby: System is not supported (" + OSDetector.getOSString() + ")");
         }
-        return true;
+        return false;
     }
 
     @Override
     public void onExit() {
-        if (asthread != null) asthread.setRunning(false);
+        if (asthread != null) {
+            asthread.setRunning(false);
+            asthread = null;
+        }
     }
 
     @Override

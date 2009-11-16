@@ -100,7 +100,7 @@ public class ProgressColumn extends JDTableColumn {
                 jlr.setText(strPluginDisabled);
                 return jlr;
             } else if (dLink.getPluginProgress() != null) {
-                progress.setString("");
+                progress.setString(dLink.getPluginProgress().getPercent() + "");
                 progress.setMaximum(dLink.getPluginProgress().getTotal());
                 progress.setValue(dLink.getPluginProgress().getCurrent());
                 COL_PROGRESS = COL_PROGRESS_NORMAL;

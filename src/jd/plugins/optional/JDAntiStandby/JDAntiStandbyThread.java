@@ -59,8 +59,7 @@ public class JDAntiStandbyThread extends Thread implements Runnable {
                             }
                             kernel32.SetThreadExecutionState(Kernel32.ES_CONTINUOUS | Kernel32.ES_SYSTEM_REQUIRED | Kernel32.ES_DISPLAY_REQUIRED);
 
-                        }
-                        if ((DownloadWatchDog.getInstance().getDownloadStatus() == DownloadWatchDog.STATE.NOT_RUNNING) || (DownloadWatchDog.getInstance().getDownloadStatus() == DownloadWatchDog.STATE.STOPPING)) {
+                        } else {
                             if (run) {
                                 run = false;
                                 logger.fine("JDAntiStandby: Stop");

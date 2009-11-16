@@ -50,11 +50,10 @@ public class Freaksharenet extends PluginForHost {
         this.setBrowserExclusive();
         br.setCustomCharset("UTF-8");/* workaround for buggy server */
         br.setFollowRedirects(false);
-        br.getPage("http://freakshare.net/?language=US"); /*
-                                                           * set english
-                                                           * language in
-                                                           * phpsession
-                                                           */
+        /*
+         * set english language in phpsession
+         */
+        br.getPage("http://freakshare.net/?language=US");
         br.getPage("http://freakshare.net/login.html");
         br.postPage("http://freakshare.net/login.html", "user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&submit=Login");
         if (br.getCookie("http://freakshare.net", "login") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -91,6 +90,7 @@ public class Freaksharenet extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         String url = null;
         if (br.getRedirectLocation() == null) {
+            if (br.containsHTML("No Downloadserver. Please try again")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No Downloadserver. Please try again later", 15 * 60 * 1000l);
             Form form = br.getForm(0);
             if (form == null) {
                 if (br.containsHTML("Sorry, your Traffic is used up for today")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
@@ -110,15 +110,15 @@ public class Freaksharenet extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
-        br.getPage("http://freakshare.net/?language=US"); /*
-                                                           * set english
-                                                           * language in
-                                                           * phpsession
-                                                           */
+        /*
+         * set english language in phpsession
+         */
+        br.getPage("http://freakshare.net/?language=US");
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("We are back soon")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
         if (br.containsHTML("Sorry but this File is not avaible")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("Sorry, this Download doesnt exist anymore")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("No Downloadserver. Please try again")) return AvailableStatus.UNCHECKABLE;
         String filename = br.getRegex("<h1[^>]*>(.*?)</h1>").getMatch(0).trim();
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(Encoding.htmlDecode(filename.trim()));
@@ -129,6 +129,7 @@ public class Freaksharenet extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         if (br.containsHTML("You can Download only 1 File in")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1001);
+        if (br.containsHTML("No Downloadserver. Please try again")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No Downloadserver. Please try again later", 15 * 60 * 1000l);
         Form form = br.getForm(1);
         if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // waittime
@@ -137,10 +138,10 @@ public class Freaksharenet extends PluginForHost {
         br.submitForm(form);
         form = br.getForm(0);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, false, 1);
-
         URLConnectionAdapter con = dl.getConnection();
         if (!con.isContentDisposition()) {
             br.followConnection();
+            if (br.containsHTML("No Downloadserver. Please try again")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No Downloadserver. Please try again later", 15 * 60 * 1000l);
             if (br.containsHTML("you cant  download more then 1 at time")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1001);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

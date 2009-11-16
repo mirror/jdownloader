@@ -25,7 +25,6 @@ import jd.plugins.optional.customizer.columns.MatchCountColumn;
 import jd.plugins.optional.customizer.columns.NameColumn;
 import jd.plugins.optional.customizer.columns.PackageNameColumn;
 import jd.plugins.optional.customizer.columns.PasswordColumn;
-import jd.plugins.optional.customizer.columns.PriorityColumn;
 import jd.plugins.optional.customizer.columns.RegexColumn;
 import jd.plugins.optional.customizer.columns.SubDirectoryColumn;
 import jd.utils.locale.JDL;
@@ -42,7 +41,6 @@ public class CustomizerTableModel extends JDTableModel {
     protected void initColumns() {
         this.addColumn(new NameColumn(JDL.L(JDL_PREFIX + "name", "Name"), this));
         this.addColumn(new EnabledColumn(JDL.L(JDL_PREFIX + "enabled", "Enabled"), this));
-        this.addColumn(new PriorityColumn(JDL.L(JDL_PREFIX + "priority", "Priority"), this));
         this.addColumn(new RegexColumn(JDL.L(JDL_PREFIX + "regex", "Regex"), this));
         this.addColumn(new PackageNameColumn(JDL.L(JDL_PREFIX + "packageName", "FilePackage name"), this));
         this.addColumn(new DownloadDirColumn(JDL.L(JDL_PREFIX + "downloadDir", "Download directory"), this));

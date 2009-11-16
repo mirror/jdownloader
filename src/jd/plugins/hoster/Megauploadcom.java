@@ -382,7 +382,7 @@ public class Megauploadcom extends PluginForHost {
             if (!dl.getConnection().isContentDisposition()) {
                 br.followConnection();
                 handleWaittimeWorkaround(link, br);
-                if (br.containsHTML("The file you are trying to access is temporarily")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
+                if (br.containsHTML("The file you are trying to access is temporarily")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File currently not available", 10 * 60 * 1000l);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
 

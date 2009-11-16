@@ -26,6 +26,7 @@ import javax.swing.JLabel;
 
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.interfaces.JDMouseAdapter;
+import jd.gui.userio.DummyFrame;
 import jd.nutils.Formatter;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
@@ -42,7 +43,12 @@ public abstract class JCountdownDialog extends JDialog {
 
     public JCountdownDialog(JFrame currentgui) {
         super(currentgui);
-
+        // fixes always on top bug in windows
+        /*
+         * Bugdesc: found in svn
+         */
+        DummyFrame.getDialogParent().setAlwaysOnTop(true);
+        DummyFrame.getDialogParent().setAlwaysOnTop(false);
         initCountdown();
     }
 

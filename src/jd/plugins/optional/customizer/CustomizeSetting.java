@@ -64,8 +64,6 @@ public class CustomizeSetting implements Serializable, Comparable<CustomizeSetti
 
     private int dlpriority = 0;
 
-    private int priority = 0;
-
     private transient int matchCount = 0;
 
     public CustomizeSetting(String name) {
@@ -153,14 +151,6 @@ public class CustomizeSetting implements Serializable, Comparable<CustomizeSetti
         this.dlpriority = dlpriority;
     }
 
-    public Integer getPriority() {
-        return priority;
-    }
-
-    public void setPriority(int priority) {
-        this.priority = priority;
-    }
-
     public String getMatchCount() {
         return String.valueOf(matchCount);
     }
@@ -170,7 +160,8 @@ public class CustomizeSetting implements Serializable, Comparable<CustomizeSetti
     }
 
     public int compareTo(CustomizeSetting o) {
-        return -getPriority().compareTo(o.getPriority());
+        if (o.getDLPriority() == getDLPriority()) return 0;
+        return o.getDLPriority() > getDLPriority() ? 1 : -1;
     }
 
 }
