@@ -63,6 +63,7 @@ public class SendFileTo extends PluginForHost {
         br.setFollowRedirects(true);
         // Form um auf free zu "klicken"
         Form dlForm0 = br.getForm(2);
+        if (dlForm0 == null) dlForm0 = br.getForm(1);
         if (dlForm0 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dlForm0.remove("method_premium");
         br.submitForm(dlForm0);

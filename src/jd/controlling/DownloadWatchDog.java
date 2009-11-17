@@ -401,8 +401,12 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
      * @return Anzahl der downloads über das plugin
      */
     private int activeDownloadsbyHosts(PluginForHost plugin) {
+        return activeDownloadsbyHosts(plugin.getHost());
+    }
+
+    private int activeDownloadsbyHosts(String host) {
         synchronized (this.activeHosts) {
-            if (activeHosts.containsKey(plugin.getHost())) { return activeHosts.get(plugin.getHost()); }
+            if (activeHosts.containsKey(host)) { return activeHosts.get(host); }
         }
         return 0;
     }
@@ -648,7 +652,18 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                                                  * we request a reconnect if
                                                  * possible
                                                  */
-                                                Reconnecter.setReconnectRequested(true);
+                                                if (activeDownloadsbyHosts(link.getHost()) == 0) {
+                                                    /*
+                                                     * do not reconnect if the
+                                                     * request comes from host
+                                                     * with active downloads,
+                                                     * this will prevent
+                                                     * reconnect loops for
+                                                     * plugins that allow resume
+                                                     * and parallel downloads
+                                                     */
+                                                    Reconnecter.setReconnectRequested(true);
+                                                }
                                                 updates.add(link);
                                             }
                                         } else if (getRemainingTempUnavailWaittime(link.getHost()) > 0 && !link.getLinkStatus().isFinished()) {
@@ -656,6 +671,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                                              * we have links that are temp.
                                              * unavail in list
                                              */
+
                                             hasTempDisabledLinks = true;
                                             updates.add(link);
                                         } else if (getRemainingIPBlockWaittime(link.getHost()) > 0 && !link.getLinkStatus().isFinished()) {
@@ -663,7 +679,17 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                                              * we have links that are ipblocked
                                              * in list
                                              */
-                                            Reconnecter.setReconnectRequested(true);
+                                            if (activeDownloadsbyHosts(link.getHost()) == 0) {
+                                                /*
+                                                 * do not reconnect if the
+                                                 * request comes from host with
+                                                 * active downloads, this will
+                                                 * prevent reconnect loops for
+                                                 * plugins that allow resume and
+                                                 * parallel downloads
+                                                 */
+                                                Reconnecter.setReconnectRequested(true);
+                                            }
                                             updates.add(link);
                                         }
                                     } else if (link.isEnabled()) {

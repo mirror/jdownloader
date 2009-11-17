@@ -206,7 +206,7 @@ public class Reconnecter {
                          */
                         JDUtilities.getConfiguration().setProperty(Configuration.PARAM_RECONNECT_OKAY, false);
                         JDUtilities.getConfiguration().setProperty(Configuration.PARAM_ALLOW_RECONNECT, false);
-                        UserIO.getInstance().requestMessageDialog(JDL.L("jd.controlling.reconnect.Reconnector.progress.failed2", "Reconnect failed too often! Autoreconnect is disabled! Please check your reconnect Settings!"));
+                        UserIO.getInstance().requestMessageDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, JDL.L("jd.controlling.reconnect.Reconnector.progress.failed2", "Reconnect failed too often! Autoreconnect is disabled! Please check your reconnect Settings!"));
                         JDUtilities.getConfiguration().setProperty(Configuration.PARAM_RECONNECT_FAILED_COUNTER, 0);
                     }
                     JDUtilities.getConfiguration().save();

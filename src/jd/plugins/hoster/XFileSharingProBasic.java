@@ -153,7 +153,7 @@ public class XFileSharingProBasic extends PluginForHost {
                 logger.info("Detected captcha method \"plaintext captchas\" for this host");
                 // Captcha method by ManiacMansion
                 String[][] letters = br.getRegex("<span style='position:absolute;padding-left:(\\d+)px;padding-top:\\d+px;'>(\\d)</span>").getMatches();
-                if (letters.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (letters == null || letters.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 SortedMap<Integer, String> capMap = new TreeMap<Integer, String>();
                 for (String[] letter : letters) {
                     capMap.put(Integer.parseInt(letter[0]), letter[1]);
@@ -167,9 +167,8 @@ public class XFileSharingProBasic extends PluginForHost {
             } else if (br.containsHTML("/captchas/")) {
                 logger.info("Detected captcha method \"Standard captcha\" for this host");
                 String[] lol = HTMLParser.getHttpLinks(br.toString(), null);
-                System.out.print(br.toString());
                 String captchaurl = null;
-                if (lol.length == 0 || lol == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (lol == null || lol.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 for (String link : lol) {
                     if (link.contains("/captchas/")) {
                         captchaurl = link;

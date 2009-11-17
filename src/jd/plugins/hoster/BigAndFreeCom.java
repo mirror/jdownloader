@@ -129,12 +129,13 @@ public class BigAndFreeCom extends PluginForHost {
         br.setDebug(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadForm, true, 0);
         if (!(dl.getConnection().isContentDisposition()) && !dl.getConnection().getContentType().contains("octet")) {
-            dl.getConnection().disconnect();
-            // If you start more downloads than allowed they block you but
-            // reconnecting makes no sense in this case because it would only
-            // cause a reconnect-loop so the plugin waits 15 minuts before
-            // retrying those downloads!
-            if (br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 15 * 60 * 1001l);
+            br.followConnection();
+            if (br.containsHTML("You have exceeded your download limit")) {
+                int wait2 = 60;
+                String time = br.getRegex("Please wait (\\d+) Minut").getMatch(0);
+                if (time != null) wait2 = Integer.parseInt(time);
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait2 * 1000l * 60);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
