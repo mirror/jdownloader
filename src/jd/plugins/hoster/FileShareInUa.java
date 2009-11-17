@@ -137,15 +137,21 @@ public class FileShareInUa extends PluginForHost {
         captchaForm.put("capture", code);
         br.submitForm(captchaForm);
         if (br.containsHTML("Цифры введены неверно")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        Form DLForm0 = br.getForm(2);
-        if (DLForm0 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.submitForm(DLForm0);
-        String dlframe = downloadLink.getDownloadURL() + "?fr";
-        br.getPage(dlframe);
-        String dllink0 = br.getRegex("yandex_bar\"  href=\"(.*?)\" id=\"dl_li").getMatch(0);
-        if (dllink0 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String dllink1 = "http://fileshare.in.ua" + dllink0;
-        br.getPage(dllink1);
+        String dllink0 = null;
+        String slowdllink = br.getRegex("href=\"(/get/.*?)\"").getMatch(0);
+        Form dlForm0 = br.getForm(2);
+        if (dlForm0 != null) {
+            br.submitForm(dlForm0);
+            String dlframe = downloadLink.getDownloadURL() + "?fr";
+            br.getPage(dlframe);
+            dllink0 = br.getRegex("href=\"(/get/.*?)\"").getMatch(0);
+        }
+        if (dllink0 == null && slowdllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink0 == null && slowdllink != null) {
+            logger.warning("The plugin seems to be damaged, using the slow downloadlink which is http://fileshare.in.ua" + slowdllink);
+            dllink0 = slowdllink;
+        }
+        br.getPage("http://fileshare.in.ua" + dllink0);
         String dllink = br.getRedirectLocation();
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         URLConnectionAdapter con = dl.getConnection();

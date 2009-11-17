@@ -66,17 +66,47 @@ public class CreaFileCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        String downarea = "http://creafile.com/handlers.php?h=getdownloadarea";
         br.setFollowRedirects(true);
+        String dllink = null;
+        boolean slowdownload = false;
+        Form dlForm = br.getFormbyKey("s_pair");
+        if (dlForm == null) dlForm = br.getForm(1);
+        dlForm.remove("Buy+VIP");
+        // Captcha handling
+        String[] letters = br.getRegex("captcha/(\\d+)").getColumn(0);
+        if (letters == null || letters.length == 0 || dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        StringBuilder code = new StringBuilder();
+        for (String value : letters) {
+            code.append(value);
+        }
+        logger.info("Captchacode to enter is " + code.toString());
         String hash = new Regex(downloadLink.getDownloadURL(), "/download/(.*)").getMatch(0);
-        Form DLForm = br.getForm(1);
-        DLForm.setAction("http://creafile.com/handlers.php?h=loadiframe");
-        if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        DLForm.put("hash", hash);
-        br.submitForm(DLForm);
-        br.getPage("http://creafile.com/handlers.php?h=getdownloadarea");
-        String dllink = br.getRegex("href=\"(http://creafile.com/d/.*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dlForm.put("hash", hash);
+        dlForm.put("captcha", code.toString());
+        br.submitForm(dlForm);
+        br.getPage(downarea);
+        String dllink0 = br.getRegex("href=\"(http://creafile.com/d/.*?)\"").getMatch(0);
+        Form faster = br.getFormbyProperty("id", "fasters");
+        if (faster == null) faster = br.getForm(0);
+        if (faster != null){
+            br.submitForm(faster);
+            br.getPage(downarea);
+            dllink = br.getRegex("href=\"(http://creafile.com/d/.*?)\"").getMatch(0);
+        }
+        if (dllink == null && dllink0 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null && dllink0 != null) {
+            logger.warning("Downloading using slow download link, plugin is not working as it should!, Slow link = " + dllink0);
+            dllink = dllink0;
+            slowdownload = true;
+        }
+        // Downloading using the slow download link the server doesn't allow
+        // more than 1 connection per file
+        if (slowdownload == false) {
+            jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        } else {
+            jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        }
         dl.startDownload();
     }
 
