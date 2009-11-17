@@ -18,13 +18,10 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.SortedMap;
-import java.util.TreeMap;
 
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.parser.html.Form;
-import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -34,24 +31,25 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.pluginUtils.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "XFileSharingProBasic" }, urls = { "http://[\\w\\.]*?OnlyForDevelopersToTest\\.com/[a-z0-9]{12}" }, flags = { 0 })
-public class XFileSharingProBasic extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filescloud.com" }, urls = { "http://[\\w\\.]*?filescloud\\.com/[a-z0-9]{12}" }, flags = { 0 })
+public class FilesCloudCom extends PluginForHost {
 
-    public XFileSharingProBasic(PluginWrapper wrapper) {
+    public FilesCloudCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    // This is only for developers to easily implement hosters using the
-    // "xfileshare(pro)" script (more informations can be found on xfilesharing.net)!
     @Override
     public String getAGBLink() {
-        return "http://www.OnlyForDevelopersToTest.com/tos.html";
+        return "http://www.filescloud.com/tos.html";
     }
 
+    // Made with the XFileSharingProBasic v.1.0 template
+    // This plugin got many loggers, if it's broken first look at the log, it
+    // could really help ;)
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.setCookie("http://www.examplehost.com", "lang", "english");
+        br.setCookie("http://www.filescloud.com", "lang", "english");
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("You have reached the download-limit")) {
             logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
@@ -92,8 +90,6 @@ public class XFileSharingProBasic extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        // If the filesize regex above doesn't match you can copy this part into
-        // the available status (and delete it here)
         Form freeform = br.getFormBySubmitvalue("Kostenloser+Download");
         if (freeform == null) {
             freeform = br.getFormBySubmitvalue("Free+Download");
@@ -132,13 +128,15 @@ public class XFileSharingProBasic extends PluginForHost {
         br.setFollowRedirects(false);
         Form DLForm = br.getFormbyProperty("name", "F1");
         if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // Ticket Time
-        String ttt = br.getRegex("countdown\">.*?(\\d+).*?</span>").getMatch(0);
-        if (ttt != null) {
-            logger.info("Waittime detected, waiting " + ttt.trim() + " seconds from now on...");
-            int tt = Integer.parseInt(ttt);
-            sleep(tt * 1001, downloadLink);
-        }
+        // // Ticket Time.....not needed in this case!
+        // String ttt =
+        // br.getRegex("countdown\">.*?(\\d+).*?</span>").getMatch(0);
+        // if (ttt != null) {
+        // logger.info("Waittime detected, waiting " + ttt.trim() +
+        // " seconds from now on...");
+        // int tt = Integer.parseInt(ttt);
+        // sleep(tt * 1001, downloadLink);
+        // }
         String c = null;
         String passCode = null;
         boolean password = false;
@@ -147,47 +145,9 @@ public class XFileSharingProBasic extends PluginForHost {
         String loginpw = br.getRegex("value=\"login\">(.*?)value=\" Login\"").getMatch(0);
         if (br.containsHTML("name=\"password\"") && !(loginpw != null && loginpw.contains("password"))) {
             password = true;
-            logger.warning("The downloadlink seems to be password protected.");
+            logger.info("The downloadlink seems to be password protected.");
         }
-        if (br.containsHTML("background:#ccc;text-align")) {
-            logger.info("Detected captcha method \"plaintext captchas\" for this host");
-            // Captcha method by ManiacMansion
-            String[][] letters = br.getRegex("<span style='position:absolute;padding-left:(\\d+)px;padding-top:\\d+px;'>(\\d)</span>").getMatches();
-            if (letters == null || letters.length == 0) {
-                logger.info("plaintext captchahandling broken!");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            SortedMap<Integer, String> capMap = new TreeMap<Integer, String>();
-            for (String[] letter : letters) {
-                capMap.put(Integer.parseInt(letter[0]), letter[1]);
-            }
-            StringBuilder code = new StringBuilder();
-            for (String value : capMap.values()) {
-                code.append(value);
-            }
-            DLForm.put("code", code.toString());
-            logger.info("Put captchacode " + code.toString() + " obtained by captcha metod\"plaintext captchas\" in the form.");
-        } else if (br.containsHTML("/captchas/")) {
-            logger.info("Detected captcha method \"Standard captcha\" for this host");
-            String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
-            String captchaurl = null;
-            if (sitelinks == null || sitelinks.length == 0) {
-                logger.warning("Standard captcha captchahandling broken!");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            for (String link : sitelinks) {
-                if (link.contains("/captchas/")) {
-                    captchaurl = link;
-                }
-            }
-            if (captchaurl == null) {
-                logger.warning("Standard captcha captchahandling broken!");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            String code = getCaptchaCode(captchaurl, downloadLink);
-            DLForm.put("code", code);
-            logger.info("Put captchacode " + code + " obtained by captcha metod\"Standard captcha\" in the form.");
-        } else if (br.containsHTML("api.recaptcha.net")) {
+        if (br.containsHTML("api.recaptcha.net")) {
             logger.info("Detected captcha method \"Re Captcha\" for this host");
             Recaptcha rc = new Recaptcha(br);
             rc.parse();
@@ -203,6 +163,7 @@ public class XFileSharingProBasic extends PluginForHost {
                 }
                 rc.getForm().put("password", passCode);
                 password = false;
+
             }
             recaptcha = true;
             rc.setCode(c);
@@ -280,10 +241,7 @@ public class XFileSharingProBasic extends PluginForHost {
                     }
                 }
             }
-            if (dllink == null) {
-                logger.warning("Final downloadlink (String is \"dllink\" regex didn't match!");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
+            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             logger.info("Final downloadlink = " + dllink + " starting the download...");
             jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         }
@@ -308,7 +266,7 @@ public class XFileSharingProBasic extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return 2;
     }
 
     @Override
