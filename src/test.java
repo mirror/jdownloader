@@ -21,9 +21,19 @@ import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.GridLayout;
 import java.awt.Insets;
+import java.awt.Toolkit;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.Transferable;
+import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.font.TextAttribute;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
@@ -59,8 +69,6 @@ import javax.swing.text.AttributeSet;
 import javax.swing.text.MutableAttributeSet;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
-
-import jd.http.Browser;
 
 public class test extends JDialog {
     private static final long serialVersionUID = -5382996948129094108L;
@@ -295,7 +303,7 @@ public class test extends JDialog {
         previewLabel.repaint();
     }
 
-    public static void main(String argv[]) {
+    public static void main(String argv[]) throws UnsupportedFlavorException, IOException {
         // GraphicsEnvironment ge =
         // GraphicsEnvironment.getLocalGraphicsEnvironment();
         // fontNames = ge.getAvailableFontFamilyNames();
@@ -308,22 +316,89 @@ public class test extends JDialog {
         // StyleConstants.setFontSize(a, 12);
         // dlg.setAttributes(a);
         // dlg.setVisible(true);
-        System.out.println(Browser.getHost("http://heise.de-dsald.da:4234/dsadasd"));
-        System.out.println(Browser.getHost("http://filebase.to"));
-        System.out.println(Browser.getHost("http://heise.de-dsald.da:4234/dsadasd"));
-        System.out.println(Browser.getHost("heise.de-dsald.da:4234/dsadasd"));
-        System.out.println(Browser.getHost("heise.de/"));
-        System.out.println(Browser.getHost("heise.de:20/"));
-        System.out.println(Browser.getHost("heise.de:20"));
-        System.out.println(Browser.getHost("test.heise.de:20/"));
-        System.out.println(Browser.getHost("test.heise.de"));
-        System.out.println(Browser.getHost("http://test.heise.de"));
-        System.out.println(Browser.getHost("http://127.23.4.4"));
-        System.out.println(Browser.getHost("http://127.23.4.4:70"));
-        System.out.println(Browser.getHost("http://127.23.4.4:70/"));
-        System.out.println(Browser.getHost("http://127.23.4.4/"));
-        System.out.println(Browser.getHost("127.23.4.4/"));
-        System.out.println(Browser.getHost("127.23.4.4"));
+        // System.out.println(Browser.getHost("http://heise.de-dsald.da:4234/dsadasd"));
+        // System.out.println(Browser.getHost("http://filebase.to"));
+        // System.out.println(Browser.getHost("http://heise.de-dsald.da:4234/dsadasd"));
+        // System.out.println(Browser.getHost("heise.de-dsald.da:4234/dsadasd"));
+        // System.out.println(Browser.getHost("heise.de/"));
+        // System.out.println(Browser.getHost("heise.de:20/"));
+        // System.out.println(Browser.getHost("heise.de:20"));
+        // System.out.println(Browser.getHost("test.heise.de:20/"));
+        // System.out.println(Browser.getHost("test.heise.de"));
+        // System.out.println(Browser.getHost("http://test.heise.de"));
+        // System.out.println(Browser.getHost("http://127.23.4.4"));
+        // System.out.println(Browser.getHost("http://127.23.4.4:70"));
+        // System.out.println(Browser.getHost("http://127.23.4.4:70/"));
+        // System.out.println(Browser.getHost("http://127.23.4.4/"));
+        // System.out.println(Browser.getHost("127.23.4.4/"));
+        // System.out.println(Browser.getHost("127.23.4.4"));
+        // System.out.println(Browser.getHost(".data-loading.com"));
+        //
+        // PrintStream jj = DynByteBuffer.PrintStreamforDynByteBuffer(1);
+        // try {
+        // throw new Exception("Test");
+        // } catch (Exception e) {
+        // e.printStackTrace(jj);
+        // }
+        // System.out.println(jj.toString());
+
+        Clipboard clip = Toolkit.getDefaultToolkit().getSystemClipboard();
+        System.out.println("Object Name: " + clip.getName());
+        Transferable contents = clip.getContents(null);
+        if (contents == null)
+            System.out.println("\n\nThe clipboard is empty.");
+        else {
+            DataFlavor flavors[] = contents.getTransferDataFlavors();
+            for (int i = 0; i < flavors.length; ++i) {
+                // System.out.println("\n\n Name: " +
+                // // flavors[i].getHumanPresentableName());
+                // System.out.println("\n MIME Type: " +
+                // flavors[i].getMimeType());
+                Class cl = flavors[i].getRepresentationClass();
+
+                if (cl == null)
+                    System.out.println("null");
+                else if (cl.getName().contains("ByteBuffer")) {
+                    // System.out.println("ByteBuffer");
+                } else if (cl.getName().contains("[B")) {
+                    System.out.println("Byte Array");
+                    System.out.println(new String((byte[]) contents.getTransferData(flavors[i]), "UTF-8"));
+                    System.out.println(new String((byte[]) contents.getTransferData(flavors[i]), "UTF-16"));
+                    System.out.println(new String((byte[]) contents.getTransferData(flavors[i]), "ISO-8859-1"));
+                }
+                // System.out.println(cl.getName());
+
+            }
+        }
+
+    }
+
+    public static String convertStreamToString(InputStream is, String charset) throws UnsupportedEncodingException {
+        /*
+         * To convert the InputStream to String we use the
+         * BufferedReader.readLine() method. We iterate until the BufferedReader
+         * return null which means there's no more data to read. Each line will
+         * appended to a StringBuilder and returned as String.
+         */
+        BufferedReader reader = new BufferedReader(new InputStreamReader(is, charset));
+        StringBuilder sb = new StringBuilder();
+
+        String line = null;
+        try {
+            while ((line = reader.readLine()) != null) {
+                sb.append(line + "\n");
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                is.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        return sb.toString();
     }
 }
 

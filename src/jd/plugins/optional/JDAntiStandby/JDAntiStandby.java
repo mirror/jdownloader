@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.controlling.JDLogger;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.nutils.OSDetector;
@@ -68,18 +69,23 @@ public class JDAntiStandby extends PluginOptional {
             }
 
         };
-        switch (OSDetector.getOSID()) {
-        case OSDetector.OS_WINDOWS_2003:
-        case OSDetector.OS_WINDOWS_VISTA:
-        case OSDetector.OS_WINDOWS_XP:
-        case OSDetector.OS_WINDOWS_7:
-        case OSDetector.OS_WINDOWS_2000:
-        case OSDetector.OS_WINDOWS_NT:
-            asthread = new JDAntiStandbyThread(this);
-            asthread.start();
-            return true;
-        default:
-            logger.fine("JDAntiStandby: System is not supported (" + OSDetector.getOSString() + ")");
+        try {
+            switch (OSDetector.getOSID()) {
+            case OSDetector.OS_WINDOWS_2003:
+            case OSDetector.OS_WINDOWS_VISTA:
+            case OSDetector.OS_WINDOWS_XP:
+            case OSDetector.OS_WINDOWS_7:
+            case OSDetector.OS_WINDOWS_2000:
+            case OSDetector.OS_WINDOWS_NT:
+                asthread = new JDAntiStandbyThread(this);
+                asthread.start();
+                return true;
+            default:
+                logger.fine("JDAntiStandby: System is not supported (" + OSDetector.getOSString() + ")");
+            }
+        } catch (Throwable e) {
+            JDLogger.exception(e);
+            logger.fine("JDAntiStandby: init failed");
         }
         return false;
     }
