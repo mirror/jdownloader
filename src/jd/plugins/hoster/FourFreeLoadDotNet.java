@@ -206,12 +206,12 @@ public class FourFreeLoadDotNet extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 2;
+        return -1;
     }
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return 20;
+        return -1;
     }
 
     @Override

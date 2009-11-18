@@ -30,7 +30,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-//uploadmachine by pspzockerscene
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadmachine.com" }, urls = { "http://[\\w\\.]*?uploadmachine\\.com/(download\\.php\\?id=[0-9]+&type=[0-9]{1}|file/[0-9]+/)" }, flags = { 0 })
 public class UploadMachineCom extends PluginForHost {
 
@@ -95,7 +94,7 @@ public class UploadMachineCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 11;
+        return -1;
     }
 
     @Override

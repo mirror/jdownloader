@@ -25,11 +25,13 @@ import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -48,6 +50,8 @@ public class SendspaceCom extends PluginForHost {
         setStartIntervall(5000l);
     }
 
+    // TODO: Add handling for password protected files for handle premium,
+    // actually it only works for handle free
     @Override
     public String getAGBLink() {
         return "http://www.sendspace.com/terms.html";
@@ -130,6 +134,36 @@ public class SendspaceCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
         requestFileInformation(downloadLink);
+        // Do we have to submit a form to enter the "free download area" for the
+        // file ?
+        if (br.getForm(1) != null) br.submitForm(br.getForm(1));
+        // Password protected links handling
+        String passCode = null;
+        if (br.containsHTML("name=\"filepassword\"")) {
+            for (int i = 0; i <= 2; i++) {
+                Form pwform = br.getFormbyKey("filepassword");
+                if (pwform == null) pwform = br.getForm(0);
+                if (pwform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (downloadLink.getStringProperty("pass", null) == null) {
+                    passCode = Plugin.getUserInput("Password?", downloadLink);
+                } else {
+                    /* gespeicherten PassCode holen */
+                    passCode = downloadLink.getStringProperty("pass", null);
+                }
+                pwform.put("filepassword", passCode);
+                logger.info("Put password \"" + passCode + "\" entered by user in the DLForm.");
+                br.submitForm(pwform);
+                if (br.containsHTML("(name=\"filepassword\"|Incorrect Password)")) {
+                    logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
+                    continue;
+                }
+                break;
+            }
+            if (br.containsHTML("(name=\"filepassword\"|Incorrect Password)")) {
+                logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+        }
         /* bypass captcha with retry ;) */
         if (br.containsHTML("User Verification") && br.containsHTML("Please type all the characters") || br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 1 * 60 * 1000l);
         /* traffic limit */
@@ -153,6 +187,9 @@ public class SendspaceCom extends PluginForHost {
         if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         linkurl = new Regex(linkurl, "href=\"(.*?)\"").getMatch(0);
         if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (passCode != null) {
+            downloadLink.setProperty("pass", passCode);
+        }
         /* Datei herunterladen */
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, true, 1);

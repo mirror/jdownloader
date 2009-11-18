@@ -86,9 +86,9 @@ public class UploadBoxCom extends PluginForHost {
         if (br.containsHTML("id=\"error\">")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex(">File name:</td>.*?<b>(.*?)</b>").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("<title>UploadBox.*?Downloading(.*?)</title>").getMatch(0).trim();
+            filename = br.getRegex("<title>UploadBox.*?Downloading(.*?)</title>").getMatch(0);
             if (filename == null) {
-                filename = br.getRegex("description\" content=\"Downloading(.*?)! Free").getMatch(0).trim();
+                filename = br.getRegex("description\" content=\"Downloading(.*?)! Free").getMatch(0);
 
             }
         }
@@ -131,10 +131,9 @@ public class UploadBoxCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waittime * 60 * 1000l);
         }
         form = br.getFormbyProperty("id", "free");
-        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String captchaUrl = form.getRegex("captcha.*?src=\"(.*?)\"").getMatch(0);
-        if (captchaUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String code = getCaptchaCode(captchaUrl, link);
+        String captchaUrl = br.getRegex("id=\"captcha\" src=\"(.*?)\"").getMatch(0);
+        if (form == null || captchaUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String code = getCaptchaCode("http://www.uploadbox.com" + captchaUrl.replace("amp;", ""), link);
         form.put("enter", code);
         br.submitForm(form);
         if (br.containsHTML("read the captcha code")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
