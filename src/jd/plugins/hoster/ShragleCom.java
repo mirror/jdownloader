@@ -98,6 +98,7 @@ public class ShragleCom extends PluginForHost {
         requestFileInformation(downloadLink);
         login(account);
         br.setFollowRedirects(false);
+        br.setCookie("http://www.shragle.com", "lang", "de_DE");
         br.getPage(downloadLink.getDownloadURL());
         if (br.getRedirectLocation() != null) {
             br.setFollowRedirects(true);
@@ -139,6 +140,7 @@ public class ShragleCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.setDebug(true);
+        br.setCookie("http://www.shragle.com", "lang", "de_DE");
         if (downloadLink.getDownloadURL().contains("?")) {
             br.getPage(downloadLink.getDownloadURL() + "&jd=1");
         } else {

@@ -296,6 +296,15 @@ public class Megauploadcom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
+            if (br.containsHTML("location='http://www\\.megaupload\\.com/\\?c=msg")) {
+                br.getPage("http://www.megaupload.com/?c=msg");
+                wait = br.getRegex("Please check back in (\\+d) minutes").getMatch(0);
+                logger.info("Megaupload blocked this IP(3): " + wait + " mins");
+                if (wait != null) {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait.trim()) * 60 * 1000l);
+                } else
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 25 * 60 * 1000l);
+            }
             url = br.getRegex("id=\"downloadlink\">.*?<a href=\"(.*?)\"").getMatch(0);
             if (url == null) url = br.getRedirectLocation();
         } else {
@@ -701,6 +710,15 @@ public class Megauploadcom extends PluginForHost {
             }
         }
         if (form != null && form.containsHTML("captchacode")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        if (br.containsHTML("location='http://www\\.megaupload\\.com/\\?c=msg")) {
+            br.getPage("http://www.megaupload.com/?c=msg");
+            wait = br.getRegex("Please check back in (\\+d) minutes").getMatch(0);
+            logger.info("Megaupload blocked this IP(3): " + wait + " mins");
+            if (wait != null) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait.trim()) * 60 * 1000l);
+            } else
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 25 * 60 * 1000l);
+        }
         String url = br.getRegex("id=\"downloadlink\">.*?<a href=\"(.*?)\"").getMatch(0);
         doDownload(link, url, true, account);
     }
