@@ -17,6 +17,7 @@
 package jd.gui.swing.jdgui.components;
 
 import java.awt.Color;
+import java.awt.FontMetrics;
 
 import javax.swing.Icon;
 import javax.swing.JPanel;
@@ -37,17 +38,20 @@ public class StatusLabel extends JPanel {
 
     private static final long serialVersionUID = -378709535509849986L;
     public static final int ICONCOUNT = 5;
+    private final FontMetrics fontmetrics;
     private JRendererLabel left;
+    private String strLeft = "";
     private JRendererLabel[] rights = new JRendererLabel[ICONCOUNT];
 
     public StatusLabel() {
         super(new MigLayout("ins 0", "[]0[fill,grow,align right]"));
+        fontmetrics = getFontMetrics(getFont());
         add(left = new JRendererLabel());
+        left.setOpaque(false);
         for (int i = 0; i < ICONCOUNT; i++) {
             add(rights[i] = new JRendererLabel(), "dock east");
             rights[i].setOpaque(false);
         }
-        left.setOpaque(false);
         this.setOpaque(true);
     }
 
@@ -57,17 +61,17 @@ public class StatusLabel extends JPanel {
     public void setText(String text) {
         left.setIcon(null);
         left.setText(text);
-        left.setToolTipText(null);
+        left.setToolTipText(text);
+        strLeft = text;
     }
 
     @Override
     public void setForeground(Color fg) {
         super.setForeground(fg);
-        if (left != null) left.setForeground(fg);
-        if (rights != null) {
-            for (int i = 0; i < rights.length; i++) {
-                if (rights[i] != null) rights[i].setForeground(fg);
-            }
+        if (left == null) return;
+        left.setForeground(fg);
+        for (int i = 0; i < rights.length; i++) {
+            rights[i].setForeground(fg);
         }
     }
 
@@ -78,24 +82,20 @@ public class StatusLabel extends JPanel {
         } else {
             if (i < 0 || i >= ICONCOUNT) return;
             rights[i].setIcon(icon);
-            rights[i].setToolTipText(tooltip);
+            if (tooltip != null) rights[i].setToolTipText(tooltip);
         }
     }
 
     @Override
     public void setEnabled(boolean b) {
-        if (left != null) left.setDisabledIcon(JDImage.getDisabledIcon(left.getIcon()));
-        if (rights != null) {
-            for (int i = 0; i < ICONCOUNT; i++) {
-                rights[i].setDisabledIcon(JDImage.getDisabledIcon(rights[i].getIcon()));
-            }
+        if (left == null) return;
+
+        left.setDisabledIcon(JDImage.getDisabledIcon(left.getIcon()));
+        left.setEnabled(b);
+        for (int i = 0; i < ICONCOUNT; i++) {
+            rights[i].setDisabledIcon(JDImage.getDisabledIcon(rights[i].getIcon()));
+            rights[i].setEnabled(b);
         }
-        if (rights != null) {
-            for (int i = 0; i < ICONCOUNT; i++) {
-                rights[i].setEnabled(b);
-            }
-        }
-        if (left != null) left.setEnabled(b);
     }
 
     /**
@@ -123,6 +123,15 @@ public class StatusLabel extends JPanel {
         }
         if (sb.length() > 0) return sb.toString();
         return null;
+    }
+
+    public void setWidth(int iconcount, int width) {
+        String s = strLeft;
+        int w = (iconcount + (left.getIcon() == null ? 0 : 1)) * 16 + left.getIconTextGap() + 5;
+        while (s.length() > 3 && fontmetrics.stringWidth(s) + w >= width) {
+            s = s.replaceAll("....$", "...");
+        }
+        left.setText(s);
     }
 
 }

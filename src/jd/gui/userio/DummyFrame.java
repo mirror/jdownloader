@@ -44,20 +44,19 @@ public class DummyFrame extends JFrame {
 
     private DummyFrame() {
         super();
-        ArrayList<Image> list = new ArrayList<Image>();
-
-        list.add(JDImage.getImage("logo/logo_14_14"));
-        list.add(JDImage.getImage("logo/logo_15_15"));
-        list.add(JDImage.getImage("logo/logo_16_16"));
-        list.add(JDImage.getImage("logo/logo_17_17"));
-        list.add(JDImage.getImage("logo/logo_18_18"));
-        list.add(JDImage.getImage("logo/logo_19_19"));
-        list.add(JDImage.getImage("logo/logo_20_20"));
-        list.add(JDImage.getImage("logo/jd_logo_64_64"));
         if (JDUtilities.getJavaVersion() >= 1.6) {
+            ArrayList<Image> list = new ArrayList<Image>();
+            list.add(JDImage.getImage("logo/logo_14_14"));
+            list.add(JDImage.getImage("logo/logo_15_15"));
+            list.add(JDImage.getImage("logo/logo_16_16"));
+            list.add(JDImage.getImage("logo/logo_17_17"));
+            list.add(JDImage.getImage("logo/logo_18_18"));
+            list.add(JDImage.getImage("logo/logo_19_19"));
+            list.add(JDImage.getImage("logo/logo_20_20"));
+            list.add(JDImage.getImage("logo/jd_logo_64_64"));
             this.setIconImages(list);
         } else {
-            this.setIconImage(list.get(3));
+            this.setIconImage(JDImage.getImage("logo/logo_17_17"));
         }
 
     }

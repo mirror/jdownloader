@@ -17,7 +17,6 @@
 package jd.gui.swing.jdgui.views.downloadview.Columns;
 
 import java.awt.Component;
-import java.awt.FontMetrics;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -43,7 +42,6 @@ public class HosterColumn extends JDTableColumn {
     private DownloadLink dLink;
     private FilePackage fp;
     private StatusLabel statuspanel;
-    private FontMetrics fontmetrics;
     private int counter = 0;
     private ImageIcon imgResume;
     private ImageIcon imgPremium;
@@ -58,7 +56,6 @@ public class HosterColumn extends JDTableColumn {
         super(name, table);
         statuspanel = new StatusLabel();
         statuspanel.setBorder(null);
-        fontmetrics = statuspanel.getFontMetrics(statuspanel.getFont());
         jlr = new JRendererLabel();
         jlr.setBorder(null);
         imgResume = JDTheme.II("gui.images.resume", 16, 16);
@@ -99,13 +96,10 @@ public class HosterColumn extends JDTableColumn {
             if (dLink.getPlugin() == null) {
                 statuspanel.setText("plugin missing");
             } else {
-                String s = dLink.getPlugin().getHost()+ dLink.getPlugin().getSessionInfo();
-                if (getCurWidth() > (counter + 2) * 16 + fontmetrics.stringWidth(s)) {
-                    statuspanel.setText(s);
-                } else {
-                    statuspanel.setText("");
-                }
+                String s = dLink.getPlugin().getHost() + dLink.getPlugin().getSessionInfo();
+                statuspanel.setText(s);
                 statuspanel.setIcon(-1, dLink.getPlugin().getHosterIcon(), strLoadingFrom + dLink.getPlugin().getHost());
+                statuspanel.setWidth(counter, getCurWidth());
             }
             statuspanel.clearIcons(counter);
         }
