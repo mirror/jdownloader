@@ -34,8 +34,6 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
-import net.miginfocom.swing.MigLayout;
-
 import jd.PluginWrapper;
 import jd.event.ControlListener;
 import jd.gui.UserIO;
@@ -49,6 +47,7 @@ import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+import net.miginfocom.swing.MigLayout;
 
 @OptionalPlugin(rev = "$Revision$", id = "RouterEditor", hasGui = true, interfaceversion = 5)
 public class JDRouterEditor extends PluginOptional implements ControlListener {
@@ -132,7 +131,7 @@ public class JDRouterEditor extends PluginOptional implements ControlListener {
         fileselector = new JComboBox(files);
         newbutton = new JButton(JDL.L(JDL_PREFIX + "newbutton", "+"));
         newbutton.addActionListener(new ActionListener() {
-            @Override
+
             public void actionPerformed(ActionEvent arg0) {
                 String filename = UserIO.getInstance().requestInputDialog(JDL.L(JDL_PREFIX + "newfileinput", "Enter Filename:"));
                 if (!filename.endsWith(".xml")) filename = filename.concat(".xml").toString();
@@ -152,7 +151,6 @@ public class JDRouterEditor extends PluginOptional implements ControlListener {
         selbutton = new JButton(JDL.L(JDL_PREFIX + "selbutton", "Select"));
         selbutton.addActionListener(new ActionListener() {
 
-            @Override
             public void actionPerformed(ActionEvent arg0) {
                 currentfile = JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/jd/router/" + fileselector.getSelectedItem().toString();
                 loadfile(currentfile);
@@ -173,7 +171,6 @@ public class JDRouterEditor extends PluginOptional implements ControlListener {
         newrouterbutton.setEnabled(false);
         newrouterbutton.addActionListener(new ActionListener() {
 
-            @Override
             public void actionPerformed(ActionEvent arg0) {
                 currentrouter = null;
                 setGuiRouterData(null);
@@ -185,7 +182,6 @@ public class JDRouterEditor extends PluginOptional implements ControlListener {
         delrouterbutton.setEnabled(false);
         delrouterbutton.addActionListener(new ActionListener() {
 
-            @Override
             public void actionPerformed(ActionEvent arg0) {
                 if (currentrouter != null) {
                     router.delRouter(currentrouter);
@@ -201,7 +197,6 @@ public class JDRouterEditor extends PluginOptional implements ControlListener {
         saverouterbutton.setEnabled(false);
         saverouterbutton.addActionListener(new ActionListener() {
 
-            @Override
             public void actionPerformed(ActionEvent arg0) {
                 if (currentrouter != null) {
                     router.delRouter(currentrouter);

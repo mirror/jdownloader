@@ -491,16 +491,14 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
             } else if (request.getRequestUrl().matches("(?is).*/action/set/reconnectenabled/.*")) {
                 // Set ReconnectEnabled
                 boolean newrc = Boolean.parseBoolean(new Regex(request.getRequestUrl(), "[\\s\\S]*/action/set/reconnectenabled/(.*)").getMatch(0));
-                boolean disprc = newrc;
-                newrc = !newrc;
-                logger.fine("RemoteControl - Set ReConnect: " + disprc);
+                logger.fine("RemoteControl - Set ReConnect: " + newrc);
                 if (newrc != JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true)) {
                     JDUtilities.getConfiguration().setProperty(Configuration.PARAM_ALLOW_RECONNECT, newrc);
                     JDUtilities.getConfiguration().save();
 
-                    response.addContent("reconnect=" + disprc + " (CHANGED=true)");
+                    response.addContent("reconnect=" + newrc + " (CHANGED=true)");
                 } else {
-                    response.addContent("reconnect=" + disprc + " (CHANGED=false)");
+                    response.addContent("reconnect=" + newrc + " (CHANGED=false)");
                 }
             } else if (request.getRequestUrl().matches("(?is).*/action/set/premiumenabled/.*")) {
                 // Set use premium
