@@ -82,7 +82,7 @@ public class StatusLabel extends JPanel {
         } else {
             if (i < 0 || i >= ICONCOUNT) return;
             rights[i].setIcon(icon);
-            if (tooltip != null) rights[i].setToolTipText(tooltip);
+            rights[i].setToolTipText(tooltip);
         }
     }
 

@@ -35,7 +35,7 @@ public class JDRouterEditorView extends ClosableView {
 
     @Override
     public Icon getIcon() {
-        return JDTheme.II(null, 16, 16);
+        return JDTheme.II("gui.images.reconnect_settings", 16, 16);
     }
 
     @Override
@@ -46,17 +46,14 @@ public class JDRouterEditorView extends ClosableView {
     @Override
     public String getTooltip() {
         return JDL.L(JDL_PREFIX + "tooltip", "JD Router Editor");
-
     }
 
     @Override
     protected void onHide() {
-
     }
 
     @Override
     protected void onShow() {
-
     }
 
 }

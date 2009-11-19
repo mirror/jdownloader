@@ -31,8 +31,11 @@ import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+
+import net.miginfocom.swing.MigLayout;
 
 import jd.PluginWrapper;
 import jd.event.ControlListener;
@@ -47,9 +50,8 @@ import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-import net.miginfocom.swing.MigLayout;
 
-@OptionalPlugin(rev = "$Revision$", id = "RouterEditor", hasGui = true, interfaceversion = 5)
+@OptionalPlugin(rev = "$Revision$", id = "routereditor", hasGui = true, interfaceversion = 5)
 public class JDRouterEditor extends PluginOptional implements ControlListener {
 
     private static final String JDL_PREFIX = "jd.plugins.optional.JDRouterEditor.";
@@ -64,7 +66,6 @@ public class JDRouterEditor extends PluginOptional implements ControlListener {
     private JButton delrouterbutton;
     private JButton saverouterbutton;
     private RouterTable routertable;
-    private JScrollPane routertableScrollPane;
     private RouterList router = new RouterList();
     private JTextField routerhersteller;
     private JTextField routername;
@@ -78,25 +79,28 @@ public class JDRouterEditor extends PluginOptional implements ControlListener {
 
     public JDRouterEditor(PluginWrapper wrapper) {
         super(wrapper);
-        // TODO Auto-generated constructor stub
     }
 
     @Override
     public boolean initAddon() {
         if (m == null) {
-            m = new MenuAction(getWrapper().getID(), 0);
+            m = new MenuAction("routereditor", 0);
             m.setActionListener(this);
             m.setTitle(getHost());
             m.setIcon(this.getIconKey());
             m.setSelected(false);
         }
-        setGuiEnable(true);
         return true;
     }
 
     @Override
     public void onExit() {
 
+    }
+
+    @Override
+    public String getIconKey() {
+        return "gui.images.reconnect_settings";
     }
 
     @Override
@@ -114,7 +118,6 @@ public class JDRouterEditor extends PluginOptional implements ControlListener {
 
     private void initGUI() {
         frame = new SwitchPanel() {
-
             private static final long serialVersionUID = -2980165161222567714L;
 
             @Override
@@ -127,7 +130,7 @@ public class JDRouterEditor extends PluginOptional implements ControlListener {
         };
 
         // File Select/add/Del
-        getfiles();
+        getFiles();
         fileselector = new JComboBox(files);
         newbutton = new JButton(JDL.L(JDL_PREFIX + "newbutton", "+"));
         newbutton.addActionListener(new ActionListener() {
@@ -137,9 +140,9 @@ public class JDRouterEditor extends PluginOptional implements ControlListener {
                 if (!filename.endsWith(".xml")) filename = filename.concat(".xml").toString();
                 currentfile = JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/jd/router/" + filename;
                 router.cleanRouter();
-                savetoFile();
-                getfiles();
-                loadfile(currentfile);
+                saveToFile();
+                getFiles();
+                loadFile(currentfile);
                 setGuiRouterData(null);
                 currentrouter = null;
                 fileselector.revalidate();
@@ -147,24 +150,23 @@ public class JDRouterEditor extends PluginOptional implements ControlListener {
                 delrouterbutton.setEnabled(true);
                 newrouterbutton.setEnabled(true);
             }
+
         });
         selbutton = new JButton(JDL.L(JDL_PREFIX + "selbutton", "Select"));
         selbutton.addActionListener(new ActionListener() {
-
             public void actionPerformed(ActionEvent arg0) {
                 currentfile = JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/jd/router/" + fileselector.getSelectedItem().toString();
-                loadfile(currentfile);
+                loadFile(currentfile);
                 delrouterbutton.setEnabled(true);
                 newrouterbutton.setEnabled(true);
             }
         });
 
-        JPanel filepanel = new JPanel(new MigLayout("ins 5, wrap 2", "[fill, grow][fill, grow]"));
-
-        filepanel.add(new JLabel(JDL.L(JDL_PREFIX + "dbselect", "DB-File:")), "Split 2,");
-        filepanel.add(fileselector, "width 400:400:400");
-        filepanel.add(selbutton, "Split 3");
-        filepanel.add(newbutton, "width ::40");
+        JPanel filepanel = new JPanel(new MigLayout("ins 0", "[][grow,fill]10[]5[]"));
+        filepanel.add(new JLabel(JDL.L(JDL_PREFIX + "dbselect", "DB-File:")));
+        filepanel.add(fileselector, "growx");
+        filepanel.add(selbutton, "sizegroup file");
+        filepanel.add(newbutton, "sizegroup file");
 
         // EditPanel
         newrouterbutton = new JButton(JDL.L(JDL_PREFIX + "routeredit.routernew", "New"));
@@ -188,7 +190,7 @@ public class JDRouterEditor extends PluginOptional implements ControlListener {
                     currentrouter = null;
                     updateTable();
                     setGuiRouterData(null);
-                    savetoFile();
+                    saveToFile();
                 }
             }
 
@@ -208,7 +210,7 @@ public class JDRouterEditor extends PluginOptional implements ControlListener {
                     router.addRouter(currentrouter);
                     updateTable();
                 }
-                savetoFile();
+                saveToFile();
             }
 
         });
@@ -223,22 +225,22 @@ public class JDRouterEditor extends PluginOptional implements ControlListener {
         routerscript.setColumns(50);
         routerscriptScrollPane = new JScrollPane();
         routerscriptScrollPane.setViewportView(routerscript);
-        JPanel EditPanel = new JPanel(new MigLayout("ins 1, wrap 2", "[fill, grow][fill, grow]"));
-        EditPanel.add(newrouterbutton, "span 2, Split 3");
-        EditPanel.add(saverouterbutton);
-        EditPanel.add(delrouterbutton);
-        EditPanel.add(new JLabel(JDL.L(JDL_PREFIX + "routeredit.routermanufactor", "Router Manufactor:")));
-        EditPanel.add(routerhersteller);
-        EditPanel.add(new JLabel(JDL.L(JDL_PREFIX + "routeredit.routername", "Router Name:")));
-        EditPanel.add(routername);
-        EditPanel.add(new JLabel(JDL.L(JDL_PREFIX + "routeredit.routerregex", "Router Regex:")));
-        EditPanel.add(routerregex);
-        EditPanel.add(new JLabel(JDL.L(JDL_PREFIX + "routeredit.routeruser", "Router Username:")));
-        EditPanel.add(routeruser);
-        EditPanel.add(new JLabel(JDL.L(JDL_PREFIX + "routeredit.routerpass", "Router Password:")));
-        EditPanel.add(routerpass);
-        EditPanel.add(new JLabel(JDL.L(JDL_PREFIX + "routeredit.routerscript", "Router Script:")));
-        EditPanel.add(routerscriptScrollPane);
+        JPanel editPanel = new JPanel(new MigLayout("ins 1, wrap 2", "[fill, grow][fill, grow]"));
+        editPanel.add(newrouterbutton, "span 2, split 3, sizegroup edit");
+        editPanel.add(saverouterbutton, "sizegroup edit");
+        editPanel.add(delrouterbutton, "sizegroup edit");
+        editPanel.add(new JLabel(JDL.L(JDL_PREFIX + "routeredit.routermanufactor", "Router Manufactor:")));
+        editPanel.add(routerhersteller);
+        editPanel.add(new JLabel(JDL.L(JDL_PREFIX + "routeredit.routername", "Router Name:")));
+        editPanel.add(routername);
+        editPanel.add(new JLabel(JDL.L(JDL_PREFIX + "routeredit.routerregex", "Router Regex:")));
+        editPanel.add(routerregex);
+        editPanel.add(new JLabel(JDL.L(JDL_PREFIX + "routeredit.routeruser", "Router Username:")));
+        editPanel.add(routeruser);
+        editPanel.add(new JLabel(JDL.L(JDL_PREFIX + "routeredit.routerpass", "Router Password:")));
+        editPanel.add(routerpass);
+        editPanel.add(new JLabel(JDL.L(JDL_PREFIX + "routeredit.routerscript", "Router Script:")));
+        editPanel.add(routerscriptScrollPane);
 
         // Main Gui(Router List + Editpanel)
         routertable = new RouterTable(router);
@@ -253,13 +255,11 @@ public class JDRouterEditor extends PluginOptional implements ControlListener {
             }
         });
 
-        routertableScrollPane = new JScrollPane();
-        routertableScrollPane.setViewportView(routertable);
-
-        frame.setLayout(new MigLayout("ins 5, wrap 1", "[fill, grow][fill, grow]"));
-        frame.add(filepanel);
-        frame.add(routertableScrollPane, "grow,Split 2, width ::200");
-        frame.add(EditPanel, "grow");
+        frame.setLayout(new MigLayout("ins 5, wrap 2", "[fill, grow][fill, grow]"));
+        frame.add(filepanel, "spanx");
+        frame.add(new JSeparator(), "spanx");
+        frame.add(new JScrollPane(routertable), "grow");
+        frame.add(editPanel, "grow");
         frame.setVisible(true);
         updateTable();
     }
@@ -289,10 +289,7 @@ public class JDRouterEditor extends PluginOptional implements ControlListener {
         if (b) {
             if (view == null) {
                 initGUI();
-                view = new JDRouterEditorView() {
-                    private static final long serialVersionUID = 8256663083855006721L;
-
-                };
+                view = new JDRouterEditorView();
                 view.getBroadcaster().addListener(new SwitchPanelListener() {
 
                     @Override
@@ -314,9 +311,7 @@ public class JDRouterEditor extends PluginOptional implements ControlListener {
     @Override
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == m) {
-            setGuiEnable(true);
-        } else {
-            setGuiEnable(false);
+            setGuiEnable(m.isSelected());
         }
     }
 
@@ -325,7 +320,7 @@ public class JDRouterEditor extends PluginOptional implements ControlListener {
         routertable.getModel().fireTableDataChanged();
     }
 
-    private void getfiles() {
+    private void getFiles() {
         String routerpath = JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/jd/router/";
         File routerfolder = new File(routerpath);
         FilenameFilter filter = new FilenameFilter() {
@@ -339,14 +334,14 @@ public class JDRouterEditor extends PluginOptional implements ControlListener {
         }
     }
 
-    private void loadfile(String filepath) {
+    private void loadFile(String filepath) {
         File file = new File(filepath);
         Vector<?> temp = (Vector<?>) JDIO.loadObject(null, file, true);
-        if (temp != null) router.loadrouter(temp);
+        if (temp != null) router.loadRouter(temp);
         updateTable();
     }
 
-    protected void savetoFile() {
+    protected void saveToFile() {
         File file = new File(currentfile);
         JDIO.saveObject(null, router.prepareToSave(), file, null, null, true);
 

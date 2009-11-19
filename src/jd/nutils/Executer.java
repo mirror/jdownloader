@@ -72,7 +72,7 @@ public class Executer extends Thread implements Runnable {
         private boolean endOfFileReceived = false;
 
         private InputStream stream;
-        /* flag to signal if underlying stream got already closed */
+        /** flag to signal if underlying stream got already closed */
         private boolean isClosed = false;
 
         private final Object LOCK = new Object();

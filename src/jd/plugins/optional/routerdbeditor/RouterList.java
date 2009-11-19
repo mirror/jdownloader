@@ -49,7 +49,7 @@ public class RouterList {
         router.clear();
     }
 
-    public void loadrouter(Vector<?> loadObject) {
+    public void loadRouter(Vector<?> loadObject) {
         router.clear();
         Iterator<?> itr = loadObject.iterator();
 
