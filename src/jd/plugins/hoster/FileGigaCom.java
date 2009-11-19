@@ -32,31 +32,63 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "file2box.com" }, urls = { "http://[\\w\\.]*?file2box\\.com/[a-z0-9]{12}" }, flags = { 0 })
-public class File2BoxCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filegiga.com" }, urls = { "http://[\\w\\.]*?filegiga\\.com/[a-z0-9]+{12}" }, flags = { 0 })
+public class FileGigaCom extends PluginForHost {
 
-    public File2BoxCom(PluginWrapper wrapper) {
+    public FileGigaCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    // Using the XFileSharingProBasic plugin v.1.1
     @Override
     public String getAGBLink() {
-        return "http://www.file2box.com/tos.html";
+        return "http://www.filegiga.com/tos.html";
     }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.setCookie("http://www.file2box.com", "lang", "english");
+        br.setCookie("http://www.filegiga.com", "lang", "english");
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("No such file")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML("No such user exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML("File not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("Filename:.*?nowrap>(.*?)</td>").getMatch(0);
-        String filesize = br.getRegex("\\(([0-9]+ bytes)\\)").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        link.setName(filename);
-        link.setDownloadSize(Regex.getSize(filesize));
+        System.out.print(br.toString());
+        if (br.containsHTML("You have reached the download-limit")) {
+            logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
+            return AvailableStatus.UNCHECKABLE;
+        }
+        if (br.containsHTML("(No such file|No such user exist|File not found)")) {
+            logger.warning("file is 99,99% offline, throwing \"file not found\" now...");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        String filename = br.getRegex("You have requested.*?http://.*?/.*?/(.*?)</font>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("fname\" value=\"(.*?)\"").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("<h2>Download File(.*?)</h2>").getMatch(0);
+                if (filename == null) {
+                    filename = br.getRegex("Filename.*?nowrap.*?>(.*?)</td").getMatch(0);
+                    if (filename == null) {
+                        filename = br.getRegex("File Name.*?nowrap>(.*?)</td").getMatch(0);
+                    }
+                }
+            }
+        }
+        String filesize = br.getRegex("<small>\\((.*?)\\)</small>").getMatch(0);
+        if (filesize == null) {
+            filesize = br.getRegex("\\(([0-9]+ bytes)\\)").getMatch(0);
+            if (filesize == null) {
+                filesize = br.getRegex("</font>.*?\\((.*?)\\).*?</font>").getMatch(0);
+            }
+        }
+        if (filename == null) {
+            logger.warning("The filename equals null, throwing \"file not found\" now...");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        filename = filename.replace("</b>", "");
+        link.setName(filename.trim());
+        if (filesize != null) {
+            logger.info("Filesize found, filesize = " + filesize);
+            link.setDownloadSize(Regex.getSize(filesize));
+        }
         return AvailableStatus.TRUE;
     }
 

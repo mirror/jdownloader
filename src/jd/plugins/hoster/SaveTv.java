@@ -56,6 +56,18 @@ public class SaveTv extends PluginForHost {
         form.put("sPassword", Encoding.urlEncode(account.getPass()));
         br.submitForm(form);
         if (!br.containsHTML("<frame") || br.containsHTML("Bitte verifizieren Sie Ihre Logindaten")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        // Just a little komfortable feature for all save.tv users ;)
+        br.getPage("http://free.save.tv/STV/M/obj/user/usShowVideoArchive.cfm?&sk=JOE");
+        String[] links = br.getRegex("\"(/STV/M/obj/recordOrder/reShowDownload\\.cfm\\?TelecastID=.*?)\"").getColumn(0);
+        if (links == null || links.length == 0) {
+            logger.warning("Didn't find any links");
+        } else {
+            logger.info("**********VIDEOLINKS START**********");
+            for (String link : links) {
+                logger.info("***VIDEOLINKS = http://free.save.tv" + link + "***");
+            }
+            logger.info("**********VIDEOLINKS END**********");
+        }
     }
 
     @Override
@@ -82,6 +94,7 @@ public class SaveTv extends PluginForHost {
         requestFileInformation(downloadLink);
         login(account);
         br.getPage(downloadLink.getDownloadURL());
+        logger.info("Added link = " + downloadLink.getDownloadURL());
         String dllink = br.getRegex("document\\.location\\.href='(http.*?)'").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("'(http://.*?/\\?m=dl)'").getMatch(0);
@@ -95,6 +108,11 @@ public class SaveTv extends PluginForHost {
                 }
             }
         }
+        if (dllink == null) {
+            logger.warning("Final downloadlink (dllink) is null");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        logger.info("Final downloadlink = " + dllink + " starting download...");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -5);
         if (!(dl.getConnection().isContentDisposition())) {
             br.followConnection();

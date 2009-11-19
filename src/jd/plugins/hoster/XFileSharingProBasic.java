@@ -34,25 +34,26 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.pluginUtils.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "up2crazy.com" }, urls = { "http://[\\w\\.]*?up2crazy\\.com/[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "only4testingpurposes.com" }, urls = { "http://[\\w\\.]*?only4testingpurposes\\.com/[a-z0-9]{12}" }, flags = { 0 })
 public class XFileSharingProBasic extends PluginForHost {
 
     public XFileSharingProBasic(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    // Version 1.1
     // This is only for developers to easily implement hosters using the
     // "xfileshare(pro)" script (more informations can be found on
     // xfilesharing.net)!
     @Override
     public String getAGBLink() {
-        return "http://www.up2crazy.com/tos.html";
+        return "http://www.only4testingpurposes.com/tos.html";
     }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.setCookie("http://www.up2crazy.com", "lang", "english");
+        br.setCookie("http://www.only4testingpurposes.com", "lang", "english");
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("You have reached the download-limit")) {
             logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
@@ -68,15 +69,20 @@ public class XFileSharingProBasic extends PluginForHost {
             if (filename == null) {
                 filename = br.getRegex("<h2>Download File(.*?)</h2>").getMatch(0);
                 if (filename == null) {
-                    filename = br.getRegex("Filename.*?nowrap>(.*?)</td").getMatch(0);
+                    filename = br.getRegex("Filename.*?nowrap.*?>(.*?)</td").getMatch(0);
                     if (filename == null) {
                         filename = br.getRegex("File Name.*?nowrap>(.*?)</td").getMatch(0);
                     }
                 }
             }
         }
-        String filesize = br.getRegex("\\(([0-9]+ bytes)\\)").getMatch(0);
-        if (filesize == null) filesize = br.getRegex("</font>.*?\\((.*?)\\).*?</font>").getMatch(0);
+        String filesize = br.getRegex("<small>\\((.*?)\\)</small>").getMatch(0);
+        if (filesize == null) {
+            filesize = br.getRegex("\\(([0-9]+ bytes)\\)").getMatch(0);
+            if (filesize == null) {
+                filesize = br.getRegex("</font>.*?\\((.*?)\\).*?</font>").getMatch(0);
+            }
+        }
         if (filename == null) {
             logger.warning("The filename equals null, throwing \"file not found\" now...");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -103,6 +109,18 @@ public class XFileSharingProBasic extends PluginForHost {
             }
         }
         if (freeform != null) br.submitForm(freeform);
+        //Handling for only-premium links
+        if (br.containsHTML("(You can download files up to.*?only|Upgrade your account to download bigger files)")) {
+            String filesizelimit = br.getRegex("You can download files up to(.*?)only").getMatch(0);
+            if (filesizelimit != null) {
+                filesizelimit = filesizelimit.trim();
+                logger.warning("As free user you can download files up to " + filesizelimit + " only");
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Free users can download files up to " + filesizelimit + " only");
+            } else {
+                logger.warning("Only downloadable via premium");
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium");
+            }
+        }
         if (br.containsHTML("This file reached max downloads")) { throw new PluginException(LinkStatus.ERROR_FATAL, "This file reached max downloads"); }
         if (br.containsHTML("You have to wait")) {
             int minutes = 0, seconds = 0, hours = 0;
@@ -140,7 +158,6 @@ public class XFileSharingProBasic extends PluginForHost {
             int tt = Integer.parseInt(ttt);
             sleep(tt * 1001, downloadLink);
         }
-        String c = null;
         String passCode = null;
         boolean password = false;
         boolean recaptcha = false;
@@ -188,13 +205,16 @@ public class XFileSharingProBasic extends PluginForHost {
             String code = getCaptchaCode(captchaurl, downloadLink);
             DLForm.put("code", code);
             logger.info("Put captchacode " + code + " obtained by captcha metod\"Standard captcha\" in the form.");
-        } else if (br.containsHTML("api.recaptcha.net")) {
+        } else if (br.containsHTML("api.recaptcha.net") && !br.containsHTML("api\\.recaptcha\\.net.*?<Textarea.*?<input type=\"submit\" value.*?</Form>")) {
+            // Some hosters also got commentfields with captchas, therefore is
+            // the !br.contains...check Exampleplugin:
+            // FileGigaCom
             logger.info("Detected captcha method \"Re Captcha\" for this host");
             Recaptcha rc = new Recaptcha(br);
             rc.parse();
             rc.load();
             File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-            c = getCaptchaCode(cf, downloadLink);
+            String c = getCaptchaCode(cf, downloadLink);
             if (password == true) {
                 if (downloadLink.getStringProperty("pass", null) == null) {
                     passCode = Plugin.getUserInput("Password?", downloadLink);
@@ -278,8 +298,12 @@ public class XFileSharingProBasic extends PluginForHost {
                 if (dllink == null) {
                     dllink = br.getRegex("dotted #bbb;padding.*?<a href=\"(.*?)\"").getMatch(0);
                     if (dllink == null) {
-                        // This was for fileop.com, maybe also works for others!
-                        dllink = br.getRegex("Download: <a href=\"(.*?)\"").getMatch(0);
+                        dllink = br.getRegex("This direct link will be available for your IP.*?href=\"(http.*?)\"").getMatch(0);
+                        if (dllink == null) {
+                            // This was for fileop.com, maybe also works for
+                            // others!
+                            dllink = br.getRegex("Download: <a href=\"(.*?)\"").getMatch(0);
+                        }
                     }
                 }
             }

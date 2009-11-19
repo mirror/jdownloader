@@ -32,31 +32,65 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "file2box.com" }, urls = { "http://[\\w\\.]*?file2box\\.com/[a-z0-9]{12}" }, flags = { 0 })
-public class File2BoxCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "my2share.com" }, urls = { "http://[\\w\\.]*?my2share\\.com/[a-z0-9]{12}" }, flags = { 0 })
+public class My2ShareCom extends PluginForHost {
 
-    public File2BoxCom(PluginWrapper wrapper) {
+    public My2ShareCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    // Version 1.1
+    // This is only for developers to easily implement hosters using the
+    // "xfileshare(pro)" script (more informations can be found on
+    // xfilesharing.net)!
     @Override
     public String getAGBLink() {
-        return "http://www.file2box.com/tos.html";
+        return "http://www.my2share.com/tos.html";
     }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.setCookie("http://www.file2box.com", "lang", "english");
+        br.setCookie("http://www.my2share.com", "lang", "english");
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("No such file")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML("No such user exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML("File not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("Filename:.*?nowrap>(.*?)</td>").getMatch(0);
-        String filesize = br.getRegex("\\(([0-9]+ bytes)\\)").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        link.setName(filename);
-        link.setDownloadSize(Regex.getSize(filesize));
+        if (br.containsHTML("You have reached the download-limit")) {
+            logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
+            return AvailableStatus.UNCHECKABLE;
+        }
+        if (br.containsHTML("(No such file|No such user exist|File not found)")) {
+            logger.warning("file is 99,99% offline, throwing \"file not found\" now...");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        String filename = br.getRegex("You have requested.*?http://.*?/.*?/(.*?)</font>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("fname\" value=\"(.*?)\"").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("<h2>Download File(.*?)</h2>").getMatch(0);
+                if (filename == null) {
+                    filename = br.getRegex("Filename.*?nowrap.*?>(.*?)</td").getMatch(0);
+                    if (filename == null) {
+                        filename = br.getRegex("File Name.*?nowrap>(.*?)</td").getMatch(0);
+                    }
+                }
+            }
+        }
+        String filesize = br.getRegex("<small>\\((.*?)\\)</small>").getMatch(0);
+        if (filesize == null) {
+            filesize = br.getRegex("\\(([0-9]+ bytes)\\)").getMatch(0);
+            if (filesize == null) {
+                filesize = br.getRegex("</font>.*?\\((.*?)\\).*?</font>").getMatch(0);
+            }
+        }
+        if (filename == null) {
+            logger.warning("The filename equals null, throwing \"file not found\" now...");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        filename = filename.replace("</b>", "");
+        link.setName(filename.trim());
+        if (filesize != null) {
+            logger.info("Filesize found, filesize = " + filesize);
+            link.setDownloadSize(Regex.getSize(filesize));
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -73,6 +107,18 @@ public class File2BoxCom extends PluginForHost {
             }
         }
         if (freeform != null) br.submitForm(freeform);
+        //Handling for only-premium links
+        if (br.containsHTML("(You can download files up to.*?only|Upgrade your account to download bigger files)")) {
+            String filesizelimit = br.getRegex("You can download files up to(.*?)only").getMatch(0);
+            if (filesizelimit != null) {
+                filesizelimit = filesizelimit.trim();
+                logger.warning("As free user you can download files up to " + filesizelimit + " only");
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Free users can download files up to " + filesizelimit + " only");
+            } else {
+                logger.warning("Only downloadable via premium");
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium");
+            }
+        }
         if (br.containsHTML("This file reached max downloads")) { throw new PluginException(LinkStatus.ERROR_FATAL, "This file reached max downloads"); }
         if (br.containsHTML("You have to wait")) {
             int minutes = 0, seconds = 0, hours = 0;

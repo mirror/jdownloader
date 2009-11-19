@@ -82,17 +82,10 @@ public class Shareplacecom extends PluginForHost {
         String[] links = HTMLParser.getHttpLinks(page, null);
         boolean found = false;
         // waittime
-        if (br.containsHTML("iptime =")) {
-            String time = br.getRegex("Download Link:.*?wait.*?script(.*?)</script>").getMatch(0);
-            String[] times = new Regex(time, "var.*?=.*?(\\d+)").getColumn(0);
-            int tt = 30;
-            if (times.length > 0) {
-                for (String t : times) {
-                    if (Integer.parseInt(t) > 10 && Integer.parseInt(t) < tt) tt = Integer.parseInt(t);
-                }
-            }
-            sleep(tt * 1001l, downloadLink);
-        }
+        String time = br.getRegex("var zzipitime =.*?(\\d+);").getMatch(0);
+        int tt = 15;
+        if (time != null && Integer.parseInt(time) < 30) tt = Integer.parseInt(time);
+        sleep(tt * 1001l, downloadLink);
         for (String link : links) {
             String fakelink = Encoding.deepHtmlDecode(link);
             if (!fakelink.contains(filename)) continue;

@@ -73,14 +73,20 @@ public class CreaFileCom extends PluginForHost {
         Form dlForm = br.getFormbyKey("s_pair");
         if (dlForm == null) dlForm = br.getForm(1);
         dlForm.remove("Buy+VIP");
-        // Captcha handling
-        String[] letters = br.getRegex("captcha/(\\d+)").getColumn(0);
-        if (letters == null || letters.length == 0 || dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        StringBuilder code = new StringBuilder();
-        for (String value : letters) {
-            code.append(value);
-        }
-        logger.info("Captchacode to enter is " + code.toString());
+        // Old Captcha handling
+        // String[] letters = br.getRegex("captcha/(\\d+)").getColumn(0);
+        // if (letters == null || letters.length == 0 || dlForm == null) throw
+        // new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // StringBuilder code = new StringBuilder();
+        // for (String value : letters) {
+        // code.append(value);
+        // }
+        // logger.info("Captchacode to enter is " + code.toString());
+        //***New Captcha handling***
+        String captchaurl = "http://creafile.com//codeimg.php";
+        if (!br.containsHTML("codeimg.php")) captchaurl = null;
+        if (dlForm == null || captchaurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String code = getCaptchaCode(captchaurl, downloadLink);
         String hash = new Regex(downloadLink.getDownloadURL(), "/download/(.*)").getMatch(0);
         dlForm.put("hash", hash);
         dlForm.put("captcha", code.toString());
@@ -89,7 +95,7 @@ public class CreaFileCom extends PluginForHost {
         String dllink0 = br.getRegex("href=\"(http://creafile.com/d/.*?)\"").getMatch(0);
         Form faster = br.getFormbyProperty("id", "fasters");
         if (faster == null) faster = br.getForm(0);
-        if (faster != null){
+        if (faster != null) {
             br.submitForm(faster);
             br.getPage(downarea);
             dllink = br.getRegex("href=\"(http://creafile.com/d/.*?)\"").getMatch(0);
