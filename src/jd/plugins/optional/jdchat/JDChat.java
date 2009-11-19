@@ -630,8 +630,13 @@ public class JDChat extends PluginOptional implements ControlListener {
     @Override
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == activateAction) {
-            if (conn != null) conn.close();
-            setGuiEnable(true);
+            if(view == null) {
+                setGuiEnable(true);
+            } else {
+            	SwingGui.getInstance().disposeView(view);
+
+                this.onExit();
+            }
         } else {
             setGuiEnable(false);
         }
