@@ -16,6 +16,7 @@
 
 package jd.gui.swing.jdgui.components;
 
+import javax.swing.BorderFactory;
 import javax.swing.JPanel;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingUtilities;
@@ -55,6 +56,7 @@ public class JDStatusBar extends JPanel implements ChangeListener, ControlListen
 
     private void initGUI() {
         setLayout(new MigLayout("ins 0", "[fill,grow,left][shrink,right][shrink,right][shrink,right]", "[22!]"));
+        setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, getBackground().darker()));
 
         JDUtilities.getController().addControlListener(this);
         spMaxSpeed = new JDSpinner(JDL.L("gui.statusbar.speed", "Max. Speed"));

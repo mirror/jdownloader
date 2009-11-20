@@ -354,7 +354,7 @@ public class test extends JDialog {
                 // // flavors[i].getHumanPresentableName());
                 // System.out.println("\n MIME Type: " +
                 // flavors[i].getMimeType());
-                Class cl = flavors[i].getRepresentationClass();
+                Class<?> cl = flavors[i].getRepresentationClass();
 
                 if (cl == null)
                     System.out.println("null");
