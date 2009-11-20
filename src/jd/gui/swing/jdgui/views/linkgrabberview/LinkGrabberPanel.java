@@ -17,8 +17,6 @@
 package jd.gui.swing.jdgui.views.linkgrabberview;
 
 import java.awt.EventQueue;
-import java.awt.Toolkit;
-import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -655,8 +653,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
                                 }
                             }
                             string = build.toString();
-                            ClipboardHandler.getClipboard().setOldText(string);
-                            Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(string), null);
+                            ClipboardHandler.getClipboard().copyTextToClipboard(string);
                             break;
                         case LinkGrabberTableAction.BROWSE_LINK:
                             if (link.getLinkType() == DownloadLink.LINKTYPE_NORMAL) {

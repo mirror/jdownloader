@@ -16,8 +16,6 @@
 
 package jd.gui.swing.jdgui.views.downloadview;
 
-import java.awt.Toolkit;
-import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -463,8 +461,7 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
                     break;
                 case TableAction.DOWNLOAD_COPY_PASSWORD:
                     string = getPasswordSelectedLinks(selectedLinks);
-                    ClipboardHandler.getClipboard().setOldText(string);
-                    Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(string), null);
+                    ClipboardHandler.getClipboard().copyTextToClipboard(string);
                     break;
                 case TableAction.DOWNLOAD_COPY_URL:
                     for (int i = 0; i < selectedLinks.size(); i++) {
@@ -478,8 +475,7 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
                         }
                     }
                     string = build.toString();
-                    ClipboardHandler.getClipboard().setOldText(string);
-                    Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(string), null);
+                    ClipboardHandler.getClipboard().copyTextToClipboard(string);
                     break;
                 case TableAction.DOWNLOAD_PRIO:
                     int prio = (Integer) prop.get("prio");
