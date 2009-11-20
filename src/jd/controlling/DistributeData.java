@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
+import jd.CPluginWrapper;
 import jd.DecryptPluginWrapper;
 import jd.HostPluginWrapper;
 import jd.gui.UserIO;
@@ -117,6 +118,13 @@ public class DistributeData extends Thread {
     public DistributeData setFilterNormalHTTP(boolean b) {
         this.filterNormalHTTP = b;
         return this;
+    }
+
+    static public boolean hasContainerPluginFor(String tmp) {
+        for (CPluginWrapper cDecrypt : CPluginWrapper.getCWrapper()) {
+            if (cDecrypt.isEnabled() && cDecrypt.canHandle(tmp)) return true;
+        }
+        return false;
     }
 
     static public boolean hasPluginFor(String tmp, boolean filterNormalHTTP) {

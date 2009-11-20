@@ -1388,7 +1388,7 @@ public class JDChat extends PluginOptional implements ControlListener {
                     public void onPanelEvent(SwitchPanelEvent event) {
                         if (event.getID() == SwitchPanelEvent.ON_REMOVE) {
                             activateAction.setSelected(false);
-                            onExit();
+                            stopAddon();
                         }
                     }
 
@@ -1408,8 +1408,7 @@ public class JDChat extends PluginOptional implements ControlListener {
         } else {
             if (frame != null) {
                 SwingGui.getInstance().disposeView(view);
-
-                this.onExit();
+                this.stopAddon();
             }
         }
         if (activateAction != null && activateAction.isSelected() != b) activateAction.setSelected(b);

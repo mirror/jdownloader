@@ -16,16 +16,9 @@
 
 package jd.gui.swing.jdgui.components;
 
-import java.awt.Color;
-import java.awt.Point;
-import java.awt.event.MouseEvent;
-
-import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JSpinner;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingUtilities;
-import javax.swing.JSpinner.DefaultEditor;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
@@ -34,6 +27,7 @@ import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
+import jd.gui.swing.components.JDSpinner;
 import jd.gui.swing.jdgui.components.premiumbar.PremiumStatus;
 import jd.nutils.Formatter;
 import jd.utils.JDTheme;
@@ -59,65 +53,12 @@ public class JDStatusBar extends JPanel implements ChangeListener, ControlListen
         initGUI();
     }
 
-    private class JDSpinner extends JPanel {
-        private static final long serialVersionUID = 8892482065686899916L;
-
-        private JLabel lbl;
-
-        private JSpinner spn;
-
-        public JDSpinner(String label) {
-            super(new MigLayout("ins 0", "[][grow,fill]"));
-
-            lbl = new JLabel(label) {
-                private static final long serialVersionUID = 8794670984465489135L;
-
-                @Override
-                public Point getToolTipLocation(MouseEvent e) {
-                    return new Point(0, -25);
-                }
-            };
-            spn = new JSpinner();
-            spn.addChangeListener(JDStatusBar.this);
-
-            add(lbl);
-            add(spn, "w 70!, h 20!");
-        }
-
-        public JSpinner getSpinner() {
-            return spn;
-        }
-
-        public void setText(String s) {
-            lbl.setText(s);
-        }
-
-        public void setValue(Integer i) {
-            spn.setValue(i);
-        }
-
-        public Integer getValue() {
-            return (Integer) spn.getValue();
-        }
-
-        public void setColor(Color c) {
-            lbl.setForeground(c);
-            ((DefaultEditor) spn.getEditor()).getTextField().setForeground(c);
-        }
-
-        @Override
-        public void setToolTipText(String s) {
-            lbl.setToolTipText(s);
-        }
-
-    }
-
     private void initGUI() {
         setLayout(new MigLayout("ins 0", "[fill,grow,left][shrink,right][shrink,right][shrink,right]", "[22!]"));
 
         JDUtilities.getController().addControlListener(this);
-
         spMaxSpeed = new JDSpinner(JDL.L("gui.statusbar.speed", "Max. Speed"));
+        spMaxSpeed.getSpinner().addChangeListener(this);
         spMaxSpeed.getSpinner().setModel(new SpinnerNumberModel(dlConfig.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0), 0, Integer.MAX_VALUE, 50));
         spMaxSpeed.setToolTipText(JDL.L("gui.tooltip.statusbar.speedlimiter", "Geschwindigkeitsbegrenzung festlegen (KB/s) [0:unendlich]"));
         colorizeSpinnerSpeed();

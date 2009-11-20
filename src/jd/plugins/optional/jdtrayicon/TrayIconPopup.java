@@ -42,8 +42,10 @@ import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.DownloadWatchDog;
 import jd.gui.swing.GuiRunnable;
+import jd.gui.swing.components.JDSpinner;
 import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
+import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
@@ -56,7 +58,7 @@ public class TrayIconPopup extends JWindow implements MouseListener, ChangeListe
     private JPanel entryPanel;
     private JPanel bottomPanel;
     private boolean enteredPopup;
-    private JSpinner spMaxSpeed;
+    private JDSpinner spMaxSpeed;
     private JSpinner spMaxDls;
     private JSpinner spMaxChunks;
 
@@ -149,11 +151,11 @@ public class TrayIconPopup extends JWindow implements MouseListener, ChangeListe
     }
 
     private void initBottomPanel() {
-        spMaxSpeed = new JSpinner();
-        spMaxSpeed.setModel(new SpinnerNumberModel(config.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0), 0, Integer.MAX_VALUE, 50));
+        spMaxSpeed = new JDSpinner(JDL.L("plugins.trayicon.popup.bottom.speed", "Geschwindigkeitsbegrenzung"), "width 60!,h 20!");
+        spMaxSpeed.getSpinner().setModel(new SpinnerNumberModel(config.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0), 0, Integer.MAX_VALUE, 50));
         spMaxSpeed.setToolTipText(JDL.L("gui.tooltip.statusbar.speedlimiter", "Geschwindigkeitsbegrenzung festlegen (KB/s) [0:unendlich]"));
-        spMaxSpeed.addChangeListener(this);
-
+        spMaxSpeed.getSpinner().addChangeListener(this);
+        colorizeSpinnerSpeed();
         spMaxDls = new JSpinner();
         spMaxDls.setModel(new SpinnerNumberModel(config.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2), 1, 20, 1));
         spMaxDls.setToolTipText(JDL.L("gui.tooltip.statusbar.simultan_downloads", "Max. gleichzeitige Downloads"));
@@ -166,8 +168,7 @@ public class TrayIconPopup extends JWindow implements MouseListener, ChangeListe
 
         bottomPanel = new JPanel(new MigLayout("ins 0, wrap 2", "[]5[]", "[]2[]2[]"));
         bottomPanel.setOpaque(false);
-        bottomPanel.add(new JLabel(JDL.L("plugins.trayicon.popup.bottom.speed", "Geschwindigkeitsbegrenzung")));
-        bottomPanel.add(spMaxSpeed, "width 60!,h 20!");
+        bottomPanel.add(spMaxSpeed);
         bottomPanel.add(new JLabel(JDL.L("plugins.trayicon.popup.bottom.simDls", "Gleichzeitige Downloads")));
         bottomPanel.add(spMaxDls, "width 60!, h 20!");
         bottomPanel.add(new JLabel(JDL.L("plugins.trayicon.popup.bottom.simChunks", "Gleichzeitige Verbindungen")));
@@ -230,13 +231,14 @@ public class TrayIconPopup extends JWindow implements MouseListener, ChangeListe
     }
 
     public void stateChanged(ChangeEvent e) {
-        if (e.getSource() == spMaxSpeed) {
+        if (e.getSource() == spMaxSpeed.getSpinner()) {
             int value = (Integer) spMaxSpeed.getValue();
 
             if (value != config.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0)) {
                 config.setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, value);
                 config.save();
             }
+            colorizeSpinnerSpeed();
         } else if (e.getSource() == spMaxDls) {
             int value = (Integer) spMaxDls.getValue();
 
@@ -251,6 +253,15 @@ public class TrayIconPopup extends JWindow implements MouseListener, ChangeListe
                 config.setProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, value);
                 config.save();
             }
+        }
+    }
+
+    private void colorizeSpinnerSpeed() {
+        /* färbt den spinner ein, falls speedbegrenzung aktiv */
+        if (spMaxSpeed.getValue() > 0) {
+            spMaxSpeed.setColor(JDTheme.C("gui.color.statusbar.maxspeedhighlight", "ff0c03"));
+        } else {
+            spMaxSpeed.setColor(null);
         }
     }
 

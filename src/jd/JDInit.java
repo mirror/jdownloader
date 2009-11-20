@@ -243,7 +243,7 @@ public class JDInit {
             for (final OptionalPluginWrapper plg : OptionalPluginWrapper.getOptionalWrapper()) {
                 if (plg.isLoaded()) {
                     try {
-                        if (plg.isEnabled() && !plg.getPlugin().initAddon()) {
+                        if (plg.isEnabled() && !plg.getPlugin().startAddon()) {
                             logger.severe("Error loading Optional Plugin:" + plg.getClassName());
                         }
                     } catch (Throwable e) {

@@ -33,19 +33,24 @@ public abstract class PluginOptional extends Plugin implements ControlListener {
 
     public static final int ADDON_INTERFACE_VERSION = 5;
 
+    /**
+     * is the optional plugin running
+     */
+    private boolean running = false;
+
     public void controlEvent(ControlEvent event) {
-
-        // Deaktiviert das PLugin beim beenden
-        if (event.getID() == ControlEvent.CONTROL_SYSTEM_EXIT) {
-            final String id = JDController.requestDelayExit(((OptionalPluginWrapper) wrapper).getID());
-            try {
-                onExit();
-            } catch (Exception e) {
-                JDLogger.exception(e);
+        if (isRunning()) {
+            // Deaktiviert das PLugin beim beenden
+            if (event.getID() == ControlEvent.CONTROL_SYSTEM_EXIT) {
+                final String id = JDController.requestDelayExit(((OptionalPluginWrapper) wrapper).getID());
+                try {
+                    stopAddon();
+                } catch (Exception e) {
+                    JDLogger.exception(e);
+                }
+                JDController.releaseDelayExit(id);
             }
-            JDController.releaseDelayExit(id);
         }
-
     }
 
     public String getHost() {
@@ -75,6 +80,24 @@ public abstract class PluginOptional extends Plugin implements ControlListener {
 
     public Object interact(String command, Object parameter) {
         return null;
+    }
+
+    public boolean isRunning() {
+        return running;
+    }
+
+    public boolean startAddon() {
+        if (isRunning()) return true;
+        if (initAddon()) {
+            running = true;
+        } else {
+            running = false;
+        }
+        return running;
+    }
+
+    public void stopAddon() {
+        if (isRunning()) onExit();
     }
 
     @Override

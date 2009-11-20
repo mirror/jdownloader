@@ -135,6 +135,7 @@ public class JDTheme {
      * @return
      */
     public static ImageIcon II(String key, int width, int height) {
+        if (key == null) return null;
         try {
             return new ImageIcon(getImage(V(key), width, height));
         } catch (Exception e) {
@@ -145,6 +146,7 @@ public class JDTheme {
     }
 
     public static Image getImage(String string, int width, int height) {
+        if (string == null) return null;
         BufferedImage img = JDImage.getImage(string + "_" + width + "_" + height);
         if (img != null) return img;
         try {

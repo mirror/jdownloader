@@ -137,6 +137,7 @@ public class JDRouterEditor extends PluginOptional implements ControlListener {
 
             public void actionPerformed(ActionEvent arg0) {
                 String filename = UserIO.getInstance().requestInputDialog(JDL.L(JDL_PREFIX + "newfileinput", "Enter Filename:"));
+                if (filename == null) return;
                 if (!filename.endsWith(".xml")) filename = filename.concat(".xml").toString();
                 currentfile = JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/jd/router/" + filename;
                 router.cleanRouter();
@@ -295,7 +296,7 @@ public class JDRouterEditor extends PluginOptional implements ControlListener {
                     @Override
                     public void onPanelEvent(SwitchPanelEvent event) {
                         if (event.getID() == SwitchPanelEvent.ON_REMOVE) {
-                            onExit();
+                            stopAddon();
                         }
                     }
 

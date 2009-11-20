@@ -399,7 +399,7 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
     @Override
     public Object interact(String command, Object parameter) {
         if (command == null) return null;
-        if (command.equalsIgnoreCase("enabled")) return subConfig.getBooleanProperty(PROPERTY_CLOSE_TO_TRAY, true);
+        if (command.equalsIgnoreCase("closetotray")) return subConfig.getBooleanProperty(PROPERTY_CLOSE_TO_TRAY, true);
         if (command.equalsIgnoreCase("refresh")) {
             new GuiRunnable<Object>() {
                 @Override

@@ -67,17 +67,18 @@ public class ActivateColumn extends JDCheckBoxTableColumn {
         config.setProperty(plgWrapper.getConfigParamKey(), value);
         config.save();
         if (value) {
-            plgWrapper.getPlugin().initAddon();
-            if (plgWrapper.getAnnotation().hasGui()) {
-                int ret = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN, plgWrapper.getHost(), JDL.LF("jd.gui.swing.jdgui.settings.panels.ConfigPanelAddons.askafterinit", "Show %s now?\r\nYou may open it later using Mainmenu->Addon", plgWrapper.getHost()));
+            if (plgWrapper.getPlugin().startAddon()) {
+                if (plgWrapper.getAnnotation().hasGui()) {
+                    int ret = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN, plgWrapper.getHost(), JDL.LF("jd.gui.swing.jdgui.settings.panels.ConfigPanelAddons.askafterinit", "Show %s now?\r\nYou may open it later using Mainmenu->Addon", plgWrapper.getHost()));
 
-                if (UserIO.isOK(ret)) {
-                    plgWrapper.getPlugin().setGuiEnable(true);
+                    if (UserIO.isOK(ret)) {
+                        plgWrapper.getPlugin().setGuiEnable(true);
+                    }
                 }
             }
         } else {
             plgWrapper.getPlugin().setGuiEnable(false);
-            plgWrapper.getPlugin().onExit();
+            plgWrapper.getPlugin().stopAddon();
         }
         AddonsMenu.getInstance().update();
         ConfigSidebar.getInstance(null).updateAddons();
