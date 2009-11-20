@@ -68,10 +68,15 @@ public class LlpszNt extends PluginForDecrypt {
                     br.getPage(finallink);
                     finallink = br.getRedirectLocation();
                 }
-                if (br.containsHTML("Nie odnaleziono pliku")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-                if (finallink == null) return null;
-                decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
-                progress.increase(1);
+                if (br.containsHTML("Nie odnaleziono pliku")) {
+                    logger.warning("Found 1 offline link");
+                } else if (finallink == null) {
+                    logger.warning("There is a problem with the decrypter!");
+                    return null;
+                } else {
+                    decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
+                    progress.increase(1);
+                }
             }
             if (fpName != null) {
                 FilePackage fp = FilePackage.getInstance();

@@ -83,6 +83,7 @@ public class ShareRapidCz extends PluginForHost {
         if (expires != null) {
             ai.setValidUntil(Regex.getMilliSeconds(expires, "dd.MM.yy - HH:mm", null));
         }
+        ai.setStatus("Premium User");
         account.setValid(true);
         return ai;
     }
@@ -95,11 +96,12 @@ public class ShareRapidCz extends PluginForHost {
         if (br.containsHTML("Již Vám došel kredit a vyčerpal jste free limit")) throw new PluginException(LinkStatus.ERROR_FATAL, "Not enough traffic left to download this file!");
         String dllink = br.getRegex("\"(http://s[0-9]{1,2}\\.share-rapid\\.com/download.*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        logger.info("Final downloadlink = " + dllink);
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (!(dl.getConnection().isContentDisposition())) {
             br.followConnection();
-            if (br.containsHTML("was not found on this server")) throw new PluginException(LinkStatus.ERROR_FATAL, "Server error");
+            if (br.containsHTML("(was not found on this server|No htmlCode read)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

@@ -20,11 +20,15 @@ import java.io.File;
 import java.io.IOException;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -34,11 +38,12 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.pluginUtils.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "only4testingpurposes.com" }, urls = { "http://[\\w\\.]*?only4testingpurposes\\.com/[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "justtotest.to" }, urls = { "http://[\\w\\.]*?justtotest\\.to/[a-z0-9]{12}" }, flags = { 2 })
 public class XFileSharingProBasic extends PluginForHost {
 
     public XFileSharingProBasic(PluginWrapper wrapper) {
         super(wrapper);
+        enablePremium("http://justtotest.com/premium.html");
     }
 
     // Version 1.1
@@ -47,13 +52,13 @@ public class XFileSharingProBasic extends PluginForHost {
     // xfilesharing.net)!
     @Override
     public String getAGBLink() {
-        return "http://www.only4testingpurposes.com/tos.html";
+        return "http://www.justtotest.com/tos.html";
     }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.setCookie("http://www.only4testingpurposes.com", "lang", "english");
+        br.setCookie("http://www.justtotest.to", "lang", "english");
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("You have reached the download-limit")) {
             logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
@@ -109,7 +114,7 @@ public class XFileSharingProBasic extends PluginForHost {
             }
         }
         if (freeform != null) br.submitForm(freeform);
-        //Handling for only-premium links
+        // Handling for only-premium links
         if (br.containsHTML("(You can download files up to.*?only|Upgrade your account to download bigger files)")) {
             String filesizelimit = br.getRegex("You can download files up to(.*?)only").getMatch(0);
             if (filesizelimit != null) {
@@ -308,7 +313,7 @@ public class XFileSharingProBasic extends PluginForHost {
                 }
             }
             if (dllink == null) {
-                logger.warning("Final downloadlink (String is \"dllink\" regex didn't match!");
+                logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
@@ -327,6 +332,116 @@ public class XFileSharingProBasic extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private void login(Account account) throws Exception {
+        this.setBrowserExclusive();
+        br.setCookie("http://justtotest.to", "lang", "english");
+        br.setDebug(true);
+        br.getPage("http://www.justtotest.to/login.html");
+        Form loginform = br.getForm(0);
+        if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        loginform.put("login", Encoding.urlEncode(account.getUser()));
+        loginform.put("password", Encoding.urlEncode(account.getPass()));
+        br.submitForm(loginform);
+        br.getPage("http://filestore.to/?op=my_account");
+        if (!br.containsHTML("Premium-Account expire")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (br.getCookie("http://filestore.to", "login") == null || br.getCookie("http://filestore.to", "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        String space = br.getRegex(Pattern.compile("<td>Used space:</td>.*?<td.*?>(.*?)of.*?Mb</td>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
+        if (space != null) ai.setUsedSpace(space + " Mb");
+        String points = br.getRegex(Pattern.compile("You have collected:</td>.*?(\\d+) premium", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
+        if (points != null) ai.setPremiumPoints(Long.parseLong(points));
+        account.setValid(true);
+        ai.setUnlimitedTraffic();
+        String expire = br.getRegex("<td>Premium-Account expire:</td>.*?<td>(.*?)</td>").getMatch(0);
+        if (expire == null) {
+            ai.setExpired(true);
+            account.setValid(false);
+            return ai;
+        } else {
+            ai.setValidUntil(Regex.getMilliSeconds(expire, "dd MMMM yyyy", null));
+        }
+        ai.setStatus("Premium User");
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(DownloadLink link, Account account) throws Exception {
+        String passCode = null;
+        requestFileInformation(link);
+        login(account);
+        br.setFollowRedirects(false);
+        br.getPage(link.getDownloadURL());
+        String dllink = br.getRedirectLocation();
+        if (dllink == null) {
+            Form DLForm = br.getFormbyProperty("name", "F1");
+            if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (br.containsHTML("name=\"password\"")) {
+                if (link.getStringProperty("pass", null) == null) {
+                    passCode = Plugin.getUserInput("Password?", link);
+                } else {
+                    /* gespeicherten PassCode holen */
+                    passCode = link.getStringProperty("pass", null);
+                }
+                DLForm.put("password", passCode);
+                logger.info("Put password \"" + passCode + "\" entered by user in the DLForm.");
+            }
+            br.submitForm(DLForm);
+            dllink = br.getRedirectLocation();
+            if (dllink == null) {
+                if (br.containsHTML("(name=\"password\"|Wrong password)")) {
+                    logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
+                    link.setProperty("pass", null);
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+                if (dllink == null) {
+                    dllink = br.getRegex("dotted #bbb;padding.*?<a href=\"(.*?)\"").getMatch(0);
+                    if (dllink == null) {
+                        dllink = br.getRegex("This direct link will be available for your IP.*?href=\"(http.*?)\"").getMatch(0);
+                        if (dllink == null) {
+                            // This was for fileop.com, maybe also works for
+                            // others!
+                            dllink = br.getRegex("Download: <a href=\"(.*?)\"").getMatch(0);
+                        }
+                    }
+                }
+            }
+        }
+        if (dllink == null) {
+            logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        logger.info("Final downloadlink = " + dllink + " starting the download...");
+        jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        if (passCode != null) {
+            link.setProperty("pass", passCode);
+        }
+        if (!(dl.getConnection().isContentDisposition())) {
+            logger.warning("The final dllink seems not to be a file!");
+            br.followConnection();
+            if (br.containsHTML("File Not Found")) {
+                logger.warning("Server says link offline, please recheck that!");
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
     }
 
     @Override

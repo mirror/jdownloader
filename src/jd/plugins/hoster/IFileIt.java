@@ -75,6 +75,7 @@ public class IFileIt extends PluginForHost {
             account.setValid(false);
             return ai;
         }
+        ai.setStatus("Registered account ok");
         account.setValid(true);
         return ai;
     }
@@ -102,12 +103,12 @@ public class IFileIt extends PluginForHost {
             for (int i = 0; i <= 5; i++) {
                 String captchashit = br.getRegex("url \\+=.*?\\+.*?\\+.*?\"(.*?)\"").getMatch(0);
                 String captchacrap = br.getRegex("var.*?x.*?c = '(.*?)'").getMatch(0);
-                if (captchashit == null||captchacrap == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (captchashit == null || captchacrap == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 String code = getCaptchaCode("http://ifile.it/download:captcha?0." + Math.random(), downloadLink);
                 String captchaget = "http://ifile.it/download:dl_request?" + downlink + "&type=simple&esn=0&" + captchacrap + "=" + code + "&" + downid + captchashit;
                 logger.info("Captchagetpage = " + captchaget);
-                //Example of the last working captchaget
-                //  http://ifile.it/download:dl_request?x65=549427&type=simple&esn=1&8a1e7=9fa&920e4e7d3666c587258c93ef87cb3365=a8c5e3fdae3471388ec44741b41b3c2d&d51500b7a7cd5292d9db0b98dc022447=98f13708210194c475687be6106a3b84
+                // Example of the last working captchaget
+                // http://ifile.it/download:dl_request?x65=549427&type=simple&esn=1&8a1e7=9fa&920e4e7d3666c587258c93ef87cb3365=a8c5e3fdae3471388ec44741b41b3c2d&d51500b7a7cd5292d9db0b98dc022447=98f13708210194c475687be6106a3b84
                 br2.getPage(captchaget);
                 if (br2.containsHTML("\"retry\":\"retry\"")) continue;
                 br.getPage("http://ifile.it/dl");
@@ -171,10 +172,10 @@ public class IFileIt extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         /* Nochmals das File überprüfen */
         requestFileInformation(downloadLink);
-//        br.cloneBrowser().getPage("http://static.ifile.it/themes/default/css/common-guest.css?v=1");
-//        br.cloneBrowser().getPage("http://static.ifile.it/themes/default/js/common.js?v=1");
+        // br.cloneBrowser().getPage("http://static.ifile.it/themes/default/css/common-guest.css?v=1");
+        // br.cloneBrowser().getPage("http://static.ifile.it/themes/default/js/common.js?v=1");
         br.cloneBrowser().getPage("http://ifile.it/ads/adframe.js");
-//        br.cloneBrowser().getPage("http://static.ifile.it/libraries/recaptcha_1.10/recaptcha_ajax.js");
+        // br.cloneBrowser().getPage("http://static.ifile.it/libraries/recaptcha_1.10/recaptcha_ajax.js");
         br.setDebug(true);
         br.setFollowRedirects(true);
         String downlink = br.getRegex("var.*?fsa.*?=.*?'(.*?)'").getMatch(0);
@@ -193,12 +194,12 @@ public class IFileIt extends PluginForHost {
             for (int i = 0; i <= 5; i++) {
                 String captchashit = br.getRegex("url \\+=.*?\\+.*?\\+.*?\"(.*?)\"").getMatch(0);
                 String captchacrap = br.getRegex("var.*?x.*?c = '(.*?)'").getMatch(0);
-                if (captchashit == null||captchacrap == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (captchashit == null || captchacrap == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 String code = getCaptchaCode("http://ifile.it/download:captcha?0." + Math.random(), downloadLink);
                 String captchaget = "http://ifile.it/download:dl_request?" + downlink + "&type=simple&esn=0&" + captchacrap + "=" + code + "&" + downid + captchashit;
                 logger.info("Captchagetpage = " + captchaget);
-                //Example of the last working captchaget
-                //  http://ifile.it/download:dl_request?x65=549427&type=simple&esn=1&8a1e7=9fa&920e4e7d3666c587258c93ef87cb3365=a8c5e3fdae3471388ec44741b41b3c2d&d51500b7a7cd5292d9db0b98dc022447=98f13708210194c475687be6106a3b84
+                // Example of the last working captchaget
+                // http://ifile.it/download:dl_request?x65=549427&type=simple&esn=1&8a1e7=9fa&920e4e7d3666c587258c93ef87cb3365=a8c5e3fdae3471388ec44741b41b3c2d&d51500b7a7cd5292d9db0b98dc022447=98f13708210194c475687be6106a3b84
                 br2.getPage(captchaget);
                 if (br2.containsHTML("\"retry\":\"retry\"")) continue;
                 br.getPage("http://ifile.it/dl");
@@ -206,9 +207,9 @@ public class IFileIt extends PluginForHost {
             }
             if (br2.containsHTML("\"retry\":\"retry\"")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
-//        br.cloneBrowser().getPage("http://static.ifile.it/themes/default/css/common-guest.css?v=1");
-//        br.cloneBrowser().getPage("http://static.ifile.it/themes/default/js/common.js?v=1");
-         br.cloneBrowser().getPage("http://ifile.it/ads/adframe.js");
+        // br.cloneBrowser().getPage("http://static.ifile.it/themes/default/css/common-guest.css?v=1");
+        // br.cloneBrowser().getPage("http://static.ifile.it/themes/default/js/common.js?v=1");
+        br.cloneBrowser().getPage("http://ifile.it/ads/adframe.js");
         String dllink = br.getRegex("req_btn.*?target=\".*?\" href=\"(http.*?)\"").getMatch(0);
         if (dllink == null) {
             logger.info("first try getting dllink failed");
