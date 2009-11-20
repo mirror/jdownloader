@@ -42,7 +42,6 @@ public class Stlth extends PluginForDecrypt {
         super(wrapper);
     }
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception, DecrypterException {
 
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>(0);
@@ -58,6 +57,7 @@ public class Stlth extends PluginForDecrypt {
         br.setDebug(true);
         br.setFollowRedirects(true);
         br.getPage(url);
+        Browser clone = null;
         if (br.containsHTML("besucherpass.png")) {
 
             Form form = br.getFormBySubmitvalue("Weiter");
@@ -78,7 +78,7 @@ public class Stlth extends PluginForDecrypt {
 
                 logger.fine("The current stealth ID is '" + stealthID + "'");
 
-                Browser clone = br.cloneBrowser();
+                clone = br.cloneBrowser();
 
                 Form form = br.getFormBySubmitvalue("Ordner+%C3%B6ffnen");
 
@@ -114,14 +114,14 @@ public class Stlth extends PluginForDecrypt {
 
         File container = JDUtilities.getResourceFile("container/stealth.to_" + System.currentTimeMillis() + ".dlc");
 
-        String name = br.getRegex("<span class=\"Name\">(.*?)</span>").getMatch(0);
-        String pass = br.getRegex("<span class=\".*?\">Passwort: (.*?)</span>").getMatch(0);
+        String name = clone.getRegex("<span class=\"Name\">(.*?)</span>").getMatch(0);
+        String pass = clone.getRegex("<span class=\".*?\">Passwort: (.*?)</span>").getMatch(0);
         FilePackage fp = FilePackage.getInstance();
 
         fp.setName(name);
         fp.setPassword(pass);
 
-        Browser.download(container, br.openGetConnection("http://sql.stealth.to/dlc.php?name=" + stealthID));
+        Browser.download(container, clone.openGetConnection("http://stealth.to:2999/dlc.php?name=" + stealthID));
         ArrayList<DownloadLink> links = JDUtilities.getController().getContainerLinks(container);
 
         if (links != null && links.size() > 0) {
@@ -135,15 +135,11 @@ public class Stlth extends PluginForDecrypt {
         container.delete();
 
         int numberOfDecryptedLinks = decryptedLinks.size();
-        if (numberOfDecryptedLinks > 0) {
-            logger.info("There were " + numberOfDecryptedLinks + " links obtained from the URL '" + url + "'");
-        } else {
+        if (numberOfDecryptedLinks == 0) {
             logger.warning("There were no links obtained for the URL '" + url + "'");
         }
 
         return decryptedLinks;
     }
-
-    // @Override
 
 }

@@ -70,6 +70,8 @@ import javax.swing.text.MutableAttributeSet;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
 
+import jd.parser.Regex;
+
 public class test extends JDialog {
     private static final long serialVersionUID = -5382996948129094108L;
 
@@ -350,10 +352,8 @@ public class test extends JDialog {
         else {
             DataFlavor flavors[] = contents.getTransferDataFlavors();
             for (int i = 0; i < flavors.length; ++i) {
-                // System.out.println("\n\n Name: " +
-                // // flavors[i].getHumanPresentableName());
-                // System.out.println("\n MIME Type: " +
-                // flavors[i].getMimeType());
+                System.out.println("\n MIME Type: " + flavors[i].getMimeType());
+
                 Class<?> cl = flavors[i].getRepresentationClass();
 
                 if (cl == null)
@@ -361,11 +361,36 @@ public class test extends JDialog {
                 else if (cl.getName().contains("ByteBuffer")) {
                     // System.out.println("ByteBuffer");
                 } else if (cl.getName().contains("[B")) {
-                    System.out.println("Byte Array");
-                    System.out.println(new String((byte[]) contents.getTransferData(flavors[i]), "UTF-8"));
-                    System.out.println(new String((byte[]) contents.getTransferData(flavors[i]), "UTF-16"));
-                    System.out.println(new String((byte[]) contents.getTransferData(flavors[i]), "ISO-8859-1"));
+                    // System.out.println("\n\n Name: " +
+                    // flavors[i].getHumanPresentableName()); //
+                    System.out.println("Size " + ((byte[]) contents.getTransferData(flavors[i])).length);
+                    for (byte b : ((byte[]) contents.getTransferData(flavors[i]))) {
+                        // System.out.print(b);
+                    }
+                    // System.out.println(new String((byte[])
+                    // contents.getTransferData(flavors[i]), "UTF-8"));
+                    // System.out.println(new String((byte[])
+                    // contents.getTransferData(flavors[i]), "UTF-16"));
+
+                    System.out.println("");
+                    int ii = 0;
+                    int oo = 0;
+                    byte[] test = new byte[20000];
+                    for (byte d : (byte[]) contents.getTransferData(flavors[i])) {
+                        if (ii >= 6) if (d != 0) test[oo++] = d;
+                        ii++;
+                    }
+                    String charSet = new Regex(flavors[i].toString(), "charset=(.*?)]").getMatch(0);
+                    if (charSet != null) {
+                        // System.out.println(new String(test, charSet));
+                    } else {
+                        // System.out.println(new String(test));
+                    }
+                    // System.out.println(new String(test, "UTF-16"));
+
                 }
+                // System.out.println("");
+
                 // System.out.println(cl.getName());
 
             }

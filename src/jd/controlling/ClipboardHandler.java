@@ -21,12 +21,15 @@ import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.io.File;
+import java.net.URL;
 import java.util.List;
+import java.util.StringTokenizer;
 
 import jd.Main;
 import jd.config.Configuration;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
+import jd.nutils.OSDetector;
 import jd.parser.Regex;
 import jd.utils.JDUtilities;
 
@@ -57,14 +60,37 @@ public class ClipboardHandler extends Thread implements ControlListener {
     private boolean waitFlag;
     private boolean tempdisabled = true;
 
+    private DataFlavor urlFlavor = null;
+
+    private DataFlavor uriListFlavor = null;
+    private DataFlavor stringFlavor = DataFlavor.stringFlavor;
+    private DataFlavor htmlFlavor = null;
+    private final static byte[] tmpByteArray = new byte[0];
+
     /**
      */
     private ClipboardHandler() {
         clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
         JDUtilities.getController().addControlListener(this);
         this.enabled = false;
+        initDataFlavors();
         this.setName("ClipboardHandler");
         this.start();
+    }
+
+    private void initDataFlavors() {
+        try {
+            urlFlavor = new DataFlavor("application/x-java-url; class=java.net.URL");
+        } catch (Exception e) {
+            JDLogger.exception(e);
+            JDLogger.getLogger().info("urlFlavor not supported");
+        }
+        try {
+            uriListFlavor = new DataFlavor("text/uri-list; class=java.lang.String");
+        } catch (Exception e) {
+            JDLogger.exception(e);
+            JDLogger.getLogger().info("uriListFlavor not supported");
+        }
     }
 
     public void setOldText(String data) {
@@ -80,9 +106,43 @@ public class ClipboardHandler extends Thread implements ControlListener {
         return JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, true);
     }
 
+    public DataFlavor getBestFlavor(Transferable trans) {
+        if (urlFlavor != null && trans.isDataFlavorSupported(urlFlavor)) return urlFlavor;
+        if (uriListFlavor != null && trans.isDataFlavorSupported(uriListFlavor)) return uriListFlavor;
+        /* check for text/html DataFlavor */
+        htmlFlavor = null;
+        if (OSDetector.isLinux()) {
+            /*
+             * for our workaround for
+             * https://bugzilla.mozilla.org/show_bug.cgi?id=385421, we need utf8
+             * charset
+             */
+            for (DataFlavor flav : trans.getTransferDataFlavors()) {
+                if (flav.getMimeType().contains("html") && flav.getRepresentationClass().isInstance(tmpByteArray)) {
+                    String charSet = new Regex(flav.toString(), "charset=(.*?)]").getMatch(0);
+                    if (charSet != null && charSet.equalsIgnoreCase("UTF-8")) {
+                        htmlFlavor = flav;
+                        return htmlFlavor;
+                    }
+                }
+            }
+        } else {
+            for (DataFlavor flav : trans.getTransferDataFlavors()) {
+                if (flav.getMimeType().contains("html") && flav.getRepresentationClass().isInstance(tmpByteArray)) {
+                    htmlFlavor = flav;
+                    return htmlFlavor;
+                }
+            }
+        }
+        if (trans.isDataFlavorSupported(stringFlavor)) return stringFlavor;
+        return null;
+    }
+
     @SuppressWarnings("unchecked")
     public void run() {
         Transferable cur = null;
+        DataFlavor lastDataFlavor = null;
+        String lastString = null;
         while (true) {
             synchronized (this) {
                 waitFlag = true;
@@ -99,68 +159,87 @@ public class ClipboardHandler extends Thread implements ControlListener {
                     /* get current content of clipboard */
                     cur = clipboard.getContents(null);
                     if (cur != null) {
-                        if (cur.isDataFlavorSupported(DataFlavor.stringFlavor)) {
-                            /*
-                             * we have text in clipboard, also can be files in
-                             * linux
-                             */
-                            String text = (String) cur.getTransferData(DataFlavor.stringFlavor);
-                            if (!text.equals(oldText)) {
-                                /* content changed */
-                                oldText = text;
-                                String files[] = Regex.getLines(text);
-                                boolean isTextContent = true;
-                                if (files.length > 0) {
-                                    /*
-                                     * workaround for files under linux
-                                     */
-                                    if (new File(files[0].trim()).exists()) {
-                                        isTextContent = false;
-                                        for (String file : files) {
-                                            JDUtilities.getController().loadContainerFile(new File(file.trim()));
+                        DataFlavor what = getBestFlavor(cur);
+                        if (what != null) {
+                            lastString = null;
+                            if (what == uriListFlavor) {
+                                // url-lists are defined by rfc 2483 as
+                                // crlf-delimited
+                                lastString = (String) cur.getTransferData(uriListFlavor);
+                            } else if (what == urlFlavor) {
+                                lastString = ((URL) cur.getTransferData(urlFlavor)).toString();
+                            } else if (what == stringFlavor) {
+                                lastString = ((String) cur.getTransferData(stringFlavor));
+                            } else if (what == htmlFlavor) {
+                                try {
+                                    String charSet = new Regex(htmlFlavor.toString(), "charset=(.*?)]").getMatch(0);
+                                    System.out.println("charset " + charSet);
+                                    byte[] html = (byte[]) cur.getTransferData(htmlFlavor);
+                                    if (OSDetector.isLinux()) {
+                                        /*
+                                         * workaround for firefox bug
+                                         * https://bugzilla
+                                         * .mozilla.org/show_bug.cgi?id=385421
+                                         */
+                                        byte[] html2 = new byte[html.length];
+
+                                        int o = 0;
+                                        for (int i = 6; i < html.length - 1; i++) {
+                                            System.out.print(html[i] + " ");
+                                            if (i % 2 == 0 || true) html2[o++] = html[i];
+                                        }
+                                        html = html2;
+                                        lastString = new String(html, "UTF-8");
+                                    } else {
+                                        if (charSet != null) {
+                                            lastString = new String(html, charSet);
+                                        } else {
+                                            lastString = new String(html);
                                         }
                                     }
+                                    System.out.println(lastString);
+                                    byte[] oo = new String("hü").getBytes("UTF-8");
+                                    for (byte z : oo) {
+                                        System.out.print(z + " ");
+                                    }
+                                    System.out.println("");
+                                } catch (Exception e) {
+                                    JDLogger.exception(e);
+                                    /* fallback */
+                                    if (cur.isDataFlavorSupported(stringFlavor)) lastString = ((String) cur.getTransferData(stringFlavor));
                                 }
-                                
-                                if(CNL2.checkText(text))return;
-                                /* parsing clipboard for Links */
-                                if (isTextContent) new DistributeData(text.trim()).start();
                             }
-                        } else if (cur.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
-                            /* we have files in cliploard */
-                            List<File> files = (List<File>) cur.getTransferData(DataFlavor.javaFileListFlavor);
-                            /* check for changes */
-                            boolean fileschanged = (oldFiles == null) || oldFiles.size() != files.size();
-                            if (!fileschanged) {
-                                /* second check for changes */
-                                for (File file : oldFiles) {
-                                    boolean found = false;
-                                    for (File file2 : files) {
-                                        if (file2.getAbsolutePath().equals(file.getAbsolutePath())) {
-                                            found = true;
-                                            break;
+
+                            if (lastDataFlavor == null || lastDataFlavor != what) {
+                                /* DataFlavor changed so lets parse it */
+                                lastDataFlavor = what;
+                                if (what == uriListFlavor) {
+                                    StringTokenizer izer = new StringTokenizer(lastString, "\r\n");
+                                    while (izer.hasMoreTokens()) {
+                                        String uri = izer.nextToken().replaceFirst("file://", "");
+                                        if (new File(uri).exists()) {
+                                            if (DistributeData.hasContainerPluginFor(uri)) JDController.getInstance().loadContainerFile(new File(uri));
                                         }
                                     }
-                                    if (!found) {
-                                        fileschanged = true;
-                                        break;
+                                } else if (what == urlFlavor || what == stringFlavor) {
+                                    if (lastString != null) {
+                                        if (!CNL2.checkText(lastString)) new DistributeData(lastString).start();
                                     }
                                 }
-                            }
-                            if (fileschanged) {
-                                /* changes detected, add files */
-                                oldFiles = files;
-                                for (File file : files) {
-                                    JDUtilities.getController().loadContainerFile(file);
-                                }
+                            } else {
+                                /*
+                                 * DataFlavor did not change, so we must check
+                                 * for changes
+                                 */
                             }
                         }
                     }
                 } catch (Exception e2) {
+                    JDLogger.exception(e2);
                 }
                 try {
                     Thread.sleep(750);
-                } catch (Exception e) {
+                } catch (InterruptedException e) {
                 }
             }
         }
@@ -183,13 +262,11 @@ public class ClipboardHandler extends Thread implements ControlListener {
      */
     public boolean setEnabled(boolean enabled2) {
         if (enabled == enabled2) return false;
-
         if (enabled2) {
             JDLogger.getLogger().info("ClipBoard Observation enabled");
         } else {
             JDLogger.getLogger().info("ClipBoard Observation disabled");
         }
-
         enabled = enabled2;
         JDUtilities.getConfiguration().setProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, enabled2);
         JDUtilities.getConfiguration().save();
