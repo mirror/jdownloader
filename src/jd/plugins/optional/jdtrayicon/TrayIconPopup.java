@@ -31,7 +31,6 @@ import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSeparator;
-import javax.swing.JSpinner;
 import javax.swing.JToggleButton;
 import javax.swing.JWindow;
 import javax.swing.SpinnerNumberModel;
@@ -59,8 +58,8 @@ public class TrayIconPopup extends JWindow implements MouseListener, ChangeListe
     private JPanel bottomPanel;
     private boolean enteredPopup;
     private JDSpinner spMaxSpeed;
-    private JSpinner spMaxDls;
-    private JSpinner spMaxChunks;
+    private JDSpinner spMaxDls;
+    private JDSpinner spMaxChunks;
 
     private JPanel exitPanel;
     private ArrayList<JToggleButton> resizecomps;
@@ -151,28 +150,27 @@ public class TrayIconPopup extends JWindow implements MouseListener, ChangeListe
     }
 
     private void initBottomPanel() {
-        spMaxSpeed = new JDSpinner(JDL.L("plugins.trayicon.popup.bottom.speed", "Geschwindigkeitsbegrenzung"), "width 60!,h 20!");
+        spMaxSpeed = new JDSpinner(JDL.L("plugins.trayicon.popup.bottom.speed", "Geschwindigkeitsbegrenzung"), "width 60!,h 20!,right");
         spMaxSpeed.getSpinner().setModel(new SpinnerNumberModel(config.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0), 0, Integer.MAX_VALUE, 50));
         spMaxSpeed.setToolTipText(JDL.L("gui.tooltip.statusbar.speedlimiter", "Geschwindigkeitsbegrenzung festlegen (KB/s) [0:unendlich]"));
         spMaxSpeed.getSpinner().addChangeListener(this);
         colorizeSpinnerSpeed();
-        spMaxDls = new JSpinner();
-        spMaxDls.setModel(new SpinnerNumberModel(config.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2), 1, 20, 1));
+
+        spMaxDls = new JDSpinner(JDL.L("plugins.trayicon.popup.bottom.simDls", "Gleichzeitige Downloads"), "width 60!,h 20!,right");
+        spMaxDls.getSpinner().setModel(new SpinnerNumberModel(config.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2), 1, 20, 1));
         spMaxDls.setToolTipText(JDL.L("gui.tooltip.statusbar.simultan_downloads", "Max. gleichzeitige Downloads"));
-        spMaxDls.addChangeListener(this);
+        spMaxDls.getSpinner().addChangeListener(this);
 
-        spMaxChunks = new JSpinner();
-        spMaxChunks.setModel(new SpinnerNumberModel(config.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2), 1, 20, 1));
+        spMaxChunks = new JDSpinner(JDL.L("plugins.trayicon.popup.bottom.simChunks", "Gleichzeitige Verbindungen"), "width 60!,h 20!,right");
+        spMaxChunks.getSpinner().setModel(new SpinnerNumberModel(config.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2), 1, 20, 1));
         spMaxChunks.setToolTipText(JDL.L("gui.tooltip.statusbar.max_chunks", "Max. Connections/File"));
-        spMaxChunks.addChangeListener(this);
+        spMaxChunks.getSpinner().addChangeListener(this);
 
-        bottomPanel = new JPanel(new MigLayout("ins 0, wrap 2", "[]5[]", "[]2[]2[]"));
+        bottomPanel = new JPanel(new MigLayout("ins 0, wrap 1", "[grow, fill]", "[]2[]2[]"));
         bottomPanel.setOpaque(false);
         bottomPanel.add(spMaxSpeed);
-        bottomPanel.add(new JLabel(JDL.L("plugins.trayicon.popup.bottom.simDls", "Gleichzeitige Downloads")));
-        bottomPanel.add(spMaxDls, "width 60!, h 20!");
-        bottomPanel.add(new JLabel(JDL.L("plugins.trayicon.popup.bottom.simChunks", "Gleichzeitige Verbindungen")));
-        bottomPanel.add(spMaxChunks, "width 60!,h 20!");
+        bottomPanel.add(spMaxDls);
+        bottomPanel.add(spMaxChunks);
     }
 
     private void addMenuEntry(String actionId) {
@@ -232,22 +230,22 @@ public class TrayIconPopup extends JWindow implements MouseListener, ChangeListe
 
     public void stateChanged(ChangeEvent e) {
         if (e.getSource() == spMaxSpeed.getSpinner()) {
-            int value = (Integer) spMaxSpeed.getValue();
+            int value = spMaxSpeed.getValue();
 
             if (value != config.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0)) {
                 config.setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, value);
                 config.save();
             }
             colorizeSpinnerSpeed();
-        } else if (e.getSource() == spMaxDls) {
-            int value = (Integer) spMaxDls.getValue();
+        } else if (e.getSource() == spMaxDls.getSpinner()) {
+            int value = spMaxDls.getValue();
 
             if (value != config.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2)) {
                 config.setProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, value);
                 config.save();
             }
-        } else if (e.getSource() == spMaxChunks) {
-            int value = (Integer) spMaxChunks.getValue();
+        } else if (e.getSource() == spMaxChunks.getSpinner()) {
+            int value = spMaxChunks.getValue();
 
             if (value != config.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2)) {
                 config.setProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, value);
