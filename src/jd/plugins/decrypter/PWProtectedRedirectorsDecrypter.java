@@ -30,7 +30,8 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cliccami.info", "jaazu.com", "lempar.co.tv", "mylink4u.info", "linkoculto.com", "urlaxe.net", "dwarfurl.com", "skracaj.org + l-x.pl", "xlurl.com", "ncane.com", "uplode.com", "cbuz.com", "shorten.ws" }, urls = { "http://[\\w\\.]*?cliccami\\.info/[0-9a-z]+", "http://[\\w\\.]*?jaazu\\.com/[a-z0-9]+", "http://[\\w\\.]*?lempar\\.co\\.tv/[0-9a-z]+", "http://[\\w\\.]*?mylink4u\\.info/[a-z0-9]+", "http://[\\w\\.]*?linkoculto\\.com/[a-z0-9]+", "http://[\\w\\.]*?urlaxe\\.net/[0-9]+", "http://[\\w\\.]*?dwarfurl\\.com/[a-z0-9]+", "http://[\\w\\.]*?(skracaj\\.org|l-x\\.pl)/[a-z0-9]+", "http://[\\w\\.]*?xlurl\\.com/[a-z0-9]+", "http://[\\w\\.]*?ncane\\.com/[a-z0-9]+", "http://[\\w\\.]*?uplode\\.in/[a-z0-9-]+", "http://[\\w\\.]*?cbuz\\.com/[a-z0-9]+", "http://[\\w\\.]*?shorten\\.ws/[a-z0-9]+" }, flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cliccami.info", "jaazu.com", "lempar.co.tv", "mylink4u.info", "linkoculto.com", "urlaxe.net", "dwarfurl.com", "skracaj.org + l-x.pl", "xlurl.com", "ncane.com", "uplode.com", "cbuz.com", "shorten.ws", "smallizer.com" }, urls = { "http://[\\w\\.]*?cliccami\\.info/[0-9a-z]+", "http://[\\w\\.]*?jaazu\\.com/[a-z0-9]+", "http://[\\w\\.]*?lempar\\.co\\.tv/[0-9a-z]+", "http://[\\w\\.]*?mylink4u\\.info/[a-z0-9]+", "http://[\\w\\.]*?linkoculto\\.com/[a-z0-9]+", "http://[\\w\\.]*?urlaxe\\.net/[0-9]+", "http://[\\w\\.]*?dwarfurl\\.com/[a-z0-9]+", "http://[\\w\\.]*?(skracaj\\.org|l-x\\.pl)/[a-z0-9]+", "http://[\\w\\.]*?xlurl\\.com/[a-z0-9]+", "http://[\\w\\.]*?ncane\\.com/[a-z0-9]+", "http://[\\w\\.]*?uplode\\.in/[a-z0-9-]+", "http://[\\w\\.]*?cbuz\\.com/[a-z0-9]+", "http://[\\w\\.]*?shorten\\.ws/[a-z0-9]+",
+        "http://[\\w\\.]*?smallizer\\.com/[a-z0-9]+" }, flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
 public class PWProtectedRedirectorsDecrypter extends PluginForDecrypt {
 
     public PWProtectedRedirectorsDecrypter(PluginWrapper wrapper) {
@@ -58,6 +59,8 @@ public class PWProtectedRedirectorsDecrypter extends PluginForDecrypt {
             if (finallink == null) finallink = br.getRegex("window\\.location = \"(.*?)\"").getMatch(0);
             // Handling for uplode.com links
             if (finallink == null) finallink = br.getRegex("download URL.*?href=\"(.*?)\"").getMatch(0);
+            // Handling for smallizer.com links
+            if (finallink == null) finallink = br.getRegex("\"removeFrame\".*?href=\"(.*?)\"").getMatch(0);
             if (finallink == null && (br.containsHTML("(name=\"pass\"|name=\"p\"|name=\"shortcut_password\")"))) {
                 for (int i = 0; i <= 2; i++) {
                     Form pwform = br.getForm(0);

@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
@@ -28,7 +29,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ex.ua" }, urls = { "http://www\\.ex\\.ua/((view|get)/[0-9]+|(view/[0-9]+\\?r=[0-9]+|view/[0-9]+\\?r=[0-9]+,[0-9]+))" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ex.ua" }, urls = { "http://www\\.ex\\.ua/((view|get)/[0-9]+|(view/[0-9]+\\?r=[0-9]+|view/[0-9]+\\?r=[0-9,]+))" }, flags = { 0 })
 public class Xa extends PluginForDecrypt {
 
     public Xa(PluginWrapper wrapper) {
@@ -43,15 +44,38 @@ public class Xa extends PluginForDecrypt {
         if (br.getRedirectLocation() != null && br.getRedirectLocation().equals("http://www.ex.ua/")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         String fpName = br.getRegex("<title>(.*?)@ EX\\.UA</title>").getMatch(0);
         if (parameter.contains("/view/")) {
-            String[] links = br.getRegex("'(/get/[0-9]+)'").getColumn(0);
-            if (links.length == 0) return null;
-            progress.setRange(links.length);
-            for (String cryptedlink : links) {
-                br.getPage("http://www.ex.ua" + cryptedlink);
-                String finallink = br.getRedirectLocation();
-                if (finallink == null) return null;
-                decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
-                progress.increase(1);
+            String[] linksandmd5 = br.getRegex("'(/get/[0-9]+.*?md5:[0-9a-z]+)'").getColumn(0);
+            if (linksandmd5 != null) {
+                progress.setRange(linksandmd5.length);
+                for (String pagepiece : linksandmd5) {
+                    String md5hash = new Regex(pagepiece, "md5:([a-z0-9]+)").getMatch(0);
+                    String cryptedlink = new Regex(pagepiece, "(/get/[0-9]+)").getMatch(0);
+                    br.getPage("http://www.ex.ua" + cryptedlink);
+                    String finallink = br.getRedirectLocation();
+                    if (finallink == null) return null;
+                    DownloadLink decryptedlink = createDownloadlink("directhttp://" + finallink);
+                    if (md5hash != null) {
+                        decryptedlink.setMD5Hash(md5hash.trim());
+                    }
+                    // Errorhandling for offline links, adding them makes no
+                    // sense!
+                    if (!finallink.contains("http://www.ex.ua/online")) {
+                        decryptedLinks.add(decryptedlink);
+                    }
+                    progress.increase(1);
+                }
+
+            } else {
+                String[] links = br.getRegex("'(/get/[0-9]+)'").getColumn(0);
+                if (links.length == 0) return null;
+                progress.setRange(links.length);
+                for (String cryptedlink : links) {
+                    br.getPage("http://www.ex.ua" + cryptedlink);
+                    String finallink = br.getRedirectLocation();
+                    if (finallink == null) return null;
+                    decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
+                    progress.increase(1);
+                }
             }
             if (fpName != null) {
                 FilePackage fp = FilePackage.getInstance();

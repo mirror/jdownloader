@@ -22,11 +22,13 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "multiupload.com" }, urls = { "http://[\\w\\.]*?multiupload\\.com/[0-9A-Z]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "multiupload.com" }, urls = { "http://[\\w\\.]*?multiupload\\.com/([A-Z0-9]{2}_[A-Z0-9]+|[0-9A-Z]+)" }, flags = { 0 })
 public class MltpldCm extends PluginForDecrypt {
 
     public MltpldCm(PluginWrapper wrapper) {
@@ -35,16 +37,26 @@ public class MltpldCm extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        br.getPage(param.toString());
-        String[] redirectLinks = br.getRegex(Pattern.compile("id=\"urlhref_.*?\">(.*?)</a></div>")).getColumn(0);
-        progress.setRange(redirectLinks.length);
-        for (String redirectLink : redirectLinks) {
-            br.getPage(redirectLink);
+        br.setFollowRedirects(false);
+        String parameter = param.toString();
+        br.getPage(parameter);
+        if (br.containsHTML("(the link you have clicked is not available|Invalid link|The file has been deleted because it was violating our|No htmlCode read)")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        if (!parameter.contains("_")) {
+            String[] redirectLinks = br.getRegex(Pattern.compile("id=\"urlhref_.*?\">(.*?)</a></div>")).getColumn(0);
+            if (redirectLinks == null || redirectLinks.length == 0) return null;
+            progress.setRange(redirectLinks.length);
+            for (String redirectLink : redirectLinks) {
+                br.getPage(redirectLink);
+                String finallink = br.getRedirectLocation();
+                if (finallink == null) return null;
+                if (finallink.contains("mediafire")) finallink = finallink.replace("mediafire.com?", "mediafire.com/?");
+                decryptedLinks.add(createDownloadlink(finallink));
+                progress.increase(1);
+            }
+        } else {
             String finallink = br.getRedirectLocation();
             if (finallink == null) return null;
-            if (finallink.contains("mediafire")) finallink = finallink.replace("mediafire.com?", "mediafire.com/?");
             decryptedLinks.add(createDownloadlink(finallink));
-            progress.increase(1);
         }
 
         return decryptedLinks;

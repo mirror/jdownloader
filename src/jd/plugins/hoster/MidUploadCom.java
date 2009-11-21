@@ -65,6 +65,7 @@ public class MidUploadCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
         }
+        if (br.containsHTML("(File Not Found|The file you were looking for could not be found)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         form = br.getFormbyProperty("name", "F1");
         if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // waittime

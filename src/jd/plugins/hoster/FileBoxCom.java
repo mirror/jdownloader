@@ -34,12 +34,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-//filebox by pspzockerscene
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filebox.com" }, urls = { "http://[\\w\\.]*?filebox\\.com/(.*?/[0-9a-z]{12}|[0-9a-z]{12})" }, flags = { 2 })
 public class FileBoxCom extends PluginForHost {
-
-    private static int simultanpremium = 1;
-    private static final Object PREMLOCK = new Object();
 
     public FileBoxCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -80,6 +76,7 @@ public class FileBoxCom extends PluginForHost {
         if (hostedFiles != null) ai.setFilesNum(Long.parseLong(hostedFiles));
         account.setValid(true);
         ai.setUnlimitedTraffic();
+        // TODO: Implement handle free for registered users!
         if (br.containsHTML("Registered User")) {
             ai.setStatus("Registered User");
         } else {
@@ -118,25 +115,14 @@ public class FileBoxCom extends PluginForHost {
 
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
-        boolean premium = false;
-        synchronized (PREMLOCK) {
-            requestFileInformation(link);
-            login(account);
-            premium = br.containsHTML("Premium User");
-            if (!premium) {
-                simultanpremium = 1;
-            } else {
-                if (simultanpremium + 1 > 20) {
-                    simultanpremium = 20;
-                } else {
-                    simultanpremium++;
-                }
-            }
-        }
         String passCode = null;
+        requestFileInformation(link);
+        login(account);
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
         String dllink = br.getRedirectLocation();
+        if (dllink == null) dllink = br.getRegex("direct_link\".*?value=\"(http.*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\"(http://media[0-9]+\\.filebox\\.com/files/.*?/[a-z0-9]+/.*?)\"").getMatch(0);
         if (dllink == null) {
             Form pwform = null;
             if (br.containsHTML("splash_Pasword")) {
@@ -149,8 +135,9 @@ public class FileBoxCom extends PluginForHost {
                     passCode = link.getStringProperty("pass", null);
                 }
                 pwform.put("password", passCode);
-            } else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             br.submitForm(pwform);
             if (br.containsHTML("Wrong password")) {
                 logger.warning("Wrong password!");
@@ -166,7 +153,7 @@ public class FileBoxCom extends PluginForHost {
             link.setProperty("pass", passCode);
         }
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = BrowserAdapter.openDownload(br, link, dllink, false, 1);
+        dl = BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (dl.getConnection() != null && dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -175,11 +162,16 @@ public class FileBoxCom extends PluginForHost {
     }
 
     @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
+    }
+
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
         String passCode = null;
-        // Outcommented stuff is the captcha handling which isn't needed right
+        // Out commented stuff is the captcha handling which isn't needed right
         // now because their captcha system is buggy so you don't have
         // to enter anything and still you can start downloading...in case they
         // repair that just "activate" the following outcommented lines!
@@ -240,13 +232,6 @@ public class FileBoxCom extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        synchronized (PREMLOCK) {
-            return simultanpremium;
-        }
     }
 
     @Override

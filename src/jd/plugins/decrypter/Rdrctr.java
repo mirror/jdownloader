@@ -82,7 +82,7 @@ public class Rdrctr extends PluginForDecrypt {
         parameter = parameter.replace("ponyurl.com/", "ponyurl.com/forward.php?");
         br.getPage(parameter);
         if (parameter.contains("wowebook.com")) {
-            String cryptedlink = br.getRegex("\"skip_button\" href=\"(.*?)\"").getMatch(0);
+            String cryptedlink = br.getRegex("/download-bg.gif\".*?\"(http://www.wowebook.com/download.*?)\"").getMatch(0);
             if (cryptedlink == null) return null;
             br.getPage(cryptedlink);
         }
