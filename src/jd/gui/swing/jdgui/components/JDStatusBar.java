@@ -68,10 +68,12 @@ public class JDStatusBar extends JPanel implements ChangeListener, ControlListen
         spMaxDls = new JDSpinner(JDL.L("gui.statusbar.sim_ownloads", "Max. Dls."));
         spMaxDls.getSpinner().setModel(new SpinnerNumberModel(dlConfig.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2), 1, 20, 1));
         spMaxDls.setToolTipText(JDL.L("gui.tooltip.statusbar.simultan_downloads", "Max. gleichzeitige Downloads"));
+        spMaxDls.getSpinner().addChangeListener(this);
 
         spMaxChunks = new JDSpinner(JDL.L("gui.statusbar.maxChunks", "Max. Con."));
         spMaxChunks.getSpinner().setModel(new SpinnerNumberModel(dlConfig.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2), 1, 20, 1));
         spMaxChunks.setToolTipText(JDL.L("gui.tooltip.statusbar.max_chunks", "Max. Connections/File"));
+        spMaxChunks.getSpinner().addChangeListener(this);
 
         add(PremiumStatus.getInstance());
         add(spMaxChunks);

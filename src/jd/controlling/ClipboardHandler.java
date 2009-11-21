@@ -33,7 +33,6 @@ import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.nutils.OSDetector;
 import jd.parser.Regex;
-import jd.parser.html.HTMLParser;
 import jd.utils.JDUtilities;
 
 /**
@@ -208,16 +207,22 @@ public class ClipboardHandler extends Thread implements ControlListener {
                                              * .cgi?id=385421
                                              */
                                             /* FIXME: not finished yet */
+                                            /*
+                                             * write check to skip broken first
+                                             * bytes and discard 0 bytes if they
+                                             * are in intervalls
+                                             */
                                             byte[] html2 = new byte[html.length];
 
                                             int o = 0;
                                             for (int i = 6; i < html.length - 1; i++) {
-                                                System.out.print(html[i] + " ");
-                                                if (i % 2 == 0 || true) html2[o++] = html[i];
+                                                // System.out.print(html[i] +
+                                                // " ");
+                                                if (html[i] != 0) html2[o++] = html[i];
                                             }
                                             html = html2;
                                             currentString = new String(html, "UTF-8");
-                                            System.out.println(currentString);
+                                            // System.out.println(currentString);
                                         } else {
                                             /* no workaround needed */
                                             if (charSet != null) {
@@ -229,7 +234,10 @@ public class ClipboardHandler extends Thread implements ControlListener {
                                     } catch (Exception e) {
                                         JDLogger.exception(e);
                                         /* fallback */
-                                        if (cur.isDataFlavorSupported(stringFlavor)) currentString = ((String) cur.getTransferData(stringFlavor));
+                                        if (cur.isDataFlavorSupported(stringFlavor)) {
+                                            what = stringFlavor;
+                                            currentString = ((String) cur.getTransferData(stringFlavor));
+                                        }
                                     }
                                 }
 
@@ -258,17 +266,12 @@ public class ClipboardHandler extends Thread implements ControlListener {
                                         }
                                     } else if (what == urlFlavor || what == stringFlavor) {
                                         /* parse plaintext content */
-                                        System.out.println(currentString);
                                         if (!CNL2.checkText(currentString)) {
                                             System.out.println("parse");
                                             new DistributeData(currentString).start();
                                         }
-                                    } else if (what == htmlFlavor && currentString != null) {
+                                    } else if (what == htmlFlavor) {
                                         /* parse html content, get all links */
-                                        if (true) {
-                                            String urls = HTMLParser.getHttpLinkList(currentString);
-                                            System.out.println(urls);
-                                        }
                                         if (!CNL2.checkText(currentString)) new DistributeData(currentString).start();
                                     }
                                     lastString = currentString;
