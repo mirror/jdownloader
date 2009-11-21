@@ -190,6 +190,19 @@ public class XPath {
     }
 
     /**
+     * Gibt den alle Treffer als NodeList zurück
+     */
+    public NodeList getMatchesAsNodeList() {
+    	NodeList result = null;
+    	try {
+    		result = (NodeList) xpath.compile(query + "/text()").evaluate(doc, XPathConstants.NODESET);
+    	} catch (Exception e) {
+            JDLogger.exception(e);
+        }
+    	return result;
+    }
+
+    /**
      * Gibt den alle Treffer zurück
      */
     public ArrayList<String> getMatches() {
