@@ -37,7 +37,7 @@ public class L4dMapsCom extends PluginForHost {
     private static final String[] servers;
 
     static {
-        servers = new String[] { "E-Frag #1", "E-Frag #2" };
+        servers = new String[] { "E-Frag #1", "GameServers.com" };
     }
 
     public L4dMapsCom(PluginWrapper wrapper) {
@@ -67,13 +67,13 @@ public class L4dMapsCom extends PluginForHost {
     private int getConfiguredServer() {
         switch (getPluginConfig().getIntegerProperty(l4dservers, -1)) {
         case 0:
-            logger.fine("The server #1 is configured");
-            return 1;
+            logger.fine("The server E-Frag #1 is configured");
+            return 0;
         case 1:
-            logger.fine("The server #2 is configured");
-            return 2;
+            logger.fine("The server GameServers.com is configured");
+            return 1;
         default:
-            logger.fine("No server is configured, returning 1st one...");
+            logger.fine("No server is configured, returning default server (E-Frag #1) ...");
             return 1;
         }
     }
@@ -82,37 +82,46 @@ public class L4dMapsCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
-        br.getPage(parameter.getDownloadURL());
+        br.getPage(parameter.getDownloadURL().replaceAll("(mirrors|file-download|details)", "details"));
         String offlinecheck = br.getRedirectLocation();
-        if (offlinecheck != null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("color=\".*?\">.*?</font>.*?\\((.*?)\\).*?<font").getMatch(0);
-        String filesize = br.getRegex(">Size:</font>(.*?)</strong>").getMatch(0);
+        if (offlinecheck != null || br.containsHTML("(404 Not Found|This file could not be found on our system)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("nugget\"><em>(.*?)</em").getMatch(0);
+        String filesize = br.getRegex(">Size: <em>(.*?)</em>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         parameter.setName(filename.trim());
-        parameter.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
+        parameter.setDownloadSize(Regex.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
-
+        br.getPage(link.getDownloadURL());
         int configuredServer = getConfiguredServer();
-
+        boolean realusedserver = false;
         String usedServer = "";
-        if (configuredServer == 1) {
-            usedServer = br.getRegex("\">E-Frag #1<.*?\"(http://www\\.l4dmaps\\.com/file-download\\.php\\?file=[0-9]+&entry=[0-9]+)\"").getMatch(0);
-            if (usedServer == null) {
-                usedServer = br.getRegex("\">E-Frag #2<.*?\"(http://www\\.l4dmaps\\.com/file-download\\.php\\?file=[0-9]+&entry=[0-9]+)\"").getMatch(0);
+        if (configuredServer == 0) {
+            usedServer = br.getRegex(">E-Frag #1</a>.*?\"(/file-download\\.php\\?file=.*?)\"").getMatch(0);
+            if (usedServer != null) {
+                realusedserver = true;
+            } else {
+                usedServer = br.getRegex(">GameServers.com</a>.*?\"(/file-download\\.php\\?file=.*?)\"").getMatch(0);
             }
-        } else if (configuredServer == 2) {
-            usedServer = br.getRegex("\">E-Frag #2<.*?\"(http://www\\.l4dmaps\\.com/file-download\\.php\\?file=[0-9]+&entry=[0-9]+)\"").getMatch(0);
-            if (usedServer == null) {
-                br.getRegex("\">E-Frag #1<.*?\"(http://www\\.l4dmaps\\.com/file-download\\.php\\?file=[0-9]+&entry=[0-9]+)\"").getMatch(0);
+        } else if (configuredServer == 1) {
+            usedServer = br.getRegex(">GameServers.com</a>.*?\"(/file-download\\.php\\?file=.*?)\"").getMatch(0);
+            if (usedServer != null) {
+                realusedserver = true;
+            } else {
+                br.getRegex(">E-Frag #1</a>.*?\"(/file-download\\.php\\?file=.*?)\"").getMatch(0);
             }
         }
         if (usedServer == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        logger.fine("Using link '" + usedServer + "'");
+        usedServer = "http://www.l4dmaps.com" + usedServer;
+        if (realusedserver == true) {
+            logger.info("Link to configured server has been successfully taken, link = " + usedServer);
+        } else {
+            logger.warning("Link to configured server hasn't been successfully taken, link = " + usedServer);
+        }
         br.getPage(usedServer);
 
         String dllink = br.getRegex("begin, <a href=\"(.*?)\"").getMatch(0);
@@ -121,7 +130,8 @@ public class L4dMapsCom extends PluginForHost {
         dllink = "http://www.l4dmaps.com/" + dllink;
         br.getPage(dllink);
         dllink = br.getRedirectLocation();
-        if (dllink.contains("index.php")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null || dllink.contains("index.php")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        logger.info("Final downloadlink = " + dllink);
         // You can download up to 3 files simultaneously from one server so if
         // someone knows how to make JD know that it is downloading 3 files from
         // one server you could make jd switch to the other servers so you can
