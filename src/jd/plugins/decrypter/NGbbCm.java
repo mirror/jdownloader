@@ -38,9 +38,8 @@ public class NGbbCm extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        br.setCookiesExclusive(true);
         br.getPage(parameter);
-        String linkHMTL = br.getRegex(Pattern.compile("Download links:.*?</div><div class=\"codeblock\"><pre>(.+)(</a>)?</pre></div></div></div></div>", Pattern.DOTALL)).getMatch(0);
+        String linkHMTL = br.getRegex(Pattern.compile("Download links:.*?<div class=\"codeblock\"><pre>(.*?)(</a>)?</pre></div>", Pattern.DOTALL)).getMatch(0);
         String links[] = new Regex(linkHMTL, Pattern.compile("(http://.+)")).getColumn(0);
         progress.setRange(links.length);
         for (String element : links) {
