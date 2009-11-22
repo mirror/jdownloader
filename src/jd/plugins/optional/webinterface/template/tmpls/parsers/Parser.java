@@ -28,18 +28,18 @@
  *      Boston, MA 02111-1307 USA
  */
 
-package jd.plugins.optional.webinterface.template.Tmpl.Parsers;
+package jd.plugins.optional.webinterface.template.tmpls.parsers;
 
 import java.util.NoSuchElementException;
 import java.util.Properties;
 import java.util.StringTokenizer;
 import java.util.Vector;
 
-import jd.plugins.optional.webinterface.template.Tmpl.Util;
-import jd.plugins.optional.webinterface.template.Tmpl.Element.Element;
-import jd.plugins.optional.webinterface.template.Tmpl.Element.If;
-import jd.plugins.optional.webinterface.template.Tmpl.Element.Loop;
-import jd.plugins.optional.webinterface.template.Tmpl.Element.Unless;
+import jd.plugins.optional.webinterface.template.tmpls.Util;
+import jd.plugins.optional.webinterface.template.tmpls.element.Element;
+import jd.plugins.optional.webinterface.template.tmpls.element.If;
+import jd.plugins.optional.webinterface.template.tmpls.element.Loop;
+import jd.plugins.optional.webinterface.template.tmpls.element.Unless;
 
 public class Parser {
     private boolean case_sensitive = false;

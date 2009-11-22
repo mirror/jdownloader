@@ -250,7 +250,18 @@
 				<include name="jd/plugins/optional/customizer/**" />
 			</fileset>
 		</jar>
-
+		<mkdir dir="${dist}/pluginressourcen/133__AntiShutdown/plugins" />
+		<jar jarfile="${dist}/pluginressourcen/133__AntiShutdown/plugins/JDAntiShutdown.jar" manifest="Manifest.MF">
+			<fileset dir="${cls}">
+				<include name="jd/plugins/optional/antistandby/**" />
+			</fileset>
+		</jar>
+		<mkdir dir="${dist}/pluginressourcen/134__RouterDBEditor/plugins" />
+		<jar jarfile="${dist}/pluginressourcen/134__RouterDBEditor/plugins/JDRouterDBEditor.jar" manifest="Manifest.MF">
+			<fileset dir="${cls}">
+				<include name="jd/plugins/optional/routerdbeditor/**" />
+			</fileset>
+		</jar>
 	</target>
 
 	<target name="sign">

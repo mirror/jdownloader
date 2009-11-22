@@ -675,6 +675,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
 
     private void chmodUnrar(String path) {
         Executer exec = new Executer("chmod");
+        exec.setLogger(JDLogger.getLogger());
         exec.addParameter("+x");
         exec.addParameter(path);
         exec.setWaitTimeout(-1);

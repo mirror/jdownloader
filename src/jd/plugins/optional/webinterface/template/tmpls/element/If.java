@@ -28,10 +28,10 @@
  *      Boston, MA 02111-1307 USA
  */
 
-package jd.plugins.optional.webinterface.template.Tmpl.Element;
+package jd.plugins.optional.webinterface.template.tmpls.element;
 
-public class Unless extends Conditional {
-    public Unless(String control_var) throws IllegalArgumentException {
-        super("unless", control_var);
+public class If extends Conditional {
+    public If(String control_var) throws IllegalArgumentException {
+        super("if", control_var);
     }
 }

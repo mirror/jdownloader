@@ -48,13 +48,13 @@ import java.util.Stack;
 import java.util.StringTokenizer;
 import java.util.Vector;
 
-import jd.plugins.optional.webinterface.template.Tmpl.Filter;
-import jd.plugins.optional.webinterface.template.Tmpl.Util;
-import jd.plugins.optional.webinterface.template.Tmpl.Element.Conditional;
-import jd.plugins.optional.webinterface.template.Tmpl.Element.Element;
-import jd.plugins.optional.webinterface.template.Tmpl.Element.If;
-import jd.plugins.optional.webinterface.template.Tmpl.Element.Var;
-import jd.plugins.optional.webinterface.template.Tmpl.Parsers.Parser;
+import jd.plugins.optional.webinterface.template.tmpls.Filter;
+import jd.plugins.optional.webinterface.template.tmpls.Util;
+import jd.plugins.optional.webinterface.template.tmpls.element.Conditional;
+import jd.plugins.optional.webinterface.template.tmpls.element.Element;
+import jd.plugins.optional.webinterface.template.tmpls.element.If;
+import jd.plugins.optional.webinterface.template.tmpls.element.Var;
+import jd.plugins.optional.webinterface.template.tmpls.parsers.Parser;
 
 /**
  * Use HTML Templates with java.

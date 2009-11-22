@@ -28,7 +28,7 @@
  *      Boston, MA 02111-1307 USA
  */
 
-package jd.plugins.optional.webinterface.template.Tmpl;
+package jd.plugins.optional.webinterface.template.tmpls;
 
 public class Util {
     public static boolean debug = false;

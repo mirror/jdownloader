@@ -28,7 +28,7 @@
  *      Boston, MA 02111-1307 USA
  */
 
-package jd.plugins.optional.webinterface.template.Tmpl.Element;
+package jd.plugins.optional.webinterface.template.tmpls.element;
 
 import java.util.Hashtable;
 import java.util.NoSuchElementException;
