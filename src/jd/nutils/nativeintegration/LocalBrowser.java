@@ -49,6 +49,12 @@ public abstract class LocalBrowser implements Serializable {
         return name;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (o == null) return false;
+        return toString().equals(o.toString());
+    }
+
     public void setName(String name) {
         this.name = name;
     }
