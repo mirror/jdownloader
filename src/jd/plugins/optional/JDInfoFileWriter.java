@@ -38,6 +38,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginOptional;
+import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.Replacer;
 import jd.utils.locale.JDL;
@@ -47,7 +48,7 @@ public class JDInfoFileWriter extends PluginOptional implements ControlListener 
 
     private static final String FILENAME_DEFAULT = "%LAST_FINISHED_PACKAGE.DOWNLOAD_DIRECTORY%/%LAST_FINISHED_PACKAGE.PACKAGENAME%.info";
 
-    private static final String INFO_STRING_DEFAULT = "Password: %LAST_FINISHED_PACKAGE.PASSWORD%\r\n%LAST_FINISHED_PACKAGE.FILELIST%\r\nFinalized %SYSTEM.DATE% to %SYSTEM.TIME% Clock";
+    private static final String INFO_STRING_DEFAULT = "Password: %LAST_FINISHED_PACKAGE.PASSWORD%\r\nAuto-Password: %LAST_FINISHED_PACKAGE.AUTO_PASSWORD%\r\n%LAST_FINISHED_PACKAGE.FILELIST%\r\nFinalized %SYSTEM.DATE% to %SYSTEM.TIME% Clock";
 
     private static final String PARAM_FILENAME = "FILENAME";
 
@@ -92,11 +93,8 @@ public class JDInfoFileWriter extends PluginOptional implements ControlListener 
 
     public void initConfig() {
         config.addEntry(cmbVars = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, "VARS", Replacer.getKeyList(), JDL.L("plugins.optional.infoFileWriter.variables", "Available variables")));
-
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, JDL.L("plugins.optional.infoFileWriter.insertKey.short", "Insert"), JDL.L("plugins.optional.infoFileWriter.insertKey", "Insert selected Key into the Content"), null));
-
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, JDL.L("plugins.optional.infoFileWriter.insertKey.short", "Insert"), JDL.L("plugins.optional.infoFileWriter.insertKey", "Insert selected Key into the Content"), JDTheme.II("gui.icons.paste", 16, 16)));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, PARAM_FILENAME, JDL.L("plugins.optional.infoFileWriter.filename", "Filename:")).setDefaultValue(FILENAME_DEFAULT));
-
         config.addEntry(txtInfo = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, subConfig, PARAM_INFO_STRING, JDL.L("plugins.optional.infoFileWriter.content", "Content:")).setDefaultValue(INFO_STRING_DEFAULT));
     }
 

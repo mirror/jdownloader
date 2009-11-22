@@ -40,7 +40,7 @@ public class Replacer {
         if (KEYS == null) Replacer.initKeys();
         String[] keys = new String[KEYS.size()];
         for (int i = 0; i < KEYS.size(); i++) {
-            keys[i] = "%" + KEYS.get(i)[0] + "%" + "   (" + KEYS.get(i)[1] + ")";
+            keys[i] = "%" + KEYS.get(i)[0] + "%   (" + KEYS.get(i)[1] + ")";
         }
         return keys;
     }
@@ -54,6 +54,7 @@ public class Replacer {
     private static void initKeys() {
         KEYS = new ArrayList<String[]>();
         KEYS.add(new String[] { "LAST_FINISHED_PACKAGE.PASSWORD", JDL.L("replacer.password", "Last finished package: Password") });
+        KEYS.add(new String[] { "LAST_FINISHED_PACKAGE.AUTO_PASSWORD", JDL.L("replacer.autopassword", "Last finished package: Auto Password") });
         KEYS.add(new String[] { "LAST_FINISHED_PACKAGE.FILELIST", JDL.L("replacer.filelist", "Last finished package: Filelist") });
         KEYS.add(new String[] { "LAST_FINISHED_PACKAGE.PACKAGENAME", JDL.L("replacer.packagename", "Last finished package: Packagename") });
         KEYS.add(new String[] { "LAST_FINISHED_PACKAGE.COMMENT", JDL.L("replacer.comment", "Last finished package: Comment") });
@@ -73,23 +74,27 @@ public class Replacer {
     }
 
     public static String getReplacement(String key) {
-        JDController controller = JDUtilities.getController();
-        DownloadLink dLink = controller.getLastFinishedDownloadLink();
+        DownloadLink dLink = JDController.getInstance().getLastFinishedDownloadLink();
 
         if (key.equalsIgnoreCase("LAST_FINISHED_PACKAGE.PASSWORD")) {
             if (dLink == null) return "";
             return dLink.getFilePackage().getPassword();
         }
 
+        if (key.equalsIgnoreCase("LAST_FINISHED_PACKAGE.AUTO_PASSWORD")) {
+            if (dLink == null) return "";
+            return dLink.getFilePackage().getPasswordAuto().toString();
+        }
+
         if (key.equalsIgnoreCase("LAST_FINISHED_PACKAGE.FILELIST")) {
             if (dLink == null) return "";
-            ArrayList<DownloadLink> files = dLink.getFilePackage().getDownloadLinkList();
-            return files.toString();
+            return dLink.getFilePackage().getDownloadLinkList().toString();
         }
 
         if (key.equalsIgnoreCase("LAST_FINISHED_PACKAGE.PACKAGENAME")) {
             if (dLink == null) return "";
-            if (dLink.getFilePackage().getName() == null || dLink.getFilePackage().getName().length() == 0) return dLink.getName();
+            String name = dLink.getFilePackage().getName();
+            if (name == null || name.equals("") || name.equals(JDL.L("controller.packages.defaultname", "various"))) return dLink.getName();
             return dLink.getFilePackage().getName();
         }
 
