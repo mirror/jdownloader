@@ -1,4 +1,0 @@
-<jDownloader>
-  <method name="filer.net" author="DwD" services="filer.net"/>
-  <format type="jpg" letterNum="5" minLetterNum="1" maxLetterNum="5"/>
-</jDownloader>

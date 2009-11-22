@@ -18,13 +18,11 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -33,10 +31,10 @@ import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.pluginUtils.Recaptcha;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filer.net" }, urls = { "http://[\\w\\.]*?filer.net/(file[\\d]+|get|dl)/.*" }, flags = { 2 })
@@ -52,27 +50,30 @@ public class FilerNet extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
+        br.setFollowRedirects(false);
         int maxCaptchaTries = 5;
-        String code;
 
         br.setCookiesExclusive(true);
         br.clearCookies("filer.net");
         br.getPage(downloadLink.getDownloadURL());
         int tries = 0;
         while (tries < maxCaptchaTries) {
-            File captchaFile = getLocalCaptchaFile(".png");
-            Browser.download(captchaFile, br.openGetConnection("http://www.filer.net/captcha.png"));
-            code = getCaptchaCode(captchaFile, downloadLink);
-            br.postPage(downloadLink.getDownloadURL(), "captcha=" + code);
+            Recaptcha rc = new Recaptcha(br);
+            rc.parse();
+            rc.load();
+            File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+            String c = getCaptchaCode(cf, downloadLink);
+            rc.setCode(c);
             tries++;
-            if (!br.containsHTML("captcha.png")) {
+            if (!br.containsHTML("api.recaptcha.net")) {
                 break;
             }
         }
-        if (br.containsHTML("captcha.png")) {
+        if (br.containsHTML("api.recaptcha.net")) {
             linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
             return;
         }
+        if (br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
         if (br.getRegex(PATTERN_MATCHER_ERROR).matches()) {
             String error = br.getRegex("folgende Fehler und versuchen sie es erneut.*?<ul>.*?<li>(.*?)<\\/li>").getMatch(0);
@@ -91,9 +92,10 @@ public class FilerNet extends PluginForHost {
         Form[] forms = br.getForms();
         if (forms.length < 2) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 1000 * 60l); }
         br.submitForm(forms[1]);
-        sleep(61000, downloadLink);
-
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, (String) null);
+        String dllink = br.getRedirectLocation();
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        dl.setAllowFilenameFromURL(true);
         dl.startDownload();
     }
 
@@ -158,68 +160,12 @@ public class FilerNet extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) {
-        if (downloadLink.getDownloadURL().contains("filer.net/dl/")) {
-            downloadLink.setDownloadSize(0);
-            downloadLink.setFinalFileName("Please logout in your Webbrowser and copy the free user links or copy the folder link.");
-            return AvailableStatus.TRUE;
-
-            /*
-             * This method removes free-traffic from the Premium Account the url
-             * is linked to - do not use it Browser br = new Browser();
-             * URLConnectionAdapter urlConnection = null;
-             * br.setFollowRedirects(true); try { urlConnection =
-             * br.openGetConnection(downloadLink.getDownloadURL());
-             * downloadLink.
-             * setFinalFileName(Plugin.getFileNameFormHeader(urlConnection));
-             * downloadLink.setBrowserUrl(downloadLink.getDownloadURL());
-             * downloadLink
-             * .setDownloadSize(urlConnection.getLongContentLength());
-             * downloadLink.setDupecheckAllowed(true);
-             * urlConnection.disconnect(); } catch (IOException e) {
-             * jd.controlling
-             * .JDLogger.getLogger().log(java.util.logging.Level.SEVERE
-             * ,"Exception occurred",e); } return true;
-             */
-        }
-
-        String page;
-        File captchaFile;
-        String code;
-        int bytes;
-        int maxCaptchaTries = 5;
-        int tries = 0;
-        while (maxCaptchaTries > tries) {
-            try {
-                Browser br = new Browser();
-                br.getPage(downloadLink.getDownloadURL());
-                captchaFile = getLocalCaptchaFile(".png");
-                Browser.download(captchaFile, br.openGetConnection("http://www.filer.net/captcha.png"));
-                code = getCaptchaCode(captchaFile, downloadLink);
-                page = br.postPage(downloadLink.getDownloadURL(), "captcha=" + code);
-                if (Regex.matches(page, PATTERN_MATCHER_ERROR)) { return AvailableStatus.FALSE; }
-                if (downloadLink.getDownloadSize() == 0) {
-                    bytes = (int) Regex.getSize(new Regex(page, "<tr class=\"even\">.*?<th>Dateigröße</th>.*?<td>(.*?)</td>").getMatch(0));
-                    downloadLink.setDownloadSize(bytes);
-                }
-                br.setFollowRedirects(false);
-                Form[] forms = br.getForms();
-                if (forms.length < 2) { return AvailableStatus.TRUE; }
-                if (downloadLink.getFinalFileName() != null) {
-                    String filename = downloadLink.getFinalFileName();
-                    downloadLink.setFinalFileName(null);
-                    downloadLink.setName(filename);
-                } else {
-                    br.submitForm(forms[1]);
-                    downloadLink.setName(Plugin.getFileNameFromURL(new URL(br.getRedirectLocation())));
-                }
-                return AvailableStatus.TRUE;
-            } catch (Exception e) {
-                logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
-            }
-            tries++;
-        }
-        return AvailableStatus.FALSE;
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.getPage(link.getDownloadURL());
+        br.setFollowRedirects(false);
+        if (!br.containsHTML("api.recaptcha.net")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        return AvailableStatus.TRUE;
     }
 
     @Override
