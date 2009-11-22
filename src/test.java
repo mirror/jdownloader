@@ -364,9 +364,10 @@ public class test extends JDialog {
                     // System.out.println("\n\n Name: " +
                     // flavors[i].getHumanPresentableName()); //
                     System.out.println("Size " + ((byte[]) contents.getTransferData(flavors[i])).length);
-                    for (byte b : ((byte[]) contents.getTransferData(flavors[i]))) {
-                        // System.out.print(b);
-                    }
+                    // for (byte b : ((byte[])
+                    // contents.getTransferData(flavors[i]))) {
+                    // System.out.print(b);
+                    // }
                     // System.out.println(new String((byte[])
                     // contents.getTransferData(flavors[i]), "UTF-8"));
                     // System.out.println(new String((byte[])

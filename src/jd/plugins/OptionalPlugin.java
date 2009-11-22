@@ -41,10 +41,10 @@ public @interface OptionalPlugin {
     String rev();
 
     /**
-     * if set to true, the addon has to implement public void
-     * setGuiEnable(boolean b)
+     * if set to true, the addon has to implement
+     * {@link PluginOptional#setGuiEnable(boolean)}
      * 
-     * @return
+     * @see PluginOptional#setGuiEnable(boolean)
      */
     boolean hasGui() default false;
 }

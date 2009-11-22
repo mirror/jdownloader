@@ -15,6 +15,7 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.lang.reflect.Method;
 import java.net.URL;
+import java.util.List;
 import java.util.ListIterator;
 import java.util.StringTokenizer;
 
@@ -26,6 +27,7 @@ import javax.swing.SwingConstants;
 
 public class test2 extends JPanel implements DropTargetListener {
 
+    private static final long serialVersionUID = 3583068430484359388L;
     DropTarget dropTarget;
     JLabel dropHereLabel;
     static DataFlavor urlFlavor, uriListFlavor, macPictStreamFlavor;
@@ -72,6 +74,7 @@ public class test2 extends JPanel implements DropTargetListener {
 
     }
 
+    @SuppressWarnings("unchecked")
     public void drop(DropTargetDropEvent dtde) {
         System.out.println("drop");
         dtde.acceptDrop(DnDConstants.ACTION_COPY_OR_MOVE);
@@ -88,8 +91,8 @@ public class test2 extends JPanel implements DropTargetListener {
                 gotData = true;
             } else if (trans.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
                 System.out.println("javaFileList is supported");
-                java.util.List list = (java.util.List) trans.getTransferData(DataFlavor.javaFileListFlavor);
-                ListIterator it = list.listIterator();
+                List<File> list = (List<File>) trans.getTransferData(DataFlavor.javaFileListFlavor);
+                ListIterator<File> it = list.listIterator();
                 while (it.hasNext()) {
                     File f = (File) it.next();
                     ImageIcon icon = new ImageIcon(f.getAbsolutePath());
@@ -122,10 +125,10 @@ public class test2 extends JPanel implements DropTargetListener {
                 // for the benefit of the non-mac crowd, this is
                 // done with reflection. directly, it would be:
                 // Image img = QTJPictHelper.pictStreamToJavaImage (in);
-                Class qtjphClass = Class.forName("QTJPictHelper");
-                Class[] methodParamTypes = { java.io.InputStream.class };
+                Class<?> qtjphClass = Class.forName("QTJPictHelper");
+                Class<?>[] methodParamTypes = { InputStream.class };
                 Method method = qtjphClass.getDeclaredMethod("pictStreamToJavaImage", methodParamTypes);
-                InputStream[] methodParams = { in };
+                Object[] methodParams = { in };
                 Image img = (Image) method.invoke(null, methodParams);
                 showImageInNewFrame(img);
                 gotData = true;

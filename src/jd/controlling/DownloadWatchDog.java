@@ -27,6 +27,7 @@ import jd.controlling.reconnect.Reconnecter;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.swing.jdgui.actions.ActionController;
+import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -91,10 +92,6 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
     private STATE downloadStatus = STATE.NOT_RUNNING;
 
     private static DownloadWatchDog INSTANCE;
-
-    // /** The path separator used by the underlying operating system */
-    // private static final String PATH_SEPARATOR =
-    // System.getProperty("file.separator");
 
     public synchronized static DownloadWatchDog getInstance() {
         if (INSTANCE == null) INSTANCE = new DownloadWatchDog();
@@ -175,27 +172,28 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                 DownloadController.getInstance().fireDownloadLinkUpdate(((FilePackage) stopMark).get(0));
             }
             stopMark = entry;
+            ToolBarAction stopMark = ActionController.getToolBarAction("toolbar.control.stopmark");
             if (entry instanceof DownloadLink) {
-                ActionController.getToolBarAction("toolbar.control.stopmark").setSelected(true);
-                ActionController.getToolBarAction("toolbar.control.stopmark").setEnabled(true);
-                ActionController.getToolBarAction("toolbar.control.stopmark").setIcon("gui.images.stopmark.enabled");
-                ActionController.getToolBarAction("toolbar.control.stopmark").setToolTipText(JDL.LF(JDL_PREFIX + "stopmark.downloadlink", "Stopmark is set on Downloadlink: %s", ((DownloadLink) entry).getName()));
+                stopMark.setSelected(true);
+                stopMark.setEnabled(true);
+                stopMark.setIcon("gui.images.stopmark.enabled");
+                stopMark.setToolTipText(JDL.LF(JDL_PREFIX + "stopmark.downloadlink", "Stopmark is set on Downloadlink: %s", ((DownloadLink) entry).getName()));
                 DownloadController.getInstance().fireDownloadLinkUpdate(entry);
             } else if (entry instanceof FilePackage) {
-                ActionController.getToolBarAction("toolbar.control.stopmark").setSelected(true);
-                ActionController.getToolBarAction("toolbar.control.stopmark").setEnabled(true);
-                ActionController.getToolBarAction("toolbar.control.stopmark").setIcon("gui.images.stopmark.enabled");
-                ActionController.getToolBarAction("toolbar.control.stopmark").setToolTipText(JDL.LF(JDL_PREFIX + "stopmark.filepackage", "Stopmark is set on Filepackage: %s", ((FilePackage) entry).getName()));
+                stopMark.setSelected(true);
+                stopMark.setEnabled(true);
+                stopMark.setIcon("gui.images.stopmark.enabled");
+                stopMark.setToolTipText(JDL.LF(JDL_PREFIX + "stopmark.filepackage", "Stopmark is set on Filepackage: %s", ((FilePackage) entry).getName()));
                 DownloadController.getInstance().fireDownloadLinkUpdate(((FilePackage) entry).get(0));
             } else if (entry == hiddenstopMark) {
-                ActionController.getToolBarAction("toolbar.control.stopmark").setSelected(true);
-                ActionController.getToolBarAction("toolbar.control.stopmark").setEnabled(true);
-                ActionController.getToolBarAction("toolbar.control.stopmark").setIcon("gui.images.stopmark.enabled");
-                ActionController.getToolBarAction("toolbar.control.stopmark").setToolTipText(JDL.L(JDL_PREFIX + "stopmark.set", "Stopmark is still set!"));
+                stopMark.setSelected(true);
+                stopMark.setEnabled(true);
+                stopMark.setIcon("gui.images.stopmark.enabled");
+                stopMark.setToolTipText(JDL.L(JDL_PREFIX + "stopmark.set", "Stopmark is still set!"));
             } else if (entry == nostopMark) {
-                ActionController.getToolBarAction("toolbar.control.stopmark").setSelected(false);
-                ActionController.getToolBarAction("toolbar.control.stopmark").setIcon("gui.images.stopmark.disabled");
-                ActionController.getToolBarAction("toolbar.control.stopmark").setToolTipText(JDL.L("jd.gui.swing.jdgui.actions.actioncontroller.toolbar.control.stopmark.tooltip", "Stop after current Downloads"));
+                stopMark.setSelected(false);
+                stopMark.setIcon("gui.images.stopmark.disabled");
+                stopMark.setToolTipText(JDL.L("jd.gui.swing.jdgui.actions.actioncontroller.toolbar.control.stopmark.tooltip", "Stop after current Downloads"));
             }
 
         }
@@ -496,7 +494,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
         }
     }
 
-    /*
+    /**
      * try to force a downloadstart, will ignore maxperhost and maxdownloads
      * limits
      */
