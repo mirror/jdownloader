@@ -25,6 +25,7 @@ import jd.controlling.ProgressControllerEvent;
 import jd.controlling.ProgressControllerListener;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -32,7 +33,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shareapic.net" }, urls = { "http://[\\w\\.]*?shareapic\\.net/([0-9]+|(Zoom|View)-[0-9]+|content\\.php\\?id=[0-9]+)" }, flags = { 0 })
-public class ShareaPicNet extends PluginForDecrypt implements ProgressControllerListener{
+public class ShareaPicNet extends PluginForDecrypt implements ProgressControllerListener {
 
     private boolean abort = false;
 
@@ -50,16 +51,12 @@ public class ShareaPicNet extends PluginForDecrypt implements ProgressController
             String picid = new Regex(parameter, "shareapic\\.net/content\\.php\\?id=(\\d+)").getMatch(0);
             parameter = "http://www.shareapic.net/View-" + picid;
         }
-        FilePackage fp = FilePackage.getInstance();
         br.setFollowRedirects(false);
-        br.getPage(parameter.replaceAll("(View|Zoom)", "Zoom") + ".html");
+        parameter = parameter.replaceAll("(View|Zoom)", "Zoom") + ".html";
+        br.getPage(parameter);
 
         /* Error handling */
-        if (br.containsHTML("Access Denied - This is a non-public gallery") || br.containsHTML("error404") || br.containsHTML("Image has been removed from the server")) {
-            logger.warning("The requested document was not found on this server.");
-            logger.warning(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-            return new ArrayList<DownloadLink>();
-        }
+        if (br.containsHTML("Access Denied - This is a non-public gallery") || br.containsHTML("error404") || br.containsHTML("Image has been removed from the server")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
 
         /* Single pictures handling */
         if (parameter.contains("Zoom") || parameter.contains("View")) {
@@ -80,9 +77,6 @@ public class ShareaPicNet extends PluginForDecrypt implements ProgressController
                 }
             }
         }
-        if (fpName != null) {
-            fp.setName(fpName.trim());
-        }
         String pagepiece = br.getRegex("<textarea(.*?)</textarea>").getMatch(0);
         if (pagepiece == null) return null;
         String[] links = new Regex(pagepiece, "\"(http://www.shareapic\\.net/View-[0-9]+)").getColumn(0);
@@ -102,12 +96,16 @@ public class ShareaPicNet extends PluginForDecrypt implements ProgressController
             decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
             progress.increase(1);
         }
-        fp.addLinks(decryptedLinks);
+        if (fpName != null) {
+            FilePackage fp = FilePackage.getInstance();
+            fp.setName(fpName.trim());
+            fp.addLinks(decryptedLinks);
+        }
         return decryptedLinks;
     }
 
     public void onProgressControllerEvent(ProgressControllerEvent event) {
-       if (event.getID() == ProgressControllerEvent.CANCEL) {
+        if (event.getID() == ProgressControllerEvent.CANCEL) {
             abort = true;
         }
     }

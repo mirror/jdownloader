@@ -28,11 +28,12 @@ import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "biggerupload.com" }, urls = { "http://[\\w\\.]*?biggerupload\\.com/[\\w]+/?.*" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "biggerupload.com" }, urls = { "http://[\\w\\.]*?biggerupload\\.com/[a-z0-9]{12}" }, flags = { 0 })
 public class BiggeruploadCom extends PluginForHost {
 
     public BiggeruploadCom(PluginWrapper wrapper) {
@@ -43,7 +44,6 @@ public class BiggeruploadCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
-        br.setDebug(true);
         Form form = br.getForm(0);
         form.setAction(downloadLink.getDownloadURL());
         form.remove("method_premium");
@@ -59,31 +59,81 @@ public class BiggeruploadCom extends PluginForHost {
             int waittime = ((3600 * hours) + (60 * minutes) + seconds + 1) * 1000;
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
         } else {
+            if (br.containsHTML("(You can download files up to.*?only|Upgrade your account to download bigger files)")) {
+                String filesizelimit = br.getRegex("You can download files up to(.*?)only").getMatch(0);
+                if (filesizelimit != null) {
+                    filesizelimit = filesizelimit.trim();
+                    logger.warning("As free user you can download files up to " + filesizelimit + " only");
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "Free users can download files up to " + filesizelimit + " only");
+                } else {
+                    logger.warning("Only downloadable via premium");
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium");
+                }
+            }
             form = br.getFormbyProperty("name", "F1");
             if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
-            /* "Captcha Method" */
-            String[][] letters = br.getRegex("<span style='position:absolute;padding-left:(\\d+)px;padding-top:\\d+px;'>(\\d)</span>").getMatches();
-            if (letters.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            SortedMap<Integer, String> capMap = new TreeMap<Integer, String>();
-            for (String[] letter : letters) {
-                capMap.put(Integer.parseInt(letter[0]), letter[1]);
+            if (br.containsHTML("background:#ccc;text-align")) {
+                /* "Captcha Method" */
+                String[][] letters = new Regex(Encoding.htmlDecode(br.toString()), "<span style='position:absolute;padding-left:(\\d+)px;padding-top:\\d+px;'>(\\d)</span>").getMatches();
+                if (letters.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                SortedMap<Integer, String> capMap = new TreeMap<Integer, String>();
+                for (String[] letter : letters) {
+                    capMap.put(Integer.parseInt(letter[0]), letter[1]);
+                }
+                StringBuilder code = new StringBuilder();
+                for (String value : capMap.values()) {
+                    code.append(value);
+                }
+                form.put("code", code.toString());
             }
-            StringBuilder code = new StringBuilder();
-            for (String value : capMap.values()) {
-                code.append(value);
-            }
-
-            form.put("code", code.toString());
             form.setAction(downloadLink.getDownloadURL());
+            String passCode = null;
+            String loginpw = br.getRegex("value=\"login\">(.*?)value=\" Login\"").getMatch(0);
+            if (br.containsHTML("name=\"password\"") && !(loginpw != null && loginpw.contains("password"))) {
+                logger.info("The downloadlink seems to be password protected.");
+                if (downloadLink.getStringProperty("pass", null) == null) {
+                    passCode = Plugin.getUserInput("Password?", downloadLink);
+                } else {
+                    /* gespeicherten PassCode holen */
+                    passCode = downloadLink.getStringProperty("pass", null);
+                }
+                form.put("password", passCode);
+                logger.info("Put password \"" + passCode + "\" entered by user in the form.");
+            }
             // Ticket Time
-            int tt = Integer.parseInt(br.getRegex("countdown\">(\\d+)</span>").getMatch(0));
-            sleep(tt * 1001, downloadLink);
-            br.submitForm(form);
+            String ttt = br.getRegex("countdown\">.*?(\\d+).*?</span>").getMatch(0);
+            if (ttt != null) {
+                logger.info("Waittime detected, waiting " + ttt.trim() + " seconds from now on...");
+                int tt = Integer.parseInt(ttt);
+                sleep(tt * 1001, downloadLink);
+            }
+            String dllink = br.getRegex("flashvars','file=(http.*?\\.mp3)").getMatch(0);
+            if (dllink == null) dllink = br.getRegex("flashvars=\"file=(http.*?\\.mp3)").getMatch(0);
+            if (dllink == null) {
+                br.submitForm(form);
+                dllink = br.getRedirectLocation();
+            }
             URLConnectionAdapter con2 = br.getHttpConnection();
-            String dllink = br.getRedirectLocation();
             if (con2.getContentType().contains("html")) {
+                if (br.containsHTML("You have to wait")) {
+                    int minutes = 0, seconds = 0, hours = 0;
+                    String tmphrs = br.getRegex("\\s+(\\d+)\\s+hours?").getMatch(0);
+                    if (tmphrs != null) hours = Integer.parseInt(tmphrs);
+                    String tmpmin = br.getRegex("\\s+(\\d+)\\s+minutes?").getMatch(0);
+                    if (tmpmin != null) minutes = Integer.parseInt(tmpmin);
+                    String tmpsec = br.getRegex("\\s+(\\d+)\\s+seconds?").getMatch(0);
+                    if (tmpsec != null) seconds = Integer.parseInt(tmpsec);
+                    int waittime = ((3600 * hours) + (60 * minutes) + seconds + 1) * 1000;
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
+                }
+                if (br.containsHTML("(name=\"password\"|Wrong password)") && !(loginpw != null && loginpw.contains("password"))) {
+                    logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
+                    downloadLink.setProperty("pass", null);
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
                 String error = br.getRegex("class=\"err\">(.*?)</font>").getMatch(0);
+
                 if (error != null) {
                     logger.warning(error);
                     con2.disconnect();
@@ -96,7 +146,27 @@ public class BiggeruploadCom extends PluginForHost {
                 if (br.containsHTML("Download Link Generated")) dllink = br.getRegex("padding:7px;\">\\s+<a\\s+href=\"(.*?)\">").getMatch(0);
             }
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (passCode != null) {
+                downloadLink.setProperty("pass", passCode);
+            }
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+            boolean error = false;
+            try {
+                if (dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("html")) {
+                    error = true;
+                }
+            } catch (Exception e) {
+                error = true;
+            }
+            if (error == true) {
+                logger.warning("The final dllink seems not to be a file!");
+                br.followConnection();
+                if (br.containsHTML("File Not Found")) {
+                    logger.warning("Server says link offline, please recheck that!");
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             dl.startDownload();
         }
     }
