@@ -44,6 +44,8 @@ public class LinkGrabberPackager {
     public static final Pattern pat15 = Pattern.compile("(.+)-+$");
     public static final Pattern pat16 = Pattern.compile("(.+)_+$");
 
+    public static final Pattern pat17 = Pattern.compile("(.+)\\.\\d+\\.xtm$");
+
     public static String cleanFileName(String name) {
         /** remove rar extensions */
         name = getNameMatch(name, pat0);
@@ -59,6 +61,8 @@ public class LinkGrabberPackager {
         name = getNameMatch(name, pat7);
         name = getNameMatch(name, pat8);
         name = getNameMatch(name, pat9);
+        /* xtremsplit */
+        name = getNameMatch(name, pat17);
 
         /**
          * FFSJ splitted files

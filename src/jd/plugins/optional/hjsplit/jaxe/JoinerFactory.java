@@ -35,7 +35,10 @@ public class JoinerFactory {
         if (DestDir == null) { return JoinerFactory.getJoiner(FileName); }
         String sFileName = FileName.getAbsolutePath();
         String sDestDir = DestDir.getAbsolutePath();
-        if (SplitFileFilter.isSplitFile(sFileName) || SplitFileFilter.isZippedSplitFile(sFileName)) { return new JAxeJoiner(sFileName, sDestDir); }
+        if (SplitFileFilter.isSplitFile(sFileName) || SplitFileFilter.isZippedSplitFile(sFileName)) {
+            JDLogger.getLogger().info("Normal split found");
+            return new JAxeJoiner(sFileName, sDestDir);
+        }
         if (UnixSplitFileFilter.isSplitFile(sFileName)) {
             JDLogger.getLogger().info("Unix split found");
             return new UnixSplitJoiner(sFileName, sDestDir);

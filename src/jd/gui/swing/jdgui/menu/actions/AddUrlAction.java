@@ -16,12 +16,11 @@
 
 package jd.gui.swing.jdgui.menu.actions;
 
-import java.awt.Toolkit;
-import java.awt.datatransfer.DataFlavor;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 
 import jd.controlling.CNL2;
+import jd.controlling.ClipboardHandler;
 import jd.controlling.DistributeData;
 import jd.gui.UserIO;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
@@ -41,7 +40,7 @@ public class AddUrlAction extends ToolBarAction {
     public void onAction(ActionEvent e) {
         StringBuilder def = new StringBuilder();
         try {
-            String newText = (String) Toolkit.getDefaultToolkit().getSystemClipboard().getData(DataFlavor.stringFlavor);
+            String newText = ClipboardHandler.getClipboard().getCurrentClipboardLinks();
             String[] links = HTMLParser.getHttpLinks(newText, null);
             ArrayList<String> pws = HTMLParser.findPasswords(newText);
             for (String l : links)

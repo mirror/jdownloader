@@ -126,6 +126,9 @@ public class JDSimpleWebserverRequestHandler {
                     if (maxdls < 1) {
                         maxdls = 1;
                     }
+                    if (maxdls > 20) {
+                        maxdls = 20;
+                    }
                     SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, maxdls);
                 }
 

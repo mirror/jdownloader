@@ -36,6 +36,8 @@ import jd.gui.swing.SwingGui;
 import jd.gui.swing.components.JDFileChooser;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.nutils.Formatter;
+import jd.nutils.io.FileSignatures;
+import jd.nutils.io.Signature;
 import jd.nutils.jobber.JDRunnable;
 import jd.nutils.jobber.Jobber;
 import jd.parser.Regex;
@@ -56,11 +58,15 @@ import jd.utils.locale.JDL;
 @OptionalPlugin(rev = "$Revision$", defaultEnabled = true, id = "hjsplit", interfaceversion = 5)
 public class JDHJSplit extends PluginOptional implements ControlListener {
 
+    private static enum ARCHIV_TYPE {
+        NONE, NORMAL, UNIX, CUTKILLER, XTREMSPLIT
+    };
+
     private static final String CONFIG_KEY_REMOVE_MERGED = "REMOVE_MERGED";
     private static final String DUMMY_HOSTER = "dum.my";
-    private static final int ARCHIVE_TYPE_NONE = -1;
-    private static final int ARCHIVE_TYPE_NORMAL = 0;
-    private static final int ARCHIVE_TYPE_UNIX = 1;
+    // private static final int ARCHIVE_TYPE_NONE = -1;
+    // private static final int ARCHIVE_TYPE_NORMAL = 0;
+    // private static final int ARCHIVE_TYPE_UNIX = 1;
     private static final String CONFIG_KEY_OVERWRITE = "OVERWRITE";
 
     // Wird als reihe für anstehende extracthjobs verwendet
@@ -246,6 +252,9 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
                 if (list != null) {
                     String cutKillerExt = getCutkillerExtension(new File(link.getFileOutput()), list.size());
                     join.setCutKiller(cutKillerExt);
+                } else {
+                    JDLogger.getLogger().severe("getFileList returned null?");
+                    return;
                 }
                 join.setProgressEventListener(new ProgressEventListener() {
 
@@ -290,11 +299,14 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
      * @return
      */
     private File getOutputFile(File file) {
-        int type = getArchiveType(file);
+        ARCHIV_TYPE type = getArchiveType(file);
         switch (type) {
-        case ARCHIVE_TYPE_UNIX:
+        case XTREMSPLIT:
+            /* maybe parse header here */
+            return new File(file.getParentFile(), file.getName().replaceFirst("\\.\\d+\\.xtm$", ""));
+        case UNIX:
             return new File(file.getParentFile(), file.getName().replaceFirst("\\.a.$", ""));
-        case ARCHIVE_TYPE_NORMAL:
+        case NORMAL:
             return new File(file.getParentFile(), file.getName().replaceFirst("\\.[\\d]+($|\\.[^\\d]*$)", ""));
         default:
             return null;
@@ -314,12 +326,12 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
     private boolean validateArchive(File file) {
         File startFile = getStartFile(file);
         if (startFile == null || !startFile.exists() || !startFile.isFile()) return false;
-        int type = getArchiveType(file);
+        ARCHIV_TYPE type = getArchiveType(file);
 
         switch (type) {
-        case ARCHIVE_TYPE_UNIX:
+        case UNIX:
             return typeCrossCheck(validateUnixType(startFile)) != null;
-        case ARCHIVE_TYPE_NORMAL:
+        case NORMAL:
             return typeCrossCheck(validateNormalType(startFile)) != null;
         default:
             return false;
@@ -336,12 +348,12 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
 
         File startFile = getStartFile(file);
         if (startFile == null || !startFile.exists() || !startFile.isFile()) return null;
-        int type = getArchiveType(file);
+        ARCHIV_TYPE type = getArchiveType(file);
 
         switch (type) {
-        case ARCHIVE_TYPE_UNIX:
+        case UNIX:
             return validateUnixType(startFile);
-        case ARCHIVE_TYPE_NORMAL:
+        case NORMAL:
             return validateNormalType(startFile);
         default:
             return null;
@@ -469,11 +481,13 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
      * @return
      */
     private File getStartFile(File file) {
-        int type = getArchiveType(file);
+        ARCHIV_TYPE type = getArchiveType(file);
         switch (type) {
-        case ARCHIVE_TYPE_UNIX:
+        case XTREMSPLIT:
+            return new File(file.getParentFile(), file.getName().replaceFirst("\\.\\d+\\.xtm$", ".001.xtm"));
+        case UNIX:
             return new File(file.getParentFile(), file.getName().replaceFirst("\\.a.$", ".aa"));
-        case ARCHIVE_TYPE_NORMAL:
+        case NORMAL:
             return new File(file.getParentFile(), file.getName().replaceFirst("\\.[\\d]+($|\\.[^\\d]*$)", ".001$1"));
         default:
             return null;
@@ -488,6 +502,7 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
      */
     private boolean isStartVolume(File file) {
         if (file.getName().matches(".*\\.aa$")) return true;
+        if (file.getName().matches(".*\\.001\\.xtm$")) return true;
         if (file.getName().matches(".*\\.001($|\\.[^\\d]*$)")) return true;
         return false;
     }
@@ -499,11 +514,12 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
      * @param file
      * @return
      */
-    private int getArchiveType(File file) {
+    private ARCHIV_TYPE getArchiveType(File file) {
         String name = file.getName();
-        if (name.matches(".*\\.a.$")) return ARCHIVE_TYPE_UNIX;
-        if (name.matches(".*\\.[\\d]+($|\\.[^\\d]*$)")) return ARCHIVE_TYPE_NORMAL;
-        return ARCHIVE_TYPE_NONE;
+        if (name.matches(".*\\.a.$")) return ARCHIV_TYPE.UNIX;
+        if (name.matches(".*\\.\\d+\\.xtm$")) return ARCHIV_TYPE.XTREMSPLIT;
+        if (name.matches(".*\\.[\\d]+($|\\.[^\\d]*$)")) return ARCHIV_TYPE.NORMAL;
+        return ARCHIV_TYPE.NONE;
     }
 
     /**

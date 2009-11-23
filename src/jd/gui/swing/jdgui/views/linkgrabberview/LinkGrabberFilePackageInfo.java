@@ -64,9 +64,8 @@ public class LinkGrabberFilePackageInfo extends JDCollapser implements ActionLis
     }
 
     public void setPackage(LinkGrabberFilePackage fp) {
-        if (this.fp != null && this.fp == fp) {
-            update();
-            return;
+        if (this.fp != null && this.fp != fp) {
+            onHideSave();
         }
         this.fp = fp;
         if (this.fp != null) {

@@ -14,13 +14,12 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.plugins.optional.jdunrar;
+package jd.nutils.io;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 
-import jd.nutils.io.JDIO;
 import jd.parser.Regex;
 import jd.utils.JDUtilities;
 
@@ -118,5 +117,4 @@ public class FileSignatures {
 
         return SIG_TXT;
     }
-
 }

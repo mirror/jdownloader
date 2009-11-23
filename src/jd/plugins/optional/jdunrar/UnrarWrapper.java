@@ -28,6 +28,8 @@ import jd.controlling.ProgressController;
 import jd.nutils.DynByteBuffer;
 import jd.nutils.Executer;
 import jd.nutils.ProcessListener;
+import jd.nutils.io.FileSignatures;
+import jd.nutils.io.Signature;
 import jd.nutils.jobber.JDRunnable;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;

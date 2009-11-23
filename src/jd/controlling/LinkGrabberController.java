@@ -509,8 +509,6 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
 
             if (bestSim < 99) {
                 bestp = new LinkGrabberFilePackage(packageName, this);
-                bestp.setPassword(link.getFilePackage().getPassword());
-                bestp.setDownloadDirectory(link.getFilePackage().getDownloadDirectory());
             } else {
                 String newPackageName = autoPackage ? getSimString(bestp.getName(), packageName) : packageName;
                 bestp.setName(newPackageName);
