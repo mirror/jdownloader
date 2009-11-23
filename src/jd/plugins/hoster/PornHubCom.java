@@ -53,7 +53,7 @@ public class PornHubCom extends PluginForHost {
         br.setFollowRedirects(false);
         br.postPageRaw(url, postdata);
 
-        String file_url = br.getRegex("flv_url.*[i|j](http.*?)\\?r=.*").getMatch(0);
+        String file_url = br.getRegex("flv_url.*(http.*?)\\?r=.*").getMatch(0);
         linksplit = file_url.split("\\.");
         downloadLink.setFinalFileName(file_name + "." + linksplit[linksplit.length - 1]);
         downloadLink.setUrlDownload(file_url);
