@@ -21,8 +21,14 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.BufferedReader;
+import java.io.DataInputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FilenameFilter;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Vector;
 
@@ -55,6 +61,8 @@ import jd.utils.locale.JDL;
 public class JDRouterEditor extends PluginOptional implements ControlListener {
 
     private static final String JDL_PREFIX = "jd.plugins.optional.JDRouterEditor.";
+    private Boolean readonly = false;
+    private Vector<String> shipped = null;
     private MenuAction m = null;
     private JDRouterEditorView view;
     private SwitchPanel frame;
@@ -130,6 +138,7 @@ public class JDRouterEditor extends PluginOptional implements ControlListener {
         };
 
         // File Select/add/Del
+        loadShippedFileList(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/jd/router/lock");
         getFiles();
         fileselector = new JComboBox(files);
         newbutton = new JButton(JDL.L(JDL_PREFIX + "newbutton", "+"));
@@ -150,6 +159,7 @@ public class JDRouterEditor extends PluginOptional implements ControlListener {
                 fileselector.setSelectedItem(filename);
                 delrouterbutton.setEnabled(true);
                 newrouterbutton.setEnabled(true);
+                readonly = false;
             }
 
         });
@@ -158,8 +168,21 @@ public class JDRouterEditor extends PluginOptional implements ControlListener {
             public void actionPerformed(ActionEvent arg0) {
                 currentfile = JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/jd/router/" + fileselector.getSelectedItem().toString();
                 loadFile(currentfile);
-                delrouterbutton.setEnabled(true);
-                newrouterbutton.setEnabled(true);
+                if(shipped.contains(fileselector.getSelectedItem().toString()))
+                    readonly = true;
+                else
+                    readonly = false;
+                if(readonly)
+                {
+                    delrouterbutton.setEnabled(false);
+                    newrouterbutton.setEnabled(false);   
+                }
+                else
+                {
+                    delrouterbutton.setEnabled(true);
+                    newrouterbutton.setEnabled(true);
+                }
+                    
             }
         });
 
@@ -252,7 +275,16 @@ public class JDRouterEditor extends PluginOptional implements ControlListener {
                 int row = routertable.rowAtPoint(p);
                 currentrouter = router.getRouterdata(row);
                 setGuiRouterData(currentrouter);
-                saverouterbutton.setEnabled(true);
+                if(readonly)
+                {
+                    saverouterbutton.setEnabled(false); 
+                      
+                }
+                else
+                {
+                    saverouterbutton.setEnabled(true);
+                }
+                
             }
         });
 
@@ -342,6 +374,31 @@ public class JDRouterEditor extends PluginOptional implements ControlListener {
         updateTable();
     }
 
+    private void loadShippedFileList(String filepath)
+    {
+        File file = new File(filepath);
+        shipped = new Vector<String>();
+        if (file.exists()) {
+            try {
+                FileInputStream fs = new FileInputStream(file);
+                DataInputStream in = new DataInputStream(fs);
+                BufferedReader br = new BufferedReader(new InputStreamReader(in));
+                String nextline;
+                while ((nextline = br.readLine()) != null) {
+                    shipped.add(nextline);
+                }
+                in.close();
+            } catch (FileNotFoundException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+        }
+
+        
+    }
     protected void saveToFile() {
         File file = new File(currentfile);
         JDIO.saveObject(null, router.prepareToSave(), file, null, null, true);
