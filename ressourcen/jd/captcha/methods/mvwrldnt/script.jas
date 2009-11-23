@@ -37,4 +37,4 @@ param.objectColorContrast = 0.3;
 param.objectDetectionContrast = 0.5;
 param.relativecontrast=0.85;
 param.autoLetterNum=true;
-param.useSpecialGetLetters=EasyCaptcha.getLetters;
+param.useSpecialGetLetters=MvWrLd.getLetters;
