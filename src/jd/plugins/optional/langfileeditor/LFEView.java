@@ -20,8 +20,6 @@ import javax.swing.Icon;
 import javax.swing.JMenuBar;
 
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
-import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
-import jd.gui.swing.jdgui.interfaces.SwitchPanelListener;
 import jd.gui.swing.jdgui.views.ClosableView;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
@@ -37,16 +35,6 @@ public class LFEView extends ClosableView {
         this.setContent(panel);
         this.setInfoPanel(LFEInfoPanel.getInstance());
         this.lfeGui = (LFEGui) panel;
-        this.getBroadcaster().addListener(new SwitchPanelListener() {
-
-            @Override
-            public void onPanelEvent(SwitchPanelEvent event) {
-                if (event.getID() == SwitchPanelEvent.ON_REMOVE) {
-                    langFileEditor.activateAction.setSelected(false);
-                }
-            }
-
-        });
         init();
     }
 

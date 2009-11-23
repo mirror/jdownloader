@@ -27,6 +27,8 @@ import jd.config.ConfigEntry;
 import jd.gui.UserIO;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.SingletonPanel;
+import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
+import jd.gui.swing.jdgui.interfaces.SwitchPanelListener;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.nutils.nativeintegration.LocalBrowser;
 import jd.nutils.svn.Subversion;
@@ -47,7 +49,7 @@ import jd.utils.locale.JDL;
 public class LangFileEditor extends PluginOptional {
 
     private final SingletonPanel lfe;
-    protected MenuAction activateAction;
+    private MenuAction activateAction;
     private LFEView lfeView;
     private String user;
     private String pass;
@@ -124,7 +126,19 @@ public class LangFileEditor extends PluginOptional {
     @Override
     public void setGuiEnable(boolean b) {
         if (b) {
-            if (lfeView == null) lfeView = new LFEView(lfe.getPanel(), this);
+            if (lfeView == null) {
+                lfeView = new LFEView(lfe.getPanel(), this);
+                lfeView.getBroadcaster().addListener(new SwitchPanelListener() {
+
+                    @Override
+                    public void onPanelEvent(SwitchPanelEvent event) {
+                        if (event.getID() == SwitchPanelEvent.ON_REMOVE) {
+                            activateAction.setSelected(false);
+                        }
+                    }
+
+                });
+            }
             SwingGui.getInstance().setContent(lfeView);
         } else {
             if (lfeView != null) lfeView.close();

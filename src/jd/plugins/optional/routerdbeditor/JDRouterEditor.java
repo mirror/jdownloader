@@ -63,7 +63,7 @@ public class JDRouterEditor extends PluginOptional implements ControlListener {
     private static final String JDL_PREFIX = "jd.plugins.optional.JDRouterEditor.";
     private Boolean readonly = false;
     private Vector<String> shipped = null;
-    private MenuAction m = null;
+    private MenuAction activateAction = null;
     private JDRouterEditorView view;
     private SwitchPanel frame;
     private JComboBox fileselector;
@@ -91,12 +91,12 @@ public class JDRouterEditor extends PluginOptional implements ControlListener {
 
     @Override
     public boolean initAddon() {
-        if (m == null) {
-            m = new MenuAction("routereditor", 0);
-            m.setActionListener(this);
-            m.setTitle(getHost());
-            m.setIcon(this.getIconKey());
-            m.setSelected(false);
+        if (activateAction == null) {
+            activateAction = new MenuAction("routereditor", 0);
+            activateAction.setActionListener(this);
+            activateAction.setTitle(getHost());
+            activateAction.setIcon(this.getIconKey());
+            activateAction.setSelected(false);
         }
         return true;
     }
@@ -115,12 +115,8 @@ public class JDRouterEditor extends PluginOptional implements ControlListener {
     public ArrayList<MenuAction> createMenuitems() {
         ArrayList<MenuAction> menu = new ArrayList<MenuAction>();
 
-        menu.add(m);
-        if (view == null || !view.isVisible()) {
-            m.setSelected(false);
-        } else {
-            m.setSelected(true);
-        }
+        menu.add(activateAction);
+
         return menu;
     }
 
@@ -168,21 +164,18 @@ public class JDRouterEditor extends PluginOptional implements ControlListener {
             public void actionPerformed(ActionEvent arg0) {
                 currentfile = JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/jd/router/" + fileselector.getSelectedItem().toString();
                 loadFile(currentfile);
-                if(shipped.contains(fileselector.getSelectedItem().toString()))
+                if (shipped.contains(fileselector.getSelectedItem().toString()))
                     readonly = true;
                 else
                     readonly = false;
-                if(readonly)
-                {
+                if (readonly) {
                     delrouterbutton.setEnabled(false);
-                    newrouterbutton.setEnabled(false);   
-                }
-                else
-                {
+                    newrouterbutton.setEnabled(false);
+                } else {
                     delrouterbutton.setEnabled(true);
                     newrouterbutton.setEnabled(true);
                 }
-                    
+
             }
         });
 
@@ -275,16 +268,13 @@ public class JDRouterEditor extends PluginOptional implements ControlListener {
                 int row = routertable.rowAtPoint(p);
                 currentrouter = router.getRouterdata(row);
                 setGuiRouterData(currentrouter);
-                if(readonly)
-                {
-                    saverouterbutton.setEnabled(false); 
-                      
-                }
-                else
-                {
+                if (readonly) {
+                    saverouterbutton.setEnabled(false);
+
+                } else {
                     saverouterbutton.setEnabled(true);
                 }
-                
+
             }
         });
 
@@ -328,7 +318,7 @@ public class JDRouterEditor extends PluginOptional implements ControlListener {
                     @Override
                     public void onPanelEvent(SwitchPanelEvent event) {
                         if (event.getID() == SwitchPanelEvent.ON_REMOVE) {
-                            stopAddon();
+                            activateAction.setSelected(false);
                         }
                     }
 
@@ -339,12 +329,13 @@ public class JDRouterEditor extends PluginOptional implements ControlListener {
         } else {
             if (view != null) view.close();
         }
+        if (activateAction != null && activateAction.isSelected() != b) activateAction.setSelected(b);
     }
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == m) {
-            setGuiEnable(m.isSelected());
+        if (e.getSource() == activateAction) {
+            setGuiEnable(activateAction.isSelected());
         }
     }
 
@@ -374,8 +365,7 @@ public class JDRouterEditor extends PluginOptional implements ControlListener {
         updateTable();
     }
 
-    private void loadShippedFileList(String filepath)
-    {
+    private void loadShippedFileList(String filepath) {
         File file = new File(filepath);
         shipped = new Vector<String>();
         if (file.exists()) {
@@ -397,8 +387,8 @@ public class JDRouterEditor extends PluginOptional implements ControlListener {
             }
         }
 
-        
     }
+
     protected void saveToFile() {
         File file = new File(currentfile);
         JDIO.saveObject(null, router.prepareToSave(), file, null, null, true);
