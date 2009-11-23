@@ -8,7 +8,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-//http://www.pornhub.com/view_video.php?viewkey=49e1f7993c38152ecfaf
 @HostPlugin(revision = "$Revision: 9543 $", interfaceVersion = 2, names = { "pornhub.com" }, urls = { "http://[\\w\\.]*?pornhub\\.com/view_video\\.php\\?viewkey=[a-z0-9]+" }, flags = { 0 })
 public class PornHubCom extends PluginForHost {
 
@@ -36,7 +35,6 @@ public class PornHubCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
-        if (br == null) br = this.br;
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
 
