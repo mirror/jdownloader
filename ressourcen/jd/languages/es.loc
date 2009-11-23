@@ -1,5 +1,5 @@
 action.customize.addsetting.ask = Ingrese el nombre de la configuración:
-action.customize.removesetting.ask = Remover cuentas seleccionadas? (cuentas %s)
+action.customize.removesetting.ask = Remover configuraciones seleccionadas? (%s)
 action.premiumview.removeacc.accs = %s Cuenta(s)
 action.premiumview.removeacc.ask = Remover seleccionados
 addons.jdshutdown.statusmessage.disabled = JDownloader ya no apagara el equipo
@@ -1126,7 +1126,6 @@ jd.plugins.optional.schedule.schedulerview.title = Planificador
 jd.plugins.optional.schedule.schedulerview.tooltip = Programa tus descargas
 jd.plugins.optional.schedule.wait = Espere un momento
 jd.plugins.optional.webinterface.jdwebinterface = JD Interfaz Web
-jd.plugins.optional.xrelnotifier.jdxrelnotifier = JD XrelNotifier
 jd.plugins.plugin.aborted = Decriptación abortada!
 jd.plugins.pluginutils.askpassword = Ingrese la contraseña para %s
 jd.plugins.pluginutils.informpasswordwrong.message = La contraseña ingresada para %s es incorrecta
@@ -1469,6 +1468,7 @@ reconnect.progress.3_ipcheck = Reconectar IP nueva: %s / %s
 reconnect.retries = Repeticiones máximas (-1 = sin límite)
 reconnect.waitforip = Esperar nueva IP (seg)
 reconnect.waittimetofirstipcheck = Tiempo de espera para primera comprobación de IP (seg)
+replacer.autopassword = Ultimo paquete finalizado: Contraseña automatica
 replacer.available = Ultimo archivo finalizado: esta disponible (Sí, No)
 replacer.comment = Ultimo archivo finalizado: Comentario
 replacer.date = Fecha actual
