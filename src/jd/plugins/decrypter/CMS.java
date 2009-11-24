@@ -130,7 +130,19 @@ public class CMS extends PluginForDecrypt {
                             String captchaAdress = host + new Regex(element[2], Pattern.compile("<IMG SRC=\"(/.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
                             captchaFile = getLocalCaptchaFile();
                             br.cloneBrowser().getDownload(captchaFile, captchaAdress);
-                            capTxt = getCaptchaCode("ucms", captchaFile, param);
+                            if (host.toLowerCase().contains("mov-world.net"))
+                                /*
+                                 * mov world does not change captcha, if first
+                                 * try fails, then ask user
+                                 */
+                                if (retry == 0) {
+                                    capTxt = getCaptchaCode("mov-world.net", captchaFile, param);
+                                } else {
+                                    capTxt = getCaptchaCode(null, captchaFile, param);
+                                }
+                            else
+                                capTxt = getCaptchaCode("ucms", captchaFile, param);
+                            captchaFile.renameTo(new File(captchaFile.getParentFile(), capTxt + ".gif"));
 
                             String posthelp = HTMLParser.getFormInputHidden(element[2]);
                             if (element[0].startsWith("http")) {
@@ -218,7 +230,19 @@ public class CMS extends PluginForDecrypt {
                             String captchaAdress = host + tform.getRegex(Pattern.compile("<img src=\"(/captcha/.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
                             captchaFile = getLocalCaptchaFile();
                             brc.getDownload(captchaFile, captchaAdress);
-                            capTxt = getCaptchaCode("ucms", captchaFile, UserIO.NO_JAC, param, null, null);
+                            if (host.toLowerCase().contains("mov-world.net")) {
+                                /*
+                                 * mov world does not change captcha, if first
+                                 * try fails, then ask user
+                                 */
+                                if (retry == 0) {
+                                    capTxt = getCaptchaCode("mov-world.net", captchaFile, param);
+                                } else {
+                                    capTxt = getCaptchaCode(null, captchaFile, param);
+                                }
+                            } else
+                                capTxt = getCaptchaCode("ucms", captchaFile, UserIO.NO_JAC, param, null, null);
+                            captchaFile.renameTo(new File(captchaFile.getParentFile(), capTxt + ".gif"));
 
                             tform.put("code", capTxt);
                             brc.submitForm(tform);

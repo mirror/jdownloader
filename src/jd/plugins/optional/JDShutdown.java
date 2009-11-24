@@ -193,6 +193,10 @@ public class JDShutdown extends PluginOptional {
         case OSDetector.OS_MAC_OTHER:
             /* mac os */
             try {
+                JDUtilities.runCommand("/usr/bin/osascript", new String[] { "-e", "'tell application \"Finder\" to shut down'" }, null, 0);
+            } catch (Exception e) {
+            }
+            try {
                 JDUtilities.runCommand("/usr/bin/osascript", new String[] { JDUtilities.getResourceFile("jd/osx/osxshutdown.scpt").getAbsolutePath() }, null, 0);
             } catch (Exception e) {
             }
@@ -261,6 +265,10 @@ public class JDShutdown extends PluginOptional {
         case OSDetector.OS_MAC_OTHER:
             /* mac os */
             prepareHibernateOrStandby();
+            try {
+                JDUtilities.runCommand("/usr/bin/osascript", new String[] { "-e", "'tell application \"Finder\" to sleep'" }, null, 0);
+            } catch (Exception e) {
+            }
             try {
                 JDUtilities.runCommand("/usr/bin/osascript", new String[] { JDUtilities.getResourceFile("jd/osx/osxhibernate.scpt").getAbsolutePath() }, null, 0);
             } catch (Exception e) {

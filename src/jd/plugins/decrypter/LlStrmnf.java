@@ -32,7 +32,6 @@ public class LlStrmnf extends PluginForDecrypt {
         super(wrapper);
     }
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.getPage(param.toString());
@@ -44,7 +43,5 @@ public class LlStrmnf extends PluginForDecrypt {
         }
         return decryptedLinks;
     }
-
-    // @Override
 
 }
