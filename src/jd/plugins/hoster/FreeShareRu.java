@@ -75,7 +75,7 @@ public class FreeShareRu extends PluginForHost {
         String ttt = br.getRegex("id=\"w\">.*?(\\d+).*?</").getMatch(0);
         if (ttt != null) {
             int tt = Integer.parseInt(ttt);
-            sleep(tt * 1001, downloadLink);
+            sleep(tt * 1001l, downloadLink);
         }
         freeform.put("sid", "2");
         br.submitForm(freeform);
@@ -95,7 +95,6 @@ public class FreeShareRu extends PluginForHost {
             dllink = br.getRegex("\"(http://frdl[0-9]+\\.free-share\\.ru/[0-9a-z]+/.*?)\"").getMatch(0);
         }
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        logger.info("Final downloadlink = " + dllink);
         jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (!(dl.getConnection().isContentDisposition())) {
             br.followConnection();

@@ -108,9 +108,9 @@ public class FilesMailRu extends PluginForHost {
                     // seconds else the server doesn't allow starting the
                     // download
                     String ttt = br.getRegex("файлы через.*?(\\d+).*?сек").getMatch(0);
-                    if (ttt == null) ttt = br.getRegex("download files in.*?(\\d+).*?sec").getMatch(0);
                     int tt = 10;
-                    if (ttt == null) tt = Integer.parseInt(ttt);
+                    if (ttt == null) ttt = br.getRegex("download files in.*?(\\d+).*?sec").getMatch(0);
+                    if (ttt != null) tt = Integer.parseInt(ttt);
                     sleep(tt * 1001, downloadLink);
                 }
             }
@@ -120,7 +120,6 @@ public class FilesMailRu extends PluginForHost {
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (!(dl.getConnection().isContentDisposition())) {
-            logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

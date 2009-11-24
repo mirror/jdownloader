@@ -132,14 +132,10 @@ public class GigaPetaCom extends PluginForHost {
             br.submitForm(DLForm);
             dllink = br.getRedirectLocation();
         }
-        if (dllink == null) {
-            logger.warning("Final downloadlink (String is \"dllink\" regex didn't match!");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         logger.info("Final downloadlink = " + dllink + " starting the download...");
         jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (!(dl.getConnection().isContentDisposition())) {
-            logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

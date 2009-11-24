@@ -34,13 +34,13 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megashare.com" }, urls = { "http://[\\w\\.]*?megashare\\.com/[0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megashare.com" }, urls = { "http://[\\w\\.]*?megashare\\.com/[0-9]+" }, flags = { 2 })
 public class MegaShareCom extends PluginForHost {
 
     public MegaShareCom(PluginWrapper wrapper) {
         super(wrapper);
         this.setStartIntervall(2000l);
-//        this.enablePremium("http://www.megashare.com/premium.php");
+        this.enablePremium("http://www.megashare.com/premium.php");
     }
 
     @Override
@@ -81,28 +81,20 @@ public class MegaShareCom extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         Form premform = br.getForm(0);
         if (premform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        premform.setPreferredSubmit(1);
-
+        premform.setPreferredSubmit("PREMIUM");
         br.submitForm(premform);
         if (br.containsHTML("This File has been DELETED")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         Form form = br.getFormbyProperty("name", "downloader");
         if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String accel = br.getRegex("name=\"(accel.*?)\"").getMatch(0);
         if (accel == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        form.remove(accel);
-        form.remove(accel);
-        form.remove(accel);
-        form.remove("yesss");
-        form.remove("yesss");
-        form.remove("yesss");
-        form.remove("yesss");
-        form.remove("yesss");
-        form.remove("yesss");
-        form.remove("user_val");
-        form.remove("captcha_code");
-        form.remove("email");
-        form.put(accel, "Get+Direct+Link");
-        form.setAction(downloadLink.getDownloadURL());
+        Form dlForm = new Form();
+        dlForm.put("yesss", "Download");
+        dlForm.put("id", form.getVarsMap().get("id"));
+        dlForm.put("time_diff", form.getVarsMap().get("time_diff"));
+        dlForm.put("req_auth", form.getVarsMap().get("req_auth"));
+        dlForm.setAction(downloadLink.getDownloadURL());
+        dlForm.setMethod(Form.MethodType.POST);
         String passCode = null;
         if (br.containsHTML("This file is password protected.")) {
             if (downloadLink.getStringProperty("pass", null) == null) {
@@ -111,12 +103,11 @@ public class MegaShareCom extends PluginForHost {
                 /* gespeicherten PassCode holen */
                 passCode = downloadLink.getStringProperty("pass", null);
             }
-            form.put("auth_nm", passCode);
+            dlForm.put("auth_nm", passCode);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, true, -3);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlForm, true, 1);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
-            System.out.print(br.toString());
             if (br.containsHTML("Invalid Captcha Value")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             if (br.containsHTML("This file is password protected.")) {
                 logger.warning("Wrong password!");
@@ -128,12 +119,6 @@ public class MegaShareCom extends PluginForHost {
         if (passCode != null) {
             downloadLink.setProperty("pass", passCode);
         }
-        dl.startDownload();
-
-        String dllink = br.getRegex("class=\"important\" href=\"(.*?)\">Click").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         dl.startDownload();
     }
 
@@ -210,7 +195,7 @@ public class MegaShareCom extends PluginForHost {
         }
         form.put("captcha_code", captchaCode);
         form.put("yesss", "Download");
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, true, -3);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, true, 1);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
             if (br.containsHTML("Invalid Captcha Value")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
