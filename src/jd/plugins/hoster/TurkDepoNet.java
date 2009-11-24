@@ -19,7 +19,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
@@ -33,7 +32,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "turkdepo.net" }, urls = { "http://[\\w\\.]*?turkdepo\\.net/[0-9a-z]{12}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "turkdepo.net" }, urls = { "http://[\\w\\.]*?turkdepo\\.net/([0-9a-z]{12}|.*?/[a-z0-9]{12})" }, flags = { 2 })
 public class TurkDepoNet extends PluginForHost {
 
     public TurkDepoNet(PluginWrapper wrapper) {
@@ -71,20 +70,14 @@ public class TurkDepoNet extends PluginForHost {
         }
         account.setValid(true);
         ai.setUnlimitedTraffic();
-        // This hoster got a bug, they show wrong expire dates. My testaccount
-        // showed "30 December 2008" which is wrong, if they fix this issue the
-        // following lines of code can be used
-        
-        // String expire =
-        // br.getRegex("Your Premium-Account is valid until <b>(.*?)</b>").getMatch(0);
-        // if (expire == null) {
-        // ai.setExpired(true);
-        // account.setValid(false);
-        // return ai;
-        // } else {
-        // ai.setValidUntil(Regex.getMilliSeconds(expire, "dd MMMM yyyy",
-        // null));
-        // }
+        String expire = br.getRegex("Your Premium-Account is valid until <b>(.*?)</b>").getMatch(0);
+        if (expire == null) {
+            ai.setExpired(true);
+            account.setValid(false);
+            return ai;
+        } else {
+            ai.setValidUntil(Regex.getMilliSeconds(expire, "dd MMMM yyyy", null));
+        }
         return ai;
     }
 
@@ -215,10 +208,11 @@ public class TurkDepoNet extends PluginForHost {
         br.setCookie("http://turkdepo.net/", "lang", "english");
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("No such (file|user)|File Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = Encoding.htmlDecode(br.getRegex("<h2>Download File(.*?)</h2>").getMatch(0));
+        String filename = br.getRegex("<Title>Download(.*?)</Title>").getMatch(0);
+        if (filename == null) filename = br.getRegex("fname\" value=\"(.*?)\"").getMatch(0);
         String filesize = br.getRegex("</font>\\s*\\((.*?)\\)</font>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        downloadLink.setName(filename);
+        downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(Regex.getSize(filesize));
         return AvailableStatus.TRUE;
     }

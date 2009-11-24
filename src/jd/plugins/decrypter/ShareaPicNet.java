@@ -93,7 +93,9 @@ public class ShareaPicNet extends PluginForDecrypt implements ProgressController
             br.getPage(link + ".html");
             String finallink = br.getRegex("<img src=\"(.*?)\"").getMatch(0);
             if (finallink == null) return null;
-            decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
+            DownloadLink dl = createDownloadlink("directhttp://" + finallink);
+            dl.setAvailable(true);
+            decryptedLinks.add(dl);
             progress.increase(1);
         }
         if (fpName != null) {

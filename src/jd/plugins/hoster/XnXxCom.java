@@ -26,44 +26,39 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xhamster.com" }, urls = { "http://[\\w\\.]*?xhamster\\.com/movies/[0-9]+/.*?\\.html" }, flags = { 2 })
-public class XHamsterCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xnxx.com" }, urls = { "http://[\\w\\.]*?video\\.xnxx\\.com/video[0-9]+" }, flags = { 0 })
+public class XnXxCom extends PluginForHost {
 
-    public XHamsterCom(PluginWrapper wrapper) {
+    public XnXxCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
     public String getAGBLink() {
-        return "http://xhamster.com/terms.php";
+        return "http://www.xnxx.com/contact.php";
     }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
+        // The regex only takes the short urls but these ones redirect to the
+        // real ones to if follow redirects is false the plugin doesn't work at
+        // all!
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("Video Not found") || br.containsHTML("403 Forbidden")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
+        if (br.containsHTML("(Page not found|This page may be in preparation, please check back in a few minutes)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<title>(.*?)- XNXX\\.COM</title>").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("<meta name=\"description\" content=\"(.*?)\"").getMatch(0);
+            br.getRegex("<span class=\"style5\"><strong>(.*?)</strong>").getMatch(0);
             if (filename == null) {
-                filename = br.getRegex("<meta name=\"keywords\" content=\"(.*?)\"").getMatch(0);
-                if (filename == null) {
-                    filename = br.getRegex("height=\"26\" width=.*?align=left>\\&nbsp;(.*?)</th>").getMatch(0);
-                    if (filename == null) {
-                        filename = br.getRegex("<B>Description:</B></td>.*?<td width=[0-9]+>(.*?)</td>").getMatch(0);
-                    }
-                }
+                br.getRegex("name=description content=\"(.*?)free sex video").getMatch(0);
             }
         }
-        String ending = br.getRegex("'type':'(.*?)'").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        filename = filename.trim();
-        if (ending != null) {
-            downloadLink.setFinalFileName(filename + "." + ending);
+        if (!br.containsHTML(".mp4")) {
+            downloadLink.setFinalFileName(filename.trim() + ".flv");
         } else {
-            downloadLink.setName(filename.trim());
+            downloadLink.setFinalFileName(filename.trim() + ".mp4");
         }
         return AvailableStatus.TRUE;
     }
@@ -71,16 +66,12 @@ public class XHamsterCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        String server = br.getRegex("'srv': '(.*?)'").getMatch(0);
-        String type = br.getRegex("'type':'(.*?)'").getMatch(0);
-        String file = br.getRegex("'file': '(.*?)'").getMatch(0);
-        if (server == null || type == null || file == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String dllink = server + "/" + type + "2/" + file;
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("http")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String dllink = br.getRegex("flv_url=(http.*?\\.(flv|mp4))").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("(http://(videocache[0-9]+\\.xvideos|[a-z0-9]+\\.xvideos)\\.com/flv/.*?/videos/flv/.*?/xvideos\\.com.*?\\.(flv|mp4))").getMatch(0);
         }
+        if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         dl.startDownload();
     }
 
