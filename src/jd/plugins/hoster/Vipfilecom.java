@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -50,6 +51,7 @@ public class Vipfilecom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
         String downloadURL = downloadLink.getDownloadURL();
         this.setBrowserExclusive();
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.getPage(downloadURL);
         if (br.containsHTML("This file not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String fileSize = br.getRegex("<span.*?Size:.*?<b style=.*?>(.*?)</b>").getMatch(0);
@@ -69,6 +71,8 @@ public class Vipfilecom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         /* DownloadLink holen, 2x der Location folgen */
+        /* we have to wait little because server too buggy */
+        sleep(2000, downloadLink);
         String link = Encoding.htmlDecode(br.getRegex(Pattern.compile("<a href=\"(http://vip-file\\.com/download.*?)\">", Pattern.CASE_INSENSITIVE)).getMatch(0));
         if (link == null) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.vipfilecom.errors.nofreedownloadlink", "No free download link for this file"));
         br.setDebug(true);
@@ -88,9 +92,16 @@ public class Vipfilecom extends PluginForHost {
         Form form = br.getForm(1);
         form.put("pass", Encoding.urlEncode(account.getPass()));
         br.submitForm(form);
-        String url = Encoding.htmlDecode(br.getRegex(Pattern.compile("<a href=\"(.*?vip-file\\.com.*?)\">", Pattern.CASE_INSENSITIVE)).getMatch(0));
+        /* we have to wait little because server too buggy */
+        sleep(5000, downloadLink);
+        String url = Encoding.htmlDecode(br.getRegex(Pattern.compile("<a href=(\"|')(http://r.*?vip-file\\.com.*?)(\"|')", Pattern.CASE_INSENSITIVE)).getMatch(1));
         if (url == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 0);
+        if (!dl.getConnection().isContentDisposition()) {
+            br.followConnection();
+            if (br.containsHTML("Error")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 2 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl.startDownload();
     }
 

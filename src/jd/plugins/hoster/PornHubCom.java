@@ -1,5 +1,7 @@
 package jd.plugins.hoster;
 
+import java.io.IOException;
+
 import jd.PluginWrapper;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
@@ -12,6 +14,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 public class PornHubCom extends PluginForHost {
 
     private static String post_element = "add299463d4410c6d1b1c418868225f7";
+    private String dlUrl = null;
 
     public PornHubCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -25,7 +28,8 @@ public class PornHubCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), true, 0);
+        if (dlUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlUrl, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -33,13 +37,13 @@ public class PornHubCom extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
+    private AvailableStatus requestVideo(DownloadLink downloadLink) throws IOException, PluginException {
+        this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-
+        dlUrl = null;
         String file_name = br.getRegex("video-title-nf\">.*<h1>(.*?)</h1>").getMatch(0);
-        if (file_name == null) { return AvailableStatus.FALSE; }
+        if (file_name == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String[] linksplit = downloadLink.getDownloadURL().split("=");
         String video_id = linksplit[linksplit.length - 1];
 
@@ -53,23 +57,28 @@ public class PornHubCom extends PluginForHost {
         br.setFollowRedirects(false);
         br.postPageRaw(url, postdata);
 
-        String file_url = br.getRegex("flv_url.*(http.*?)\\?r=.*").getMatch(0);
-        linksplit = file_url.split("\\.");
+        dlUrl = br.getRegex("flv_url.*(http.*?)\\?r=.*").getMatch(0);
+        if (dlUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        linksplit = dlUrl.split("\\.");
         downloadLink.setFinalFileName(file_name + "." + linksplit[linksplit.length - 1]);
-        downloadLink.setUrlDownload(file_url);
+        return AvailableStatus.TRUE;
+    }
 
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
+        requestVideo(downloadLink);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         try {
-            if (!br.openGetConnection(downloadLink.getDownloadURL()).getContentType().contains("html")) {
-                long size = br.getHttpConnection().getLongContentLength();
-                downloadLink.setDownloadSize(Long.valueOf(size));
+            if (!br.openGetConnection(dlUrl).getContentType().contains("html")) {
+                downloadLink.setDownloadSize(br.getHttpConnection().getLongContentLength());
+                br.getHttpConnection().disconnect();
                 return AvailableStatus.TRUE;
             }
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } finally {
             if (br.getHttpConnection() != null) br.getHttpConnection().disconnect();
         }
+        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
     @Override

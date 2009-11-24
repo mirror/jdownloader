@@ -22,6 +22,7 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -53,6 +54,7 @@ public class LetitBitNet extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.getPage(downloadLink.getDownloadURL());
         br.postPage(downloadLink.getDownloadURL(), "en.x=10&en.y=8&vote_cr=en");
         String filename = br.getRegex("<span>File::</span>(.*?)</h1>").getMatch(0);
@@ -69,9 +71,18 @@ public class LetitBitNet extends PluginForHost {
         Form form = br.getForm(3);
         form.put("pass", Encoding.urlEncode(account.getPass()));
         br.submitForm(form);
+        /* we have to wait little because server too buggy */
+        sleep(5000, downloadLink);
         String url = br.getRegex("middle.*?href='(http://.*?download.*?)'").getMatch(0);
         if (url == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        br.setDebug(true);
+        br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 0);
+        if (!dl.getConnection().isContentDisposition()) {
+            br.followConnection();
+            if (br.containsHTML("Error")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 2 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl.startDownload();
     }
 
@@ -121,7 +132,8 @@ public class LetitBitNet extends PluginForHost {
         if (!br.containsHTML("<frame")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         url = br.getRegex("<frame src=\"http://letitbit.net/tmpl/tmpl_frame_top.php\\?link=(.*?)\" name=\"topFrame\" scrolling=\"No\" noresize=\"noresize\" id=\"topFrame\" title=\"topFrame\" />").getMatch(0);
         if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        this.sleep(2000, downloadLink);
+        /* we have to wait little because server too buggy */
+        sleep(2000, downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 1);
         con = dl.getConnection();
         if (con.getResponseCode() == 404) {

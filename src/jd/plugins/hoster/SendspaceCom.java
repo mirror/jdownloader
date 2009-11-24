@@ -140,7 +140,7 @@ public class SendspaceCom extends PluginForHost {
         // Password protected links handling
         String passCode = null;
         if (br.containsHTML("name=\"filepassword\"")) {
-            for (int i = 0; i <= 2; i++) {
+            for (int i = 0; i < 2; i++) {
                 Form pwform = br.getFormbyKey("filepassword");
                 if (pwform == null) pwform = br.getForm(0);
                 if (pwform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -151,18 +151,13 @@ public class SendspaceCom extends PluginForHost {
                     passCode = downloadLink.getStringProperty("pass", null);
                 }
                 pwform.put("filepassword", passCode);
-                logger.info("Put password \"" + passCode + "\" entered by user in the DLForm.");
                 br.submitForm(pwform);
                 if (br.containsHTML("(name=\"filepassword\"|Incorrect Password)")) {
-                    logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
                     continue;
                 }
                 break;
             }
-            if (br.containsHTML("(name=\"filepassword\"|Incorrect Password)")) {
-                logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            }
+            if (br.containsHTML("(name=\"filepassword\"|Incorrect Password)")) throw new PluginException(LinkStatus.ERROR_FATAL, "Wrong Password");
         }
         /* bypass captcha with retry ;) */
         if (br.containsHTML("User Verification") && br.containsHTML("Please type all the characters") || br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 1 * 60 * 1000l);
