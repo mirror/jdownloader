@@ -199,6 +199,7 @@ public class SharingMatrixCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         String passCode = null;
+        if (br.containsHTML("You are already downloading file. Only premium")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
         if (br.containsHTML("no available free download slots left")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No free slots available for this file");
         if (br.containsHTML("daily download limit is over")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Daily limit reached", 60 * 60 * 1000l);
         String linkid = br.getRegex("link_id = '(\\d+)';").getMatch(0);
@@ -248,6 +249,7 @@ public class SharingMatrixCom extends PluginForHost {
                 /* strange because captcha should be okay */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 5 * 60 * 1000l);
             }
+            if (br.containsHTML("You are already downloading file. Only premium")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (passCode != null) {

@@ -48,8 +48,10 @@ public class DuckLoad extends PluginForHost {
             sleep(10 * 1000l, link);
         }
         Form form = br.getForm(0);
-        String capurl = "/design/Captcha2" + br.getRegex("src=\"/design/Captcha\\d?(.*?\\.php\\?.*?key=.*?)\"").getMatch(0);
-        if (capurl == null) capurl = "/design/Captcha2" + br.getRegex("src='/design/Captcha\\d?(.*?\\.php.*?key=.*?)'").getMatch(0);
+        String capurl = br.getRegex("src=\"/design/Captcha\\d?(.*?\\.php\\?.*?=.*?)\"").getMatch(0);
+        if (capurl == null) capurl = br.getRegex("src='/design/Captcha\\d?(.*?\\.php\\?.*?=.*?)'").getMatch(0);
+        if (capurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        capurl = "/design/Captcha2" + capurl;
         String code = getCaptchaCode(capurl, link);
         if (form.containsHTML("appl_code")) {
             form = new Form();
