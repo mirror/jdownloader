@@ -79,7 +79,7 @@ public class ShrLnksBz extends PluginForDecrypt {
             File file = this.getLocalCaptchaFile();
             Browser temp = br.cloneBrowser();
             temp.getDownload(file, "http://share-links.biz"+Captchamap);       
-            Point p = UserIO.getInstance().requestClickPositionDialog(file, "Share-links.biz", "blaaa");
+            Point p = UserIO.getInstance().requestClickPositionDialog(file, "Share-links.biz", JDL.L("plugins.decrypt.shrlnksbz.desc", "Read the combination in the background and click the corresponding combination in the overview!"));
             int y = getnearstvalue(br.getRegex("coords=\"\\d+,\\d+,\\d+,(\\d+?)\"").getColumn(0), p.y);
             int x = getnearstvalue(br.getRegex("coords=\"\\d+,\\d+,(\\d+?),"+y+"\"").getColumn(0), p.x);
             String nexturl = br.getRegex("<area shape=\"rect\" coords=\"\\d+,\\d+,"+x+","+y+"\" href=\"/(.*?)\" alt=\"\" title=\"\" />").getMatch(0);
@@ -87,6 +87,8 @@ public class ShrLnksBz extends PluginForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             br.setFollowRedirects(true);
             br.getPage("http://share-links.biz/"+nexturl);
+            if(br.containsHTML("Die getroffene Auswahl war falsch"))
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             
         }
         
