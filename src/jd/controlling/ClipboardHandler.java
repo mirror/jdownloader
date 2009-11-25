@@ -306,7 +306,7 @@ public class ClipboardHandler extends Thread implements ControlListener {
                                     }
                                 }
                             } catch (Exception e) {
-                                JDLogger.exception(e);
+                                // JDLogger.exception(e);
                                 /* fallback */
                                 if (cur.isDataFlavorSupported(stringFlavor)) {
                                     what = stringFlavor;

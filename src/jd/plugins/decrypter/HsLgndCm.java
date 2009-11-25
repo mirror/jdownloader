@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.config.Property;
 import jd.controlling.ProgressController;
 import jd.gui.UserIO;
 import jd.nutils.encoding.Encoding;
@@ -32,12 +33,13 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {"houselegend.com"}, urls = {"http://[\\w\\.]*?houselegend\\.com/(([0-9]+.+)|(redirector.+))"}, flags = {0})
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "houselegend.com" }, urls = { "http://[\\w\\.]*?houselegend\\.com/(([0-9]+.+)|(redirector.+))" }, flags = { 0 })
 public class HsLgndCm extends PluginForDecrypt {
 
     private Pattern sitePattern = Pattern.compile("target='_blank' href='(.*?houselegend\\.com/redirector\\.php\\?url=.*?)'>", Pattern.CASE_INSENSITIVE);
     private Pattern redirectorPattern = Pattern.compile("click on the link <a href=\"(http://.*?)\">", Pattern.CASE_INSENSITIVE);
-    private String cookie;
+    /* must be static so all plugins share same lock */
+    private static final Object LOCK = new Object();
 
     public HsLgndCm(PluginWrapper wrapper) {
         super(wrapper);
@@ -47,13 +49,13 @@ public class HsLgndCm extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        br.setCookiesExclusive(false);
+        br.setCookiesExclusive(true);
+        String[] links = null;
         br.getPage(parameter);
-        String[] links;
         if (parameter.contains("redirector.php?")) {
-            links = new String[]{parameter};
+            links = new String[] { parameter };
         } else {
-            if (!getUserLogin(parameter)) return new ArrayList<DownloadLink>();
+            if (!getUserLogin(parameter)) return decryptedLinks;
             links = br.getRegex(sitePattern).getColumn(0);
         }
         if (links == null || links.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -63,22 +65,36 @@ public class HsLgndCm extends PluginForDecrypt {
         }
         return decryptedLinks;
 
-
-
     }
 
     private boolean getUserLogin(String url) throws IOException, DecrypterException {
-        for (int i = 0; i < 3; i++) {
-            if (br.containsHTML("Registration\"><b>REGISTER</b></a> before you can view this text")) {
-                String login = UserIO.getInstance().requestInputDialog("Enter Loginname for houselegend.com :");
-                if (login == null) return false;
-                String pass = UserIO.getInstance().requestInputDialog("Enter password for houselegend.com :");
-                if (pass == null) return false;
-                cookie = "login_name=" + login + "&login_password=" + Encoding.urlEncode(pass) + "&no_cookies=1&image=LOGIN&login=submit";
-                br.postPage(url, cookie);
-                br.getPage(url);
-            } else return true;
+        String ltmp = null;
+        String ptmp = null;
+        synchronized (LOCK) {
+            ltmp = this.getPluginConfig().getStringProperty("user", null);
+            ptmp = this.getPluginConfig().getStringProperty("pass", null);
+            if (ltmp != null && ptmp != null) {
+                br.postPage(url, "login_name=" + ltmp + "&login_password=" + Encoding.urlEncode(ptmp) + "&no_cookies=1&image=LOGIN&login=submit");
+            }
+            br.getPage(url);
+            for (int i = 0; i < 3; i++) {
+                if (br.containsHTML("Registration\"><b>REGISTER</b></a> before you can view this text")) {
+                    this.getPluginConfig().setProperty("user", Property.NULL);
+                    this.getPluginConfig().setProperty("pass", Property.NULL);
+                    ltmp = UserIO.getInstance().requestInputDialog("Enter Loginname for houselegend.com :");
+                    if (ltmp == null) return false;
+                    ptmp = UserIO.getInstance().requestInputDialog("Enter password for houselegend.com :");
+                    if (ptmp == null) return false;
+                    br.postPage(url, "login_name=" + ltmp + "&login_password=" + Encoding.urlEncode(ptmp) + "&no_cookies=1&image=LOGIN&login=submit");
+                    br.getPage(url);
+                } else {
+                    this.getPluginConfig().setProperty("user", ltmp);
+                    this.getPluginConfig().setProperty("pass", ptmp);
+                    this.getPluginConfig().save();
+                    return true;
+                }
 
+            }
         }
         throw new DecrypterException("Login or/and password wrong");
     }

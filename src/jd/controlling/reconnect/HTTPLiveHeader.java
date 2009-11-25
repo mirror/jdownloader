@@ -113,7 +113,9 @@ public class HTTPLiveHeader extends ReconnectMethod {
         headerProperties = new HashMap<String, String>();
 
         Browser br = new Browser();
-
+        /* set custom timeouts here because 10secs is a LONG time ;) */
+        br.setReadTimeout(10000);
+        br.setConnectTimeout(10000);
         br.setProxy(JDProxy.NO_PROXY);
         if (user != null && pass != null) {
             br.setAuth(ip, user, pass);
@@ -242,7 +244,7 @@ public class HTTPLiveHeader extends ReconnectMethod {
                         }
                         try {
                             /* DDoS Schutz */
-                            Thread.sleep(150);
+                            Thread.sleep(350);
                         } catch (Exception e) {
                         }
                         if (retbr == null || !retbr.getHttpConnection().isOK()) {
