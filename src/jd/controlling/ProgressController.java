@@ -43,7 +43,7 @@ class ProgressControllerBroadcaster extends JDBroadcaster<ProgressControllerList
  * 
  * @author JD-Team
  */
-public class ProgressController implements MessageListener {
+public class ProgressController implements MessageListener, Comparable<ProgressController> {
 
     private static int idCounter = 0;
     private long currentValue;
@@ -244,4 +244,10 @@ public class ProgressController implements MessageListener {
     public void onMessage(MessageEvent event) {
         this.setStatusText(event.getMessage());
     }
+
+    public int compareTo(ProgressController o) {
+        if (isFinalizing()) return 1;
+        return ((Integer) o.getPercent()).compareTo(getPercent());
+    }
+
 }

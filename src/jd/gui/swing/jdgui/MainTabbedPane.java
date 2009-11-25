@@ -16,7 +16,6 @@
 
 package jd.gui.swing.jdgui;
 
-import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Graphics;
@@ -29,11 +28,11 @@ import javax.swing.Icon;
 import javax.swing.JComponent;
 import javax.swing.JTabbedPane;
 import javax.swing.KeyStroke;
-import javax.swing.UIManager;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import jd.gui.swing.SwingGui;
+import jd.gui.swing.components.JDCloseAction;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
 import jd.gui.swing.jdgui.interfaces.View;
 import jd.gui.swing.jdgui.maintab.ClosableTabHeader;
@@ -225,60 +224,13 @@ public class MainTabbedPane extends JTabbedPane implements MouseListener {
         public void paintIcon(Component c, Graphics g, int x, int y) {
             this.x_pos = x;
             this.y_pos = y;
-            Icon ic = UIManager.getIcon("InternalFrame.closeIcon");
-            int y_p = y + 2;
-
-            Color col;
-            int w, h;
-            if (ic == null) {
-                // draw close X
-                col = g.getColor();
-
-                g.drawLine(x + 3, y_p + 3, x + 10, y_p + 10);
-                g.drawLine(x + 3, y_p + 4, x + 9, y_p + 10);
-                g.drawLine(x + 4, y_p + 3, x + 10, y_p + 9);
-                g.drawLine(x + 10, y_p + 3, x + 3, y_p + 10);
-                g.drawLine(x + 10, y_p + 4, x + 4, y_p + 10);
-                g.drawLine(x + 9, y_p + 3, x + 3, y_p + 9);
-                g.setColor(col);
-                w = 13;
-                h = 13;
-            } else {
-                // use icon
-                ic.paintIcon(c, g, x - 1, y_p - 1);
-                w = ic.getIconWidth() - 3;
-                h = ic.getIconHeight() - 3;
-            }
-            // draw border
-            col = g.getColor();
-
-            // g.setColor(Color.black);
-
-            // --- <<
-            // | |
-            // ---
-            g.drawLine(x + 1, y_p, x + w - 1, y_p);
-            // ---
-            // | |
-            // --- <<
-            g.drawLine(x + 1, y_p + h, x + w - 1, y_p + h);
-            // ---
-            // >> | |
-            // ---
-            g.drawLine(x, y_p + 1, x, y_p + h - 1);
-            // ---
-            // | | <<
-            // ---
-            g.drawLine(x + w, y_p + 1, x + w, y_p + h - 1);
-            g.setColor(col);
-
-            if (fileIcon != null) {
-                fileIcon.paintIcon(c, g, x + width + 2, y_p);
-            }
+            Icon ic = JDCloseAction.getCloseIcon();
+            ic.paintIcon(c, g, x, y);
+            if (fileIcon != null) fileIcon.paintIcon(c, g, x + ic.getIconWidth() + 2, y);
         }
 
         public int getIconWidth() {
-            return width + (fileIcon != null ? fileIcon.getIconWidth() : 0);
+            return width + (fileIcon != null ? fileIcon.getIconWidth() + 2 : 0);
         }
 
         public int getIconHeight() {

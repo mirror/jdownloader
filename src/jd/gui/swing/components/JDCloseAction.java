@@ -7,6 +7,7 @@ import javax.swing.AbstractAction;
 import javax.swing.Icon;
 import javax.swing.UIManager;
 
+import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 
 public class JDCloseAction extends AbstractAction {
@@ -17,15 +18,23 @@ public class JDCloseAction extends AbstractAction {
     private int width;
     private ActionListener listener;
 
+    /**
+     * Returns the default close icon.
+     */
+    public static Icon getCloseIcon() {
+        Icon ic = UIManager.getIcon("InternalFrame.closeIcon");
+        if (ic == null) ic = JDTheme.II("gui.images.cancel", 16, 16);
+        return ic;
+    }
+
     public JDCloseAction(ActionListener listener) {
         this.listener = listener;
-        Icon ic = UIManager.getIcon("InternalFrame.closeIcon");
-        if (ic != null) {
-            this.height = ic.getIconHeight();
-            this.width = ic.getIconWidth();
-            this.putValue(AbstractAction.SMALL_ICON, ic);
-            this.putValue(AbstractAction.SHORT_DESCRIPTION, JDL.L(JDL_PREFIX + "closeTab", "Close Tab"));
-        }
+
+        Icon ic = getCloseIcon();
+        this.height = ic.getIconHeight();
+        this.width = ic.getIconWidth();
+        this.putValue(AbstractAction.SMALL_ICON, ic);
+        this.putValue(AbstractAction.SHORT_DESCRIPTION, JDL.L(JDL_PREFIX + "closeTab", "Close Tab"));
     }
 
     public int getHeight() {

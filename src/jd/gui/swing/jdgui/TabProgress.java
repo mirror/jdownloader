@@ -18,11 +18,11 @@ package jd.gui.swing.jdgui;
 
 import java.awt.Color;
 import java.awt.Cursor;
+import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -51,7 +51,7 @@ public class TabProgress extends JPanel implements ControlListener {
 
     private static final long serialVersionUID = -8537543161116653345L;
 
-    private static final int MAX_BARS = 6;
+    private static final int MAX_BARS = GUIUtils.getConfig().getIntegerProperty(JDGuiConstants.PARAM_VISIBLE_MODULES, 6);
 
     /**
      * Hier werden alle Fortschritte der Plugins gespeichert
@@ -64,7 +64,7 @@ public class TabProgress extends JPanel implements ControlListener {
 
     private boolean updateInProgress = false;
 
-    private long latestUpdateTIme = 0;
+    private long latestUpdateTime = 0;
 
     /**
      * Die Tabelle für die Pluginaktivitäten
@@ -86,11 +86,7 @@ public class TabProgress extends JPanel implements ControlListener {
 
     private void initGUI() {
         this.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, getBackground().darker()));
-        // add(title = new JLabel(""),
-        // "split 3, gapleft 10, gapbottom 5, gaptop 5");
-        // title.setIcon(JDTheme.II("gui.images.sort", 24, 24));
-        // title.setIconTextGap(15);
-        add(title = new JXBusyLabel(), "split 3, gapleft 10, gapbottom 5, gaptop 5");
+        add(title = new JXBusyLabel(new Dimension(24, 24)), "split 3, gapleft 10, gapbottom 5, gaptop 5");
         title.setIconTextGap(15);
         add(new JSeparator(), "growx,pushx,gapright 15");
         add(new JLabel(JDTheme.II("gui.images.config.tip", 16, 16)));
@@ -141,7 +137,7 @@ public class TabProgress extends JPanel implements ControlListener {
     protected void update(boolean force) {
         if (!force) {
             if (updateInProgress) return;
-            if ((System.currentTimeMillis() - latestUpdateTIme) < (500)) return;
+            if ((System.currentTimeMillis() - latestUpdateTime) < (500)) return;
             updateInProgress = true;
         }
         sortControllers();
@@ -172,7 +168,7 @@ public class TabProgress extends JPanel implements ControlListener {
             this.revalidate();
             this.repaint();
             if (!force) updateInProgress = false;
-            latestUpdateTIme = System.currentTimeMillis();
+            latestUpdateTime = System.currentTimeMillis();
         }
     }
 
@@ -181,22 +177,7 @@ public class TabProgress extends JPanel implements ControlListener {
      */
     private void sortControllers() {
         synchronized (controllers) {
-            Collections.sort(controllers, new Comparator<ProgressController>() {
-
-                public int compare(ProgressController o1, ProgressController o2) {
-                    if (o1.getPercent() == o2.getPercent()) return 0;
-                    return o1.getPercent() < o2.getPercent() ? 1 : -1;
-                }
-
-            });
-            Collections.sort(controllers, new Comparator<ProgressController>() {
-
-                public int compare(ProgressController o1, ProgressController o2) {
-                    if (o1.isFinalizing()) return 1;
-                    return 0;
-                }
-
-            });
+            Collections.sort(controllers);
         }
     }
 

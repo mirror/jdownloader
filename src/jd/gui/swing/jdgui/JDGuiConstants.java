@@ -33,7 +33,6 @@ public class JDGuiConstants {
     public static final String PARAM_SHOW_SPLASH = "SHOW_SPLASH";
     public static final String PARAM_JAC_LOG = "JAC_DOLOG";
     public static final String PARAM_BROWSER = "BROWSER2";
-    // public static final String GUICONFIGNAME = "simpleGUI";
     public static final String PARAM_SIDEBAR_COLLAPSED = "PARAM_SIDEBAR_COLLAPSED";
     public static final String ANIMATION_ENABLED = "ANIMATION_ENABLED3";
     public static final String DECORATION_ENABLED = "DECORATION_ENABLED2";
@@ -42,5 +41,6 @@ public class JDGuiConstants {
     public static final String PARAM_SHOW_BALLOON = "PARAM_SHOW_BALLOON";
     public static final String PARAM_GENERAL_FONT_SIZE = "PARAM_GENERAL_FONT_SIZE3";
     public static final String PARAM_GENERAL_FONT_NAME = "PARAM_GENERAL_FONT_NAME3";
+    public static final String PARAM_VISIBLE_MODULES = "PARAM_VISIBLE_MODULES";
 
 }
