@@ -881,6 +881,7 @@ jd.gui.swing.components.accountdialog.hoster = Πάροχος:
 jd.gui.swing.components.accountdialog.name = Όνομα:
 jd.gui.swing.components.accountdialog.pass = Κωδικός:
 jd.gui.swing.components.accountdialog.title = Προσθήκη νέου λογαριασμού
+jd.gui.swing.components.jdcloseaction.closetab = Κλείσιμο Καρτέλας
 jd.gui.swing.components.jdcollapser.closetooltip = Κλείσιμο %s
 jd.gui.swing.components.table.jdtable.columncontrol = Αλλαγή στηλών
 jd.gui.swing.jdgui.actions.actioncontroller.toolbar.control.stopmark.tooltip = Διακοπή μετά τις τρέχουσες Λήψεις
