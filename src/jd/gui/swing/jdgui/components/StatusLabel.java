@@ -58,8 +58,8 @@ public class StatusLabel extends JPanel {
     /**
      * clears the icon for left, setIcon AFTER setText
      */
-    public void setText(String text) {
-        left.setIcon(null);
+    public void setText(String text, Icon icon) {
+        left.setIcon(icon);
         left.setText(text);
         left.setToolTipText(text);
         strLeft = text;
@@ -75,13 +75,15 @@ public class StatusLabel extends JPanel {
         }
     }
 
-    public void setIcon(int i, Icon icon, String tooltip) {
+    public void setIcon(int i, Icon icon, String text, String tooltip) {
         if (i < 0 && ICONCOUNT > 0) {
             left.setIcon(icon);
+            left.setText(text);
             left.setToolTipText(tooltip);
         } else {
             if (i < 0 || i >= ICONCOUNT) return;
             rights[i].setIcon(icon);
+            rights[i].setText(text);
             rights[i].setToolTipText(tooltip);
         }
     }
@@ -105,6 +107,7 @@ public class StatusLabel extends JPanel {
     public void clearIcons(int counter) {
         for (int i = counter; i < ICONCOUNT; i++) {
             rights[i].setIcon(null);
+            rights[i].setText(null);
             rights[i].setToolTipText(null);
         }
     }

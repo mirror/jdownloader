@@ -97,12 +97,12 @@ public class StatusColumn extends JDTableColumn {
             int failedCount = fp.countFailedLinks(false);
             int size = fp.getDownloadLinks().size();
             if (failedCount > 0) {
-                statuspanel.setText(JDL.LF("gui.linkgrabber.packageofflinepercent", "%s offline", JDUtilities.getPercent(failedCount, size)));
+                statuspanel.setText(JDL.LF("gui.linkgrabber.packageofflinepercent", "%s offline", JDUtilities.getPercent(failedCount, size)), null);
             } else {
-                statuspanel.setText("");
+                statuspanel.setText("", null);
             }
             if (fp.hasCustomIcon()) {
-                statuspanel.setIcon(-1, fp.getCustomIcon(), fp.getCustomIconText());
+                statuspanel.setIcon(-1, fp.getCustomIcon(), null, fp.getCustomIconText());
             }
             statuspanel.clearIcons(counter);
         } else if (value instanceof DownloadLink) {
@@ -113,50 +113,50 @@ public class StatusColumn extends JDTableColumn {
             } else if (dLink.getLinkStatus().getStatusString() != null && dLink.getLinkStatus().getStatusString().trim().length() > 0) {
                 sb.append('>').append(dLink.getLinkStatus().getStatusString());
             }
-            statuspanel.setText(sb.toString());
+            statuspanel.setText(sb.toString(), null);
             if (!dLink.isAvailabilityStatusChecked()) {
-                statuspanel.setText(strUnchecked + sb.toString());
+                statuspanel.setText(strUnchecked + sb.toString(), null);
             } else {
                 switch (dLink.getAvailableStatus()) {
                 case FALSE:
-                    statuspanel.setText(strOffline + sb.toString());
-                    statuspanel.setIcon(-1, imgFailed, strOffline);
+                    statuspanel.setText(strOffline + sb.toString(), null);
+                    statuspanel.setIcon(-1, imgFailed, strOffline, null);
                     break;
                 case TRUE:
-                    statuspanel.setText(strOnline + sb.toString());
-                    statuspanel.setIcon(-1, imgOnline, strOnline);
+                    statuspanel.setText(strOnline + sb.toString(), null);
+                    statuspanel.setIcon(-1, imgOnline, strOnline, null);
                     break;
                 case UNCHECKABLE:
-                    statuspanel.setText(strUncheckable + sb.toString());
-                    statuspanel.setIcon(-1, imgUncheckable, strUncheckable);
+                    statuspanel.setText(strUncheckable + sb.toString(), null);
+                    statuspanel.setIcon(-1, imgUncheckable, strUncheckable, null);
                     break;
                 case UNCHECKED:
-                    statuspanel.setText(strUnchecked + sb.toString());
+                    statuspanel.setText(strUnchecked + sb.toString(), null);
                     break;
                 }
             }
             if (dLink.getPriority() != 0) {
                 switch (dLink.getPriority()) {
                 case -1:
-                    statuspanel.setIcon(counter, imgPriorityS, strPriorityS);
+                    statuspanel.setIcon(counter, imgPriorityS, null, strPriorityS);
                     counter++;
                     break;
                 case 1:
-                    statuspanel.setIcon(counter, imgPriority1, strPriority1);
+                    statuspanel.setIcon(counter, imgPriority1, null, strPriority1);
                     counter++;
                     break;
                 case 2:
-                    statuspanel.setIcon(counter, imgPriority2, strPriority2);
+                    statuspanel.setIcon(counter, imgPriority2, null, strPriority2);
                     counter++;
                     break;
                 case 3:
-                    statuspanel.setIcon(counter, imgPriority3, strPriority3);
+                    statuspanel.setIcon(counter, imgPriority3, null, strPriority3);
                     counter++;
                     break;
                 }
             }
             if (dLink.hasCustomIcon()) {
-                statuspanel.setIcon(counter, dLink.getCustomIcon(), dLink.getCustomIconText());
+                statuspanel.setIcon(counter, dLink.getCustomIcon(), null, dLink.getCustomIconText());
                 counter++;
             }
             statuspanel.clearIcons(counter);

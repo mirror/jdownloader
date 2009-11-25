@@ -141,6 +141,7 @@ public class ZShareNet extends PluginForHost {
         // Möglicherweise serverfehler...
         if (!dl.getConnection().isContentDisposition() || dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            if (br.containsHTML("/images/download.gif")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 5 * 60 * 1000l);
             if (br.containsHTML("404 - Not Found") || br.getHttpConnection().getContentLength() == 0) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

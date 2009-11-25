@@ -171,9 +171,14 @@ public class Megauploadcom extends PluginForHost {
             if (days != null && !days.equalsIgnoreCase("Unlimited")) {
                 ai.setValidUntil(System.currentTimeMillis() + (Long.parseLong(days) * 24 * 60 * 60 * 1000));
             } else if (days == null || days.equals("0")) {
-                ai.setExpired(true);
-                account.setValid(false);
-                return ai;
+                String hours = br.getRegex("<TD><b>Premium</b>.*?\\((\\d+) hours remaining - <a").getMatch(0);
+                if (hours != null) {
+                    ai.setValidUntil(System.currentTimeMillis() + (Long.parseLong(hours) * 60 * 60 * 1000));
+                } else {
+                    ai.setExpired(true);
+                    account.setValid(false);
+                    return ai;
+                }
             }
         }
         String points = br.getRegex(Pattern.compile("<TD>Reward points available:</TD>.*?<TD><b>(\\d+)</b> ", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);

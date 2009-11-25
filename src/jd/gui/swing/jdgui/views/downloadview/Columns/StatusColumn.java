@@ -98,10 +98,10 @@ public class StatusColumn extends JDTableColumn {
             fp = (FilePackage) value;
             counter = 0;
             if (fp.isFinished()) {
-                statuspanel.setIcon(counter, imgFinished, strFinished);
+                statuspanel.setIcon(counter, imgFinished, null, strFinished);
                 counter++;
             } else if (DownloadWatchDog.getInstance().isStopMark(value)) {
-                statuspanel.setIcon(counter, imgStopMark, strStopMark);
+                statuspanel.setIcon(counter, imgStopMark, null, strStopMark);
                 counter++;
             }
             clearSB();
@@ -112,28 +112,28 @@ public class StatusColumn extends JDTableColumn {
             } else if (fp.getLinksInProgress() > 0) {
                 sb.append(fp.getLinksInProgress()).append('/').append(fp.size()).append(' ').append(strDownloadLinkActive);
             }
-            statuspanel.setText(sb.toString());
+            statuspanel.setText(sb.toString(), null);
             statuspanel.clearIcons(counter);
             statuspanel.setWidth(counter, getCurWidth());
         } else {
             dLink = (DownloadLink) value;
             counter = 0;
             if (DownloadWatchDog.getInstance().isStopMark(value)) {
-                statuspanel.setIcon(counter, imgStopMark, strStopMark);
+                statuspanel.setIcon(counter, imgStopMark, null, strStopMark);
                 counter++;
             }
             if (dLink.getLinkStatus().getStatusIcon() != null) {
-                statuspanel.setIcon(counter, dLink.getLinkStatus().getStatusIcon(), dLink.getLinkStatus().getStatusText());
+                statuspanel.setIcon(counter, dLink.getLinkStatus().getStatusIcon(), null, dLink.getLinkStatus().getStatusText());
                 counter++;
             } else if (dLink.getLinkStatus().isFinished()) {
-                statuspanel.setIcon(counter, imgFinished, strFinished);
+                statuspanel.setIcon(counter, imgFinished, null, strFinished);
                 counter++;
             } else if (dLink.getLinkStatus().isFailed() || (dLink.isAvailabilityStatusChecked() && !dLink.isAvailable())) {
-                statuspanel.setIcon(counter, imgFailed, strFailed);
+                statuspanel.setIcon(counter, imgFailed, null, strFailed);
                 counter++;
             }
             if (counter <= StatusLabel.ICONCOUNT && dLink.getPluginProgress() != null && dLink.getPluginProgress().getPercent() > 0.0 && dLink.getPluginProgress().getPercent() < 100.0) {
-                statuspanel.setIcon(counter, imgExtract, strExtract);
+                statuspanel.setIcon(counter, imgExtract, null, strExtract);
                 counter++;
             }
             if (counter <= StatusLabel.ICONCOUNT) {
@@ -142,28 +142,28 @@ public class StatusColumn extends JDTableColumn {
                 default:
                     break;
                 case -1:
-                    statuspanel.setIcon(counter, imgPriorityS, strPriorityS);
+                    statuspanel.setIcon(counter, imgPriorityS, null, strPriorityS);
                     counter++;
                     break;
                 case 1:
-                    statuspanel.setIcon(counter, imgPriority1, strPriority1);
+                    statuspanel.setIcon(counter, imgPriority1, null, strPriority1);
                     counter++;
                     break;
                 case 2:
-                    statuspanel.setIcon(counter, imgPriority2, strPriority2);
+                    statuspanel.setIcon(counter, imgPriority2, null, strPriority2);
                     counter++;
                     break;
                 case 3:
-                    statuspanel.setIcon(counter, imgPriority3, strPriority3);
+                    statuspanel.setIcon(counter, imgPriority3, null, strPriority3);
                     counter++;
                     break;
                 }
             }
             if (counter <= StatusLabel.ICONCOUNT && dLink.hasCustomIcon()) {
-                statuspanel.setIcon(counter, dLink.getCustomIcon(), dLink.getCustomIconText());
+                statuspanel.setIcon(counter, dLink.getCustomIcon(), null, dLink.getCustomIconText());
                 counter++;
             }
-            statuspanel.setText(dLink.getLinkStatus().getStatusString());
+            statuspanel.setText(dLink.getLinkStatus().getStatusString(), null);
             statuspanel.clearIcons(counter);
             statuspanel.setWidth(counter, getCurWidth());
         }

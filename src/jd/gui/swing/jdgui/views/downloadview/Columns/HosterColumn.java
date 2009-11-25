@@ -83,22 +83,22 @@ public class HosterColumn extends JDTableColumn {
             return jlr;
         } else {
             dLink = (DownloadLink) value;
-            statuspanel.setText(dLink.getLinkStatus().getStatusString());
+            statuspanel.setText(dLink.getLinkStatus().getStatusString(), null);
             counter = 0;
             if (dLink.getTransferStatus().usesPremium()) {
-                statuspanel.setIcon(counter, imgPremium, strPremium);
+                statuspanel.setIcon(counter, imgPremium, null, strPremium);
                 counter++;
             }
             if (dLink.getTransferStatus().supportsResume()) {
-                statuspanel.setIcon(counter, imgResume, strResume);
+                statuspanel.setIcon(counter, imgResume, null, strResume);
                 counter++;
             }
             if (dLink.getPlugin() == null) {
-                statuspanel.setText("plugin missing");
+                statuspanel.setText("plugin missing", null);
             } else {
                 String s = dLink.getPlugin().getHost() + dLink.getPlugin().getSessionInfo();
-                statuspanel.setText(s);
-                statuspanel.setIcon(-1, dLink.getPlugin().getHosterIcon(), strLoadingFrom + dLink.getPlugin().getHost());
+                statuspanel.setText(s, null);
+                statuspanel.setIcon(-1, dLink.getPlugin().getHosterIcon(), null, strLoadingFrom + dLink.getPlugin().getHost());
                 statuspanel.setWidth(counter, getCurWidth());
             }
             statuspanel.clearIcons(counter);
