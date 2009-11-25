@@ -20,8 +20,6 @@ import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -42,21 +40,18 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
+import org.jdesktop.swingx.JXBusyLabel;
+
 /**
  * Diese Klasse zeigt alle Fortschritte von momenten aktiven Plugins an.
  * 
  * @author JD-Team
  */
-public class TabProgress extends JPanel implements ActionListener, ControlListener, MouseListener {
+public class TabProgress extends JPanel implements ControlListener {
 
-    /**
-     * serialVersionUID
-     */
     private static final long serialVersionUID = -8537543161116653345L;
 
     private static final int MAX_BARS = 6;
-
-    // private static final String COLLAPSED = "COLLAPSED";
 
     /**
      * Hier werden alle Fortschritte der Plugins gespeichert
@@ -65,7 +60,7 @@ public class TabProgress extends JPanel implements ActionListener, ControlListen
 
     private ProgressEntry[] lines;
 
-    private JLabel title;
+    private JXBusyLabel title;
 
     private boolean updateInProgress = false;
 
@@ -77,33 +72,31 @@ public class TabProgress extends JPanel implements ActionListener, ControlListen
     public TabProgress() {
         controllers = new ArrayList<ProgressController>();
         JDUtilities.getController().addControlListener(this);
-        this.addMouseListener(this);
         this.setVisible(false);
         lines = new ProgressEntry[MAX_BARS];
-        this.setLayout(new MigLayout("ins 0,wrap 1", "[fill,grow]"));
+        this.setLayout(new MigLayout("ins 0, wrap 1", "[fill,grow]"));
 
         initGUI();
-        this.setTitle(JDL.LF("gui.progresspane.title", "%s module(s) running", 0));
+        this.setTitle(0);
     }
 
-    private void setTitle(String lf) {
-        title.setText(lf);
+    private void setTitle(int runningModules) {
+        title.setText(JDL.LF("gui.progresspane.title", "%s module(s) running", runningModules));
     }
 
     private void initGUI() {
         this.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, getBackground().darker()));
-        add(title = new JLabel(""), "split 3,gapleft 10,gapbottom 5,gaptop 5");
-        title.setIcon(JDTheme.II("gui.images.sort", 24, 24));
+        // add(title = new JLabel(""),
+        // "split 3, gapleft 10, gapbottom 5, gaptop 5");
+        // title.setIcon(JDTheme.II("gui.images.sort", 24, 24));
+        // title.setIconTextGap(15);
+        add(title = new JXBusyLabel(), "split 3, gapleft 10, gapbottom 5, gaptop 5");
         title.setIconTextGap(15);
         add(new JSeparator(), "growx,pushx,gapright 15");
         add(new JLabel(JDTheme.II("gui.images.config.tip", 16, 16)));
         for (int i = 0; i < MAX_BARS; i++) {
             lines[i] = new ProgressEntry();
         }
-    }
-
-    public void actionPerformed(ActionEvent e) {
-        setVisible(false);
     }
 
     private void addController(ProgressController source) {
@@ -156,10 +149,7 @@ public class TabProgress extends JPanel implements ActionListener, ControlListen
             for (int i = 0; i < Math.min(controllers.size(), MAX_BARS); i++) {
                 if (!lines[i].isAttached()) {
                     this.add(lines[i], "height 20!");
-                    // System.out.println("ATTACH " + i);
                     lines[i].setAttached(true);
-                } else {
-                    // System.out.println("OK " + i);
                 }
                 lines[i].update(controllers.get(i));
 
@@ -167,18 +157,18 @@ public class TabProgress extends JPanel implements ActionListener, ControlListen
             for (int i = Math.max(0, Math.min(controllers.size(), MAX_BARS)); i < MAX_BARS; i++) {
                 if (lines[i].isAttached()) {
                     this.remove(lines[i]);
-                    // System.out.println("GONE " + i);
-
                     lines[i].setAttached(false);
                 }
 
             }
-            if (controllers.size() == 0) {
+            if (controllers.isEmpty()) {
+                title.setBusy(false);
                 this.setVisible(false);
             } else {
+                title.setBusy(true);
                 this.setVisible(true);
             }
-            this.setTitle(JDL.LF("gui.progresspane.title", "%s module(s) running", "" + controllers.size()));
+            this.setTitle(controllers.size());
             this.revalidate();
             this.repaint();
             if (!force) updateInProgress = false;
@@ -238,7 +228,6 @@ public class TabProgress extends JPanel implements ActionListener, ControlListen
             cancel.setOpaque(false);
             cancel.setFocusable(false);
             cancel.addActionListener(this);
-            // this.add(new JSeparator(), "span");
         }
 
         public boolean isAttached() {
@@ -287,25 +276,6 @@ public class TabProgress extends JPanel implements ActionListener, ControlListen
             }
         }
 
-    }
-
-    public void mouseClicked(MouseEvent e) {
-    }
-
-    public void mouseEntered(MouseEvent e) {
-    }
-
-    public void mouseExited(MouseEvent e) {
-    }
-
-    public void mousePressed(MouseEvent e) {
-    }
-
-    public void mouseReleased(MouseEvent e) {
-        // System.out.println("Task is :" + this.isCollapsed());
-        // SubConfiguration.getConfig("gui").setProperty(TabProgress.COLLAPSED,
-        // this.isCollapsed());
-        // SubConfiguration.getConfig("gui").save();
     }
 
 }
