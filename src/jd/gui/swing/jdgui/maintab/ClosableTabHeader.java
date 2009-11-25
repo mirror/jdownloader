@@ -32,7 +32,6 @@ public class ClosableTabHeader extends JPanel {
 
     public ClosableTabHeader(ClosableView view) {
         setLayout(new MigLayout("ins 0", "[grow,fill]"));
-        JLabel l1 = new JLabel(view.getTitle());
 
         final JButton closeIcon = new JButton(view.getCloseAction());
         closeIcon.setContentAreaFilled(false);
@@ -50,8 +49,10 @@ public class ClosableTabHeader extends JPanel {
                 closeIcon.setBorderPainted(false);
             }
         });
-        closeIcon.setText(null);
+        closeIcon.setHideActionText(true);
         putClientProperty("paintActive", Boolean.TRUE);
+
+        JLabel l1 = new JLabel(view.getTitle());
         l1.setIcon(view.getIcon());
         l1.setOpaque(false);
 

@@ -18,6 +18,7 @@ package jd.plugins.decrypter;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.logging.Level;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -61,7 +62,7 @@ public class CrpttCm extends PluginForDecrypt {
         if (con.getContentType().indexOf("text/html") >= 0) {
             logger.info(br.loadConnection(con));
             if (br.containsHTML(PATTERN_PW)) {
-                String pass = getUserInput(JDL.L("plugins.hoster.general.passwordProtectedInput", "Die Links sind mit einem Passwort gesch\u00fctzt. Bitte geben Sie das Passwort ein:"), param.getDecrypterPassword(), param);
+                String pass = getUserInput(JDL.L("plugins.hoster.general.passwordProtectedInput", "Die Links sind mit einem Passwort geschützt. Bitte geben Sie das Passwort ein:"), param.getDecrypterPassword(), param);
                 String postData = "a=pw&pw=" + Encoding.urlEncode(pass);
                 br.postPage(parameter, postData);
                 if (br.containsHTML(PATTERN_PW)) {
@@ -125,7 +126,7 @@ public class CrpttCm extends PluginForDecrypt {
         return new String(cipher).trim();
     }
 
-    // @Override
+    @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
@@ -184,16 +185,14 @@ public class CrpttCm extends PluginForDecrypt {
                 }
                 progress.increase(1);
             }
-            if (decryptedLinks.size() == 0) { return containerStep(param); }
+            if (decryptedLinks.size() == 0) return containerStep(param);
         } catch (DecrypterException j) {
             throw j;
         } catch (Exception e) {
-            logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
+            logger.log(Level.SEVERE, "Exception occurred", e);
             return null;
         }
         return decryptedLinks;
     }
-
-    // @Override
 
 }

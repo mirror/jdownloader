@@ -35,7 +35,7 @@ public class SGdNt extends PluginForDecrypt {
         super(wrapper);
     }
 
-    // @Override
+    @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -46,7 +46,7 @@ public class SGdNt extends PluginForDecrypt {
             boolean okay = true;
             for (int i = 0; i < 4; i++) {
 
-                String pass = getUserInput(JDL.L("plugins.hoster.general.passwordProtectedInput", "Die Links sind mit einem Passwort gesch\u00fctzt. Bitte geben Sie das Passwort ein:"), param.getDecrypterPassword(), param);
+                String pass = getUserInput(JDL.L("plugins.hoster.general.passwordProtectedInput", "Die Links sind mit einem Passwort geschützt. Bitte geben Sie das Passwort ein:"), param.getDecrypterPassword(), param);
                 String postData = "pass=" + Encoding.urlEncode(pass);
                 br.postPage(parameter, postData);
                 if (br.containsHTML("Wrong password!")) {
@@ -64,7 +64,5 @@ public class SGdNt extends PluginForDecrypt {
 
         return decryptedLinks;
     }
-
-    // @Override
 
 }

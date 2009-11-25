@@ -44,6 +44,7 @@ public class MainTabbedPane extends JTabbedPane implements MouseListener {
 
     private static final long serialVersionUID = -1531827591735215594L;
     private static MainTabbedPane INSTANCE;
+    protected View latestSelection;
 
     public synchronized static MainTabbedPane getInstance() {
         if (INSTANCE == null) INSTANCE = new MainTabbedPane();
@@ -70,30 +71,22 @@ public class MainTabbedPane extends JTabbedPane implements MouseListener {
         if (getTabCount() > 0) setSelectedComponent(getComponentAt(0));
     }
 
-    protected View latestSelection;
-
     public void addTab(View view) {
         SwingGui.checkEDT();
         if (view instanceof ClosableView) {
             addClosableTab((ClosableView) view);
         } else {
             super.addTab(view.getTitle(), view.getIcon(), view, view.getTooltip());
-
             view.getBroadcaster().fireEvent(new SwitchPanelEvent(view, SwitchPanelEvent.ON_ADD));
-
             this.setFocusable(false);
         }
-
     }
 
     private void addClosableTab(ClosableView view) {
-
         if (JDUtilities.getJavaVersion() >= 1.6) {
             super.addTab(view.getTitle(), view.getIcon(), view, view.getTooltip());
             view.getBroadcaster().fireEvent(new SwitchPanelEvent(view, SwitchPanelEvent.ON_ADD));
-
             this.setTabComponentAt(this.getTabCount() - 1, new ClosableTabHeader(view));
-
         } else {
             super.addTab(view.getTitle(), new CloseTabIcon(view.getIcon()), view, view.getTooltip());
             view.getBroadcaster().fireEvent(new SwitchPanelEvent(view, SwitchPanelEvent.ON_ADD));
@@ -125,7 +118,6 @@ public class MainTabbedPane extends JTabbedPane implements MouseListener {
                 } catch (Exception e2) {
                     e2.printStackTrace();
                 }
-
             }
 
         });
@@ -192,14 +184,11 @@ public class MainTabbedPane extends JTabbedPane implements MouseListener {
             int tabNumber = getUI().tabForCoordinate(this, e.getX(), e.getY());
             if (tabNumber < 0) return;
             Rectangle rect = ((CloseTabIcon) getIconAt(tabNumber)).getBounds();
-
             if (rect.contains(e.getX(), e.getY())) {
                 // the tab is being closed
                 ((ClosableView) this.getComponentAt(tabNumber)).close();
-
             }
-        } catch (java.lang.ClassCastException e2) {
-
+        } catch (ClassCastException e2) {
         }
     }
 
@@ -220,7 +209,7 @@ public class MainTabbedPane extends JTabbedPane implements MouseListener {
      * accepts an icon which is extra to the 'X' icon, so you can have tabs like
      * in JBuilder. This value is null if no extra icon is required.
      */
-    class CloseTabIcon implements Icon {
+    private class CloseTabIcon implements Icon {
         private int x_pos;
         private int y_pos;
         private int width;

@@ -26,10 +26,12 @@ import javax.swing.UIManager;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.MainTabbedPane;
 import jd.gui.swing.jdgui.interfaces.View;
+import jd.utils.locale.JDL;
 
 abstract public class ClosableView extends View {
 
     private static final long serialVersionUID = 8698758386841005256L;
+    private static final String JDL_PREFIX = "jd.gui.swing.jdgui.views.ClosableView.";
     private JMenuBar menubar;
     private CloseAction closeAction;
 
@@ -96,6 +98,7 @@ abstract public class ClosableView extends View {
             this.height = ic.getIconHeight();
             this.width = ic.getIconWidth();
             this.putValue(AbstractAction.SMALL_ICON, ic);
+            this.putValue(AbstractAction.SHORT_DESCRIPTION, JDL.L(JDL_PREFIX + "closeTab", "Close Tab"));
         }
 
         public void actionPerformed(ActionEvent e) {

@@ -51,7 +51,7 @@ public class Pldr extends PluginForDecrypt {
         return 0;
     }
 
-    // @Override
+    @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(false);
@@ -78,7 +78,7 @@ public class Pldr extends PluginForDecrypt {
                     Form passcap = br.getFormbyProperty("name", "captcha");
                     if (passcap == null) br.getForm(0);
                     if (br.containsHTML("Ordnerpasswort:")) {
-                        passwordstring = getUserInput(JDL.L("plugins.hoster.general.passwordProtectedInput", "Die Links sind mit einem Passwort gesch\u00fctzt. Bitte geben Sie das Passwort ein:"), param.getDecrypterPassword(), param);
+                        passwordstring = getUserInput(JDL.L("plugins.hoster.general.passwordProtectedInput", "Die Links sind mit einem Passwort geschützt. Bitte geben Sie das Passwort ein:"), param.getDecrypterPassword(), param);
                         password = true;
                     }
 
@@ -124,10 +124,8 @@ public class Pldr extends PluginForDecrypt {
                 decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
             }
             return decryptedLinks;
-        } else
-            return null;
+        }
+        return null;
     }
-
-    // @Override
 
 }

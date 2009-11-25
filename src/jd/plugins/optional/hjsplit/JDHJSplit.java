@@ -60,7 +60,7 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
 
     private static enum ARCHIV_TYPE {
         NONE, NORMAL, UNIX, CUTKILLER, XTREMSPLIT
-    };
+    }
 
     private static final String CONFIG_KEY_REMOVE_MERGED = "REMOVE_MERGED";
     private static final String DUMMY_HOSTER = "dum.my";
