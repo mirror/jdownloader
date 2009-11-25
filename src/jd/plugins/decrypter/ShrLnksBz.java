@@ -16,12 +16,14 @@
 
 package jd.plugins.decrypter;
 
+import java.awt.Point;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -53,11 +55,6 @@ public class ShrLnksBz extends PluginForDecrypt {
 
         /* Error handling */
         if (br.containsHTML("Der Inhalt konnte nicht gefunden werden")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-
-        if (br.containsHTML("(/captcha/|captcha_container|\"Captcha\"|id=\"captcha\")")) {
-            logger.warning("The user tried do add a captcha protected link but this plugin has no captcha handling!");
-            throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Plugin unvollständig: Das Plugin kann noch nicht mit Captchaeingaben umgehen!"));
-        }
         // Folderpassword+Captcha handling
         if (br.containsHTML("id=\"folderpass\"")) {
             for (int i = 0; i <= 3; i++) {
@@ -75,7 +72,25 @@ public class ShrLnksBz extends PluginForDecrypt {
             }
             if (br.containsHTML("Sicherheitscode ist falsch")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
-
+        
+        
+        if (br.containsHTML("(/captcha/|captcha_container|\"Captcha\"|id=\"captcha\")")) {
+            String Captchamap = br.getRegex("/><img src=\"(.*?)\" alt=\"Captcha\" id=\"captcha\" usemap=\"#captchamap\" />").getMatch(0);
+            File file = this.getLocalCaptchaFile();
+            Browser temp = br.cloneBrowser();
+            temp.getDownload(file, "http://share-links.biz"+Captchamap);       
+            Point p = UserIO.getInstance().requestClickPositionDialog(file, "Share-links.biz", "blaaa");
+            int y = getnearstvalue(br.getRegex("coords=\"\\d+,\\d+,\\d+,(\\d+?)\"").getColumn(0), p.y);
+            int x = getnearstvalue(br.getRegex("coords=\"\\d+,\\d+,(\\d+?),"+y+"\"").getColumn(0), p.x);
+            String nexturl = br.getRegex("<area shape=\"rect\" coords=\"\\d+,\\d+,"+x+","+y+"\" href=\"/(.*?)\" alt=\"\" title=\"\" />").getMatch(0);
+            if(nexturl == null)
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            br.setFollowRedirects(true);
+            br.getPage("http://share-links.biz/"+nexturl);
+            
+        }
+        
+        
         // container handling
         if (br.containsHTML("'dlc'")) {
             decryptedLinks = loadcontainer(br, "dlc");
@@ -121,6 +136,21 @@ public class ShrLnksBz extends PluginForDecrypt {
             progress.increase(1);
         }
         return decryptedLinks;
+    }
+
+    private int getnearstvalue(String[] data, int cord) {
+        int min = Integer.parseInt(data[0]);
+        for(int x = 0;x<data.length;x++)
+        {
+            if(min > Integer.parseInt(data[x]))
+                min = Integer.parseInt(data[x]);
+        }
+        int search = 0;
+        if(cord < min/2)
+            search = min;
+        else
+         search = Math.round((float)cord/min);
+        return min * search;
     }
 
     // by jiaz
