@@ -16,13 +16,9 @@
 
 package jd.gui.swing.jdgui.maintab;
 
-import java.awt.event.MouseEvent;
-
-import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
-import jd.gui.swing.jdgui.interfaces.JDMouseAdapter;
 import jd.gui.swing.jdgui.views.ClosableView;
 import net.miginfocom.swing.MigLayout;
 
@@ -33,31 +29,14 @@ public class ClosableTabHeader extends JPanel {
     public ClosableTabHeader(ClosableView view) {
         setLayout(new MigLayout("ins 0", "[grow,fill]"));
 
-        final JButton closeIcon = new JButton(view.getCloseAction());
-        closeIcon.setContentAreaFilled(false);
-        closeIcon.setBorderPainted(false);
-        closeIcon.addMouseListener(new JDMouseAdapter() {
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                closeIcon.setContentAreaFilled(true);
-                closeIcon.setBorderPainted(true);
-            }
-
-            @Override
-            public void mouseExited(MouseEvent e) {
-                closeIcon.setContentAreaFilled(false);
-                closeIcon.setBorderPainted(false);
-            }
-        });
-        closeIcon.setHideActionText(true);
         putClientProperty("paintActive", Boolean.TRUE);
 
-        JLabel l1 = new JLabel(view.getTitle());
-        l1.setIcon(view.getIcon());
-        l1.setOpaque(false);
+        JLabel label = new JLabel(view.getTitle());
+        label.setIcon(view.getIcon());
+        label.setOpaque(false);
 
-        add(l1);
-        add(closeIcon, "dock east, hidemode 3,gapleft 5,height 16!, width 16!");
+        add(label);
+        add(view.getCloseButton(), "dock east, hidemode 3,gapleft 5,height 16!, width 16!");
         setOpaque(false);
     }
 }

@@ -16,23 +16,17 @@
 
 package jd.gui.swing.components;
 
-import java.awt.Dimension;
 import java.awt.event.ActionEvent;
-import java.awt.event.MouseEvent;
 
-import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.Icon;
-import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JMenuBar;
 import javax.swing.JPanel;
-import javax.swing.UIManager;
 
 import jd.gui.swing.jdgui.borders.JDBorderFactory;
 import jd.gui.swing.jdgui.interfaces.DroppedPanel;
-import jd.gui.swing.jdgui.interfaces.JDMouseAdapter;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
@@ -46,48 +40,38 @@ public abstract class JDCollapser extends DroppedPanel {
     private static final long serialVersionUID = 6864885344815243560L;
 
     protected JMenuBar menubar;
-    private JButton closeButton;
+    private JDCloseButton closeButton;
     protected JLabel menutitle;
 
     protected JPanel content;
 
     protected JDCollapser() {
         super();
-        this.setLayout(new MigLayout("ins 0 5 0 0,wrap 1", "[fill,grow]", "[fill,grow]"));
-
-        menubar = new JMenuBar();
-        menubar.add(menutitle = new JLabel(""));
-        menubar.add(Box.createHorizontalGlue());
-        menubar.setBorder(JDBorderFactory.createInsideShadowBorder(0, 0, 1, 0));
-        CloseAction closeAction = new CloseAction();
 
         Box panel = new Box(1);
-        panel.add(closeButton = new JButton(closeAction));
-        closeButton.setContentAreaFilled(false);
-        closeButton.setBorderPainted(false);
-        closeButton.addMouseListener(new JDMouseAdapter() {
-            public void mouseEntered(MouseEvent e) {
-                closeButton.setContentAreaFilled(true);
-                closeButton.setBorderPainted(true);
-            }
+        panel.add(closeButton = new JDCloseButton() {
+            private static final long serialVersionUID = -5490387734487354668L;
 
-            public void mouseExited(MouseEvent e) {
-                closeButton.setContentAreaFilled(false);
-                closeButton.setBorderPainted(false);
+            public void actionPerformed(ActionEvent e) {
+                JDCollapser.this.onClosed();
             }
         });
-        closeButton.setPreferredSize(new Dimension(closeAction.getWidth(), closeAction.getHeight()));
-        closeButton.setToolTipText(JDL.LF("jd.gui.swing.components.JDCollapser.closetooltip", "Close %s", ""));
         panel.setOpaque(false);
         panel.setBorder(BorderFactory.createEmptyBorder(0, 0, 1, 5));
+
+        menubar = new JMenuBar();
+        menubar.setBorder(JDBorderFactory.createInsideShadowBorder(0, 0, 1, 0));
+        menubar.add(menutitle = new JLabel(""));
+        menubar.add(Box.createHorizontalGlue());
         menubar.add(panel);
 
-        add(menubar, "dock NORTH,height " + Math.max(closeAction.getHeight() + 3, 18) + "!,gapbottom 2");
-        this.content = new JPanel();
-        add(content);
-        content.setLayout(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[grow,fill]"));
-        this.setVisible(true);
+        content = new JPanel();
+        content.setLayout(new MigLayout("ins 0, wrap 1", "[grow,fill]", "[grow,fill]"));
 
+        setLayout(new MigLayout("ins 0 5 0 0, wrap 1", "[fill,grow]", "[fill,grow]"));
+        add(menubar, "dock NORTH, height " + Math.max(closeButton.getIconHeight() + 3, 18) + "!, gapbottom 2, growx");
+        add(content);
+        setVisible(true);
     }
 
     public void setInfos(String name, Icon icon) {
@@ -95,33 +79,6 @@ public abstract class JDCollapser extends DroppedPanel {
         menutitle.setIcon(icon);
 
         closeButton.setToolTipText(JDL.LF("jd.gui.swing.components.JDCollapser.closetooltip", "Close %s", name));
-    }
-
-    public class CloseAction extends AbstractAction {
-        private static final long serialVersionUID = -771203720364300914L;
-        private int height;
-        private int width;
-
-        public int getHeight() {
-            return height;
-        }
-
-        public int getWidth() {
-            return width;
-        }
-
-        public CloseAction() {
-            Icon ic = UIManager.getIcon("InternalFrame.closeIcon");
-            if (ic != null) {
-                this.height = ic.getIconHeight();
-                this.width = ic.getIconWidth();
-                this.putValue(AbstractAction.SMALL_ICON, ic);
-            }
-        }
-
-        public void actionPerformed(ActionEvent e) {
-            JDCollapser.this.onClosed();
-        }
     }
 
     abstract public void onClosed();

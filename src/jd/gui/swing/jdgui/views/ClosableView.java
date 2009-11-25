@@ -18,22 +18,18 @@ package jd.gui.swing.jdgui.views;
 
 import java.awt.event.ActionEvent;
 
-import javax.swing.AbstractAction;
-import javax.swing.Icon;
 import javax.swing.JMenuBar;
-import javax.swing.UIManager;
 
 import jd.gui.swing.GuiRunnable;
+import jd.gui.swing.components.JDCloseButton;
 import jd.gui.swing.jdgui.MainTabbedPane;
 import jd.gui.swing.jdgui.interfaces.View;
-import jd.utils.locale.JDL;
 
 abstract public class ClosableView extends View {
 
     private static final long serialVersionUID = 8698758386841005256L;
-    private static final String JDL_PREFIX = "jd.gui.swing.jdgui.views.ClosableView.";
     private JMenuBar menubar;
-    private CloseAction closeAction;
+    private JDCloseButton closeButton;
 
     public ClosableView() {
         super();
@@ -46,14 +42,20 @@ abstract public class ClosableView extends View {
         menubar = new JMenuBar();
         int count = menubar.getComponentCount();
         initMenu(menubar);
-        closeAction = new CloseAction();
+        closeButton = new JDCloseButton() {
+            private static final long serialVersionUID = -8427069347798591918L;
+
+            public void actionPerformed(ActionEvent e) {
+                MainTabbedPane.getInstance().remove(ClosableView.this);
+            }
+        };
         if (menubar.getComponentCount() > count) {
             add(menubar, "dock NORTH,height 16!,gapbottom 2");
         }
     }
 
-    public CloseAction getCloseAction() {
-        return closeAction;
+    public JDCloseButton getCloseButton() {
+        return closeButton;
     }
 
     /**
@@ -65,44 +67,18 @@ abstract public class ClosableView extends View {
     }
 
     /**
-     * CLoses this view
+     * Closes this view
      */
     public void close() {
         new GuiRunnable<Object>() {
 
             @Override
             public Object runSave() {
-                closeAction.actionPerformed(null);
+                closeButton.actionPerformed(null);
                 return null;
             }
 
         }.start();
-
     }
 
-    public class CloseAction extends AbstractAction {
-        private static final long serialVersionUID = -771203720364300914L;
-        private int height;
-        private int width;
-
-        public int getHeight() {
-            return height;
-        }
-
-        public int getWidth() {
-            return width;
-        }
-
-        public CloseAction() {
-            Icon ic = UIManager.getIcon("InternalFrame.closeIcon");
-            this.height = ic.getIconHeight();
-            this.width = ic.getIconWidth();
-            this.putValue(AbstractAction.SMALL_ICON, ic);
-            this.putValue(AbstractAction.SHORT_DESCRIPTION, JDL.L(JDL_PREFIX + "closeTab", "Close Tab"));
-        }
-
-        public void actionPerformed(ActionEvent e) {
-            MainTabbedPane.getInstance().remove(ClosableView.this);
-        }
-    }
 }
