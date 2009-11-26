@@ -163,6 +163,7 @@ public class JDRouterEditor extends PluginOptional implements ControlListener {
         selbutton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent arg0) {
                 currentfile = JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/jd/router/" + fileselector.getSelectedItem().toString();
+                setGuiRouterData(null);
                 loadFile(currentfile);
                 if (shipped.contains(fileselector.getSelectedItem().toString()))
                     readonly = true;
