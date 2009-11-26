@@ -22,7 +22,6 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.util.ArrayList;
 
-import javax.swing.JLabel;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
@@ -60,7 +59,6 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
     private static final int BARCOUNT = 15;
     private static final long ACCOUNT_UPDATE_DELAY = 30 * 60 * 1000;
     private TinyProgressBar[] bars;
-    private JLabel lbl;
 
     private boolean redrawinprogress = false;
     private JToggleButton premium;
@@ -79,7 +77,6 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
     private PremiumStatus() {
         super(new MigLayout("ins 0", "", "[::20, center]"));
         bars = new TinyProgressBar[BARCOUNT];
-        lbl = new JLabel(JDL.L("gui.statusbar.premiumloadlabel", "< Add Accounts"));
         setName("Premium Statusbar");
         premium = new JToggleButton(ActionController.getToolBarAction("premiumMenu.toggle"));
         premium.setHideActionText(true);
@@ -88,7 +85,6 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
         premium.setBorderPainted(false);
         add(premium, "hmax 20");
         add(new JSeparator(JSeparator.VERTICAL), "growy");
-        add(lbl, "hidemode 3");
 
         for (int i = 0; i < BARCOUNT; i++) {
             bars[i] = new TinyProgressBar();
@@ -158,7 +154,6 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
             public Object runSave() {
                 int ii = 0;
                 try {
-                    lbl.setVisible(false);
                     for (int i = 0; i < BARCOUNT; i++) {
                         bars[i].setVisible(false);
                     }
@@ -283,29 +278,23 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
     }
 
     public void mouseClicked(MouseEvent e) {
-        for (int i = 0; i < BARCOUNT; i++) {
-            if (bars[i] == e.getSource()) {
-                if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
-
-                    JPopupMenu popup = new JPopupMenu();
-
-                    ArrayList<MenuAction> entries = bars[i].getPlugin().createMenuitems();
-                    for (MenuAction next : entries) {
-                        JMenuItem mi = Menu.getJMenuItem(next);
-                        if (mi == null) {
-                            popup.addSeparator();
-                        } else {
-                            popup.add(mi);
-                        }
+        if (e.getSource() instanceof TinyProgressBar) {
+            TinyProgressBar tpb = (TinyProgressBar) e.getSource();
+            if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
+                JPopupMenu popup = new JPopupMenu();
+                ArrayList<MenuAction> entries = tpb.getPlugin().createMenuitems();
+                for (MenuAction next : entries) {
+                    JMenuItem mi = Menu.getJMenuItem(next);
+                    if (mi == null) {
+                        popup.addSeparator();
+                    } else {
+                        popup.add(mi);
                     }
-                    popup.show(bars[i], e.getPoint().x, e.getPoint().y);
-
-                } else {
-                    bars[i].getPlugin().getConfig().setGroup(new ConfigGroup(bars[i].getPlugin().getHost(), JDTheme.II("gui.images.taskpanes.premium", 24, 24)));
-
-                    UserIF.getInstance().requestPanel(UserIF.Panels.CONFIGPANEL, bars[i].getPlugin().getConfig());
                 }
-                return;
+                popup.show(tpb, e.getPoint().x, e.getPoint().y);
+            } else {
+                tpb.getPlugin().getConfig().setGroup(new ConfigGroup(tpb.getPlugin().getHost(), JDTheme.II("gui.images.taskpanes.premium", 24, 24)));
+                UserIF.getInstance().requestPanel(UserIF.Panels.CONFIGPANEL, tpb.getPlugin().getConfig());
             }
         }
 

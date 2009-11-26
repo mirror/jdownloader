@@ -25,7 +25,6 @@ import jd.controlling.JDLogger;
 import jd.event.JDBroadcaster;
 import jd.event.MessageEvent;
 import jd.event.MessageListener;
-import jd.nutils.Formatter;
 import jd.nutils.JDHash;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
@@ -87,10 +86,6 @@ public class SrcParser {
         }
     }
 
-    private void print(String s) {
-        System.out.println(s);
-    }
-
     @SuppressWarnings("unchecked")
     /**
      * parses an java file and writes all JDL Matches to entries and pattern. this method uses a cache to be faster
@@ -114,14 +109,12 @@ public class SrcParser {
 
                 for (LngEntry entry : fileEntries) {
                     if (!entries.contains(entry)) {
-                        print(" CACHE: " + entry);
                         entries.add(entry);
                     }
                 }
 
                 for (String patt : filePattern) {
                     if (!pattern.contains(patt)) {
-                        print(" CACHE: " + patt);
                         pattern.add(patt);
                     }
                 }
@@ -276,12 +269,10 @@ public class SrcParser {
                 if (orgm.startsWith("LF ") || orgm.startsWith("LF(")) {
 
                     if (orgm.substring(2).trim().charAt(0) != '(') {
-
                         JDLogger.getLogger().severe("Malformated translation value in " + currentFile + " : " + m);
                         continue;
                     }
                     if (parameter.length != 2) {
-
                         JDLogger.getLogger().severe("Malformated translation pair (inner functions?) in " + currentFile + " : " + match);
                         continue;
                     }
@@ -301,14 +292,11 @@ public class SrcParser {
                                 try {
                                     String value = getValueOf(mm[1]);
                                     parameter[0] = parameter[0].replace(mm[0], value);
-
                                 } catch (Exception e) {
-
                                     JDLogger.getLogger().severe("Malformated translation key in " + currentFile + " : " + match);
                                     break main;
                                 }
                             }
-
                         } catch (Exception e) {
                             e.printStackTrace();
                             break;
@@ -320,13 +308,11 @@ public class SrcParser {
                                 try {
                                     String value = getValueOf(mm[1]);
                                     parameter[0] = parameter[0].replace(mm[0], value);
-
                                 } catch (Exception e) {
                                     JDLogger.getLogger().severe("Malformated translation key in 2" + currentFile + " : " + match);
                                     break main;
                                 }
                             }
-
                         } catch (Exception e) {
                             e.printStackTrace();
                             break;
@@ -334,23 +320,17 @@ public class SrcParser {
 
                     }
                     for (int x = 0; x < parameter.length; x++) {
-
                         while (parameter[x].contains("%%%S%%%")) {
-
                             parameter[x] = parameter[x].replaceFirst("%%%S%%%", Matcher.quoteReplacement(strings[i++]));
                         }
-
                     }
                     String error;
                     if ((error = new Regex(parameter[0], "([\\(\\)\\{\\}\\/\\\\\\$\\&\\+\\~\\#\\\"\\!\\?]+)").getMatch(0)) != null) {
-
                         int index = parameter[0].indexOf(error);
                         if (index >= 0) {
                             JDLogger.getLogger().warning("Unsupported chars (" + parameter[0].substring(0, index) + "<< |" + parameter[0].substring(index + 1) + ") in key:" + currentFile + " : " + parameter[0]);
-
                         } else {
                             JDLogger.getLogger().warning("Unsupported chars in key: " + currentFile + " : " + parameter[0]);
-
                         }
                         continue;
                     }
@@ -363,21 +343,16 @@ public class SrcParser {
                     entry = new LngEntry(parameter[0], parameter[1]);
                     if (!entries.contains(entry)) {
                         entries.add(entry);
-
-                        print("LF  " + Formatter.fillInteger(entries.size(), 3, "0") + " " + entry);
                     }
                     if (!fileEntries.contains(entry)) {
                         fileEntries.add(entry);
                     }
                 } else if (orgm.startsWith("L ") || orgm.startsWith("L(")) {
-
                     if (orgm.substring(1).trim().charAt(0) != '(') {
-
                         JDLogger.getLogger().severe("Malformated translation value in " + currentFile + " : " + m);
                         continue;
                     }
                     if (parameter.length != 2) {
-
                         JDLogger.getLogger().severe("Malformated translation pair (inner functions?) in " + currentFile + " : " + match);
                         continue;
                     }
@@ -396,13 +371,12 @@ public class SrcParser {
                             for (String[] mm : matches) {
                                 try {
                                     String value = getValueOf(mm[1]);
-                                    print(mm[0] + " - " + mm[1]);
+                                    System.out.println(mm[0] + " - " + mm[1]);
                                     parameter[0] = parameter[0].replace(mm[0], value);
                                 } catch (Exception e) {
                                     parameter[0] = parameter[0].replace(mm[0], "*");
                                 }
                             }
-
                         } catch (Exception e) {
                             e.printStackTrace();
                             break;
@@ -420,7 +394,6 @@ public class SrcParser {
                                     break main;
                                 }
                             }
-
                         } catch (Exception e) {
                             e.printStackTrace();
                             break;
@@ -429,24 +402,18 @@ public class SrcParser {
                     }
 
                     for (int x = 0; x < parameter.length; x++) {
-
                         while (parameter[x].contains("%%%S%%%")) {
-
                             parameter[x] = parameter[x].replaceFirst("%%%S%%%", Matcher.quoteReplacement(strings[i++]));
                         }
-
                     }
 
                     String error;
                     if ((error = new Regex(parameter[0], "([\\(\\)\\{\\}\\/\\\\\\$\\&\\+\\~\\#\\\"\\!\\?]+)").getMatch(0)) != null) {
-
                         int index = parameter[0].indexOf(error);
                         if (index >= 0) {
                             JDLogger.getLogger().warning("Unsupported chars (" + parameter[0].substring(0, index) + "<< |" + parameter[0].substring(index + 1) + ") in key:" + currentFile + " : " + parameter[0]);
-
                         } else {
                             JDLogger.getLogger().warning("Unsupported chars in key: " + currentFile + " : " + parameter[0]);
-
                         }
                         continue;
                     }
@@ -465,14 +432,11 @@ public class SrcParser {
                         JDLogger.getLogger().severe("Pattern match in " + currentFile + " : " + match);
                         if (!pattern.contains(patt)) pattern.add(patt);
                         if (!filePattern.contains(patt)) filePattern.add(patt);
-
                     } else {
                         entry = new LngEntry(parameter[0], parameter[1]);
 
                         if (!entries.contains(entry)) {
                             entries.add(entry);
-
-                            print("L   " + Formatter.fillInteger(entries.size(), 3, "0") + " " + entry);
                         }
 
                         if (!fileEntries.contains(entry)) {

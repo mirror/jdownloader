@@ -29,6 +29,7 @@ import jd.config.SubConfiguration;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.swing.components.JDSpinner;
+import jd.gui.swing.jdgui.components.modules.ModuleStatus;
 import jd.gui.swing.jdgui.components.premiumbar.PremiumStatus;
 import jd.nutils.Formatter;
 import jd.utils.JDTheme;
@@ -40,7 +41,7 @@ public class JDStatusBar extends JPanel implements ChangeListener, ControlListen
 
     private static final long serialVersionUID = 3676496738341246846L;
 
-    private SubConfiguration dlConfig = null;
+    private final SubConfiguration dlConfig;
 
     private JDSpinner spMaxChunks;
 
@@ -55,7 +56,7 @@ public class JDStatusBar extends JPanel implements ChangeListener, ControlListen
     }
 
     private void initGUI() {
-        setLayout(new MigLayout("ins 0", "[fill,grow,left][shrink,right][shrink,right][shrink,right]", "[22!]"));
+        setLayout(new MigLayout("ins 0", "[fill,grow,left][fill,grow][shrink,right][shrink,right][shrink,right]", "[22!]"));
         setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, getBackground().darker()));
 
         JDUtilities.getController().addControlListener(this);
@@ -75,7 +76,8 @@ public class JDStatusBar extends JPanel implements ChangeListener, ControlListen
         spMaxChunks.setToolTipText(JDL.L("gui.tooltip.statusbar.max_chunks", "Max. Connections/File"));
         spMaxChunks.getSpinner().addChangeListener(this);
 
-        add(PremiumStatus.getInstance());
+        add(PremiumStatus.getInstance(), "sizegroup statuses");
+        add(new ModuleStatus(), "sizegroup statuses");
         add(spMaxChunks);
         add(spMaxDls);
         add(spMaxSpeed);

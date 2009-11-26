@@ -92,7 +92,6 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
     private JDStatusBar statusBar;
 
     private MainTabbedPane mainTabbedPane;
-    private TabProgress multiProgressBar;
     private DownloadView downloadView;
     private LinkgrabberView linkgrabberView;
     private ConfigurationView configurationView;
@@ -159,7 +158,6 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         waitingPane = new JPanel();
         waitingPane.setOpaque(false);
         mainTabbedPane = MainTabbedPane.getInstance();
-        multiProgressBar = new TabProgress();
         toolBar = MainToolBar.getInstance();
         toolBar.registerAccelerators(this);
         downloadView = DownloadView.getInstance();
@@ -183,18 +181,15 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         mainFrame.add(toolBar, "dock NORTH");
 
         contentPane.add(mainTabbedPane);
-        contentPane.add(multiProgressBar, "hidemode 3");
         contentPane.add(statusBar, "dock SOUTH");
 
     }
 
     private void initDefaults() {
-
         mainFrame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         mainFrame.addWindowListener(this);
 
         ToolTipManager.sharedInstance().setReshowDelay(0);
-
     }
 
     public void setWindowTitle(final String msg) {
@@ -270,7 +265,6 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
             INSTANCE = new GuiRunnable<JDGui>() {
                 @Override
                 public JDGui runSave() {
-
                     return new JDGui();
                 }
 
@@ -345,7 +339,6 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
                 }
             }
             JDLogger.getLogger().info("All downloads finished");
-
             break;
         case ControlEvent.CONTROL_DOWNLOAD_START:
             Balloon.showIfHidden(JDL.L("ballon.download.title", "Download"), JDTheme.II("gui.images.next", 32, 32), JDL.L("ballon.download.finished.started", "Download started"));

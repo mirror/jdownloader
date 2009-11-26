@@ -41,6 +41,5 @@ public class JDGuiConstants {
     public static final String PARAM_SHOW_BALLOON = "PARAM_SHOW_BALLOON";
     public static final String PARAM_GENERAL_FONT_SIZE = "PARAM_GENERAL_FONT_SIZE3";
     public static final String PARAM_GENERAL_FONT_NAME = "PARAM_GENERAL_FONT_NAME3";
-    public static final String PARAM_VISIBLE_MODULES = "PARAM_VISIBLE_MODULES";
 
 }
