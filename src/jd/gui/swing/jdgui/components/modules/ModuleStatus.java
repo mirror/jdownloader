@@ -5,7 +5,6 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.util.ArrayList;
 
-import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 
@@ -13,7 +12,6 @@ import jd.controlling.ProgressController;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 public class ModuleStatus extends JPanel implements ControlListener, MouseListener {
@@ -23,26 +21,25 @@ public class ModuleStatus extends JPanel implements ControlListener, MouseListen
     private ArrayList<ProgressController> controllers = new ArrayList<ProgressController>();
     private ArrayList<ProgressController> addcontrollers = new ArrayList<ProgressController>();
     private ArrayList<ProgressController> removecontrollers = new ArrayList<ProgressController>();
-    private JLabel title;
     private ProgressCircle[] circles;
     private transient Thread updateThread = null;
     private volatile boolean updateThreadWaiting = false;
     private static final int updateThreadPause = 250;
 
     public ModuleStatus() {
-        super(new MigLayout("ins 0", "", "[::20, center]"));
+        super(new MigLayout("ins 0", "[fill,grow,align right]", "[::20, center]"));
         circles = new ProgressCircle[BARCOUNT];
 
         setName("Module Statusbar");
-        add(title = new JLabel(), "hmax 20");
         for (int i = 0; i < BARCOUNT; i++) {
             circles[i] = new ProgressCircle();
             circles[i].setOpaque(false);
             circles[i].addMouseListener(this);
             circles[i].setVisible(false);
-            add(circles[i], "hidemode 3, hmax 20");
+            add(circles[i], "dock east, hidemode 3, hmax 20, gapleft 3");
         }
-        this.setOpaque(false);
+        setOpaque(false);
+
         updateThread = new Thread() {
             @Override
             public void run() {
@@ -57,9 +54,7 @@ public class ModuleStatus extends JPanel implements ControlListener, MouseListen
                                 update();
                             }
                         });
-                        System.out.println("neu zeichnen");
                     } else {
-                        System.out.println("nix neu, warten");
                         updateThreadWaiting = true;
                         synchronized (this) {
                             while (addcontrollers.size() == 0) {
@@ -70,9 +65,7 @@ public class ModuleStatus extends JPanel implements ControlListener, MouseListen
                             }
                         }
                         updateThreadWaiting = false;
-                        System.out.println("wieder was da");
                     }
-                    System.out.println("250 ms warten");
                     try {
                         /* 4 updates per second is enough */
                         sleep(updateThreadPause);
@@ -130,11 +123,6 @@ public class ModuleStatus extends JPanel implements ControlListener, MouseListen
 
     private void update() {
         synchronized (controllers) {
-            if (controllers.isEmpty()) {
-                title.setText("");
-            } else {
-                title.setText(JDL.LF("gui.progresspane.title", "%s module(s) running", controllers.size()));
-            }
             int i;
             for (i = 0; i < Math.min(BARCOUNT, controllers.size()); ++i) {
                 circles[i].setController(controllers.get(i));

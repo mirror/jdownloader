@@ -53,10 +53,6 @@ public abstract class ToolBarAction extends JDAction {
         this.putValue(ID, id);
     }
 
-    @Deprecated
-    public void setPriority(int priority) {
-    }
-
     public ToolBarAction(String menukey, int id) {
         this(menukey, null, id);
     }

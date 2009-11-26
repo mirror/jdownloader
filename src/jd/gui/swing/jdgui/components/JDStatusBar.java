@@ -18,6 +18,7 @@ package jd.gui.swing.jdgui.components;
 
 import javax.swing.BorderFactory;
 import javax.swing.JPanel;
+import javax.swing.JSeparator;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
@@ -56,7 +57,7 @@ public class JDStatusBar extends JPanel implements ChangeListener, ControlListen
     }
 
     private void initGUI() {
-        setLayout(new MigLayout("ins 0", "[fill,grow,left][fill,grow][shrink,right][shrink,right][shrink,right]", "[22!]"));
+        setLayout(new MigLayout("ins 0", "[fill,grow,left][fill,grow,right][][shrink,right][shrink,right][shrink,right]", "[22!]"));
         setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, getBackground().darker()));
 
         JDUtilities.getController().addControlListener(this);
@@ -76,8 +77,9 @@ public class JDStatusBar extends JPanel implements ChangeListener, ControlListen
         spMaxChunks.setToolTipText(JDL.L("gui.tooltip.statusbar.max_chunks", "Max. Connections/File"));
         spMaxChunks.getSpinner().addChangeListener(this);
 
-        add(PremiumStatus.getInstance(), "sizegroup statuses");
-        add(new ModuleStatus(), "sizegroup statuses");
+        add(PremiumStatus.getInstance());
+        add(new ModuleStatus());
+        add(new JSeparator(JSeparator.VERTICAL), "growy");
         add(spMaxChunks);
         add(spMaxDls);
         add(spMaxSpeed);
