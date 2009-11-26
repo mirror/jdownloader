@@ -196,11 +196,7 @@ public class JDShutdown extends PluginOptional {
                 JDUtilities.runCommand("/usr/bin/osascript", new String[] { "-e", "tell application \"Finder\" to shut down" }, null, 0);
             } catch (Exception e) {
             }
-            try {
-                JDUtilities.runCommand("/usr/bin/osascript", new String[] { JDUtilities.getResourceFile("jd/osx/osxshutdown.scpt").getAbsolutePath() }, null, 0);
-            } catch (Exception e) {
-            }
-            break;
+            /* will fall through, because shutdown command also works under mac */
         default:
             /* linux and others */
             try {
@@ -265,10 +261,8 @@ public class JDShutdown extends PluginOptional {
         case OSDetector.OS_MAC_OTHER:
             /* mac os */
             prepareHibernateOrStandby();
-            try {
-                JDUtilities.runCommand("/usr/bin/osascript", new String[] { JDUtilities.getResourceFile("jd/osx/osxhibernate.scpt").getAbsolutePath() }, null, 0);
-            } catch (Exception e) {
-            }
+            logger.info("no hibernate support, use shutdown");
+            shutdown();
             break;
         default:
             /* linux and other */

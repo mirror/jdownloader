@@ -89,12 +89,20 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         switch (event.getID()) {
         case ControlEvent.CONTROL_PLUGIN_INACTIVE:
             // Nur Hostpluginevents auswerten
-            if (this.getPluginConfig().getBooleanProperty("ACTIVATED", true)) {
-                if (!(event.getSource() instanceof PluginForHost)) { return; }
-                link = ((SingleDownloadController) event.getParameter()).getDownloadLink();
+            if (!(event.getSource() instanceof PluginForHost)) return;
+            link = ((SingleDownloadController) event.getParameter()).getDownloadLink();
+            /* react if JDUnrar is activated or package has flag for autoextract */
+            if (this.getPluginConfig().getBooleanProperty("ACTIVATED", true) || link.getFilePackage().isExtractAfterDownload()) {
                 link = findStartLink(link);
                 if (link == null) return;
                 if (link.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
+                    /*
+                     * check again if we really want to extract the package
+                     * 
+                     * 
+                     * check for defaultfilepackage in case link already
+                     * removed, TODO: better way to handle this
+                     */
                     if (link.getFilePackage().isExtractAfterDownload() || link.getFilePackage() == FilePackage.getDefaultFilePackage()) {
                         if (isArchiveComplete(link)) {
                             this.addToQueue(link);

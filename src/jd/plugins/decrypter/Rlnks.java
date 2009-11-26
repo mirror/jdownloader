@@ -19,6 +19,7 @@ package jd.plugins.decrypter;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Random;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -36,7 +37,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginUtils;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "relink.us", "relink.us" }, urls = { "http://[\\w\\.]*?relink\\.us/(go\\.php\\?id=[\\w]+|f/[\\w]+)", "http://[\\w\\.]*?relink\\.us/view\\.php\\?id=\\w+" }, flags = { PluginWrapper.CNL_2, PluginWrapper.CNL_2})
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "relink.us", "relink.us" }, urls = { "http://[\\w\\.]*?relink\\.us/(go\\.php\\?id=[\\w]+|f/[\\w]+)", "http://[\\w\\.]*?relink\\.us/view\\.php\\?id=\\w+" }, flags = { PluginWrapper.CNL_2, PluginWrapper.CNL_2 })
 public class Rlnks extends PluginForDecrypt {
 
     ProgressController progress;
@@ -66,10 +67,25 @@ public class Rlnks extends PluginForDecrypt {
             progress.addToMax(matches.length);
             for (String match : matches) {
                 try {
-                    for (int i = 0; i < 3; i++) {
-                        Browser brc = br.cloneBrowser();
-                        brc.getPage("http://www.relink.us/frame.php?" + match);
-                        if (brc.getRedirectLocation() != null && brc.getRedirectLocation().contains("relink.us/getfile")) brc.getPage(brc.getRedirectLocation());
+                    boolean captcharetry = false;
+                    Browser brc = null;
+                    for (int i = 0; i < 5; i++) {
+                        if (!captcharetry) {
+                            brc = br.cloneBrowser();
+                            try {
+                                Thread.sleep((i + 1) * 100);
+                            } catch (Exception e) {
+                            }
+                            brc.getPage("http://www.relink.us/frame.php?" + match);
+                        }
+                        captcharetry = false;
+                        if (brc.getRedirectLocation() != null && brc.getRedirectLocation().contains("relink.us/getfile")) {
+                            try {
+                                Thread.sleep((i + 1) * 100);
+                            } catch (Exception e) {
+                            }
+                            brc.getPage(brc.getRedirectLocation());
+                        }
                         if (brc.getRedirectLocation() != null) {
                             decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(brc.getRedirectLocation())));
                             break;
@@ -78,10 +94,23 @@ public class Rlnks extends PluginForDecrypt {
                             if (url != null) {
                                 decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(url)));
                                 break;
+                            } else {
+                                Form f = brc.getForm(0);
+                                File file = this.getLocalCaptchaFile();
+                                Browser temp = brc.cloneBrowser();
+                                temp.getDownload(file, "http://www.relink.us/core/captcha/circlecaptcha.php");
+                                /* at the moment they dont check clickcaptcha ;) */
+                                // Point p =
+                                // UserIO.getInstance().requestClickPositionDialog(file,
+                                // "relink.us", "blaaa");
+                                f.put("button.x", new Random().nextInt(100) + "");
+                                f.put("button.y", new Random().nextInt(100) + "");
+                                brc.submitForm(f);
+                                captcharetry = true;
                             }
                         }
                         try {
-                            Thread.sleep(2000);
+                            if (!captcharetry) Thread.sleep(2000 + i * 250);
                         } catch (Exception e) {
                         }
                     }

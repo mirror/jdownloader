@@ -108,8 +108,8 @@ public class DepositFiles extends PluginForHost {
                     dllink = br.getRegex("<div id=\"download_url\" style=\"display:none;\">.*?<form action=\"(.*?)\" method=\"get").getMatch(0);
                     if (dllink == null) {
                         /* TODO: get correct output here */
-                        logger.severe("Debug: " + br.toString());
-                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                        if (br.containsHTML("get_download_img_code.php")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                 }
             }
