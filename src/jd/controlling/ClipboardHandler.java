@@ -168,7 +168,7 @@ public class ClipboardHandler extends Thread implements ControlListener {
                     /* get current content of clipboard */
                     synchronized (LOCK) {
                         DataFlavor what = getCurrentClipboardContent();
-                        if ((lastDataFlavor == null || lastString == null || lastDataFlavor != what) && currentString != null) {
+                        if ((lastDataFlavor == null || lastString == null || lastDataFlavor != what) && currentString != null && what != null) {
                             /* DataFlavor changed so lets parse it */
                             lastDataFlavor = what;
                             if (what == uriListFlavor || what == fileListFlavor) {
