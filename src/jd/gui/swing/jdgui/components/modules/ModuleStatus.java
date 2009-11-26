@@ -7,11 +7,11 @@ import java.util.ArrayList;
 
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.SwingUtilities;
 
 import jd.controlling.ProgressController;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
-import jd.gui.swing.GuiRunnable;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
@@ -20,13 +20,17 @@ public class ModuleStatus extends JPanel implements ControlListener, MouseListen
 
     private static final long serialVersionUID = 1745881766942067472L;
     private static final int BARCOUNT = 15;
-    private ArrayList<ProgressController> controllers;
+    private ArrayList<ProgressController> controllers = new ArrayList<ProgressController>();
+    private ArrayList<ProgressController> addcontrollers = new ArrayList<ProgressController>();
+    private ArrayList<ProgressController> removecontrollers = new ArrayList<ProgressController>();
     private JLabel title;
     private ProgressCircle[] circles;
+    private transient Thread updateThread = null;
+    private volatile boolean updateThreadWaiting = false;
+    private static final int updateThreadPause = 250;
 
     public ModuleStatus() {
         super(new MigLayout("ins 0", "", "[::20, center]"));
-        controllers = new ArrayList<ProgressController>();
         circles = new ProgressCircle[BARCOUNT];
 
         setName("Module Statusbar");
@@ -39,35 +43,87 @@ public class ModuleStatus extends JPanel implements ControlListener, MouseListen
             add(circles[i], "hidemode 3, hmax 20");
         }
         this.setOpaque(false);
-
+        updateThread = new Thread() {
+            @Override
+            public void run() {
+                int activecontrollers = 0;
+                while (true) {
+                    activecontrollers = controllers.size();
+                    updateControllers();
+                    if (controllers.size() != 0 || activecontrollers != 0) {
+                        /* only gui update if controllers changed */
+                        SwingUtilities.invokeLater(new Runnable() {
+                            public void run() {
+                                update();
+                            }
+                        });
+                        System.out.println("neu zeichnen");
+                    } else {
+                        System.out.println("nix neu, warten");
+                        updateThreadWaiting = true;
+                        synchronized (this) {
+                            while (addcontrollers.size() == 0) {
+                                try {
+                                    wait();
+                                } catch (InterruptedException e) {
+                                }
+                            }
+                        }
+                        updateThreadWaiting = false;
+                        System.out.println("wieder was da");
+                    }
+                    System.out.println("250 ms warten");
+                    try {
+                        /* 4 updates per second is enough */
+                        sleep(updateThreadPause);
+                    } catch (InterruptedException e) {
+                    }
+                }
+            }
+        };
+        updateThread.start();
         JDUtilities.getController().addControlListener(this);
     }
 
     private void addController(ProgressController source) {
-        synchronized (controllers) {
-            if (!controllers.contains(source)) controllers.add(0, source);
+        synchronized (addcontrollers) {
+            if (!addcontrollers.contains(source)) addcontrollers.add(0, source);
         }
     }
 
     private void removeController(ProgressController source) {
+        synchronized (removecontrollers) {
+            if (!removecontrollers.contains(source)) removecontrollers.add(0, source);
+        }
+    }
+
+    private void updateControllers() {
         synchronized (controllers) {
-            controllers.remove(source);
+            synchronized (addcontrollers) {
+                for (ProgressController add : addcontrollers) {
+                    if (!controllers.contains(add)) controllers.add(add);
+                }
+                addcontrollers.clear();
+            }
+            synchronized (removecontrollers) {
+                controllers.removeAll(removecontrollers);
+                removecontrollers.clear();
+            }
         }
     }
 
     public void controlEvent(ControlEvent event) {
-        synchronized (controllers) {
-            if (event.getID() == ControlEvent.CONTROL_ON_PROGRESS && event.getSource() instanceof ProgressController) {
-                ProgressController source = (ProgressController) event.getSource();
+        if (event.getID() == ControlEvent.CONTROL_ON_PROGRESS && event.getSource() instanceof ProgressController) {
+            ProgressController source = (ProgressController) event.getSource();
+            if (!source.isFinished()) {
                 addController(source);
-                if (source.isFinished()) removeController(source);
-                new GuiRunnable<Object>() {
-                    @Override
-                    public Object runSave() {
-                        update();
-                        return null;
+                if (updateThreadWaiting) {
+                    synchronized (updateThread) {
+                        updateThread.notify();
                     }
-                }.start();
+                }
+            } else {
+                removeController(source);
             }
         }
     }
@@ -82,8 +138,16 @@ public class ModuleStatus extends JPanel implements ControlListener, MouseListen
             int i;
             for (i = 0; i < Math.min(BARCOUNT, controllers.size()); ++i) {
                 circles[i].setController(controllers.get(i));
+                if (controllers.get(i).isFinalizing()) {
+                    if (controllers.get(i).isFinished()) {
+                        controllers.get(i).setFinished();
+                    } else {
+                        controllers.get(i).increase(updateThreadPause);
+                    }
+                }
                 if (controllers.get(i).isInterruptable()) {
                     circles[i].setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+                    circles[i].removeMouseListener(this);
                     circles[i].addMouseListener(this);
                 } else {
                     circles[i].setCursor(Cursor.getDefaultCursor());
@@ -93,6 +157,9 @@ public class ModuleStatus extends JPanel implements ControlListener, MouseListen
             }
             for (int j = i; j < BARCOUNT; ++j) {
                 circles[j].setVisible(false);
+                circles[j].removeMouseListener(this);
+                /* to remove references */
+                circles[j].setController(null);
             }
             revalidate();
             repaint();

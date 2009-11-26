@@ -113,25 +113,13 @@ public class ProgressController implements MessageListener, Comparable<ProgressC
     public void doFinalize(final long waittimer) {
         if (finalizing) return;
         finalizing = true;
-        final ProgressController instance = this;
-        new Thread() {
-            @Override
-            public void run() {
-                long timer = waittimer;
-                instance.setRange(timer);
-                while (timer > 0) {
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                    }
-                    timer -= 1000;
-                    instance.increase(1000l);
-                }
-                finished = true;
-                currentValue = max;
-                if (JDUtilities.getController() != null) JDUtilities.getController().fireControlEvent(new ControlEvent(instance, ControlEvent.CONTROL_ON_PROGRESS, source));
-            }
-        }.start();
+        setRange(waittimer, 0);
+    }
+
+    public void setFinished() {
+        finished = true;
+        currentValue = max;
+        JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ON_PROGRESS, source));
     }
 
     public void fireChanges() {
@@ -170,7 +158,7 @@ public class ProgressController implements MessageListener, Comparable<ProgressC
     }
 
     public boolean isFinished() {
-        return finished;
+        return finished || currentValue >= max;
     }
 
     public boolean isAbort() {
@@ -180,6 +168,11 @@ public class ProgressController implements MessageListener, Comparable<ProgressC
     public void setRange(long max) {
         this.max = max;
         setStatus(currentValue);
+    }
+
+    public void setRange(long max, long cur) {
+        this.max = max;
+        setStatus(cur);
     }
 
     public void setSource(Object src) {

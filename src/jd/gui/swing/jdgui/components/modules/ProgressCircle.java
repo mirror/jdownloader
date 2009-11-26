@@ -9,7 +9,6 @@ import java.awt.RenderingHints;
 import javax.swing.JPanel;
 
 import jd.controlling.ProgressController;
-import jd.gui.swing.GuiRunnable;
 
 public class ProgressCircle extends JPanel {
 
@@ -18,20 +17,14 @@ public class ProgressCircle extends JPanel {
 
     private double value;
     private double maximum;
+    private double indeterminateValue = 0;
+    private double indeterminateMaximum = 8;
     private Color color;
     private ProgressController controller;
-    private Thread indeterminateChanger;
-    private boolean stopIt = false;
     private boolean backward = false;
 
     public ProgressCircle() {
         super();
-    }
-
-    @Override
-    public void setVisible(boolean aFlag) {
-        super.setVisible(aFlag);
-        if (!aFlag) stopIt = true;
     }
 
     /**
@@ -42,53 +35,24 @@ public class ProgressCircle extends JPanel {
      */
     public void setController(ProgressController controller) {
         this.controller = controller;
-
+        if (this.controller == null) return;
         if (!controller.isIndeterminate()) {
-            stopIt = true;
             maximum = controller.getMax();
             value = controller.getValue();
         } else {
-            setIndeterminate();
+            maximum = indeterminateMaximum;
+            value = indeterminateValue;
+            if (backward) {
+                value--;
+                if (value == 0) backward = false;
+            } else {
+                value++;
+                if (value == indeterminateMaximum) backward = true;
+            }
+            indeterminateValue = value;
         }
         color = controller.getColor();
-
         setToolTipText(controller.getStatusText());
-    }
-
-    private void setIndeterminate() {
-        if (indeterminateChanger == null) {
-            value = 0;
-            maximum = 8;
-            indeterminateChanger = new Thread(new Runnable() {
-                public void run() {
-                    while (!stopIt) {
-                        if (backward) {
-                            --value;
-                            if (value == 0) backward = false;
-                        } else {
-                            ++value;
-                            if (value == 8) backward = true;
-                        }
-                        new GuiRunnable<Object>() {
-                            @Override
-                            public Object runSave() {
-                                revalidate();
-                                repaint();
-                                return null;
-                            }
-                        }.start();
-                        try {
-                            Thread.sleep(100);
-                        } catch (InterruptedException e) {
-                        }
-                    }
-                    stopIt = false;
-                    backward = false;
-                    indeterminateChanger = null;
-                }
-            });
-            indeterminateChanger.start();
-        }
     }
 
     public ProgressController getController() {

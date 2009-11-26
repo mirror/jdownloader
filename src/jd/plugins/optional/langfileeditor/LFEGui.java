@@ -231,12 +231,23 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
                 getSourceEntries();
                 populateLngMenu();
                 LFEGui.this.setEnabled(true);
-                if (menubar != null) menubar.setEnabled(true);
-
-                mnuFile.setEnabled(true);
-
+                if (menubar != null) {
+                    new GuiRunnable<Object>() {
+                        @Override
+                        public Object runSave() {
+                            menubar.setEnabled(true);
+                            return null;
+                        }
+                    }.start();
+                }
+                new GuiRunnable<Object>() {
+                    @Override
+                    public Object runSave() {
+                        mnuFile.setEnabled(true);
+                        return null;
+                    }
+                }.start();
             }
-
         });
         updater.start();
     }
