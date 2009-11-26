@@ -147,7 +147,7 @@ public class UPNPRouter extends Router {
             int nOutArgs = outArgList.size();
             for (int n = 0; n < nOutArgs; n++) {
                 Argument outArg = outArgList.getArgument(n);
-                /* Why return in a for-loop without condition ? */
+                /* TODO: Why return in a for-loop without condition ? */
                 return outArg.getValue();
             }
             return super.getExternalIPAddress();

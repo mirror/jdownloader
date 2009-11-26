@@ -46,7 +46,7 @@ public class ShrLnksBz extends PluginForDecrypt {
         super(wrapper);
     }
 
-    // @Override
+    @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -70,29 +70,24 @@ public class ShrLnksBz extends PluginForDecrypt {
                 logger.warning("Wrong password!");
                 throw new DecrypterException(DecrypterException.PASSWORD);
             }
-            if (br.containsHTML("Sicherheitscode ist falsch")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            if (br.containsHTML("Sicherheitscode ist falsch")) throw new DecrypterException(DecrypterException.CAPTCHA);
         }
-        
-        
+
         if (br.containsHTML("(/captcha/|captcha_container|\"Captcha\"|id=\"captcha\")")) {
             String Captchamap = br.getRegex("/><img src=\"(.*?)\" alt=\"Captcha\" id=\"captcha\" usemap=\"#captchamap\" />").getMatch(0);
             File file = this.getLocalCaptchaFile();
             Browser temp = br.cloneBrowser();
-            temp.getDownload(file, "http://share-links.biz"+Captchamap);       
+            temp.getDownload(file, "http://share-links.biz" + Captchamap);
             Point p = UserIO.getInstance().requestClickPositionDialog(file, "Share-links.biz", JDL.L("plugins.decrypt.shrlnksbz.desc", "Read the combination in the background and click the corresponding combination in the overview!"));
             int y = getnearstvalue(br.getRegex("coords=\"\\d+,\\d+,\\d+,(\\d+?)\"").getColumn(0), p.y);
-            int x = getnearstvalue(br.getRegex("coords=\"\\d+,\\d+,(\\d+?),"+y+"\"").getColumn(0), p.x);
-            String nexturl = br.getRegex("<area shape=\"rect\" coords=\"\\d+,\\d+,"+x+","+y+"\" href=\"/(.*?)\" alt=\"\" title=\"\" />").getMatch(0);
-            if(nexturl == null)
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            int x = getnearstvalue(br.getRegex("coords=\"\\d+,\\d+,(\\d+?)," + y + "\"").getColumn(0), p.x);
+            String nexturl = br.getRegex("<area shape=\"rect\" coords=\"\\d+,\\d+," + x + "," + y + "\" href=\"/(.*?)\" alt=\"\" title=\"\" />").getMatch(0);
+            if (nexturl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             br.setFollowRedirects(true);
-            br.getPage("http://share-links.biz/"+nexturl);
-            if(br.containsHTML("Die getroffene Auswahl war falsch"))
-                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            
+            br.getPage("http://share-links.biz/" + nexturl);
+            if (br.containsHTML("Die getroffene Auswahl war falsch")) throw new DecrypterException(DecrypterException.CAPTCHA);
         }
-        
-        
+
         // container handling
         if (br.containsHTML("'dlc'")) {
             decryptedLinks = loadcontainer(br, "dlc");
@@ -142,16 +137,14 @@ public class ShrLnksBz extends PluginForDecrypt {
 
     private int getnearstvalue(String[] data, int cord) {
         int min = Integer.parseInt(data[0]);
-        for(int x = 0;x<data.length;x++)
-        {
-            if(min > Integer.parseInt(data[x]))
-                min = Integer.parseInt(data[x]);
+        for (String element : data) {
+            if (min > Integer.parseInt(element)) min = Integer.parseInt(element);
         }
         int search = 0;
-        if(cord < min/2)
+        if (cord < min / 2)
             search = min;
         else
-         search = Math.round((float)cord/min);
+            search = Math.round((float) cord / min);
         return min * search;
     }
 

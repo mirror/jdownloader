@@ -47,10 +47,11 @@ public class ProgressCircle extends JPanel {
             stopIt = true;
             maximum = controller.getMax();
             value = controller.getValue();
+        } else {
+            setIndeterminate();
         }
         color = controller.getColor();
 
-        setIndeterminate();
         setToolTipText(controller.getStatusText());
     }
 
