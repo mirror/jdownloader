@@ -426,4 +426,16 @@ public class JDShutdown extends PluginOptional {
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, subConfig, CONFIG_MODE, MODES_AVAIL, JDL.L("gui.config.jdshutdown.mode", "Mode:")).setDefaultValue(0));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, CONFIG_FORCESHUTDOWN, JDL.L("gui.config.jdshutdown.forceshutdown", "Herunterfahren erzwingen (Nur einige OS)")).setDefaultValue(false));
     }
+    
+    @Override
+    public Object interact(String command, Object parameter) {
+        if(command == null) return null;
+        if(command.equals("shutdown"))
+            this.shutdown();
+        if(command.equals("hibernate"))
+            this.hibernate();
+        if(command.equals("standby"))
+            this.standby();
+        return null;
+    }
 }

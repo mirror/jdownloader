@@ -33,7 +33,10 @@ import jd.plugins.PluginOptional;
 import jd.plugins.optional.schedule.modules.DisablePremium;
 import jd.plugins.optional.schedule.modules.DisablePremiumForHost;
 import jd.plugins.optional.schedule.modules.DisableReconnect;
+import jd.plugins.optional.schedule.modules.DoHibernate;
 import jd.plugins.optional.schedule.modules.DoReconnect;
+import jd.plugins.optional.schedule.modules.DoShutdown;
+import jd.plugins.optional.schedule.modules.DoSleep;
 import jd.plugins.optional.schedule.modules.EnablePremium;
 import jd.plugins.optional.schedule.modules.EnablePremiumForHost;
 import jd.plugins.optional.schedule.modules.EnableReconnect;
@@ -98,8 +101,12 @@ public class Schedule extends PluginOptional {
         modules.add(new EnableReconnect());
         modules.add(new DisableReconnect());
         modules.add(new DoReconnect());
+        modules.add(new DoShutdown());
+        modules.add(new DoSleep());
+        modules.add(new DoHibernate());
         modules.add(new SetStopMark());
         modules.add(new UnSetStopMark());
+        
     }
 
     public ArrayList<SchedulerModuleInterface> getModules() {
