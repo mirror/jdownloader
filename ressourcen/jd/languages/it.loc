@@ -728,7 +728,6 @@ gui.premiumstatus.expired_maybetraffic.tooltip = %s - %s -- Al momento è possib
 gui.premiumstatus.expired_traffic.tooltip = %s - %s -- Al momento non è disponibile traffico Premium
 gui.premiumstatus.traffic.tooltip = %s - %s -- E' possibile scaricare fino a %s in Premium oggi.
 gui.premiumstatus.unlimited_traffic.tooltip = %s -- Traffico illimitato! E' possibile scaricare quanto più si desidera.
-gui.progresspane.title = %s moduli in esecuzione
 gui.quickhelp.text = Fai clic per aiuto: %s
 gui.reconnect.confirm = Riattivare la connessione?
 gui.reconnect.progress.status = Riconnessione in esecuzione: %s m:s
