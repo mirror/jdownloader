@@ -49,6 +49,7 @@ public class JDShutdown extends PluginOptional {
     private static final String CONFIG_ENABLEDONSTART = "ENABLEDONSTART";
     private static final String CONFIG_MODE = "CONFIG_MODE";
     private static final String CONFIG_FORCESHUTDOWN = "FORCE";
+    private static final String CONFIG_INSTALLFORCESHUTDOWN = "INSTALLFORCESHUTDOWN";
     private static Thread shutdown = null;
     private static boolean shutdownEnabled;
     private static MenuAction menuAction = null;
@@ -192,11 +193,19 @@ public class JDShutdown extends PluginOptional {
             break;
         case OSDetector.OS_MAC_OTHER:
             /* mac os */
-            try {
-                JDUtilities.runCommand("/usr/bin/osascript", new String[] { "-e", "tell application \"Finder\" to shut down" }, null, 0);
-            } catch (Exception e) {
+            
+            if (getPluginConfig().getBooleanProperty(CONFIG_FORCESHUTDOWN, false)) {
+                try {
+                    JDUtilities.runCommand("/usr/bin/osascript", new String[] { "-e", "shutdown -h now" }, null, 0);
+                } catch (Exception e) {
+                } 
+            } else {
+                try {
+                    JDUtilities.runCommand("/usr/bin/osascript", new String[] { "-e", "tell application \"Finder\" to shut down" }, null, 0);
+                } catch (Exception e) {
+                }
+                /* will fall through, because shutdown command also works under mac */
             }
-            /* will fall through, because shutdown command also works under mac */
         default:
             /* linux and others */
             try {
