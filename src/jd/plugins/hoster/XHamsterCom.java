@@ -63,7 +63,7 @@ public class XHamsterCom extends PluginForHost {
         if (ending != null) {
             downloadLink.setFinalFileName(filename + "." + ending);
         } else {
-            downloadLink.setName(filename.trim());
+            downloadLink.setName(filename);
         }
         return AvailableStatus.TRUE;
     }

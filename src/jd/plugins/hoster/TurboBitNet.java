@@ -19,8 +19,11 @@ import java.io.IOException;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -28,11 +31,12 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "turbobit.net" }, urls = { "http://[\\w\\.]*?(bluetooths.pp.ru|dz-files.ru|file.alexforum.ws|file.grad.by|file.krut-warez.ru|filebit.org|files.best-trainings.org.ua|files.wzor.ws|gdefile.ru|letitshare.ru|mnogofiles.com|share.uz|sibit.net|turbo-bit.ru|turbobit.net|turbobit.ru|upload.mskvn.by|vipbit.ru|files.prime-speed.ru|filestore.net.ru|turbobit.ru|upload.dwmedia.ru|upload.uz|xrfiles.ru)/[a-z0-9]+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "turbobit.net" }, urls = { "http://[\\w\\.]*?(bluetooths.pp.ru|dz-files.ru|file.alexforum.ws|file.grad.by|file.krut-warez.ru|filebit.org|files.best-trainings.org.ua|files.wzor.ws|gdefile.ru|letitshare.ru|mnogofiles.com|share.uz|sibit.net|turbo-bit.ru|turbobit.net|turbobit.ru|upload.mskvn.by|vipbit.ru|files.prime-speed.ru|filestore.net.ru|turbobit.ru|upload.dwmedia.ru|upload.uz|xrfiles.ru)/[a-z0-9]+\\.html" }, flags = { 2 })
 public class TurboBitNet extends PluginForHost {
 
     public TurboBitNet(PluginWrapper wrapper) {
         super(wrapper);
+        enablePremium("http://turbobit.net/turbo");
     }
 
     @Override
@@ -90,6 +94,70 @@ public class TurboBitNet extends PluginForHost {
         if (downloadUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadUrl, true, 1);
         dl.startDownload();
+    }
+
+    private void login(Account account) throws Exception {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.setCookie("http://turbobit.net/", "lang", "english");
+        br.setCustomCharset("UTF-8");
+        br.getPage("http://turbobit.net/en");
+        Form loginform = null;
+        Form[] allforms = br.getForms();
+        for (Form sform : allforms) {
+            String form = Encoding.htmlDecode(sform.toString());
+            if (form.contains("user[login]")){
+                loginform = sform;
+                break;
+            }
+        }
+        if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        loginform.put("user[login]", account.getUser());
+        loginform.put("user[pass]", account.getPass());
+        br.submitForm(loginform);
+        if (!br.containsHTML("yesturbo")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (br.getCookie("http://turbobit.net/", "sid") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        ai.setUnlimitedTraffic();
+        String expire = br.getRegex("<u>Turbo Access</u> to(.*?)<a").getMatch(0);
+        //For the russian version
+        if(expire == null)expire = br.getRegex("<u>Турбо доступ</u> до(.*?)<a").getMatch(0);
+        if (expire == null) {
+            ai.setExpired(true);
+            account.setValid(false);
+            return ai;
+        } else {
+            ai.setValidUntil(Regex.getMilliSeconds(expire.trim(), "dd.MM.yyyy", null));
+        }
+        ai.setStatus("Premium User");
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(DownloadLink link, Account account) throws Exception {
+        requestFileInformation(link);
+        login(account);
+        br.getPage(link.getDownloadURL());
+        String dllink = br.getRegex("<h1><a href=\"(.*?)\"").getMatch(0);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dllink = "http://turbobit.net" + dllink;
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        dl.startDownload();
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
     }
 
     @Override

@@ -79,8 +79,8 @@ public class KewlshareCom extends PluginForHost {
         setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("The Link You requested not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>: (.*?)</title><link rel").getMatch(0);
-        String filesize = br.getRegex("<h4>.*?\\|\\| (.*?)</h4>").getMatch(0);
+        String filename = br.getRegex("<h1>(.*?)\\|\\|.*?</h1>").getMatch(0);
+        String filesize = br.getRegex("<h1>.*?\\|\\|(.*?)</h1>").getMatch(0);
         if (filesize == null || filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(Regex.getSize(filesize.trim()));
@@ -120,9 +120,10 @@ public class KewlshareCom extends PluginForHost {
         br.setFollowRedirects(false);
         Form form = br.getForm(0);
         br.submitForm(form);
-        String dllink = br.getRegex("\"padding-right:10px;\">.*?<form action=\"(.*?)\" method").getMatch(0);
+        String dllink = br.getRegex("\"proceed\">.*?<form action=\"(.*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\"(http://[a-z0-9]+\\.kewlshare\\.com/dl/.*?/.*?/.*?/.*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
             if (br.containsHTML("your current parallel download")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);

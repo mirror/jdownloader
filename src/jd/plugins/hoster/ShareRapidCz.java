@@ -57,11 +57,12 @@ public class ShareRapidCz extends PluginForHost {
         this.setBrowserExclusive();
         br.setCustomCharset("UTF-8");
         br.setFollowRedirects(true);
+        br.setDebug(true);
         br.getPage("http://share-rapid.com/prihlaseni/");
         Form form = br.getForm(0);
         if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        form.put("login", Encoding.urlEncode(account.getUser()));
-        form.put("pass1", Encoding.urlEncode(account.getPass()));
+        form.put("login", account.getUser());
+        form.put("pass1", account.getPass());
         br.submitForm(form);
         if (!br.containsHTML("Kredit:</td>")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
@@ -75,10 +76,15 @@ public class ShareRapidCz extends PluginForHost {
             account.setValid(false);
             return ai;
         }
+        // Trafficleft actually only caused problems because in the night you
+        // got no limit when downloading from this host so i guess it's the best
+        // not to show any traffic-information
         String trafficleft = br.getMatch("Kredit:</td><td>(.*?)<a");
         if (trafficleft != null) {
-            ai.setTrafficLeft(Regex.getSize(trafficleft));
+//            ai.setTrafficLeft(trafficleft);
+            logger.info("Free traffic equals" + trafficleft);
         }
+        ai.setUnlimitedTraffic();
         String expires = br.getMatch("Neomezený tarif vyprší</td><td><strong>([0-9]{1,2}.[0-9]{1,2}.[0-9]{2,4} - [0-9]{1,2}:[0-9]{1,2})</strong>");
         if (expires != null) {
             ai.setValidUntil(Regex.getMilliSeconds(expires, "dd.MM.yy - HH:mm", null));
@@ -142,7 +148,7 @@ public class ShareRapidCz extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return -1;
     }
 
     @Override

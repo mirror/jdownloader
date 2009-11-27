@@ -57,34 +57,59 @@ public class ShrLnksBz extends PluginForDecrypt {
         if (br.containsHTML("Der Inhalt konnte nicht gefunden werden")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         // Folderpassword+Captcha handling
         if (br.containsHTML("id=\"folderpass\"")) {
+            boolean wrongpw = false;
+            String latestPassword = null;
             for (int i = 0; i <= 3; i++) {
-                Form captchaForm = br.getForm(0);
-                if (captchaForm == null) return null;
-                String passCode = Plugin.getUserInput("Password?", param);
-                captchaForm.put("pass", passCode);
-                br.submitForm(captchaForm);
-                if (br.containsHTML("Das eingegebene Passwort ist falsch")) continue;
+                Form pwform = br.getForm(0);
+                if (pwform == null) return null;
+                // First try the stored password, if that doesn't work, ask the
+                // user to enter it
+                latestPassword = this.getPluginConfig().getStringProperty("PASSWORD");
+                if (latestPassword == null || wrongpw == true) latestPassword = Plugin.getUserInput("Password?", param);
+                pwform.put("pass", latestPassword);
+                br.submitForm(pwform);
+                if (br.containsHTML("Das eingegebene Passwort ist falsch")) {
+                    wrongpw = true;
+                    continue;
+                }
                 break;
             }
             if (br.containsHTML("Das eingegebene Passwort ist falsch")) {
                 logger.warning("Wrong password!");
                 throw new DecrypterException(DecrypterException.PASSWORD);
             }
-            if (br.containsHTML("Sicherheitscode ist falsch")) throw new DecrypterException(DecrypterException.CAPTCHA);
+            // Save actual password if it is valid
+            getPluginConfig().setProperty("PASSWORD", latestPassword);
+            getPluginConfig().save();
         }
 
         if (br.containsHTML("(/captcha/|captcha_container|\"Captcha\"|id=\"captcha\")")) {
-            String Captchamap = br.getRegex("/><img src=\"(.*?)\" alt=\"Captcha\" id=\"captcha\" usemap=\"#captchamap\" />").getMatch(0);
-            File file = this.getLocalCaptchaFile();
-            Browser temp = br.cloneBrowser();
-            temp.getDownload(file, "http://share-links.biz" + Captchamap);
-            Point p = UserIO.getInstance().requestClickPositionDialog(file, "Share-links.biz", JDL.L("plugins.decrypt.shrlnksbz.desc", "Read the combination in the background and click the corresponding combination in the overview!"));
-            int y = getnearstvalue(br.getRegex("coords=\"\\d+,\\d+,\\d+,(\\d+?)\"").getColumn(0), p.y);
-            int x = getnearstvalue(br.getRegex("coords=\"\\d+,\\d+,(\\d+?)," + y + "\"").getColumn(0), p.x);
-            String nexturl = br.getRegex("<area shape=\"rect\" coords=\"\\d+,\\d+," + x + "," + y + "\" href=\"/(.*?)\" alt=\"\" title=\"\" />").getMatch(0);
-            if (nexturl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            br.setFollowRedirects(true);
-            br.getPage("http://share-links.biz/" + nexturl);
+            for (int i = 0; i <= 5; i++) {
+                String Captchamap = br.getRegex("/><img src=\"(.*?)\" alt=\"Captcha\" id=\"captcha\" usemap=\"#captchamap\" />").getMatch(0);
+                File file = this.getLocalCaptchaFile();
+                Browser temp = br.cloneBrowser();
+                temp.getDownload(file, "http://share-links.biz" + Captchamap);
+                Point p = UserIO.getInstance().requestClickPositionDialog(file, "Share-links.biz", JDL.L("plugins.decrypt.shrlnksbz.desc", "Read the combination in the background and click the corresponding combination in the overview!"));
+                int y = getnearstvalue(br.getRegex("coords=\"\\d+,\\d+,\\d+,(\\d+?)\"").getColumn(0), p.y);
+                int x = getnearstvalue(br.getRegex("coords=\"\\d+,\\d+,(\\d+?)," + y + "\"").getColumn(0), p.x);
+                String nexturl = br.getRegex("<area shape=\"rect\" coords=\"\\d+,\\d+," + x + "," + y + "\" href=\"/(.*?)\" alt=\"\" title=\"\" />").getMatch(0);
+                if (nexturl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                br.setFollowRedirects(true);
+                br.getPage("http://share-links.biz/" + nexturl);
+                if (br.containsHTML("Die getroffene Auswahl war falsch")) {
+                    br.getPage(parameter);
+                    // Usually a cookie is being set and you don't have to enter
+                    // the password again but if you would, the password of the
+                    // plugin configuration would always be the right one
+                    if (br.containsHTML("id=\"folderpass\"")) {
+                        Form pwform = br.getForm(0);
+                        pwform.put("pass", this.getPluginConfig().getStringProperty("PASSWORD"));
+                        br.submitForm(pwform);
+                    }
+                    continue;
+                }
+                break;
+            }
             if (br.containsHTML("Die getroffene Auswahl war falsch")) throw new DecrypterException(DecrypterException.CAPTCHA);
         }
 

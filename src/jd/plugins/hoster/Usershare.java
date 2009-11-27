@@ -48,7 +48,7 @@ public class Usershare extends PluginForHost {
             if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, linkurl, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, linkurl, true, -4);
         dl.startDownload();
     }
 
@@ -73,12 +73,11 @@ public class Usershare extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
-    /*
-     * public String getVersion() { return getVersion("$Revision$"); }
-     */
-
     @Override
+    // TODO: Hoster allows 4 connections (1 download with 4 chunks or 4 simultan
+    // downloads) at all, a controller to set the max.number of the connections
+    // would be nice for that
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return 1;
     }
 }
