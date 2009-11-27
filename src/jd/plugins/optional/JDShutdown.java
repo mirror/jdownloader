@@ -16,6 +16,8 @@
 
 package jd.plugins.optional;
 
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.BufferedWriter;
@@ -49,7 +51,6 @@ public class JDShutdown extends PluginOptional {
     private static final String CONFIG_ENABLEDONSTART = "ENABLEDONSTART";
     private static final String CONFIG_MODE = "CONFIG_MODE";
     private static final String CONFIG_FORCESHUTDOWN = "FORCE";
-    private static final String CONFIG_INSTALLFORCESHUTDOWN = "INSTALLFORCESHUTDOWN";
     private static Thread shutdown = null;
     private static boolean shutdownEnabled;
     private static MenuAction menuAction = null;
@@ -423,6 +424,15 @@ public class JDShutdown extends PluginOptional {
 
     private void initConfig() {
         SubConfiguration subConfig = getPluginConfig();
+        if (OSDetector.isMac()) {
+            config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, new ActionListener() {
+
+                public void actionPerformed(ActionEvent e) {
+                    // HIER BEFEHLE DIE AUSGEFÜHRT WERDEN SOLLEN (INSTALLATION)
+                }
+
+            }, "HIER_TEXT_FÜR_LABEL", "HIER_TEXT_FÜR_BUTTON", null));
+        }
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, CONFIG_ENABLEDONSTART, JDL.L("gui.config.jdshutdown.enabledOnStart", "Enabled on Start")).setDefaultValue(false));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, subConfig, CONFIG_MODE, MODES_AVAIL, JDL.L("gui.config.jdshutdown.mode", "Mode:")).setDefaultValue(0));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, CONFIG_FORCESHUTDOWN, JDL.L("gui.config.jdshutdown.forceshutdown", "Herunterfahren erzwingen (Nur einige OS)")).setDefaultValue(false));

@@ -64,6 +64,7 @@ import jd.nutils.svn.ResolveHandler;
 import jd.nutils.svn.Subversion;
 import jd.parser.Regex;
 import jd.utils.JDGeoCode;
+import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
@@ -441,6 +442,7 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
 
         final ProgressController progress = new ProgressController(JDL.L(LOCALE_PREFIX + "svn.updating", "Updating SVN: Please wait"));
         progress.setIndeterminate(true);
+        progress.setIcon(JDTheme.II("gui.splash.languages", 16, 16));
         try {
             Subversion svn = null;
             Subversion svnLanguageDir;
@@ -617,6 +619,7 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
     private void getSourceEntries() {
         ProgressController progress = new ProgressController(JDL.L(LOCALE_PREFIX + "analyzingSource1", "Analyzing Source Folder"));
         progress.setIndeterminate(true);
+        progress.setIcon(JDTheme.II("gui.splash.languages", 16, 16));
 
         sourceParser = new SrcParser(this.dirWorkingCopy);
         sourceParser.getBroadcaster().addListener(progress);

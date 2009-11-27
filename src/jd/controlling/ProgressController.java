@@ -18,6 +18,8 @@ package jd.controlling;
 
 import java.awt.Color;
 
+import javax.swing.Icon;
+
 import jd.event.ControlEvent;
 import jd.event.JDBroadcaster;
 import jd.event.MessageEvent;
@@ -29,7 +31,6 @@ class ProgressControllerBroadcaster extends JDBroadcaster<ProgressControllerList
     @Override
     protected void fireEvent(ProgressControllerListener listener, ProgressControllerEvent event) {
         listener.onProgressControllerEvent(event);
-
     }
 
 }
@@ -54,7 +55,8 @@ public class ProgressController implements MessageListener, Comparable<ProgressC
 
     private Object source;
     private String statusText;
-    private Color progresscolor;
+    private Color progresscolor = null;
+    private Icon icon = null;
 
     private transient ProgressControllerBroadcaster broadcaster = new ProgressControllerBroadcaster();
     private boolean abort = false;
@@ -89,6 +91,15 @@ public class ProgressController implements MessageListener, Comparable<ProgressC
 
     public Color getColor() {
         return progresscolor;
+    }
+
+    public void setIcon(Icon icon) {
+        this.icon = icon;
+        fireChanges();
+    }
+
+    public Icon getIcon() {
+        return icon;
     }
 
     public void addToMax(long length) {
