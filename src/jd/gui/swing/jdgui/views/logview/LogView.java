@@ -25,6 +25,10 @@ import javax.swing.Icon;
 import jd.controlling.JDLogHandler;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
+import jd.gui.swing.jdgui.GUIUtils;
+import jd.gui.swing.jdgui.JDGuiConstants;
+import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
+import jd.gui.swing.jdgui.interfaces.SwitchPanelListener;
 import jd.gui.swing.jdgui.views.ClosableView;
 import jd.gui.swing.jdgui.views.info.LogInfoPanel;
 import jd.utils.JDTheme;
@@ -64,6 +68,17 @@ public class LogView extends ClosableView implements ControlListener {
         this.setContent(lp = new LogPane());
         this.setDefaultInfoPanel(lip = new LogInfoPanel());
         lip.addActionListener(lp);
+        getBroadcaster().addListener(new SwitchPanelListener() {
+
+            @Override
+            public void onPanelEvent(SwitchPanelEvent event) {
+                if (event.getID() == SwitchPanelEvent.ON_REMOVE) {
+                    GUIUtils.getConfig().setProperty(JDGuiConstants.PARAM_LOGVIEW_SHOWN, false);
+                    GUIUtils.getConfig().save();
+                }
+            }
+
+        });
         init();
     }
 

@@ -84,6 +84,7 @@ public class ProgressCircle extends JPanel {
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
         if (icon == null || iconGrey == null) {
+            // No Custom Icon: Simply fill a Circle with Green
             Color color = this.color != null ? this.color : new Color(50, 100 + (int) (155 * (1 - progress)), 50);
 
             g2.setColor(color);
@@ -96,6 +97,8 @@ public class ProgressCircle extends JPanel {
             g2.setColor(Color.BLACK);
             g2.drawArc(0, 0, ICONSIZE, ICONSIZE, 0, 360);
         } else {
+            // Custom Icon: Change between Grey and Color for indicating a
+            // running Process
             if (!backward) {
                 iconGrey.paintIcon(this, g2, 0, 0);
             } else {

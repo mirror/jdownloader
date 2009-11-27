@@ -27,7 +27,7 @@ public class ClosableTabHeader extends JPanel {
     private static final long serialVersionUID = 4463352125800695922L;
 
     public ClosableTabHeader(ClosableView view) {
-        setLayout(new MigLayout("ins 0", "[grow,fill]"));
+        setLayout(new MigLayout("ins 0", "[grow,fill]", "[16!]"));
 
         putClientProperty("paintActive", Boolean.TRUE);
 

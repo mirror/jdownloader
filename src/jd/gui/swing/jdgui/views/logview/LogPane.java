@@ -63,7 +63,7 @@ public class LogPane extends SwitchPanel implements ActionListener, ControlListe
 
     public LogPane() {
         this.setName("LOGDIALOG");
-        this.setLayout(new MigLayout("ins 3", "[fill,grow]", "[fill,grow]"));
+        this.setLayout(new MigLayout("ins 0", "[fill,grow]", "[fill,grow]"));
 
         logField = new JTextPane();
         // logField.setContentType("text/html");

@@ -19,6 +19,8 @@ package jd.gui.swing.jdgui.menu.actions;
 import java.awt.event.ActionEvent;
 
 import jd.gui.swing.SwingGui;
+import jd.gui.swing.jdgui.GUIUtils;
+import jd.gui.swing.jdgui.JDGuiConstants;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.gui.swing.jdgui.views.logview.LogView;
 
@@ -32,16 +34,15 @@ public class LogAction extends ToolBarAction {
 
     @Override
     public void onAction(ActionEvent e) {
-
         LogView view = LogView.getLogView();
-        System.out.println(view.isShown());
-
         SwingGui.getInstance().setContent(view);
+
+        GUIUtils.getConfig().setProperty(JDGuiConstants.PARAM_LOGVIEW_SHOWN, true);
+        GUIUtils.getConfig().save();
     }
 
     @Override
     public void init() {
-        this.setSelected(false);
     }
 
     @Override

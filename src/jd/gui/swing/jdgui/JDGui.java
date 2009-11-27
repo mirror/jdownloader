@@ -70,6 +70,7 @@ import jd.gui.swing.jdgui.views.DownloadView;
 import jd.gui.swing.jdgui.views.LinkgrabberView;
 import jd.gui.swing.jdgui.views.TabbedPanelView;
 import jd.gui.swing.jdgui.views.linkgrabberview.LinkGrabberPanel;
+import jd.gui.swing.jdgui.views.logview.LogView;
 import jd.gui.swing.jdgui.views.sidebars.configuration.AddonConfig;
 import jd.gui.swing.jdgui.views.sidebars.configuration.ConfigSidebar;
 import jd.nutils.JDFlags;
@@ -167,6 +168,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         mainTabbedPane.addTab(downloadView);
         mainTabbedPane.addTab(linkgrabberView);
         mainTabbedPane.addTab(configurationView);
+        if (GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_LOGVIEW_SHOWN, false)) mainTabbedPane.addTab(LogView.getLogView());
         mainTabbedPane.setSelectedComponent(downloadView);
         toolBar.setList(GUIUtils.getConfig().getGenericProperty("TOOLBAR", ToolBar.DEFAULT_LIST).toArray(new String[] {}));
 
