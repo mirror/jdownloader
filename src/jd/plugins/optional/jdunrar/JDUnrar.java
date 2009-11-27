@@ -462,7 +462,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
             ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
             for (DownloadLink l : fp.getDownloadLinkList()) {
                 if (l.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
-                    if (l.getName().matches(".*part[0]*[1].rar$") || (!l.getName().matches(".*part[0-9]+.rar$") && l.getName().matches(".*rar$"))) {
+                    if (l.getName().matches(".*pa?r?t?\\.?[0]*[1].rar$") || (!l.getName().matches(".*p?a?r?t?\\.?[0-9]+.rar$") && l.getName().matches(".*rar$"))) {
                         links.add(l);
                     }
 

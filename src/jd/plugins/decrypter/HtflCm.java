@@ -39,6 +39,7 @@ public class HtflCm extends PluginForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(false);
         br.getPage(parameter);
+        if (br.containsHTML("Empty Directory")) return decryptedLinks;
         FilePackage fp = FilePackage.getInstance();
         String fpName = br.getRegex("-2px;\" />(.*?)/?</td>").getMatch(0).trim();
         if (fpName == null || fpName.length() == 0) fpName = "Hotfile.com folder";

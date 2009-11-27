@@ -76,9 +76,10 @@ public class LdT extends PluginForDecrypt {
             DownloadLink dl;
             if (br.getRedirectLocation().equalsIgnoreCase(parameter)) br.getPage(parameter);
             if (br.getRedirectLocation().equalsIgnoreCase(parameter)) return null;
-            decryptedLinks.add(dl = createDownloadlink(br.getRedirectLocation()));
+            String url = br.getRedirectLocation();
+            decryptedLinks.add(dl = createDownloadlink(url));
             dl.addSourcePluginPassword("iload.to");
-            dl.setUrlDownload(br.getRedirectLocation());
+            dl.setUrlDownload(url);
         }
         return decryptedLinks;
     }

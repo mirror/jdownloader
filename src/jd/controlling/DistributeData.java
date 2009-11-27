@@ -17,7 +17,6 @@
 package jd.controlling;
 
 import java.net.URL;
-import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.logging.Logger;
@@ -180,12 +179,7 @@ public class DistributeData extends Thread {
 
                 if (url != null) {
                     url = HTMLParser.getHttpLinkList(url);
-
-                    try {
-                        url = URLDecoder.decode(url, "UTF-8");
-                    } catch (Exception e) {
-                        logger.warning("text not url decodeable");
-                    }
+                    url = Encoding.urlDecode(url, true);
                 }
                 boolean coulddecrypt = false;
                 for (DecryptPluginWrapper pDecrypt : DecryptPluginWrapper.getDecryptWrapper()) {

@@ -57,12 +57,13 @@ public class LdTTemp extends PluginForDecrypt {
         }
         if (br.containsHTML("(api.recaptcha.net|Das war leider Falsch)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         // container handling
-//        String containerregex = br.getRegex("\"(\\?lid=.*?)\"").getMatch(0);
-//        if (containerregex != null) {
-//            containerregex = containerregex.replace("amp;", "");
-//            decryptedLinks = loadcontainer(br, containerregex);
-//            if (decryptedLinks != null && decryptedLinks.size() > 0) return decryptedLinks;
-//        }
+        // String containerregex = br.getRegex("\"(\\?lid=.*?)\"").getMatch(0);
+        // if (containerregex != null) {
+        // containerregex = containerregex.replace("amp;", "");
+        // decryptedLinks = loadcontainer(br, containerregex);
+        // if (decryptedLinks != null && decryptedLinks.size() > 0) return
+        // decryptedLinks;
+        // }
         String[] links = br.getRegex("<a href=\"(http.*?)\" target=").getColumn(0);
         if (links.length == 0) return null;
         for (String finallink : links)

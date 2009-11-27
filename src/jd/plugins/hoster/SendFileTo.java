@@ -78,6 +78,7 @@ public class SendFileTo extends PluginForHost {
             long waittime = ((3600 * hours) + (60 * minutes) + seconds + 1) * 1000l;
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
         }
+        if (br.containsHTML("Error happened when generating Download Link")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 10 * 60 * 1000l);
         // Experimental, dunno if this fixed the plugin error that some guys
         // reported!
         if (br.containsHTML("You have reached the")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
@@ -102,6 +103,7 @@ public class SendFileTo extends PluginForHost {
         int tt = Integer.parseInt(br.getRegex("countdown\">(\\d+)</span>").getMatch(0));
         sleep(tt * 1001, downloadLink);
         br.submitForm(DLForm);
+        if (br.containsHTML("Error happened when generating Download Link")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 10 * 60 * 1000l);
         if (br.containsHTML("Wrong password") || br.containsHTML("Wrong captcha")) {
             logger.warning("Wrong password or wrong captcha!");
             downloadLink.setProperty("pass", null);

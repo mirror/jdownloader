@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 
 import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
@@ -123,7 +124,7 @@ public class Recaptcha {
         // cols="40"></textarea>\n <input type="hidden"
         // name="recaptcha_response_field" value="manual_challenge"/>
         form.put("recaptcha_challenge_field", challenge);
-        form.put("recaptcha_response_field", code);
+        form.put("recaptcha_response_field", Encoding.urlEncode(code));
         br.submitForm(form);
         return br;
 

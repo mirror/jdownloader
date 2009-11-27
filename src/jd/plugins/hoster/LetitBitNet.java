@@ -131,6 +131,13 @@ public class LetitBitNet extends PluginForHost {
         }
         if (!br.containsHTML("<frame")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         url = br.getRegex("<frame src=\"http://letitbit.net/tmpl/tmpl_frame_top.php\\?link=(.*?)\" name=\"topFrame\" scrolling=\"No\" noresize=\"noresize\" id=\"topFrame\" title=\"topFrame\" />").getMatch(0);
+        if (url == null) {
+            /* if we have to wait, lets wait 60+5 buffer secs */
+            sleep(65 * 1000l, downloadLink);
+            String nextpage = br.getRegex("(http://s\\d+.letitbit.net/tmpl/tmpl_frame_top.*?)\"").getMatch(0);
+            br.getPage(nextpage);
+            url = br.getRegex("(http://r\\d+.letitbit.net/download.*?)\"").getMatch(0);
+        }
         if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         /* we have to wait little because server too buggy */
         sleep(2000, downloadLink);
