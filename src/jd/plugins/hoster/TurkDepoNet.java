@@ -86,13 +86,14 @@ public class TurkDepoNet extends PluginForHost {
         String passCode = null;
         requestFileInformation(link);
         login(account);
+        br.setDebug(true);
         br.getPage(link.getDownloadURL());
         br.setFollowRedirects(false);
         // Form um auf "Datei herunterladen" zu klicken
         Form DLForm = br.getFormbyProperty("name", "F1");
         if (DLForm == null && br.getRedirectLocation() != null) {
             br.setFollowRedirects(true);
-            dl = BrowserAdapter.openDownload(br, link, br.getRedirectLocation(), true, 0);
+            dl = BrowserAdapter.openDownload(br, link, br.getRedirectLocation(), false, 1);
         } else {
             if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             if (br.containsHTML("name=\"password\"")) {
@@ -105,7 +106,7 @@ public class TurkDepoNet extends PluginForHost {
                 DLForm.put("password", passCode);
             }
             br.setFollowRedirects(true);
-            dl = BrowserAdapter.openDownload(br, link, DLForm, true, 0);
+            dl = BrowserAdapter.openDownload(br, link, DLForm, false, 1);
         }
         if (dl.getConnection() != null && dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -117,7 +118,7 @@ public class TurkDepoNet extends PluginForHost {
                 String url = br.getRegex("dotted #bbb;padding:[0-9]+px;.*?<a href=\"(.*?)\"").getMatch(0);
                 if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 br.setFollowRedirects(true);
-                dl = BrowserAdapter.openDownload(br, link, url, true, 0);
+                dl = BrowserAdapter.openDownload(br, link, url, false, 1);
                 if (dl.getConnection() != null && dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("html")) {
                     br.followConnection();
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -187,7 +188,7 @@ public class TurkDepoNet extends PluginForHost {
                 downloadLink.setProperty("pass", passCode);
             }
             br.setFollowRedirects(true);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
             if (!(dl.getConnection().isContentDisposition())) {
                 br.followConnection();
                 if (br.containsHTML("Error happened when generating")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
