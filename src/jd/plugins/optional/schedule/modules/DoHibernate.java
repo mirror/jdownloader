@@ -1,6 +1,7 @@
 package jd.plugins.optional.schedule.modules;
 
 import jd.OptionalPluginWrapper;
+import jd.controlling.JDLogger;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -13,8 +14,12 @@ public class DoHibernate implements SchedulerModuleInterface {
     }
 
     public void execute(String parameter) {
-        
+
         OptionalPluginWrapper addon = JDUtilities.getOptionalPlugin("shutdown");
+        if (addon == null) {
+            JDLogger.getLogger().info("JDShutdown addon not loaded! Cannot hibernate!");
+            return;
+        }
         addon.getPlugin().interact("hibernate", null);
     }
 

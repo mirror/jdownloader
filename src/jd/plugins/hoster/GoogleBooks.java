@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
+import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
@@ -32,12 +33,12 @@ public class GoogleBooks extends PluginForHost {
         super(wrapper);
         // TODO Auto-generated constructor stub
     }
-    
+
     @Override
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replaceAll("googlebooksdecrypter", "books.google"));
     }
-    
+
     @Override
     public String getAGBLink() {
         return "http://books.google.de/accounts/TOS";
@@ -45,16 +46,18 @@ public class GoogleBooks extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink link) throws Exception {
-        br.setCookiesExclusive(true);
+        this.setBrowserExclusive();
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("http://sorry.google.com/sorry/\\?continue=.*")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1001l);
         if (br.containsHTML("Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String dllink = br.getRegex(";preloadImg.src = \\'(.*?)\\';window").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.setDebug(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
         URLConnectionAdapter con = dl.getConnection();
-        if (con.getResponseCode() == 404) {
-            con.disconnect();
+        if (con.getContentType().contains("html")) {
+            br.followConnection();
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1001l);
         }
         dl.startDownload();

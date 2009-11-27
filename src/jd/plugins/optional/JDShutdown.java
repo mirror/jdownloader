@@ -193,19 +193,20 @@ public class JDShutdown extends PluginOptional {
             break;
         case OSDetector.OS_MAC_OTHER:
             /* mac os */
-            
             if (getPluginConfig().getBooleanProperty(CONFIG_FORCESHUTDOWN, false)) {
+                /* force shutdown */
                 try {
-                    JDUtilities.runCommand("/usr/bin/osascript", new String[] { "-e", "shutdown -h now" }, null, 0);
+                    JDUtilities.runCommand("sudo", new String[] { "shutdown", "-h", "now" }, null, 0);
                 } catch (Exception e) {
-                } 
+                }
             } else {
+                /* normal shutdown */
                 try {
                     JDUtilities.runCommand("/usr/bin/osascript", new String[] { "-e", "tell application \"Finder\" to shut down" }, null, 0);
                 } catch (Exception e) {
                 }
-                /* will fall through, because shutdown command also works under mac */
             }
+            break;
         default:
             /* linux and others */
             try {
@@ -426,16 +427,13 @@ public class JDShutdown extends PluginOptional {
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, subConfig, CONFIG_MODE, MODES_AVAIL, JDL.L("gui.config.jdshutdown.mode", "Mode:")).setDefaultValue(0));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, CONFIG_FORCESHUTDOWN, JDL.L("gui.config.jdshutdown.forceshutdown", "Herunterfahren erzwingen (Nur einige OS)")).setDefaultValue(false));
     }
-    
+
     @Override
     public Object interact(String command, Object parameter) {
-        if(command == null) return null;
-        if(command.equals("shutdown"))
-            this.shutdown();
-        if(command.equals("hibernate"))
-            this.hibernate();
-        if(command.equals("standby"))
-            this.standby();
+        if (command == null) return null;
+        if (command.equals("shutdown")) this.shutdown();
+        if (command.equals("hibernate")) this.hibernate();
+        if (command.equals("standby")) this.standby();
         return null;
     }
 }
