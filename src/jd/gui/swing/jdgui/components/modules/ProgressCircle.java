@@ -47,10 +47,16 @@ public class ProgressCircle extends JPanel {
             maximum = INDETERMINATE_MAXIMUM;
             if (backward) {
                 value--;
-                if (value == 0) backward = false;
+                if (value <= 0) {
+                    value = 0;
+                    backward = false;
+                }
             } else {
                 value++;
-                if (value == INDETERMINATE_MAXIMUM) backward = true;
+                if (value >= INDETERMINATE_MAXIMUM) {
+                    backward = true;
+                    value = INDETERMINATE_MAXIMUM;
+                }
             }
         }
         color = controller.getColor();

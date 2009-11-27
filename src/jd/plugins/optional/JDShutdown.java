@@ -224,7 +224,7 @@ public class JDShutdown extends PluginOptional {
             }
         }
         try {
-            Thread.sleep(8000);
+            Thread.sleep(2000);
         } catch (InterruptedException e) {
         }
         System.exit(0);
