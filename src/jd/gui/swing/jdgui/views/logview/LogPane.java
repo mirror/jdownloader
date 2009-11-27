@@ -19,7 +19,6 @@ package jd.gui.swing.jdgui.views.logview;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
-import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
 import java.util.ArrayList;
@@ -29,7 +28,6 @@ import java.util.logging.LogRecord;
 import javax.swing.JFileChooser;
 import javax.swing.JScrollPane;
 import javax.swing.JTextPane;
-import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
 import javax.swing.text.EditorKit;
 
@@ -66,7 +64,6 @@ public class LogPane extends SwitchPanel implements ActionListener, ControlListe
         this.setLayout(new MigLayout("ins 0", "[fill,grow]", "[fill,grow]"));
 
         logField = new JTextPane();
-        // logField.setContentType("text/html");
         logField.setEditable(true);
         logField.setAutoscrolls(true);
 
@@ -160,17 +157,7 @@ public class LogPane extends SwitchPanel implements ActionListener, ControlListe
             LogFormatter formater = (LogFormatter) JDLogHandler.getHandler().getFormatter();
             StringBuilder sb = new StringBuilder();
 
-            // sb.append("<style type=\"text/css\">");
-            // sb.append(".warning { background-color:yellow;}");
-            // sb.append(".severe { background-color:red;}");
-            // sb.append(".exception { background-color:red;}");
-            // // sb.append(".normal { background-color:black;}");
-            // sb.append("</style>");
-
             for (LogRecord lr : buff) {
-                // if (lr.getLevel().intValue() >=
-                // JDLogger.getLogger().getLevel().intValue())
-
                 sb.append(format(lr, formater));
             }
             synchronized (LOCK) {
@@ -183,9 +170,9 @@ public class LogPane extends SwitchPanel implements ActionListener, ControlListe
 
     private String format(LogRecord lr, LogFormatter formater) {
         if (lr.getThrown() != null) {
-            return ("EXCEPTION   " + formater.format(lr));
+            return "EXCEPTION   " + formater.format(lr);
         } else {
-            return (formater.format(lr));
+            return formater.format(lr);
         }
     }
 
@@ -202,9 +189,7 @@ public class LogPane extends SwitchPanel implements ActionListener, ControlListe
             Reader r = new StringReader(sb);
             try {
                 editorkit.read(r, doc, doc.getEndPosition().getOffset() - 1);
-            } catch (IOException e1) {
-                e1.printStackTrace();
-            } catch (BadLocationException e1) {
+            } catch (Exception e1) {
                 e1.printStackTrace();
             }
         }
