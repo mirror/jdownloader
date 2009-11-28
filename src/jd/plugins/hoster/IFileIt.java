@@ -36,7 +36,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ifile.it" }, urls = { "http://[\\w\\.]*?ifile\\.it/[\\w]+/?" }, flags = { 2 })
 public class IFileIt extends PluginForHost {
 
-    private String useragent = "Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 5.1; Trident/4.0; .NET CLR 2.0.50727; .NET CLR 3.0.4506.2152; .NET CLR 3.5.30729; .NET CLR 1.1.4322)";
+    private String useragent = "Mozilla/5.0 (Windows; U; Windows NT 6.0; chrome://global/locale/intl.properties; rv:1.8.1.12) Gecko/2008102920  Firefox/3.0.0";
 
     public IFileIt(PluginWrapper wrapper) {
         super(wrapper);
@@ -87,7 +87,6 @@ public class IFileIt extends PluginForHost {
         br.setDebug(true);
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        br.cloneBrowser().getPage("http://ifile.it/ads/adframe.js");
         String downlink = br.getRegex("var.*?fsa.*?=.*?'(.*?)'").getMatch(0);
         String downid = br.getRegex("var.*?fs =.*?'(.*?)'").getMatch(0);
         String esn = br.getRegex("var.*?esn.*?=.*?(\\d+);<").getMatch(0);
@@ -95,7 +94,7 @@ public class IFileIt extends PluginForHost {
         // Example how current links(last updated plugin-links) look(ed) like
         // http://ifile.it/download:dl_request?x64=741603&type=na&esn=1&b3da197159a22d301ad99f58f8137557=9bf31c7ff062936a96d3c8bd1f8f2ff3
         String finaldownlink = "http://ifile.it/download:dl_request?" + downlink + "&type=na&esn=" + esn + "&" + downid;
-        br.getPage(finaldownlink);
+        xmlrequest(br, finaldownlink);
         if (!br.containsHTML("status\":\"ok\"")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage("http://ifile.it/dl");
         if (br.containsHTML("download:captcha")) {
@@ -109,7 +108,7 @@ public class IFileIt extends PluginForHost {
                 logger.info("Captchagetpage = " + captchaget);
                 // Example of the last working captchaget
                 // http://ifile.it/download:dl_request?x65=549427&type=simple&esn=1&8a1e7=9fa&920e4e7d3666c587258c93ef87cb3365=a8c5e3fdae3471388ec44741b41b3c2d&d51500b7a7cd5292d9db0b98dc022447=98f13708210194c475687be6106a3b84
-                br2.getPage(captchaget);
+                xmlrequest(br2, captchaget);
                 if (br2.containsHTML("\"retry\":\"retry\"")) continue;
                 br.getPage("http://ifile.it/dl");
                 break;
@@ -136,7 +135,6 @@ public class IFileIt extends PluginForHost {
             logger.info("last try getting dllink failed, plugin must be defect!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        br.cloneBrowser().getPage("http://ifile.it/ads/adframe.js");
         br.setFollowRedirects(false);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -155,9 +153,12 @@ public class IFileIt extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.setDebug(true);
         br.getHeaders().put("User-Agent", useragent);
+        br.setRequestIntervalLimit(getHost(), 250);
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
+        simulateBrowser();
         if (br.containsHTML("file not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("font-size: [0-9]+%; color: gray;\">(.*?)\\&nbsp;").getMatch(0);
         if (filename == null) filename = br.getRegex("id=\"descriptive_link\" value=\"http://ifile.it/.*?/(.*?)\"").getMatch(0);
@@ -168,14 +169,20 @@ public class IFileIt extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    private void simulateBrowser() throws IOException {
+        br.cloneBrowser().getPage("http://static.ifile.it/themes/default/js/common.js?v=1");
+    }
+
+    private void xmlrequest(Browser br, String url) throws IOException {
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br.getPage(url);
+        br.getHeaders().remove("X-Requested-With");
+    }
+
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         /* Nochmals das File überprüfen */
         requestFileInformation(downloadLink);
-        // br.cloneBrowser().getPage("http://static.ifile.it/themes/default/css/common-guest.css?v=1");
-        // br.cloneBrowser().getPage("http://static.ifile.it/themes/default/js/common.js?v=1");
-        br.cloneBrowser().getPage("http://ifile.it/ads/adframe.js");
-        // br.cloneBrowser().getPage("http://static.ifile.it/libraries/recaptcha_1.10/recaptcha_ajax.js");
         br.setDebug(true);
         br.setFollowRedirects(true);
         String downlink = br.getRegex("var.*?fsa.*?=.*?'(.*?)'").getMatch(0);
@@ -186,7 +193,7 @@ public class IFileIt extends PluginForHost {
         // like
         // http://ifile.it/download:dl_request?x64=741603&type=na&esn=1&b3da197159a22d301ad99f58f8137557=9bf31c7ff062936a96d3c8bd1f8f2ff3
         String finaldownlink = "http://ifile.it/download:dl_request?" + downlink + "&type=na&esn=" + esn + "&" + downid;
-        br.getPage(finaldownlink);
+        xmlrequest(br, finaldownlink);
         if (!br.containsHTML("status\":\"ok\"")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage("http://ifile.it/dl");
         if (br.containsHTML("download:captcha")) {
@@ -200,16 +207,13 @@ public class IFileIt extends PluginForHost {
                 logger.info("Captchagetpage = " + captchaget);
                 // Example of the last working captchaget
                 // http://ifile.it/download:dl_request?x65=549427&type=simple&esn=1&8a1e7=9fa&920e4e7d3666c587258c93ef87cb3365=a8c5e3fdae3471388ec44741b41b3c2d&d51500b7a7cd5292d9db0b98dc022447=98f13708210194c475687be6106a3b84
-                br2.getPage(captchaget);
+                xmlrequest(br2, captchaget);
                 if (br2.containsHTML("\"retry\":\"retry\"")) continue;
                 br.getPage("http://ifile.it/dl");
                 break;
             }
             if (br2.containsHTML("\"retry\":\"retry\"")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
-        // br.cloneBrowser().getPage("http://static.ifile.it/themes/default/css/common-guest.css?v=1");
-        // br.cloneBrowser().getPage("http://static.ifile.it/themes/default/js/common.js?v=1");
-        br.cloneBrowser().getPage("http://ifile.it/ads/adframe.js");
         String dllink = br.getRegex("req_btn.*?target=\".*?\" href=\"(http.*?)\"").getMatch(0);
         if (dllink == null) {
             logger.info("first try getting dllink failed");
@@ -230,7 +234,6 @@ public class IFileIt extends PluginForHost {
             logger.info("last try getting dllink failed, plugin must be defect!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        br.cloneBrowser().getPage("http://ifile.it/ads/adframe.js");
         br.setFollowRedirects(false);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {

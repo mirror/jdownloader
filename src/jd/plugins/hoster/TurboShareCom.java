@@ -32,7 +32,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "turboshare.com" }, urls = { "http://[\\w\\.]*?turboshare\\.com/files/[0-9]+/.*?\\.htm" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "turboshare.com" }, urls = { "http://[\\w\\.]*?turboshare\\.com/files/[0-9]+/.+" }, flags = { 2 })
 public class TurboShareCom extends PluginForHost {
 
     public TurboShareCom(PluginWrapper wrapper) {

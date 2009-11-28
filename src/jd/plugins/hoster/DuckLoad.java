@@ -43,6 +43,7 @@ public class DuckLoad extends PluginForHost {
     public void handleFree(DownloadLink link) throws Exception {
         boolean stream = false;
         requestFileInformation(link);
+        br.setDebug(true);
         // waittime check
         if (br.containsHTML("Your downloadticket was booked")) {
             sleep(10 * 1000l, link);
@@ -53,12 +54,12 @@ public class DuckLoad extends PluginForHost {
         if (capurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         capurl = "/design/Captcha2" + capurl;
         String code = getCaptchaCode(capurl, link);
-        if (form.containsHTML("appl_code")) {
+        if (form.containsHTML("a_code")) {
             form = new Form();
             form.setAction(br.getForm(0).getAction());
             form.setMethod(MethodType.POST);
             form.put("server", "1");
-            form.put("appl_code", code);
+            form.put("a_code", code);
             stream = true;
         } else {
             form.put("cap", code);
@@ -77,6 +78,7 @@ public class DuckLoad extends PluginForHost {
             if (filename != null) link.setFinalFileName(filename);
             if (url == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
+        if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, true, 0);
         dl.startDownload();

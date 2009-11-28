@@ -27,6 +27,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 
+import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
@@ -172,12 +173,21 @@ public class MainGui extends SwitchPanel implements ActionListener, MouseListene
 
     @Override
     protected void onShow() {
-        table.getModel().refreshModel();
+        new GuiRunnable<Object>() {
+            public Object runSave() {
+                table.getModel().refreshModel();
+                return null;
+            }
+        }.start();
     }
 
     public void updateTable() {
-        table.getModel().refreshModel();
-        table.getModel().fireTableDataChanged();
+        new GuiRunnable<Object>() {
+            public Object runSave() {
+                table.getModel().refreshModel();
+                table.getModel().fireTableDataChanged();
+                return null;
+            }
+        }.start();
     }
-
 }

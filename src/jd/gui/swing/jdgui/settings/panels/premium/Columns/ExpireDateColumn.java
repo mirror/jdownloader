@@ -56,7 +56,7 @@ public class ExpireDateColumn extends JDTextTableColumn {
             if (!ac.isValid()) {
                 return "Invalid account";
             } else if (ai == null) {
-                return "Unkown";
+                return "Unknown";
             } else {
                 if (ai.getValidUntil() == -1) {
                     return "Unlimited";

@@ -82,7 +82,7 @@ public class CreaFileCom extends PluginForHost {
         // code.append(value);
         // }
         // logger.info("Captchacode to enter is " + code.toString());
-        //***New Captcha handling***
+        // ***New Captcha handling***
         String captchaurl = "http://creafile.com//codeimg.php";
         if (!br.containsHTML("codeimg.php")) captchaurl = null;
         if (dlForm == null || captchaurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -97,6 +97,7 @@ public class CreaFileCom extends PluginForHost {
         if (faster == null) faster = br.getForm(0);
         if (faster != null) {
             br.submitForm(faster);
+            sleep(60 * 1000l, downloadLink);
             br.getPage(downarea);
             dllink = br.getRegex("href=\"(http://creafile.com/d/.*?)\"").getMatch(0);
         }
@@ -108,8 +109,9 @@ public class CreaFileCom extends PluginForHost {
         }
         // Downloading using the slow download link the server doesn't allow
         // more than 1 connection per file
+        br.setDebug(true);
         if (slowdownload == false) {
-            jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+            jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         } else {
             jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         }

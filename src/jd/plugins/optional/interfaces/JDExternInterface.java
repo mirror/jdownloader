@@ -36,7 +36,6 @@ import jd.config.SubConfiguration;
 import jd.controlling.DistributeData;
 import jd.controlling.JDLogger;
 import jd.controlling.LinkGrabberController;
-import jd.controlling.PasswordListController;
 import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.SwingGui;
@@ -177,9 +176,10 @@ public class JDExternInterface extends PluginOptional {
                         /* parse the post data */
                         String urls[] = Regex.getLines(Encoding.htmlDecode(request.getParameters().get("urls")));
                         String passwords[] = Regex.getLines(Encoding.htmlDecode(request.getParameters().get("passwords")));
-                        PasswordListController.getInstance().addPasswords(passwords);
                         if (urls.length != 0) {
                             ArrayList<DownloadLink> links = new DistributeData(Encoding.htmlDecode(request.getParameters().get("urls"))).findLinks();
+                            for (DownloadLink link : links)
+                                link.addSourcePluginPasswords(passwords);
                             LinkGrabberController.getInstance().addLinks(links, false, false);
                             new GuiRunnable<Object>() {
 
@@ -238,11 +238,11 @@ public class JDExternInterface extends PluginOptional {
                             String decryted = decrypt(baseDecoded, key).trim();
 
                             String passwords[] = Regex.getLines(Encoding.htmlDecode(request.getParameters().get("passwords")));
-                            PasswordListController.getInstance().addPasswords(passwords);
 
                             ArrayList<DownloadLink> links = new DistributeData(Encoding.htmlDecode(decryted)).findLinks();
+                            for (DownloadLink link : links)
+                                link.addSourcePluginPasswords(passwords);
                             for (DownloadLink l : links) {
-                                l.addSourcePluginPasswords(passwords);
                                 if (request.getParameters().get("source") != null) {
                                     l.setBrowserUrl(Encoding.htmlDecode(request.getParameters().get("source")));
                                 }

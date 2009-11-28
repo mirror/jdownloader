@@ -29,6 +29,10 @@ import jd.plugins.DownloadLink.AvailableStatus;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "books.google.com" }, urls = { "http://googlebooksdecrypter.[a-z]+/books\\?id=.*&pg=.*" }, flags = { 0 })
 public class GoogleBooks extends PluginForHost {
 
+    private static int counter = 0;
+
+    private static Object LOCK = new Object();
+
     public GoogleBooks(PluginWrapper wrapper) {
         super(wrapper);
         // TODO Auto-generated constructor stub
@@ -58,7 +62,18 @@ public class GoogleBooks extends PluginForHost {
         URLConnectionAdapter con = dl.getConnection();
         if (con.getContentType().contains("html")) {
             br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1001l);
+            synchronized (LOCK) {
+                if (counter > 10) {
+                    /* too many failed lets wait and retry later */
+                    counter = 0;
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1001l);
+                } else {
+                    /* lets temp unavail this download, maybe it works later */
+                    counter++;
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1001l);
+                }
+            }
+
         }
         dl.startDownload();
 
@@ -71,8 +86,7 @@ public class GoogleBooks extends PluginForHost {
 
     @Override
     public void reset() {
-        // TODO Auto-generated method stub
-
+        counter = 0;
     }
 
     @Override
@@ -83,7 +97,7 @@ public class GoogleBooks extends PluginForHost {
 
     // @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 2;
+        return 1;
     }
 
 }

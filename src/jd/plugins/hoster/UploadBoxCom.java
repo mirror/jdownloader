@@ -116,7 +116,7 @@ public class UploadBoxCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
-        Form form = br.getFormbyProperty("id", "free");
+        Form form = br.getForm(1);
         if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.submitForm(form);
         if (br.containsHTML("The last download from your IP was done less than 30 minutes ago")) {
@@ -136,11 +136,11 @@ public class UploadBoxCom extends PluginForHost {
         String code = getCaptchaCode("http://www.uploadbox.com" + captchaUrl.replace("amp;", ""), link);
         form.put("enter", code);
         br.submitForm(form);
-        if (br.containsHTML("read the captcha code")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        if (br.containsHTML("read the code")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         br.setDebug(true);
-        String dlUrl = br.getRegex("please <a href=\"(.*?)\">click").getMatch(0);
-        if (dlUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlUrl, true, 1);
+        form = br.getForm(1);
+        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, form, true, 1);
         dl.startDownload();
     }
 

@@ -136,11 +136,11 @@ public class FilesMonsterCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        String wait = br.getRegex("You can wait for the start of downloading (\\d+) minute").getMatch(0);
-        if (wait != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(wait) * 60 * 1000l); }
-        wait = br.getRegex("is already in use (\\d+) free download").getMatch(0);
+        String wait = br.getRegex("You can wait for the start of downloading (\\d+)").getMatch(0);
+        if (wait != null && br.containsHTML("You reached your")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(wait) * 60 * 1000l);
 
-        if (wait != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l); }
+        wait = br.getRegex("is already in use (\\d+)").getMatch(0);
+        if (wait != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
         /* get file id */
 
         String fileID = br.getRegex("<input type=\"hidden\" name=\"t\" value=\"(.*?)\"").getMatch(0);

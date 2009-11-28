@@ -137,7 +137,12 @@ public class Rlnks extends PluginForDecrypt {
             if (br.containsHTML("(das richtige Passwort)|(haben ein falsches Passwort)")) {
                 okay = false;
                 Form form = br.getForm(1);
+                if (form == null) {
+                    br.getPage(parameter);
+                    form = br.getForm(1);
+                }
                 String pw = PluginUtils.askPassword(this);
+                if (pw == null) throw new DecrypterException(DecrypterException.PASSWORD);
                 form.put("password", pw);
                 page = br.submitForm(form);
             } else {
@@ -161,7 +166,7 @@ public class Rlnks extends PluginForDecrypt {
                 }
             }
         }
-
+        if (decryptedLinks.size() == 0 && br.containsHTML("swf/cnl2.swf")) throw new DecrypterException("CNL2 only, open this link in Browser");
         return decryptedLinks;
     }
 
