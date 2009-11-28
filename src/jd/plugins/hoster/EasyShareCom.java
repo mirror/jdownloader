@@ -39,6 +39,8 @@ import jd.plugins.DownloadLink.AvailableStatus;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "easy-share.com" }, urls = { "http://[\\w\\d\\.]*?easy-share\\.com/\\d{6}.*" }, flags = { 2 })
 public class EasyShareCom extends PluginForHost {
 
+    private static Boolean longwait = null;
+
     public EasyShareCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.easy-share.com/cgi-bin/premium.cgi");
@@ -110,10 +112,21 @@ public class EasyShareCom extends PluginForHost {
         String wait = br.getRegex("w='(.*?)'").getMatch(0);
         int waittime = 0;
         if (wait != null) waittime = Integer.parseInt(wait.trim());
-        if (waittime > 90 && waittime != 500) {
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waittime * 1000l);
-        } else {
+        if (waittime > 90 && (longwait == null || longwait == true)) {
+            /* first time >90 secs, it can be we are country with long waittime */
+            longwait = true;
             sleep(waittime * 1000l, downloadLink);
+        } else {
+            if (longwait == null) longwait = false;
+            if (waittime > 90 && longwait == false) {
+                /*
+                 * only request reconnect if we dont have to wait long on every
+                 * download
+                 */
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waittime * 1000l);
+            } else {
+                sleep(waittime * 1000l, downloadLink);
+            }
         }
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("Please wait or buy a Premium membership")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);

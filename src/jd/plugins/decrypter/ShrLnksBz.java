@@ -57,25 +57,25 @@ public class ShrLnksBz extends PluginForDecrypt {
         if (br.containsHTML("Der Inhalt konnte nicht gefunden werden")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         // Folderpassword+Captcha handling
         if (br.containsHTML("id=\"folderpass\"")) {
-            boolean wrongpw = false;
-            String latestPassword = null;
+            String latestPassword = this.getPluginConfig().getStringProperty("PASSWORD", null);
             for (int i = 0; i <= 3; i++) {
                 Form pwform = br.getForm(0);
                 if (pwform == null) return null;
                 // First try the stored password, if that doesn't work, ask the
                 // user to enter it
-                latestPassword = this.getPluginConfig().getStringProperty("PASSWORD");
-                if (latestPassword == null || wrongpw == true) latestPassword = Plugin.getUserInput("Password?", param);
+                if (latestPassword == null) latestPassword = Plugin.getUserInput("Password?", param);
                 pwform.put("pass", latestPassword);
                 br.submitForm(pwform);
                 if (br.containsHTML("Das eingegebene Passwort ist falsch")) {
-                    wrongpw = true;
+                    getPluginConfig().setProperty("PASSWORD", null);
+                    getPluginConfig().save();
                     continue;
                 }
                 break;
             }
             if (br.containsHTML("Das eingegebene Passwort ist falsch")) {
-                logger.warning("Wrong password!");
+                getPluginConfig().setProperty("PASSWORD", null);
+                getPluginConfig().save();
                 throw new DecrypterException(DecrypterException.PASSWORD);
             }
             // Save actual password if it is valid

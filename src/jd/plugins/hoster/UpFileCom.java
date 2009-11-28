@@ -61,8 +61,12 @@ public class UpFileCom extends PluginForHost {
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("Downloading is in process from your")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
-        Form form = br.getForm(7);
-        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        Form forms[] = br.getForms();
+        /*
+         * because every country has different number of possible payment
+         * solutions
+         */
+        Form form = forms[forms.length - 1];
         br.submitForm(form);
         String dllink;
         dllink = br.getRedirectLocation();
