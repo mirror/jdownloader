@@ -143,6 +143,32 @@ public class HTMLParser {
         return ret.toString();
     }
 
+    public static String[] getHttpLinks(String data, String url) {
+        String[] links = getHttpLinksIntern(data, url);
+        if (links == null || links.length == 0) return links;
+        /*
+         * in case we have valid and invalid (...) urls for the same link, we
+         * only use the valid one
+         */
+        ArrayList<String> tmplinks = new ArrayList<String>();
+        for (String link : links) {
+            if (link.contains("...")) {
+                String check = link.substring(0, link.indexOf("..."));
+                String found = link;
+                for (String link2 : links) {
+                    if (link2.startsWith(check) && !link2.contains("...")) {
+                        found = link2;
+                        break;
+                    }
+                }
+                if (!tmplinks.contains(found)) tmplinks.add(found);
+            } else {
+                tmplinks.add(link);
+            }
+        }
+        return tmplinks.toArray(new String[tmplinks.size()]);
+    }
+
     /**
      * Sucht alle Links heraus
      * 
@@ -153,7 +179,7 @@ public class HTMLParser {
      *            zu setzen)
      * @return Linkliste aus data extrahiert
      */
-    public static String[] getHttpLinks(String data, String url) {
+    public static String[] getHttpLinksIntern(String data, String url) {
         data = data.trim();
         String protocolPattern = "(flashget|h.{2,3}|httpviajd|httpsviajd|https|ccf|dlc|ftp|jd|rsdf|jdlist)";
         if (!data.matches(".*<.*>.*")) {

@@ -281,8 +281,9 @@ public class DepositFiles extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         setBrowserExclusive();
         String link = downloadLink.getDownloadURL();
-
         setLangtoGer();
+        /* needed so the download gets counted,any referer should work */
+        br.getHeaders().put("Referer", "http://www.google.de");
         br.setFollowRedirects(false);
         br.getPage(link);
 
