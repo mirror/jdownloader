@@ -227,7 +227,6 @@ public class DistributeData extends Thread {
 
             public void go() throws Exception {
                 run();
-
             }
         }
 
@@ -543,7 +542,6 @@ public class DistributeData extends Thread {
                 }
 
             } catch (Exception e1) {
-
             }
             pc.setStatusText(JDL.LF("gui.addurls.progress.found", "Parse %s URL(s). Found %s links", links.length, i));
             pc.increase(1);

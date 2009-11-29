@@ -90,9 +90,7 @@ public class ShrLnksBz extends PluginForDecrypt {
                 Browser temp = br.cloneBrowser();
                 temp.getDownload(file, "http://share-links.biz" + Captchamap);
                 Point p = UserIO.getInstance().requestClickPositionDialog(file, "Share-links.biz", JDL.L("plugins.decrypt.shrlnksbz.desc", "Read the combination in the background and click the corresponding combination in the overview!"));
-                int y = getnearstvalue(br.getRegex("coords=\"\\d+,\\d+,\\d+,(\\d+?)\"").getColumn(0), p.y);
-                int x = getnearstvalue(br.getRegex("coords=\"\\d+,\\d+,(\\d+?)," + y + "\"").getColumn(0), p.x);
-                String nexturl = br.getRegex("<area shape=\"rect\" coords=\"\\d+,\\d+," + x + "," + y + "\" href=\"/(.*?)\" alt=\"\" title=\"\" />").getMatch(0);
+                String nexturl = getNextUrl(p.x, p.y);
                 if (nexturl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 br.setFollowRedirects(true);
                 br.getPage("http://share-links.biz/" + nexturl);
@@ -160,17 +158,21 @@ public class ShrLnksBz extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private int getnearstvalue(String[] data, int cord) {
-        int min = Integer.parseInt(data[0]);
-        for (String element : data) {
-            if (min > Integer.parseInt(element)) min = Integer.parseInt(element);
+    /* finds the correct shape area for the given point */
+    private String getNextUrl(int x, int y) {
+        String[][] results = br.getRegex("<area shape=\"rect\" coords=\"(\\d+),(\\d+),(\\d+),(\\d+)\" href=\"/(.*?)\"").getMatches();
+        String hit = null;
+        for (String[] ret : results) {
+            int xmin = Integer.parseInt(ret[0]);
+            int ymin = Integer.parseInt(ret[1]);
+            int xmax = Integer.parseInt(ret[2]);
+            int ymax = Integer.parseInt(ret[3]);
+            if (x >= xmin && x <= xmax && y >= ymin && y <= ymax) {
+                hit = ret[4];
+                break;
+            }
         }
-        int search = 0;
-        if (cord < min / 2)
-            search = min;
-        else
-            search = Math.round((float) cord / min);
-        return min * search;
+        return hit;
     }
 
     // by jiaz
