@@ -1286,6 +1286,7 @@ plugins.optional.jdlighttray.password = סיסמה:
 plugins.optional.jdlighttray.passwordrequired = הכנס סיסמה בשביל לפתוח משורת המשימות
 plugins.optional.jdlighttray.singleclick = הצג חלונית מצב ע"י לחיצה בודדת
 plugins.optional.jdlighttray.startminimized = הפעל ממוזער
+plugins.optional.jdlighttray.titleinfo = במצב ממוזער הראה מידע בשורת-המשימות
 plugins.optional.jdlighttray.tooltip = הצג עזרה במעבר עכבר
 plugins.optional.jdunrar.askforpassword = סיסמה עבור %s
 plugins.optional.jdunrar.config.advanced = הגדרות מתקדמות
