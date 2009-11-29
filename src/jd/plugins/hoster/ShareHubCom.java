@@ -45,9 +45,10 @@ public class ShareHubCom extends PluginForHost {
         AvailableStatus av = requestFileInformation(downloadLink);
         if (av != AvailableStatus.TRUE) throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED);
         Form form = br.getForm(0);
+        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         form.setProperty("x", (int) (Math.random() * 134));
         form.setProperty("y", (int) (Math.random() * 25));
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, true, 2);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, false, 1);
         dl.setFilesizeCheck(false);
         dl.startDownload();
 
@@ -67,7 +68,7 @@ public class ShareHubCom extends PluginForHost {
     }
 
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return -1;
     }
 
     public void reset() {
