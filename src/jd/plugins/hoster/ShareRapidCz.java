@@ -61,8 +61,8 @@ public class ShareRapidCz extends PluginForHost {
         br.getPage("http://share-rapid.com/prihlaseni/");
         Form form = br.getForm(0);
         if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        form.put("login", account.getUser());
-        form.put("pass1", account.getPass());
+        form.put("login", Encoding.urlEncode(account.getUser()));
+        form.put("pass1", Encoding.urlEncode(account.getPass()));
         br.submitForm(form);
         if (!br.containsHTML("Kredit:</td>")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }

@@ -92,11 +92,11 @@ public class UploadBoxCom extends PluginForHost {
 
             }
         }
-        String filesize = br.getRegex(">S[ie]+ze:</td>.*?<td>.*?<b>(.*?)</b>").getMatch(0);
+        String filesize = br.getRegex("Size:</span>(.*?)<s").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         parameter.setName(filename.trim());
         if (filesize != null) {
-            parameter.setDownloadSize(Regex.getSize(filesize));
+            parameter.setDownloadSize(Regex.getSize(filesize.trim()));
         }
         return AvailableStatus.TRUE;
     }

@@ -25,6 +25,7 @@ import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -64,10 +65,11 @@ public class LdTTemp extends PluginForDecrypt {
         // if (decryptedLinks != null && decryptedLinks.size() > 0) return
         // decryptedLinks;
         // }
-        String[] links = br.getRegex("<a href=\"(http.*?)\" target=").getColumn(0);
+        String[] links = HTMLParser.getHttpLinks(br.toString(), "");
         if (links.length == 0) return null;
-        for (String finallink : links)
-            decryptedLinks.add(createDownloadlink(finallink));
+        for (String finallink : links) {
+            if (!finallink.contains("iload.to")) decryptedLinks.add(createDownloadlink(finallink));
+        }
 
         return decryptedLinks;
     }

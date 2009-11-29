@@ -106,14 +106,14 @@ public class TurboBitNet extends PluginForHost {
         Form[] allforms = br.getForms();
         for (Form sform : allforms) {
             String form = Encoding.htmlDecode(sform.toString());
-            if (form.contains("user[login]")){
+            if (form.contains("user[login]")) {
                 loginform = sform;
                 break;
             }
         }
         if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        loginform.put("user[login]", account.getUser());
-        loginform.put("user[pass]", account.getPass());
+        loginform.put("user[login]", Encoding.htmlDecode(account.getUser()));
+        loginform.put("user[pass]", Encoding.htmlDecode(account.getPass()));
         br.submitForm(loginform);
         if (!br.containsHTML("yesturbo")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         if (br.getCookie("http://turbobit.net/", "sid") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -130,8 +130,8 @@ public class TurboBitNet extends PluginForHost {
         }
         ai.setUnlimitedTraffic();
         String expire = br.getRegex("<u>Turbo Access</u> to(.*?)<a").getMatch(0);
-        //For the russian version
-        if(expire == null)expire = br.getRegex("<u>Турбо доступ</u> до(.*?)<a").getMatch(0);
+        // For the russian version
+        if (expire == null) expire = br.getRegex("<u>Турбо доступ</u> до(.*?)<a").getMatch(0);
         if (expire == null) {
             ai.setExpired(true);
             account.setValid(false);
