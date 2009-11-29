@@ -54,12 +54,18 @@ public class DuckLoad extends PluginForHost {
         if (capurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         capurl = "/design/Captcha2" + capurl;
         String code = getCaptchaCode(capurl, link);
+        String applcode = null;
         if (form.containsHTML("a_code")) {
+            applcode = "a_code";
+        } else if (form.containsHTML("appl_code")) {
+            applcode = "appl_code";
+        }
+        if (applcode != null) {
             form = new Form();
             form.setAction(br.getForm(0).getAction());
             form.setMethod(MethodType.POST);
             form.put("server", "1");
-            form.put("a_code", code);
+            form.put(applcode, code);
             stream = true;
         } else {
             form.put("cap", code);

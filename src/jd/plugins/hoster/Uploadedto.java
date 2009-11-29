@@ -147,16 +147,10 @@ public class Uploadedto extends PluginForHost {
         checkPassword(downloadLink);
         String error = new Regex(br.getRedirectLocation(), "http://uploaded.to/\\?view=(.*)").getMatch(0);
         if (error == null) {
-            error = new Regex(br.getRedirectLocation(), "\\?view=(.*?)&id\\_a").getMatch(0);
+            error = new Regex(br.getRedirectLocation(), "\\?view=(.*?)&i").getMatch(0);
         }
         if (error != null) {
-            if (error.equalsIgnoreCase("error_traffic")) {
-                linkStatus.setErrorMessage(JDL.L("plugins.hoster.uploadedto.errorso.premiumtrafficreached", "Traffic limit reached"));
-                linkStatus.addStatus(LinkStatus.ERROR_PREMIUM);
-                linkStatus.setValue(PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                return;
-
-            }
+            if (error.contains("error_traffic")) throw new PluginException(LinkStatus.ERROR_PREMIUM, JDL.L("plugins.hoster.uploadedto.errorso.premiumtrafficreached", "Traffic limit reached"), PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             String message = JDL.L("plugins.errors.uploadedto." + error, error.replaceAll("_", " "));
             linkStatus.addStatus(LinkStatus.ERROR_FATAL);
             linkStatus.setErrorMessage("ServerError: " + message);
@@ -260,11 +254,12 @@ public class Uploadedto extends PluginForHost {
             linkStatus.setValue(wait);
             return;
         }
-        String error = new Regex(br.getURL(), "http://uploaded.to/\\?view=(.*?)").getMatch(0);
+        String error = new Regex(br.getURL(), "http://uploaded.to/\\?view=(.*)").getMatch(0);
         if (error == null) {
-            error = new Regex(br.getURL(), "\\?view=(.*?)&id\\_a").getMatch(0);
+            error = new Regex(br.getURL(), "\\?view=(.*?)&").getMatch(0);
         }
         if (error != null) {
+            if (error.contains("error_traffic")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 61 * 60 * 1000l);
             String message = JDL.L("plugins.errors.uploadedto." + error, error.replaceAll("_", " "));
             linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFECT);
             linkStatus.setErrorMessage(message);

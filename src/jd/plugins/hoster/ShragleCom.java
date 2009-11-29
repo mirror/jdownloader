@@ -152,6 +152,7 @@ public class ShragleCom extends PluginForHost {
         if (wait != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait.trim()) * 60 * 1000l); }
         wait = br.getRegex("var downloadWait =(.*?);").getMatch(0);
         Form form = br.getFormbyProperty("name", "download");
+        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         if (wait == null) wait = "10";
         sleep(Long.parseLong(wait.trim()) * 1000l, downloadLink);
         br.setFollowRedirects(true);
