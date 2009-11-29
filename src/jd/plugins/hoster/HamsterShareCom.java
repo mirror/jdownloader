@@ -54,7 +54,7 @@ public class HamsterShareCom extends PluginForHost {
         requestFileInformation(link);
         br.setFollowRedirects(false);
         String dllink = br.getRegex("window\\.document\\.location\\.href='(.*?)'\"").getMatch(0);
-
+        if (dllink == null && (br.containsHTML("paycodeenter") || br.containsHTML("paycode"))) throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium");
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         dl.startDownload();
@@ -62,7 +62,7 @@ public class HamsterShareCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return -1;
     }
 
     @Override
