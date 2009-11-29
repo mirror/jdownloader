@@ -195,7 +195,7 @@ public class Reconnecter {
                 }
                 if (ret == false) {
                     /* reconnect failed, increase fail counter */
-                    ProgressController progress = new ProgressController(JDL.L("jd.controlling.reconnect.Reconnector.progress.failed", "Reconnect failed! Please check your reconnect Settings and try a Manual Reconnect!"), 100);
+                    ProgressController progress = new ProgressController(JDL.L("jd.controlling.reconnect.Reconnector.progress.failed", "Reconnect failed! Please check your reconnect Settings and try a Manual Reconnect!"), 100, "gui.images.reconnect_warning");
                     progress.doFinalize(10000l);
                     int counter = JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_RECONNECT_FAILED_COUNTER, 0) + 1;
                     JDUtilities.getConfiguration().setProperty(Configuration.PARAM_RECONNECT_FAILED_COUNTER, counter);
@@ -245,7 +245,7 @@ public class Reconnecter {
     public static boolean waitForNewIP(long i, boolean doit) {
         if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true) == false && doit == false) return false;
         setReconnectRequested(true);
-        final ProgressController progress = new ProgressController(JDL.LF("gui.reconnect.progress.status", "Reconnect running: %s m:s", "0:00s"), 2);
+        final ProgressController progress = new ProgressController(JDL.LF("gui.reconnect.progress.status", "Reconnect running: %s m:s", "0:00s"), 2, "gui.images.reconnect");
         if (i > 0) {
             i += System.currentTimeMillis();
         }

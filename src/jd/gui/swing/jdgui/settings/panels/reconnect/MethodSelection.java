@@ -100,7 +100,7 @@ public class MethodSelection extends ConfigPanel implements ActionListener {
 
             JDLogger.addHeader("Reconnect Testing");
 
-            final ProgressController progress = new ProgressController(JDL.L("gui.warning.reconnect.pleaseWait", "Bitte Warten...Reconnect läuft"), 100);
+            final ProgressController progress = new ProgressController(JDL.L("gui.warning.reconnect.pleaseWait", "Bitte Warten...Reconnect läuft"), 100, "gui.images.reconnect");
 
             logger.info("Start Reconnect");
             message.setText(JDL.L("gui.warning.reconnect.running", "running..."));

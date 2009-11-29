@@ -55,6 +55,7 @@ public abstract class PluginForDecrypt extends Plugin {
     private CryptedLink curcryptedLink = null;
 
     private static HashMap<Class<? extends PluginForDecrypt>, Long> LAST_STARTED_TIME = new HashMap<Class<? extends PluginForDecrypt>, Long>();
+    private static final String JDL_PREFIX = "jd.plugins.PluginForDecrypt.";
     private Long WAIT_BETWEEN_STARTS = 0L;
 
     public synchronized long getLastTimeStarted() {
@@ -141,9 +142,8 @@ public abstract class PluginForDecrypt extends Plugin {
      */
     public ArrayList<DownloadLink> decryptLink(CryptedLink cryptedLink) {
         curcryptedLink = cryptedLink;
-        ProgressController progress;
-        progress = new ProgressController("Decrypter: " + getLinkName());
-        progress.setStatusText("decrypt-" + getHost() + ": " + getLinkName());
+        System.out.println(getLinkName());
+        ProgressController progress = new ProgressController(JDL.LF(JDL_PREFIX + "decrypting", "Decrypt %s: %s", getHost(), getLinkName()), null);
         curcryptedLink.setProgressController(progress);
         try {
             while (waitForNextStartAllowed(curcryptedLink)) {
@@ -156,12 +156,12 @@ public abstract class PluginForDecrypt extends Plugin {
         try {
             tmpLinks = decryptIt(curcryptedLink, progress);
         } catch (SocketTimeoutException e2) {
-            progress.setStatusText("Serverproblem?");
+            progress.setStatusText(JDL.L(JDL_PREFIX + "error.server", "Serverproblem?"));
             progress.setColor(Color.RED);
             progress.doFinalize(15000l);
             return new ArrayList<DownloadLink>();
         } catch (UnknownHostException e) {
-            progress.setStatusText("No InternetConnection?");
+            progress.setStatusText(JDL.L(JDL_PREFIX + "error.connection", "No InternetConnection?"));
             progress.setColor(Color.RED);
             progress.doFinalize(15000l);
             return new ArrayList<DownloadLink>();
@@ -180,7 +180,7 @@ public abstract class PluginForDecrypt extends Plugin {
         if (tmpLinks == null) {
             logger.severe("Decrypter out of date: " + this);
             logger.severe("Decrypter out of date: " + getVersion());
-            progress.setStatusText("Decrypter out of date: " + this.getHost());
+            progress.setStatusText(JDL.LF(JDL_PREFIX + "error.outOfDate", "Decrypter out of date: %s", this.getHost()));
 
             progress.setColor(Color.RED);
             progress.doFinalize(15000l);

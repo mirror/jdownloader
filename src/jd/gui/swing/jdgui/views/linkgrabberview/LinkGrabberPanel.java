@@ -378,7 +378,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
             public void run() {
                 setName("LinkGrabber");
                 gatherer_running = true;
-                pc = new ProgressController(JDL.L("gui.linkgrabber.pc.linkgrabber", "LinkGrabber operations pending..."));
+                pc = new ProgressController(JDL.L("gui.linkgrabber.pc.linkgrabber", "LinkGrabber operations pending..."), null);
                 pc.getBroadcaster().addListener(INSTANCE);
                 lc.getBroadcaster().addListener(INSTANCE);
                 pc.setRange(0);

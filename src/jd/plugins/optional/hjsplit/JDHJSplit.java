@@ -34,6 +34,7 @@ import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.components.JDFileChooser;
+import jd.gui.swing.jdgui.actions.ToolBarAction.Types;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.nutils.Formatter;
 import jd.nutils.io.FileSignatures;
@@ -69,7 +70,7 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
     // private static final int ARCHIVE_TYPE_UNIX = 1;
     private static final String CONFIG_KEY_OVERWRITE = "OVERWRITE";
 
-    // Wird als reihe für anstehende extracthjobs verwendet
+    /** Wird als reihe für anstehende extracthjobs verwendet */
     private Jobber queue;
 
     public JDHJSplit(PluginWrapper wrapper) {
@@ -145,6 +146,7 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
         menu.add(m = new MenuAction("optional.hjsplit.menu.toggle", 1));
         m.setActionListener(this);
         m.setSelected(this.getPluginConfig().getBooleanProperty("ACTIVATED", true));
+        menu.add(new MenuAction(Types.SEPARATOR));
         menu.add(m = new MenuAction("optional.hjsplit.menu.extract.singlefils", 21));
         m.setActionListener(this);
         return menu;
@@ -246,7 +248,7 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
             public void go() {
                 final File output = getOutputFile(new File(link.getFileOutput()));
                 if (output == null) return;
-                final ProgressController progress = new ProgressController("Default HJMerge", 100);
+                final ProgressController progress = new ProgressController("Default HJMerge", 100, "gui.images.addons.merge");
                 JAxeJoiner join = JoinerFactory.getJoiner(new File(link.getFileOutput()));
                 ArrayList<File> list = getFileList(new File(link.getFileOutput()));
                 if (list != null) {

@@ -522,7 +522,7 @@ public class DistributeData extends Thread {
     private static String getLoadLinkString(String linkstring) {
         StringBuffer sb = new StringBuffer();
         String[] links = HTMLParser.getHttpLinks(linkstring, null);
-        ProgressController pc = new ProgressController(JDL.LF("gui.addurls.progress", "Parse %s URL(s)", links.length), links.length);
+        ProgressController pc = new ProgressController(JDL.LF("gui.addurls.progress", "Parse %s URL(s)", links.length), links.length, null);
         int i = 0;
 
         for (String l : links) {

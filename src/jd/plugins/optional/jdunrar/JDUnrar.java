@@ -40,6 +40,7 @@ import jd.event.ControlListener;
 import jd.gui.UserIO;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.components.JDFileChooser;
+import jd.gui.swing.jdgui.actions.ToolBarAction.Types;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.nutils.Executer;
 import jd.nutils.Formatter;
@@ -168,7 +169,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
                 m.setActionListener(this);
                 m.setSelected(link.getFilePackage().isExtractAfterDownload());
                 m.setProperty("LINK", link);
-                container.addMenuItem(m = new MenuAction(MenuAction.Types.SEPARATOR));
+                container.addMenuItem(m = new MenuAction(Types.SEPARATOR));
                 container.addMenuItem(m = new MenuAction("optional.jdunrar.linkmenu.setextract", 1003));
                 m.setActionListener(this);
 
@@ -320,7 +321,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         UnrarWrapper wrapper = new UnrarWrapper(link);
 
         if (link.getHost().equals(DUMMY_HOSTER)) {
-            ProgressController progress = new ProgressController(JDL.LF("plugins.optional.jdunrar.progress.extractfile", "Extract %s", link.getFileOutput()), 100);
+            ProgressController progress = new ProgressController(JDL.LF("plugins.optional.jdunrar.progress.extractfile", "Extract %s", link.getFileOutput()), 100, "gui.images.addons.unrar");
             wrapper.setProgressController(progress);
         }
 
@@ -333,10 +334,10 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         wrapper.setUnrarCommand(getPluginConfig().getStringProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND));
         ArrayList<String> pwList = new ArrayList<String>();
         pwList.add(link.getFilePackage().getPassword());
-        pwList.addAll((link.getFilePackage().getPasswordAuto()));
+        pwList.addAll(link.getFilePackage().getPasswordAuto());
         String dlpw = link.getStringProperty("pass", null);
         if (dlpw != null) pwList.add(dlpw);
-        pwList.addAll((PasswordListController.getInstance().getPasswordList()));
+        pwList.addAll(PasswordListController.getInstance().getPasswordList());
         // Fügt den Archivnamen und dan dateinamen ans ende der passwortliste
         pwList.add(this.getArchiveName(link));
         pwList.add(new File(link.getFileOutput()).getName());
@@ -360,7 +361,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
     private File getExtractToPath(DownloadLink link) {
 
         if (link.getProperty(JDUnrarConstants.DOWNLOADLINK_KEY_EXTRACTTOPATH) != null) return (File) link.getProperty(JDUnrarConstants.DOWNLOADLINK_KEY_EXTRACTTOPATH);
-        if (link.getHost().equals(DUMMY_HOSTER)) { return new File(link.getFileOutput()).getParentFile(); }
+        if (link.getHost().equals(DUMMY_HOSTER)) return new File(link.getFileOutput()).getParentFile();
         String path;
 
         if (!getPluginConfig().getBooleanProperty(JDUnrarConstants.CONFIG_KEY_USE_EXTRACT_PATH, false)) {
@@ -370,7 +371,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         }
 
         File ret = new File(path);
-        if (!this.getPluginConfig().getBooleanProperty(JDUnrarConstants.CONFIG_KEY_USE_SUBPATH, false)) { return ret; }
+        if (!this.getPluginConfig().getBooleanProperty(JDUnrarConstants.CONFIG_KEY_USE_SUBPATH, false)) return ret;
 
         path = this.getPluginConfig().getStringProperty(JDUnrarConstants.CONFIG_KEY_SUBPATH, "%PACKAGENAME%");
 
@@ -388,7 +389,6 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
             }
             if (link.getHost() != null) {
                 path = path.replace("%HOSTER%", link.getHost());
-
             } else {
                 logger.severe("link.getFilePackage().getName() ==null");
             }
@@ -422,7 +422,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         menu.add(m = new MenuAction("optional.jdunrar.menu.toggle", 1));
         m.setActionListener(this);
         m.setSelected(this.getPluginConfig().getBooleanProperty("ACTIVATED", true));
-
+        menu.add(new MenuAction(Types.SEPARATOR));
         menu.add(menuAction);
 
         return menu;
@@ -792,7 +792,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         // Falls der link entfernt wird während dem entpacken
         if (wrapper.getDownloadLink().getFilePackage() == FilePackage.getDefaultFilePackage() && wrapper.getProgressController() == null) {
             logger.warning("LINK GOT REMOVED_: " + wrapper.getDownloadLink());
-            ProgressController progress = new ProgressController(JDL.LF("plugins.optional.jdunrar.progress.extractfile", "Extract %s", wrapper.getDownloadLink().getFileOutput()), 100);
+            ProgressController progress = new ProgressController(JDL.LF("plugins.optional.jdunrar.progress.extractfile", "Extract %s", wrapper.getDownloadLink().getFileOutput()), 100, "gui.images.addons.unrar");
             wrapper.setProgressController(progress);
         }
 

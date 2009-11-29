@@ -95,7 +95,7 @@ public class TestLink {
                                 CryptedLink[] dd = plg.getDecryptableLinks(l);
 
                                 if (dd != null && dd.length > 0) {
-                                    ArrayList<DownloadLink> a = plg.decryptIt(dd[0], new ProgressController("test", 10));
+                                    ArrayList<DownloadLink> a = plg.decryptIt(dd[0], new ProgressController("test", 10, null));
                                     if (a != null && a.size() > 0) {
                                         System.out.println("Crypter: " + dd[0] + " : Files:" + a.size());
                                     }

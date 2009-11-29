@@ -512,7 +512,7 @@ public class JDController implements ControlListener {
         ArrayList<DownloadLink> downloadLinks = new ArrayList<DownloadLink>();
         PluginsC pContainer;
         CPluginWrapper wrapper;
-        ProgressController progress = new ProgressController("Containerloader", pluginsForContainer.size());
+        ProgressController progress = new ProgressController("Containerloader", pluginsForContainer.size(), null);
         logger.info("load Container: " + file);
         for (int i = 0; i < pluginsForContainer.size(); i++) {
             wrapper = pluginsForContainer.get(i);
@@ -573,7 +573,7 @@ public class JDController implements ControlListener {
                 ArrayList<CPluginWrapper> pluginsForContainer = CPluginWrapper.getCWrapper();
                 ArrayList<DownloadLink> downloadLinks = new ArrayList<DownloadLink>();
                 CPluginWrapper wrapper;
-                ProgressController progress = new ProgressController("Containerloader", pluginsForContainer.size());
+                ProgressController progress = new ProgressController("Containerloader", pluginsForContainer.size(), null);
                 logger.info("load Container: " + file);
                 for (int i = 0; i < pluginsForContainer.size(); i++) {
                     wrapper = pluginsForContainer.get(i);
@@ -672,7 +672,7 @@ public class JDController implements ControlListener {
             @Override
             public void run() {
                 this.setName("Autostart counter");
-                final ProgressController pc = new ProgressController(JDL.L("gui.autostart", "Autostart downloads in few seconds..."));
+                final ProgressController pc = new ProgressController(JDL.L("gui.autostart", "Autostart downloads in few seconds..."), null);
                 pc.getBroadcaster().addListener(new ProgressControllerListener() {
                     public void onProgressControllerEvent(ProgressControllerEvent event) {
                         pc.setStatusText("Autostart aborted!");

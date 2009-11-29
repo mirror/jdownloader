@@ -42,7 +42,7 @@ public class JDMediaConvert {
             return true;
         }
 
-        ProgressController progress = new ProgressController(JDL.L("convert.progress.convertingto", "Konvertiere zu") + " " + OutType.toString(), 3);
+        ProgressController progress = new ProgressController(JDL.L("convert.progress.convertingto", "Konvertiere zu") + " " + OutType.toString(), 3, null);
         downloadlink.getLinkStatus().setStatusText(JDL.L("convert.progress.convertingto", "Konvertiere zu") + " " + OutType.toString());
         progress.increase(1);
         switch (InType) {

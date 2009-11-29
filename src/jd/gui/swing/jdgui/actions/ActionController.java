@@ -234,7 +234,7 @@ public class ActionController {
 
             @Override
             public void threadedActionPerformed(ActionEvent e) {
-                final ProgressController pc = new ProgressController(JDL.L("gui.downloadstop", "Stopping current downloads..."));
+                final ProgressController pc = new ProgressController(JDL.L("gui.downloadstop", "Stopping current downloads..."), null);
                 Thread test = new Thread() {
                     @Override
                     public void run() {

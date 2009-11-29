@@ -172,7 +172,7 @@ public class LinkCheck implements ActionListener, ProgressControllerListener {
             public void run() {
                 setName("OnlineCheck");
                 getBroadcaster().fireEvent(new LinkCheckEvent(this, LinkCheckEvent.START));
-                pc = new ProgressController(JDL.L("gui.linkgrabber.pc.onlinecheck", "Checking online availability..."));
+                pc = new ProgressController(JDL.L("gui.linkgrabber.pc.onlinecheck", "Checking online availability..."), null);
                 pc.getBroadcaster().addListener(LinkCheck.getLinkChecker());
                 pc.setRange(0);
                 while (linksToCheck.size() != 0) {

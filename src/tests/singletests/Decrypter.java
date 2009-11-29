@@ -38,7 +38,7 @@ public class Decrypter {
 
     @Before
     public void setUp() {
-    
+
         TestUtils.mainInit();
         TestUtils.initDecrypter();
         TestUtils.initHosts();
@@ -57,7 +57,7 @@ public class Decrypter {
                     CryptedLink[] d = plg.getDecryptableLinks(url);
 
                     try {
-                        ArrayList<DownloadLink> a = plg.decryptIt(d[0], new ProgressController("test", 10));
+                        ArrayList<DownloadLink> a = plg.decryptIt(d[0], new ProgressController("test", 10, null));
 
                         if (a.size() > 1 || (a.size() == 1 && a.get(0).getBrowserUrl() != null))
                             assertTrue(true);

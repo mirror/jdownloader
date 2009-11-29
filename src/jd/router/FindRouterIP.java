@@ -26,7 +26,7 @@ import jd.utils.locale.JDL;
 
 public class FindRouterIP {
     public static String findIP(GUIConfigEntry ip) {
-        final ProgressController progress = new ProgressController(JDL.L("gui.config.routeripfinder.featchIP", "Search for routers hostname..."), 100);
+        final ProgressController progress = new ProgressController(JDL.L("gui.config.routeripfinder.featchIP", "Search for routers hostname..."), 100, null);
 
         ip.setData(JDL.L("gui.config.routeripfinder.featchIP", "Search for routers hostname..."));
 

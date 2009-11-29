@@ -24,6 +24,7 @@ import jd.event.ControlEvent;
 import jd.event.JDBroadcaster;
 import jd.event.MessageEvent;
 import jd.event.MessageListener;
+import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
 class ProgressControllerBroadcaster extends JDBroadcaster<ProgressControllerListener, ProgressControllerEvent> {
@@ -61,21 +62,22 @@ public class ProgressController implements MessageListener, Comparable<ProgressC
     private transient ProgressControllerBroadcaster broadcaster = new ProgressControllerBroadcaster();
     private boolean abort = false;
 
-    public ProgressController(String name) {
-        this(name, 100l);
+    public ProgressController(String name, String iconKey) {
+        this(name, 100l, iconKey);
     }
 
     public boolean isInterruptable() {
         return getBroadcaster().hasListener();
     }
 
-    public ProgressController(String name, long max) {
+    public ProgressController(String statusText, long max, String iconKey) {
         id = idCounter++;
         this.max = max;
-        statusText = name;
+        this.statusText = statusText;
         currentValue = 0;
         finished = false;
         progresscolor = null;
+        this.icon = JDTheme.II(iconKey, 16, 16);
         fireChanges();
     }
 

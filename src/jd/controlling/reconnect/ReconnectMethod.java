@@ -82,7 +82,7 @@ public abstract class ReconnectMethod {
     }
 
     public final boolean doReconnectInteral(int retry) {
-        ProgressController progress = new ProgressController(this.toString(), 10);
+        ProgressController progress = new ProgressController(this.toString(), 10, "gui.images.reconnect");
         progress.setStatusText(JDL.L("reconnect.progress.1_retries", "Reconnect #") + retry);
         try {
             int waittime = JDUtilities.getConfiguration().getIntegerProperty(PARAM_IPCHECKWAITTIME, 5);

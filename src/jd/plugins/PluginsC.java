@@ -364,7 +364,7 @@ public abstract class PluginsC extends Plugin {
             if (progress != null) {
                 progress.doFinalize();
             }
-            progress = new ProgressController(JDL.L("plugins.container.open", "Open Container"), 10);
+            progress = new ProgressController(JDL.L("plugins.container.open", "Open Container"), 10, null);
             progress.increase(1);
             if (bs != null) k = bs;
             doDecryption(filename);

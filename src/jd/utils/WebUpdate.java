@@ -70,7 +70,7 @@ public class WebUpdate {
     }
 
     public static boolean updateUpdater() {
-        final ProgressController progress = new ProgressController(JDL.L("wrapper.webupdate.updatenewupdater", "Downloading new jdupdate.jar"));
+        final ProgressController progress = new ProgressController(JDL.L("wrapper.webupdate.updatenewupdater", "Downloading new jdupdate.jar"), "gui.images.update");
         progress.increase(1);
         Thread ttmp = new Thread() {
             public void run() {
@@ -177,7 +177,7 @@ public class WebUpdate {
         }
         final ProgressController guiPrgs;
         if (forceguiCall) {
-            guiPrgs = new ProgressController(JDL.L("init.webupdate.progress.0_title", "Webupdate"), 9);
+            guiPrgs = new ProgressController(JDL.L("init.webupdate.progress.0_title", "Webupdate"), 9, "gui.images.update");
             guiPrgs.setStatus(3);
         } else {
             guiPrgs = null;
@@ -315,7 +315,7 @@ public class WebUpdate {
 
                 if (files.size() > 0) {
 
-                    final ProgressController progress = new ProgressController(JDL.L("init.webupdate.progress.0_title", "Webupdate"), 100);
+                    final ProgressController progress = new ProgressController(JDL.L("init.webupdate.progress.0_title", "Webupdate"), 100, "gui.images.update");
                     updater.getBroadcaster().addListener(messageListener = new MessageListener() {
                         public void onMessage(MessageEvent event) {
                             progress.setStatusText(event.getSource() + ": " + event.getMessage());
@@ -372,7 +372,7 @@ public class WebUpdate {
 
     private static void doPluginUpdate(final WebUpdater updater, final ArrayList<FileUpdate> files) {
 
-        final ProgressController pc = new ProgressController("", files.size());
+        final ProgressController pc = new ProgressController("", files.size(), "gui.images.update");
 
         try {
             updater.getBroadcaster().addListener(new MessageListener() {
@@ -447,7 +447,7 @@ public class WebUpdate {
 
                     }
 
-                    final ProgressController pc = new ProgressController(JDL.L("jd.utils.webupdate.progresscontroller.text", "Update is running"), 10);
+                    final ProgressController pc = new ProgressController(JDL.L("jd.utils.webupdate.progresscontroller.text", "Update is running"), 10, "gui.images.update");
 
                     try {
 

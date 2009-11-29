@@ -308,8 +308,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
     void abort() {
         aborting = true;
         logger.finer("Abort all active Downloads");
-        ProgressController progress = new ProgressController("Termination", activeDownloads);
-        progress.setStatusText("Stopping all downloads " + activeDownloads);
+        ProgressController progress = new ProgressController(JDL.LF(JDL_PREFIX + "stopping", "Stopping all downloads %s", activeDownloads), activeDownloads, null);
         ArrayList<DownloadLink> al = new ArrayList<DownloadLink>();
 
         ArrayList<SingleDownloadController> cons = new ArrayList<SingleDownloadController>(DownloadControllers.values());
