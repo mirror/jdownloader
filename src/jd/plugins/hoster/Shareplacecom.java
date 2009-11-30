@@ -81,16 +81,26 @@ public class Shareplacecom extends PluginForHost {
         String page = Encoding.urlDecode(br.toString(), true);
         String[] links = HTMLParser.getHttpLinks(page, null);
         boolean found = false;
-        // waittime
-        String time = br.getRegex("var zzipitime =.*?(\\d+);").getMatch(0);
-        int tt = 15;
-        if (time != null && Integer.parseInt(time) < 30) tt = Integer.parseInt(time);
-        sleep(tt * 1001l, downloadLink);
+//        // waittime   deactivated till shareplace blocks it ;)
+//        String time = br.getRegex("var zzipitime =.*?(\\d+);").getMatch(0);
+//        int tt = 15;
+//        if (time != null && Integer.parseInt(time) < 30) tt = Integer.parseInt(time);
+//        sleep(tt * 1001l, downloadLink);
         for (String link : links) {
             String fakelink = Encoding.deepHtmlDecode(link);
             if (!fakelink.contains(filename)) continue;
+            if (br.containsHTML("replace")) {
+                String[] replacessuck = br.getRegex("(\\(.*?\\.replace\\(.*?,.*?\\))").getColumn(0);
+                if (replacessuck != null) {
+                    for (String fckU : replacessuck) {
+                        String rpl1 = new Regex(fckU, "replace\\((.*?),.*?\\)").getMatch(0).replace("/", "");
+                        String rpl2 = new Regex(fckU, "replace\\(.*?, \"(.*?)\"\\)").getMatch(0);
+                        fakelink = fakelink.replace(rpl1, rpl2);
+                    }
+                }
+            }
             Browser brc = br.cloneBrowser();
-            dl = BrowserAdapter.openDownload(brc, downloadLink, link);
+            dl = BrowserAdapter.openDownload(brc, downloadLink, fakelink);
             if (dl.getConnection().isContentDisposition()) {
                 String fakename = Plugin.getFileNameFromHeader(dl.getConnection());
                 if (fakename.contains("README.TXT")) {

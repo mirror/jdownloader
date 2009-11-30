@@ -29,7 +29,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "edisk.cz" }, urls = { "http://[\\w\\.]*?edisk\\.cz/stahni/[0-9]+/.+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "edisk.cz" }, urls = { "http://[\\w\\.]*?edisk\\.(cz|sk)/stahni/[0-9]+/.+\\.html" }, flags = { 0 })
 public class EdiskCz extends PluginForHost {
 
     public EdiskCz(PluginWrapper wrapper) {
@@ -40,7 +40,9 @@ public class EdiskCz extends PluginForHost {
     public String getAGBLink() {
         return "http://www.edisk.cz/kontakt";
     }
-
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("edisk.sk", "edisk.cz"));
+    }
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();

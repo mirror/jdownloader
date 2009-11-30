@@ -87,8 +87,18 @@ public class YourFilesTo extends PluginForHost {
         for (String link : links) {
             String fakelink = Encoding.deepHtmlDecode(link);
             if (!fakelink.contains(filename)) continue;
+            if (br.containsHTML("replace")) {
+                String[] replacessuck = br.getRegex("(\\(.*?\\.replace\\(.*?,.*?\\))").getColumn(0);
+                if (replacessuck != null) {
+                    for (String fckU : replacessuck) {
+                        String rpl1 = new Regex(fckU, "replace\\((.*?),.*?\\)").getMatch(0).replace("/", "");
+                        String rpl2 = new Regex(fckU, "replace\\(.*?, \"(.*?)\"\\)").getMatch(0);
+                        fakelink = fakelink.replace(rpl1, rpl2);
+                    }
+                }
+            }
             Browser brc = br.cloneBrowser();
-            dl = BrowserAdapter.openDownload(brc, downloadLink, link);
+            dl = BrowserAdapter.openDownload(brc, downloadLink, fakelink);
             if (dl.getConnection().isContentDisposition()) {
                 String fakename = Plugin.getFileNameFromHeader(dl.getConnection());
                 if (fakename.contains("README.TXT")) {
