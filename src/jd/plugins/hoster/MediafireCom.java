@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.LinkedList;
 
 import jd.PluginWrapper;
 import jd.controlling.JDLogger;
@@ -190,6 +191,10 @@ public class MediafireCom extends PluginForHost {
                 }
 
                 if (redirectURL != null && br.getCookie("http://www.mediafire.com", "ukey") != null) {
+                    if(Plugin.extractFileNameFromURL(url).equals("download.php")) {
+                        br.getPage(redirectURL);
+                        break;
+                    }
                     downloadLink.setProperty("type", "direct");
                     if (!downloadLink.getStringProperty("origin", "").equalsIgnoreCase("decrypter")) {
                         downloadLink.setName(Plugin.extractFileNameFromURL(br.getRedirectLocation()));
@@ -223,10 +228,10 @@ public class MediafireCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         String url = null;
-
+        LinkedList<String> urlList = new LinkedList<String>();
         try {
             for (int i = 0; i < 3; i++) {
-                if (url != null) break;
+                if (urlList.size() != 0) break;
                 requestFileInformation(downloadLink);
 
                 try {
@@ -258,7 +263,7 @@ public class MediafireCom extends PluginForHost {
                 }
 
                 if (downloadLink.getStringProperty("type", "").equalsIgnoreCase("direct")) {
-                    url = br.getRedirectLocation();
+                    urlList.add(br.getRedirectLocation());
                 } else {
 
                     if (!br.containsHTML("\\s+cu\\('")) {
@@ -292,17 +297,26 @@ public class MediafireCom extends PluginForHost {
 
                     String error = br.getRegex("var et=(.*?);").getMatch(0);
                     if (error != null && !error.trim().equalsIgnoreCase("15")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
-                    String js = br.getRegex("'Your download is starting.*?(http://.*?)\\+'\"> Click here to start download..</a>'").getMatch(0).trim();
+                    String[][] jsUrls = br.getRegex("'Your download is starting.*?(http://.*?)\\+'\"> Click here to start download..</a>'").getMatches();
                     String vars = br.getRegex("<!--(.*?)function").getMatch(0).trim();
-                    Context cx = Context.enter();
-                    Scriptable scope = cx.initStandardObjects();
-                    String eval = "function f(){\r\n" + vars + "\r\n return \"" + js + ";\r\n}\r\n f();";
-                    Object result = cx.evaluateString(scope, eval, "<cmd>", 1, null);
+                    
+                    for (String[] js : jsUrls) {
+                        if(js[0].contains("autodisable.php")) continue;
+                        Context cx = Context.enter();
+                        Scriptable scope = cx.initStandardObjects();
+                        String eval = "function f(){\r\n" + vars + "\r\n return \"" + js[0] + ";\r\n}\r\n f();";
+                        Object result = cx.evaluateString(scope, eval, "<cmd>", 1, null);
 
-                    url = Context.toString(result);
+                        urlList.add(Context.toString(result));
+                    }
                 }
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 0);
+            for(String linkUrl : urlList) {
+                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkUrl, true, 0);
+                if (dl.getConnection().isContentDisposition()) {
+                    break;
+                }
+            }
             if (!dl.getConnection().isContentDisposition()) {
                 br.followConnection();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
