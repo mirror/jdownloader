@@ -181,6 +181,20 @@ public class HTMLParser {
      */
     public static String[] getHttpLinksIntern(String data, String url) {
         data = data.trim();
+        /*
+         * replace urlencoded br tags, so we can find all links seperated by
+         * those
+         */
+        data = data.replaceAll("%3Cbr%20/%3E", "<br />");
+        /*
+         * remove all span because they can break url parsing (eg when
+         * google-code-prettify is used)
+         */
+        data = data.replaceAll("(?i)<span.*?>", "");
+        data = data.replaceAll("(?i)</span.*?>", "");
+        /* CHECKME: why remove url/link tags? */
+        data = data.replaceAll("(?s)\\[(url|link)\\].*?\\[/(url|link)\\]", "");
+
         String protocolPattern = "(flashget|h.{2,3}|httpviajd|httpsviajd|https|ccf|dlc|ftp|jd|rsdf|jdlist)";
         if (!data.matches(".*<.*>.*")) {
             int c = new Regex(data, "(" + protocolPattern + "://|(?<!://)www\\.)").count();
@@ -302,9 +316,7 @@ public class HTMLParser {
 
             }
         }
-        /* we must not remove tags, because in them there can be links */
-        // data = data.replaceAll("(?s)<.*?>", "\r\n");
-        data = data.replaceAll("(?s)\\[(url|link)\\].*?\\[/(url|link)\\]", "");
+
         m = Pattern.compile("(" + protocolPattern + "://|www\\.)[^\\s<>'\"]*(((?!\\s" + protocolPattern + "://|\\swww\\.)[^<>'\"]){0,20}([\\?|\\&][^<>'\\s\"]{1,10}\\=[^<>'\\s\"]+|\\.(htm[^<>'\\s\"]*|php|cgi|rar|zip|exe|avi|mpe?g|7z|bz2|doc|jpg|bmp|m4a|mdf|mkv|wav|mp[34]|pdf|wm[^<>'\\s\"]*|xcf|jar|swf|class|cue|bin|dll|cab|png|ico|gif|iso)[^<>'\\s\"]*))?", Pattern.CASE_INSENSITIVE).matcher(data);
         while (m.find()) {
             link = m.group(0);
