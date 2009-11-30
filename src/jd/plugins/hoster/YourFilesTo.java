@@ -88,7 +88,7 @@ public class YourFilesTo extends PluginForHost {
             String fakelink = Encoding.deepHtmlDecode(link);
             if (!fakelink.contains(filename)) continue;
             if (br.containsHTML("replace")) {
-                String[] replacessuck = br.getRegex("(\\(.*?\\.replace\\(.*?,.*?\\))").getColumn(0);
+                String[] replacessuck = br.getRegex("(\\.replace\\(.*?,.*?\\))").getColumn(0);
                 if (replacessuck != null) {
                     for (String fckU : replacessuck) {
                         String rpl1 = new Regex(fckU, "replace\\((.*?),.*?\\)").getMatch(0).replace("/", "");
@@ -120,7 +120,7 @@ public class YourFilesTo extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return -1;
     }
 
     @Override
