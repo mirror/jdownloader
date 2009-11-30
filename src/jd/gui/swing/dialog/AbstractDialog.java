@@ -169,7 +169,6 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
             }
         }
         this.addButtons(buttonBar);
-        this.setMinimumSize(new Dimension(300, -1));
 
         if (JDFlags.hasNoFlags(flag, UserIO.NO_COUNTDOWN)) {
             this.countdown(UserIO.getCountdownTime());
@@ -211,7 +210,7 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
 
             });
         }
-        //this.setAlwaysOnTop(true);
+        // this.setAlwaysOnTop(true);
         this.invalidate();
         this.pack();
         this.setResizable(true);
@@ -242,10 +241,10 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
         focus.requestFocus();
         this.packed();
         this.setVisible(true);
-        
-        //fixes always on top bug in windows
+
+        // fixes always on top bug in windows
         /*
-         * Bugdesc: found in svn               
+         * Bugdesc: found in svn
          */
         DummyFrame.getDialogParent().setAlwaysOnTop(true);
         DummyFrame.getDialogParent().setAlwaysOnTop(false);

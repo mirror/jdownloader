@@ -68,14 +68,14 @@ public class InputDialog extends AbstractDialog implements KeyListener, MouseLis
             input.setText(this.defaultMessage);
             input.addKeyListener(this);
             input.addMouseListener(this);
-            contentpane.add(new JScrollPane(input), "height 20:60:n,pushy,growy");
+            contentpane.add(new JScrollPane(input), "height 20:60:n,pushy,growy,w 450");
         } else {
             input = new JTextField();
             input.setBorder(BorderFactory.createEtchedBorder());
             input.setText(this.defaultMessage);
             input.addKeyListener(this);
             input.addMouseListener(this);
-            contentpane.add(input, "pushy,growy, width n:n:450");
+            contentpane.add(input, "pushy,growy,w 450");
         }
 
         return contentpane;
