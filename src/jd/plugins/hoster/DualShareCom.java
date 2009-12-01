@@ -49,10 +49,10 @@ public class DualShareCom extends PluginForHost {
         if (br.containsHTML("No such file")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("No such user")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("File Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("Filename:.*?nowrap>(.*?)</td>").getMatch(0);
-        String filesize = br.getRegex("\\((.*? bytes)\\)").getMatch(0);
+        String filename = br.getRegex("<h2>Download File(.*?)</h2>").getMatch(0);
+        String filesize = br.getRegex("<h2>Download File.*?</h2>.*?</font>.*?\\((.*?)\\)").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        link.setName(filename);
+        link.setName(filename.trim());
         link.setDownloadSize(Regex.getSize(filesize));
         return AvailableStatus.TRUE;
     }
@@ -75,15 +75,30 @@ public class DualShareCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
         }
         // Form um auf "Datei herunterladen" zu klicken
-        Form dlForm = br.getFormbyProperty("name", "F1");
-        String captchaurl = br.getRegex("\"(http://dualshare\\.com/captchas/.*?)\"").getMatch(0);
-        if (dlForm == null || captchaurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        Form dlForm = br.getForm(0);
+        if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // Ticket Time
+        dlForm.setPreferredSubmit("Free+Download");
+        /* download button */
+        br.submitForm(dlForm);
+        dlForm = br.getForm(0);
+        if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (br.containsHTML("You have to wait")) {
+            int waitt = 30;
+            String wait = br.getRegex("You have to wait (\\d+) seconds").getMatch(0);
+            if (wait != null) {
+                waitt = Integer.parseInt(wait);
+            }
+            sleep(waitt * 1001, downloadLink);
+            br.getPage(br.getURL());
+        }
         String ttt = br.getRegex("countdown\">(\\d+)</span>").getMatch(0);
         if (ttt != null) {
             int tt = Integer.parseInt(ttt);
             sleep(tt * 1001, downloadLink);
         }
+        String captchaurl = br.getRegex("\"(http://dualshare\\.com/captchas/.*?)\"").getMatch(0);
+        if (captchaurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String code = getCaptchaCode(captchaurl, downloadLink);
         dlForm.put("code", code);
         // Password handling

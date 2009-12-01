@@ -117,12 +117,7 @@ public class UploadingCom extends PluginForHost {
         String redirect = getDownloadUrl(br, link);
         br.setFollowRedirects(false);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, redirect, true, 0);
-        if (!dl.getConnection().isContentDisposition()) {
-            String error = dl.getConnection().getRequest().getCookies().get("error").getValue();
-            br.followConnection();
-            if (error != null && error.contains("wait")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 1000l * 15);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
+        handleDownloadErrors();
         dl.setFilenameFix(true);
         dl.startDownload();
     }
@@ -141,6 +136,23 @@ public class UploadingCom extends PluginForHost {
         }
     }
 
+    private void handleDownloadErrors() throws IOException, PluginException {
+        if (dl.getConnection().getResponseCode() == 416) {
+            dl.getConnection().disconnect();
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 1000l * 60 * 30);
+        }
+        if (!dl.getConnection().isContentDisposition()) {
+            String error = dl.getConnection().getRequest().getCookies().get("error").getValue();
+            br.followConnection();
+            if (error != null && error.contains("wait")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 1000l * 15);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (dl.getConnection().getLongContentLength() == 0) {
+            dl.getConnection().disconnect();
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 1000l * 60 * 30);
+        }
+    }
+
     public void handleFree0(DownloadLink link) throws Exception {
         checkErrors();
         Form form = br.getFormbyProperty("id", "downloadform");
@@ -154,13 +166,9 @@ public class UploadingCom extends PluginForHost {
         checkErrors();
         String redirect = getDownloadUrl(br, link);
         br.setFollowRedirects(false);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, redirect, true, 1);
-        if (!dl.getConnection().isContentDisposition()) {
-            String error = dl.getConnection().getRequest().getCookies().get("error").getValue();
-            br.followConnection();
-            if (error != null && error.contains("wait")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 1000l * 15);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
+        br.setDebug(true);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, redirect, false, 1);
+        handleDownloadErrors();
         dl.setFilenameFix(true);
         dl.startDownload();
     }

@@ -67,7 +67,13 @@ public class FileRackCom extends PluginForHost {
             retry++;
         } while (br.containsHTML("<b>Verification Code doesn't match </b>"));
         String dllink = br.getRegex(Pattern.compile("<span id=\"btn_download2\">.*<a href=\"(.*?)\" onclick=\"disableimg\\(\\)\">", Pattern.DOTALL)).getMatch(0);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.setDebug(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        if (dl.getConnection().getResponseCode() == 404) {
+            dl.getConnection().disconnect();
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         dl.setAllowFilenameFromURL(true);
         dl.startDownload();
 
