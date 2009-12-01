@@ -17,7 +17,6 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -57,12 +56,13 @@ public class Shareplacecom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(url);
         if (br.getRedirectLocation() == null) {
-            String filename = br.getRegex("Filename.*?b>(.*?)<b>").getMatch(0);
-            if (filename == null) filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
+            String filename = br.getRegex(Encoding.Base64Decode("RmlsZW5hbWU6KC4qPyk8YnI+")).getMatch(0);
+            if (filename == null) filename = br.getRegex(Encoding.Base64Decode("PHRpdGxlPiguKj8pPC90aXRsZT5PV05FRA==").replace("OWNED", "")).getMatch(0);
+            filename = filename.trim().replaceAll("(<noscript>.*?</noscript>|<b>|</b>|</font>|<font>|YOUSUCKyoulose)", "");
             String filesize = br.getRegex("Filesize.*?b>(.*?)<b>").getMatch(0);
             if (filesize == null) filesize = br.getRegex("File.*?size.*?:.*?</b>(.*?)<b><br>").getMatch(0);
             if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            downloadLink.setName(filename.trim());
+            downloadLink.setFinalFileName(filename.trim());
             if (filesize != null) {
                 downloadLink.setDownloadSize(Regex.getSize(filesize.trim()));
             }
@@ -74,9 +74,9 @@ public class Shareplacecom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        String filename = Encoding.htmlDecode(br.getRegex(Pattern.compile("File.*?name.*?:.*?</b>(.*?)<b>")).getMatch(0));
+        String filename = downloadLink.getFinalFileName();
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        filename = Encoding.htmlDecode(filename);
+        filename = Encoding.htmlDecode(filename.trim());
         filename = Encoding.deepHtmlDecode(filename);
         String page = Encoding.urlDecode(br.toString(), true);
         String[] links = HTMLParser.getHttpLinks(page, null);
