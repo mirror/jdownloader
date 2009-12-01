@@ -985,7 +985,7 @@ public class Rapidshare extends PluginForHost {
             String[][] matches = br.getRegex("(\\w+)=([^\r^\n]+)").getMatches();
             HashMap<String, String> data = getMap(matches);
             ai.setTrafficLeft((long) (Long.parseLong(data.get("premkbleft")) / 1000.0) * 1024l * 1024l);
-            ai.setTrafficMax(25 * 1024 * 1024 * 1024l);
+            ai.setTrafficMax(25 * 1000 * 1000 * 1000l);
             ai.setFilesNum(Long.parseLong(data.get("curfiles")));
             ai.setPremiumPoints(Long.parseLong(data.get("fpoints")));
             ai.setAccountBalance((Long.parseLong(data.get("ppoints")) * Long.parseLong(data.get("ppointrate"))) / 1000);
