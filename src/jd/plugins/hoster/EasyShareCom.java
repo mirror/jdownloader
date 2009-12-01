@@ -131,8 +131,9 @@ public class EasyShareCom extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("Please wait or buy a Premium membership")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
         Form form = br.getForm(3);
-        String captcha = br.getRegex("<img src=\"(/kapt.*?)\"").getMatch(0);
+        String captcha = br.getRegex("<img src=\"/(kapt.*?)\"").getMatch(0);
         String captchaUrl = "http://" + br.getHost() + "/" + captcha;
+        br.setDebug(true);
         if (captcha != null) {
             String captchaCode = getCaptchaCode(captchaUrl, downloadLink);
             form.put("captcha", captchaCode);

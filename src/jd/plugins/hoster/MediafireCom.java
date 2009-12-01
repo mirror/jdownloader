@@ -18,7 +18,6 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.LinkedList;
 
 import jd.PluginWrapper;
 import jd.controlling.JDLogger;
@@ -118,7 +117,6 @@ public class MediafireCom extends PluginForHost {
         if (downloadLink.getStringProperty("type", "").equalsIgnoreCase("direct")) {
             url = br.getRedirectLocation();
         } else {
-
             if (!br.containsHTML("\\s+cu\\('")) {
                 String passCode;
                 DownloadLink link = downloadLink;
@@ -140,25 +138,9 @@ public class MediafireCom extends PluginForHost {
                 }
             }
 
-            String qk = null, pk = null, r = null;
-            String[] parameters = br.getRegex("\\s+cu\\('(.*?)','(.*?)','(.*?)'\\);").getRow(0);
-            qk = parameters[0];
-            pk = parameters[1];
-            r = parameters[2];
-
-            br.getPage("http://www.mediafire.com/dynamic/download.php?qk=" + qk + "&pk=" + pk + "&r=" + r);
-
-            String error = br.getRegex("var et=(.*?);").getMatch(0);
-            if (error != null && !error.trim().equalsIgnoreCase("15")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
-            String js = br.getRegex("'Your download is starting.*?(http://.*?)\\+'\"> Click here to start download..</a>'").getMatch(0).trim();
-            String vars = br.getRegex("<!--(.*?)function").getMatch(0).trim();
-            Context cx = Context.enter();
-            Scriptable scope = cx.initStandardObjects();
-            String eval = "function f(){\r\n" + vars + "\r\n return \"" + js + ";\r\n}\r\n f();";
-            Object result = cx.evaluateString(scope, eval, "<cmd>", 1, null);
-
-            url = Context.toString(result);
+            url = getDownloadUrl();
         }
+        if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 0);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
@@ -191,7 +173,7 @@ public class MediafireCom extends PluginForHost {
                 }
 
                 if (redirectURL != null && br.getCookie("http://www.mediafire.com", "ukey") != null) {
-                    if(Plugin.extractFileNameFromURL(url).equals("download.php")) {
+                    if (Plugin.extractFileNameFromURL(url).equals("download.php")) {
                         br.getPage(redirectURL);
                         break;
                     }
@@ -225,107 +207,112 @@ public class MediafireCom extends PluginForHost {
         return status;
     }
 
-    @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
+    private String getDownloadUrl() throws IOException, PluginException {
         String url = null;
-        LinkedList<String> urlList = new LinkedList<String>();
         try {
-            for (int i = 0; i < 3; i++) {
-                if (urlList.size() != 0) break;
-                requestFileInformation(downloadLink);
-
-                try {
-                    Recaptcha rc = new Recaptcha(br);
-                    Form form = br.getFormbyProperty("name", "form_captcha");
-                    String id = br.getRegex("e\\?k=(.+?)\"").getMatch(0);
-                    if (id != null) {
-                        rc.setId(id);
-                        InputField challenge = new InputField("recaptcha_challenge_field", null);
-                        InputField code = new InputField("recaptcha_response_field", null);
-                        form.addInputField(challenge);
-                        form.addInputField(code);
-                        rc.setForm(form);
-                        rc.load();
-                        File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-
-                        try {
-                            String c = getCaptchaCode(cf, downloadLink);
-                            rc.setCode(c);
-                        } catch (PluginException e) {
-                            /**
-                             * captcha input timeout run out.. try to reconnect
-                             */
-                            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
-                        }
-                    }
-                } catch (Exception e) {
-                    JDLogger.exception(e);
-                }
-
-                if (downloadLink.getStringProperty("type", "").equalsIgnoreCase("direct")) {
-                    urlList.add(br.getRedirectLocation());
-                } else {
-
-                    if (!br.containsHTML("\\s+cu\\('")) {
-                        String passCode;
-                        DownloadLink link = downloadLink;
-                        Form form = br.getFormbyProperty("name", "form_password");
-                        if (link.getStringProperty("pass", null) == null) {
-                            passCode = Plugin.getUserInput(null, link);
-                        } else {
-                            /* gespeicherten PassCode holen */
-                            passCode = link.getStringProperty("pass", null);
-                        }
-                        form.put("downloadp", passCode);
-                        br.submitForm(form);
-                        form = br.getFormbyProperty("name", "form_password");
-                        if (form != null && !br.containsHTML("cu\\('[a-z0-9]*'")) {
-                            link.setProperty("pass", null);
-                            throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.errors.wrongpassword", "Password wrong"));
-                        } else {
-                            link.setProperty("pass", passCode);
-                        }
-                    }
-
-                    String qk = null, pk = null, r = null;
-                    String[] parameters = br.getRegex("\\s+cu\\('(.*?)','(.*?)','(.*?)'\\);").getRow(0);
-                    qk = parameters[0];
-                    pk = parameters[1];
-                    r = parameters[2];
-
-                    br.getPage("http://www.mediafire.com/dynamic/download.php?qk=" + qk + "&pk=" + pk + "&r=" + r);
-
-                    String error = br.getRegex("var et=(.*?);").getMatch(0);
-                    if (error != null && !error.trim().equalsIgnoreCase("15")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
-                    String[][] jsUrls = br.getRegex("'Your download is starting.*?(http://.*?)\\+'\"> Click here to start download..</a>'").getMatches();
-                    String vars = br.getRegex("<!--(.*?)function").getMatch(0).trim();
-                    
-                    for (String[] js : jsUrls) {
-                        if(js[0].contains("autodisable.php")) continue;
-                        Context cx = Context.enter();
-                        Scriptable scope = cx.initStandardObjects();
-                        String eval = "function f(){\r\n" + vars + "\r\n return \"" + js[0] + ";\r\n}\r\n f();";
-                        Object result = cx.evaluateString(scope, eval, "<cmd>", 1, null);
-
-                        urlList.add(Context.toString(result));
-                    }
-                }
-            }
-            for(String linkUrl : urlList) {
-                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkUrl, true, 0);
-                if (dl.getConnection().isContentDisposition()) {
+            String qk = null, pk = null, r = null;
+            String[] parameters = br.getRegex("\\s+cu\\('(.*?)','(.*?)','(.*?)'\\);").getRow(0);
+            qk = parameters[0];
+            pk = parameters[1];
+            r = parameters[2];
+            /*
+             * these are our downloadbutton id's, we need them to find the right
+             * one for building downloadurl later
+             */
+            String[] ids = br.getRegex("<div class=\"download_link\" style=\"display:none;\" id=\"(.*?)\"").getColumn(0);
+            br.getPage("http://www.mediafire.com/dynamic/download.php?qk=" + qk + "&pk=" + pk + "&r=" + r);
+            String error = br.getRegex("var et=(.*?);").getMatch(0);
+            if (error != null && !error.trim().equalsIgnoreCase("15")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
+            /* all var parts to build a downloadurl */
+            String vars = br.getRegex("<!--(.*?)function").getMatch(0).trim();
+            for (String id : ids) {
+                String idmatch = br.getRegex(id + ".*?(http:.*?)\\+'\">").getMatch(0);
+                if (idmatch != null) {
+                    /*
+                     * we found the right id, so lets build our downloadurl
+                     */
+                    Context cx = Context.enter();
+                    Scriptable scope = cx.initStandardObjects();
+                    String eval = "function f(){\r\n" + vars + "\r\n return \"" + idmatch + ";\r\n}\r\n f();";
+                    Object result = cx.evaluateString(scope, eval, "<cmd>", 1, null);
+                    url = Context.toString(result);
                     break;
                 }
             }
-            if (!dl.getConnection().isContentDisposition()) {
-                br.followConnection();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            dl.startDownload();
+            return url;
         } catch (EvaluatorException e) {
-            // too complexx retry
+            // js parsing errors
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        String url = null;
+
+        for (int i = 0; i < 3; i++) {
+            requestFileInformation(downloadLink);
+            try {
+                Recaptcha rc = new Recaptcha(br);
+                Form form = br.getFormbyProperty("name", "form_captcha");
+                String id = br.getRegex("e\\?k=(.+?)\"").getMatch(0);
+                if (id != null) {
+                    rc.setId(id);
+                    InputField challenge = new InputField("recaptcha_challenge_field", null);
+                    InputField code = new InputField("recaptcha_response_field", null);
+                    form.addInputField(challenge);
+                    form.addInputField(code);
+                    rc.setForm(form);
+                    rc.load();
+                    File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+
+                    try {
+                        String c = getCaptchaCode(cf, downloadLink);
+                        rc.setCode(c);
+                    } catch (PluginException e) {
+                        /**
+                         * captcha input timeout run out.. try to reconnect
+                         */
+                        throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
+                    }
+                }
+            } catch (Exception e) {
+                JDLogger.exception(e);
+            }
+
+            if (downloadLink.getStringProperty("type", "").equalsIgnoreCase("direct")) {
+                url = br.getRedirectLocation();
+            } else {
+                if (!br.containsHTML("\\s+cu\\('")) {
+                    String passCode;
+                    DownloadLink link = downloadLink;
+                    Form form = br.getFormbyProperty("name", "form_password");
+                    if (link.getStringProperty("pass", null) == null) {
+                        passCode = Plugin.getUserInput(null, link);
+                    } else {
+                        /* gespeicherten PassCode holen */
+                        passCode = link.getStringProperty("pass", null);
+                    }
+                    form.put("downloadp", passCode);
+                    br.submitForm(form);
+                    form = br.getFormbyProperty("name", "form_password");
+                    if (form != null && !br.containsHTML("cu\\('[a-z0-9]*'")) {
+                        link.setProperty("pass", null);
+                        throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.errors.wrongpassword", "Password wrong"));
+                    } else {
+                        link.setProperty("pass", passCode);
+                    }
+                }
+                url = getDownloadUrl();
+            }
+        }
+        if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 0);
+        if (!dl.getConnection().isContentDisposition()) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     @Override
