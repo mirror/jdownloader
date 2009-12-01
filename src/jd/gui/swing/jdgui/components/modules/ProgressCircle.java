@@ -43,6 +43,11 @@ public class ProgressCircle extends JPanel {
         if (!controller.isIndeterminate()) {
             maximum = controller.getMax();
             value = controller.getValue();
+            StringBuilder toolTip = new StringBuilder(controller.getStatusText());
+            toolTip.append(new char[] { ' ', '[' });
+            toolTip.append(controller.getPercent() / 100);
+            toolTip.append(new char[] { '%', ']' });
+            setToolTipText(toolTip.toString());
         } else {
             maximum = INDETERMINATE_MAXIMUM;
             if (backward) {
@@ -58,11 +63,11 @@ public class ProgressCircle extends JPanel {
                     value = INDETERMINATE_MAXIMUM;
                 }
             }
+            setToolTipText(controller.getStatusText());
         }
         color = controller.getColor();
         icon = controller.getIcon();
         iconGrey = JDImage.getDisabledIcon(icon);
-        setToolTipText(controller.getStatusText());
     }
 
     public ProgressController getController() {
