@@ -69,7 +69,6 @@ public class CreaFileCom extends PluginForHost {
         String downarea = "http://creafile.com/handlers.php?h=getdownloadarea";
         br.setFollowRedirects(true);
         String dllink = null;
-        boolean slowdownload = false;
         Form dlForm = br.getFormbyKey("s_pair");
         if (dlForm == null) dlForm = br.getForm(1);
         dlForm.remove("Buy+VIP");
@@ -105,16 +104,11 @@ public class CreaFileCom extends PluginForHost {
         if (dllink == null && dllink0 != null) {
             logger.warning("Downloading using slow download link, plugin is not working as it should!, Slow link = " + dllink0);
             dllink = dllink0;
-            slowdownload = true;
         }
         // Downloading using the slow download link the server doesn't allow
         // more than 1 connection per file
         br.setDebug(true);
-        if (slowdownload == false) {
-            jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
-        } else {
-            jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
-        }
+        jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         dl.startDownload();
     }
 
@@ -124,7 +118,7 @@ public class CreaFileCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return -1;
     }
 
     @Override
