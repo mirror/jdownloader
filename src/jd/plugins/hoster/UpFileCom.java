@@ -74,8 +74,8 @@ public class UpFileCom extends PluginForHost {
         if (dllink.contains("free.php")) br.getPage("http://up-file.com/free-link.php");
         if (br.containsHTML("please wait")) {
             String waittime = br.getRegex("please wait -.*?(\\d+).*?se").getMatch(0);
-            int wait = 60;
-            if (waittime != null) wait = Integer.parseInt(waittime.trim());
+            int wait = 65;
+            if (waittime != null) wait = Integer.parseInt(waittime.trim()) + 10;
             sleep(wait * 1000l, downloadLink);
             br.getPage("http://up-file.com/free-link.php");
         }
