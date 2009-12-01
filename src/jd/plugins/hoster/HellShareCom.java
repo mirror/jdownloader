@@ -153,6 +153,7 @@ public class HellShareCom extends PluginForHost {
         } else {
             String url = br.getRegex("FreeDownProgress'.*?'(http://download.en.hellshare.com/.*?)'").getMatch(0);
             br.getPage(url);
+            if (br.containsHTML("The server is under the maximum load")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server is under maximum load", 10 * 60 * 1000l);
             if (br.containsHTML("You are exceeding the limitations on this download")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
             String captcha = br.getRegex("(http://www.en.hellshare.com/antispam.php\\?sv=FreeDown:\\d+)\"").getMatch(0);
             Form form = br.getForm(0);
@@ -162,6 +163,7 @@ public class HellShareCom extends PluginForHost {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, false, 1);
             if (!(dl.getConnection().isContentDisposition())) {
                 br.followConnection();
+                if (br.containsHTML("The server is under the maximum load")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server is under maximum load", 10 * 60 * 1000l);
                 if (br.containsHTML("Incorrectly copied code from the image")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 if (br.containsHTML("You are exceeding the limitations on this download")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
