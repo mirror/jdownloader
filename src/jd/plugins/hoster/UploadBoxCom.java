@@ -52,12 +52,13 @@ public class UploadBoxCom extends PluginForHost {
 
     public void login(Account account) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.getPage("http://uploadbox.com/en/premium/?ac=lang&lang_new=en");
-        br.getPage("http://uploadbox.com/en/premium/");
+        br.setDebug(true);
+        br.getPage("http://uploadbox.com/?ac=lang&lang_new=en");
+        br.getPage("http://uploadbox.com/en");
         br.postPage("http://uploadbox.com/en", "login=" + Encoding.urlEncode(account.getUser()) + "&passwd=" + Encoding.urlEncode(account.getPass()) + "&ac=auth&back=");
         if (br.containsHTML("You enter wrong user name or password")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        br.getPage("http://uploadbox.com/en/");
-        if (br.containsHTML("Your account type:</strong> FREE")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        br.getPage("http://uploadbox.com/");
+        if (br.containsHTML("Type: FREE")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
     @Override

@@ -28,7 +28,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "frogup.com" }, urls = { "http://[\\w\\.]*?frogup\\.com/plik/pokaz/.*?/[0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "frogup.com" }, urls = { "http://[\\w\\.]*?frogup\\.com/plik/pokaz/.*?/[0-9]+" }, flags = { 0 })
 public class FrogUpCom extends PluginForHost {
 
     public FrogUpCom(PluginWrapper wrapper) {

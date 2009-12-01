@@ -31,7 +31,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hellshare.com" }, urls = { "http://[\\w\\.]*?download\\.((sk|cz|en)\\.hellshare\\.com|hellshare\\.hu)/.+/[0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hellshare.com" }, urls = { "http://[\\w\\.]*?download\\.((sk|cz|en)\\.hellshare\\.com|hellshare\\.(sk|hu))/.+/[0-9]+" }, flags = { 2 })
 public class HellShareCom extends PluginForHost {
 
     public HellShareCom(PluginWrapper wrapper) {
@@ -42,6 +42,11 @@ public class HellShareCom extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://www.en.hellshare.com/terms";
+    }
+
+    @Override
+    public void correctDownloadLink(DownloadLink link) throws Exception {
+        link.setUrlDownload(link.getDownloadURL().replaceAll("http.*?//.*?/", "http://download.en.hellshare.com/"));
     }
 
     public void login(Account account) throws Exception {
@@ -89,7 +94,7 @@ public class HellShareCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (!(dl.getConnection().isContentDisposition())) {
             br.followConnection();
-            System.out.print(br.toString());
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
@@ -137,10 +142,26 @@ public class HellShareCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        br.setDebug(true);
         if (br.containsHTML("Current load 100%, take advantage of unlimited")) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, "No free slots available");
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, 15 * 60 * 1000l);
         } else {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Please send the log to a supporter");
+            String url = br.getRegex("FreeDownProgress'.*?'(http://download.en.hellshare.com/.*?)'").getMatch(0);
+            br.getPage(url);
+            if (br.containsHTML("You are exceeding the limitations on this download")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
+            String captcha = br.getRegex("(http://www.en.hellshare.com/antispam.php\\?sv=FreeDown:\\d+)\"").getMatch(0);
+            Form form = br.getForm(0);
+            if (form == null || captcha == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            String code = getCaptchaCode(captcha, downloadLink);
+            form.put("captcha", Encoding.urlEncode(code));
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, false, 1);
+            if (!(dl.getConnection().isContentDisposition())) {
+                br.followConnection();
+                if (br.containsHTML("Incorrectly copied code from the image")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                if (br.containsHTML("You are exceeding the limitations on this download")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl.startDownload();
         }
     }
 
@@ -150,7 +171,7 @@ public class HellShareCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return 1;
     }
 
     @Override
