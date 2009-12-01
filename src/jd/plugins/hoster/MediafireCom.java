@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
 
 import jd.PluginWrapper;
 import jd.controlling.JDLogger;
@@ -37,10 +38,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.pluginUtils.Recaptcha;
 import jd.utils.locale.JDL;
-
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.EvaluatorException;
-import org.mozilla.javascript.Scriptable;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mediafire.com" }, urls = { "http://[\\w\\.]*?mediafire\\.com/(download\\.php\\?.+|\\?(?!sharekey).+|file/.+)" }, flags = { 2 })
 public class MediafireCom extends PluginForHost {
@@ -209,48 +206,58 @@ public class MediafireCom extends PluginForHost {
 
     private String getDownloadUrl() throws IOException, PluginException {
         String url = null;
-        try {
-            String qk = null, pk = null, r = null;
-            String[] parameters = br.getRegex("\\s+cu\\('(.*?)','(.*?)','(.*?)'\\);").getRow(0);
-            qk = parameters[0];
-            pk = parameters[1];
-            r = parameters[2];
-            /*
-             * these are our downloadbutton id's, we need them to find the right
-             * one for building downloadurl later
-             */
-            String[] ids = br.getRegex("<div class=\"download_link\" style=\"display:none;\" id=\"(.*?)\"").getColumn(0);
-            br.getPage("http://www.mediafire.com/dynamic/download.php?qk=" + qk + "&pk=" + pk + "&r=" + r);
-            String error = br.getRegex("var et=(.*?);").getMatch(0);
-            if (error != null && !error.trim().equalsIgnoreCase("15")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
-            /* all var parts to build a downloadurl */
-            String vars = br.getRegex("<!--(.*?)function").getMatch(0).trim();
-            for (String id : ids) {
-                String idmatch = br.getRegex(id + ".*?(http:.*?)\\+'\">").getMatch(0);
-                if (idmatch != null) {
-                    /*
-                     * we found the right id, so lets build our downloadurl
-                     */
-                    Context cx = Context.enter();
-                    Scriptable scope = cx.initStandardObjects();
-                    String eval = "function f(){\r\n" + vars + "\r\n return \"" + idmatch + ";\r\n}\r\n f();";
-                    Object result = cx.evaluateString(scope, eval, "<cmd>", 1, null);
-                    url = Context.toString(result);
-                    break;
-                }
-            }
-            return url;
-        } catch (EvaluatorException e) {
-            // js parsing errors
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String vars = null;
+        String idmatch = null;
+
+        String qk = null, pk = null, r = null;
+        String[] parameters = br.getRegex("\\s+cu\\('(.*?)','(.*?)','(.*?)'\\);").getRow(0);
+        qk = parameters[0];
+        pk = parameters[1];
+        r = parameters[2];
+        /*
+         * these are our downloadbutton id's, we need them to find the right one
+         * for building downloadurl later
+         */
+        String[] ids = br.getRegex("<div class=\"download_link\" style=\"display:none;\" id=\"(.*?)\"").getColumn(0);
+        br.getPage("http://www.mediafire.com/dynamic/download.php?qk=" + qk + "&pk=" + pk + "&r=" + r);
+        String error = br.getRegex("var et=(.*?);").getMatch(0);
+        if (error != null && !error.trim().equalsIgnoreCase("15")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
+        /* all var parts to build a downloadurl */
+        vars = br.getRegex("<!--(.*?)function").getMatch(0);
+        if (vars == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String[][] tmpvars = new Regex(vars.trim(), "var.*?([a-zA-Z0-9]*?)='(.*?)'").getMatches();
+        HashMap<String, String> varmap = new HashMap<String, String>();
+        for (String[] tmp : tmpvars) {
+            varmap.put(tmp[0], tmp[1]);
         }
+        for (String id : ids) {
+            idmatch = br.getRegex(id + ".*?(http:.*?)\\+'\">").getMatch(0);
+            if (idmatch != null) {
+                /*
+                 * we found the right id, so lets build our downloadurl
+                 */
+                while (true) {
+                    String nextreplace = new Regex(idmatch, "\\+(.*?)(\\+|$)").getMatch(0);
+                    if (nextreplace == null) break;
+                    String match = varmap.get(nextreplace);
+                    if (match != null) {
+                        idmatch = idmatch.replaceFirst("\\+" + nextreplace, match);
+                    } else {
+                        idmatch = idmatch.replaceFirst("\\+" + nextreplace, nextreplace.replaceAll("'", ""));
+                    }
+                }
+                url = idmatch.replaceAll(" |\"", "");
+                break;
+            }
+        }
+        return url;
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         String url = null;
-
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < NUMBER_OF_RETRIES; i++) {
+            if (url != null) break;
             requestFileInformation(downloadLink);
             try {
                 Recaptcha rc = new Recaptcha(br);

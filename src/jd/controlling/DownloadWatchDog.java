@@ -310,8 +310,10 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
         logger.finer("Abort all active Downloads");
         ProgressController progress = new ProgressController(JDL.LF(JDL_PREFIX + "stopping", "Stopping all downloads %s", activeDownloads), activeDownloads, null);
         ArrayList<DownloadLink> al = new ArrayList<DownloadLink>();
-
-        ArrayList<SingleDownloadController> cons = new ArrayList<SingleDownloadController>(DownloadControllers.values());
+        ArrayList<SingleDownloadController> cons = null;
+        synchronized (DownloadControllers) {
+            cons = new ArrayList<SingleDownloadController>(DownloadControllers.values());
+        }
         for (SingleDownloadController singleDownloadController : cons) {
             al.add(singleDownloadController.abortDownload().getDownloadLink());
         }
@@ -320,7 +322,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
         while (true) {
             progress.setStatusText("Stopping all downloads " + activeDownloads);
             check = true;
-            ArrayList<DownloadLink> links = new ArrayList<DownloadLink>(DownloadControllers.keySet());
+            ArrayList<DownloadLink> links = getRunningDownloads();
             for (DownloadLink link : links) {
                 if (link.getLinkStatus().isPluginActive()) {
                     check = false;
@@ -334,7 +336,9 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                 Thread.sleep(100);
             } catch (InterruptedException e) {
             }
-            cons = new ArrayList<SingleDownloadController>(DownloadControllers.values());
+            synchronized (DownloadControllers) {
+                cons = new ArrayList<SingleDownloadController>(DownloadControllers.values());
+            }
             for (SingleDownloadController singleDownloadController : cons) {
                 al.add(singleDownloadController.abortDownload().getDownloadLink());
             }
@@ -348,7 +352,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
      * Setzt den Status der Downloadliste zurück. zB. bei einem Abbruch
      */
     private void clearDownloadListStatus() {
-        ArrayList<DownloadLink> links = new ArrayList<DownloadLink>(DownloadControllers.keySet());
+        ArrayList<DownloadLink> links = getRunningDownloads();
         for (DownloadLink link : links) {
             this.deactivateDownload(link);
         }
@@ -374,7 +378,9 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
     }
 
     public ArrayList<DownloadLink> getRunningDownloads() {
-        return new ArrayList<DownloadLink>(DownloadControllers.keySet());
+        synchronized (DownloadControllers) {
+            return new ArrayList<DownloadLink>(DownloadControllers.keySet());
+        }
     }
 
     public void controlEvent(ControlEvent event) {
@@ -384,7 +390,9 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
     }
 
     public int activeDownloadControllers() {
-        return DownloadControllers.keySet().size();
+        synchronized (DownloadControllers) {
+            return DownloadControllers.keySet().size();
+        }
     }
 
     public int getDownloadssincelastStart() {
