@@ -59,6 +59,7 @@ public class HellShareCom extends PluginForHost {
         form.put("lgnp7_psw", Encoding.urlEncode(account.getPass()));
         br.setFollowRedirects(true);
         br.submitForm(form);
+        br.getPage("http://www.en.hellshare.com/profile");
         if (!br.containsHTML("credit for downloads") || br.containsHTML("Špatně zadaný login nebo heslo uživatele")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
@@ -91,7 +92,11 @@ public class HellShareCom extends PluginForHost {
             dllink = br.getRegex("\"(http://data.*?\\.helldata\\.com.*?)\"").getMatch(0);
         }
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        /*
+         * set max chunks to 1 because each range request counts as download,
+         * reduces traffic very fast ;)
+         */
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (!(dl.getConnection().isContentDisposition())) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
