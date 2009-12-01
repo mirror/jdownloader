@@ -129,9 +129,7 @@ public class Up4Com extends PluginForHost {
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // This hoster allows 2 Chunks but only for the first started download
         // so we better set it to one!
-        jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1).startDownload();
-        String check = br.getURL();
-        if (check.contains("FileNotFound")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
         if ((dl.getConnection().getContentType().contains("html"))) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl.startDownload();
     }
