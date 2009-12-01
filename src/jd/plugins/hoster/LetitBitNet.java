@@ -136,7 +136,8 @@ public class LetitBitNet extends PluginForHost {
             sleep(65 * 1000l, downloadLink);
             String nextpage = br.getRegex("(http://s\\d+.letitbit.net/tmpl/tmpl_frame_top.*?)\"").getMatch(0);
             br.getPage(nextpage);
-            url = br.getRegex("(http://r\\d+.letitbit.net/download.*?)\"").getMatch(0);
+            /* letitbit and vipfile share same hosting server ;) */
+            url = br.getRegex("(http://r\\d+\\.*?/download.*?)\"").getMatch(0);
         }
         if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         /* we have to wait little because server too buggy */
