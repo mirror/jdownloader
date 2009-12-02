@@ -121,9 +121,8 @@ public class OronCom extends PluginForHost {
                 }
                 if (dllink == null) {
                     dllink = br.getRegex("<td align=\"center\" height=\"100\"><a href=\"(http.*?)\"").getMatch(0);
-                    dllink = null;
                     if (dllink == null) {
-                        dllink = br.getRegex("\"(http://[a-z0-9]+\\.oron\\.com/d/[a-z0-9]+/.*?)\"").getMatch(0);
+                        dllink = br.getRegex("\"(http://[a-zA-Z0-9]+\\.oron\\.com/.*?/.*?)\"").getMatch(0);
                     }
                 }
             }
