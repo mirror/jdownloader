@@ -130,10 +130,7 @@ public class ShrLnksBz extends PluginForDecrypt {
             decryptedLinks = loadcontainer(br, "cnl");
             if (decryptedLinks != null && decryptedLinks.size() > 0) return decryptedLinks;
 
-        } else {
-            logger.warning("The user tried to add a link without containers but the plugin can't handle such links!");
-            throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-        }
+        } 
         /* File package handling */
         String[] links = br.getRegex("decrypt\\.gif\".*?_get\\('(.*?)'").getColumn(0);
         if (links == null || links.length == 0) return null;
@@ -141,17 +138,15 @@ public class ShrLnksBz extends PluginForDecrypt {
         for (String link : links) {
             link = "http://share-links.biz/get/lnk/" + link;
             br.getPage(link);
-            System.out.print(br.toString());
             String clink0 = br.getRegex("unescape\\(\"(.*?)\"").getMatch(0);
             if (clink0 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             clink0 = Encoding.htmlDecode(clink0);
             String frm = br.getRegex("\"(http://share-links\\.biz/get/frm/.*?)\"").getMatch(0);
-            String cmm = br.getRegex("\"(http://share-links\\.biz/get/cmm/.*?)\"").getMatch(0);
-            br.getPage(cmm);
-            System.out.print(br.toString());
             br.getPage(frm);
-            System.out.print(br.toString());
-            DownloadLink dl = createDownloadlink(cmm);
+            String b64 = br.getRegex("\\p{Punct}(aHR0.*?)\\p{Punct}").getMatch(0);
+            String finalUrl = Encoding.Base64Decode(b64 + "=");
+            if (finalUrl.equals(b64 + "=")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            DownloadLink dl = createDownloadlink(finalUrl);
             decryptedLinks.add(dl);
             progress.increase(1);
         }
