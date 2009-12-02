@@ -33,11 +33,6 @@ import jd.utils.locale.JDL;
 public abstract class UserIO {
 
     /**
-     * Flag to set that no Automatic captcha detection should be used in the
-     * userinput
-     */
-    public static final int NO_JAC = 1 << 0;
-    /**
      * TO not query user. Try to fill automaticly, or return null
      */
     public static final int NO_USER_INTERACTION = 1 << 1;
@@ -116,13 +111,13 @@ public abstract class UserIO {
         INSTANCE = instance;
     }
 
-    public String requestCaptchaDialog(int flag, String host, String methodname, File captchafile, String suggestion, String explain) {
+    public String requestCaptchaDialog(int flag, String host, ImageIcon icon, File captchafile, String suggestion, String explain) {
         synchronized (INSTANCE) {
-            return showCaptchaDialog(flag, host, methodname, captchafile, suggestion, explain);
+            return showCaptchaDialog(flag, host, icon, captchafile, suggestion, explain);
         }
     }
 
-    abstract protected String showCaptchaDialog(int flag, String host, String methodname, File captchafile, String suggestion, String explain);
+    abstract protected String showCaptchaDialog(int flag, String host, ImageIcon icon, File captchafile, String suggestion, String explain);
 
     public Point requestClickPositionDialog(File imagefile, String title, String explain) {
         synchronized (INSTANCE) {

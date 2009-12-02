@@ -252,7 +252,7 @@ public abstract class PluginForDecrypt extends Plugin {
      */
     protected String getCaptchaCode(String method, File file, int flag, CryptedLink link, String defaultValue, String explain) throws DecrypterException {
         if (link.getProgressController() != null) link.getProgressController().setStatusText(JDL.LF("gui.linkgrabber.waitinguserio", "Waiting for user input: %s", method));
-        String cc = new CaptchaController(getHost(), method, file, defaultValue, explain).getCode(flag);
+        String cc = new CaptchaController(getHost(), null, method, file, defaultValue, explain).getCode(flag);
         if (link.getProgressController() != null) link.getProgressController().setStatusText(null);
         if (cc == null) throw new DecrypterException(DecrypterException.CAPTCHA);
         return cc;

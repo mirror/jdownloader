@@ -116,7 +116,7 @@ public abstract class PluginForHost extends Plugin {
                 e.printStackTrace();
             }
             DownloadController.getInstance().fireDownloadLinkUpdate(link);
-            String cc = new CaptchaController(getHost(), method, file, defaultValue, explain).getCode(flag);
+            String cc = new CaptchaController(getHost(), getHosterIcon(), method, file, defaultValue, explain).getCode(flag);
 
             if (cc == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             return cc;

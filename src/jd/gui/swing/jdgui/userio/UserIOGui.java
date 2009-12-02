@@ -51,13 +51,13 @@ public class UserIOGui extends UserIO {
     }
 
     @Override
-    protected String showCaptchaDialog(final int flag, final String host, final String methodname, final File captchafile, final String suggestion, final String explain) {
+    protected String showCaptchaDialog(final int flag, final String host, final ImageIcon icon, final File captchafile, final String suggestion, final String explain) {
         if ((flag & UserIO.NO_USER_INTERACTION) > 0) return suggestion;
         return new GuiRunnable<String>() {
 
             @Override
             public String runSave() {
-                return new CaptchaDialog(flag, host, methodname, captchafile, suggestion, explain).getCaptchaText();
+                return new CaptchaDialog(host, icon, captchafile, suggestion, explain).getCaptchaText();
             }
 
         }.getReturnValue();

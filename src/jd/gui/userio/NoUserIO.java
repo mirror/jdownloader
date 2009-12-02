@@ -38,7 +38,7 @@ public class NoUserIO extends UserIO {
     }
 
     @Override
-    protected String showCaptchaDialog(int flag, String host, String methodname, File captchafile, String suggestion, String explain) {
+    protected String showCaptchaDialog(int flag, String host, ImageIcon icon, File captchafile, String suggestion, String explain) {
         System.out.println("NoUserIO set!");
         return null;
     }

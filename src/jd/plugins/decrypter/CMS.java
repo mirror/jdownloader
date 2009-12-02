@@ -24,7 +24,6 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
@@ -130,7 +129,7 @@ public class CMS extends PluginForDecrypt {
                             String captchaAdress = host + new Regex(element[2], Pattern.compile("<IMG SRC=\"(/.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
                             captchaFile = getLocalCaptchaFile();
                             br.cloneBrowser().getDownload(captchaFile, captchaAdress);
-                            if (host.toLowerCase().contains("mov-world.net"))
+                            if (host.toLowerCase().contains("mov-world.net")) {
                                 /*
                                  * mov world does not change captcha, if first
                                  * try fails, then ask user
@@ -140,8 +139,9 @@ public class CMS extends PluginForDecrypt {
                                 } else {
                                     capTxt = getCaptchaCode(null, captchaFile, param);
                                 }
-                            else
+                            } else {
                                 capTxt = getCaptchaCode("ucms", captchaFile, param);
+                            }
                             captchaFile.renameTo(new File(captchaFile.getParentFile(), capTxt + ".gif"));
 
                             String posthelp = HTMLParser.getFormInputHidden(element[2]);
@@ -240,8 +240,9 @@ public class CMS extends PluginForDecrypt {
                                 } else {
                                     capTxt = getCaptchaCode(null, captchaFile, param);
                                 }
-                            } else
-                                capTxt = getCaptchaCode("ucms", captchaFile, UserIO.NO_JAC, param, null, null);
+                            } else {
+                                capTxt = getCaptchaCode("ucms", captchaFile, param);
+                            }
                             captchaFile.renameTo(new File(captchaFile.getParentFile(), capTxt + ".gif"));
 
                             tform.put("code", capTxt);
