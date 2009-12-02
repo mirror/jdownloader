@@ -170,7 +170,11 @@ public class TbCm extends PluginForDecrypt {
                             br.getHttpConnection().disconnect();
                         }
                         if (br.openGetConnection(link + "&fmt=35").getResponseCode() == 200) {
-                            addtopos(ConversionMode.VIDEOMP4, link + "&fmt=35", br.getHttpConnection().getLongContentLength(), "(35)", "&fmt=35");
+                            addtopos(ConversionMode.VIDEOMP4, link + "&fmt=35", br.getHttpConnection().getLongContentLength(), "(35,720p)", "&fmt=35");
+                            br.getHttpConnection().disconnect();
+                        }
+                        if (br.openGetConnection(link + "&fmt=37").getResponseCode() == 200) {
+                            addtopos(ConversionMode.VIDEOMP4, link + "&fmt=37", br.getHttpConnection().getLongContentLength(), "(37,1080p)", "&fmt=37");
                             br.getHttpConnection().disconnect();
                         }
                         if (ConvertDialog.getKeeped().contains(ConversionMode.VIDEOMP4)) break;
