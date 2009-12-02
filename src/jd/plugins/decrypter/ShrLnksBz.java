@@ -20,6 +20,8 @@ import java.awt.Point;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -41,6 +43,8 @@ import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "share-links.biz" }, urls = { "http://[\\w\\.]*?share-links\\.biz/_[0-9a-z]+" }, flags = { 0 })
 public class ShrLnksBz extends PluginForDecrypt {
+
+    private static String host = "http://share-links.biz";
 
     public ShrLnksBz(PluginWrapper wrapper) {
         super(wrapper);
@@ -132,9 +136,19 @@ public class ShrLnksBz extends PluginForDecrypt {
 
         } 
         /* File package handling */
-        String[] links = br.getRegex("decrypt\\.gif\".*?_get\\('(.*?)'").getColumn(0);
-        if (links == null || links.length == 0) return null;
-        progress.setRange(links.length);
+        int pages = 1;
+        String pattern = parameter.substring(parameter.lastIndexOf("/"), parameter.length());
+        if(br.containsHTML("folderNav")) {
+            pages = pages + br.getRegex(pattern + "\\?n=[0-9]++\"").getMatches().length;
+        }
+        LinkedList<String> links = new LinkedList<String>(); 
+        for (int i = 1; i <= pages; i++) {
+            br.getPage(host + pattern + "?n=" + i);
+            String[] linki = br.getRegex("decrypt\\.gif\".*?_get\\('(.*?)'").getColumn(0);
+            links.addAll(Arrays.asList(linki));
+        }
+        if (links.size() == 0) return null;
+        progress.setRange(links.size());
         for (String link : links) {
             link = "http://share-links.biz/get/lnk/" + link;
             br.getPage(link);
@@ -144,8 +158,14 @@ public class ShrLnksBz extends PluginForDecrypt {
             String frm = br.getRegex("\"(http://share-links\\.biz/get/frm/.*?)\"").getMatch(0);
             br.getPage(frm);
             String b64 = br.getRegex("\\p{Punct}(aHR0.*?)\\p{Punct}").getMatch(0);
-            String finalUrl = Encoding.Base64Decode(b64 + "=");
-            if (finalUrl.equals(b64 + "=")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            String finalUrl = Encoding.Base64Decode(b64);
+            if (finalUrl.equals(b64)) {
+                finalUrl = Encoding.Base64Decode(b64 + "=");
+                if (finalUrl.equals(b64 + "=")) {
+                    finalUrl = Encoding.Base64Decode(b64 + "==");
+                    if (finalUrl.equals(b64 + "==")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+                }
+            }
             DownloadLink dl = createDownloadlink(finalUrl);
             decryptedLinks.add(dl);
             progress.increase(1);
@@ -204,7 +224,7 @@ public class ShrLnksBz extends PluginForDecrypt {
         } else {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        return null;
+        return new ArrayList<DownloadLink>();
     }
 
 }
