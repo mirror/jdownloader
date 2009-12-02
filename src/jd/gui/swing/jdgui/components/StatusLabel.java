@@ -42,7 +42,6 @@ public class StatusLabel extends JPanel {
 
     public StatusLabel() {
         super(new MigLayout("ins 0", "[]0[fill,grow,align right]"));
-        getFontMetrics(getFont());
         add(left = new JRendererLabel());
         left.setOpaque(false);
         for (int i = 0; i < ICONCOUNT; i++) {
