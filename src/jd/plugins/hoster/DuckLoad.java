@@ -68,9 +68,7 @@ public class DuckLoad extends PluginForHost {
             form.put(applcode, code);
             stream = true;
         } else {
-            form.put("cap", code);
-            form.put("_____download.x", "" + ((int) (Math.random() * 168)));
-            form.put("_____download.y", "" + ((int) (Math.random() * 44)));
+            form.put("humpf", code);
         }
         br.submitForm(form);
         String url = null;
