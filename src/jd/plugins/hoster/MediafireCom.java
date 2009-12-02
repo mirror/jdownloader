@@ -175,7 +175,7 @@ public class MediafireCom extends PluginForHost {
                 }
 
                 if (redirectURL != null && br.getCookie("http://www.mediafire.com", "ukey") != null) {
-                    if (url.contains("download.php")) {
+                    if (url.contains("download.php") || url.contains("fire.com/file/")) {
                         br.getPage(redirectURL);
                         break;
                     }
