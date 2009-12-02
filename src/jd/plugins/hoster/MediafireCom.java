@@ -112,8 +112,10 @@ public class MediafireCom extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         String url = null;
         if (downloadLink.getStringProperty("type", "").equalsIgnoreCase("direct")) {
+            logger.info("DirectDownload");
             url = br.getRedirectLocation();
         } else {
+            if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
             if (!br.containsHTML("\\s+cu\\('")) {
                 String passCode;
                 DownloadLink link = downloadLink;
@@ -137,6 +139,7 @@ public class MediafireCom extends PluginForHost {
             url = getDownloadUrl();
         }
         if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 0);
         if (!dl.getConnection().isContentDisposition()) {
             logger.info("Error (4)");
@@ -154,6 +157,8 @@ public class MediafireCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException, InterruptedException {
         this.setBrowserExclusive();
+        br.setFollowRedirects(false);
+        downloadLink.setProperty("type", "");
         String url = downloadLink.getDownloadURL();
         AvailableStatus status = AvailableStatus.TRUE;
         for (int i = 0; i < NUMBER_OF_RETRIES; i++) {
@@ -170,7 +175,7 @@ public class MediafireCom extends PluginForHost {
                 }
 
                 if (redirectURL != null && br.getCookie("http://www.mediafire.com", "ukey") != null) {
-                    if (Plugin.extractFileNameFromURL(url).equals("download.php")) {
+                    if (url.contains("download.php")) {
                         br.getPage(redirectURL);
                         break;
                     }
@@ -296,6 +301,7 @@ public class MediafireCom extends PluginForHost {
             }
 
             if (downloadLink.getStringProperty("type", "").equalsIgnoreCase("direct")) {
+                logger.info("DirectDownload");
                 url = br.getRedirectLocation();
             } else {
                 if (!br.containsHTML("\\s+cu\\('")) {
@@ -322,6 +328,7 @@ public class MediafireCom extends PluginForHost {
             }
         }
         if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 0);
         if (!dl.getConnection().isContentDisposition()) {
             logger.info("Error (3)");
@@ -346,5 +353,6 @@ public class MediafireCom extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
+        link.setProperty("type", "");
     }
 }
