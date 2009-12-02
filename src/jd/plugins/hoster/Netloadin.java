@@ -311,7 +311,7 @@ public class Netloadin extends PluginForHost {
             Thread.sleep(1000);
             br.followConnection();
             checkPassword(downloadLink);
-            checkErrors();
+            handleErrors(downloadLink);
             String url = br.getRedirectLocation();
             if (url == null) url = br.getRegex("<a class=\"Orange_Link\" href=\"(.*?)\" >Alternativ klicke hier.<\\/a>").getMatch(0);
             if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, JDL.L("plugins.hoster.netloadin.errors.dlnotfound", "Download link not found"));
@@ -345,7 +345,7 @@ public class Netloadin extends PluginForHost {
             // Serverfehler
             if (br.followConnection() == null) throw new PluginException(LinkStatus.ERROR_RETRY, JDL.L("plugins.hoster.netloadin.errors.couldnotfollow", "Server: could not follow the link"));
             checkPassword(downloadLink);
-            checkErrors();
+            handleErrors(downloadLink);
         }
         if (!dl.startDownload()) {
             if (downloadLink.getLinkStatus().getErrorMessage() != null && downloadLink.getLinkStatus().getErrorMessage().startsWith(JDL.L("download.error.message.rangeheaderparseerror", "Unexpected rangeheader format:"))) {
@@ -360,11 +360,6 @@ public class Netloadin extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
         link.setProperty("nochunk", false);
-    }
-
-    private void checkErrors() throws PluginException {
-        if (br.containsHTML(FILE_NOT_FOUND)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML(FILE_DAMAGED)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.netloadin.errors.fileondmgserver", "File on damaged server"), 20 * 60 * 1000l);
     }
 
     @Override

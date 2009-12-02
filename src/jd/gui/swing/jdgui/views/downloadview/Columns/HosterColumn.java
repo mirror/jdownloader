@@ -99,7 +99,6 @@ public class HosterColumn extends JDTableColumn {
                 String s = dLink.getPlugin().getHost() + dLink.getPlugin().getSessionInfo();
                 statuspanel.setText(s, null);
                 statuspanel.setIcon(-1, dLink.getPlugin().getHosterIcon(), null, strLoadingFrom + dLink.getPlugin().getHost());
-                statuspanel.setWidth(counter, getCurWidth());
             }
             statuspanel.clearIcons(counter);
         }

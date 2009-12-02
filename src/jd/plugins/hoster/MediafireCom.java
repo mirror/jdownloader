@@ -39,7 +39,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.pluginUtils.Recaptcha;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mediafire.com" }, urls = { "http://[\\w\\.]*?mediafire\\.com/(download\\.php\\?.+|\\?(?!sharekey).+|file/.+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mediafire.com" }, urls = { "http://[\\w\\.]*?mediafire\\.com/(download\\.php\\?|\\?(?!sharekey)|file/).+" }, flags = { 2 })
 public class MediafireCom extends PluginForHost {
 
     static private final String offlinelink = "tos_aup_violation";
@@ -134,12 +134,12 @@ public class MediafireCom extends PluginForHost {
                     link.setProperty("pass", passCode);
                 }
             }
-
             url = getDownloadUrl();
         }
         if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 0);
         if (!dl.getConnection().isContentDisposition()) {
+            logger.info("Error (4)");
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -224,7 +224,10 @@ public class MediafireCom extends PluginForHost {
         if (error != null && !error.trim().equalsIgnoreCase("15")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
         /* all var parts to build a downloadurl */
         vars = br.getRegex("<!--(.*?)function").getMatch(0);
-        if (vars == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (vars == null) {
+            logger.info("Error (1)");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         String[][] tmpvars = new Regex(vars.trim(), "var.*?([a-zA-Z0-9]*?)='(.*?)'").getMatches();
         HashMap<String, String> varmap = new HashMap<String, String>();
         for (String[] tmp : tmpvars) {
@@ -249,6 +252,11 @@ public class MediafireCom extends PluginForHost {
                 url = idmatch.replaceAll(" |\"", "");
                 break;
             }
+        }
+        /* we need a valid url now, if not then something went wrong */
+        if (url == null) {
+            logger.info("Error (2)");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         return url;
     }
@@ -316,6 +324,7 @@ public class MediafireCom extends PluginForHost {
         if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 0);
         if (!dl.getConnection().isContentDisposition()) {
+            logger.info("Error (3)");
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

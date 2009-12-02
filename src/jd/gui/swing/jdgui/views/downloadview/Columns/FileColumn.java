@@ -84,7 +84,6 @@ public class FileColumn extends JDTableColumn {
             }
             jlr.setIcon(0, null, "[" + fp.size() + "]", null);
             jlr.clearIcons(1);
-            jlr.setWidth(1, getCurWidth());
             jlr.setBorder(null);
         } else {
             dLink = (DownloadLink) value;

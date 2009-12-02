@@ -114,7 +114,6 @@ public class StatusColumn extends JDTableColumn {
             }
             statuspanel.setText(sb.toString(), null);
             statuspanel.clearIcons(counter);
-            statuspanel.setWidth(counter, getCurWidth());
         } else {
             dLink = (DownloadLink) value;
             counter = 0;
@@ -165,7 +164,6 @@ public class StatusColumn extends JDTableColumn {
             }
             statuspanel.setText(dLink.getLinkStatus().getStatusString(), null);
             statuspanel.clearIcons(counter);
-            statuspanel.setWidth(counter, getCurWidth());
         }
         return statuspanel;
     }

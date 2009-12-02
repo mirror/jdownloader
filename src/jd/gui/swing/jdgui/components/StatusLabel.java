@@ -17,7 +17,6 @@
 package jd.gui.swing.jdgui.components;
 
 import java.awt.Color;
-import java.awt.FontMetrics;
 
 import javax.swing.Icon;
 import javax.swing.JPanel;
@@ -38,14 +37,12 @@ public class StatusLabel extends JPanel {
 
     private static final long serialVersionUID = -378709535509849986L;
     public static final int ICONCOUNT = 5;
-    private final FontMetrics fontmetrics;
     private JRendererLabel left;
-    private String strLeft = "";
     private JRendererLabel[] rights = new JRendererLabel[ICONCOUNT];
 
     public StatusLabel() {
         super(new MigLayout("ins 0", "[]0[fill,grow,align right]"));
-        fontmetrics = getFontMetrics(getFont());
+        getFontMetrics(getFont());
         add(left = new JRendererLabel());
         left.setOpaque(false);
         for (int i = 0; i < ICONCOUNT; i++) {
@@ -62,7 +59,6 @@ public class StatusLabel extends JPanel {
         left.setIcon(icon);
         left.setText(text);
         left.setToolTipText(text);
-        strLeft = text;
     }
 
     @Override
@@ -126,15 +122,6 @@ public class StatusLabel extends JPanel {
         }
         if (sb.length() > 0) return sb.toString();
         return null;
-    }
-
-    public void setWidth(int iconcount, int width) {
-        String s = strLeft;
-        int w = (iconcount + (left.getIcon() == null ? 0 : 1)) * 16 + left.getIconTextGap() + 5;
-        while (s.length() > 3 && fontmetrics.stringWidth(s) + w >= width) {
-            s = s.replaceAll("....$", "...");
-        }
-        left.setText(s);
     }
 
 }
