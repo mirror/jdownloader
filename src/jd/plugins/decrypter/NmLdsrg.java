@@ -47,7 +47,7 @@ public class NmLdsrg extends PluginForDecrypt {
             br.getPage(parameter);
             Thread.sleep(200);
             br.getPage(parameter);
-            String[] calls = br.getRegex("(\\||')([a-z0-9]{32})(\\||')").getColumn(1);
+            String[] calls = br.getRegex("(\\||')([a-z0-9]{32})").getColumn(1);
             for (String call : calls) {
                 links.add(getLink(call));
             }
