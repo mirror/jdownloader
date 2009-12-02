@@ -1,9 +1,9 @@
 action.customize.addsetting.ask = אנא הכנס את השם עבור ההגדרות החדשות:
 action.customize.removesetting.ask = הסר הגדרות נבחרות? (%s חשבונות)
+action.downloadview.movedown.tooltip = העבר למטה
 action.downloadview.movetobottom.tooltip = העבר לתחתית
-action.downloadview.movetodown.tooltip = העבר למטה
 action.downloadview.movetotop.tooltip = העבר לשיא
-action.downloadview.movetoup.tooltip = העבר למעלה
+action.downloadview.moveup.tooltip = העבר למעלה
 action.premiumview.removeacc.accs = %s חשבונות
 action.premiumview.removeacc.ask = הסר נבחרות
 addons.jdshutdown.statusmessage.disabled = JDownloader המערכת לא תכובה ע"י
