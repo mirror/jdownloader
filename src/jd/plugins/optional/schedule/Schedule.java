@@ -30,6 +30,7 @@ import jd.gui.swing.jdgui.interfaces.SwitchPanelListener;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
+import jd.plugins.optional.schedule.modules.DisableHost;
 import jd.plugins.optional.schedule.modules.DisablePremium;
 import jd.plugins.optional.schedule.modules.DisablePremiumForHost;
 import jd.plugins.optional.schedule.modules.DisableReconnect;
@@ -37,6 +38,7 @@ import jd.plugins.optional.schedule.modules.DoHibernate;
 import jd.plugins.optional.schedule.modules.DoReconnect;
 import jd.plugins.optional.schedule.modules.DoShutdown;
 import jd.plugins.optional.schedule.modules.DoSleep;
+import jd.plugins.optional.schedule.modules.EnableHost;
 import jd.plugins.optional.schedule.modules.EnablePremium;
 import jd.plugins.optional.schedule.modules.EnablePremiumForHost;
 import jd.plugins.optional.schedule.modules.EnableReconnect;
@@ -94,6 +96,8 @@ public class Schedule extends PluginOptional {
         modules.add(new SetMaxDownloads());
         modules.add(new PauseDownloads());
         modules.add(new UnPauseDownloads());
+        modules.add(new EnableHost());
+        modules.add(new DisableHost());
         modules.add(new EnablePremium());
         modules.add(new DisablePremium());
         modules.add(new EnablePremiumForHost());
@@ -106,7 +110,7 @@ public class Schedule extends PluginOptional {
         modules.add(new DoHibernate());
         modules.add(new SetStopMark());
         modules.add(new UnSetStopMark());
-        
+
     }
 
     public ArrayList<SchedulerModuleInterface> getModules() {
