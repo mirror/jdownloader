@@ -55,6 +55,7 @@ public class TrayIconPopup extends JWindow implements MouseListener, ChangeListe
 
     private SubConfiguration config;
     private JPanel entryPanel;
+    private JPanel quickConfigPanel;
     private JPanel bottomPanel;
     private boolean enteredPopup;
     private JDSpinner spMaxSpeed;
@@ -73,6 +74,7 @@ public class TrayIconPopup extends JWindow implements MouseListener, ChangeListe
         addMouseListener(this);
 
         initEntryPanel();
+        initQuickConfigPanel();
         initBottomPanel();
         initExitPanel();
         JPanel content = new JPanel(new MigLayout("ins 5, wrap 1", "[]", "[]5[]5[]5[]5[]"));
@@ -80,7 +82,8 @@ public class TrayIconPopup extends JWindow implements MouseListener, ChangeListe
         content.add(new JLabel("<html><b>" + JDUtilities.getJDTitle() + "</b></html>"), "align center");
         content.add(new JSeparator(), "growx, spanx");
         content.add(entryPanel);
-
+        content.add(new JSeparator(), "growx, spanx");
+        content.add(quickConfigPanel);
         content.add(new JSeparator(), "growx, spanx");
         content.add(bottomPanel);
         content.add(new JSeparator(), "growx, spanx");
@@ -96,11 +99,12 @@ public class TrayIconPopup extends JWindow implements MouseListener, ChangeListe
         pack();
     }
 
-    /*
+    /**
      * start autohide in 3 secs if mouse did not enter popup before
      */
     public void startAutoHide() {
         new Thread() {
+            @Override
             public void run() {
                 try {
                     Thread.sleep(3000);
@@ -108,6 +112,7 @@ public class TrayIconPopup extends JWindow implements MouseListener, ChangeListe
                 }
                 if (enteredPopup == false) {
                     new GuiRunnable<Object>() {
+                        @Override
                         public Object runSave() {
                             dispose();
                             return null;
@@ -119,34 +124,38 @@ public class TrayIconPopup extends JWindow implements MouseListener, ChangeListe
     }
 
     private void initEntryPanel() {
-        entryPanel = new JPanel(new MigLayout("ins 0, wrap 1", "[]", "[]0[]0[]0[]0[]0[]0[]0[]0[]0[]"));
+        entryPanel = new JPanel(new MigLayout("ins 0, wrap 1", "[]", "[]0[]0[]0[]0[]0[]0[]"));
         switch (DownloadWatchDog.getInstance().getDownloadStatus()) {
         case NOT_RUNNING:
-            addMenuEntry("toolbar.control.start");
-            addMenuEntry("toolbar.control.stop");
+            addMenuEntry(entryPanel, "toolbar.control.start");
+            addMenuEntry(entryPanel, "toolbar.control.stop");
             break;
         case RUNNING:
-            addMenuEntry("toolbar.control.stop");
-            addMenuEntry("toolbar.control.pause");
+            addMenuEntry(entryPanel, "toolbar.control.stop");
+            addMenuEntry(entryPanel, "toolbar.control.pause");
             break;
         default:
-            addMenuEntry("toolbar.control.start");
-            addMenuEntry("toolbar.control.pause");
+            addMenuEntry(entryPanel, "toolbar.control.start");
+            addMenuEntry(entryPanel, "toolbar.control.pause");
         }
 
-        addMenuEntry("action.addurl");
-        addMenuEntry("action.load");
-        addMenuEntry("toolbar.interaction.update");
-        addMenuEntry("toolbar.interaction.reconnect");
-        addMenuEntry("premiumMenu.toggle");
-        addMenuEntry("toolbar.quickconfig.clipboardoberserver");
-        addMenuEntry("toolbar.quickconfig.reconnecttoggle");
-        addMenuEntry("action.opendlfolder");
+        addMenuEntry(entryPanel, "action.addurl");
+        addMenuEntry(entryPanel, "action.load");
+        addMenuEntry(entryPanel, "toolbar.interaction.update");
+        addMenuEntry(entryPanel, "toolbar.interaction.reconnect");
+        addMenuEntry(entryPanel, "action.opendlfolder");
+    }
+
+    private void initQuickConfigPanel() {
+        quickConfigPanel = new JPanel(new MigLayout("ins 0, wrap 1", "[]", "[]0[]0[]"));
+        addMenuEntry(quickConfigPanel, "premiumMenu.toggle");
+        addMenuEntry(quickConfigPanel, "toolbar.quickconfig.clipboardoberserver");
+        addMenuEntry(quickConfigPanel, "toolbar.quickconfig.reconnecttoggle");
     }
 
     private void initExitPanel() {
         exitPanel = new JPanel(new MigLayout("ins 0, wrap 1", "[]", "[]"));
-        exitPanel.add(getMenuEntry("action.exit"), "growx,pushx");
+        addMenuEntry(exitPanel, "action.exit");
     }
 
     private void initBottomPanel() {
@@ -173,9 +182,8 @@ public class TrayIconPopup extends JWindow implements MouseListener, ChangeListe
         bottomPanel.add(spMaxChunks);
     }
 
-    private void addMenuEntry(String actionId) {
-        JToggleButton b = getMenuEntry(actionId);
-        entryPanel.add(b, "growx,pushx");
+    private void addMenuEntry(JPanel panel, String actionId) {
+        panel.add(getMenuEntry(actionId), "growx, pushx");
     }
 
     private JToggleButton getMenuEntry(String actionId) {
@@ -185,9 +193,10 @@ public class TrayIconPopup extends JWindow implements MouseListener, ChangeListe
         return b;
     }
 
-    private JToggleButton createButton(final ToolBarAction action) {
+    private JToggleButton createButton(ToolBarAction action) {
         action.init();
-        final JToggleButton bt = new JToggleButton(action);
+        JToggleButton bt = new JToggleButton(action);
+        bt.setOpaque(false);
         bt.setContentAreaFilled(false);
         bt.setBorderPainted(false);
         bt.addActionListener(new ActionListener() {
@@ -197,12 +206,9 @@ public class TrayIconPopup extends JWindow implements MouseListener, ChangeListe
             }
 
         });
-        bt.setOpaque(false);
         bt.setIcon((Icon) action.getValue(Action.SMALL_ICON));
-
         bt.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         bt.setFocusPainted(false);
-
         bt.setHorizontalAlignment(JButton.LEFT);
         bt.setIconTextGap(5);
         bt.addMouseListener(new HoverEffect(bt));
@@ -254,8 +260,8 @@ public class TrayIconPopup extends JWindow implements MouseListener, ChangeListe
         }
     }
 
+    /** färbt den spinner ein, falls speedbegrenzung aktiv */
     private void colorizeSpinnerSpeed() {
-        /* färbt den spinner ein, falls speedbegrenzung aktiv */
         if (spMaxSpeed.getValue() > 0) {
             spMaxSpeed.setColor(JDTheme.C("gui.color.statusbar.maxspeedhighlight", "ff0c03"));
         } else {

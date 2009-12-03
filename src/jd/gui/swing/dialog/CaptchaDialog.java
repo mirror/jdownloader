@@ -42,8 +42,6 @@ import net.miginfocom.swing.MigLayout;
 
 /**
  * Mit dieser Klasse wird ein Captcha Bild angezeigt
- * 
- * @author astaldo
  */
 public class CaptchaDialog extends JCountdownDialog implements ActionListener, KeyListener, WindowListener {
 
