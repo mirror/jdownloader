@@ -20,10 +20,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 
-import javax.swing.JComponent;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
-import javax.swing.JSeparator;
 
 import jd.HostPluginWrapper;
 import jd.controlling.AccountController;
@@ -33,7 +31,8 @@ import jd.utils.locale.JDL;
 
 public class HosterMenu extends Menu {
 
-    public static void update(JComponent c) {
+    public static void update(JMenu c) {
+        boolean addedEntry = false;
 
         PluginForHost plugin;
         JMenu pluginPopup;
@@ -62,9 +61,10 @@ public class HosterMenu extends Menu {
                 }
             }
             c.add(pluginPopup);
+            addedEntry = true;
         }
 
-        c.add(new JSeparator());
+        if (addedEntry) c.addSeparator();
         int entries = 10;
         int menus = ('z' - 'a') / entries + 1;
         JMenu[] jmenus = new JMenu[menus];

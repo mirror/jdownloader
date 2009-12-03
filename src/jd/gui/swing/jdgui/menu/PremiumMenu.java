@@ -131,16 +131,14 @@ public class PremiumMenu extends JStartMenu implements ActionListener, AccountCo
     }
 
     private void updateMenu() {
-
-        this.add(new JCheckBoxMenuItem(tba));
-        this.addSeparator();
-
-        HosterMenu.update(this);
-        this.addSeparator();
-
         config = new JMenuItem(JDL.L("gui.menu.action.config.desc", "Premium Settings"));
         config.addActionListener(this);
+        config.setIcon(JDTheme.II("gui.images.premium", 16, 16));
+
+        this.add(new JCheckBoxMenuItem(tba));
         this.add(config);
+        this.addSeparator();
+        HosterMenu.update(this);
     }
 
     public void actionPerformed(ActionEvent e) {

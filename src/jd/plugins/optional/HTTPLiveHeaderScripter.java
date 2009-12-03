@@ -27,7 +27,6 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JScrollPane;
-import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 
 import jd.PluginWrapper;
@@ -341,7 +340,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
 
                 menFile.add(menImportFile);
                 menFile.add(menSave);
-                menFile.add(new JSeparator());
+                menFile.addSeparator();
                 menFile.add(menImportHTTPLive);
                 menFile.add(menImportJDLH);
 
@@ -359,7 +358,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
                 menEditAddWait.addActionListener(HTTPLiveHeaderScripter.this);
 
                 menEdit.add(menEditValidate);
-                menEdit.add(new JSeparator());
+                menEdit.addSeparator();
                 menEdit.add(menEditAddRequest);
                 menEdit.add(menEditAddDefine);
                 menEdit.add(menEditAddWait);
