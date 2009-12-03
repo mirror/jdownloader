@@ -16,6 +16,7 @@
 
 package jd.plugins.optional.routersend;
 
+import java.awt.EventQueue;
 import java.io.IOException;
 import java.util.ArrayList;
 
@@ -40,7 +41,9 @@ import jd.utils.locale.JDL;
 public class SendRouter extends PluginOptional implements ControlListener {
     private static final String JDL_PREFIX = "jd.plugins.optional.SendRouter.";
     private String scripturl = "http://127.0.0.1/jd/index.php";
-    private String manufactururl = "http://127.0.0.1/jd/hersteller"; // List separated by ","
+    private String manufactururl = "http://127.0.0.1/jd/hersteller"; // List
+                                                                     // separated
+                                                                     // by ","
     private String currentScript = "";
     private int reconnectCounter = 0;
     private Boolean send = false;
@@ -55,7 +58,7 @@ public class SendRouter extends PluginOptional implements ControlListener {
         reconnectCounter = getPluginConfig().getIntegerProperty("ReconnectCounter", 0);
         currentScript = getPluginConfig().getStringProperty("CurrentScript", "");
         send = getPluginConfig().getBooleanProperty("send", false);
-        if(check() == false || send == false)
+        if (check() == false || send == false) 
             JDUtilities.getController().addControlListener(this);
         return false;
     }
@@ -78,31 +81,40 @@ public class SendRouter extends PluginOptional implements ControlListener {
                 reconnectCounter++;
                 getPluginConfig().setProperty("ReconnectCounter", reconnectCounter);
                 getPluginConfig().save();
-                if (reconnectCounter > 5  && check()) {
-                    int ret = UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN, JDL.L(JDL_PREFIX + "info.topic", "Help to Improve JD"), JDL.L(JDL_PREFIX + "info.msg", "JD have detected that you hade 5 successfull reconnects \r\n You now can send the script to our server so we can include it permanently in JD"), UserIO.getInstance().getIcon(UserIO.ICON_INFO), null, null);
-                    if (ret != 2) {
-                        JDUtilities.getController().removeControlListener(this);
-                        return;
-                    }
-                    if (submitdata() == 0) {
-                        UserIO.getInstance().requestMessageDialog(JDL.L(JDL_PREFIX + "send.successfull", "Thank you for your help"));
-                        send = true;
-                        getPluginConfig().setProperty("send", send);
-                        getPluginConfig().save();
-                        JDUtilities.getController().removeControlListener(this);
-                    } else {
-                        UserIO.getInstance().requestMessageDialog(JDL.L(JDL_PREFIX + "send.failed", "A error eccourd while sending your data.\r\n We will ask you again later."));
-                        reconnectCounter = 0;
-                        getPluginConfig().setProperty("ReconnectCounter", reconnectCounter);
-                        getPluginConfig().save();
-                        JDUtilities.getController().removeControlListener(this);
-                    }
+                if (reconnectCounter > 5 && check()) {
+                    EventQueue.invokeLater(new Runnable() {
+                        public void run() {
+                            execute_send();
+                        }
+                    });
+
                 }
             }
         }
     }
 
-    private boolean check(){
+    private void execute_send() {
+        int ret = UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN, JDL.L(JDL_PREFIX + "info.topic", "Help to Improve JD"), JDL.L(JDL_PREFIX + "info.msg", "JD have detected that you hade 5 successfull reconnects \r\n You now can send the script to our server so we can include it permanently in JD"), UserIO.getInstance().getIcon(UserIO.ICON_INFO), null, null);
+        if (ret != 2) {
+            JDUtilities.getController().removeControlListener(this);
+            return;
+        }
+        if (submitdata() == 0) {
+            UserIO.getInstance().requestMessageDialog(JDL.L(JDL_PREFIX + "send.successfull", "Thank you for your help"));
+            send = true;
+            getPluginConfig().setProperty("send", send);
+            getPluginConfig().save();
+            JDUtilities.getController().removeControlListener(this);
+        } else {
+            UserIO.getInstance().requestMessageDialog(JDL.L(JDL_PREFIX + "send.failed", "A error eccourd while sending your data.\r\n We will ask you again later."));
+            reconnectCounter = 0;
+            getPluginConfig().setProperty("ReconnectCounter", reconnectCounter);
+            getPluginConfig().save();
+            JDUtilities.getController().removeControlListener(this);
+        }
+    }
+
+    private boolean check() {
         if (!currentScript.equals(JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_REQUESTS))) {
             currentScript = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_REQUESTS);
             send = false;
@@ -115,6 +127,7 @@ public class SendRouter extends PluginOptional implements ControlListener {
         }
         return true;
     }
+
     private int submitdata() {
         Form data = new Form();
         data.setMethod(Form.MethodType.POST);
