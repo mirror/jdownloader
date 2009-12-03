@@ -20,6 +20,7 @@ import java.io.File;
 
 import jd.PluginWrapper;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -67,16 +68,27 @@ public class ExtaBitCom extends PluginForHost {
         String addedlink = br.getURL();
         br.getPage(addedlink + "?go");
         // If the waittime was forced it yould be here but it isn't!
-        // Captcha handling
-        Recaptcha rc = new Recaptcha(br);
-        rc.parse();
-        rc.load();
-        File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-        String c = getCaptchaCode(cf, link);
-        rc.getForm().put("capture", "1");
-        rc.getForm().setAction(addedlink);
-        rc.setCode(c);
-        if (br.containsHTML("api.recaptcha.net")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        // Re Captcha handling
+        if (br.containsHTML("api.recaptcha.net")) {
+            Recaptcha rc = new Recaptcha(br);
+            rc.parse();
+            rc.load();
+            File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+            String c = getCaptchaCode(cf, link);
+            rc.getForm().put("capture", "1");
+            rc.getForm().setAction(addedlink);
+            rc.setCode(c);
+        } else {
+            // *Normal* captcha handling
+            Form dlform = br.getFormbyProperty("id", "cmn_form");
+            String captchaurl = br.getRegex("\"(/capture.*?\\?-[0-9]+)\"").getMatch(0);
+            if (dlform == null || captchaurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            captchaurl = "http://extabit.com" + captchaurl;
+            String code = getCaptchaCode(captchaurl, link);
+            dlform.put("capture", code);
+            br.submitForm(dlform);
+        }
+        if (br.containsHTML("(api.recaptcha.net|/capture)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         br.getPage(addedlink + "?af");
         String dllink = br.getRegex("color:black;font-weight:normal;font-family:arial;\" href=\"(.*?)\"").getMatch(0);
         if (dllink == null) dllink = br.getRegex("\"(http://[a-zA-Z]+[0-9]+\\.extabit\\.com/.*?/.*?)\"").getMatch(0);
