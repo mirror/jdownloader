@@ -138,10 +138,16 @@ public class UploadBoxCom extends PluginForHost {
         form.put("enter", code);
         br.submitForm(form);
         if (br.containsHTML("read the code")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        String dllink = br.getRegex("id=\"file_download\".*?src=\"(.*?)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("If downloading hasn't started.*?<a href=\"(.*?)\"").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("\"(http://[a-z0-9]+-get\\.uploadbox\\.com/get/.*?)\"").getMatch(0);
+            }
+        }
         br.setDebug(true);
-        form = br.getForm(1);
-        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, form, true, 1);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
         dl.startDownload();
     }
 
