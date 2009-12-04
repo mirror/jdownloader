@@ -136,11 +136,8 @@ public class ToolBar extends JToolBar {
                 ab = null;
                 switch (action.getType()) {
                 case NORMAL:
-
-                    // add(ab = new JMenuItem(action), BUTTON_CONSTRAINTS);
                     ab = add(action);
                     lastseperator = false;
-                    // ab.setText("");
                     break;
                 case SEPARATOR:
                     if (!lastseperator) {
@@ -148,9 +145,7 @@ public class ToolBar extends JToolBar {
                         lastseperator = true;
                     }
                     break;
-
                 case TOGGLE:
-                    // ab = add(action);
                     add(ab = new JToggleButton(action));
                     if (JDUtilities.getJavaVersion() < 1.6) {
                         final AbstractButton button = ab;
@@ -178,29 +173,24 @@ public class ToolBar extends JToolBar {
                                         }
 
                                     }.start();
-
                                 }
-
                             }
-
                         });
                     }
                     if ((action.getValue(Action.SMALL_ICON) != null || action.getValue(Action.LARGE_ICON_KEY) != null)) {
                         ab.setText("");
                     }
                     lastseperator = false;
-                    // add(ab = tbt = new JCheckBoxMenuItem(action),
-                    // BUTTON_CONSTRAINTS);
-                    // tbt.setText("");
                     break;
-
                 }
 
                 if (ab != null) {
                     if (JDUtilities.getJavaVersion() < 1.6) {
                         if (action.getValue(Action.LARGE_ICON_KEY) != null) ab.setIcon((Icon) action.getValue(Action.LARGE_ICON_KEY));
                     }
-                    KeyStroke ks = (KeyStroke) action.getValue(Action.ACCELERATOR_KEY);
+                    Object value = action.getValue(Action.ACCELERATOR_KEY);
+                    if (value == null) continue;
+                    KeyStroke ks = (KeyStroke) value;
                     rootpane.getInputMap(JButton.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(ks, action);
                     rootpane.getInputMap(JButton.WHEN_IN_FOCUSED_WINDOW).put(ks, action);
                     rootpane.getActionMap().put(action, action);

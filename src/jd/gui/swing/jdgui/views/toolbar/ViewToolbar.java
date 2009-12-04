@@ -22,7 +22,6 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 
 import javax.swing.AbstractButton;
-import javax.swing.Action;
 import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.JSeparator;
@@ -133,7 +132,6 @@ public class ViewToolbar extends JPanel {
                 if (action == null) {
                     warning("The Action " + key + " is not available");
                     continue;
-
                 }
 
                 action.init();
@@ -146,26 +144,19 @@ public class ViewToolbar extends JPanel {
                 case SEPARATOR:
                     add(new JSeparator(JSeparator.VERTICAL), "height 32,gapleft 10,gapright 10");
                     break;
-
                 case TOGGLE:
                     add(ab = new JToggleButton(action), getButtonConstraint(i, action));
                     break;
-
                 }
                 if (ab != null) {
                     ab.setContentAreaFilled(contentPainted);
                     ab.setFocusPainted(false);
-                    if (action.getValue(Action.MNEMONIC_KEY) != null) {
-                        ab.setToolTipText(action.getTooltipText() + " [Alt+" + new String(new byte[] { ((Integer) action.getValue(Action.MNEMONIC_KEY)).byteValue() }) + "]");
-                    } else {
-                        ab.setToolTipText(action.getTooltipText());
-                    }
-
                     ab.setIcon(JDTheme.II(action.getValue(ToolBarAction.IMAGE_KEY) + "", 16, 16));
                     if (!textPainted) {
                         ab.setText("");
                     }
-                    ab.setToolTipText(action.getTooltipText());
+                    String shortCut = action.getShortCutString();
+                    ab.setToolTipText(action.getTooltipText() + (shortCut != null ? " [" + shortCut + "]" : ""));
                     ab.setEnabled(action.isEnabled());
                     ab.setSelected(action.isSelected());
                     setDefaults(i, ab);
@@ -178,29 +169,20 @@ public class ViewToolbar extends JPanel {
                             ToolBarAction action = (ToolBarAction) evt.getSource();
                             try {
                                 AbstractButton ab = ((AbstractButton) action.getValue(GUIINSTANCE));
-                                // ab.setText("");
-                                if (action.getValue(Action.MNEMONIC_KEY) != null) {
-                                    ab.setToolTipText(action.getTooltipText() + " [Alt+" + new String(new byte[] { ((Integer) action.getValue(Action.MNEMONIC_KEY)).byteValue() }) + "]");
-                                } else {
-                                    ab.setToolTipText(action.getTooltipText());
-                                }
+                                String shortCut = action.getShortCutString();
+                                ab.setToolTipText(action.getTooltipText() + (shortCut != null ? " [" + shortCut + "]" : ""));
                                 ab.setEnabled(action.isEnabled());
                                 ab.setSelected(action.isSelected());
                             } catch (Throwable w) {
                                 JDLogger.exception(w);
                                 action.removePropertyChangeListener(this);
-
                             }
-
                         }
-
                     });
                     if (action.getValue(PROPERTY_CHANGE_LISTENER) != null) {
-
                         action.removePropertyChangeListener((PropertyChangeListener) action.getValue(PROPERTY_CHANGE_LISTENER));
                     }
                     action.putValue(PROPERTY_CHANGE_LISTENER, pcl);
-
                 }
             }
         }

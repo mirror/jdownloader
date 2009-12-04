@@ -275,13 +275,9 @@ public abstract class JDAction extends AbstractAction {
     }
 
     public String getShortCutString() {
-        if (getValue(Action.ACCELERATOR_KEY) != null) {
-            return ShortCuts.getAcceleratorString((KeyStroke) getValue(Action.ACCELERATOR_KEY));
-        } else if (getValue(Action.MNEMONIC_KEY) != null) {
-            return "Alt+" + new String(new byte[] { ((Integer) getValue(Action.MNEMONIC_KEY)).byteValue() });
-        } else {
-            return null;
-        }
+        Object value = getValue(Action.ACCELERATOR_KEY);
+        if (value == null) return null;
+        return ShortCuts.getAcceleratorString((KeyStroke) getValue(Action.ACCELERATOR_KEY));
     }
 
     /**

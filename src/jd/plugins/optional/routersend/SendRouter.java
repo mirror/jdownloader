@@ -60,7 +60,7 @@ public class SendRouter extends PluginOptional implements ControlListener {
         reconnectCounter = getPluginConfig().getIntegerProperty("ReconnectCounter", 0);
         currentScript = getPluginConfig().getStringProperty("CurrentScript", "");
         send = getPluginConfig().getBooleanProperty("send", false);
-        if (check() == false || send == false||DEBUG) JDUtilities.getController().addControlListener(this);
+        if (!check() || !send || DEBUG) JDUtilities.getController().addControlListener(this);
         return false;
     }
 
@@ -82,7 +82,7 @@ public class SendRouter extends PluginOptional implements ControlListener {
                 reconnectCounter++;
                 getPluginConfig().setProperty("ReconnectCounter", reconnectCounter);
                 getPluginConfig().save();
-                if (DEBUG||(reconnectCounter > 5 && check())) {
+                if ((reconnectCounter > 5 && check()) || DEBUG) {
                     new Thread() {
                         public void run() {
                             executeSend();
@@ -172,9 +172,9 @@ public class SendRouter extends PluginOptional implements ControlListener {
         String routerlogins = UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN | UserIO.NO_CANCEL_OPTION, JDL.L(JDL_PREFIX + "password.name", "Router's Username? \r\nIt will NOT be uploaded. We need it to remove it from the script."), "");
         String routerpassword = UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN | UserIO.NO_CANCEL_OPTION, JDL.L(JDL_PREFIX + "password.name", "Router's Password? \r\nIT will NOT be uploaded. We need it to remove it from the script."), "");
 
-       if(routerlogins!=null) currentScript = currentScript.replace(routerlogins, "%%%username%%%");
-       if(routerpassword!=null) currentScript = currentScript.replace(routerpassword, "%%%password%%%");
-        //Send
+        if (routerlogins != null) currentScript = currentScript.replace(routerlogins, "%%%username%%%");
+        if (routerpassword != null) currentScript = currentScript.replace(routerpassword, "%%%password%%%");
+        // Send
         InputField hersteller = new InputField("hersteller", Encoding.urlEncode(manufactor));
         InputField name = new InputField("name", Encoding.urlEncode(routerName));
         InputField script = new InputField("script", Encoding.urlEncode(currentScript));
@@ -186,7 +186,7 @@ public class SendRouter extends PluginOptional implements ControlListener {
             if (br.toString().contains("2")) return true;
         } catch (Exception e) {
             JDLogger.exception(e);
-          
+
             return false;
         }
         return true;
