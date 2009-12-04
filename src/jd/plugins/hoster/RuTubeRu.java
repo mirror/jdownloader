@@ -63,7 +63,11 @@ public class RuTubeRu extends PluginForHost {
         String linkurl = br.getRegex("player.swf\\?buffer_first=1\\.0&file=(.*?)&xurl").getMatch(0);
         if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         linkurl = Encoding.urlDecode(linkurl, true);
-        System.out.println(linkurl);
+        String video_id = linkurl.substring(linkurl.lastIndexOf("/")+1, linkurl.lastIndexOf("."));
+        linkurl = linkurl.replaceFirst(linkurl.substring(linkurl.lastIndexOf(".")+1, linkurl.length()), "xml");
+        linkurl = linkurl + "?referer=" + Encoding.urlEncode(downloadLink.getDownloadURL()+"?v="+video_id);
+        br.getPage(linkurl);
+        linkurl = br.getRegex("\\[CDATA\\[(.*?)\\]").getMatch(0);
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, true, 0);
         dl.startDownload();
