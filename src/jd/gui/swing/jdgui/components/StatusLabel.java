@@ -73,7 +73,7 @@ public class StatusLabel extends JPanel {
     public void setIcon(int i, Icon icon, String text, String tooltip) {
         if (i < 0 && ICONCOUNT > 0) {
             left.setIcon(icon);
-            left.setText(text);
+            // left.setText(text);
             left.setToolTipText(tooltip);
         } else {
             if (i < 0 || i >= ICONCOUNT) return;

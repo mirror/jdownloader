@@ -75,7 +75,7 @@ public class Lnkcrptws {
         ArrayList<PixelObject> ob = getObjects(captcha);
         // delete the lines
         for (Iterator<PixelObject> iterator = ob.iterator(); iterator.hasNext();) {
-            PixelObject pixelObject = (PixelObject) iterator.next();
+            PixelObject pixelObject = iterator.next();
             int ratio = pixelObject.getHeight() * 100 / pixelObject.getWidth();
             if (ratio > 105 || ratio < 95) iterator.remove();
         }

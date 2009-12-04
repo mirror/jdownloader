@@ -43,8 +43,12 @@ public class ProgressCircle extends JPanel {
         if (!controller.isIndeterminate()) {
             maximum = controller.getMax();
             value = controller.getValue();
-            StringBuilder toolTip = new StringBuilder(controller.getStatusText());
-            toolTip.append(new char[] { ' ', '[' });
+            StringBuilder toolTip = new StringBuilder();
+            if (controller.getStatusText() != null) {
+                toolTip.append(controller.getStatusText());
+                toolTip.append(' ');
+            }
+            toolTip.append('[');
             toolTip.append(controller.getPercent() / 100);
             toolTip.append(new char[] { '%', ']' });
             setToolTipText(toolTip.toString());

@@ -117,12 +117,12 @@ public class GetRouterInfo {
             Enumeration<NetworkInterface> e = NetworkInterface.getNetworkInterfaces();
 
             while (e.hasMoreElements()) {
-                NetworkInterface ni = (NetworkInterface) e.nextElement();
+                NetworkInterface ni = e.nextElement();
 
                 Enumeration<InetAddress> e2 = ni.getInetAddresses();
 
                 while (e2.hasMoreElements()) {
-                    InetAddress ip = (InetAddress) e2.nextElement();
+                    InetAddress ip = e2.nextElement();
                     if (ip.isLoopbackAddress()) break;
                     if (ip.getHostAddress().matches("\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}")) ret.add(ip);
                 }

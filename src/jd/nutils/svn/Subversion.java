@@ -161,7 +161,7 @@ public class Subversion implements ISVNEventHandler {
      */
     @SuppressWarnings("unchecked")
     public ArrayList<SVNLogEntry> getChangeset(int start, int end) throws SVNException {
-        Collection log = repository.log(new String[] { "" }, null, start, end, true, true);
+        Collection<SVNLogEntry> log = repository.log(new String[] { "" }, null, start, end, true, true);
 
         ArrayList<SVNLogEntry> list = new ArrayList<SVNLogEntry>();
         list.addAll(log);

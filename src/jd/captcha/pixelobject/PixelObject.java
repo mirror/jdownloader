@@ -198,9 +198,10 @@ public class PixelObject implements Comparable<PixelObject> {
         yMax = Math.max(current.yMax, yMax);
         for (Entry<Integer, HashMap<Integer, int[]>> set : current.grid.entrySet()) {
             HashMap<Integer, int[]> row = grid.get(set.getKey());
-            if (row == null) grid.put(set.getKey(), set.getValue());
+            if (row == null)
+                grid.put(set.getKey(), set.getValue());
             else
-            row.putAll(set.getValue());
+                row.putAll(set.getValue());
         }
         for (int i = 0; i < current.object.size(); i++) {
             int[] ob = current.object.get(i);
@@ -221,7 +222,7 @@ public class PixelObject implements Comparable<PixelObject> {
             int x = current.object.get(i)[0];
             int y = current.object.get(i)[1];
             for (Iterator<int[]> iterator = object.iterator(); iterator.hasNext();) {
-                int[] o = (int[]) iterator.next();
+                int[] o = iterator.next();
                 if (o[0] == x && o[1] == y) {
                     iterator.remove();
                     break;
@@ -815,7 +816,7 @@ public class PixelObject implements Comparable<PixelObject> {
             int xd = x - akt[0];
             int yd = y - akt[1];
             if (Math.max(Math.abs(xd), Math.abs(yd)) < bestDist) {
-                double dist = Math.sqrt(xd*xd + yd*yd);
+                double dist = Math.sqrt(xd * xd + yd * yd);
                 if (dist < bestDist) {
                     bestDist = dist;
                     bestAKT = akt;

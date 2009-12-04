@@ -94,7 +94,7 @@ public class test2 extends JPanel implements DropTargetListener {
                 List<File> list = (List<File>) trans.getTransferData(DataFlavor.javaFileListFlavor);
                 ListIterator<File> it = list.listIterator();
                 while (it.hasNext()) {
-                    File f = (File) it.next();
+                    File f = it.next();
                     ImageIcon icon = new ImageIcon(f.getAbsolutePath());
                     showImageInNewFrame(icon);
                 }

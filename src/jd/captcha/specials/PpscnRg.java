@@ -130,7 +130,7 @@ public class PpscnRg {
         if (os.size() == 4) return;
         PixelObject aos = null;
         for (Iterator<PixelObject> iterator = os.iterator(); iterator.hasNext();) {
-            PixelObject pixelObject = (PixelObject) iterator.next();
+            PixelObject pixelObject = iterator.next();
             if (pixelObject.getSize() < 2) iterator.remove();
         }
         int mergeos = Integer.MAX_VALUE;
