@@ -203,14 +203,14 @@ public class ShrLnksBz extends PluginForDecrypt {
         if (format.matches("rsdf")) {
             dlclinks = br.getRegex("rsdf container.*?onclick=\"javascript:_get\\('(.*?)'.*?'rsdf'\\)").getMatch(0);
         }
-        if (dlclinks == null) return null;
+        if (dlclinks == null) new ArrayList<DownloadLink>();
         dlclinks = "http://share-links.biz/get/" + format + "/" + dlclinks;
         String test = Encoding.htmlDecode(dlclinks);
         File file = null;
         URLConnectionAdapter con = brc.openGetConnection(dlclinks);
         if (con.getResponseCode() == 200) {
             file = JDUtilities.getResourceFile("tmp/sharelinks/" + test.replaceAll("(http://share-links.biz/|/|\\?)", "") + "." + format);
-            if (file == null) return null;
+            if (file == null) return new ArrayList<DownloadLink>();;
             file.deleteOnExit();
             brc.downloadConnection(file, con);
         } else {
