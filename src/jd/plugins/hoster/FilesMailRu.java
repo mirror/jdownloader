@@ -103,6 +103,10 @@ public class FilesMailRu extends PluginForHost {
                     String directlink = new Regex(info, "\"(http://content\\.files\\.mail\\.ru/.*?/.*?)\"").getMatch(0);
                     if (directlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     dllink = directlink;
+                    // Set the new downloadlink so when the user stops the
+                    // download and tries again he doesn't have to wait the 10
+                    // Seconds to start!
+                    downloadLink.setUrlDownload(dllink);
                     // Ticket Time
                     // If we get the dllink this way we have to wait about 10
                     // seconds else the server doesn't allow starting the

@@ -86,86 +86,83 @@ public class RapidSharkPl extends PluginForHost {
         if (dlform2 != null && !br.containsHTML("http://www.rapidshark.pl/captchas")) {
             br.submitForm(dlform2);
             dllink = br.getRegex("document has moved <a href=\"(.*?)\"").getMatch(0);
+            if (dllink == null) dllink = br.getRedirectLocation();
         } else {
-//            // Ticket Time (not needed right now)
-//            String ttt = br.getRegex("countdown\">.*?(\\d+).*?</span>").getMatch(0);
-//            if (ttt != null) {
-//                logger.info("Waittime detected, waiting " + ttt.trim() + " seconds from now on...");
-//                int tt = Integer.parseInt(ttt);
-//                sleep(tt * 1001, downloadLink);
-//            }
-            Form dlform = br.getFormbyProperty("name", "F1");
-            if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
 
-            String captchaurl = br.getRegex("(http://www.rapidshark.pl/captchas.*?)\"").getMatch(0);
-            if (captchaurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // Ticket Time
+        // String ttt =
+        // br.getRegex("countdown\">.*?(\\d+).*?</span>").getMatch(0);
+        // if (ttt != null) {
+        // logger.info("Waittime detected, waiting " + ttt.trim() +
+        // " seconds from now on...");
+        // int tt = Integer.parseInt(ttt);
+        // sleep(tt * 1001, downloadLink);
+        // }
+        if (dllink == null) {
+            URLConnectionAdapter con2 = br.getHttpConnection();
+            logger.finest("Connection type is '" + con2.getContentType() + "'");
 
-            String code = getCaptchaCode(captchaurl, downloadLink);
-            logger.finest("Obtained captcha code is '" + code + "'");
-            dlform.put("code", code);
-
-            dlform.remove("method_premium");
-            br.submitForm(dlform);
-
-            dllink = br.getRedirectLocation();
-            if (dllink == null) {
-                URLConnectionAdapter con2 = br.getHttpConnection();
-                logger.finest("Connection type is '" + con2.getContentType() + "'");
-
-                if (con2.getContentType().contains("html")) {
-                    if (br.containsHTML("You have to wait")) {
+            if (con2.getContentType().contains("html")) {
+                if (br.containsHTML("You have to wait")) {
+                    int minutes = 0, seconds = 0, hours = 0;
+                    String tmphrs = br.getRegex("\\s+(\\d+)\\s+hours?").getMatch(0);
+                    if (tmphrs != null) hours = Integer.parseInt(tmphrs);
+                    String tmpmin = br.getRegex("\\s+(\\d+)\\s+minutes?").getMatch(0);
+                    if (tmpmin != null) minutes = Integer.parseInt(tmpmin);
+                    String tmpsec = br.getRegex("\\s+(\\d+)\\s+seconds?").getMatch(0);
+                    if (tmpsec != null) seconds = Integer.parseInt(tmpsec);
+                    int waittime = ((3600 * hours) + (60 * minutes) + seconds + 1) * 1000;
+                    logger.info("Detected waittime #1, waiting " + waittime + "milliseconds");
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
+                }
+                if (br.containsHTML("You have reached the download-limit")) {
+                    String tmphrs = br.getRegex("\\s+(\\d+)\\s+hours?").getMatch(0);
+                    String tmpmin = br.getRegex("\\s+(\\d+)\\s+minutes?").getMatch(0);
+                    String tmpsec = br.getRegex("\\s+(\\d+)\\s+seconds?").getMatch(0);
+                    if (tmphrs == null && tmpmin == null && tmpsec == null) {
+                        throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 60 * 60 * 1000l);
+                    } else {
                         int minutes = 0, seconds = 0, hours = 0;
-                        String tmphrs = br.getRegex("\\s+(\\d+)\\s+hours?").getMatch(0);
                         if (tmphrs != null) hours = Integer.parseInt(tmphrs);
-                        String tmpmin = br.getRegex("\\s+(\\d+)\\s+minutes?").getMatch(0);
                         if (tmpmin != null) minutes = Integer.parseInt(tmpmin);
-                        String tmpsec = br.getRegex("\\s+(\\d+)\\s+seconds?").getMatch(0);
                         if (tmpsec != null) seconds = Integer.parseInt(tmpsec);
                         int waittime = ((3600 * hours) + (60 * minutes) + seconds + 1) * 1000;
-                        logger.info("Detected waittime #1, waiting " + waittime + "milliseconds");
+                        logger.info("Detected waittime #2, waiting " + waittime + "milliseconds");
                         throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
                     }
-                    if (br.containsHTML("You have reached the download-limit")) {
-                        String tmphrs = br.getRegex("\\s+(\\d+)\\s+hours?").getMatch(0);
-                        String tmpmin = br.getRegex("\\s+(\\d+)\\s+minutes?").getMatch(0);
-                        String tmpsec = br.getRegex("\\s+(\\d+)\\s+seconds?").getMatch(0);
-                        if (tmphrs == null && tmpmin == null && tmpsec == null) {
-                            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 60 * 60 * 1000l);
-                        } else {
-                            int minutes = 0, seconds = 0, hours = 0;
-                            if (tmphrs != null) hours = Integer.parseInt(tmphrs);
-                            if (tmpmin != null) minutes = Integer.parseInt(tmpmin);
-                            if (tmpsec != null) seconds = Integer.parseInt(tmpsec);
-                            int waittime = ((3600 * hours) + (60 * minutes) + seconds + 1) * 1000;
-                            logger.info("Detected waittime #2, waiting " + waittime + "milliseconds");
-                            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
-                        }
-                    }
-                    String error = br.getRegex("class=\"err\">(.*?)</font>").getMatch(0);
-                    if (error != null) {
-                        logger.warning(error);
-                        con2.disconnect();
-                        if (error.equalsIgnoreCase("Wrong captcha") || error.equalsIgnoreCase("Expired session")) {
-                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                        } else {
-                            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, error, 10000);
-                        }
-                    }
-
-                    if (br.containsHTML("Download Link Generated")) {
-                        dllink = br.getRegex("padding:7px;\">\\s+<a\\s+href=\"(.*?)\">").getMatch(0);
+                }
+                String error = br.getRegex("class=\"err\">(.*?)</font>").getMatch(0);
+                if (error != null) {
+                    logger.warning(error);
+                    con2.disconnect();
+                    if (error.equalsIgnoreCase("Wrong captcha") || error.equalsIgnoreCase("Expired session")) {
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, error, 10000);
                     }
                 }
 
-                con2.disconnect();
+                if (dllink == null) {
+                    dllink = br.getRegex("dotted #bbb;padding.*?<a href=\"(.*?)\"").getMatch(0);
+                    if (dllink == null) {
+                        dllink = br.getRegex("This direct link will be available for your IP.*?href=\"(http.*?)\"").getMatch(0);
+                        if (dllink == null) {
+                            // This was for fileop.com, maybe also works for
+                            // others!
+                            dllink = br.getRegex("Download: <a href=\"(.*?)\"").getMatch(0);
+                        }
+                    }
+                }
             }
+
+            con2.disconnect();
         }
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        logger.fine("Obtained download link is '" + dllink + "'");
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         boolean error2 = false;
         try {
-            if (dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("html")) {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+            if (dl.getConnection().getContentType().contains("html")) {
                 error2 = true;
             }
         } catch (Exception e) {

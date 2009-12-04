@@ -18,14 +18,16 @@ package jd.plugins.hoster;
 
 import jd.PluginWrapper;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "usershare.net" }, urls = { "http://[\\w\\.]*?usershare\\.net/[0-9a-zA-Z.]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "usershare.net" }, urls = { "http://[\\w\\.]*?usershare\\.net/[0-9a-zA-Z]{12}" }, flags = { 0 })
 public class Usershare extends PluginForHost {
 
     public Usershare(PluginWrapper wrapper) {
@@ -41,13 +43,39 @@ public class Usershare extends PluginForHost {
     @Override
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
-        br.setCookie("http://www.usershare.net", "lang", "english");
-        String linkurl = br.getRegex("</script> -->.*?<br>.*?<a href=\"(.*?)\"><img").getMatch(0);
-        if (linkurl == null) {
-            linkurl = br.getRegex(".*?document.oncontextmenu=new Function.*?<a href=\"(.*?)\"><img src=\"/images/download_btn.jpg\" border=0>").getMatch(0);
-            if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.setFollowRedirects(false);
+        String passCode = null;
+        String linkurl = null;
+        String loginpw = br.getRegex("value=\"login\">(.*?)value=\" Login\"").getMatch(0);
+        if (br.containsHTML("name=\"password\"") && !(loginpw != null && loginpw.contains("password"))) {
+            logger.info("The downloadlink seems to be password protected.");
+            Form pwform = br.getFormbyProperty("name", "F1");
+            if (pwform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (link.getStringProperty("pass", null) == null) {
+                passCode = Plugin.getUserInput("Password?", link);
+            } else {
+                /* gespeicherten PassCode holen */
+                passCode = link.getStringProperty("pass", null);
+            }
+            pwform.put("password", passCode);
+            logger.info("Put password \"" + passCode + "\" entered by user in the DLForm and submitted it.");
+            br.submitForm(pwform);
+            if (br.containsHTML("(name=\"password\"|Wrong password)") && !(loginpw != null && loginpw.contains("password"))) {
+                logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
+                link.setProperty("pass", null);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+            linkurl = br.getRedirectLocation();
+        } else {
+            linkurl = br.getRegex("</script> -->.*?<br>.*?<a href=\"(.*?)\"><img").getMatch(0);
+            if (linkurl == null) {
+                linkurl = br.getRegex(".*?document.oncontextmenu=new Function.*?<a href=\"(.*?)\"><img src=\"/images/download_btn.jpg\" border=0>").getMatch(0);
+            }
         }
-        br.setFollowRedirects(true);
+        if (passCode != null) {
+            link.setProperty("pass", passCode);
+        }
+        if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, linkurl, true, -4);
         dl.startDownload();
     }

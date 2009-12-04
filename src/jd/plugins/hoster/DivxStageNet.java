@@ -24,11 +24,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-//movshare by pspzockerscene
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "movshare.net" }, urls = { "http://[\\w\\.]*?movshare\\.net/video/[a-z0-9]+" }, flags = { 0 })
-public class MovShareNet extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "divxstage.net" }, urls = { "http://[\\w\\.]*?divxstage\\.net/video/[a-z0-9]+" }, flags = { 0 })
+public class DivxStageNet extends PluginForHost {
 
-    public MovShareNet(PluginWrapper wrapper) {
+    public DivxStageNet(PluginWrapper wrapper) {
         super(wrapper);
         br.setFollowRedirects(true);
         setBrowserExclusive();
@@ -36,7 +35,7 @@ public class MovShareNet extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.movshare.net/terms.php";
+        return "http://www.divxstage.net/terms.php";
     }
 
     // This plugin is 99,99% copy the same as the MovShareNet plugin, if this
@@ -51,7 +50,7 @@ public class MovShareNet extends PluginForHost {
         }
         if (br.containsHTML("The file is beeing transfered to our other servers")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
         if (br.containsHTML("This file no longer exists on our servers")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = (br.getRegex("Title: </strong>(.*?)</td> <td>").getMatch(0));
+        String filename = (br.getRegex("<br>.*?<h4>(.*?)</h4>").getMatch(0));
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (filename.contains("Untitled")) {
             downloadLink.setFinalFileName("Video " + System.currentTimeMillis() + ".avi");
