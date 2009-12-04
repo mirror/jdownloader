@@ -387,6 +387,7 @@ gui.linkgrabber.package.offline = Offline
 gui.linkgrabber.package.unchecked = Unchecked
 gui.linkgrabber.package.unsorted = Various
 gui.linkgrabber.packageofflinepercent = %s Offline
+gui.linkgrabber.packageonlinepercent = %s Online
 gui.linkgrabber.packagetab.chb.extractafterdownload = Extract
 gui.linkgrabber.packagetab.chb.usesubdirectory = Use Sub-directory
 gui.linkgrabber.packagetab.lbl.comment = Comment

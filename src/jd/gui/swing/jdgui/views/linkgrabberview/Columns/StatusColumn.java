@@ -97,9 +97,13 @@ public class StatusColumn extends JDTableColumn {
             int failedCount = fp.countFailedLinks(false);
             int size = fp.getDownloadLinks().size();
             if (failedCount > 0) {
-                statuspanel.setText(JDL.LF("gui.linkgrabber.packageofflinepercent", "%s offline", JDUtilities.getPercent(failedCount, size)), null);
+                if(failedCount == size) {
+                    statuspanel.setText(JDL.LF("gui.linkgrabber.packageofflinepercent", "%s offline", JDUtilities.getPercent(failedCount, size)), null);
+                } else {
+                    statuspanel.setText(JDL.LF("gui.linkgrabber.packageofflinepercent", "%s offline", JDUtilities.getPercent(failedCount, size)) + "/" + JDL.LF("gui.linkgrabber.packageonlinepercent", "%s online", JDUtilities.getPercent(size - failedCount, size)), null);
+                }
             } else {
-                statuspanel.setText("", null);
+                statuspanel.setText(JDL.LF("gui.linkgrabber.packageonlinepercent", "%s online", "100.00%"), null);
             }
             if (fp.hasCustomIcon()) {
                 statuspanel.setIcon(-1, fp.getCustomIcon(), null, fp.getCustomIconText());
