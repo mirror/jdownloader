@@ -387,6 +387,7 @@ gui.linkgrabber.package.offline = Μη διαθέσιμο
 gui.linkgrabber.package.unchecked = Δεν ελέγχθηκαν
 gui.linkgrabber.package.unsorted = Διάφορα
 gui.linkgrabber.packageofflinepercent = %s Μη διαθέσιμα
+gui.linkgrabber.packageonlinepercent = %s Διαθέσιμα
 gui.linkgrabber.packagetab.chb.extractafterdownload = Αποσυμπίεση
 gui.linkgrabber.packagetab.chb.usesubdirectory = Χρήση υπο-τοποθεσίας
 gui.linkgrabber.packagetab.lbl.comment = Σχόλιο
