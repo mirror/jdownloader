@@ -24,7 +24,6 @@ import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
-import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -88,24 +87,10 @@ public class RemixShareCom extends PluginForHost {
                 downloadLink.setProperty("pass", pass);
             }
         }
-        String away = null;
-        String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
-        if (sitelinks == null || sitelinks.length == 0) {
-            logger.warning("Standard captcha captchahandling broken!");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        for (String link : sitelinks) {
-            if (link.contains("/downloadfinal")) {
-                away = link;
-                break;
-            }
-        }
-        if (away != null)
-            br.getPage(away);
-        else {
-            Form down = br.getForm(0);
-            if (down == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
+        String fCKU = br.getRegex("'(/downloadfinal/.*?/.*?)'").getMatch(0);
+        if (fCKU == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        fCKU = "http://remixshare.com" + fCKU;
+        br.getPage(fCKU);
         String dllink = br.getRedirectLocation();
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // this.sleep(12000, downloadLink); // uncomment when they find a better

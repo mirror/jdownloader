@@ -82,7 +82,8 @@ public class FilesFm extends PluginForHost {
         String code = getCaptchaCode(captchaurl, downloadLink);
         captchaForm.put("captchacode", code);
         br.submitForm(captchaForm);
-        if (br.containsHTML("You have got max allowed bandwidth size per hour")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 60 * 60 * 1001l); }
+        if (br.containsHTML("no free download slots available")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No free slots available");
+        if (br.containsHTML("You have got max allowed bandwidth size per hour")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 60 * 60 * 1001l);
         if (br.containsHTML("Captcha number error") || br.containsHTML("Password Error")) {
             downloadLink.setProperty("pass", null);
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
