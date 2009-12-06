@@ -17,6 +17,7 @@ public class ProgressCircle extends JPanel {
 
     private static final long serialVersionUID = -6877009081026501104L;
     private static final int ICONSIZE = 15;
+    private static final int ICONSIZE_CIRCLE = 16;
     private static final double INDETERMINATE_MAXIMUM = 8;
 
     private double value;
@@ -80,7 +81,11 @@ public class ProgressCircle extends JPanel {
 
     @Override
     public Dimension getPreferredSize() {
-        return new Dimension(ICONSIZE + 1, ICONSIZE + 1);
+        if (icon == null || iconGrey == null) {
+            return new Dimension(ICONSIZE_CIRCLE + 1, ICONSIZE_CIRCLE + 1);
+        } else {
+            return new Dimension(ICONSIZE + 1, ICONSIZE + 1);
+        }
     }
 
     @Override
@@ -98,13 +103,13 @@ public class ProgressCircle extends JPanel {
 
             g2.setColor(color);
             if (!backward) {
-                g2.fillArc(0, 0, ICONSIZE, ICONSIZE, 90 - degree, degree);
+                g2.fillArc(0, 0, ICONSIZE_CIRCLE, ICONSIZE_CIRCLE, 90 - degree, degree);
             } else {
-                g2.fillArc(0, 0, ICONSIZE, ICONSIZE, 90, degree);
+                g2.fillArc(0, 0, ICONSIZE_CIRCLE, ICONSIZE_CIRCLE, 90, degree);
             }
 
             g2.setColor(Color.BLACK);
-            g2.drawArc(0, 0, ICONSIZE, ICONSIZE, 0, 360);
+            g2.drawArc(0, 0, ICONSIZE_CIRCLE, ICONSIZE_CIRCLE, 0, 360);
         } else {
             // Custom Icon: Change between Grey and Color for indicating a
             // running Process
