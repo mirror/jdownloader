@@ -36,7 +36,7 @@ public class ModuleStatus extends JPanel implements ControlListener, MouseListen
             circles[i].setOpaque(false);
             circles[i].addMouseListener(this);
             circles[i].setVisible(false);
-            add(circles[i], "dock east, hidemode 3, hmax 20, gapleft 3");
+            add(circles[i], "dock east, hidemode 3, h 16!, w 16!, gapleft 3");
         }
         setOpaque(false);
 
