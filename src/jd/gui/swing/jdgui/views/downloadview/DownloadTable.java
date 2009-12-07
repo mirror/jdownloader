@@ -46,6 +46,7 @@ import jd.gui.swing.components.table.JDRowHighlighter;
 import jd.gui.swing.components.table.JDTable;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.gui.swing.menu.Menu;
+import jd.nutils.OSDetector;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -252,7 +253,7 @@ public class DownloadTable extends JDTable implements MouseListener, KeyListener
     }
 
     public void keyReleased(KeyEvent e) {
-        if (e.getKeyCode() == KeyEvent.VK_DELETE) {
+        if (e.getKeyCode() == KeyEvent.VK_DELETE || (OSDetector.isMac() && e.getKeyCode() == KeyEvent.VK_BACK_SPACE)) {
             ArrayList<DownloadLink> alllinks = getAllSelectedDownloadLinks();
             TableAction test = new TableAction(panel, JDTheme.II("gui.images.delete", 16, 16), JDL.L("gui.table.contextmenu.delete", "entfernen") + " (" + alllinks.size() + ")", TableAction.DELETE, new Property("links", alllinks));
             test.actionPerformed(new ActionEvent(test, 0, ""));

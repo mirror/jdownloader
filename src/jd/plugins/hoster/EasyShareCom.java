@@ -109,7 +109,7 @@ public class EasyShareCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
         requestFileInformation(downloadLink);
-        String wait = br.getRegex("w='(.*?)'").getMatch(0);
+        String wait = br.getRegex("w='(\\d+)'").getMatch(0);
         int waittime = 0;
         if (wait != null) waittime = Integer.parseInt(wait.trim());
         if (waittime > 90 && (longwait == null || longwait == true)) {

@@ -58,6 +58,7 @@ import jd.gui.swing.jdgui.JDGuiConstants;
 import jd.gui.swing.jdgui.actions.ThreadedAction;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.views.LinkgrabberView;
+import jd.gui.swing.jdgui.views.downloadview.DownloadTable;
 import jd.gui.swing.jdgui.views.toolbar.ViewToolbar;
 import jd.nutils.JDFlags;
 import jd.nutils.io.JDFileFilter;
@@ -757,6 +758,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
             link.setProperty("forcecheck", Property.NULL);
         }
         FilePackage fp = FilePackage.getInstance();
+        fp.setProperty(DownloadTable.PROPERTY_EXPANDED, fpv2.getBooleanProperty(LinkGrabberTable.PROPERTY_EXPANDED, false));
         fp.setName(fpv2.getName());
         fp.setComment(fpv2.getComment());
         fp.setPassword(fpv2.getPassword());

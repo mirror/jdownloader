@@ -44,6 +44,7 @@ import jd.gui.swing.components.JExtCheckBoxMenuItem;
 import jd.gui.swing.components.table.JDRowHighlighter;
 import jd.gui.swing.components.table.JDTable;
 import jd.gui.swing.jdgui.actions.ActionController;
+import jd.nutils.OSDetector;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkGrabberFilePackage;
 import jd.plugins.LinkStatus;
@@ -445,7 +446,7 @@ public class LinkGrabberTable extends JDTable implements MouseListener, KeyListe
     }
 
     public void keyReleased(KeyEvent e) {
-        if (e.getKeyCode() == KeyEvent.VK_DELETE) {
+        if (e.getKeyCode() == KeyEvent.VK_DELETE || (OSDetector.isMac() && e.getKeyCode() == KeyEvent.VK_BACK_SPACE)) {
             ArrayList<DownloadLink> alllinks = getAllSelectedDownloadLinks();
             if (alllinks.size() == 0) return;
             LinkGrabberTableAction test = new LinkGrabberTableAction(linkgrabber, JDTheme.II("gui.images.delete", 16, 16), JDL.L("gui.table.contextmenu.delete", "entfernen") + " (" + alllinks.size() + ")", LinkGrabberTableAction.DELETE, new Property("links", alllinks));

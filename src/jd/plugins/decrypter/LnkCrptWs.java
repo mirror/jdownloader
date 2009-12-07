@@ -24,6 +24,7 @@ import java.util.HashMap;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -48,7 +49,8 @@ public class LnkCrptWs extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-
+        this.setBrowserExclusive();
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         String containerId = new Regex(parameter, "dir/([a-zA-Z0-9]+)").getMatch(0);
 
         br.getPage("http://linkcrypt.ws/dlc/" + containerId);
@@ -82,39 +84,42 @@ public class LnkCrptWs extends PluginForDecrypt {
         boolean valid = true;
         for (int i = 0; i < 15; ++i) {
             Form captcha = br.getForm(0);
-            String url = captcha.getRegex("src=\"([^\"]*\\.php\\?id=[^\"]*)\"[^>]*style=\"cursor:(?![^>]*display[^>]*none)").getMatch(0);
-            if (url == null) url = captcha.getRegex("style=\"cursor:(?![^>]*display[^>]*none)src=\"([^\"]*\\.php\\?id=[^\"]*)\"").getMatch(1);
-            if (url == null && captcha != null && !captcha.hasInputFieldByName("key")) url = captcha.getRegex("src=\"([^\"]*\\.php\\?id=[^\"]*)\"").getMatch(0);
-            if (url != null) {
-                valid = false;
-                File file = this.getLocalCaptchaFile();
-                String id = url.replaceFirst(".*id=", "");
-                // System.out.println(url);
-                // System.out.println(id);
-                // br.cloneBrowser().getDownload(file, url);
-                br.cloneBrowser().getDownload(file, "http://linkcrypt.ws/captx.php?id=" + id);
+            String url = null;
+            if (captcha != null) {
+                url = captcha.getRegex("src=\"([^\"]*\\.php\\?id=[^\"]*)\"[^>]*style=\"cursor:(?![^>]*display[^>]*none)").getMatch(0);
+                if (url == null) url = captcha.getRegex("style=\"cursor:(?![^>]*display[^>]*none)src=\"([^\"]*\\.php\\?id=[^\"]*)\"").getMatch(1);
+                if (url == null && captcha != null && !captcha.hasInputFieldByName("key")) url = captcha.getRegex("src=\"([^\"]*\\.php\\?id=[^\"]*)\"").getMatch(0);
+                if (url != null) {
+                    valid = false;
+                    File file = this.getLocalCaptchaFile();
+                    String id = url.replaceFirst(".*id=", "");
+                    // System.out.println(url);
+                    // System.out.println(id);
+                    // br.cloneBrowser().getDownload(file, url);
+                    br.cloneBrowser().getDownload(file, "http://linkcrypt.ws/captx.php?id=" + id);
 
-                // Browser.download(file,
-                // br.cloneBrowser().openGetConnection(url));
-                // redr System.out.println(url);
-                Point p;
-                // if (url.contains("captx.php")) {
-                String code = getCaptchaCode("lnkcrptwsCircles", file, param);
-                if (code == null) continue;
-                String[] codep = code.split(":");
-                p = new Point(Integer.parseInt(codep[0]), Integer.parseInt(codep[1]));
+                    // Browser.download(file,
+                    // br.cloneBrowser().openGetConnection(url));
+                    // redr System.out.println(url);
+                    Point p;
+                    // if (url.contains("captx.php")) {
+                    String code = getCaptchaCode("lnkcrptwsCircles", file, param);
+                    if (code == null) continue;
+                    String[] codep = code.split(":");
+                    p = new Point(Integer.parseInt(codep[0]), Integer.parseInt(codep[1]));
 
-                // } else
-                // p = UserIO.getInstance().requestClickPositionDialog(file,
-                // JDL.L("plugins.decrypt.stealthto.captcha.title", "Captcha"),
-                // JDL.L("plugins.decrypt.stealthto.captcha",
-                // "Please click on the Circle with a gap"));
-                if (p == null) throw new DecrypterException(DecrypterException.CAPTCHA);
-                captcha.put("x", p.x + "");
-                captcha.put("y", p.y + "");
-                br.submitForm(captcha);
+                    // } else
+                    // p = UserIO.getInstance().requestClickPositionDialog(file,
+                    // JDL.L("plugins.decrypt.stealthto.captcha.title",
+                    // "Captcha"),
+                    // JDL.L("plugins.decrypt.stealthto.captcha",
+                    // "Please click on the Circle with a gap"));
+                    if (p == null) throw new DecrypterException(DecrypterException.CAPTCHA);
+                    captcha.put("x", p.x + "");
+                    captcha.put("y", p.y + "");
+                    br.submitForm(captcha);
+                }
             } else {
-
                 valid = true;
                 break;
             }
@@ -167,21 +172,20 @@ public class LnkCrptWs extends PluginForDecrypt {
             container.delete();
             if (decryptedLinks.size() > 0) return decryptedLinks;
         }
-
+        /* we have to open the normal page for weblinks */
+        br.getPage("http://linkcrypt.ws/dir/" + containerId);
         // IF container decryption failed, try webdecryption
         Form[] forms = br.getForms();
         progress.setRange(forms.length / 2);
         for (Form form : forms) {
             Browser clone;
-            if (form.getInputField("key").getValue() != null && form.getInputField("key").getValue().length() > 0) {
+            if (form.getInputField("key") != null && form.getInputField("key").getValue() != null && form.getInputField("key").getValue().length() > 0) {
                 progress.increase(1);
                 clone = br.cloneBrowser();
                 clone.submitForm(form);
-                clone.setDebug(true);
                 String[] srcs = clone.getRegex("<iframe.*?src\\s*?=\\s*?\"?([^\"> ]{20,})\"?\\s?").getColumn(0);
                 for (String col : srcs) {
                     col = Encoding.htmlDecode(col);
-
                     clone.getPage(col);
                     if (clone.containsHTML("eval")) {
                         String[] evals = clone.getRegex("eval\\((.*?\\,\\{\\}\\))\\)").getColumn(0);

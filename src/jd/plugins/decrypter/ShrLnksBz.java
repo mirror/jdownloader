@@ -27,6 +27,7 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.gui.UserIO;
 import jd.http.Browser;
+import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
@@ -54,9 +55,11 @@ public class ShrLnksBz extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        this.setBrowserExclusive();
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.setFollowRedirects(false);
         br.getPage(parameter);
-
+        if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
         /* Error handling */
         if (br.containsHTML("Der Inhalt konnte nicht gefunden werden")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         // Folderpassword+Captcha handling
@@ -134,14 +137,14 @@ public class ShrLnksBz extends PluginForDecrypt {
             decryptedLinks = loadcontainer(br, "cnl");
             if (decryptedLinks != null && decryptedLinks.size() > 0) return decryptedLinks;
 
-        } 
+        }
         /* File package handling */
         int pages = 1;
         String pattern = parameter.substring(parameter.lastIndexOf("/"), parameter.length());
-        if(br.containsHTML("folderNav")) {
+        if (br.containsHTML("folderNav")) {
             pages = pages + br.getRegex(pattern + "\\?n=[0-9]++\"").getMatches().length;
         }
-        LinkedList<String> links = new LinkedList<String>(); 
+        LinkedList<String> links = new LinkedList<String>();
         for (int i = 1; i <= pages; i++) {
             br.getPage(host + pattern + "?n=" + i);
             String[] linki = br.getRegex("decrypt\\.gif\".*?_get\\('(.*?)'").getColumn(0);
@@ -210,7 +213,8 @@ public class ShrLnksBz extends PluginForDecrypt {
         URLConnectionAdapter con = brc.openGetConnection(dlclinks);
         if (con.getResponseCode() == 200) {
             file = JDUtilities.getResourceFile("tmp/sharelinks/" + test.replaceAll("(http://share-links.biz/|/|\\?)", "") + "." + format);
-            if (file == null) return new ArrayList<DownloadLink>();;
+            if (file == null) return new ArrayList<DownloadLink>();
+            ;
             file.deleteOnExit();
             brc.downloadConnection(file, con);
         } else {

@@ -99,7 +99,7 @@ public class ProgressCircle extends JPanel {
 
         if (icon == null || iconGrey == null) {
             // No Custom Icon: Simply fill a Circle with Green
-            Color color = this.color != null ? this.color : new Color(50, 100 + (int) (155 * (1 - progress)), 50);
+            Color color = this.color != null ? this.color : Color.GREEN;
 
             g2.setColor(color);
             if (!backward) {
