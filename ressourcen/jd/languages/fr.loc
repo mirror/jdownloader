@@ -397,6 +397,7 @@ gui.linkgrabber.package.offline = Hors ligne
 gui.linkgrabber.package.unchecked = Non vérifié
 gui.linkgrabber.package.unsorted = Divers
 gui.linkgrabber.packageofflinepercent = %s hors ligne
+gui.linkgrabber.packageonlinepercent = %s en ligne
 gui.linkgrabber.packagetab.chb.extractafterdownload = Extraire
 gui.linkgrabber.packagetab.chb.usesubdirectory = Créer un sous-répertoire
 gui.linkgrabber.packagetab.lbl.comment = Commentaire
