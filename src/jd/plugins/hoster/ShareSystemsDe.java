@@ -31,9 +31,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision: 8967 $", interfaceVersion = 2, names = { "sharesystems.de" }, urls = { "http://[//w//.]*?sharesystems\\.de/.*?hash=(.*)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision: 8967 $", interfaceVersion = 2, names = { "sharesystems.de" }, urls = { "http://[//w//.]*?sharesystems\\.de/.*&hash=(.*)" }, flags = { 2 })
 /**
- * Plugin for sharesystems. Written on adminrequest. Uses API givven by sharesystems.de
+ * Plugin for sharesystems. Written on adminrequest. Uses API given by sharesystems.de
  */
 public class ShareSystemsDe extends PluginForHost {
 
@@ -78,17 +78,19 @@ public class ShareSystemsDe extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        br.forceDebug(true);
         br.getPage(downloadLink.getDownloadURL());
         String hash = new Regex(downloadLink.getDownloadURL().toLowerCase(), "hash=([0-9a-f]{32})").getMatch(0);
 
         // method returns either the filename or an errorid.
-        String name = br.getPage("http://91.121.188.186/share/tool_download_free.php?hash=" + hash + "&get_filename").trim();
+
+        String name = br.getPage("http://api.sharesystems.de/?action=jd_free&hash=" + hash + "&get_filename").trim();
         // throws an appripriate exception of name is an errorid
         parseError(name);
-        String size = br.getPage("http://91.121.188.186/share/tool_download_free.php?hash=" + hash + "&get_filesize").trim();
+        String size = br.getPage("http://api.sharesystems.de/?action=jd_free&hash=" + hash + "&get_filesize").trim();
         downloadLink.setFinalFileName(name);
         downloadLink.setDownloadSize(Long.parseLong(size));
-        String md5hash = br.getPage("http://91.121.188.186/share/tool_download_free.php?hash=" + hash + "&get_md5").trim();
+        String md5hash = br.getPage("http://api.sharesystems.de/?action=jd_free&hash=" + hash + "&get_md5").trim();
         downloadLink.setMD5Hash(md5hash);
 
         return AvailableStatus.TRUE;
@@ -100,7 +102,9 @@ public class ShareSystemsDe extends PluginForHost {
         this.requestFileInformation(downloadLink);
         // e86466b05601d8c12952105d82a9ad6a is the jd key
         String login = account.getUser() + JDHash.getMD5(account.getPass()) + "e86466b05601d8c12952105d82a9ad6a";
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, "http://91.121.188.186/share/tool_download.php?hash=" + downloadLink.getMD5Hash() + "&key=" + JDHash.getMD5(login), true, 0);
+        String hash = new Regex(downloadLink.getDownloadURL().toLowerCase(), "hash=([0-9a-f]{32})").getMatch(0);
+
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, "http://api.sharesystems.de/?action=jd_vip&hash=" + hash + "&key=" + JDHash.getMD5(login), true, 0);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
             parseError(br.toString());
@@ -115,6 +119,8 @@ public class ShareSystemsDe extends PluginForHost {
      */
     private void parseError(String string) throws PluginException {
         int errorID = -1;
+        String[] params = Regex.getLines(string);
+        string = params[0];
         try {
             errorID = Integer.parseInt(string);
         } catch (Exception e) {
@@ -145,7 +151,17 @@ public class ShareSystemsDe extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 2 * 60 * 1000l);
 
         case 29:// No ACCESS to read this file
-            throw new PluginException(LinkStatus.ERROR_PREMIUM);
+            // download limit reached
+            try {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(params[1]) * 1000l);
+            } catch (NumberFormatException e) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
+
+            } catch (ArrayIndexOutOfBoundsException e) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
+
+            }
+
         case 31:// Damaged file
             throw new PluginException(LinkStatus.ERROR_FATAL);
         }
@@ -154,7 +170,8 @@ public class ShareSystemsDe extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         this.requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, "http://91.121.188.186/share/tool_download_free.php?hash=" + downloadLink.getMD5Hash(), true, 1);
+        String hash = new Regex(downloadLink.getDownloadURL().toLowerCase(), "hash=([0-9a-f]{32})").getMatch(0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, "http://api.sharesystems.de/?action=jd_free&hash=" + hash, true, 1);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
             parseError(br.toString());
