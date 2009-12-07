@@ -25,7 +25,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision: 8976 $", interfaceVersion = 2, names = { "stooorage.com" }, urls = { "http://[\\w\\.]*?stooorage\\.com/(show|images)/\\d+/.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "stooorage.com" }, urls = { "http://[\\w\\.]*?stooorage\\.com/(show|images)/\\d+/.+" }, flags = { 0 })
 public class StooorageCom extends PluginForHost {
 
     public StooorageCom(PluginWrapper wrapper) {

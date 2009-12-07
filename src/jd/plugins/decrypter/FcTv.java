@@ -16,10 +16,10 @@ import jd.plugins.PluginForDecrypt;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-@DecrypterPlugin(revision = "$Revision: 9647 $", interfaceVersion = 2, names = { "freecaster.tv" }, urls = { "http://[\\w\\.]*?freecaster\\.tv/[a-zA-Z]+/[0-9]+/[a-zA-Z0-9-]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freecaster.tv" }, urls = { "http://[\\w\\.]*?freecaster\\.tv/[a-zA-Z]+/[0-9]+/[a-zA-Z0-9-]+" }, flags = { 0 })
 public class FcTv extends PluginForDecrypt {
 
-    static private String host = "gateway.freecaster.tv";
+    private static String host = "gateway.freecaster.tv";
 
     public FcTv(PluginWrapper wrapper) {
         super(wrapper);

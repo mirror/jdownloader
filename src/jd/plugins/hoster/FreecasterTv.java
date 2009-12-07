@@ -8,7 +8,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision: 9647 $", interfaceVersion = 2, names = { "freecaster.tv" }, urls = { "http://videos.freecaster.com/.++" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freecaster.tv" }, urls = { "http://videos.freecaster.com/.++" }, flags = { 0 })
 public class FreecasterTv extends PluginForHost {
 
     public FreecasterTv(PluginWrapper wrapper) {

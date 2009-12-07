@@ -176,7 +176,7 @@ public class ShrLnksBz extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    /* finds the correct shape area for the given point */
+    /** finds the correct shape area for the given point */
     private String getNextUrl(int x, int y) {
         String[][] results = br.getRegex("<area shape=\"rect\" coords=\"(\\d+),(\\d+),(\\d+),(\\d+)\" href=\"/(.*?)\"").getMatches();
         String hit = null;
@@ -193,7 +193,7 @@ public class ShrLnksBz extends PluginForDecrypt {
         return hit;
     }
 
-    // by jiaz
+    /** by jiaz */
     private ArrayList<DownloadLink> loadcontainer(Browser br, String format) throws IOException, PluginException {
         Browser brc = br.cloneBrowser();
         String dlclinks = null;
@@ -214,7 +214,6 @@ public class ShrLnksBz extends PluginForDecrypt {
         if (con.getResponseCode() == 200) {
             file = JDUtilities.getResourceFile("tmp/sharelinks/" + test.replaceAll("(http://share-links.biz/|/|\\?)", "") + "." + format);
             if (file == null) return new ArrayList<DownloadLink>();
-            ;
             file.deleteOnExit();
             brc.downloadConnection(file, con);
         } else {

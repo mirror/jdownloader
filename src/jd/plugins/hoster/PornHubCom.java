@@ -10,7 +10,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision: 9543 $", interfaceVersion = 2, names = { "pornhub.com" }, urls = { "http://[\\w\\.]*?pornhub\\.com/view_video\\.php\\?viewkey=[a-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornhub.com" }, urls = { "http://[\\w\\.]*?pornhub\\.com/view_video\\.php\\?viewkey=[a-z0-9]+" }, flags = { 0 })
 public class PornHubCom extends PluginForHost {
 
     private static String post_element = "add299463d4410c6d1b1c418868225f7";
