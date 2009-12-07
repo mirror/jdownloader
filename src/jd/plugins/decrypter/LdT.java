@@ -42,6 +42,7 @@ public class LdT extends PluginForDecrypt {
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         if (parameter.matches(patternSupported_Info)) {
             br.getPage(parameter);
+            if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
             String links_page[] = br.getRegex("href=\"(/go/[0-9]+)/\"").getColumn(0);
             String streamlinks[] = br.getRegex("href=\"(/go/[0-9]+/streaming/.*?/)\"").getColumn(0);
             if (links_page == null && streamlinks == null) return null;

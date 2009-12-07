@@ -117,8 +117,11 @@ public class OpenFileRu extends PluginForHost {
         // TODO:Hoster allows to connections at all so you can eigher download 1
         // file with 2 chunks or 2 files with one, a new controller could solve
         // this problem by being able to set the number of the max connections
-        jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -2);
-        if ((dl.getConnection().getContentType().contains("html"))) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -2);
+        if ((dl.getConnection().getContentType().contains("html"))) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl.startDownload();
     }
 

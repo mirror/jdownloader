@@ -75,9 +75,9 @@ public class QshareCom extends PluginForHost {
         br.getPage(url);
 
         if (br.getRegex("(Du hast die maximal zulässige Anzahl|You have exceeded the maximum allowed)").matches()) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l);
-
+        if (br.containsHTML("There are currently too many free downloads")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "There are currently too many free downloads", 10 * 60 * 1000l);
         String wait = br.getRegex("Dein Freivolumen wird in <b>([\\d]*?) Minuten").getMatch(0);
-        if (wait != null && !downloadLink.getBooleanProperty("trywithoutwait", true)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait.trim()) * 60 * 1000l);
+        if (wait != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait.trim()) * 60 * 1000l);
 
         String link = br.getRegex("writeToPage\\('<A HREF=\"(.*?)\"").getMatch(0);
         if (link == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -85,19 +85,10 @@ public class QshareCom extends PluginForHost {
         br.setFollowRedirects(false);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, link, true, 1);
         if (!dl.getConnection().isContentDisposition()) {
-            dl.getConnection().disconnect();
-            if (dl.getConnection().getContentType().contains("html")) {
-                logger.severe("Server error. The file does not exist");
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-            }
-            if (wait != null) {
-                downloadLink.setProperty("trywithoutwait", false);
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            }
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (dl.startDownload()) {
-            downloadLink.setProperty("trywithoutwait", true);
-        }
+        dl.startDownload();
 
     }
 

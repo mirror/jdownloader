@@ -53,9 +53,8 @@ public class YourFilesTo extends PluginForHost {
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.getPage(downloadLink.getDownloadURL());
         String filename = br.getRegex("Filename:</b></font></td>.*?<td align=.*?width=.*?>(.*?)</td>").getMatch(0);
-        if (filename == null){
+        if (filename == null) {
             filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
-            
         }
         String filesize = br.getRegex("File size:</b></td>.*?<td align=.*?>(.*?)</td>").getMatch(0);
         if (filesize == null) filesize = br.getRegex("File.*?size.*?:.*?</b>(.*?)<b><br>").getMatch(0);

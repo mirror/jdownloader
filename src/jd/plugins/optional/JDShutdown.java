@@ -234,6 +234,8 @@ public class JDShutdown extends PluginOptional {
         logger.info("Stop all running downloads");
         DownloadWatchDog.getInstance().stopDownloads();
         JDController.getInstance().syncDatabase();
+        /* reset enabled flag */
+        menuAction.setSelected(false);
     }
 
     private void hibernate() {

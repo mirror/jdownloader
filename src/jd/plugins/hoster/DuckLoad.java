@@ -100,7 +100,7 @@ public class DuckLoad extends PluginForHost {
         if (br.containsHTML("stream_protection_h\">Bitte Server")) {
             /* streaming file */
             parameter.setName("VideoStream.avi");
-            String filesize = br.getRegex("s_1\">Server.*?\\[(.*?)\\]").getMatch(0);
+            String filesize = br.getRegex("s_1.*?\">Server.*?\\[(.*?)\\]").getMatch(0);
             if (filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             parameter.setDownloadSize(Regex.getSize(filesize.trim()));
             return AvailableStatus.TRUE;

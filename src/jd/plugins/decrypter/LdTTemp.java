@@ -17,14 +17,10 @@
 package jd.plugins.decrypter;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -33,7 +29,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.pluginUtils.Recaptcha;
-import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "iload.to", "lof.cc" }, urls = { "http://[\\w\\.]*?links\\.iload\\.to/links/\\?lid=.+", "http://[\\w\\.]*?lof\\.cc/[a-zA-Z0-9]+" }, flags = { 0, 0 })
 public class LdTTemp extends PluginForDecrypt {
@@ -57,47 +52,13 @@ public class LdTTemp extends PluginForDecrypt {
             break;
         }
         if (br.containsHTML("(api.recaptcha.net|Das war leider Falsch)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        // container handling
-        // String containerregex = br.getRegex("\"(\\?lid=.*?)\"").getMatch(0);
-        // if (containerregex != null) {
-        // containerregex = containerregex.replace("amp;", "");
-        // decryptedLinks = loadcontainer(br, containerregex);
-        // if (decryptedLinks != null && decryptedLinks.size() > 0) return
-        // decryptedLinks;
-        // }
         String[] links = HTMLParser.getHttpLinks(br.toString(), "");
         if (links.length == 0) return null;
         for (String finallink : links) {
-            if (!finallink.contains("iload.to")) decryptedLinks.add(createDownloadlink(finallink));
+            if (!finallink.contains("iload.to") && !finallink.contains("lof.cc")) decryptedLinks.add(createDownloadlink(finallink));
         }
 
         return decryptedLinks;
-    }
-
-    // by jiaz
-    private ArrayList<DownloadLink> loadcontainer(Browser br, String format) throws IOException, PluginException {
-        Browser brc = br.cloneBrowser();
-        String dlclinks = "http://links.iload.to/links/" + format;
-        String test = Encoding.htmlDecode(dlclinks);
-        File file = null;
-        URLConnectionAdapter con = brc.openGetConnection(dlclinks);
-        if (con.getResponseCode() == 200) {
-            file = JDUtilities.getResourceFile("tmp/ldttemp/" + test.replaceAll("(http://links.iload.to/links/|/|\\?|\\&|%)", "") + ".dlc");
-            if (file == null) return null;
-            file.deleteOnExit();
-            brc.downloadConnection(file, con);
-        } else {
-            con.disconnect();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-
-        if (file != null && file.exists() && file.length() > 100) {
-            ArrayList<DownloadLink> decryptedLinks = JDUtilities.getController().getContainerLinks(file);
-            if (decryptedLinks.size() > 0) return decryptedLinks;
-        } else {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        return null;
     }
 
 }

@@ -220,11 +220,11 @@ public class HTTPConnection extends sun.net.www.protocol.http.HttpURLConnection 
 
         if (this.getRequest() != null) {
             if (getRequest() instanceof PostRequest) {
-                sb.append(((PostRequest) getRequest()).getPostDataString());
+                if (((PostRequest) getRequest()).getPostDataString() != null) sb.append(((PostRequest) getRequest()).getPostDataString());
                 sb.append(new char[] { '\r', '\n' });
 
             } else if (getRequest() instanceof PostFormDataRequest) {
-                sb.append(((PostFormDataRequest) getRequest()).getPostDataString());
+                if (((PostFormDataRequest) getRequest()).getPostDataString() != null) sb.append(((PostFormDataRequest) getRequest()).getPostDataString());
                 sb.append(new char[] { '\r', '\n' });
             }
 

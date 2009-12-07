@@ -121,6 +121,7 @@ public class XSevenTo extends PluginForHost {
     private Browser requestXML(Browser br, String url, String post, boolean clonebrowser) throws IOException {
         Browser brc = br;
         if (clonebrowser) brc = br.cloneBrowser();
+        brc.setDebug(true);
         brc.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         brc.postPage(url, post != null ? post : "");
         brc.getHeaders().remove("X-Requested-With");
@@ -140,6 +141,7 @@ public class XSevenTo extends PluginForHost {
                 String error = brc.getRegex("err:\"(.*?)\"").getMatch(0);
                 if (error == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 if (error.contains("limit-parallel")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
+                if (error.contains("limit-dl")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1000l);
                 /* unknown error */
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -157,7 +159,8 @@ public class XSevenTo extends PluginForHost {
         }
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setDebug(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        /* streams are not resumable */
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, !isStream, 1);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

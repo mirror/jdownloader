@@ -237,6 +237,7 @@ public class UploadingCom extends PluginForHost {
             redirect = redirect.replaceAll("\\\\/", "/");
         } else {
             if (br.containsHTML("Please wait")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 1000l);
+            if (br.containsHTML("Your download was not found or")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Your download was not found or has expired. Please try again later", 15 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (redirect == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

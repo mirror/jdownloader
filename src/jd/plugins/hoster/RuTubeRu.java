@@ -48,6 +48,8 @@ public class RuTubeRu extends PluginForHost {
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
         if (br.getRedirectLocation() != null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String fsk18 = br.getRegex("<br><b>.*?18.*?href=\"(http://rutube.ru/.*?confirm=.*?)\"").getMatch(0);
+        if (fsk18 != null) br.getPage(fsk18);
         br.setFollowRedirects(true);
         String filename = br.getRegex(Pattern.compile("<h3[^>]*>(.*?)</h3>", Pattern.CASE_INSENSITIVE)).getMatch(0);
         String filesize = br.getRegex("<span class=\"size\"[^>]*>(.*?)</span>").getMatch(0);
@@ -63,9 +65,9 @@ public class RuTubeRu extends PluginForHost {
         String linkurl = br.getRegex("player.swf\\?buffer_first=1\\.0&file=(.*?)&xurl").getMatch(0);
         if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         linkurl = Encoding.urlDecode(linkurl, true);
-        String video_id = linkurl.substring(linkurl.lastIndexOf("/")+1, linkurl.lastIndexOf("."));
-        linkurl = linkurl.replaceFirst(linkurl.substring(linkurl.lastIndexOf(".")+1, linkurl.length()), "xml");
-        linkurl = linkurl + "?referer=" + Encoding.urlEncode(downloadLink.getDownloadURL()+"?v="+video_id);
+        String video_id = linkurl.substring(linkurl.lastIndexOf("/") + 1, linkurl.lastIndexOf("."));
+        linkurl = linkurl.replaceFirst(linkurl.substring(linkurl.lastIndexOf(".") + 1, linkurl.length()), "xml");
+        linkurl = linkurl + "?referer=" + Encoding.urlEncode(downloadLink.getDownloadURL() + "?v=" + video_id);
         br.getPage(linkurl);
         linkurl = br.getRegex("\\[CDATA\\[(.*?)\\]").getMatch(0);
         br.setFollowRedirects(true);

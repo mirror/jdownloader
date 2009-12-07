@@ -179,7 +179,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                 infovector.add("Set max sim. Downloads %X%");
 
                 commandvec.add("/action/add/links/grabber(0|1)/start(0|1)/%X%");
-                infovector.add("Add Links %X% to Grabber<br />" + "<p><span class=\"underline\">Optional:</span><br />" + "grabber(0|1): Hide/Show LinkGrabber<br />" + "grabber(0|1)/start(0|1): Hide/Show LinkGrabber and start/don't start downloads afterwards<br /></p>" + "<p><span class=\"underline\">Sample:</span><br />" + "/action/add/links/grabber0/start1/http://tinyurl.com/6o73eq http://tinyurl.com/4khvhn<br />" + "Don't forget Space between Links!</p>");
+                infovector.add("Add Links %X% to Grabber<br />" + "<p><span class=\"underline\">Optional:</span><br />" + "grabber(0|1): Hide/Show LinkGrabber<br />" + "grabber(0|1)/start(0|1): Hide/Show LinkGrabber and start/don't start downloads afterwards<br /></p>" + "<p><span class=\"underline\">Sample:</span><br />" + "/action/add/links/grabber0/start1/http://tinyurl.com/6o73eq<br />" + "Don't forget to URLEncode the links and use NEWLINE between Links!</p>");
 
                 commandvec.add("/action/add/container/grabber(0|1)/start(0|1)/%X%");
                 infovector.add("Add Container %X%<br />" + "<p><span class=\"underline\">Optional:</span><br />" + "grabber(0|1): Hide/Show LinkGrabber<br />" + "grabber(0|1)/start(0|1): Hide/Show LinkGrabber and start/don't start downloads afterwards<br /></p>" + "<p><span class=\"underline\">Sample:</span><br />" + "/action/add/container/grabber0/start1/C:\\container.dlc</p>");
