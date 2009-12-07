@@ -47,12 +47,13 @@ public class FlsMailRu extends PluginForDecrypt {
         String[] linkinformation = br.getRegex("<td class=\"name\">(.*?)<td class=\"do\">").getColumn(0);
         if (linkinformation.length == 0) return null;
         for (String info : linkinformation) {
-            String directlink = new Regex(info, "\"(http://content\\.files\\.mail\\.ru/.*?/.*?)\"").getMatch(0);
+            String directlink = new Regex(info, "\"(http://(content[0-9]+|content)\\.files\\.mail\\.ru/.*?/.*?)\"").getMatch(0);
             String filename = new Regex(info, "href=\".*?onclick=\"return.*?\">(.*?)<").getMatch(0);
             if (directlink == null || filename == null) return null;
             String filesize = new Regex(info, "<td>(.*?{1,15})</td>").getMatch(0);
             // Rename the decrypted links so the host-plugin regex is fine
-            DownloadLink finallink = createDownloadlink(directlink.replace("content.files.mail.ru", "wge4zu4rjfsdehehztiuxw"));
+            String domainpart = new Regex(info, ".*?(content.*?files\\.mail\\.ru)").getMatch(0);
+            DownloadLink finallink = createDownloadlink(directlink.replace(domainpart, "wge4zu4rjfsdehehztiuxw"));
             // Maybe that helps id jd gets the english version of the site!
             if (!filesize.contains("MB")) {
                 filesize = filesize.replace("Г", "G");

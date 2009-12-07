@@ -125,6 +125,18 @@ public class FilesCloudCom extends PluginForHost {
             // throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 *
             // 1000l);
         }
+        // Handling for only-premium links
+        if (br.containsHTML("(You can download files up to.*?only|Upgrade your account to download bigger files)")) {
+            String filesizelimit = br.getRegex("You can download files up to(.*?)only").getMatch(0);
+            if (filesizelimit != null) {
+                filesizelimit = filesizelimit.trim();
+                logger.warning("As free user you can download files up to " + filesizelimit + " only");
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Free users can only download files up to " + filesizelimit);
+            } else {
+                logger.warning("Only downloadable via premium");
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium");
+            }
+        }
         br.setFollowRedirects(false);
         Form DLForm = br.getFormbyProperty("name", "F1");
         if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

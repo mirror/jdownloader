@@ -20,6 +20,7 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.RandomUserAgent;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
@@ -63,15 +64,26 @@ public class WrzucTo extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        String dllink = br.getRegex(("\"(http://(wrzuc\\.to|[0-9a-z]+\\.wrzuc\\.to)/pobierz/.*?)\"")).getMatch(0);
-        if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        String fid = br.getRegex(("file: \"(.*?)\"")).getMatch(0);
+        if (fid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.postPage("http://www.wrzuc.to/ajax/server/download_link", "file=" + Encoding.htmlDecode(fid));
+        String tempid = br.getRegex(("download_link\":\"(.*?)\"")).getMatch(0);
+        String server = br.getRegex(("server.*?\":\"(.*?)\"")).getMatch(0);
+        if (tempid == null || server == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String dllink = "http://" + server + ".wrzuc.to/pobierz/" + tempid;
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl.startDownload();
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return -1;
     }
 
     @Override

@@ -46,7 +46,7 @@ public class XFileSharingProBasic extends PluginForHost {
         enablePremium("http://turboshare.com/premium.html");
     }
 
-    // Version 1.2
+    // XfileSharingProBasic Version 1.3
     // This is only for developers to easily implement hosters using the
     // "xfileshare(pro)" script (more informations can be found on
     // xfilesharing.net)!
@@ -120,7 +120,7 @@ public class XFileSharingProBasic extends PluginForHost {
             if (filesizelimit != null) {
                 filesizelimit = filesizelimit.trim();
                 logger.warning("As free user you can download files up to " + filesizelimit + " only");
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Free users can download files up to " + filesizelimit + " only");
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Free users can only download files up to " + filesizelimit);
             } else {
                 logger.warning("Only downloadable via premium");
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium");
@@ -174,9 +174,7 @@ public class XFileSharingProBasic extends PluginForHost {
         String passCode = null;
         boolean password = false;
         boolean recaptcha = false;
-        // The String "loginpw" is only made for fileop.com
-        String loginpw = br.getRegex("value=\"login\">(.*?)value=\" Login\"").getMatch(0);
-        if (br.containsHTML("name=\"password\"") && !(loginpw != null && loginpw.contains("password"))) {
+        if (br.containsHTML("(<b>Passwort:</b>|<b>Password:</b>)")) {
             password = true;
             logger.info("The downloadlink seems to be password protected.");
         }
@@ -211,6 +209,7 @@ public class XFileSharingProBasic extends PluginForHost {
             for (String link : sitelinks) {
                 if (link.contains("/captchas/")) {
                     captchaurl = link;
+                    break;
                 }
             }
             if (captchaurl == null) {
@@ -266,7 +265,7 @@ public class XFileSharingProBasic extends PluginForHost {
         }
         boolean error = false;
         try {
-            if (dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getContentType().contains("html")) {
                 error = true;
             }
         } catch (Exception e) {
@@ -306,7 +305,7 @@ public class XFileSharingProBasic extends PluginForHost {
                     }
                 }
                 if (br.containsHTML("You're using all download slots for IP")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
-                if (br.containsHTML("(name=\"password\"|Wrong password)") && !(loginpw != null && loginpw.contains("password"))) {
+                if (br.containsHTML("(<b>Passwort:</b>|<b>Password:</b>|Wrong password)")) {
                     logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
                     downloadLink.setProperty("pass", null);
                     throw new PluginException(LinkStatus.ERROR_RETRY);
@@ -339,7 +338,7 @@ public class XFileSharingProBasic extends PluginForHost {
         }
         boolean error2 = false;
         try {
-            if (dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getContentType().contains("html")) {
                 error2 = true;
             }
         } catch (Exception e) {
@@ -420,7 +419,7 @@ public class XFileSharingProBasic extends PluginForHost {
         if (dllink == null) {
             Form DLForm = br.getFormbyProperty("name", "F1");
             if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            if (br.containsHTML("name=\"password\"")) {
+            if (br.containsHTML("<b>Passwort:</b>|<b>Password:</b>")) {
                 if (link.getStringProperty("pass", null) == null) {
                     passCode = Plugin.getUserInput("Password?", link);
                 } else {
@@ -433,7 +432,7 @@ public class XFileSharingProBasic extends PluginForHost {
             br.submitForm(DLForm);
             dllink = br.getRedirectLocation();
             if (dllink == null) {
-                if (br.containsHTML("(name=\"password\"|Wrong password)")) {
+                if (br.containsHTML("(<b>Passwort:</b>|<b>Password:</b>|Wrong password)")) {
                     logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
                     link.setProperty("pass", null);
                     throw new PluginException(LinkStatus.ERROR_RETRY);

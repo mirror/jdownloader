@@ -34,12 +34,12 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "Only4Devs2Test.com" }, urls = { "http://[\\w\\.]*?Only4Devs2Test\\.com/\\?d=[A-Z0-9]+" }, flags = { 0 })
-public class MhfScriptBasic extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filecruz.com" }, urls = { "http://[\\w\\.]*?filecruz\\.com/(\\?d|download\\.php\\?id)=[A-Z0-9]+" }, flags = { 2 })
+public class FileCruzCom extends PluginForHost {
 
-    public MhfScriptBasic(PluginWrapper wrapper) {
+    public FileCruzCom(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium("http://Only4Devs2Test.com/register.php?g=3");
+        this.enablePremium("http://filecruz.com/register.php?g=3");
     }
 
     // This plugin is for developers to easily implement hosters using the MHF
@@ -47,7 +47,7 @@ public class MhfScriptBasic extends PluginForHost {
     // nearly all of those hosters!
     @Override
     public String getAGBLink() {
-        return "http://Only4Devs2Test.com/rules.php";
+        return "http://filecruz.com/rules.php";
     }
 
     @Override
@@ -55,7 +55,7 @@ public class MhfScriptBasic extends PluginForHost {
         this.setBrowserExclusive();
         // br.setCustomCharset("UTF-8");
         br.setFollowRedirects(true);
-        br.setCookie("http://Only4Devs2Test.com", "mfh_mylang", "en");
+        br.setCookie("http://filecruz.com", "mfh_mylang", "en");
         br.getPage(parameter.getDownloadURL());
         if (br.containsHTML("Your requested file is not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<b>File name:</b></td>.*?<td align=.*?width=.*?>(.*?)</td>").getMatch(0);
@@ -70,6 +70,8 @@ public class MhfScriptBasic extends PluginForHost {
         }
         String filesize = br.getRegex("<b>File size:</b></td>.*?<td align=.*?>(.*?)</td>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // Hoster tags it's files and tags only cause problems so let's remove
+        // them!
         parameter.setFinalFileName(filename.trim());
         if (filesize != null) parameter.setDownloadSize(Regex.getSize(filesize));
         return AvailableStatus.TRUE;
@@ -79,7 +81,7 @@ public class MhfScriptBasic extends PluginForHost {
     public void handleFree(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         requestFileInformation(link);
-        // br.postPage(link.getDownloadURL(), "Free=Free+Users");
+        br.postPage(link.getDownloadURL(), "Free=Free+Users");
         String passCode = null;
         for (int i = 0; i <= 3; i++) {
             Form captchaform = br.getFormbyProperty("name", "myform");
@@ -89,9 +91,10 @@ public class MhfScriptBasic extends PluginForHost {
                     captchaform = br.getFormbyProperty("name", "valideform");
                 }
             }
-            String captchaurl = "http://Only4Devs2Test.com/captcha.php";
+            String captchaurl = "http://filecruz.com/captcha.php";
             if (captchaform == null || !br.containsHTML("captcha.php")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             if (br.containsHTML("downloadpw")) {
+                logger.info("The file you're trying to download seems to be password protected...");
                 if (link.getStringProperty("pass", null) == null) {
                     passCode = Plugin.getUserInput("Password?", link);
 
@@ -141,7 +144,7 @@ public class MhfScriptBasic extends PluginForHost {
             }
         }
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -270,7 +273,7 @@ public class MhfScriptBasic extends PluginForHost {
             }
         }
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, dllink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, dllink, true, -5);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

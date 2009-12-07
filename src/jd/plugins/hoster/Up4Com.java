@@ -29,7 +29,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "up-4.com" }, urls = { "http://[\\w\\.]*?up-4\\.com/\\?d=[A-Z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "up-4.com" }, urls = { "http://[\\w\\.]*?up-4\\.com/(\\?d|download\\.php\\?id)=[A-Z0-9]+" }, flags = { 0 })
 public class Up4Com extends PluginForHost {
 
     public Up4Com(PluginWrapper wrapper) {
@@ -44,7 +44,6 @@ public class Up4Com extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
-        // br.setCustomCharset("UTF-8");
         br.setFollowRedirects(true);
         br.setCookie("http://up-4.com", "mfh_mylang", "en");
         br.getPage(parameter.getDownloadURL());
@@ -70,7 +69,7 @@ public class Up4Com extends PluginForHost {
     public void handleFree(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         requestFileInformation(link);
-        br.postPage(link.getDownloadURL(), "Free=Free+Users");
+//        br.postPage(link.getDownloadURL(), "Free=Free+Users"); not needed anymore
         String passCode = null;
         for (int i = 0; i <= 3; i++) {
             Form captchaform = br.getFormbyProperty("name", "validateform");
