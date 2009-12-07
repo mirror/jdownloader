@@ -77,7 +77,7 @@ public class Xa extends PluginForDecrypt {
                     progress.increase(1);
                 }
             }
-            if (fpName != null) {
+            if (fpName != null && !fpName.trim().equals("kein titel")) {
                 FilePackage fp = FilePackage.getInstance();
                 fp.setName(fpName.trim());
                 fp.addLinks(decryptedLinks);

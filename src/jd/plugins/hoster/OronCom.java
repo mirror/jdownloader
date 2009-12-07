@@ -160,6 +160,8 @@ public class OronCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setCookie("http://www.oron.com", "lang", "english");
         br.getPage(link.getDownloadURL());
+        // Handling for links which can only be downloaded by premium users
+        if (br.containsHTML("The file status can only be queried by Premium Users")) return AvailableStatus.UNCHECKABLE;
         if (br.containsHTML("No such file with this filename")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("No such user exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("File Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -174,6 +176,7 @@ public class OronCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        if (br.containsHTML("The file status can only be queried by Premium Users")) throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium account");
         br.setFollowRedirects(true);
         // Form um auf free zu "klicken"
         Form DLForm0 = br.getForm(0);
