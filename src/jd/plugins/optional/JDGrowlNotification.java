@@ -71,18 +71,18 @@ public class JDGrowlNotification extends PluginOptional {
     public void controlEvent(ControlEvent event) {
         switch (event.getID()) {
         case ControlEvent.CONTROL_INIT_COMPLETE:
-            growlNotification(JDL.L(JDL_PREFIX + "started", "jDownloader started..."), getDateAndTime(), JDL.L(JDL_PREFIX + "started.title", "Programstart"));
+            growlNotification(JDL.L(JDL_PREFIX + "started", "jDownloader started..."), getDateAndTime(), "Programstart");
             break;
         case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
-            if (DownloadWatchDog.getInstance().getDownloadssincelastStart() > 0) growlNotification(JDL.L(JDL_PREFIX + "allfinished", "All downloads stopped"), "", JDL.L(JDL_PREFIX + "allfinished.title", "All downloads finished"));
+            if (DownloadWatchDog.getInstance().getDownloadssincelastStart() > 0) growlNotification(JDL.L(JDL_PREFIX + "allfinished", "All downloads stopped"), "", "All downloads finished");
             break;
         case ControlEvent.CONTROL_PLUGIN_INACTIVE:
             if (!(event.getSource() instanceof PluginForHost)) return;
             DownloadLink lastLink = ((SingleDownloadController) event.getParameter()).getDownloadLink();
             if (lastLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
-                growlNotification(JDL.L(JDL_PREFIX + "finished", "Download stopped"), lastLink.getFinalFileName(), JDL.L(JDL_PREFIX + "finished.title", "Download complete"));
+                growlNotification(JDL.L(JDL_PREFIX + "finished", "Download stopped"), lastLink.getFinalFileName(), "Download complete");
             }
-            break;
+            break; 
         default:
             break;
         }
