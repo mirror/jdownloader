@@ -16,6 +16,7 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -40,15 +41,19 @@ public class FreeLoadTo extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
+        br.setDebug(true);
         br.getPage(downloadLink.getDownloadURL());
         String jscookiepage = br.getRegex("javascript\" src=\"(.*?)\"").getMatch(0);
-        if(jscookiepage != null){
-            br.getPage("http://freeload.to" + jscookiepage);
-            String check = br.getCookie("freeload.to", "sitechrx");
-            System.out.print(br.toString());
-            String cookiename = br.getRegex("document.cookie=\"(.*?)\"").getMatch(0);
+        String cookie = br.getRegex("onload=.*?'(.*?)'").getMatch(0);
+        String onload = br.getRegex("onload=.*?'(/.*?)'").getMatch(0);
+        if (jscookiepage != null) {
+            /* this cookie is needed to reach the site */
+            Browser brc = br.cloneBrowser();
+            brc.getPage("http://freeload.to" + jscookiepage);
+            String cookie2 = brc.getRegex("escape.*?\"(.*?)\"").getMatch(0);
+            br.setCookie("http://freeload.to", "sitechrx", cookie + cookie2);
         }
-        br.getPage(downloadLink.getDownloadURL());
+        br.getPage(onload);
         if (br.containsHTML("player_not_found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("\".*?/uploads/.*?/.*?/.*?/(.*?)\"").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
