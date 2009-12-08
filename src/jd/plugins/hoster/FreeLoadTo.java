@@ -15,10 +15,7 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.util.regex.Pattern;
-
 import jd.PluginWrapper;
-import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -26,8 +23,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-//movshare by pspzockerscene
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freeload.to" }, urls = { "http://[\\w\\.]*?freeload\\.to/divx\\.php\\?file_id=[a-z|0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freeload.to" }, urls = { "http://[\\w\\.]*?freeload\\.to/divx\\.php\\?file_id=[a-z0-9]+" }, flags = { 0 })
 public class FreeLoadTo extends PluginForHost {
 
     public FreeLoadTo(PluginWrapper wrapper) {
@@ -45,8 +41,16 @@ public class FreeLoadTo extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
+        String jscookiepage = br.getRegex("javascript\" src=\"(.*?)\"").getMatch(0);
+        if(jscookiepage != null){
+            br.getPage("http://freeload.to" + jscookiepage);
+            String check = br.getCookie("freeload.to", "sitechrx");
+            System.out.print(br.toString());
+            String cookiename = br.getRegex("document.cookie=\"(.*?)\"").getMatch(0);
+        }
+        br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("player_not_found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = Encoding.htmlDecode(br.getRegex("embed type=\"video/divx\" src=\".*?/uploads/[0-9]+/[0-9]+/[0-9]+/(.*?)\" custommo").getMatch(0));
+        String filename = br.getRegex("\".*?/uploads/.*?/.*?/.*?/(.*?)\"").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename);
         return AvailableStatus.TRUE;
@@ -55,14 +59,16 @@ public class FreeLoadTo extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        String dllink = br.getRegex(Pattern.compile("ideo/divx\" src=\"(.*?)\" custo")).getMatch(0);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, dllink, true, 1);
+        String dllink = br.getRegex("video/divx\" src=\"(.*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("src\" value=\"(.*?)\"").getMatch(0);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         dl.startDownload();
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return -1;
     }
 
     @Override

@@ -19,7 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.parser.html.Form;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -27,8 +27,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-//mystream.to by pspzockerscene
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fullshare.net" }, urls = { "http://[\\w\\.]*?fullshare\\.net/show/[a-z0-9]+/.+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fullshare.net" }, urls = { "http://[\\w\\.]*?fullshare\\.net/show/[a-z0-9]+/.+" }, flags = { 0 })
 public class FullShareNet extends PluginForHost {
 
     public FullShareNet(PluginWrapper wrapper) {
@@ -45,7 +44,18 @@ public class FullShareNet extends PluginForHost {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("Datei konnte nicht gefunden werden")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("action=\"show/.*?/(.*?)\"").getMatch(0);
+        String filename = br.getRegex("filename\" value=\"(.*?)\"").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("\"http://fullshare\\.net/deliver/.*?/(.*?)\"").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("\"http:.*?/get/.*?/(.*?)\"").getMatch(0);
+            }
+        }
+        Regex filesize = br.getRegex("<td>GR\\&Ouml;SSE <b>(.*?)</b>(.*?)</td>");
+        if (filesize.getMatch(0) != null && filesize.getMatch(1) != null) {
+            String fsize = filesize.getMatch(0) + filesize.getMatch(1);
+            downloadLink.setDownloadSize(Regex.getSize(fsize.trim()));
+        }
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename);
         return AvailableStatus.TRUE;
@@ -54,20 +64,16 @@ public class FullShareNet extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        Form dlform = br.getForm(0);
-        if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        int tt = Integer.parseInt(br.getRegex("Das Video wurde angefordert. Bitte warten Sie (\\d+) Sekunden!").getMatch(0));
-        sleep(tt * 1001l, downloadLink);
-        br.submitForm(dlform);
-        String dllink = br.getRegex("\"src\" value=\"(.*?)\"").getMatch(0);
+        String dllink = br.getRegex("video/divx\" src=\"(.*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("src\" value=\"(.*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -20);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         dl.startDownload();
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return -1;
     }
 
     @Override
