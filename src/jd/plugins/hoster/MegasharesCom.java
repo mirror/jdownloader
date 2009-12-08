@@ -109,13 +109,13 @@ public class MegasharesCom extends PluginForHost {
         loadpage(downloadLink.getDownloadURL());
         if (!checkPassword(downloadLink)) { return; }
         if (br.containsHTML("All download slots for this link are currently filled")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
-        String dlLink = br.getRegex("<div id=\"dlink\"><a href=\"(.*?)\">Click").getMatch(0);
-        if (dlLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String url = br.getRegex("<div>\\s*?<a href=\"(http://.*?megashares.*?)\">").getMatch(0);
+        if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlLink, true, -6);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, -6);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 5 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
@@ -162,11 +162,8 @@ public class MegasharesCom extends PluginForHost {
             if (!checkPassword(downloadLink)) { return; }
         }
         // Downloadlink
-        String url = br.getRegex("<div id=\"dlink\"><a href=\"(.*?)\">Click here to download</a>").getMatch(0);
-        if (url == null) {
-            downloadLink.getLinkStatus().setRetryCount(0);
-            throw new PluginException(LinkStatus.ERROR_RETRY);
-        }
+        String url = br.getRegex("<div>\\s*?<a href=\"(http://.*?megashares.*?)\">").getMatch(0);
+        if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // Dateigröße holen
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 1);
@@ -233,16 +230,8 @@ public class MegasharesCom extends PluginForHost {
             downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.megasharescom.errors.passwordprotected", "Password protected download"));
             return AvailableStatus.UNCHECKABLE;
         }
-        String dsize = br.getRegex("<dt>Filename:.*?<strong>.*?</strong>.*?size:(.*?)</dt>").getMatch(0);
-        /*
-         * besserer match da name nicht abgeschnitten wird, aber im falle eines
-         * neuen tickets fehlt dieser tag
-         */
-        String fln = br.getRegex("fln=/(.*?)\">Click here to download").getMatch(0);
-        /*
-         * notfall regex , falls grad ticket benötigt wird
-         */
-        if (fln == null) fln = br.getRegex("<dt>Filename:.*?<strong>(.*?)</strong>").getMatch(0);
+        String dsize = br.getRegex("Filesize:</span></strong>(.*?)<br />").getMatch(0);
+        String fln = br.getRegex("download page link title.*?<h1 class=.*?>(.*?)<").getMatch(0);
         if (dsize == null || fln == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(fln.trim());
         downloadLink.setDownloadSize(Regex.getSize(dsize));

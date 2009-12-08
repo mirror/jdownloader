@@ -734,6 +734,11 @@ public class Megauploadcom extends PluginForHost {
             if (br.getRequest().getHttpConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } catch (IOException e) {
             try {
+                JDLogger.getLogger().info(br.getRequest().getHttpConnection().toString());
+            } catch (Throwable e2) {
+            }
+            JDLogger.exception(e);
+            try {
                 String passCode;
                 if (downloadLink.getStringProperty("pass", null) == null) {
                     passCode = Plugin.getUserInput(null, downloadLink);
@@ -746,6 +751,11 @@ public class Megauploadcom extends PluginForHost {
                 downloadLink.setProperty("pass", passCode);
                 return;
             } catch (IOException e2) {
+                try {
+                    JDLogger.getLogger().info(br.getRequest().getHttpConnection().toString());
+                } catch (Throwable e3) {
+                }
+                JDLogger.exception(e2);
                 downloadLink.setProperty("pass", null);
                 throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.errors.wrongpassword", "Password wrong"));
             }
