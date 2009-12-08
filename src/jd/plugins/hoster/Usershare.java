@@ -67,9 +67,9 @@ public class Usershare extends PluginForHost {
             }
             linkurl = br.getRedirectLocation();
         } else {
-            linkurl = br.getRegex("</script> -->.*?<br>.*?<a href=\"(.*?)\"><img").getMatch(0);
+            linkurl = br.getRegex("</a></TD><TD width=\"1%\" nowrap align=right.*?/TD>.*?</Table>.*?<a href=\"(http.*?)\"").getMatch(0);
             if (linkurl == null) {
-                linkurl = br.getRegex(".*?document.oncontextmenu=new Function.*?<a href=\"(.*?)\"><img src=\"/images/download_btn.jpg\" border=0>").getMatch(0);
+                linkurl = br.getRegex("\"(http://[a-zA-Z0-9]+\\.usershare\\.net/files/.*?/.*?/.*?)\"").getMatch(0);
             }
         }
         if (passCode != null) {

@@ -17,8 +17,12 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
+import jd.http.Cookies;
 import jd.http.RandomUserAgent;
+import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -28,7 +32,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bigandfree.com" }, urls = { "http://[\\w\\.]*?(megaftp|bigandfree)\\.com/[0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bigandfree.com" }, urls = { "http://[\\w\\.]*?(megaftp|bigandfree)\\.com/[0-9]+" }, flags = { 2 })
 public class BigAndFreeCom extends PluginForHost {
 
     public static final Object LOCK = new Object();
@@ -36,6 +40,7 @@ public class BigAndFreeCom extends PluginForHost {
     public BigAndFreeCom(PluginWrapper wrapper) {
         super(wrapper);
         this.setStartIntervall(2000l);
+        this.enablePremium("http://www.bigandfree.com/join");
     }
 
     @Override
@@ -143,7 +148,65 @@ public class BigAndFreeCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return -1;
+    }
+
+    public void login(Account account) throws Exception {
+        this.setBrowserExclusive();
+        br.setDebug(true);
+        br.setFollowRedirects(true);
+        br.getPage("http://www.bigandfree.com/members");
+        Form form = br.getFormbyProperty("name", "login");
+        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        form.put("uname", Encoding.urlEncode(account.getUser()));
+        form.put("pwd", Encoding.urlEncode(account.getPass()));
+        br.submitForm(form);
+        String acctype = br.getRegex(">Account Type: </font><font class=.*?>(.*?)</font>").getMatch(0);
+        if (br.containsHTML("Account not found") || acctype == null || !acctype.contains("PREMIUM")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        ai.setStatus("Premium User");
+        account.setValid(true);
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+        requestFileInformation(downloadLink);
+        login(account);
+        br.setDebug(true);
+        br.getPage(downloadLink.getDownloadURL());
+        Cookies check = br.getCookies("bigandfree.com");
+        System.out.print(br.toString());
+        Form premform = br.getForm(1);
+        if (premform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        premform.setPreferredSubmit("chosen_prem");
+        br.submitForm(premform);
+        System.out.print(br.toString());
+        String dllink = br.getRegex("Direct Link:.*?value=\"(http.*?)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("Proxy Link:.*?value=\"(http.*?)\"").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("Proxy Link:.*?value=\"(http.*?)\"").getMatch(0);
+            }
+        }
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dl.startDownload();
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
     }
 
     @Override
