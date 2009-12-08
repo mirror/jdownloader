@@ -198,7 +198,7 @@ public class ModuleStatus extends JPanel implements ControlListener, MouseListen
         }
 
         public void actionPerformed(ActionEvent e) {
-            source.showTooltip();
+            if (source.isVisible()) source.showTooltip();
         }
 
     }
