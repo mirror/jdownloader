@@ -16,32 +16,20 @@
 
 package jd.plugins.optional.jdtrayicon;
 
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Point;
-import java.awt.Toolkit;
-import java.awt.TrayIcon;
-
-import javax.swing.BorderFactory;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JWindow;
-import javax.swing.SwingUtilities;
 
-import jd.controlling.DownloadController;
 import jd.controlling.DownloadInformations;
-import jd.gui.swing.GuiRunnable;
+import jd.gui.swing.components.JWindowTooltip;
 import jd.gui.swing.jdgui.components.JDProgressBar;
 import jd.nutils.Formatter;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
-public class TrayIconTooltip extends JWindow {
+public class TrayIconTooltip extends JWindowTooltip {
 
     private static final long serialVersionUID = -400023413449818691L;
-
-    private TrayInfo trayInfo;
 
     private JLabel lblSpeed;
     private JLabel lblDlRunning;
@@ -51,133 +39,46 @@ public class TrayIconTooltip extends JWindow {
     private JLabel lblETA;
     private JLabel lblProgress;
 
-    private Point estimatedTopLeft;
-    private TrayIcon trayIcon;
-
-    private DownloadInformations ds = new DownloadInformations();
+    private final DownloadInformations ds;
 
     public TrayIconTooltip() {
-
-        JPanel toolPanel = new JPanel(new MigLayout("wrap 2", "[fill, grow][fill, grow]"));
-        toolPanel.setOpaque(true);
-        toolPanel.setBackground(new Color(0xb9cee9));
-        toolPanel.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, toolPanel.getBackground().darker()));
-
-        toolPanel.add(new JLabel(JDL.L("plugins.optional.trayIcon.downloads", "Downloads:")), "spanx 2");
-        toolPanel.add(new JLabel(JDL.L("plugins.optional.trayIcon.dl.running", "Running:")), "gapleft 10");
-        toolPanel.add(lblDlRunning = new JLabel(""));
-        toolPanel.add(new JLabel(JDL.L("plugins.optional.trayIcon.dl.finished", "Finished:")), "gapleft 10");
-        toolPanel.add(lblDlFinished = new JLabel(""));
-        toolPanel.add(new JLabel(JDL.L("plugins.optional.trayIcon.dl.total", "Total:")), "gapleft 10");
-        toolPanel.add(lblDlTotal = new JLabel(""));
-        toolPanel.add(new JLabel(JDL.L("plugins.optional.trayIcon.speed", "Speed:")));
-        toolPanel.add(lblSpeed = new JLabel(""));
-        toolPanel.add(new JLabel(JDL.L("plugins.optional.trayIcon.progress", "Progress: ")));
-        toolPanel.add(lblProgress = new JLabel(""));
-        toolPanel.add(prgTotal = new JDProgressBar(), "spanx 2");
-        toolPanel.add(new JLabel(JDL.L("plugins.optional.trayIcon.eta", "ETA:")));
-        toolPanel.add(lblETA = new JLabel(""));
-        this.setVisible(false);
-        this.setAlwaysOnTop(true);
-        this.add(toolPanel);
-        this.pack();
-
+        ds = new DownloadInformations();
     }
 
-    public void show(Point point, TrayIcon trayIcon) {
-        this.trayIcon = trayIcon;
-        this.estimatedTopLeft = point;
-        if (trayInfo != null) trayInfo.interrupt();
-        trayInfo = new TrayInfo();
-        trayInfo.start();
+    protected void addContent(JPanel panel) {
+        panel.setLayout(new MigLayout("wrap 2", "[fill, grow][fill, grow]"));
+        panel.add(new JLabel(JDL.L("plugins.optional.trayIcon.downloads", "Downloads:")), "spanx 2");
+        panel.add(new JLabel(JDL.L("plugins.optional.trayIcon.dl.running", "Running:")), "gapleft 10");
+        panel.add(lblDlRunning = new JLabel(""));
+        panel.add(new JLabel(JDL.L("plugins.optional.trayIcon.dl.finished", "Finished:")), "gapleft 10");
+        panel.add(lblDlFinished = new JLabel(""));
+        panel.add(new JLabel(JDL.L("plugins.optional.trayIcon.dl.total", "Total:")), "gapleft 10");
+        panel.add(lblDlTotal = new JLabel(""));
+        panel.add(new JLabel(JDL.L("plugins.optional.trayIcon.speed", "Speed:")));
+        panel.add(lblSpeed = new JLabel(""));
+        panel.add(new JLabel(JDL.L("plugins.optional.trayIcon.progress", "Progress: ")));
+        panel.add(lblProgress = new JLabel(""));
+        panel.add(prgTotal = new JDProgressBar(), "spanx 2");
+        panel.add(new JLabel(JDL.L("plugins.optional.trayIcon.eta", "ETA:")));
+        panel.add(lblETA = new JLabel(""));
     }
 
-    public void hideWindow() {
-        new GuiRunnable<Object>() {
+    protected void updateContent() {
+        JDUtilities.getDownloadController().getDownloadStatus(ds);
 
-            @Override
-            public Object runSave() {
-                if (TrayIconTooltip.this.isVisible()) TrayIconTooltip.this.setVisible(false);
-                return null;
-            }
+        lblDlRunning.setText(String.valueOf(ds.getRunningDownloads()));
+        lblDlFinished.setText(String.valueOf(ds.getFinishedDownloads()));
+        lblDlTotal.setText(String.valueOf(ds.getDownloadCount()));
+        lblSpeed.setText(Formatter.formatReadable(JDUtilities.getController().getSpeedMeter()) + "/s");
 
-        }.start();
-        // counter = 0;
-        // inside = false;
-    }
+        lblProgress.setText(Formatter.formatFilesize(ds.getCurrentDownloadSize(), 0) + " / " + Formatter.formatFilesize(ds.getTotalDownloadSize(), 0));
+        prgTotal.setMaximum(ds.getTotalDownloadSize());
+        prgTotal.setValue(ds.getCurrentDownloadSize());
 
-    private void setLocation() {
-        new GuiRunnable<Object>() {
-            // @Override
-            public Object runSave() {
-                Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-                int limitX = (int) screenSize.getWidth() / 2;
-                int limitY = (int) screenSize.getHeight() / 2;
-                Point pp = estimatedTopLeft;
-                if (pp.x <= limitX) {
-                    if (pp.y <= limitY) {
-                        setLocation(pp.x, pp.y + trayIcon.getSize().height);
-                    } else {
-                        setLocation(pp.x, pp.y - getHeight());
-                    }
-                } else {
-                    if (pp.y <= limitY) {
-                        setLocation(pp.x - getWidth(), pp.y + trayIcon.getSize().height);
-                    } else {
-                        setLocation(pp.x - getWidth(), pp.y - getHeight());
-                    }
-                }
-                return null;
-            }
-        }.waitForEDT();
-    }
+        long etanum = 0;
+        if (JDUtilities.getController().getSpeedMeter() > 1024) etanum = (ds.getTotalDownloadSize() - ds.getCurrentDownloadSize()) / JDUtilities.getController().getSpeedMeter();
 
-    private class TrayInfo extends Thread implements Runnable {
-
-        // @Override
-        public void run() {
-
-            pack();
-            setLocation();
-            setVisible(true);
-            toFront();
-
-            final DownloadController dlc = JDUtilities.getDownloadController();
-
-            while (TrayIconTooltip.this.isVisible()) {
-                SwingUtilities.invokeLater(new Runnable() {
-
-                    public void run() {
-                        dlc.getDownloadStatus(ds);
-
-                        lblDlRunning.setText(String.valueOf(ds.getRunningDownloads()));
-                        lblDlFinished.setText(String.valueOf(ds.getFinishedDownloads()));
-                        lblDlTotal.setText(String.valueOf(ds.getDownloadCount()));
-                        lblSpeed.setText(Formatter.formatReadable(JDUtilities.getController().getSpeedMeter()) + "/s");
-
-                        lblProgress.setText(Formatter.formatFilesize(ds.getCurrentDownloadSize(), 0) + " / " + Formatter.formatFilesize(ds.getTotalDownloadSize(), 0));
-                        prgTotal.setMaximum(ds.getTotalDownloadSize());
-                        prgTotal.setValue(ds.getCurrentDownloadSize());
-
-                        long etanum = 0;
-                        if (JDUtilities.getController().getSpeedMeter() > 1024) etanum = (ds.getTotalDownloadSize() - ds.getCurrentDownloadSize()) / JDUtilities.getController().getSpeedMeter();
-
-                        lblETA.setText(Formatter.formatSeconds(etanum));
-
-                        pack();
-                    }
-
-                });
-
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    interrupt();
-                }
-            }
-
-            hideWindow();
-        }
+        lblETA.setText(Formatter.formatSeconds(etanum));
     }
 
 }

@@ -45,6 +45,7 @@ class ProgressControllerBroadcaster extends JDBroadcaster<ProgressControllerList
  */
 public class ProgressController implements MessageListener, Comparable<ProgressController> {
 
+    private static final int ICONSIZE = 19;
     private static int idCounter = 0;
     private long currentValue;
     private boolean finished;
@@ -77,7 +78,7 @@ public class ProgressController implements MessageListener, Comparable<ProgressC
         currentValue = 0;
         finished = false;
         progresscolor = null;
-        this.icon = JDTheme.II(iconKey, 16, 16);
+        this.icon = JDTheme.II(iconKey, ICONSIZE, ICONSIZE);
         fireChanges();
     }
 
@@ -95,8 +96,8 @@ public class ProgressController implements MessageListener, Comparable<ProgressC
         return progresscolor;
     }
 
-    public void setIcon(Icon icon) {
-        this.icon = icon;
+    public void setIcon(String iconKey) {
+        this.icon = JDTheme.II(iconKey, ICONSIZE, ICONSIZE);
         fireChanges();
     }
 

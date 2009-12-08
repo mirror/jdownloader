@@ -16,8 +16,7 @@ import jd.nutils.JDImage;
 public class ProgressCircle extends JPanel {
 
     private static final long serialVersionUID = -6877009081026501104L;
-    private static final int ICONSIZE = 15;
-    private static final int ICONSIZE_CIRCLE = 16;
+    private static final int ICONSIZE = 18;
     private static final double INDETERMINATE_MAXIMUM = 8;
 
     private double value;
@@ -26,10 +25,12 @@ public class ProgressCircle extends JPanel {
     private Icon icon;
     private Icon iconGrey;
     private ProgressController controller;
+    private ProgressCircleTooltip tooltip;
     private boolean backward = false;
 
     public ProgressCircle() {
         super();
+        tooltip = new ProgressCircleTooltip();
     }
 
     /**
@@ -40,19 +41,11 @@ public class ProgressCircle extends JPanel {
      */
     public void setController(ProgressController controller) {
         this.controller = controller;
+        tooltip.setController(controller);
         if (this.controller == null) return;
         if (!controller.isIndeterminate()) {
             maximum = controller.getMax();
             value = controller.getValue();
-            StringBuilder toolTip = new StringBuilder();
-            if (controller.getStatusText() != null) {
-                toolTip.append(controller.getStatusText());
-                toolTip.append(' ');
-            }
-            toolTip.append('[');
-            toolTip.append(controller.getPercent() / 100);
-            toolTip.append(new char[] { '%', ']' });
-            setToolTipText(toolTip.toString());
         } else {
             maximum = INDETERMINATE_MAXIMUM;
             if (backward) {
@@ -68,7 +61,6 @@ public class ProgressCircle extends JPanel {
                     value = INDETERMINATE_MAXIMUM;
                 }
             }
-            setToolTipText(controller.getStatusText());
         }
         color = controller.getColor();
         icon = controller.getIcon();
@@ -81,11 +73,7 @@ public class ProgressCircle extends JPanel {
 
     @Override
     public Dimension getPreferredSize() {
-        if (icon == null || iconGrey == null) {
-            return new Dimension(ICONSIZE_CIRCLE + 1, ICONSIZE_CIRCLE + 1);
-        } else {
-            return new Dimension(ICONSIZE + 1, ICONSIZE + 1);
-        }
+        return new Dimension(ICONSIZE + 1, ICONSIZE + 1);
     }
 
     @Override
@@ -103,13 +91,13 @@ public class ProgressCircle extends JPanel {
 
             g2.setColor(color);
             if (!backward) {
-                g2.fillArc(0, 0, ICONSIZE_CIRCLE, ICONSIZE_CIRCLE, 90 - degree, degree);
+                g2.fillArc(0, 0, ICONSIZE, ICONSIZE, 90 - degree, degree);
             } else {
-                g2.fillArc(0, 0, ICONSIZE_CIRCLE, ICONSIZE_CIRCLE, 90, degree);
+                g2.fillArc(0, 0, ICONSIZE, ICONSIZE, 90, degree);
             }
 
             g2.setColor(Color.BLACK);
-            g2.drawArc(0, 0, ICONSIZE_CIRCLE, ICONSIZE_CIRCLE, 0, 360);
+            g2.drawArc(0, 0, ICONSIZE, ICONSIZE, 0, 360);
         } else {
             // Custom Icon: Change between Grey and Color for indicating a
             // running Process
@@ -168,6 +156,14 @@ public class ProgressCircle extends JPanel {
 
     private static double tan(double degree) {
         return Math.tan(degree * Math.PI / 180.0);
+    }
+
+    public void showTooltip() {
+        tooltip.showTooltip(getLocationOnScreen());
+    }
+
+    public void hideTooltip() {
+        tooltip.hideTooltip();
     }
 
 }

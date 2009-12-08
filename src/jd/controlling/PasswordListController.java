@@ -54,9 +54,11 @@ public class PasswordListController implements ActionListener, DownloadControlle
         saveSync();
     }
 
-    /* Warning: only use single passwords here, not multiple in one string */
-    /*
-     * add pw to pwlist
+    /**
+     * <b>Warning: only use single passwords here, not multiple in one
+     * string</b><br><br>
+     * 
+     * add pw to pwlist<br>
      * 
      * optional: move pw to top (eg by jdunrar)
      */

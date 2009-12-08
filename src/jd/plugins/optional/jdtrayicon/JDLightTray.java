@@ -166,7 +166,7 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
     public void controlEvent(ControlEvent event) {
         if (event.getID() == ControlEvent.CONTROL_INIT_COMPLETE && event.getSource() instanceof Main) {
             logger.info("JDLightTrayIcon Init complete");
-            guiFrame = SwingGui.getInstance().getMainFrame();
+            guiFrame = JDGui.getInstance().getMainFrame();
             if (guiFrame != null) {
                 guiFrame.removeWindowListener(JDLightTray.this);
                 guiFrame.addWindowListener(JDLightTray.this);
@@ -240,11 +240,11 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
     }
 
     public void mouseExited(MouseEvent e) {
-        trayIconTooltip.hideWindow();
+        trayIconTooltip.hideTooltip();
     }
 
     public void mousePressed(MouseEvent e) {
-        trayIconTooltip.hideWindow();
+        trayIconTooltip.hideTooltip();
         if (e.getSource() instanceof TrayIcon) {
             if (!OSDetector.isMac()) {
                 if (e.getClickCount() >= (subConfig.getBooleanProperty(PROPERTY_SINGLE_CLICK, false) ? 1 : 2) && !SwingUtilities.isRightMouseButton(e)) {
@@ -372,14 +372,12 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
 
     /**
      * gets called if mouse stays over the tray. Edit delay in
-     * TrayJDMouseAdapter
-     * 
-     * @param me
+     * {@link TrayMouseAdapter}
      */
     public void mouseStay(MouseEvent e) {
         if (!subConfig.getBooleanProperty(PROPERTY_TOOLTIP, true)) return;
         if (trayIconPopup != null && trayIconPopup.isVisible()) return;
-        trayIconTooltip.show(((TrayMouseAdapter) e.getSource()).getEstimatedTopLeft(), this.trayIcon);
+        trayIconTooltip.showTooltip(((TrayMouseAdapter) e.getSource()).getEstimatedTopLeft());
     }
 
     private void removeTrayIcon() {

@@ -67,7 +67,7 @@ public class TrayIconPopup extends JWindow implements MouseListener, ChangeListe
     private ArrayList<JToggleButton> resizecomps;
 
     public TrayIconPopup() {
-        //required. JWindow  needs a parent to grant a nested Component focus
+        // required. JWindow needs a parent to grant a nested Component focus
         super(JDGui.getInstance().getMainFrame());
         config = SubConfiguration.getConfig("DOWNLOAD");
         resizecomps = new ArrayList<JToggleButton>();

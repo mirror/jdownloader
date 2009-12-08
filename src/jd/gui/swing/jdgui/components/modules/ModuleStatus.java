@@ -1,12 +1,15 @@
 package jd.gui.swing.jdgui.components.modules;
 
 import java.awt.Cursor;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.util.ArrayList;
 
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
+import javax.swing.Timer;
 
 import jd.controlling.ProgressController;
 import jd.event.ControlEvent;
@@ -18,12 +21,14 @@ public class ModuleStatus extends JPanel implements ControlListener, MouseListen
 
     private static final long serialVersionUID = 1745881766942067472L;
     private static final int BARCOUNT = 15;
+    private static int TOOLTIP_DELAY = 1000;
     private ArrayList<ProgressController> controllers = new ArrayList<ProgressController>();
     private ArrayList<ProgressController> addcontrollers = new ArrayList<ProgressController>();
     private ArrayList<ProgressController> removecontrollers = new ArrayList<ProgressController>();
     private ProgressCircle[] circles;
     private transient Thread updateThread = null;
     private volatile boolean updateThreadWaiting = false;
+    private transient TooltipTimer timer = null;
     private static final int updateThreadPause = 250;
 
     public ModuleStatus() {
@@ -135,17 +140,13 @@ public class ModuleStatus extends JPanel implements ControlListener, MouseListen
                 }
                 if (controllers.get(i).isInterruptable()) {
                     circles[i].setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-                    circles[i].removeMouseListener(this);
-                    circles[i].addMouseListener(this);
                 } else {
                     circles[i].setCursor(Cursor.getDefaultCursor());
-                    circles[i].removeMouseListener(this);
                 }
                 circles[i].setVisible(true);
             }
             for (int j = i; j < BARCOUNT; ++j) {
                 circles[j].setVisible(false);
-                circles[j].removeMouseListener(this);
                 /* to remove references */
                 circles[j].setController(null);
             }
@@ -162,15 +163,44 @@ public class ModuleStatus extends JPanel implements ControlListener, MouseListen
     }
 
     public void mouseEntered(MouseEvent e) {
+        if (timer != null) timer.stop();
+        timer = new TooltipTimer((ProgressCircle) e.getSource());
     }
 
     public void mouseExited(MouseEvent e) {
+        if (timer != null) {
+            timer.stop();
+            timer = null;
+        }
+        ((ProgressCircle) e.getSource()).hideTooltip();
     }
 
     public void mousePressed(MouseEvent e) {
     }
 
     public void mouseReleased(MouseEvent e) {
+    }
+
+    private class TooltipTimer extends Timer implements ActionListener {
+
+        private static final long serialVersionUID = 2620518234470214757L;
+
+        private ProgressCircle source;
+
+        public TooltipTimer(ProgressCircle source) {
+            super(TOOLTIP_DELAY, null);
+
+            this.source = source;
+
+            this.addActionListener(this);
+            this.setRepeats(false);
+            this.start();
+        }
+
+        public void actionPerformed(ActionEvent e) {
+            source.showTooltip();
+        }
+
     }
 
 }
