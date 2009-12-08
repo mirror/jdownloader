@@ -262,6 +262,13 @@
 				<include name="jd/plugins/optional/routerdbeditor/**" />
 			</fileset>
 		</jar>
+		
+		<mkdir dir="${dist}/pluginressourcen/135__RouterSend/plugins" />
+			<jar jarfile="${dist}/pluginressourcen/135__RouterSend/plugins/RouterSend.jar" manifest="Manifest.MF">
+				<fileset dir="${cls}">
+					<include name="jd/plugins/optional/routersend/**" />
+				</fileset>
+			</jar>
 	</target>
 
 	<target name="sign">

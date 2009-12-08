@@ -38,8 +38,8 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.xml.sax.SAXException;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "Linksave.in" }, urls = { "http://[\\w\\.]*?linksave\\.in/(view.php\\?id=)?[\\w]+" }, flags = { 0 })
+//PluginWrapper.CNL_2 um dem kaputten linksave wieder auf die Beine zu helfen
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "Linksave.in" }, urls = { "http://[\\w\\.]*?linksave\\.in/(view.php\\?id=)?[\\w]+" }, flags = { PluginWrapper.CNL_2 })
 public class Lnksvn extends PluginForDecrypt {
 
     public Lnksvn(PluginWrapper wrapper) {
