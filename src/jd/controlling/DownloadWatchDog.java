@@ -606,7 +606,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                     this.setName("DownloadWatchDog");
                     ArrayList<DownloadLink> links;
                     ArrayList<DownloadLink> updates = new ArrayList<DownloadLink>();
-                    ArrayList<FilePackage> fps;
+                    ArrayList<FilePackage> fps = new ArrayList<FilePackage>();
                     DownloadLink link;
                     LinkStatus linkStatus;
                     boolean hasInProgressLinks;
@@ -621,7 +621,12 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                         hasInProgressLinks = false;
                         hasTempDisabledLinks = false;
 
-                        fps = dlc.getPackages();
+                        fps.clear();
+                        synchronized (DownloadController.ControllerLock) {
+                            synchronized (dlc.getPackages()) {
+                                fps.addAll(dlc.getPackages());
+                            }
+                        }
                         currentTotalSpeed = 0;
                         inProgress = 0;
                         updates.clear();

@@ -520,12 +520,15 @@ public class Rapidshare extends PluginForHost {
             if (Regex.matches(error, Pattern.compile("(Betrugserkennung)"))) { throw new PluginException(LinkStatus.ERROR_PREMIUM, JDL.L("plugin.rapidshare.error.fraud", "Fraud detected: This Account has been illegally used by several users."), PluginException.VALUE_ID_PREMIUM_DISABLE); }
             if (Regex.matches(error, Pattern.compile("(expired|abgelaufen)"))) { throw new PluginException(LinkStatus.ERROR_PREMIUM, dynTranslate(error), PluginException.VALUE_ID_PREMIUM_DISABLE); }
             if (Regex.matches(error, Pattern.compile("(You have exceeded the download limit|Sie haben heute das Limit)"))) { throw new PluginException(LinkStatus.ERROR_PREMIUM, JDL.L("plugin.rapidshare.error.limitexeeded", "You have exceeded the download limit."), PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE); }
-            if (Regex.matches(error, Pattern.compile("Passwort ist falsch"))) { throw new PluginException(LinkStatus.ERROR_PREMIUM, dynTranslate(error), PluginException.VALUE_ID_PREMIUM_DISABLE); }
             if (Regex.matches(error, Pattern.compile("IP"))) { throw new PluginException(LinkStatus.ERROR_PREMIUM, dynTranslate(error), PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE); }
             if (Regex.matches(error, Pattern.compile("Der Server .*? ist momentan nicht verf.*"))) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.LF("plugin.rapidshare.error.serverunavailable", "The Server %s is currently unavailable.", error.substring(11, error.indexOf(" ist"))), 3600 * 1000l); }
             if (Regex.matches(error, Pattern.compile("(Ihr Cookie wurde nicht erkannt)"))) {
                 if (account != null) account.setProperty("cookies", null);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+            if (Regex.matches(error, Pattern.compile("Passwort ist falsch"))) {
+                if (account != null) account.setProperty("cookies", null);
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, dynTranslate(error), PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
             if (Regex.matches(error, Pattern.compile("(Account wurde nicht gefunden|Your Premium Account has not been found)"))) {
                 if (account != null) account.setProperty("cookies", null);

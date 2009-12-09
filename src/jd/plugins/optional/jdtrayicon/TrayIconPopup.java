@@ -18,6 +18,9 @@ package jd.plugins.optional.jdtrayicon;
 
 import java.awt.Cursor;
 import java.awt.Dimension;
+import java.awt.MouseInfo;
+import java.awt.Point;
+import java.awt.PointerInfo;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
@@ -66,16 +69,18 @@ public class TrayIconPopup extends JWindow implements MouseListener, ChangeListe
     private JPanel exitPanel;
     private ArrayList<JToggleButton> resizecomps;
 
+    private transient Thread hideThread;
+    private JWindow thisPopup;
+
     public TrayIconPopup() {
         // required. JWindow needs a parent to grant a nested Component focus
         super(JDGui.getInstance().getMainFrame());
         config = SubConfiguration.getConfig("DOWNLOAD");
         resizecomps = new ArrayList<JToggleButton>();
-
+        thisPopup = this;
         setVisible(false);
         setLayout(new MigLayout("ins 0", "[grow,fill]", "[grow,fill]"));
         addMouseListener(this);
-
         initEntryPanel();
         initQuickConfigPanel();
         initBottomPanel();
@@ -100,6 +105,32 @@ public class TrayIconPopup extends JWindow implements MouseListener, ChangeListe
         }
         setAlwaysOnTop(true);
         pack();
+        hideThread = new Thread() {
+            /*
+             * this thread handles closing of popup because enter/exit/move
+             * events are too slow and can miss the exitevent
+             */
+            public void run() {
+                while (true) {
+                    try {
+                        sleep(500);
+                    } catch (InterruptedException e) {
+                    }
+                    if (enteredPopup) {
+                        PointerInfo mouse = MouseInfo.getPointerInfo();
+                        Point current = thisPopup.getLocation();
+                        if (mouse.getLocation().x < current.x || mouse.getLocation().x > current.x + thisPopup.getSize().width) {
+                            dispose();
+                            break;
+                        } else if (mouse.getLocation().y < current.y || mouse.getLocation().y > current.y + thisPopup.getSize().height) {
+                            dispose();
+                            break;
+                        }
+                    }
+                }
+            }
+        };
+        hideThread.start();
     }
 
     /**
@@ -226,9 +257,6 @@ public class TrayIconPopup extends JWindow implements MouseListener, ChangeListe
     }
 
     public void mouseExited(MouseEvent e) {
-        if (e.getSource() == this && enteredPopup && !this.contains(e.getPoint())) {
-            dispose();
-        }
     }
 
     public void mousePressed(MouseEvent e) {

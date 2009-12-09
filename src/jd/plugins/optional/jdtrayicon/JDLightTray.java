@@ -22,6 +22,7 @@ import java.awt.Point;
 import java.awt.SystemTray;
 import java.awt.Toolkit;
 import java.awt.TrayIcon;
+import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
@@ -32,6 +33,7 @@ import java.util.ArrayList;
 
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
+import javax.swing.Timer;
 
 import jd.Main;
 import jd.PluginWrapper;
@@ -96,10 +98,25 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
 
     private boolean iconified = false;
 
+    private Timer disableAlwaysonTop;
+
     public JDLightTray(PluginWrapper wrapper) {
         super(wrapper);
         subConfig = SubConfiguration.getConfig("ADDONS_JDLIGHTTRAY");
         initConfig();
+        disableAlwaysonTop = new Timer(2000, this);
+        disableAlwaysonTop.setInitialDelay(2000);
+        disableAlwaysonTop.setRepeats(false);
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        if (e.getSource() == disableAlwaysonTop) {
+            if (guiFrame != null) guiFrame.setAlwaysOnTop(false);
+        } else {
+            super.actionPerformed(e);
+        }
+        return;
     }
 
     @Override
@@ -363,6 +380,7 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
                 @Override
                 public Object runSave() {
                     guiFrame.setAlwaysOnTop(true);
+                    disableAlwaysonTop.restart();
                     guiFrame.toFront();
                     return null;
                 }
