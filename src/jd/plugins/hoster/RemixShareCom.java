@@ -87,8 +87,9 @@ public class RemixShareCom extends PluginForHost {
                 downloadLink.setProperty("pass", pass);
             }
         }
-        String fCKU = br.getRegex("'(/downloadfinal/.*?/.*?)'").getMatch(0);
+        String fCKU = br.getRegex("'(/downloadfinal/.*?/)'").getMatch(0);
         if (fCKU == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        fCKU = fCKU.replace("break", "a0");
         fCKU = "http://remixshare.com" + fCKU;
         br.getPage(fCKU);
         String dllink = br.getRedirectLocation();

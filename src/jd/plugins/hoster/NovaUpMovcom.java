@@ -48,17 +48,18 @@ public class NovaUpMovcom extends PluginForHost {
         if (link.getDownloadURL().contains("video")) {
             String dllink = br.getRegex("\"file\",\"(.*?)\"").getMatch(0);
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (!dllink.contains("http")) dllink = "http://www.novaup.com" + dllink;
             link.setFinalFileName(null);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -20);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
             dl.startDownload();
 
         } else {
             // handling für "nicht"-video Links
-            String dllink1 = br.getRegex("> <strong><a href=\"(.*?)\"><span class=\"dwl_novaup").getMatch(0);
-            String dllink = "http://www.novaup.com" + dllink1;
+            String dllink = br.getRegex("> <strong><a href=\"(.*?)\"><span class=\"dwl_novaup").getMatch(0);
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (!dllink.contains("http")) dllink = "http://www.novaup.com" + dllink;
             link.setFinalFileName(null);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -20);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
             dl.startDownload();
         }
 
@@ -114,7 +115,7 @@ public class NovaUpMovcom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return -1;
     }
 
 }
