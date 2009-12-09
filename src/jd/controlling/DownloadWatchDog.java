@@ -621,6 +621,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                         hasInProgressLinks = false;
                         hasTempDisabledLinks = false;
 
+                        /* so we can work on a list without threading errors */
                         fps.clear();
                         synchronized (DownloadController.ControllerLock) {
                             synchronized (dlc.getPackages()) {
@@ -720,7 +721,6 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                             Reconnecter.doReconnectIfRequested(false);
                             if (inProgress > 0) {
                                 /* calc speed */
-                                fps = dlc.getPackages();
                                 for (FilePackage filePackage : fps) {
                                     Iterator<DownloadLink> iter = filePackage.getDownloadLinkList().iterator();
                                     int maxspeed = SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0) * 1024;
