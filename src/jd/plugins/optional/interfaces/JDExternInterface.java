@@ -33,6 +33,7 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
 import jd.config.SubConfiguration;
+import jd.controlling.CNL2;
 import jd.controlling.DistributeData;
 import jd.controlling.JDLogger;
 import jd.controlling.LinkGrabberController;
@@ -119,19 +120,7 @@ public class JDExternInterface extends PluginOptional {
         server = null;
     }
 
-    public static String decrypt(byte[] b, byte[] key) {
-        Cipher cipher;
-        try {
-            IvParameterSpec ivSpec = new IvParameterSpec(key);
-            SecretKeySpec skeySpec = new SecretKeySpec(key, "AES");
-            cipher = Cipher.getInstance("AES/CBC/NoPadding");
-            cipher.init(Cipher.DECRYPT_MODE, skeySpec, ivSpec);
-            return new String(cipher.doFinal(b));
-        } catch (Exception e) {
-            JDLogger.exception(e);
-        }
-        return null;
-    }
+
 
     @Override
     public ArrayList<MenuAction> createMenuitems() {
@@ -217,37 +206,16 @@ public class JDExternInterface extends PluginOptional {
                     } else if (splitPath.length > 1 && splitPath[1].equalsIgnoreCase("addcrypted2")) {
                         askPermission(request);
                         /* parse the post data */
-                        String string = Encoding.htmlDecode(request.getParameters().get("crypted")).trim().replace(" ", "+");
-                        byte[] baseDecoded = Base64.decode(string);
+                        String crypted = Encoding.htmlDecode(request.getParameters().get("crypted")).trim().replace(" ", "+");
+                        String jk=Encoding.htmlDecode(request.getParameters().get("jk"));
+                        String k=Encoding.htmlDecode(request.getParameters().get("k"));
+                        String passwords=Encoding.htmlDecode(request.getParameters().get("passwords"));
+                        String source=Encoding.htmlDecode(request.getParameters().get("source"));
+                       
                         try {
-                            byte[] key;
-
-                            if (request.getParameters().containsKey("jk")) {
-                                Context cx = Context.enter();
-                                Scriptable scope = cx.initStandardObjects();
-                                String fun = Encoding.htmlDecode(request.getParameters().get("jk")) + "  f()";
-
-                                Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
-
-                                key = JDHexUtils.getByteArray(Context.toString(result));
-                                Context.exit();
-                            } else {
-                                key = JDHexUtils.getByteArray(request.getParameters().get("k"));
-                            }
-
-                            String decryted = decrypt(baseDecoded, key).trim();
-
-                            String passwords[] = Regex.getLines(Encoding.htmlDecode(request.getParameters().get("passwords")));
-
-                            ArrayList<DownloadLink> links = new DistributeData(Encoding.htmlDecode(decryted)).findLinks();
-                            for (DownloadLink link : links)
-                                link.addSourcePluginPasswords(passwords);
-                            for (DownloadLink l : links) {
-                                if (request.getParameters().get("source") != null) {
-                                    l.setBrowserUrl(Encoding.htmlDecode(request.getParameters().get("source")));
-                                }
-                            }
-                            LinkGrabberController.getInstance().addLinks(links, false, false);
+                            CNL2.decrypt(crypted,jk,k,passwords,source);
+                             
+                            response.addContent("success\r\n");
                             new GuiRunnable<Object>() {
                                 @Override
                                 public Object runSave() {
@@ -255,7 +223,6 @@ public class JDExternInterface extends PluginOptional {
                                     return null;
                                 }
                             }.waitForEDT();
-                            response.addContent("success\r\n");
                         } catch (Exception e) {
                             e.printStackTrace();
                             response.addContent("failed\r\n");

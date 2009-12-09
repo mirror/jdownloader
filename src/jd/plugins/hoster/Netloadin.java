@@ -82,9 +82,7 @@ public class Netloadin extends PluginForHost {
         try {
             requestFileInformation(downloadLink);
             br.setDebug(true);
-
             LinkStatus linkStatus = downloadLink.getLinkStatus();
-
             this.setBrowserExclusive();
             br.getPage("http://netload.in/index.php?lang=de");
             br.setFollowRedirects(true);

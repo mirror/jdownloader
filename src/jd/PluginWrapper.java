@@ -47,12 +47,7 @@ public abstract class PluginWrapper implements Comparable<PluginWrapper> {
      * String, String, int)}<br>
      */
     public static final int LOAD_ON_INIT = 1 << 1;
-    /**
-     * By default, a plugin pattern must macht a valid URL. Sometimes it is
-     * required to match a javascript expression or anything like this. Use this
-     * flag to tell the plugin that it should accept invalid URLs
-     */
-    public static final int PATTERN_ACCEPTS_INVALID_URI = 1 << 2;
+  
     /**
      * By default, plugins can be disabled. But in some cases plugins should not
      * be disabled for controlling reasons. Use this flag to prevent the plugin
@@ -93,10 +88,7 @@ public abstract class PluginWrapper implements Comparable<PluginWrapper> {
      * field to cache the plugininstance if it is loaded already
      */
     protected Plugin loadedPlugin = null;
-    /**
-     * @see PluginWrapper#PATTERN_ACCEPTS_INVALID_URI
-     */
-    private boolean acceptOnlyURIs = true;
+ 
     /**
      * @see PluginWrapper#ALWAYS_ENABLED
      */
@@ -147,7 +139,7 @@ public abstract class PluginWrapper implements Comparable<PluginWrapper> {
         this.flags = flags;
         if (JDFlags.hasSomeFlags(flags, LOAD_ON_INIT)) this.getPlugin();
         if (JDFlags.hasSomeFlags(flags, ALWAYS_ENABLED)) this.alwaysenabled = true;
-        if (JDFlags.hasSomeFlags(flags, PATTERN_ACCEPTS_INVALID_URI)) this.acceptOnlyURIs = false;
+    
         if (JDFlags.hasNoFlags(flags, DEBUG_ONLY) || JDInitFlags.SWITCH_DEBUG) {
 
             WRAPPER.put(classn, this);
@@ -392,9 +384,10 @@ public abstract class PluginWrapper implements Comparable<PluginWrapper> {
     /**
      * @return the {@link PluginWrapper#acceptOnlyURIs}
      * @see PluginWrapper#acceptOnlyURIs
+     * @deprecated Currently is not used by any plugin. Review required
      */
     public boolean isAcceptOnlyURIs() {
-        return acceptOnlyURIs;
+        return true;
     }
 
 }

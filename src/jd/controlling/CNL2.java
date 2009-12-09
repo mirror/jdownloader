@@ -17,14 +17,28 @@
 package jd.controlling;
 
 import java.net.URL;
+import java.util.ArrayList;
+
+import javax.crypto.Cipher;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
+
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.Scriptable;
 
 import jd.DecryptPluginWrapper;
 import jd.OptionalPluginWrapper;
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
+import jd.gui.swing.GuiRunnable;
+import jd.gui.swing.SwingGui;
 import jd.gui.swing.components.Balloon;
+import jd.nutils.encoding.Base64;
+import jd.nutils.encoding.Encoding;
 import jd.nutils.nativeintegration.LocalBrowser;
 import jd.parser.Regex;
+import jd.plugins.DownloadLink;
+import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -67,5 +81,56 @@ public class CNL2 {
     private static boolean isExternInterfaceActive() {
         OptionalPluginWrapper plg = JDUtilities.getOptionalPlugin("externinterface");
         return (plg != null && plg.isLoaded() && plg.isEnabled());
+    }
+    public static String decrypt(byte[] b, byte[] key) {
+        Cipher cipher;
+        try {
+            IvParameterSpec ivSpec = new IvParameterSpec(key);
+            SecretKeySpec skeySpec = new SecretKeySpec(key, "AES");
+            cipher = Cipher.getInstance("AES/CBC/NoPadding");
+            cipher.init(Cipher.DECRYPT_MODE, skeySpec, ivSpec);
+            return new String(cipher.doFinal(b));
+        } catch (Exception e) {
+            JDLogger.exception(e);
+        }
+        return null;
+    }
+    /**
+     * @param crypted
+     * @param jk
+     * @param k
+     * @param passwords
+     * @param source
+     */
+    public static void decrypt(String crypted, String jk, String k, String password, String source) {
+        byte[] key;
+
+        if (jk!=null) {
+            Context cx = Context.enter();
+            Scriptable scope = cx.initStandardObjects();
+            String fun = jk + "  f()";
+
+            Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
+
+            key = JDHexUtils.getByteArray(Context.toString(result));
+            Context.exit();
+        } else {
+            key = JDHexUtils.getByteArray(k);
+        }
+        byte[] baseDecoded = Base64.decode(crypted);
+        String decryted = decrypt(baseDecoded, key).trim();
+
+        String passwords[] = Regex.getLines(password);
+
+        ArrayList<DownloadLink> links = new DistributeData(Encoding.htmlDecode(decryted)).findLinks();
+        for (DownloadLink link : links)
+            link.addSourcePluginPasswords(passwords);
+        for (DownloadLink l : links) {
+            if (source != null) {
+                l.setBrowserUrl(source);
+            }
+        }
+        LinkGrabberController.getInstance().addLinks(links, false, false);
+      
     }
 }

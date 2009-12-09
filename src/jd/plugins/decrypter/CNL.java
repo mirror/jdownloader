@@ -19,14 +19,16 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
+import jd.controlling.CNL2;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 7387 $", interfaceVersion = 2, names = { "Click'n'load" }, urls = { "cnl://.*?/" }, flags = { PluginWrapper.PATTERN_ACCEPTS_INVALID_URI })
+@DecrypterPlugin(revision = "$Revision: 7387 $", interfaceVersion = 2, names = { "Click'n'load" }, urls = { "cnl://.*?\\..*?/.*?/" }, flags = {0})
 public class CNL extends PluginForDecrypt {
 
     public CNL(PluginWrapper wrapper) {
@@ -36,6 +38,36 @@ public class CNL extends PluginForDecrypt {
     // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+      String code=  new Regex(param,"cnl://jdownloader.org/(.*?)/").getMatch(0);
+    String[] params= Regex.getLines(Encoding.Base64Decode(code));
+    String passwords=null;
+    String source=null;
+    String jk=null;
+    String crypted=null;
+for(String p:params){
+    int i = p.indexOf("=");
+    String key= p.substring(0,i);
+    if(key.equalsIgnoreCase("passwords")){
+        passwords=Encoding.Base64Decode(p.substring(i+1));
+        continue;
+    }
+    if(key.equalsIgnoreCase("source")){
+        source=Encoding.Base64Decode(p.substring(i+1));
+        continue;
+    }
+    if(key.equalsIgnoreCase("jk")){
+        jk=Encoding.Base64Decode(p.substring(i+1));
+        continue;
+    }
+    if(key.equalsIgnoreCase("crypted")){
+        crypted=Encoding.Base64Decode(p.substring(i+1));
+        continue;
+    }
+    
+    
+    CNL2.decrypt(crypted,jk,null,passwords,source);
+    
+}
         String parameter = param.toString();
 
 
