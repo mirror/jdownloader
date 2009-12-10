@@ -42,26 +42,22 @@ public class SharecashOrg extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
-
         this.setBrowserExclusive();
         try {
-
             br.getPage(downloadLink.getDownloadURL());
             String filename = br.getRegex("<td width=\"120\"><strong>(.*?)</strong></td>").getMatch(0);
-            if (filename == null) return AvailableStatus.FALSE;
+            if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             long size = Regex.getSize(br.getRegex("<b>Size:</b>(.*?)</td>").getMatch(0));
-        
-            downloadLink.setFinalFileName(filename);
+            downloadLink.setFinalFileName(filename.trim());
             downloadLink.setDownloadSize(size);
             return AvailableStatus.TRUE;
         } catch (NullPointerException e) {
-            return AvailableStatus.FALSE;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-
         requestFileInformation(downloadLink);
         String[] vars = br.getRegex("\"(\\\\.*?)\"").getColumn(0);
         String url = null;
@@ -70,10 +66,12 @@ public class SharecashOrg extends PluginForHost {
             url = new Regex(decoded, "<h2>Click <a href=\"(.*?)\"").getMatch(0);
             if (url != null) break;
         }
-
         if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 1);
-
+        if (!dl.getConnection().isContentDisposition()) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl.startDownload();
     }
 

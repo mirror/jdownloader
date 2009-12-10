@@ -133,6 +133,15 @@ public class HTMLParser {
      */
     public static String getHttpLinkList(String data) {
         String[] links = HTMLParser.getHttpLinks(data, null);
+        return ArrayToString(links);
+    }
+
+    /**
+     * converts a String array into a string which is parsable by
+     * getHttpLinksIntern
+     */
+    private static String ArrayToString(String[] links) {
+        if (links == null || links.length == 0) return "";
         StringBuilder ret = new StringBuilder();
         char tmp[] = new char[] { '"', '\r', '\n' };
         for (String element : links) {
@@ -194,6 +203,25 @@ public class HTMLParser {
         data = data.replaceAll("(?i)</span.*?>", "");
         /* CHECKME: why remove url/link tags? */
         data = data.replaceAll("(?s)\\[(url|link)\\].*?\\[/(url|link)\\]", "");
+
+        /* filtering tags, recursion command me ;) */
+        while (true) {
+            String nexttag = new Regex(data, "<(.*?)>").getMatch(0);
+            if (nexttag == null) {
+                /* no further tag found, lets continue */
+                break;
+            } else {
+                /* lets check if tag contains links */
+                String[] result = getHttpLinksIntern(nexttag, url);
+                if (result.length == 0) {
+                    /* no links, lets replace it with nothing */
+                    data = data.replaceFirst("<.*?>", "");
+                } else {
+                    /* lets replace the tag with the links */
+                    data = data.replaceFirst("<.*?>", ArrayToString(result));
+                }
+            }
+        }
 
         String protocolPattern = "(flashget|h.{2,3}|httpviajd|httpsviajd|https|ccf|dlc|ftp|jd|rsdf|jdlist)";
         if (!data.matches(".*<.*>.*")) {
