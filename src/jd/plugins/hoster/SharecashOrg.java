@@ -48,7 +48,7 @@ public class SharecashOrg extends PluginForHost {
 
             br.getPage(downloadLink.getDownloadURL());
             String filename = br.getRegex("<td width=\"120\"><strong>(.*?)</strong></td>").getMatch(0);
-            if(filename==null) return AvailableStatus.FALSE;
+            if (filename == null) return AvailableStatus.FALSE;
             long size = Regex.getSize(br.getRegex("<b>Size:</b>(.*?)</td>").getMatch(0));
             String md5 = br.getRegex("<b>MD5\\:<\\/b> (\\w{32})").getMatch(0);
             downloadLink.setMD5Hash(md5);
@@ -63,7 +63,6 @@ public class SharecashOrg extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
 
-   
         requestFileInformation(downloadLink);
         String[] vars = br.getRegex("\"(\\\\.*?)\"").getColumn(0);
         String url = null;
@@ -76,12 +75,6 @@ public class SharecashOrg extends PluginForHost {
         if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 1);
 
-        /* DownloadLimit? */
-//        if (!dl.getConnection().isContentDisposition()) {
-//            dl.getConnection().disconnect();
-//            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 180000);
-//        }
-        
         dl.startDownload();
     }
 
@@ -89,7 +82,6 @@ public class SharecashOrg extends PluginForHost {
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
-
 
     @Override
     public void reset() {
