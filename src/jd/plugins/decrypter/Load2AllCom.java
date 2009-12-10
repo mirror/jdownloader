@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
@@ -27,28 +28,38 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "load2all.com" }, urls = { "http://[\\w\\.]*?load2all\\.com/files/[0-9A-Z]+/[\\w.]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "load2all.com" }, urls = { "http://[\\w\\.]*?load2all\\.com/files/[0-9A-Z]+/[\\w.-]+" }, flags = { 0 })
 public class Load2AllCom extends PluginForDecrypt {
 
     public Load2AllCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        br.getPage(parameter.replace(".html", "").replace("files", "links"));
-        System.out.print(br.toString());
+        parameter = parameter.replace("files", "links").replace(".html", "");
+        br.getPage(parameter);
         /* Error handling */
         if (br.containsHTML("No htmlCode read")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         String[] redirectLinks = br.getRegex("(/redirect/[0-9A-Z]+/.*?/[0-9]+)").getColumn(0);
         if (redirectLinks.length == 0) return null;
         progress.setRange(redirectLinks.length);
         for (String link : redirectLinks) {
-            br.getPage("http://www.load2all.com" + link);
+            link = "http://www.load2all.com" + link;
+            br.getPage(link);
             if (br.containsHTML("Warning")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-            String finallink = br.getRedirectLocation();
+            if (!br.containsHTML("gkod.php")) return null;
+            for (int i = 0; i <= 3; i++) {
+                String captchaurl = "http://www.load2all.com/gkod.php?hash=" + Math.random();
+                String code = getCaptchaCode(captchaurl, param);
+                br.postPage(link, "gcode=" + Encoding.urlEncode(code) + "&x=0&y=0");
+                if (!br.containsHTML("dotted #bbb;padding")) continue;
+                break;
+            }
+            if (!br.containsHTML("dotted #bbb;padding")) throw new DecrypterException(DecrypterException.CAPTCHA);
+            System.out.print(br.toString());
+            String finallink = br.getRegex("dotted #bbb;padding.*?<a href=\"(.*?)\"").getMatch(0);
             if (finallink == null) return null;
             decryptedLinks.add(createDownloadlink(finallink));
             progress.increase(1);
