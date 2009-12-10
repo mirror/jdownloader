@@ -17,7 +17,6 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
-import jd.http.Cookies;
 import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
@@ -185,8 +184,6 @@ public class BigAndFreeCom extends PluginForHost {
         login(account);
         br.setDebug(true);
         br.getPage(downloadLink.getDownloadURL());
-        Cookies check = br.getCookies("bigandfree.com");
-        System.out.print(br.toString());
         Form premform = br.getForm(1);
         if (premform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         premform.setPreferredSubmit("chosen_prem");
@@ -201,6 +198,10 @@ public class BigAndFreeCom extends PluginForHost {
         }
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        if (!(dl.getConnection().isContentDisposition()) && !dl.getConnection().getContentType().contains("octet")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl.startDownload();
     }
 

@@ -588,7 +588,7 @@ public class Main {
                 Constructor<?> con = plgClass.getConstructor(new Class[] {});
                 DynamicPluginInterface dplg = (DynamicPluginInterface) con.newInstance(new Object[] {});
                 dplg.execute();
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 JDLogger.exception(Level.FINER, e);
             }
         }

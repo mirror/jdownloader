@@ -102,10 +102,14 @@ public class RAFDownload extends DownloadInterface {
         } catch (Exception e) {
             // JDLogger.getLogger().log(Level.SEVERE,"Exception occurred",e);
         }
-        if (!handleErrors()) {
-
-        return; }
+        /*
+         * workaround for old Idle bug when one chunk got idle but download is
+         * okay
+         */
+        downloadLink.getLinkStatus().setStatusText(null);
+        if (!handleErrors()) return;
         try {
+            downloadLink.getLinkStatus().setStatusText(null);
             logger.finest("no errors : rename");
             if (!new File(downloadLink.getFileOutput() + ".part").renameTo(new File(downloadLink.getFileOutput()))) {
 

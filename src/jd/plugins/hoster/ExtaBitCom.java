@@ -81,7 +81,7 @@ public class ExtaBitCom extends PluginForHost {
         } else {
             // *Normal* captcha handling
             Form dlform = br.getFormbyProperty("id", "cmn_form");
-            String captchaurl = br.getRegex("\"(/capture.*?\\?-[0-9]+)\"").getMatch(0);
+            String captchaurl = br.getRegex("\"(/capture.*?\\?-?[0-9]+)\"").getMatch(0);
             if (dlform == null || captchaurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             captchaurl = "http://extabit.com" + captchaurl;
             String code = getCaptchaCode(captchaurl, link);

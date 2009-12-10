@@ -66,7 +66,7 @@ public class AboutDialog extends AbstractDialog {
         } else {
             branch = "-" + branch + "- ";
         }
-        cp.add(new JLabel(branch + JDL.LF(JDL_PREFIX + "version", "Version %s", JDUtilities.JD_VERSION + JDUtilities.getRevision())));
+        cp.add(new JLabel(branch + JDL.LF(JDL_PREFIX + "version", "Version %s", JDUtilities.getRevision())));
 
         cp.add(new JLabel("© AppWork UG (haftungsbeschränkt) 2007-2009"), "gaptop 5");
 

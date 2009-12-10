@@ -223,7 +223,7 @@ public class MediafireCom extends PluginForHost {
          * these are our downloadbutton id's, we need them to find the right one
          * for building downloadurl later
          */
-        String[] ids = br.getRegex("<div class=\"download_link\" style=\"display:none;\" id=\"(.*?)\"").getColumn(0);
+        String[] ids = br.getRegex("<div class=\".*?\" style=\".*?\" id=\"(.*?)\"").getColumn(0);
         br.getPage("http://www.mediafire.com/dynamic/download.php?qk=" + qk + "&pk=" + pk + "&r=" + r);
         String error = br.getRegex("var et=(.*?);").getMatch(0);
         if (error != null && !error.trim().equalsIgnoreCase("15")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);

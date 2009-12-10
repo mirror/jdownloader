@@ -1652,11 +1652,6 @@ abstract public class DownloadInterface {
      * @return
      */
     public boolean handleErrors() {
-        /*
-         * workaround for old Idle bug when one chunk got idle but download is
-         * okay
-         */
-        downloadLink.getLinkStatus().setStatusText(null);
         if (userInterrupt) {
             logger.info("Download interrupted by user input");
             return false;

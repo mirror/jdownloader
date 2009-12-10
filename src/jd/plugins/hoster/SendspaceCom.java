@@ -161,8 +161,7 @@ public class SendspaceCom extends PluginForHost {
         }
         /* bypass captcha with retry ;) */
         if (br.containsHTML("User Verification") && br.containsHTML("Please type all the characters") || br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 1 * 60 * 1000l);
-        /* traffic limit */
-        if (br.containsHTML("Sorry, this connection has reached the")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000);
+        handleErrors(false);
         /* Link holen */
         String script = br.getRegex(Pattern.compile("<script type=\"text/javascript\">(function .*?)</script>", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (script == null) {
@@ -191,13 +190,7 @@ public class SendspaceCom extends PluginForHost {
         URLConnectionAdapter con = dl.getConnection();
         if (con.getURL().toExternalForm().contains("?e=") || con.getContentType().contains("html")) {
             br.followConnection();
-            String error = br.getRegex("<div class=\"errorbox-bad\".*?>(.*?)</div>").getMatch(0);
-            if (error == null) error = br.getRegex("<div class=\"errorbox-bad\".*?>.*?>(.*?)</>").getMatch(0);
-            if (error == null) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.sendspacecom.errors.servererror", "Unknown server error"), 5 * 60 * 1000l);
-            if (error.contains("You may now download the file")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, error, 30 * 1000l); }
-            if (error.contains("full capacity")) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.sendspacecom.errors.serverfull", "Free service capacity full"), 5 * 60 * 1000l); }
-            if (error.contains("this connection has reached the")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            handleErrors(true);
         }
         if (con.getResponseCode() == 416) {
             // HTTP/1.1 416 Requested Range Not Satisfiable
@@ -209,6 +202,25 @@ public class SendspaceCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
         }
         dl.startDownload();
+    }
+
+    private void handleErrors(boolean plugindefect) throws PluginException {
+        String error = br.getRegex("<div class=\"errorbox-bad\".*?>(.*?)</div>").getMatch(0);
+        if (error == null) error = br.getRegex("<div class=\"errorbox-bad\".*?>.*?>(.*?)</>").getMatch(0);
+        if (error == null && !plugindefect) return;
+        if (error == null) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.sendspacecom.errors.servererror", "Unknown server error"), 5 * 60 * 1000l);
+        if (error.contains("You may now download the file")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, error, 30 * 1000l); }
+        if (error.contains("full capacity")) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.sendspacecom.errors.serverfull", "Free service capacity full"), 5 * 60 * 1000l); }
+        if (error.contains("this connection has reached the")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000);
+        if (error.contains("reached daily download")) {
+            int wait = 60;
+            String untilh = br.getRegex("again in (\\d+)h:(\\d+)m").getMatch(0);
+            String untilm = br.getRegex("again in (\\d+)h:(\\d+)m").getMatch(1);
+            if (untilh != null) wait = Integer.parseInt(untilh) * 60;
+            if (untilm != null && untilh != null) wait = wait + Integer.parseInt(untilm);
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You have reached your daily download limit", wait * 60 * 1000l);
+        }
+        if (plugindefect) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
     @Override

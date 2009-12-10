@@ -106,6 +106,7 @@ public class KewlshareCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
+        br.setDebug(true);
         Form freeform = br.getForm(1);
         if (freeform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         freeform.put("x", "2");
@@ -117,6 +118,7 @@ public class KewlshareCom extends PluginForHost {
             int sec = Integer.parseInt(br.getRegex("You can download your next file after (\\d+):(\\d+):(\\d+)</div>").getMatch(2));
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, (hour * 3600 + minute * 60 + sec) * 1001);
         }
+        if (br.containsHTML("free download limit is reached")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Sorry, your Country's free download limit is reached", 60 * 60 * 1000l);
         br.setFollowRedirects(false);
         Form form = br.getForm(0);
         br.submitForm(form);

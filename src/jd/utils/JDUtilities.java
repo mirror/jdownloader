@@ -102,11 +102,6 @@ public class JDUtilities {
     private static JDController CONTROLLER = null;
 
     /**
-     * Titel der Applikation
-     */
-    public static final String JD_VERSION = "0.";
-
-    /**
      * Ein URLClassLoader, um Dateien aus dem HomeVerzeichnis zu holen
      */
     private static JDClassLoader JD_CLASSLOADER = null;
@@ -125,6 +120,8 @@ public class JDUtilities {
     private static String REVISION;
 
     private static String[] JD_ARGUMENTS = new String[1];
+
+    private static int REVISIONINT = -1;
 
     public static <K extends Comparable<K>, V> TreeMap<K, V> revSortByKey(Map<K, V> map) {
         TreeMap<K, V> a = new TreeMap<K, V>(new Comparator<K>() {
@@ -584,34 +581,34 @@ public class JDUtilities {
     }
 
     /**
-     * Parsed den Revision-String ins Format 0.000
+     * 
      * 
      * @return RevisionID
      */
     public static String getRevision() {
         if (REVISION != null) return REVISION;
+        return (REVISION = getRevisionNumber() + "");
+    }
+
+    public static int getRevisionNumber() {
+        if (REVISIONINT != -1) return REVISIONINT;
         int rev = -1;
         try {
             rev = Formatter.filterInt(JDIO.readFileToString(JDUtilities.getResourceFile("config/version.cfg")));
         } catch (Throwable t) {
             t.printStackTrace();
         }
-
         int rev2 = Integer.parseInt(Formatter.getRevision("$Revision$"));
-
-        double r = Math.max(rev2, rev) / 1000.0;
-        return REVISION = new DecimalFormat("0.000").format(r).replace(",", ".");
+        return (REVISIONINT = Math.max(rev2, rev));
     }
 
     public static int getRunType() {
         String caller = (Thread.currentThread().getContextClassLoader().getResource("jd") + "");
-
         if (caller.matches("jar\\:.*\\.jar\\!.*")) {
             return RUNTYPE_LOCAL_JARED;
         } else {
             return RUNTYPE_LOCAL;
         }
-
     }
 
     public static void setJDargs(String[] args) {
