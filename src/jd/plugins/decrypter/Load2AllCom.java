@@ -58,7 +58,6 @@ public class Load2AllCom extends PluginForDecrypt {
                 break;
             }
             if (!br.containsHTML("dotted #bbb;padding")) throw new DecrypterException(DecrypterException.CAPTCHA);
-            System.out.print(br.toString());
             String finallink = br.getRegex("dotted #bbb;padding.*?<a href=\"(.*?)\"").getMatch(0);
             if (finallink == null) return null;
             decryptedLinks.add(createDownloadlink(finallink));
