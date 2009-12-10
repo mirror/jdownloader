@@ -68,11 +68,13 @@ public class Dataupde extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
 
         if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
-
+        int maxchunks = 1;
         /* DownloadLink holen */
         String dllink = null;
         if (br.containsHTML("DivXBrowserPlugin.cab")) {
-            // Stream-links handling
+            // Stream-links handling, also when downloading streams you can
+            // download the file with multiple connections (chunks)
+            maxchunks = 0;
             dllink = br.getRegex("autoPlay\"/>.*?<param value=\"(.*?)\"").getMatch(0);
         } else {
             // Normal-links handling
@@ -82,7 +84,7 @@ public class Dataupde extends PluginForHost {
 
         // this.sleep(10000, downloadLink);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, maxchunks);
 
         if (dl.getConnection().getLongContentLength() == 0) {
             dl.getConnection().disconnect();
@@ -91,7 +93,7 @@ public class Dataupde extends PluginForHost {
             return;
         }
         /* DownloadLimit? */
-        if (!dl.getConnection().isContentDisposition()) {
+        if (dl.getConnection().getContentType().contains("html")) {
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 180000);
         }

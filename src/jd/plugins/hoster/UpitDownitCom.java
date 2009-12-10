@@ -38,27 +38,24 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.pluginUtils.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ForDevsToPlayWith.com" }, urls = { "http://[\\w\\.]*?ForDevsToPlayWith\\.com/[a-z0-9]{12}" }, flags = { 0 })
-public class XFileSharingProBasic extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "upit-downit.com" }, urls = { "http://[\\w\\.]*?upit-downit\\.com/file/[a-z0-9]{12}" }, flags = { 2 })
+public class UpitDownitCom extends PluginForHost {
 
-    public XFileSharingProBasic(PluginWrapper wrapper) {
+    public UpitDownitCom(PluginWrapper wrapper) {
         super(wrapper);
-        // enablePremium("http://turboshare.com/premium.html");
+        enablePremium("http://upit-downit.com/file/premium.html");
     }
 
     // XfileSharingProBasic Version 1.3
-    // This is only for developers to easily implement hosters using the
-    // "xfileshare(pro)" script (more informations can be found on
-    // xfilesharing.net)!
     @Override
     public String getAGBLink() {
-        return "http://www.ForDevsToPlayWith.com/tos.html";
+        return "http://upit-downit.com/file/tos.html";
     }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.setCookie("http://www.turboshare.com", "lang", "english");
+        br.setCookie("http://upit-downit.com", "lang", "english");
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("You have reached the download-limit")) {
             logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
@@ -199,7 +196,7 @@ public class XFileSharingProBasic extends PluginForHost {
                 code.append(value);
             }
             DLForm.put("code", code.toString());
-            logger.info("Put captchacode " + code.toString() + " obtained by captcha metod \"plaintext captchas\" in the form.");
+            logger.info("Put captchacode " + code.toString() + " obtained by captcha metod\"plaintext captchas\" in the form.");
         } else if (br.containsHTML("/captchas/")) {
             logger.info("Detected captcha method \"Standard captcha\" for this host");
             String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
@@ -244,7 +241,7 @@ public class XFileSharingProBasic extends PluginForHost {
             }
             recaptcha = true;
             rc.setCode(c);
-            logger.info("Put captchacode " + c + " obtained by captcha metod \"Re Captcha\" in the form and submitted it.");
+            logger.info("Put captchacode " + c + " obtained by captcha metod\"Re Captcha\" in the form and submitted it.");
         }
         /* Captcha END */
 
@@ -262,7 +259,7 @@ public class XFileSharingProBasic extends PluginForHost {
                 DLForm.put("password", passCode);
                 logger.info("Put password \"" + passCode + "\" entered by user in the DLForm.");
             }
-            jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLForm, true, 0);
+            jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLForm, false, 1);
             logger.info("Submitted DLForm");
         }
         boolean error = false;
@@ -333,7 +330,7 @@ public class XFileSharingProBasic extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
-            jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+            jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         }
         if (passCode != null) {
             downloadLink.setProperty("pass", passCode);
@@ -360,17 +357,18 @@ public class XFileSharingProBasic extends PluginForHost {
 
     private void login(Account account) throws Exception {
         this.setBrowserExclusive();
-        br.setCookie("http://turboshare.com", "lang", "english");
+        br.setCookie("http://upit-downit.com", "lang", "english");
         br.setDebug(true);
-        br.getPage("http://www.turboshare.com/login.html");
+        br.getPage("http://upit-downit.com/file/login.html");
         Form loginform = br.getForm(0);
         if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         loginform.put("login", Encoding.urlEncode(account.getUser()));
         loginform.put("password", Encoding.urlEncode(account.getPass()));
         br.submitForm(loginform);
-        br.getPage("http://turboshare.com/?op=my_account");
+        br.getPage("http://upit-downit.com/file/?op=my_account");
+        System.out.print(br.toString());
         if (!br.containsHTML("Premium-Account expire")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        if (br.getCookie("http://turboshare.com", "login") == null || br.getCookie("http://turboshare.com", "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (br.getCookie("http://upit-downit.com", "login") == null || br.getCookie("http://upit-downit.com", "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
     @Override
@@ -414,7 +412,7 @@ public class XFileSharingProBasic extends PluginForHost {
         String passCode = null;
         requestFileInformation(link);
         login(account);
-        br.setCookie("http://turboshare.com", "lang", "english");
+        br.setCookie("http://upit-downit.com", "lang", "english");
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
         String dllink = br.getRedirectLocation();
