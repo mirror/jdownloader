@@ -23,15 +23,10 @@ import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.Scriptable;
-
 import jd.DecryptPluginWrapper;
 import jd.OptionalPluginWrapper;
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
-import jd.gui.swing.GuiRunnable;
-import jd.gui.swing.SwingGui;
 import jd.gui.swing.components.Balloon;
 import jd.nutils.encoding.Base64;
 import jd.nutils.encoding.Encoding;
@@ -41,6 +36,9 @@ import jd.plugins.DownloadLink;
 import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.Scriptable;
 
 public class CNL2 {
 
@@ -82,6 +80,7 @@ public class CNL2 {
         OptionalPluginWrapper plg = JDUtilities.getOptionalPlugin("externinterface");
         return (plg != null && plg.isLoaded() && plg.isEnabled());
     }
+
     public static String decrypt(byte[] b, byte[] key) {
         Cipher cipher;
         try {
@@ -95,6 +94,7 @@ public class CNL2 {
         }
         return null;
     }
+
     /**
      * @param crypted
      * @param jk
@@ -105,7 +105,7 @@ public class CNL2 {
     public static void decrypt(String crypted, String jk, String k, String password, String source) {
         byte[] key;
 
-        if (jk!=null) {
+        if (jk != null) {
             Context cx = Context.enter();
             Scriptable scope = cx.initStandardObjects();
             String fun = jk + "  f()";
@@ -131,6 +131,6 @@ public class CNL2 {
             }
         }
         LinkGrabberController.getInstance().addLinks(links, false, false);
-      
+
     }
 }

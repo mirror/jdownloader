@@ -33,7 +33,8 @@ import jd.utils.locale.JDL;
 
 public class SrcParser {
 
-    private File root;
+    private final File root;
+    private final int rootLen;
     private JDBroadcaster<MessageListener, MessageEvent> broadcaster;
 
     public static void deleteCache() {
@@ -48,6 +49,7 @@ public class SrcParser {
 
     public SrcParser(File resourceFile) {
         this.root = resourceFile;
+        this.rootLen = root.getAbsolutePath().length() + 1;
         this.entries = new ArrayList<LngEntry>();
 
         this.broadcaster = new JDBroadcaster<MessageListener, MessageEvent>() {
@@ -93,7 +95,7 @@ public class SrcParser {
     private void parseFile(File file) {
 
         this.currentFile = file;
-        broadcaster.fireEvent(new MessageEvent(this, 0, JDL.LF("jd.plugins.optional.langfileeditor.SrcParser.parse", "Parse %s", file.getAbsolutePath())));
+        broadcaster.fireEvent(new MessageEvent(this, 0, JDL.LF("jd.plugins.optional.langfileeditor.SrcParser.parse", "Parse %s", file.getAbsolutePath().substring(rootLen))));
 
         // find all lines containing JDL calls
         currentContent = JDIO.readFileToString(file);

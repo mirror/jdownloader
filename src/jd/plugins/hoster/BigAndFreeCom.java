@@ -22,6 +22,7 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
+import jd.plugins.BrowserAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -131,7 +132,7 @@ public class BigAndFreeCom extends PluginForHost {
         downloadForm.setAction(downloadLink.getDownloadURL());
         br.setFollowRedirects(true);
         br.setDebug(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadForm, true, 0);
+        dl = BrowserAdapter.openDownload(br, downloadLink, downloadForm, true, 0);
         if (!(dl.getConnection().isContentDisposition()) && !dl.getConnection().getContentType().contains("octet")) {
             br.followConnection();
             if (br.containsHTML("You have exceeded your download limit")) {
@@ -188,7 +189,6 @@ public class BigAndFreeCom extends PluginForHost {
         if (premform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         premform.setPreferredSubmit("chosen_prem");
         br.submitForm(premform);
-        System.out.print(br.toString());
         String dllink = br.getRegex("Direct Link:.*?value=\"(http.*?)\"").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("Proxy Link:.*?value=\"(http.*?)\"").getMatch(0);
@@ -197,7 +197,7 @@ public class BigAndFreeCom extends PluginForHost {
             }
         }
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dl = BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (!(dl.getConnection().isContentDisposition()) && !dl.getConnection().getContentType().contains("octet")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -216,7 +216,6 @@ public class BigAndFreeCom extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
-
     }
 
 }

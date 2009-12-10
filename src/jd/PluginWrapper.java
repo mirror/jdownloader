@@ -386,6 +386,7 @@ public abstract class PluginWrapper implements Comparable<PluginWrapper> {
      * @see PluginWrapper#acceptOnlyURIs
      * @deprecated Currently is not used by any plugin. Review required
      */
+    @Deprecated
     public boolean isAcceptOnlyURIs() {
         return true;
     }

@@ -49,7 +49,6 @@ public class UPnPInfo {
     public ArrayList<String> met = new ArrayList<String>();
     public HashMap<String, String> SCPDs = null;
 
-    // protected String
     private void getSCPDURLs(String location) throws SAXException, IOException, ParserConfigurationException {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         DocumentBuilder builder = factory.newDocumentBuilder();
@@ -167,13 +166,10 @@ public class UPnPInfo {
         if (ssdpP == null) return;
         try {
             // ---- Parse XML file ----
-
             if (ssdpP.getLocation() == null) return;
 
             getSCPDURLs(ssdpP.getLocation());
             met = createUpnpReconnect(SCPDs, ssdpP.getLocation());
-            //System.out.println(ndList.item(0).getParentNode().getChildNodes().
-            // item(1).getFirstChild());
             // ---- Error handling ----
         } catch (SAXParseException spe) {
             System.out.println("\n** Parsing error, line " + spe.getLineNumber() + ", uri " + spe.getSystemId());
@@ -186,17 +182,9 @@ public class UPnPInfo {
         } catch (ParserConfigurationException pce) {
             JDLogger.exception(pce);
         } catch (IOException ioe) {
-           JDLogger.exception(ioe);
+            JDLogger.exception(ioe);
         }
 
     }
 
-    public static void main(String[] args) {
-        UPnPInfo upnp = new UPnPInfo(RouterInfoCollector.getRouterIP());
-        for (String string : upnp.met) {
-            System.out.println(string);
-        }
-
-        System.exit(0);
-    }
 }

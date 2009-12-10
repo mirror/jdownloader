@@ -28,53 +28,46 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 7387 $", interfaceVersion = 2, names = { "Click'n'load" }, urls = { "cnl://.*?\\..*?/.*?/" }, flags = {0})
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "Click'n'load" }, urls = { "cnl://.*?\\..*?/.*?/" }, flags = { 0 })
 public class CNL extends PluginForDecrypt {
 
     public CNL(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-      String code=  new Regex(param,"cnl://jdownloader.org/(.*?)/").getMatch(0);
-    String[] params= Regex.getLines(Encoding.Base64Decode(code));
-    String passwords=null;
-    String source=null;
-    String jk=null;
-    String crypted=null;
-for(String p:params){
-    int i = p.indexOf("=");
-    String key= p.substring(0,i);
-    if(key.equalsIgnoreCase("passwords")){
-        passwords=Encoding.Base64Decode(p.substring(i+1));
-        continue;
-    }
-    if(key.equalsIgnoreCase("source")){
-        source=Encoding.Base64Decode(p.substring(i+1));
-        continue;
-    }
-    if(key.equalsIgnoreCase("jk")){
-        jk=Encoding.Base64Decode(p.substring(i+1));
-        continue;
-    }
-    if(key.equalsIgnoreCase("crypted")){
-        crypted=Encoding.Base64Decode(p.substring(i+1));
-        continue;
-    }
-    
-    
-    CNL2.decrypt(crypted,jk,null,passwords,source);
-    
-}
-        String parameter = param.toString();
+        String code = new Regex(param, "cnl://jdownloader.org/(.*?)/").getMatch(0);
+        String[] params = Regex.getLines(Encoding.Base64Decode(code));
+        String passwords = null;
+        String source = null;
+        String jk = null;
+        String crypted = null;
+        for (String p : params) {
+            int i = p.indexOf("=");
+            String key = p.substring(0, i);
+            if (key.equalsIgnoreCase("passwords")) {
+                passwords = Encoding.Base64Decode(p.substring(i + 1));
+                continue;
+            }
+            if (key.equalsIgnoreCase("source")) {
+                source = Encoding.Base64Decode(p.substring(i + 1));
+                continue;
+            }
+            if (key.equalsIgnoreCase("jk")) {
+                jk = Encoding.Base64Decode(p.substring(i + 1));
+                continue;
+            }
+            if (key.equalsIgnoreCase("crypted")) {
+                crypted = Encoding.Base64Decode(p.substring(i + 1));
+                continue;
+            }
 
+            CNL2.decrypt(crypted, jk, null, passwords, source);
 
+        }
 
         return decryptedLinks;
     }
-
-    // @Override
 
 }

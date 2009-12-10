@@ -70,14 +70,12 @@ public class TrayIconPopup extends JWindow implements MouseListener, ChangeListe
     private ArrayList<JToggleButton> resizecomps;
 
     private transient Thread hideThread;
-    private JWindow thisPopup;
 
     public TrayIconPopup() {
         // required. JWindow needs a parent to grant a nested Component focus
         super(JDGui.getInstance().getMainFrame());
         config = SubConfiguration.getConfig("DOWNLOAD");
         resizecomps = new ArrayList<JToggleButton>();
-        thisPopup = this;
         setVisible(false);
         setLayout(new MigLayout("ins 0", "[grow,fill]", "[grow,fill]"));
         addMouseListener(this);
@@ -118,11 +116,11 @@ public class TrayIconPopup extends JWindow implements MouseListener, ChangeListe
                     }
                     if (enteredPopup) {
                         PointerInfo mouse = MouseInfo.getPointerInfo();
-                        Point current = thisPopup.getLocation();
-                        if (mouse.getLocation().x < current.x || mouse.getLocation().x > current.x + thisPopup.getSize().width) {
+                        Point current = TrayIconPopup.this.getLocation();
+                        if (mouse.getLocation().x < current.x || mouse.getLocation().x > current.x + TrayIconPopup.this.getSize().width) {
                             dispose();
                             break;
-                        } else if (mouse.getLocation().y < current.y || mouse.getLocation().y > current.y + thisPopup.getSize().height) {
+                        } else if (mouse.getLocation().y < current.y || mouse.getLocation().y > current.y + TrayIconPopup.this.getSize().height) {
                             dispose();
                             break;
                         }
@@ -144,7 +142,7 @@ public class TrayIconPopup extends JWindow implements MouseListener, ChangeListe
                     Thread.sleep(3000);
                 } catch (InterruptedException e) {
                 }
-                if (enteredPopup == false) {
+                if (!enteredPopup) {
                     new GuiRunnable<Object>() {
                         @Override
                         public Object runSave() {

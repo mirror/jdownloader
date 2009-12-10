@@ -22,9 +22,6 @@ import java.io.File;
 import java.net.URL;
 import java.util.ArrayList;
 
-import javax.crypto.Cipher;
-import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
 import javax.swing.JFrame;
 
 import jd.Installer;
@@ -42,7 +39,6 @@ import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.nutils.JDFlags;
-import jd.nutils.encoding.Base64;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.httpserver.Handler;
 import jd.nutils.httpserver.HttpServer;
@@ -57,14 +53,10 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginOptional;
 import jd.update.WebUpdater;
-import jd.utils.JDHexUtils;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.WebUpdate;
 import jd.utils.locale.JDL;
-
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.Scriptable;
 
 @OptionalPlugin(rev = "$Revision$", defaultEnabled = true, id = "externinterface", interfaceversion = 5)
 public class JDExternInterface extends PluginOptional {
@@ -119,8 +111,6 @@ public class JDExternInterface extends PluginOptional {
         }
         server = null;
     }
-
-
 
     @Override
     public ArrayList<MenuAction> createMenuitems() {
@@ -207,14 +197,14 @@ public class JDExternInterface extends PluginOptional {
                         askPermission(request);
                         /* parse the post data */
                         String crypted = Encoding.htmlDecode(request.getParameters().get("crypted")).trim().replace(" ", "+");
-                        String jk=Encoding.htmlDecode(request.getParameters().get("jk"));
-                        String k=Encoding.htmlDecode(request.getParameters().get("k"));
-                        String passwords=Encoding.htmlDecode(request.getParameters().get("passwords"));
-                        String source=Encoding.htmlDecode(request.getParameters().get("source"));
-                       
+                        String jk = Encoding.htmlDecode(request.getParameters().get("jk"));
+                        String k = Encoding.htmlDecode(request.getParameters().get("k"));
+                        String passwords = Encoding.htmlDecode(request.getParameters().get("passwords"));
+                        String source = Encoding.htmlDecode(request.getParameters().get("source"));
+
                         try {
-                            CNL2.decrypt(crypted,jk,k,passwords,source);
-                             
+                            CNL2.decrypt(crypted, jk, k, passwords, source);
+
                             response.addContent("success\r\n");
                             new GuiRunnable<Object>() {
                                 @Override

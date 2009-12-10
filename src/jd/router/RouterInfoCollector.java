@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import jd.JDInit;
 import jd.config.Configuration;
 import jd.controlling.JDLogger;
 import jd.controlling.reconnect.HTTPLiveHeader;
@@ -35,12 +34,9 @@ import jd.nutils.Threader;
 import jd.nutils.jobber.JDRunnable;
 import jd.parser.Regex;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 
 public class RouterInfoCollector {
-    public final static String PROPERTY_SHOW_ROUTERINFO_DIALOG = "PROPERTY_SHOW_ROUTERINFO_DIALOG";
-    public final static String RECONNECTTYPE_LIVE_HEADER = JDL.L("modules.reconnect.types.liveheader", "LiveHeader/Curl");
-    public final static String RECONNECTTYPE_CLR = JDL.L("modules.reconnect.types.clr", "CLR Script");
+
     protected static String reconnectMethode = null;
     protected static String reconnectMethodeClr = null;
     public final static int RInfo_UPNP = 1 << 1;
@@ -68,41 +64,9 @@ public class RouterInfoCollector {
         try {
             return InetAddress.getByName(routerIp);
         } catch (UnknownHostException e) {
-            // TODO Auto-generated catch block
             JDLogger.exception(e);
         }
         return null;
-    }
-
-    public static void showDialog() {
-        /*
-         * if (isValidReconnect()) { if
-         * (JDUtilities.getConfiguration().getBooleanProperty
-         * (PROPERTY_SHOW_ROUTERINFO_DIALOG, true)) { if (rict != null &&
-         * rict.isAlive()) return; rict = new Thread(new Runnable() { public
-         * void run() { RouterInfoCollector ric = new RouterInfoCollector();
-         * String xml = ric.toString(); if (xml != null && isValidReconnect()) {
-         * CountdownConfirmDialog ccd = new
-         * CountdownConfirmDialog(SwingGui.getInstance(),
-         * JDLocale.L("routerinfocollector.dialog.title",
-         * "Helfen sie die Routererkennung zu verbessern"), 30, true,
-         * CountdownConfirmDialog.STYLE_YES | CountdownConfirmDialog.STYLE_NO |
-         * CountdownConfirmDialog.STYLE_DETAILLABLE,
-         * JDLocale.L("routerinfocollector.dialog.msg",
-         * "<b>Um die automatische Routererkennung zu verbessern sammeln wir Routerinformationen!</b><br>Wenn sie damit einverstanden sind die Informationen aus den Details an unseren Server zu übermitteln bestätigen sie mit ja!"
-         * ), xml);
-         * 
-         * if (!ccd.window_Closed) {JDUtilities.getConfiguration().setProperty(
-         * PROPERTY_SHOW_ROUTERINFO_DIALOG, false);
-         * JDUtilities.getConfiguration().save(); } if (ccd.result) { if
-         * (ric.routerMethodeNames == null) { ric.routerMethodeNames =
-         * SwingGui.getInstance().showUserInputDialog(JDLocale.L(
-         * "routerinfocollector.namedialog.title",
-         * "Please enter the following routerinfos: manufacturer, model, firmware. (e.g DLink, 635 , FW1.37)"
-         * )); } ric.sendToServer(); } }
-         * 
-         * } }); rict.start(); } }
-         */
     }
 
     public static RInfo getRInfo(final int infoToCollect) {
@@ -157,7 +121,7 @@ public class RouterInfoCollector {
 
                 public void go() throws Exception {
                     try {
-                        info.setRouterMAC(new GetMacAdress().getMacAddress(ia));
+                        info.setRouterMAC(GetMacAdress.getMacAddress(ia));
                     } catch (Exception e) {
                     }
                 }
@@ -231,8 +195,4 @@ public class RouterInfoCollector {
         return info;
     }
 
-    public static void main(String[] args) {
-        new JDInit().loadConfiguration();
-        showDialog();
-    }
 }

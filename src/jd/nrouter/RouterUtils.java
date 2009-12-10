@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.Socket;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.regex.Matcher;
@@ -133,16 +132,12 @@ public class RouterUtils {
      */
     public static boolean validateIP(String iPaddress) {
         final Pattern IP_PATTERN = Pattern.compile("\\b(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b");
-        if (IP_PATTERN.matcher(iPaddress).matches())
+        if (IP_PATTERN.matcher(iPaddress).matches()) {
             return true;
-        else {
+        } else {
             try {
-                if (InetAddress.getByName(iPaddress).isReachable(1500)) { return true; }
-            } catch (UnknownHostException e) {
-
-                JDLogger.exception(e);
-            } catch (IOException e) {
-
+                if (InetAddress.getByName(iPaddress).isReachable(1500)) return true;
+            } catch (Exception e) {
                 JDLogger.exception(e);
             }
         }
@@ -184,21 +179,19 @@ public class RouterUtils {
      * @param port
      * @return
      */
-    public static boolean checkport(String host, int port) {
+    public static boolean checkPort(String host, int port) {
         Socket sock;
         try {
             sock = new Socket(host, port);
             sock.setSoTimeout(200);
             return true;
-        } catch (UnknownHostException e) {
-        } catch (IOException e) {
+        } catch (Exception e) {
         }
         return false;
-
     }
 
     /**
-     * Tries to find the ourter's ip adress and returns it.
+     * Tries to find the router's ip adress and returns it.
      * 
      * @param force
      *            if false, jd uses a cached value if available
@@ -214,7 +207,6 @@ public class RouterUtils {
             address = getIPFromRouteCommand();
             if (address != null) return address;
             address = getIpFormHostTable();
-
             return address;
         } finally {
             ADDRESS_CACHE = address;
@@ -222,7 +214,7 @@ public class RouterUtils {
     }
 
     /**
-     * UPdates the host table and adds the full ip range (0-255) of the local
+     * Updates the host table and adds the full ip range (0-255) of the local
      * devices to the table.
      */
     private static void updateHostTable() {
@@ -254,9 +246,9 @@ public class RouterUtils {
     }
 
     /**
-     * RUns throw a predefined HOst Table (multithreaded) and checks if there is
+     * Runs throw a predefined Host Table (multithreaded) and checks if there is
      * a service on port 80. returns the ip if there is a webservice on any
-     * adress. See updateHostTable()
+     * adress. See {@link #updateHostTable()}
      * 
      * @return
      */
@@ -296,7 +288,7 @@ public class RouterUtils {
     }
 
     /**
-     * USes the /sbin/route command to determine therouter's ip. works on linux
+     * Uses the /sbin/route command to determine the router's ip. works on linux
      * and mac.
      * 
      * @return
@@ -323,13 +315,9 @@ public class RouterUtils {
                             try {
                                 InetAddress ia = InetAddress.getByName(hostname);
                                 if (ia.isReachable(1500)) {
-                                    if (RouterUtils.checkport(hostname, 80)) { return ia; }
+                                    if (RouterUtils.checkPort(hostname, 80)) return ia;
                                 }
-                            } catch (UnknownHostException e) {
-
-                                JDLogger.exception(e);
-                            } catch (IOException e) {
-
+                            } catch (Exception e) {
                                 JDLogger.exception(e);
                             }
                         }
@@ -353,13 +341,9 @@ public class RouterUtils {
                             try {
                                 InetAddress ia = InetAddress.getByName(hostname);
                                 if (ia.isReachable(1500)) {
-                                    if (RouterUtils.checkport(hostname, 80)) { return ia; }
+                                    if (RouterUtils.checkPort(hostname, 80)) return ia;
                                 }
-                            } catch (UnknownHostException e) {
-
-                                JDLogger.exception(e);
-                            } catch (IOException e) {
-
+                            } catch (Exception e) {
                                 JDLogger.exception(e);
                             }
                         }
@@ -377,7 +361,6 @@ public class RouterUtils {
      * Calls netstat -nt to find the router's ip. returns null if nothing found
      * and the ip if found something;
      * http://jdownloader.net:8081/pastebin/1ab4eabb60df171d0d442f0c7fb875a0
-     * 
      */
     public static InetAddress getIPFormNetStat() {
         try {
@@ -393,19 +376,16 @@ public class RouterUtils {
                 String m = new Regex(string, pat).getMatch(0);
                 if (m != null) {
                     InetAddress ia = InetAddress.getByName(m);
-                    if (ia.isReachable(1500)) {
-
-                    return ia; }
+                    if (ia.isReachable(1500)) return ia;
                 }
             }
-
         } catch (Exception e) {
             JDLogger.exception(e);
         }
         return null;
     }
 
-    static class WebServerChecker implements JDRunnable {
+    private static class WebServerChecker implements JDRunnable {
 
         private String host;
         private InetAddress address = null;
@@ -423,7 +403,7 @@ public class RouterUtils {
             try {
                 InetAddress ia = InetAddress.getByName(host);
                 if (ia.isReachable(1500)) {
-                    if (RouterUtils.checkport(host, 80)) {
+                    if (RouterUtils.checkPort(host, 80)) {
                         address = ia;
                     }
                 }

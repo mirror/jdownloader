@@ -129,7 +129,6 @@ public abstract class PluginForHost extends Plugin {
     }
 
     private static final String AGB_CHECKED = "AGB_CHECKED";
-    private static final String CONFIGNAME = "pluginsForHost";
     private static int currentConnections = 0;
 
     public static final String PARAM_MAX_RETRIES = "MAX_RETRIES";
@@ -535,11 +534,6 @@ public abstract class PluginForHost extends Plugin {
     }
 
     public boolean isAGBChecked() {
-        if (!getPluginConfig().hasProperty(AGB_CHECKED)) {
-            // this is just so complicated to preserv compatibility
-            getPluginConfig().setProperty(AGB_CHECKED, SubConfiguration.getConfig(CONFIGNAME).getBooleanProperty("AGBS_CHECKED_" + getPluginID(), false) || SubConfiguration.getConfig(CONFIGNAME).getBooleanProperty("AGB_CHECKED_" + getHost(), false));
-            getPluginConfig().save();
-        }
         return getPluginConfig().getBooleanProperty(AGB_CHECKED, false);
     }
 
@@ -577,14 +571,10 @@ public abstract class PluginForHost extends Plugin {
             try {
                 sleep(time, downloadLink);
             } catch (PluginException e) {
-
-                // downloadLink.getLinkStatus().setStatusText(null);
                 throw new InterruptedException();
             }
-            // downloadLink.getLinkStatus().setStatusText(null);
             return true;
         } else {
-            // downloadLink.getLinkStatus().setStatusText(null);
             return false;
         }
     }
@@ -695,8 +685,6 @@ public abstract class PluginForHost extends Plugin {
         if (dummy.length() > 2) dummy = dummy.substring(0, 2);
         g.setFont(new Font("Arial", Font.BOLD, size));
         int ww = g.getFontMetrics().stringWidth(dummy);
-        // g.setColor(Color.BLACK);
-        // g.drawRect(0, 0, w - 1, h - 1);
 
         g.setColor(Color.WHITE);
         g.fillRect(1, 1, w - 2, h - 2);
