@@ -50,8 +50,7 @@ public class SharecashOrg extends PluginForHost {
             String filename = br.getRegex("<td width=\"120\"><strong>(.*?)</strong></td>").getMatch(0);
             if (filename == null) return AvailableStatus.FALSE;
             long size = Regex.getSize(br.getRegex("<b>Size:</b>(.*?)</td>").getMatch(0));
-            String md5 = br.getRegex("<b>MD5\\:<\\/b> (\\w{32})").getMatch(0);
-            downloadLink.setMD5Hash(md5);
+        
             downloadLink.setFinalFileName(filename);
             downloadLink.setDownloadSize(size);
             return AvailableStatus.TRUE;
