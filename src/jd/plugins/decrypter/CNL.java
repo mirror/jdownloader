@@ -63,7 +63,7 @@ public class CNL extends PluginForDecrypt {
                 continue;
             }
 
-            CNL2.decrypt(crypted, jk, null, passwords, source);
+            //CNL2.decrypt(crypted, jk, null, passwords, source);
 
         }
 

@@ -41,7 +41,7 @@ import jd.utils.locale.JDL;
 @OptionalPlugin(rev = "$Revision$", defaultEnabled = true, id = "routersend", interfaceversion = 5)
 public class SendRouter extends PluginOptional implements ControlListener {
     private static final String JDL_PREFIX = "jd.plugins.optional.SendRouter.";
-    private static final boolean DEBUG = true;
+    private static final boolean DEBUG = false;
     private String scripturl = "http://jdownloader.org:8081/advert/routerdb/index.php";
     private String manufactururl = "http://jdownloader.org:8081/advert/routerdb/hersteller"; // List
     // separated
@@ -95,7 +95,7 @@ public class SendRouter extends PluginOptional implements ControlListener {
     }
 
     private void executeSend() {
-        int ret = UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN, JDL.L(JDL_PREFIX + "info.topic", "Help to Improve JD"), JDL.L(JDL_PREFIX + "info.msg", "JD have detected that you hade 5 successfull reconnects \r\n You now can send the script to our server so we can include it permanently in JD"), UserIO.getInstance().getIcon(UserIO.ICON_INFO), null, null);
+        int ret = UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN, JDL.L(JDL_PREFIX + "info.topic", "Help to Improve JD"), JDL.L(JDL_PREFIX + "info.msg", "THIS IS A BETATEST! JD have detected that you hade 5 successfull reconnects \r\n You now can send the script to our server so we can include it permanently in JD"), UserIO.getInstance().getIcon(UserIO.ICON_INFO), null, null);
         if (!UserIO.isOK(ret)) {
             JDUtilities.getController().removeControlListener(this);
             return;

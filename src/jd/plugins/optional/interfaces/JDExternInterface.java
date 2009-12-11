@@ -224,18 +224,8 @@ public class JDExternInterface extends PluginOptional {
                     response.addContent("<?xml version=\"1.0\"?>\r\n");
                     response.addContent("<!DOCTYPE cross-domain-policy SYSTEM \"http://www.macromedia.com/xml/dtds/cross-domain-policy.dtd\">\r\n");
                     response.addContent("<cross-domain-policy>\r\n");
-                    response.addContent("<allow-access-from domain=\"jdownloader.org\" />\r\n");
-                    response.addContent("<allow-access-from domain=\"jdownloader.net\" />\r\n");
-                    response.addContent("<allow-access-from domain=\"jdownloader.net:8081\" />\r\n");
-                    response.addContent("<allow-access-from domain=\"jdownloader.org:8081\" />\r\n");
-                    response.addContent("<allow-access-from domain=\"*.jdownloader.org\" />\r\n");
-                    response.addContent("<allow-access-from domain=\"*.jdownloader.net\" />\r\n");
-                    response.addContent("<allow-access-from domain=\"*.jdownloader.org:8081\" />\r\n");
-                    response.addContent("<allow-access-from domain=\"*.jdownloader.net:8081\" />\r\n");
-                    response.addContent("<allow-access-from domain=\"linksave.in\" />\r\n");
-                    response.addContent("<allow-access-from domain=\"relink.us\" />\r\n");
-                    response.addContent("<allow-access-from domain=\"*.linksave.in\" />\r\n");
-                    response.addContent("<allow-access-from domain=\"*.relink.us\" />\r\n");
+                        response.addContent("<allow-access-from domain=\"*\" />\r\n");
+                        response.addContent("<allow-access-from domain=\"*.*\" />\r\n");
                     response.addContent("</cross-domain-policy>\r\n");
                 } else if (namespace.equalsIgnoreCase("flashgot")) {
                     /*
