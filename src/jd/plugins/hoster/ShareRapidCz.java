@@ -81,7 +81,7 @@ public class ShareRapidCz extends PluginForHost {
         // not to show any traffic-information
         String trafficleft = br.getMatch("Kredit:</td><td>(.*?)<a");
         if (trafficleft != null) {
-//            ai.setTrafficLeft(trafficleft);
+            // ai.setTrafficLeft(trafficleft);
             logger.info("Free traffic equals" + trafficleft);
         }
         ai.setUnlimitedTraffic();
@@ -99,6 +99,7 @@ public class ShareRapidCz extends PluginForHost {
         requestFileInformation(downloadLink);
         login(account);
         br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML("Disk, na kterém se soubor nachází, je dočasně odpojen, zkuste to prosím později")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This file is on a damaged hard drive disk", 60 * 60 * 1000);
         if (br.containsHTML("Již Vám došel kredit a vyčerpal jste free limit")) throw new PluginException(LinkStatus.ERROR_FATAL, "Not enough traffic left to download this file!");
         String dllink = br.getRegex("\"(http://s[0-9]{1,2}\\.share-rapid\\.com/download.*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -138,7 +139,8 @@ public class ShareRapidCz extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        String dllink = br.getRegex("class=\"important\" href=\"(.*?)\">Click to download! <").getMatch(0);
+        if (br.containsHTML("Disk, na kterém se soubor nachází, je dočasně odpojen, zkuste to prosím později")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This file is on a damaged hard drive disk", 60 * 60 * 1000);
+        String dllink = br.getRegex("\"(http://s[0-9]{1,2}\\.share-rapid\\.com/download.*?)\"").getMatch(0);
         if (dllink == null && br.containsHTML("Stahování je přístupné pouze přihlášeným uživatelům")) throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for registered users");
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Please contact the support jdownloader.org");
         br.setFollowRedirects(true);
