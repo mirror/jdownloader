@@ -95,7 +95,7 @@ public class JDExternInterface extends PluginOptional {
             Installer.askInstallFlashgot();
         }
         try {
-            server = new HttpServer(this.getPluginConfig().getIntegerProperty("INTERFACE_PORT", 9666), handler);
+            server = new HttpServer(this.getPluginConfig().getIntegerProperty("INTERFACE_PORT", 9666), handler, true);
             server.start();
             return true;
         } catch (Exception e) {

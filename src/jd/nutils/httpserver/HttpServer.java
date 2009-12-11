@@ -17,8 +17,10 @@
 package jd.nutils.httpserver;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.UnknownHostException;
 
 import jd.controlling.JDLogger;
 
@@ -29,11 +31,20 @@ public class HttpServer extends Thread {
     private boolean running = true;
     private Thread run;
     private int port;
+    private boolean uselocalhost = false;
 
     public HttpServer(int port, Handler handler) throws IOException {
         super("HTTP-Server");
         this.handler = handler;
         this.port = port;
+        this.uselocalhost = false;
+    }
+
+    public HttpServer(int port, Handler handler, boolean localhost) throws IOException {
+        super("HTTP-Server");
+        this.handler = handler;
+        this.port = port;
+        this.uselocalhost = localhost;
     }
 
     public void sstop() throws IOException {
@@ -44,13 +55,35 @@ public class HttpServer extends Thread {
     public void start() {
         running = true;
         try {
-            ssocket = new ServerSocket(port);
-            //ssocket.setSoTimeout(1000);
+            InetAddress localhost = getLocalHost();
+            if (localhost != null && uselocalhost) {
+                ssocket = new ServerSocket(port, 5, localhost);
+            } else {
+                ssocket = new ServerSocket(port, 5);
+            }
+            // ssocket.setSoTimeout(1000);
         } catch (IOException e) {
             JDLogger.exception(e);
         }
-        run = new Thread(this,"Http-Server Consumer");
+        run = new Thread(this, "Http-Server Consumer");
         run.start();
+    }
+
+    public static InetAddress getLocalHost() {
+        InetAddress localhost = null;
+        try {
+            localhost = InetAddress.getLocalHost();
+        } catch (UnknownHostException e) {
+            /*
+             * fallback to loopback if host has no dns entry in local dns table
+             */
+            try {
+                localhost = InetAddress.getByName(null);
+            } catch (UnknownHostException e1) {
+                JDLogger.getLogger().severe("could not find localhost!");
+            }
+        }
+        return localhost;
     }
 
     public void run() {
@@ -64,7 +97,7 @@ public class HttpServer extends Thread {
             } catch (Exception e) {
                 JDLogger.exception(e);
             }
-           
+
         }
 
         try {

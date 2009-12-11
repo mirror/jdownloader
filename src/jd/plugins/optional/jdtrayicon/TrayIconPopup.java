@@ -65,6 +65,7 @@ public class TrayIconPopup extends JWindow implements MouseListener, ChangeListe
     private JDSpinner spMaxSpeed;
     private JDSpinner spMaxDls;
     private JDSpinner spMaxChunks;
+    private boolean hideThreadrunning = false;
 
     private JPanel exitPanel;
     private ArrayList<JToggleButton> resizecomps;
@@ -109,12 +110,12 @@ public class TrayIconPopup extends JWindow implements MouseListener, ChangeListe
              * events are too slow and can miss the exitevent
              */
             public void run() {
-                while (true) {
+                while (true && hideThreadrunning) {
                     try {
                         sleep(500);
                     } catch (InterruptedException e) {
                     }
-                    if (enteredPopup) {
+                    if (enteredPopup && hideThreadrunning) {
                         PointerInfo mouse = MouseInfo.getPointerInfo();
                         Point current = TrayIconPopup.this.getLocation();
                         if (mouse.getLocation().x < current.x || mouse.getLocation().x > current.x + TrayIconPopup.this.getSize().width) {
@@ -128,6 +129,7 @@ public class TrayIconPopup extends JWindow implements MouseListener, ChangeListe
                 }
             }
         };
+        hideThreadrunning = true;
         hideThread.start();
     }
 
@@ -146,6 +148,7 @@ public class TrayIconPopup extends JWindow implements MouseListener, ChangeListe
                     new GuiRunnable<Object>() {
                         @Override
                         public Object runSave() {
+                            hideThreadrunning = false;
                             dispose();
                             return null;
                         }
@@ -221,6 +224,14 @@ public class TrayIconPopup extends JWindow implements MouseListener, ChangeListe
     private JToggleButton getMenuEntry(String actionId) {
         final ToolBarAction action = ActionController.getToolBarAction(actionId);
         JToggleButton b = createButton(action);
+        if (actionId.equals("action.exit")) {
+            b.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    hideThreadrunning = false;
+                    TrayIconPopup.this.dispose();
+                }
+            });
+        }
         resizecomps.add(b);
         return b;
     }
@@ -232,11 +243,10 @@ public class TrayIconPopup extends JWindow implements MouseListener, ChangeListe
         bt.setContentAreaFilled(false);
         bt.setBorderPainted(false);
         bt.addActionListener(new ActionListener() {
-
             public void actionPerformed(ActionEvent e) {
+                hideThreadrunning = false;
                 TrayIconPopup.this.dispose();
             }
-
         });
         bt.setIcon((Icon) action.getValue(Action.SMALL_ICON));
         bt.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
