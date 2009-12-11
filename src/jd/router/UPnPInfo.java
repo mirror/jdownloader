@@ -16,7 +16,6 @@
 
 package jd.router;
 
-import java.io.IOException;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -24,7 +23,6 @@ import java.util.Map.Entry;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 
 import jd.controlling.JDLogger;
 import jd.http.Browser;
@@ -40,7 +38,6 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
-import org.xml.sax.SAXParseException;
 
 public class UPnPInfo {
 
@@ -49,7 +46,7 @@ public class UPnPInfo {
     public ArrayList<String> met = new ArrayList<String>();
     public HashMap<String, String> SCPDs = null;
 
-    private void getSCPDURLs(String location) throws SAXException, IOException, ParserConfigurationException {
+    private void getSCPDURLs(String location) throws Exception {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         DocumentBuilder builder = factory.newDocumentBuilder();
         String page = new Browser().getPage(location);
@@ -62,7 +59,6 @@ public class UPnPInfo {
         NodeList ndList = document.getElementsByTagName("SCPDURL");
         for (int i = 0; i < ndList.getLength(); i++) {
             getSCPDURLs(ssdpP.getLocation().replaceFirst("(http://.*?)/.*", "$1/" + ndList.item(i).getTextContent().replaceFirst("^\\/", "")));
-
         }
     }
 
@@ -70,7 +66,7 @@ public class UPnPInfo {
         this(ipadress, 10000);
     }
 
-    private static ArrayList<String> createUpnpReconnect(HashMap<String, String> SCPDs, String desc) throws ParserConfigurationException, SAXException, IOException {
+    private static ArrayList<String> createUpnpReconnect(HashMap<String, String> SCPDs, String desc) throws Exception {
 
         StringInputStream input = new StringInputStream(SCPDs.get(desc));
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
@@ -86,7 +82,6 @@ public class UPnPInfo {
         }
         if (terminations.size() == 0) return ret;
         NodeList ndList = document.getElementsByTagName("SCPDURL");
-        // printNodesFromList( ndList ); // printNodesFromList see below
 
         Node node = null;
         for (int j = 0; j < ndList.getLength(); j++) {
@@ -124,11 +119,10 @@ public class UPnPInfo {
         return ret;
     }
 
-    public static ArrayList<String> createUpnpReconnect(HashMap<String, String> SCPDs) throws SAXException, IOException, ParserConfigurationException {
+    public static ArrayList<String> createUpnpReconnect(HashMap<String, String> SCPDs) throws Exception {
         for (Entry<String, String> ent : SCPDs.entrySet()) {
             if (ent.getValue().contains("</UDN>")) { return createUpnpReconnect(SCPDs, ent.getKey()); }
         }
-
         return null;
     }
 
@@ -167,24 +161,15 @@ public class UPnPInfo {
         try {
             // ---- Parse XML file ----
             if (ssdpP.getLocation() == null) return;
-
             getSCPDURLs(ssdpP.getLocation());
             met = createUpnpReconnect(SCPDs, ssdpP.getLocation());
             // ---- Error handling ----
-        } catch (SAXParseException spe) {
-            System.out.println("\n** Parsing error, line " + spe.getLineNumber() + ", uri " + spe.getSystemId());
-            System.out.println("   " + spe.getMessage());
-            Exception e = (spe.getException() != null) ? spe.getException() : spe;
-            JDLogger.exception(e);
         } catch (SAXException sxe) {
             Exception e = (sxe.getException() != null) ? sxe.getException() : sxe;
             JDLogger.exception(e);
-        } catch (ParserConfigurationException pce) {
-            JDLogger.exception(pce);
-        } catch (IOException ioe) {
+        } catch (Exception ioe) {
             JDLogger.exception(ioe);
         }
-
     }
 
 }

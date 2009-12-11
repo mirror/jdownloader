@@ -160,7 +160,7 @@ public class JDL {
     }
 
     public static JDLocale getLocale() {
-        if (DEBUG) return JDL.getInstance("en");
+        if (DEBUG) return DEFAULT_LOCALE;
         return LOCALE_ID;
     }
 

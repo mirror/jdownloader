@@ -16,10 +16,7 @@
 
 package jd.router;
 
-import java.io.IOException;
 import java.net.InetAddress;
-import java.net.SocketException;
-import java.net.UnknownHostException;
 
 import jd.controlling.JDLogger;
 import jd.nutils.OSDetector;
@@ -27,7 +24,7 @@ import jd.parser.Regex;
 import jd.utils.JDUtilities;
 
 public class GetMacAdress {
-    public static String getMacAddress() throws SocketException, UnknownHostException {
+    public static String getMacAddress() throws Exception {
         try {
             return GetMacAdress.getMacAddress(RouterInfoCollector.getRouterIP());
         } catch (Exception e) {
@@ -36,7 +33,7 @@ public class GetMacAdress {
         return null;
     }
 
-    public static String getMacAddress(InetAddress hostAddress) throws UnknownHostException, IOException, InterruptedException {
+    public static String getMacAddress(InetAddress hostAddress) throws Exception {
         String resultLine = callArpTool(hostAddress.getHostAddress());
         String rd = new Regex(resultLine, "..?[:\\-]..?[:\\-]..?[:\\-]..?[:\\-]..?[:\\-]..?").getMatch(-1).replaceAll("-", ":");
         if (rd == null) return null;
@@ -54,12 +51,12 @@ public class GetMacAdress {
         return ret.toString().substring(0, 17);
     }
 
-    private static String callArpTool(String ipAddress) throws IOException, InterruptedException {
+    private static String callArpTool(String ipAddress) throws Exception {
         if (OSDetector.isWindows()) return callArpToolWindows(ipAddress);
         return callArpToolDefault(ipAddress);
     }
 
-    private static String callArpToolWindows(String ipAddress) throws IOException, InterruptedException {
+    private static String callArpToolWindows(String ipAddress) throws Exception {
         ProcessBuilder pb = new ProcessBuilder(new String[] { "ping", ipAddress });
         pb.start();
         String[] parts = JDUtilities.runCommand("arp", new String[] { "-a" }, null, 10).split(System.getProperty("line.separator"));
@@ -70,7 +67,7 @@ public class GetMacAdress {
         return null;
     }
 
-    private static String callArpToolDefault(String ipAddress) throws IOException, InterruptedException {
+    private static String callArpToolDefault(String ipAddress) throws Exception {
         String out = null;
         InetAddress hostAddress = InetAddress.getByName(ipAddress);
         ProcessBuilder pb = null;
