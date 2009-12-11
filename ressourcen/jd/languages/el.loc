@@ -297,7 +297,6 @@ gui.config.routeripfinder.notfound = Δεν είναι δυνατή η εύρε�
 gui.config.routeripfinder.ready = Βρέθηκε IP: %s
 gui.config.routeripfinder.status.collectingrouterinfo = Συλλογή πληροφοριών router
 gui.config.routeripfinder.status.downloadlingsimilarmethods = Λήψη παρόμοιων μεθόδων router
-gui.config.routeripfinder.status.searchingforupnp = Αναζήτηση για UPnP...
 gui.config.routeripfinder.status.sortingmethods = Ταξινόμηση των μεθόδων router...
 gui.config.routeripfinder.status.testingrouter = Δοκιμή router
 gui.config.routeripfinder.status.testingupnp = Δοκιμή UPnP
