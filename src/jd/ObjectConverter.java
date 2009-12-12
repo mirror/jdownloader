@@ -41,25 +41,24 @@ public class ObjectConverter {
 
             public void exceptionThrown(Exception e) {
                 exception = e;
-
             }
         });
 
         xmlEncoder.writeObject(obj);
         xmlEncoder.close();
-
         out.close();
         if (exception != null) throw exception;
+
         String[] ret = new Regex(new String(ba.toByteArray()), "(<java .*?>)(.*?)(</java>)").getRow(0);
         this.pre = ret[0];
         this.post = ret[2];
-        ret[1]=ret[1].replace(" ", "   ");
+        ret[1] = ret[1].replace(" ", "   ");
         return ret[1].trim();
     }
 
     public Object toObject(String in) throws Exception {
-        if(pre==null||post==null){
-            //dummy
+        if (pre == null || post == null) {
+            // dummy
             toString(new Object());
         }
         Object objectLoaded = null;
@@ -78,7 +77,6 @@ public class ObjectConverter {
         ba.close();
         if (exception != null) throw exception;
         return objectLoaded;
-
     }
 
 }
