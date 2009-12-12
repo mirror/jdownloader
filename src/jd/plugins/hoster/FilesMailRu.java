@@ -39,7 +39,7 @@ public class FilesMailRu extends PluginForHost {
 
     public void correctDownloadLink(DownloadLink link) {
         // Rename the decrypted links to make them work
-        link.setUrlDownload(link.getDownloadURL().replace("wge4zu4rjfsdehehztiuxw", "content.files.mail.ru"));
+        link.setUrlDownload(link.getDownloadURL().replace("wge4zu4rjfsdehehztiuxw", "files.mail.ru"));
     }
 
     @Override
@@ -100,7 +100,7 @@ public class FilesMailRu extends PluginForHost {
             if (linkinformation.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             for (String info : linkinformation) {
                 if (info.contains(finalfilename)) {
-                    String directlink = new Regex(info, "\"(http://(content[0-9]+|content)\\.files\\.mail\\.ru/.*?/.*?)\"").getMatch(0);
+                    String directlink = new Regex(info, "\"(http://.*?\\.files\\.mail\\.ru/.*?/.*?)\"").getMatch(0);
                     if (directlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     dllink = directlink;
                     // Set the new downloadlink so when the user stops the

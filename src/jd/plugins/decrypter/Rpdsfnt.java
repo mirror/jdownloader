@@ -26,7 +26,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidsafe.net" }, urls = { "http://[\\w\\.]*?rapidsafe\\.net/r.-?[\\w]{11}/.*" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidsafe.net" }, urls = { "http://[\\w\\.]*?rapidsafe\\.net/r.*?/.+" }, flags = { 0 })
 public class Rpdsfnt extends PluginForDecrypt {
 
     public Rpdsfnt(PluginWrapper wrapper) {
