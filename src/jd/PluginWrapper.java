@@ -34,9 +34,9 @@ import jd.utils.locale.JDL;
 
 /**
  * A Container for {@link jd.plugins.Plugin Plugins}. Plugins usually do not get
- * instantiated after programstart. {@link JDInit#initPlugins()} reads all
- * Annotations and creates a pluginwrapperinstance. The pluginwrapper creates a
- * plugininstance when required
+ * instantiated after program start. {@link JDInit#initPlugins()} reads all
+ * Annotations and creates a PluginWrapper instance. The PluginWrapper creates a
+ * plugin instance when required
  * 
  * @author unkown
  * 
@@ -47,13 +47,14 @@ public abstract class PluginWrapper implements Comparable<PluginWrapper> {
      * String, String, int)}<br>
      */
     public static final int LOAD_ON_INIT = 1 << 1;
-  
+
     /**
      * By default, plugins can be disabled. But in some cases plugins should not
      * be disabled for controlling reasons. Use this flag to prevent the plugin
      * from disabeling
      */
     public static final int ALWAYS_ENABLED = 1 << 3;
+
     /**
      * See http://wiki.jdownloader.org/knowledge/wiki/glossary/cnl2 for cnl2
      * details. If a Decrypter uses CNL2, we can think about activating this
@@ -62,6 +63,7 @@ public abstract class PluginWrapper implements Comparable<PluginWrapper> {
      * defaultbrowser to use CNL
      */
     public static final int CNL_2 = 1 << 4;
+
     /**
      * Load only if debug flag is set. For internal developer plugins
      */
@@ -71,34 +73,40 @@ public abstract class PluginWrapper implements Comparable<PluginWrapper> {
      * The Regular expression pattern. This pattern defines which urls can be
      * handeled by this plugin
      */
-    private Pattern pattern;
+    private final Pattern pattern;
+
     /**
-     * The domain od this plugin, which is the plugin's name, too
+     * The domain of this plugin, which is the plugin's name, too
      */
-    private String host;
+    private final String host;
+
     /**
      * Full qualified classname
      */
-    private String className;
+    private final String className;
+
     /**
      * internal logger instance
      */
-    protected Logger logger = jd.controlling.JDLogger.getLogger();
+    protected final Logger logger = JDLogger.getLogger();
+
     /**
      * field to cache the plugininstance if it is loaded already
      */
     protected Plugin loadedPlugin = null;
- 
+
     /**
      * @see PluginWrapper#ALWAYS_ENABLED
      */
     private boolean alwaysenabled = false;
+
     /**
      * Usage and InitFlags created by <br>{@link PluginWrapper#CNL_2} <br>
      * {@link PluginWrapper#DEBUG_ONLY} <br> {@link PluginWrapper#LOAD_ON_INIT} <br>
      * {@link PluginWrapper#PATTERN_ACCEPTS_INVALID_URI}
      */
-    private int flags;
+    private final int flags;
+
     /**
      * Static classloader. gets created when the first plugin should be
      * initiated.
@@ -130,18 +138,18 @@ public abstract class PluginWrapper implements Comparable<PluginWrapper> {
      *            {@link PluginWrapper#PATTERN_ACCEPTS_INVALID_URI}
      */
     public PluginWrapper(String host, String classNamePrefix, String className, String pattern, int flags) {
-        String classn = (classNamePrefix == null ? "" : classNamePrefix) + className;
-        if (pattern != null) {
-            this.pattern = Pattern.compile(pattern, Pattern.CASE_INSENSITIVE);
-        }
+        this.pattern = (pattern != null) ? Pattern.compile(pattern, Pattern.CASE_INSENSITIVE) : null;
         this.host = host.toLowerCase();
+        final String classn = (classNamePrefix == null ? "" : classNamePrefix) + className;
         this.className = classn;
         this.flags = flags;
-        if (JDFlags.hasSomeFlags(flags, LOAD_ON_INIT)) this.getPlugin();
-        if (JDFlags.hasSomeFlags(flags, ALWAYS_ENABLED)) this.alwaysenabled = true;
-    
+        if (JDFlags.hasSomeFlags(flags, LOAD_ON_INIT)) {
+            this.getPlugin();
+        }
+        if (JDFlags.hasSomeFlags(flags, ALWAYS_ENABLED)) {
+            this.alwaysenabled = true;
+        }
         if (JDFlags.hasNoFlags(flags, DEBUG_ONLY) || JDInitFlags.SWITCH_DEBUG) {
-
             WRAPPER.put(classn, this);
         }
     }
@@ -279,7 +287,8 @@ public abstract class PluginWrapper implements Comparable<PluginWrapper> {
 
     public Plugin getNewPluginInstance() {
         try {
-            return getPlugin().getClass().getConstructor(new Class[] { PluginWrapper.class }).newInstance(new Object[] { this });
+            //return getPlugin().getClass().getConstructor(new Class[] { PluginWrapper.class }).newInstance(new Object[] { this });
+            return getPlugin().getClass().newInstance();
         } catch (Exception e) {
             JDLogger.exception(e);
         }
@@ -330,15 +339,19 @@ public abstract class PluginWrapper implements Comparable<PluginWrapper> {
      * @return
      */
     public static Plugin getNewInstance(String className) {
-        if (!WRAPPER.containsKey(className)) {
-            try {
-                throw new Exception("plugin " + className + " could not be found");
-            } catch (Exception e) {
-                JDLogger.exception(e);
-                return null;
-            }
+        // if (!WRAPPER.containsKey(className)) {
+        // JDLogger.exception(new Exception("plugin " + className +
+        // " could not be found"));
+        // return null;
+        // }
+        // return WRAPPER.get(className).getNewPluginInstance();
+        final PluginWrapper wrapper = WRAPPER.get(className);
+        if (wrapper == null) {
+            JDLogger.exception(new Exception("plugin " + className + " could not be found"));
+            return null;
+        } else {
+            return wrapper.getNewPluginInstance();
         }
-        return WRAPPER.get(className).getNewPluginInstance();
     }
 
     /**
