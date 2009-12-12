@@ -287,8 +287,8 @@ public abstract class PluginWrapper implements Comparable<PluginWrapper> {
 
     public Plugin getNewPluginInstance() {
         try {
-            //return getPlugin().getClass().getConstructor(new Class[] { PluginWrapper.class }).newInstance(new Object[] { this });
-            return getPlugin().getClass().newInstance();
+            return getPlugin().getClass().getConstructor(new Class[] { PluginWrapper.class }).newInstance(new Object[] { this });
+            //return getPlugin().getClass().newInstance();
         } catch (Exception e) {
             JDLogger.exception(e);
         }
