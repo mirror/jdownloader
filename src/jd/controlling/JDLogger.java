@@ -25,13 +25,15 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
-public class JDLogger {
+public final class JDLogger {
+    /**
+     * Don't let anyone instantiate this class.
+     */
     protected JDLogger() {
-
     }
 
     private static Logger LOGGER = null;
-    public static String LOGGER_NAME = "java_downloader";
+    public static final String LOGGER_NAME = "java_downloader";
     private static ConsoleHandler console;
 
     /**
@@ -72,12 +74,10 @@ public class JDLogger {
     public static void removeConsoleHandler() {
         if (console != null) getLogger().removeHandler(console);
         System.err.println("Removed Consolehandler. Start with -debug to see console output");
-
     }
 
     public static void addHeader(String string) {
         getLogger().info("\r\n\r\n--------------------------------------" + string + "-----------------------------------");
-
     }
 
     public static void exception(Level level, Throwable e) {
@@ -86,23 +86,21 @@ public class JDLogger {
 
     public static void quickLog() {
         System.out.println("Footstep: " + new Exception().getStackTrace()[1]);
-
     }
 
     static public void warning(Object o) {
         getLogger().warning(o.toString());
-
     }
 
     /**
-     * Retusn a Stacdktrace of an Exception
+     * Returns a StackTrace of an Exception
      * 
      * @param thrown
      * @return
      */
     public static String getStackTrace(Throwable thrown) {
-        StringWriter sw = new StringWriter();
-        PrintWriter pw = new PrintWriter(sw);
+        final StringWriter sw = new StringWriter();
+        final PrintWriter pw = new PrintWriter(sw);
         thrown.printStackTrace(pw);
         pw.close();
         return sw.toString();
@@ -115,21 +113,17 @@ public class JDLogger {
      * @return
      */
     public static String getLog(Level level) {
-
         Level tmp = getLogger().getLevel();
         getLogger().setLevel(level);
         try {
             ArrayList<LogRecord> buff = JDLogHandler.getHandler().getBuffer();
             StringBuilder sb = new StringBuilder();
             for (LogRecord lr : buff) {
-
                 sb.append(JDLogHandler.getHandler().getFormatter().format(lr));
             }
-
             return sb.toString();
         } finally {
             getLogger().setLevel(tmp);
-
         }
     }
 
