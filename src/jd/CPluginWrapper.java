@@ -16,6 +16,7 @@
 
 package jd;
 
+import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 
 import jd.controlling.JDLogger;
@@ -53,11 +54,10 @@ public class CPluginWrapper extends PluginWrapper {
                 logger.info("PLUGIN NOT FOUND!");
                 return null;
             }
-//            Class<?>[] classes = new Class[] { PluginWrapper.class };
-//            Constructor<?> con = plgClass.getConstructor(classes);
-//
-//            this.loadedPlugin = (PluginsC) con.newInstance(new Object[] { this });
-            this.loadedPlugin = (PluginsC) plgClass.newInstance();
+            Class<?>[] classes = new Class[] { PluginWrapper.class };
+            Constructor<?> con = plgClass.getConstructor(classes);
+
+            this.loadedPlugin = (PluginsC) con.newInstance(new Object[] { this });
             logger.finer("Successfully loaded " + this.getClassName());
             return (PluginsC) loadedPlugin;
         } catch (Exception e) {
@@ -73,14 +73,13 @@ public class CPluginWrapper extends PluginWrapper {
         return getPlugin().canHandle(data);
     }
 
-    /*
-     * (non-Javadoc)
-     * 
+    /* (non-Javadoc)
      * @see jd.PluginWrapper#getVersion()
      */
     @Override
     public String getVersion() {
-        return this.isLoaded() ? this.getPlugin().getVersion() : "idle";
+        // TODO Auto-generated method stub
+        return this.isLoaded()?this.getPlugin().getVersion():"idle";
     }
 
 }
