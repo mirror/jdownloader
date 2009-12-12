@@ -74,8 +74,7 @@ public class Config {
 
     public Config() {
 
-        JDInit jdi = new JDInit();
-        jdi.init();
+        (new JDInit()).init();
         final JDController controller = JDController.getInstance();
         JDUpdateUtils.backupDataBase();
 
@@ -415,7 +414,7 @@ public class Config {
 
         private static final long serialVersionUID = -5434313385327397539L;
 
-        private String[] columnNames = { "Key", "Value" };
+        private final String[] columnNames = { "Key", "Value" };
 
         public int getColumnCount() {
             return columnNames.length;
