@@ -38,7 +38,7 @@ public class Tchnrckrnf extends PluginForDecrypt {
         String parameter = param.toString();
 
         br.getPage(parameter);
-        String link = br.getRegex("value=\"(http://.*?)\"").getMatch(0);
+        String link = br.getRegex("value=\"(.*?)\"").getMatch(0);
         if (link == null) return null;
         DownloadLink dl_link = createDownloadlink(link);
         dl_link.addSourcePluginPassword("technorocker");
