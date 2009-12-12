@@ -33,32 +33,32 @@ class Lock {
 	/**
 	 * The lock id.
 	 */
-	private String id;
+	private final String id;
 
 	/**
 	 * The lock file.
 	 */
-	private File lockFile;
+	private final File lockFile;
 
 	/**
 	 * The port file.
 	 */
-	private File portFile;
+	private final File portFile;
 
 	/**
 	 * The channel associated to the lock file.
 	 */
-	private FileChannel lockFileChannel;
+	private final FileChannel lockFileChannel;
 
 	/**
 	 * The file lock taken on the lock file.
 	 */
-	private FileLock lockFileLock;
+	private final FileLock lockFileLock;
 
 	/**
 	 * The server handling message reception for this lock.
 	 */
-	private Server server;
+	private final Server server;
 
 	/**
 	 * It builds the lock representation.

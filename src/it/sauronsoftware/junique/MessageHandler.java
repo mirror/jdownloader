@@ -33,6 +33,6 @@ public interface MessageHandler {
 	 *            The incoming message.
 	 * @return An optional response (may be null).
 	 */
-	public String handle(String message);
+	public String handle(final String message);
 
 }

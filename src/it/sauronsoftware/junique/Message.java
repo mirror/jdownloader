@@ -27,7 +27,7 @@ import java.io.OutputStream;
  * 
  * @author Carlo Pelliccia
  */
-class Message {
+final class Message {
 
 	/**
 	 * It reads a JUnique formatted message from an InputStream.

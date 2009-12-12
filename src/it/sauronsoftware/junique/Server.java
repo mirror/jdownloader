@@ -40,18 +40,18 @@ class Server implements Runnable, ConnectionListener {
     /**
      * The lock id.
      */
-    private String id;
+    private final String id;
 
     /**
      * The message handler used by this server. It could be null if who has
      * taken the lock is not interested in message handling.
      */
-    private MessageHandler messageHandler;
+    private final MessageHandler messageHandler;
 
     /**
      * A synchronization lock, used internally.
      */
-    private Object synchLock = new Object();
+    private final Object synchLock = new Object();
 
     /**
      * The underlying server socket listened by this server.
@@ -66,7 +66,7 @@ class Server implements Runnable, ConnectionListener {
     /**
      * Established connections.
      */
-    private ArrayList<Connection> connections = new ArrayList<Connection>();
+    private final ArrayList<Connection> connections = new ArrayList<Connection>();
 
     /**
      * It builds a ready-to-start lock server.

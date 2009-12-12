@@ -33,17 +33,17 @@ class Connection implements Runnable {
     /**
      * A plain internal synchronization object.
      */
-    private Object synchLock = new Object();
+    private final Object synchLock = new Object();
 
     /**
      * The lock ID.
      */
-    private String id;
+    private final String id;
 
     /**
      * The connection listener.
      */
-    private ConnectionListener listener;
+    private final ConnectionListener listener;
 
     /**
      * The underlying socket connection.

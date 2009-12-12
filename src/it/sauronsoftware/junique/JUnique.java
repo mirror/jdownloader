@@ -42,7 +42,7 @@ import jd.utils.JDUtilities;
  * 
  * @author Carlo Pelliccia
  */
-public class JUnique {
+public final class JUnique {
 
     /**
      * The directory where lock files are stored.
