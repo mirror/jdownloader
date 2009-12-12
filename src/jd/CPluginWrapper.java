@@ -16,7 +16,6 @@
 
 package jd;
 
-import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 
 import jd.controlling.JDLogger;
@@ -54,10 +53,11 @@ public class CPluginWrapper extends PluginWrapper {
                 logger.info("PLUGIN NOT FOUND!");
                 return null;
             }
-            Class<?>[] classes = new Class[] { PluginWrapper.class };
-            Constructor<?> con = plgClass.getConstructor(classes);
-
-            this.loadedPlugin = (PluginsC) con.newInstance(new Object[] { this });
+//            Class<?>[] classes = new Class[] { PluginWrapper.class };
+//            Constructor<?> con = plgClass.getConstructor(classes);
+//
+//            this.loadedPlugin = (PluginsC) con.newInstance(new Object[] { this });
+            this.loadedPlugin = (PluginsC) plgClass.newInstance();
             logger.finer("Successfully loaded " + this.getClassName());
             return (PluginsC) loadedPlugin;
         } catch (Exception e) {
