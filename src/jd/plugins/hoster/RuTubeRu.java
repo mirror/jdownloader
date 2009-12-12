@@ -52,7 +52,7 @@ public class RuTubeRu extends PluginForHost {
         if (fsk18 != null) br.getPage(fsk18);
         br.setFollowRedirects(true);
         String filename = br.getRegex(Pattern.compile("<h3[^>]*>(.*?)</h3>", Pattern.CASE_INSENSITIVE)).getMatch(0);
-        String filesize = br.getRegex("<span class=\"size\"[^>]*>(.*?)</span>").getMatch(0);
+        String filesize = br.getRegex("<span class=\"icn-size\"[^>]*>(.*?)</span>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim() + ".flv");
         downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
