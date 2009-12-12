@@ -874,6 +874,7 @@ jd.gui.swing.components.jdcloseaction.closetab = סגור לשונית
 jd.gui.swing.components.jdcollapser.closetooltip = סגור %s
 jd.gui.swing.components.table.jdtable.columncontrol = שנה עמודות
 jd.gui.swing.jdgui.actions.actioncontroller.toolbar.control.stopmark.tooltip = עצור לאחר הורדה נוכחית
+jd.gui.swing.jdgui.actions.actioncontroller.toolbar.interaction.reconnect.tooltip = השג כתובת IP חדשה ע"י התחברות מחדש לאינטרנט
 jd.gui.swing.jdgui.menu.actions.backuplinklistaction.password = הכנס סיסמאת הצפנה
 jd.gui.swing.jdgui.settings.configpanel.restartquestion = אפשרות זאת דורשת הפעלה מחדש של JDownloader
 jd.gui.swing.jdgui.settings.configpanel.restartquestion.ok = הפעל מחדש עכשיו!
