@@ -104,7 +104,7 @@ public class DatabaseConnector implements Serializable {
 
             PreparedStatement pst = con.prepareStatement("INSERT INTO config VALUES (?,?)");
             logger.finer("Starting database wrapper");
-
+//cfg file conversion
             for (String tmppath : new File(configpath).list()) {
                 try {
                     if (tmppath.endsWith(".cfg")) {

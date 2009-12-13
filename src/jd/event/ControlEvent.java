@@ -107,6 +107,14 @@ public class ControlEvent extends AWTEvent {
      * prepareShutDown is complete
      */
     public static final int CONTROL_SYSTEM_SHUTDOWN_PREPARED = 261;
+/**
+ * can be used to write reconnect addons.
+ * the call musst set messagebox.setProperty(Reconnecter.VERFIFY_IP_AGAIN,true);
+ * 
+ * to force the reconnector to check the ip again.
+ * if this ip check succeeds, the internal reconnect settings are skipped
+ */
+    public static final int CONTROL_RECONNECT_REQUEST = 262;
 
     /**
      * Die ID des Ereignisses

@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.logging.Logger;
 
 import jd.config.Configuration;
+import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.controlling.DownloadWatchDog;
 import jd.controlling.JDLogger;
@@ -38,7 +39,12 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 public class Reconnecter {
-
+    /**
+     * Addons may set this ley in a messagebox property. the reconnector then
+     * checks the ip again after the CONTROL_BEFORE_RECONNECT this can be used
+     * for reconnect addons
+     */
+    public static final String VERFIFY_IP_AGAIN = "VERFIFY_IP_AGAIN";
     private static String CURRENT_IP = "";
     /**
      * Set to true only if there is a reconnect running currently
@@ -91,7 +97,11 @@ public class Reconnecter {
         if (System.currentTimeMillis() - LAST_UP_UPDATE_TIME > (1000 * 60) * SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty("EXTERNAL_IP_CHECK_INTERVAL2", 10)) {
             if (Reconnecter.checkExternalIPChange()) return true;
         }
-        JDUtilities.getController().fireControlEvent(new ControlEvent(JDUtilities.getController(), ControlEvent.CONTROL_BEFORE_RECONNECT, null));
+        // use a messagebox to get messages of eventl reconnect addons
+        Property messageBox = new Property();
+        // direct eventsender call
+        JDUtilities.getController().fireControlEvent(new ControlEvent(JDUtilities.getController(), ControlEvent.CONTROL_BEFORE_RECONNECT, messageBox));
+
         int type = JDUtilities.getConfiguration().getIntegerProperty(ReconnectMethod.PARAM_RECONNECT_TYPE, ReconnectMethod.LIVEHEADER);
         logger.info("Try to reconnect...");
         /* laufende downloads stoppen */
@@ -114,19 +124,34 @@ public class Reconnecter {
             logger.severe("Could not stop all running downloads!");
         }
 
-        try {
-            switch (type) {
-            case ReconnectMethod.EXTERN:
-                ipChangeSuccess = new ExternReconnect().doReconnect();
-                break;
-            case ReconnectMethod.BATCH:
-                ipChangeSuccess = new BatchReconnect().doReconnect();
-                break;
-            default:
-                ipChangeSuccess = new HTTPLiveHeader().doReconnect();
+        JDUtilities.getController().fireControlEventDirect(new ControlEvent(JDUtilities.getController(), ControlEvent.CONTROL_RECONNECT_REQUEST, messageBox));
+
+        if (messageBox.getGenericProperty(VERFIFY_IP_AGAIN, false)) {
+            logger.severe("Use Reconnect Addon. disable the reconnect addons to use normal reconnect settings.!");
+            try {
+                ipChangeSuccess = checkExternalIPChange();
+            } catch (Exception e) {
+                logger.severe("No connection!");
+                ipChangeSuccess = false;
             }
-        } catch (Exception e) {
-            logger.severe("ReconnectMethod failed!");
+            
+            
+        }else{
+     
+            try {
+                switch (type) {
+                case ReconnectMethod.EXTERN:
+                    ipChangeSuccess = new ExternReconnect().doReconnect();
+                    break;
+                case ReconnectMethod.BATCH:
+                    ipChangeSuccess = new BatchReconnect().doReconnect();
+                    break;
+                default:
+                    ipChangeSuccess = new HTTPLiveHeader().doReconnect();
+                }
+            } catch (Exception e) {
+                logger.severe("ReconnectMethod failed!");
+            }
         }
         /* gestoppte downloads wieder aufnehmen */
         for (DownloadLink link : disabled) {

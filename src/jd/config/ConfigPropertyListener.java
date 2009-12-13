@@ -46,7 +46,8 @@ public abstract class ConfigPropertyListener implements ControlListener {
         if (event.getID() == ControlEvent.CONTROL_JDPROPERTY_CHANGED) {
             for (String key : list) {
                 if (strict) {
-                    if (event.getParameter().equals(key)) {
+                    //if an addon sets property.setProperty(null,bla) rthis leads to nullpointers here
+                    if ((event.getParameter() == null && key == null) || (event.getParameter() != null && event.getParameter().equals(key))) {
                         onPropertyChanged((Property) event.getSource(), key);
                     }
                 } else {
