@@ -14,7 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.plugins.optional;
+package jd.plugins.optional.proxyrot;
 
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
@@ -37,7 +37,7 @@ import jd.plugins.PluginOptional;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@OptionalPlugin(rev = "$Revision$", id = "proxyrotation", interfaceversion = 5)
+@OptionalPlugin(rev = "$Revision: 9816 $", id = "proxyrotation", interfaceversion = 5)
 public class ProxyRotation extends PluginOptional implements ControlListener {
 
     private static final String PARAM_PROXYLIST = "PARAM_PROXYLIST";
@@ -113,10 +113,10 @@ public class ProxyRotation extends PluginOptional implements ControlListener {
 
                 proxy.setUser(username);
                 proxy.setPass(password);
-                JDLogger.getLogger().info("Use Proxy: " + proxy);
+                JDLogger.getLogger().info("Use Proxy: "+proxy);
                 Browser.setGlobalProxy(proxy);
-                // force the Reconnecter to verify IP again
-                ((Property) event.getParameter()).setProperty(Reconnecter.VERIFY_IP_AGAIN, true);
+                //force the Reconnecter to verify IP again
+                ((Property)event.getParameter()).setProperty(Reconnecter.VERFIFY_IP_AGAIN,true);
 
             } catch (Exception e) {
                 e.printStackTrace();

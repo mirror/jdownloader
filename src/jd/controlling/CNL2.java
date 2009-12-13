@@ -109,8 +109,7 @@ public class CNL2 {
             Context cx = Context.enter();
             Scriptable scope = cx.initStandardObjects();
             String fun = jk + "  f()";
-
-            Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
+           Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
 
             key = JDHexUtils.getByteArray(Context.toString(result));
             Context.exit();

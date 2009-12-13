@@ -45,7 +45,10 @@ public class Reconnecter {
      * {@link ControlEvent#CONTROL_BEFORE_RECONNECT} this can be used for
      * reconnect addons
      */
-    public static final String VERIFY_IP_AGAIN = "VERIFY_IP_AGAIN";
+    public static final String VERFIFY_IP_AGAIN = "VERIFY_IP_AGAIN";
+
+
+    
     private static String CURRENT_IP = "";
     /**
      * Set to true only if there is a reconnect running currently
@@ -127,7 +130,7 @@ public class Reconnecter {
 
         JDUtilities.getController().fireControlEventDirect(new ControlEvent(JDUtilities.getController(), ControlEvent.CONTROL_RECONNECT_REQUEST, messageBox));
 
-        if (messageBox.getBooleanProperty(VERIFY_IP_AGAIN, false)) {
+        if (messageBox.getBooleanProperty(VERFIFY_IP_AGAIN, false)) {
             logger.severe("Use Reconnect Addon. disable the reconnect addons to use normal reconnect settings.!");
             try {
                 ipChangeSuccess = checkExternalIPChange();

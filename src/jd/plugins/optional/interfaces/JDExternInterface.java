@@ -197,11 +197,10 @@ public class JDExternInterface extends PluginOptional {
                         askPermission(request);
                         /* parse the post data */
                         String crypted = Encoding.htmlDecode(request.getParameters().get("crypted")).trim().replace(" ", "+");
-                        String jk = Encoding.htmlDecode(request.getParameters().get("jk"));
-                        String k = Encoding.htmlDecode(request.getParameters().get("k"));
-                        String passwords = Encoding.htmlDecode(request.getParameters().get("passwords"));
-                        String source = Encoding.htmlDecode(request.getParameters().get("source"));
-
+                        String jk = Encoding.urlDecode(request.getParameters().get("jk"), false);
+                        String k = Encoding.urlDecode(request.getParameters().get("k"), false);
+                        String passwords = Encoding.urlDecode(request.getParameters().get("passwords"), false);
+                        String source = Encoding.urlDecode(request.getParameters().get("source"), false);
                         try {
                             CNL2.decrypt(crypted, jk, k, passwords, source);
 
@@ -214,8 +213,8 @@ public class JDExternInterface extends PluginOptional {
                                 }
                             }.waitForEDT();
                         } catch (Exception e) {
-                            e.printStackTrace();
-                            response.addContent("failed\r\n");
+                            JDLogger.exception(e);
+                            response.addContent("failed " + e.getMessage() + "\r\n");
                         }
                     } else {
                         response.addContent(JDUtilities.getJDTitle() + "\r\n");
@@ -224,8 +223,8 @@ public class JDExternInterface extends PluginOptional {
                     response.addContent("<?xml version=\"1.0\"?>\r\n");
                     response.addContent("<!DOCTYPE cross-domain-policy SYSTEM \"http://www.macromedia.com/xml/dtds/cross-domain-policy.dtd\">\r\n");
                     response.addContent("<cross-domain-policy>\r\n");
-                        response.addContent("<allow-access-from domain=\"*\" />\r\n");
-                        response.addContent("<allow-access-from domain=\"*.*\" />\r\n");
+                    response.addContent("<allow-access-from domain=\"*\" />\r\n");
+
                     response.addContent("</cross-domain-policy>\r\n");
                 } else if (namespace.equalsIgnoreCase("flashgot")) {
                     /*
