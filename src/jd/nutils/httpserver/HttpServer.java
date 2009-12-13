@@ -72,16 +72,9 @@ public class HttpServer extends Thread {
     public static InetAddress getLocalHost() {
         InetAddress localhost = null;
         try {
-            localhost = InetAddress.getLocalHost();
-        } catch (UnknownHostException e) {
-            /*
-             * fallback to loopback if host has no dns entry in local dns table
-             */
-            try {
-                localhost = InetAddress.getByName(null);
-            } catch (UnknownHostException e1) {
-                JDLogger.getLogger().severe("could not find localhost!");
-            }
+            localhost = InetAddress.getByName(null);
+        } catch (UnknownHostException e1) {
+            JDLogger.getLogger().severe("could not find localhost!");
         }
         return localhost;
     }

@@ -24,7 +24,6 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketAddress;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 
 /**
@@ -96,16 +95,7 @@ class Server implements Runnable, ConnectionListener {
             // Opens the server socket.
             try {
                 serverSocket = new ServerSocket();
-                InetAddress localhost;
-                try {
-                    localhost = InetAddress.getLocalHost();
-                } catch (UnknownHostException e) {
-                    /*
-                     * fallback to loopback if host has no dns entry in local
-                     * dns table
-                     */
-                    localhost = InetAddress.getByName(null);
-                }
+                InetAddress localhost = InetAddress.getByName(null);
                 SocketAddress socketAddress = new InetSocketAddress(localhost, 0);
                 serverSocket.bind(socketAddress);
             } catch (IOException e) {
