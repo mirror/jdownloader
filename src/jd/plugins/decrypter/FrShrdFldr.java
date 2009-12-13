@@ -16,10 +16,12 @@
 
 package jd.plugins.decrypter;
 
-import java.util.ArrayList;
+import java.util.*;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.gui.UserIO;
+import jd.gui.swing.jdgui.userio.UserIOGui;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -28,6 +30,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4shared.com" }, urls = { "http://[\\w\\.]*?4shared\\.com/dir/\\d+/[\\w]+/?" }, flags = { 0 })
 public class FrShrdFldr extends PluginForDecrypt {
@@ -36,11 +39,121 @@ public class FrShrdFldr extends PluginForDecrypt {
         super(wrapper);
     }
 
+    //scan file in actual directory and put in filepackage with setting correct save directory 
+    private void scanFile(ArrayList<DownloadLink> decryptedLinks, String pass, String burl, String name, String path) throws Exception {
+        ArrayList<DownloadLink> dL = new ArrayList<DownloadLink>();
+        String[] pages = br.getRegex("javascript:pagerShowFiles\\((\\d+)\\);").getColumn(0);
+        String[] links;
+
+        FilePackage fp = FilePackage.getInstance();
+        fp.setName(name);
+        fp.setDownloadDirectory(fp.getDownloadDirectory() + '\\' + path);
+
+        //if (!br.containsHTML("dirPwdVerified="))  -- Don't work correctly on all 4shared folders :( 
+        
+        //scan simple 
+        links = br.getRegex("<a href=\"(http://[\\w\\.]*?4shared.com/file/.*?)\"").getColumn(0);
+        for (String dl : links) {
+            DownloadLink dlink;
+            dlink = createDownloadlink(dl);
+            if (pass.length() != 0) dlink.setProperty("pass", pass);
+            decryptedLinks.add(dlink);
+            dL.add(dlink);
+        }
+
+        //scan verified
+        links = br.getRegex("<a href=\"(http://[\\w\\.]*?4shared.com/file/.*?)\\?dirPwdVerified").getColumn(0);
+        for (String dl : links) {
+            DownloadLink dlink;
+            dlink = createDownloadlink(dl);
+            if (pass.length() != 0) dlink.setProperty("pass", pass);
+            decryptedLinks.add(dlink);
+            dL.add(dlink);
+        }
+        
+        //scan all possible tabs
+        for (int i = 0; i < pages.length - 1; i++) {
+            String url = "http://www.4shared.com" + burl + "&ajax=true&firstFileToShow=" + pages[i] + "&sortsMode=NAME&sortsAsc=&random=0.9519735221243086";
+            br.getPage(url);
+
+            //scan simple 
+            links = br.getRegex("<a href=\"(http://[\\w\\.]*?4shared.com/file/.*?)\"").getColumn(0);
+            for (String dl : links) {
+                DownloadLink dlink;
+                dlink = createDownloadlink(dl);
+                if (pass.length() != 0) dlink.setProperty("pass", pass);
+                decryptedLinks.add(dlink);
+                dL.add(dlink);
+            }
+
+            //scan verified
+            links = br.getRegex("<a href=\"(http://[\\w\\.]*?4shared.com/file/.*?)\\?dirPwdVerified").getColumn(0);
+            for (String dl : links) {
+                DownloadLink dlink;
+                dlink = createDownloadlink(dl);
+                if (pass.length() != 0) dlink.setProperty("pass", pass);
+                decryptedLinks.add(dlink);
+                dL.add(dlink);
+            }
+        }
+        if (dL.size() > 0) fp.addLinks(dL);
+    }
+    
+    //replace ID directory with correct name 
+    private void replaceA(ArrayList<String> names, String oldS, String newS) throws Exception {
+        String rpl;
+        int pos;
+        
+        for (int x = 0; x < names.size(); x++) {
+            rpl = "\\" + names.get(x) + "\\";
+            pos = rpl.indexOf("\\" + oldS + "\\"); 
+            if (pos != -1) names.set(x, rpl.substring(0, pos) + "\\" + newS + "\\" + rpl.substring(pos + 1 + oldS.length()));  
+        }
+    }
+    
+    //scan all ID directory and make simple tree structure  
+    private void scanDirectory(ArrayList<DownloadLink> decryptedLinks, String pass, String burl, String defName, ProgressController progress) throws Exception {
+        ArrayList<String> links = new ArrayList<String>(); 
+        ArrayList<String> names = new ArrayList<String>(); 
+        String name;
+
+        links.addAll(Arrays.asList(br.getRegex("new WebFXTreeItem\\(\"(.+?)\",'javascript:changeDirLeft\\((\\d+)\\)',false\\)").getColumn(1)));
+        for (int i = 0; i < links.size(); i++) {
+          name = br.getRegex("tree(\\w+)\\.add\\(tree" + links.get(i)).getMatch(0);  
+          if (name == null) names.add(defName + "\\" + links.get(i)); 
+          else names.add(names.get(links.indexOf(name)) + "\\" + links.get(i));
+        }
+
+        //scan files in actual directory
+        scanFile(decryptedLinks, pass, burl, defName, defName);
+        progress.increase(1);
+        
+        progress.setRange(links.size());
+        for (int i = 0; i < links.size(); i++) {
+            String url = "http://www.4shared.com" + burl + "&ajax=true&changedir=" + links.get(i) + "&sortsMode=NAME&sortsAsc=&random=0.1863370989474954";
+            br.getPage(url);
+            name = br.getRegex("<input type=\"text\" class=\"fnamefieldinv\" id=\"fnamefield1\"\\s+readonly=\"\\w+\"\\s+style=\".+?\"\\s+value=\"(.+?)\"\\s+/>").getMatch(0).trim();            
+            replaceA(names, links.get(i), name);
+            scanFile(decryptedLinks, pass, burl, name, names.get(i));
+            progress.increase(1);
+        }
+    }
+    
+    
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         String pass = "";
+
+        //allow choice scan only root directory or all subdirectories too
+        int result = UserIOGui.getInstance().requestConfirmDialog(UserIO.STYLE_LARGE | UserIO.NO_COUNTDOWN, 
+                                                                  JDL.L("jd.plugins.decrypter.frshrdfldr.dir.title", "Directory scan"), 
+                                                                  JDL.L("jd.plugins.decrypter.frshrdfldr.dir.message", "Do you want scan all subdirectory or only files in this directory?"), null, 
+                                                                  JDL.L("jd.plugins.decrypter.frshrdfldr.dir.ok", "Subdirectory"), 
+                                                                  JDL.L("jd.plugins.decrypter.frshrdfldr.dir.cancel", "File"));
+        
+        //check for password 
         br.getPage(parameter);
         if (br.containsHTML("enter a password to access")) {
             Form form = br.getFormbyProperty("name", "theForm");
@@ -54,42 +167,17 @@ public class FrShrdFldr extends PluginForDecrypt {
                 } else if (retry == 5) logger.severe("Wrong Password!");
             }
         }
+
         String script = br.getRegex("src=\"(/account/homeScript.*?)\"").getMatch(0);
         br.cloneBrowser().getPage("http://4shared.com" + script);
-        String pages[] = br.getRegex("javascript:pagerShowFiles\\((\\d+)\\);").getColumn(0);
         String burl = br.getRegex("var bUrl = \"(/account/changedir.jsp\\?sId=.*?)\";").getMatch(0);
-        String name = br.getRegex("hidden\" name=\"defaultZipName\" value=\"(.*?)\">").getMatch(0);
-        String[] links;
-        if (!br.containsHTML("dirPwdVerified="))
-            links = br.getRegex("<a href=\"(http://[\\w\\.]*?4shared.com/file/.*?)\"").getColumn(0);
-        else
-            links = br.getRegex("<a href=\"(http://[\\w\\.]*?4shared.com/file/.*?)\\?dirPwdVerified").getColumn(0);
-        FilePackage fp = FilePackage.getInstance();
-        fp.setName(name);
-        if (links.length == 0) return null;
-        for (String dl : links) {
-            DownloadLink dlink;
-            dlink = createDownloadlink(dl);
-            if (pass.length() != 0) dlink.setProperty("pass", pass);
-            decryptedLinks.add(dlink);
-        }
-        String changedir = br.getRegex("var currentDirId = (\\d+);").getMatch(0);
-        for (int i = 0; i < pages.length - 1; i++) {
-            String url = "http://4shared.com" + burl + "&ajax=true&changedir=" + changedir + "&firstFileToShow=" + pages[i] + "&sortsMode=NAME&sortsAsc=&random=0.1863370989474954";
-            br.getPage(url);
-            if (!br.containsHTML("dirPwdVerified="))
-                links = br.getRegex("<a href=\"(http://[\\w\\.]*?4shared.com/file/.*?)\"").getColumn(0);
-            else
-                links = br.getRegex("<a href=\"(http://[\\w\\.]*?4shared.com/file/.*?)\\?dirPwdVerified").getColumn(0);
-            if (links.length == 0) return null;
-            for (String dl : links) {
-                DownloadLink dlink;
-                dlink = createDownloadlink(dl);
-                if (pass.length() != 0) dlink.setProperty("pass", pass);
-                decryptedLinks.add(dlink);
-            }
-        }
-        fp.addLinks(decryptedLinks);
+        String name = br.getRegex("hidden\" name=\"defaultZipName\" value=\"(.*?)\">").getMatch(0).trim();
+        
+        if (result == 4)
+            scanFile(decryptedLinks, pass, burl, name, name);
+        if (result == 2)
+            scanDirectory(decryptedLinks, pass, burl, name, progress);
+        
         return decryptedLinks;
     }
 
