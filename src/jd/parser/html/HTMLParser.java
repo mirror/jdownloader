@@ -199,8 +199,9 @@ public class HTMLParser {
          * remove all span because they can break url parsing (eg when
          * google-code-prettify is used)
          */
-        data = data.replaceAll("(?i)<span.*?>", "");
-        data = data.replaceAll("(?i)</span.*?>", "");
+        // not needed here because our filter below will take care of them
+        // data = data.replaceAll("(?i)<span.*?>", "");
+        // data = data.replaceAll("(?i)</span.*?>", "");
         /* CHECKME: why remove url/link tags? */
         data = data.replaceAll("(?s)\\[(url|link)\\].*?\\[/(url|link)\\]", "");
 
@@ -215,10 +216,10 @@ public class HTMLParser {
                 String[] result = getHttpLinksIntern(nexttag, url);
                 if (result.length == 0) {
                     /* no links, lets replace it with nothing */
-                    data = data.replaceFirst("<.*?>", "");
+                    data = data.replaceFirst("(?s)<.*?>", "");
                 } else {
                     /* lets replace the tag with the links */
-                    data = data.replaceFirst("<.*?>", ArrayToString(result));
+                    data = data.replaceFirst("(?s)<.*?>", ArrayToString(result));
                 }
             }
         }
