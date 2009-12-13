@@ -135,6 +135,7 @@ public class BigAndFreeCom extends PluginForHost {
         dl = BrowserAdapter.openDownload(br, downloadLink, downloadForm, true, 0);
         if (!(dl.getConnection().isContentDisposition()) && !dl.getConnection().getContentType().contains("octet")) {
             br.followConnection();
+            if (br.containsHTML("performing system maintenance")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Currently performing system maintenance", 60 * 60 * 1000l);
             if (br.containsHTML("You have exceeded your download limit")) {
                 int wait2 = 60;
                 String time = br.getRegex("Please wait (\\d+) Minut").getMatch(0);
@@ -200,6 +201,7 @@ public class BigAndFreeCom extends PluginForHost {
         dl = BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (!(dl.getConnection().isContentDisposition()) && !dl.getConnection().getContentType().contains("octet")) {
             br.followConnection();
+            if (br.containsHTML("performing system maintenance")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Currently performing system maintenance", 60 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

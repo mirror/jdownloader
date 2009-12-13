@@ -506,7 +506,7 @@ public class SingleDownloadController extends Thread {
      * @param step
      */
     private void onErrorDownloadTemporarilyUnavailable(DownloadLink downloadLink, PluginForHost plugin) {
-        logger.warning("Error occurred: Temporarily unavailably: PLease wait " + downloadLink.getLinkStatus().getValue() + " ms for a retry");
+        logger.warning("Error occurred: Temporarily unavailable: PLlease wait " + downloadLink.getLinkStatus().getValue() + " ms for a retry");
         LinkStatus status = downloadLink.getLinkStatus();
         if (status.getErrorMessage() == null) status.setErrorMessage(JDL.L("controller.status.tempUnavailable", "kurzzeitig nicht verfügbar"));
 
@@ -534,7 +534,7 @@ public class SingleDownloadController extends Thread {
             logger.severe(JDL.L("plugins.errors.pluginerror", "Plugin error. Please inform Support"));
             milliSeconds = 3600000l;
         }
-        logger.warning("Error occurred: Download from this host is currently not possble: PLease wait " + milliSeconds + " ms for a retry");
+        logger.warning("Error occurred: Download from this host is currently not possible: Please wait " + milliSeconds + " ms for a retry");
         status.setWaitTime(milliSeconds);
         DownloadWatchDog.getInstance().setTempUnavailWaittime(plugin.getHost(), milliSeconds);
         DownloadController.getInstance().fireDownloadLinkUpdate(downloadLink);

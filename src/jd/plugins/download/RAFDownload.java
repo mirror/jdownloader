@@ -80,7 +80,7 @@ public class RAFDownload extends DownloadInterface {
 
     // @Override
     protected void onChunksReady() {
-        logger.finer("onCHunksReady");
+        logger.finer("onChunksReady");
         //
         logger.info("Close connections if the are not closed yet");
         for (Chunk c : this.getChunks()) {

@@ -66,11 +66,11 @@ public class GoogleBooks extends PluginForHost {
                 if (counter > 10) {
                     /* too many failed lets wait and retry later */
                     counter = 0;
-                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1001l);
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
                 } else {
                     /* lets temp unavail this download, maybe it works later */
                     counter++;
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1001l);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
                 }
             }
 

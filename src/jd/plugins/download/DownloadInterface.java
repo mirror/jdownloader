@@ -128,7 +128,7 @@ abstract public class DownloadInterface {
          * @param connection
          */
         public Chunk(long startByte, long endByte, URLConnectionAdapter connection, DownloadInterface dl) {
-            super("DOwnloadchunk " + startByte + " - " + endByte);
+            super("Downloadchunk " + startByte + " - " + endByte);
             this.startByte = startByte;
             this.endByte = endByte;
             this.connection = connection;

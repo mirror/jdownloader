@@ -362,7 +362,7 @@ public class Executer extends Thread implements Runnable {
 
                 }
             }
-            if (logger != null) logger.finer("STream observer closed");
+            if (logger != null) logger.finer("Stream observer closed");
         } catch (IOException e1) {
             this.exception = e1;
             return;

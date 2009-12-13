@@ -731,13 +731,25 @@ public class Megauploadcom extends PluginForHost {
     private void getRedirectforAPI(String url, DownloadLink downloadLink) throws PluginException, InterruptedException {
         try {
             br.getPage(url);
+            /* file offline */
             if (br.getRequest().getHttpConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } catch (IOException e) {
+            try {
+                /* traffic limit reached */
+                if (br.getRequest().getHttpConnection().getResponseCode() == 503) limitReached(downloadLink, 10 * 60, "API Limit reached!");
+            } catch (IOException e1) {
+                JDLogger.exception(e1);
+            }
+            /*
+             * debug info, can be removed when we have correct error in case of
+             * pw needed
+             */
             try {
                 JDLogger.getLogger().info(br.getRequest().getHttpConnection().toString());
             } catch (Throwable e2) {
             }
             JDLogger.exception(e);
+            /* pw handling */
             try {
                 String passCode;
                 if (downloadLink.getStringProperty("pass", null) == null) {
@@ -747,15 +759,27 @@ public class Megauploadcom extends PluginForHost {
                     passCode = downloadLink.getStringProperty("pass", null);
                 }
                 br.getPage(url + "&p=" + passCode);
+                /* file offline */
                 if (br.getRequest().getHttpConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 downloadLink.setProperty("pass", passCode);
                 return;
             } catch (IOException e2) {
                 try {
+                    /* traffic limit reached */
+                    if (br.getRequest().getHttpConnection().getResponseCode() == 503) limitReached(downloadLink, 10 * 60, "API Limit reached!");
+                } catch (IOException e1) {
+                    JDLogger.exception(e1);
+                }
+                /*
+                 * debug info, can be removed when we have correct error in case
+                 * of pw needed
+                 */
+                try {
                     JDLogger.getLogger().info(br.getRequest().getHttpConnection().toString());
                 } catch (Throwable e3) {
                 }
                 JDLogger.exception(e2);
+                /* pw wrong */
                 downloadLink.setProperty("pass", null);
                 throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.errors.wrongpassword", "Password wrong"));
             }

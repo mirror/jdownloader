@@ -47,8 +47,6 @@ public class Reconnecter {
      */
     public static final String VERFIFY_IP_AGAIN = "VERIFY_IP_AGAIN";
 
-
-    
     private static String CURRENT_IP = "";
     /**
      * Set to true only if there is a reconnect running currently
@@ -212,7 +210,7 @@ public class Reconnecter {
                 try {
                     ret = Reconnecter.doReconnect();
                     if (ret) {
-                        logger.info("Reconnect successfully!");
+                        logger.info("Reconnect successful!");
                     } else {
                         logger.info("Reconnect failed!");
                     }
