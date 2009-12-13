@@ -19,7 +19,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
-import jd.controlling.CNL2;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -63,7 +62,7 @@ public class CNL extends PluginForDecrypt {
                 continue;
             }
 
-            //CNL2.decrypt(crypted, jk, null, passwords, source);
+            // CNL2.decrypt(crypted, jk, null, passwords, source);
 
         }
 
