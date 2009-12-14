@@ -66,7 +66,7 @@ public class Installer {
 
     private boolean aborted = false;
 
-    private String countryCode;
+    private final String countryCode;
 
     private File dlFolder = null;
 
