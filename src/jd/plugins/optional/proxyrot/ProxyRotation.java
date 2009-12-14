@@ -37,7 +37,7 @@ import jd.plugins.PluginOptional;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@OptionalPlugin(rev = "$Revision: 9816 $", id = "proxyrotation", interfaceversion = 5)
+@OptionalPlugin(rev = "$Revision$", id = "proxyrotation", interfaceversion = 5)
 public class ProxyRotation extends PluginOptional implements ControlListener {
 
     private static final String PARAM_PROXYLIST = "PARAM_PROXYLIST";
@@ -110,14 +110,12 @@ public class ProxyRotation extends PluginOptional implements ControlListener {
                 }
 
                 JDProxy proxy = new JDProxy(type.equalsIgnoreCase("socks") ? JDProxy.Type.SOCKS : JDProxy.Type.HTTP, ip, Integer.parseInt(port));
-
                 proxy.setUser(username);
                 proxy.setPass(password);
-                JDLogger.getLogger().info("Use Proxy: "+proxy);
+                JDLogger.getLogger().info("Use Proxy: " + proxy);
                 Browser.setGlobalProxy(proxy);
-                //force the Reconnecter to verify IP again
-                ((Property)event.getParameter()).setProperty(Reconnecter.VERFIFY_IP_AGAIN,true);
-
+                // force the Reconnecter to verify IP again
+                ((Property) event.getParameter()).setProperty(Reconnecter.VERIFY_IP_AGAIN, true);
             } catch (Exception e) {
                 e.printStackTrace();
             }

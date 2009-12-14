@@ -28,11 +28,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision: 9411 $", interfaceVersion = 2, names = { "sharecash.org" }, urls = { "http://[\\w\\.]*?sharecash\\.org/download.php\\?(file|id)=\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharecash.org" }, urls = { "http://[\\w\\.]*?sharecash\\.org/download.php\\?(file|id)=\\d+" }, flags = { 0 })
 public class SharecashOrg extends PluginForHost {
     public SharecashOrg(PluginWrapper wrapper) {
         super(wrapper);
-
     }
 
     @Override
