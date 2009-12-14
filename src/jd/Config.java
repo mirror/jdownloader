@@ -58,8 +58,8 @@ import net.miginfocom.swing.MigLayout;
 
 public class Config {
 
-    private Configuration mainConfig;
-    private ArrayList<SubConfiguration> configs;
+    private final Configuration mainConfig;
+    private final ArrayList<SubConfiguration> configs;
     private JComboBox configSelection;
     private SubConfiguration currentConfig;
     private JTable table;
@@ -86,9 +86,9 @@ public class Config {
         tmplaf.setProperties(new HashMap<String, Object>());
 
         tmplaf.getProperties().putAll(laf.getProperties());
-        UIDefaults defaults = UIManager.getDefaults();
+        final UIDefaults defaults = UIManager.getDefaults();
 
-        Enumeration<Object> keys = defaults.keys();
+        final Enumeration<Object> keys = defaults.keys();
         while (keys.hasMoreElements()) {
             Object key = keys.nextElement();
 
@@ -143,10 +143,11 @@ public class Config {
     }
 
     private int[] getSelectedRows() {
-        int[] rows = table.getSelectedRows();
-        int[] ret = new int[rows.length];
+        final int[] rows = table.getSelectedRows();
+        final int length = rows.length;
+        int[] ret = new int[length];
 
-        for (int i = 0; i < rows.length; ++i) {
+        for (int i = 0; i < length; ++i) {
             ret[i] = table.convertRowIndexToModel(rows[i]);
         }
         Arrays.sort(ret);
@@ -161,21 +162,18 @@ public class Config {
 
         createMap(cfg.getProperties(), keys, values, "");
         if (tableModel != null) this.tableModel.fireTableDataChanged();
-
     }
 
     @SuppressWarnings("unchecked")
     private void createMap(HashMap<?, ?> hashMap, ArrayList<String> keys, ArrayList<Object> values, String pre) {
+        pre = (pre.length() > 0) ? pre + "/" : "";
         for (Entry<?, ?> next : hashMap.entrySet()) {
-            String key = pre.length() > 0 ? pre + "/" + next.getKey() : next.getKey() + "";
-            if (next.getValue() instanceof HashMap<?, ?>) {
-                keys.add(key);
-                values.add(next.getValue());
-                createMap((HashMap) next.getValue(), keys, values, key);
-            } else {
-                keys.add(key);
-                values.add(next.getValue());
-
+            String key = pre + next.getKey();
+            Object nextValue = next.getValue();
+            keys.add(key);
+            values.add(nextValue);
+            if (nextValue instanceof HashMap<?, ?>) {
+                createMap((HashMap) nextValue, keys, values, key);
             }
         }
 
@@ -219,7 +217,7 @@ public class Config {
         table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
 
             public void valueChanged(ListSelectionEvent e) {
-                int[] rows = getSelectedRows();
+                final int[] rows = getSelectedRows();
                 if (rows.length == 0) return;
                 int row = rows[0];
                 Object value = tableModel.getValueAt(row, 1);
@@ -241,13 +239,13 @@ public class Config {
 
             @SuppressWarnings("unchecked")
             public void actionPerformed(ActionEvent e) {
-                String key = UserIOGui.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN, "Enter Key", "Enter your key use / deliminator to create new sub-maps", "NEW_KEY", null, "Create Entry", "Cancel");
+                final String key = UserIOGui.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN, "Enter Key", "Enter your key use / deliminator to create new sub-maps", "NEW_KEY", null, "Create Entry", "Cancel");
                 if (key == null) { return; }
                 if (keys.contains(key)) {
                     UserIOGui.getInstance().requestMessageDialog("Key " + key + " is already available. Try Edit feature");
                     return;
                 }
-                String result = UserIOGui.getInstance().requestInputDialog(UserIO.STYLE_LARGE | UserIO.NO_COUNTDOWN, "Edit value for " + key, "Please take care to keep xml structure", "<classtype>VALUE</classtype>\r\n e.g.: <boolean>true</boolean>", null, "Save", "Cancel");
+                final String result = UserIOGui.getInstance().requestInputDialog(UserIO.STYLE_LARGE | UserIO.NO_COUNTDOWN, "Edit value for " + key, "Please take care to keep xml structure", "<classtype>VALUE</classtype>\r\n e.g.: <boolean>true</boolean>", null, "Save", "Cancel");
                 if (result == null) return;
                 try {
 
@@ -261,9 +259,10 @@ public class Config {
 
                         System.out.println("Save Object " + key);
 
-                        for (int i = 0; i < configKeys.length; i++) {
+                        final int length = configKeys.length;
+                        for (int i = 0; i < length; i++) {
                             String k = configKeys[i];
-                            if (i < configKeys.length - 1) {
+                            if (i < length) {
                                 Object next = props.get(k);
 
                                 if (next instanceof HashMap<?, ?>) {
@@ -276,7 +275,7 @@ public class Config {
                             }
                         }
 
-                        currentConfig.setProperty(configKeys[configKeys.length - 1], object);
+                        currentConfig.setProperty(configKeys[length - 1], object);
 
                         currentConfig.save();
                         setCurrentConfig(currentConfig);
@@ -295,7 +294,7 @@ public class Config {
 
             @SuppressWarnings("unchecked")
             public void actionPerformed(ActionEvent e) {
-                int[] rows = getSelectedRows();
+                final int[] rows = getSelectedRows();
                 if (rows.length == 0) return;
                 int row = rows[0];
                 Object key = tableModel.getValueAt(row, 0);
@@ -352,7 +351,7 @@ public class Config {
 
             @SuppressWarnings("unchecked")
             public void actionPerformed(ActionEvent e) {
-                int[] rows = getSelectedRows();
+                final int[] rows = getSelectedRows();
                 if (rows.length == 0) return;
                 int row = rows[0];
                 Object key = tableModel.getValueAt(row, 0);
