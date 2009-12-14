@@ -28,13 +28,14 @@ import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.XPath;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "lastfm.de" }, urls = { "http://([\\w\\.]|cn)*?(lastfm|last)\\.(fm|de|pl|es|fr|it|jp|com\\.br|ru|se|com\\.tr)/(music/.+|user/[a-zA-Z]+)" }, flags = { 0 })
 public class LastFm extends PluginForHost {
-
+    private static final HashMap<String, FilePackage> PACKAGE_CACHE = new HashMap<String, FilePackage>();
     private static final String API_ROOT = "http://ext.last.fm/2.0/?";
     private static final String API_KEY = "api_key";
     private static final String API_KEY_VALUE = "da6ae1e99462ee22e81ac91ed39b43a4";
@@ -52,7 +53,29 @@ public class LastFm extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
+    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
+        // TODO some songs are not available...so this plugin downloads another
+        // song....
+        // we should filter these unavailable links.
+        br.getPage(link.getDownloadURL());
+
+        String title = br.getRegex("\"name\"\\:\"(.*?)\"").getMatch(0);
+        String artist = br.getRegex("\"artistname\"\\:\"(.*?)\"").getMatch(0);
+        String duration = br.getRegex("\"duration\"\\:\"(.*?)\"").getMatch(0);
+        // //aproximate size
+        int size = Integer.parseInt(duration) * 128 * 1024 / 8;
+        link.setFinalFileName(artist + " - " + title + ".mp3");
+        link.setDownloadSize(size);
+        // create package with artistnames
+        FilePackage fp = PACKAGE_CACHE.get(artist);
+        if (fp == null) {
+            fp = FilePackage.getInstance();
+            fp.setName(artist);
+            fp.setComment("Songs from lastfm by " + artist);
+            PACKAGE_CACHE.put(artist, fp);
+        }
+        link.setFilePackage(fp);
+        //     
         return AvailableStatus.TRUE;
     }
 
@@ -61,7 +84,8 @@ public class LastFm extends PluginForHost {
         br.getPage(link.getDownloadURL());
 
         String artist = br.getRegex("/></span>(.*?)</a>\\p{Space}&raquo;\\p{Space}<a href=").getMatch(0);
-        String title = link.getName();
+
+        String title = Encoding.urlDecode(link.getDownloadURL().substring(1 + link.getDownloadURL().lastIndexOf("/")), false);
 
         // getWebSession
         Map<String, String> args = new HashMap<String, String>();
@@ -137,6 +161,7 @@ public class LastFm extends PluginForHost {
         br.setFollowRedirects(true);
 
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, songLink, false, 1);
+
         dl.startDownload();
     }
 
