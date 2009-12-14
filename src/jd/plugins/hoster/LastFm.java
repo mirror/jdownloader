@@ -32,6 +32,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "lastfm.de" }, urls = { "http://([\\w\\.]|cn)*?(lastfm|last)\\.(fm|de|pl|es|fr|it|jp|com\\.br|ru|se|com\\.tr)/(music/.+|user/[a-zA-Z]+)" }, flags = { 0 })
 public class LastFm extends PluginForHost {
@@ -61,6 +62,11 @@ public class LastFm extends PluginForHost {
 
         String title = br.getRegex("\"name\"\\:\"(.*?)\"").getMatch(0);
         String artist = br.getRegex("\"artistname\"\\:\"(.*?)\"").getMatch(0);
+        if (br.containsHTML("Wir haben keine Titel")) {
+            link.getLinkStatus().setStatusText(JDL.L("jd.plugins.hoster.LastFm.requestFileInformation.nodownload", "Not Downloadable"));
+            link.getLinkStatus().setErrorMessage(JDL.L("jd.plugins.hoster.LastFm.requestFileInformation.nodownload", "Not Downloadable"));
+            return AvailableStatus.FALSE;
+        }
         String duration = br.getRegex("\"duration\"\\:\"(.*?)\"").getMatch(0);
         // //aproximate size
         int size = Integer.parseInt(duration) * 128 * 1024 / 8;
