@@ -102,7 +102,6 @@ public class Netloadin extends PluginForHost {
                 return;
             }
             if (br.containsHTML(FILE_DAMAGED)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.netloadin.errors.fileondmgserver", "File on damaged server"), 20 * 60 * 1000l);
-            logger.fine(br.toString());
             if ((!br.containsHTML(DOWNLOAD_START)&&!br.containsHTML(DOWNLOAD_STARTXMAS)) || url == null) {
                 linkStatus.setErrorMessage(JDL.L("plugins.hoster.netloadin.errors.dlnotfound", "Download link not found"));
                 logger.severe(br.toString());
