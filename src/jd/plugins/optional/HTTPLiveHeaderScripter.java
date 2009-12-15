@@ -32,9 +32,9 @@ import javax.swing.JTextArea;
 import jd.PluginWrapper;
 import jd.gui.UserIO;
 import jd.gui.swing.SwingGui;
-import jd.gui.swing.components.ImportRouterDialog;
 import jd.gui.swing.components.JDFileChooser;
 import jd.gui.swing.components.linkbutton.JLink;
+import jd.gui.swing.dialog.ImportRouterDialog;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelListener;
@@ -309,6 +309,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
                 return JDTheme.II(getIconKey(), 16, 16);
             }
 
+            @Override
             public void onHide() {
             }
 
@@ -417,6 +418,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
 
     }
 
+    @Override
     public void onExit() {
     }
 

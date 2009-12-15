@@ -14,7 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.gui.swing.components;
+package jd.gui.swing.dialog;
 
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;

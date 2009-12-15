@@ -14,7 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.gui.swing.components;
+package jd.gui.swing.dialog;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -77,7 +77,7 @@ public class AboutDialog extends AbstractDialog {
 
             public void actionPerformed(ActionEvent e) {
                 String license = JDIO.readFileToString(JDUtilities.getResourceFile("licenses/jdownloader.license"));
-                UserIO.getInstance().requestConfirmDialog(UserIO.NO_CANCEL_OPTION | UserIO.STYLE_LARGE | UserIO.NO_ICON | UserIO.NO_COUNTDOWN, JDL.L(JDL_PREFIX + "license.title", "JDownloader License"), license, null, null, null);
+                UserIO.getInstance().requestMessageDialog(UserIO.STYLE_LARGE | UserIO.NO_ICON | UserIO.NO_COUNTDOWN, JDL.L(JDL_PREFIX + "license.title", "JDownloader License"), license);
             }
 
         }), "gaptop 15, spanx, split 4");

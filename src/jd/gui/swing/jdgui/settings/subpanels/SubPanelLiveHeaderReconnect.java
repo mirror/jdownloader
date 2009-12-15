@@ -30,7 +30,7 @@ import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
-import jd.gui.swing.components.ImportRouterDialog;
+import jd.gui.swing.dialog.ImportRouterDialog;
 import jd.gui.swing.jdgui.settings.ConfigPanel;
 import jd.gui.swing.jdgui.settings.GUIConfigEntry;
 import jd.router.FindRouterIP;

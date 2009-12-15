@@ -17,7 +17,7 @@
 package jd.gui.swing;
 
 import jd.controlling.JDController;
-import jd.gui.swing.components.AboutDialog;
+import jd.gui.swing.dialog.AboutDialog;
 
 import com.apple.eawt.Application;
 import com.apple.eawt.ApplicationAdapter;
@@ -26,17 +26,18 @@ import com.apple.eawt.ApplicationEvent;
 public class MacOSController extends Application {
 
     public MacOSController() {
-        // setEnabledPreferencesMenu(true);
         setEnabledAboutMenu(true);
         addApplicationListener(new Handler());
     }
 
-    class Handler extends ApplicationAdapter {
+    private class Handler extends ApplicationAdapter {
 
+        @Override
         public void handleQuit(ApplicationEvent e) {
             JDController.getInstance().exit();
         }
 
+        @Override
         public void handleAbout(ApplicationEvent e) {
             e.setHandled(true);
             new GuiRunnable<Object>() {
@@ -50,14 +51,10 @@ public class MacOSController extends Application {
             }.start();
         }
 
-        // public void handlePreferences(ApplicationEvent e) {
-        // SwingGui.getInstance().actionPerformed(new ActionEvent(this,
-        // JDAction.APP_CONFIGURATION, null));
-        // }
-
+        @Override
         public void handleReOpenApplication(ApplicationEvent e) {
             if (SwingGui.getInstance() == null || SwingGui.getInstance().getMainFrame() == null) return;
-            if (SwingGui.getInstance().getMainFrame().isVisible() == false) {
+            if (!SwingGui.getInstance().getMainFrame().isVisible()) {
                 SwingGui.getInstance().getMainFrame().setVisible(true);
             }
         }

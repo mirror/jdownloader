@@ -25,7 +25,7 @@ import java.util.ArrayList;
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 import jd.gui.swing.GuiRunnable;
-import jd.gui.swing.components.DnDWebBrowser;
+import jd.gui.swing.dialog.DnDWebBrowser;
 import jd.gui.swing.jdgui.JDGuiConstants;
 import jd.nutils.Executer;
 import jd.nutils.OSDetector;

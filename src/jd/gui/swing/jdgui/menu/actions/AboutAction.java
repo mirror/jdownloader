@@ -18,7 +18,7 @@ package jd.gui.swing.jdgui.menu.actions;
 
 import java.awt.event.ActionEvent;
 
-import jd.gui.swing.components.AboutDialog;
+import jd.gui.swing.dialog.AboutDialog;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
 
 public class AboutAction extends ToolBarAction {

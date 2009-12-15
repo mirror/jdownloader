@@ -20,6 +20,7 @@ import java.awt.Dimension;
 
 import javax.swing.ImageIcon;
 import javax.swing.JComponent;
+import javax.swing.JScrollPane;
 import javax.swing.JTextPane;
 
 import jd.gui.UserIO;
@@ -47,22 +48,22 @@ public class ConfirmDialog extends AbstractDialog {
             textField.addHyperlinkListener(JLink.getHyperlinkListener());
         } else {
             textField.setContentType("text");
-
-            textField.setBounds(0, 0, 450, 600);
             textField.setMaximumSize(new Dimension(450, 600));
         }
-      
+
         textField.setText(this.message);
         textField.setEditable(false);
         textField.setBackground(null);
         textField.setOpaque(false);
         textField.putClientProperty("Synthetica.opaque", Boolean.FALSE);
 
-        return textField;
-    }
-
-    public Integer getReturnID() {
-        return super.getReturnValue();
+        if (JDFlags.hasAllFlags(this.flag, UserIO.STYLE_LARGE)) {
+            JScrollPane sp = new JScrollPane(textField);
+            sp.setMaximumSize(new Dimension(450, 600));
+            return sp;
+        } else {
+            return textField;
+        }
     }
 
     @Override

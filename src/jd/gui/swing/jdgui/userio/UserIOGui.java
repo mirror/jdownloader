@@ -94,7 +94,7 @@ public class UserIOGui extends UserIO {
 
             @Override
             public Integer runSave() {
-                return new ConfirmDialog(flag, title, message, icon, okOption, cancelOption).getReturnID();
+                return new ConfirmDialog(flag, title, message, icon, okOption, cancelOption).getReturnValue();
             }
 
         }.getReturnValue();

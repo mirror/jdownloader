@@ -75,12 +75,8 @@ public class ComboDialog extends AbstractDialog {
         return contentpane;
     }
 
-    protected void packed() {
-
-    }
-
     public Integer getReturnID() {
-        if ((this.getReturnValue() & UserIO.RETURN_OK) == 0) { return -1; }
+        if ((this.getReturnValue() & UserIO.RETURN_OK) == 0) return -1;
         return input.getSelectedIndex();
     }
 

@@ -14,7 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.gui.swing.components;
+package jd.gui.swing.dialog;
 
 import java.util.ArrayList;
 
@@ -30,9 +30,7 @@ import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 /**
- * Diese Klasse zeigt dem Nutzer Auswahldialoge beim Konvertieren von FLVs an <br>
- * TODO: Use {@link jd.gui.swing.dialog.ConvertDialog} instead. Just remaining
- * for backward compatibility
+ * Diese Klasse zeigt dem Nutzer Auswahldialoge beim Konvertieren von FLVs an
  */
 public class ConvertDialog extends AbstractDialog {
 
