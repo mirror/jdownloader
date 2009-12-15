@@ -19,6 +19,8 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
@@ -36,6 +38,20 @@ public class CreaFileCom extends PluginForHost {
         // this host blocks if there is no timegap between the simultan
         // downloads so waittime is 5,5 sec right now, works good!
         this.setStartIntervall(15000l);
+        setConfigElements();
+    }
+
+    private static final String WAIT1 = "WAIT1";
+    private static final String WAIT2 = "WAIT2";
+    private static final String CHUNKS = "CHUNKS";
+
+    private void setConfigElements() {
+        ConfigEntry cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), WAIT1, "Activate waittime1").setDefaultValue(false);
+        ConfigEntry cond1 = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), WAIT2, "Activate waittime2").setDefaultValue(false);
+        ConfigEntry cond2 = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CHUNKS, "Activate unlimited Max.Con. (speeds up the downloads but may causes errors)").setDefaultValue(false);
+        config.addEntry(cond);
+        config.addEntry(cond1);
+        config.addEntry(cond2);
     }
 
     @Override
@@ -72,16 +88,6 @@ public class CreaFileCom extends PluginForHost {
         Form dlForm = br.getFormbyKey("s_pair");
         if (dlForm == null) dlForm = br.getForm(1);
         dlForm.remove("Buy+VIP");
-        // Old Captcha handling
-        // String[] letters = br.getRegex("captcha/(\\d+)").getColumn(0);
-        // if (letters == null || letters.length == 0 || dlForm == null) throw
-        // new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // StringBuilder code = new StringBuilder();
-        // for (String value : letters) {
-        // code.append(value);
-        // }
-        // logger.info("Captchacode to enter is " + code.toString());
-        // ***New Captcha handling***
         String captchaurl = "http://creafile.com//codeimg.php";
         if (!br.containsHTML("codeimg.php")) captchaurl = null;
         if (dlForm == null || captchaurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -90,25 +96,32 @@ public class CreaFileCom extends PluginForHost {
         dlForm.put("hash", hash);
         dlForm.put("captcha", code.toString());
         br.submitForm(dlForm);
+        boolean wait1 = getPluginConfig().getBooleanProperty(WAIT1, true);
+        if (wait1) sleep(60 * 1001l, downloadLink);
         br.getPage(downarea);
         String dllink0 = br.getRegex("href=\"(http://creafile.com/d/.*?)\"").getMatch(0);
         Form faster = br.getFormbyProperty("id", "fasters");
         if (faster == null) faster = br.getForm(0);
         if (faster != null) {
             br.submitForm(faster);
-            sleep(60 * 1000l, downloadLink);
+            boolean wait2 = getPluginConfig().getBooleanProperty(WAIT2, true);
+            if (wait2) sleep(60 * 1001l, downloadLink);
             br.getPage(downarea);
             dllink = br.getRegex("href=\"(http://creafile.com/d/.*?)\"").getMatch(0);
         }
         if (dllink == null && dllink0 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        int maxchunks = 1;
+        boolean chunks = getPluginConfig().getBooleanProperty(CHUNKS, true);
+        if (chunks) maxchunks = 0;
         if (dllink == null && dllink0 != null) {
-            logger.warning("Downloading using slow download link, plugin is not working as it should!, Slow link = " + dllink0);
+            // Downloading using the slow download link the server doesn't allow
+            // more than 1 connection per file
+            logger.warning("Downloading using slow download link, plugin is not working as it should!, Slow link = " + dllink0 + "decreasing chunks to 1...");
             dllink = dllink0;
+            maxchunks = 1;
         }
-        // Downloading using the slow download link the server doesn't allow
-        // more than 1 connection per file
         br.setDebug(true);
-        jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, maxchunks);
         dl.startDownload();
     }
 

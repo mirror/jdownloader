@@ -52,13 +52,14 @@ public class XFileSharingProBasic extends PluginForHost {
     // xfilesharing.net)!
     @Override
     public String getAGBLink() {
-        return "http://www.ForDevsToPlayWith.com/tos.html";
+        return COOKIE_HOST + "/tos.html";
     }
+    private static final String COOKIE_HOST = "http://azsharing.com";
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.setCookie("http://www.turboshare.com", "lang", "english");
+        br.setCookie(COOKIE_HOST, "lang", "english");
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("You have reached the download-limit")) {
             logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
@@ -103,6 +104,8 @@ public class XFileSharingProBasic extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        boolean resumable = true;
+        int maxchunks = 0;
         requestFileInformation(downloadLink);
         // If the filesize regex above doesn't match you can copy this part into
         // the available status (and delete it here)
@@ -262,7 +265,7 @@ public class XFileSharingProBasic extends PluginForHost {
                 DLForm.put("password", passCode);
                 logger.info("Put password \"" + passCode + "\" entered by user in the DLForm.");
             }
-            jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLForm, true, 0);
+            jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLForm, resumable, maxchunks);
             logger.info("Submitted DLForm");
         }
         boolean error = false;
@@ -333,7 +336,7 @@ public class XFileSharingProBasic extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
-            jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+            jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLForm, resumable, maxchunks);
         }
         if (passCode != null) {
             downloadLink.setProperty("pass", passCode);
@@ -360,7 +363,7 @@ public class XFileSharingProBasic extends PluginForHost {
 
     private void login(Account account) throws Exception {
         this.setBrowserExclusive();
-        br.setCookie("http://turboshare.com", "lang", "english");
+        br.setCookie(COOKIE_HOST, "lang", "english");
         br.setDebug(true);
         br.getPage("http://www.turboshare.com/login.html");
         Form loginform = br.getForm(0);
@@ -414,7 +417,7 @@ public class XFileSharingProBasic extends PluginForHost {
         String passCode = null;
         requestFileInformation(link);
         login(account);
-        br.setCookie("http://turboshare.com", "lang", "english");
+        br.setCookie(COOKIE_HOST, "lang", "english");
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
         String dllink = br.getRedirectLocation();

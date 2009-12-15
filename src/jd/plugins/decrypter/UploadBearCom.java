@@ -45,10 +45,8 @@ public class UploadBearCom extends PluginForDecrypt {
         String[] redirectLinks = br.getRegex("\"(/link\\.php\\?id=.*?\\&filename=.*?)\"").getColumn(0);
         if ((redirectLinks.length == 0 || redirectLinks == null) && !br.containsHTML("download.php")) return null;
         if (br.containsHTML("download.php")) {
-            String filename = br.getRegex("filename=(.*?)\"").getMatch(0);
             String filesize = br.getRegex("Filesize:</b></td><td>(.*?)</td>").getMatch(0);
             DownloadLink upbear = createDownloadlink(parameter.replace("mirrors.php?id=", "download.php?id="));
-            if (filename != null) upbear.setFinalFileName(filename);
             if (filesize != null) upbear.setDownloadSize(Regex.getSize(filesize));
             decryptedLinks.add(upbear);
         }
