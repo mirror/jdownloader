@@ -1115,6 +1115,7 @@ jd.plugins.decrypter.frshrdfldr.dir.title = Prohlížení složek
 jd.plugins.decrypter.lnksvn.pass = Uživatelské heslo
 jd.plugins.decrypter.stealth.askpassword = Vyžadováno heslo na stažení pro %s
 jd.plugins.hoster.filebaseto.serversideerror = Chyba serveru. Zkuste to později
+jd.plugins.hoster.lastfm.requestfileinformation.nodownload = Nestažitelné
 jd.plugins.optional.antistandby.jdantistandby = JD AntiStandby
 jd.plugins.optional.customizer.columns.packagenamecolumn.tooltip = Jméno balíčku, pokud odkaz splňuje podmínky regexu. Ponechte prázdné, pokud chcete použít výchozí jméno!
 jd.plugins.optional.customizer.columns.regexcolumn.regex.empty = Regex by neměl být prázdný!
