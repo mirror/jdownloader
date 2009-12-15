@@ -23,7 +23,6 @@ import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "good.net" }, urls = { "http://[\\w\\.]*?good\\.net/.+" }, flags = { 0 })
@@ -41,7 +40,6 @@ public class GoodNetFolder extends PluginForDecrypt {
         br.setFollowRedirects(false);
         if (parameter.endsWith("/")) {
             br.getPage(parameter);
-            String fpname = br.getRegex("<h1>Index of (/.+?){1,}/(.+?)</h1>").getMatch(1);
             String[] filenames = br.getRegex("<img src=\".*?\" alt=\".*?\"> <a href=\"(.*?)\">").getColumn(0);
             if (filenames == null || filenames.length == 0) br.getRegex("href=\".*?\">(.*?\\..*?)</a>").getColumn(0);
             if (filenames == null || filenames.length == 0) return null;
@@ -51,11 +49,6 @@ public class GoodNetFolder extends PluginForDecrypt {
                 String finallink = br.getRedirectLocation();
                 if (finallink != null) decryptedLinks.add(createDownloadlink(finallink.replace("good.net", "gjerzu4zr4jk555hd")));
                 progress.increase(1);
-            }
-            if (fpname != null) {
-                FilePackage fp = FilePackage.getInstance();
-                fp.setName(fpname.trim());
-                fp.addLinks(decryptedLinks);
             }
         } else {
             decryptedLinks.add(createDownloadlink(parameter.replace("good.net", "gjerzu4zr4jk555hd")));
