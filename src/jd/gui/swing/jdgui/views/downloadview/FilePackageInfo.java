@@ -32,7 +32,7 @@ import jd.gui.swing.components.ComboBrowseFile;
 import jd.gui.swing.components.JDCollapser;
 import jd.gui.swing.components.JDFileChooser;
 import jd.gui.swing.components.JDTextField;
-import jd.gui.swing.components.MultiProgressBar;
+import jd.gui.swing.components.multiprogress.MultiProgressBar;
 import jd.gui.swing.jdgui.views.DownloadView;
 import jd.nutils.Formatter;
 import jd.plugins.DownloadLink;

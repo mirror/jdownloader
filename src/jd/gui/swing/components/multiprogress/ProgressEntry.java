@@ -14,7 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.gui.swing.components;
+package jd.gui.swing.components.multiprogress;
 
 public class ProgressEntry {
 
@@ -43,13 +43,11 @@ public class ProgressEntry {
     }
 
     public void setPosition(long p) {
-        position=p;
+        position = p;
     }
 
     public long getPosition() {
         return position;
     }
-
-
 
 }
