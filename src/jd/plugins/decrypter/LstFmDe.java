@@ -27,8 +27,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "lastfm.de" }, urls = { "http://[\\w\\.]*?lastfm\\.de/music/.+\\?autostart" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "lastfm.de" }, urls = { "http://([\\w\\.]|cn)*?(lastfm|last)\\.(fm|de|pl|es|fr|it|jp|com\\.br|ru|se|com\\.tr)/(user/[a-zA-Z0-9]+|.+)" }, flags = { 0 })
 public class LstFmDe extends PluginForDecrypt {
+
+    private static final String lang = "?setlang=en";
 
     public LstFmDe(PluginWrapper wrapper) {
         super(wrapper);
@@ -36,15 +38,51 @@ public class LstFmDe extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        long pages = 0;
+        br.setFollowRedirects(true);
+        br.setDebug(true);
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows; U; Windows NT 5.1; de; rv:1.9.1.5) Gecko/20091102 Firefox/3.5.5 (.NET CLR 3.5.30729)");
+        
         String parameter = param.toString();
-        br.getPage(parameter);
-        if (br.containsHTML("Artist not found")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-        String finallink = br.getRegex("\"(http://freedownloads\\.last\\.fm/download/[0-9]+/.*?)\"").getMatch(0);
-        if (finallink == null) finallink = br.getRegex("\"(http://freedownloads\\.last\\.fm/download/.*?)\"").getMatch(0);
-        if (finallink == null) return null;
-        decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
-
+        br.getPage(parameter + lang);
+        if(parameter.contains("/_/") || parameter.contains("?autostart")) {
+            progress.setRange(1);
+            decryptedLinks.add(createDownloadlink(parameter.replace(".last", "ik3mg23seryi4521")));
+            progress.increase(1);
+            return decryptedLinks;
+        } else if (parameter.contains("/user/")) {
+            br.getPage(parameter + lang);
+            if(br.containsHTML("User not found")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+            if(br.containsHTML("/tracks\" title=\"\">See more</a>")) {
+                br.getPage(parameter + "/tracks" + lang);
+                if(br.containsHTML("class=\"lastpage\">")) {
+                    String pagesString = br.getRegex("class=\"lastpage\">([0-9]+)</a>").getMatch(0);
+                    pages = Long.parseLong(pagesString);
+                    progress.setRange(pages);
+                }
+                for(long i = 1; i <= pages; i++) {
+                    br.getPage(parameter + "/tracks" + "?page=" + i + lang);
+                    getLinks(decryptedLinks);
+                    progress.increase(1);
+                }
+            }
+            
+        } else {
+            br.getPage(parameter + "/+charts" + lang);
+            if(br.containsHTML("Sorry, that artist could not be found.")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+            getLinks(decryptedLinks);
+        }
         return decryptedLinks;
     }
 
+    private void getLinks(ArrayList<DownloadLink> links) {
+        String host = "http://www.last.fm";
+        String[] songs = br.getRegex("<a class=\"playbutton\" href=\"(.*?)\\?autostart\"").getColumn(0);
+        if (songs != null) {
+            for (String song : songs) {
+                String finallink = host + song;
+                links.add(createDownloadlink(finallink.replace(".last", "ik3mg23seryi4521")));
+            }
+        }
+    }
 }
