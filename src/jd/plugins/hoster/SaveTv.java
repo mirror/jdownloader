@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.Random;
 
 import jd.PluginWrapper;
+import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -33,7 +34,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "save.tv" }, urls = { "http://[\\w\\.]*?free\\.save\\.tv/STV/M/obj/recordOrder/reShowDownload\\.cfm\\?TelecastID=[0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "save.tv" }, urls = { "http://[\\w\\.]*?(save\\.tv|free\\.save\\.tv)/STV/M/obj/recordOrder/reShowDownload\\.cfm\\?TelecastID=[0-9]+" }, flags = { 2 })
 public class SaveTv extends PluginForHost {
 
     public SaveTv(PluginWrapper wrapper) {
@@ -49,25 +50,35 @@ public class SaveTv extends PluginForHost {
     public void login(Account account) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage("http://free.save.tv");
-        Form form = br.getForm(0);
-        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        form.put("sUsername", Encoding.urlEncode(account.getUser()));
-        form.put("sPassword", Encoding.urlEncode(account.getPass()));
-        br.submitForm(form);
-        if (!br.containsHTML("<frame") || br.containsHTML("Bitte verifizieren Sie Ihre Logindaten")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        // Just a little komfortable feature for all save.tv users ;)
-        br.getPage("http://free.save.tv/STV/M/obj/user/usShowVideoArchive.cfm?&sk=JOE");
-        String[] links = br.getRegex("\"(/STV/M/obj/recordOrder/reShowDownload\\.cfm\\?TelecastID=.*?)\"").getColumn(0);
-        if (links == null || links.length == 0) {
-            logger.warning("Didn't find any links");
-        } else {
-            logger.info("**********VIDEOLINKS START**********");
-            for (String link : links) {
-                logger.info("***VIDEOLINKS = http://free.save.tv" + link + "***");
+        for (int i = 0; i <= 1; i++) {
+            String acctype = this.getPluginConfig().getStringProperty("premium", null);
+            if (acctype != null) {
+                br.getPage("http://www.save.tv/STV/S/misc/home.cfm?");
+                Form loginform = br.getFormbyProperty("name", "LoginForm");
+                if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                loginform.put("sUsername", Encoding.urlEncode(account.getUser()));
+                loginform.put("sPassword", Encoding.urlEncode(account.getPass()));
+                br.submitForm(loginform);
+                System.out.print(br.toString());
+                break;
+            } else {
+                br.getPage("http://free.save.tv");
+                Form loginform = br.getForm(0);
+                if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                loginform.put("sUsername", Encoding.urlEncode(account.getUser()));
+                loginform.put("sPassword", Encoding.urlEncode(account.getPass()));
+                br.submitForm(loginform);
+                if (br.containsHTML("Sie sind Kunde des EasyRecord Plugins")) {
+                    this.getPluginConfig().setProperty("premium", "1");
+                    this.getPluginConfig().save();
+                    continue;
+                }
+                this.getPluginConfig().setProperty("premium", Property.NULL);
+                this.getPluginConfig().save();
+                break;
             }
-            logger.info("**********VIDEOLINKS END**********");
         }
+        if (!br.containsHTML("<frame") || br.containsHTML("Bitte verifizieren Sie Ihre Logindaten")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
     @Override
@@ -79,12 +90,21 @@ public class SaveTv extends PluginForHost {
             account.setValid(false);
             return ai;
         }
+        String acctype = this.getPluginConfig().getStringProperty("premium", null);
+        if (acctype != null) {
+            ai.setStatus("Premium save.tv User");
+        } else {
+            ai.setStatus("Free save.tv User");
+        }
         String tic = br.getRegex("tic=(\\d+)").getMatch(0);
         if (tic != null) {
-            br.getPage("http://free.save.tv/STV/M/obj/user/usShowVideoArchive.cfm?&sk=JOE&tic=" + tic);
+            String ticlink = "http://free.save.tv/STV/M/obj/user/usShowVideoArchive.cfm?&sk=JOE&tic=";
+            if (acctype != null) ticlink = "http://save.tv/STV/M/obj/user/usShowVideoArchive.cfm?&sk=JOE&tic=";
+            br.getPage(ticlink + tic);
             String minsleft = br.getRegex("Restzeit.*?(\\d+).*?Min").getMatch(0);
-            if (minsleft != null) ai.setTrafficLeft(minsleft + "MB");
+            logger.info("The user got " + minsleft + " minutes left to record");
         }
+        ai.setUnlimitedTraffic();
         account.setValid(true);
         return ai;
     }
@@ -93,8 +113,14 @@ public class SaveTv extends PluginForHost {
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         requestFileInformation(downloadLink);
         login(account);
-        br.getPage(downloadLink.getDownloadURL());
-        logger.info("Added link = " + downloadLink.getDownloadURL());
+        String addedlink = downloadLink.getDownloadURL();
+        if (this.getPluginConfig().getStringProperty("premium", null) != null) {
+            addedlink = addedlink.replace("free.save.tv", "save.tv");
+        } else {
+            if (!addedlink.contains("free.save.tv")) addedlink = addedlink.replace("save.tv", "free.save.tv");
+        }
+        logger.info("Added link = " + addedlink);
+        br.getPage(addedlink);
         String dllink = br.getRegex("document\\.location\\.href='(http.*?)'").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("'(http://.*?/\\?m=dl)'").getMatch(0);
@@ -114,7 +140,7 @@ public class SaveTv extends PluginForHost {
         }
         logger.info("Final downloadlink = " + dllink + " starting download...");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -5);
-        if (!(dl.getConnection().isContentDisposition())) {
+        if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -130,14 +156,26 @@ public class SaveTv extends PluginForHost {
             String username = accdata.getMatch(0);
             String password = accdata.getMatch(1).replace("true", "").trim();
             br.setFollowRedirects(true);
-            br.getPage("http://free.save.tv");
-            Form loginform = br.getForm(0);
+            Form loginform = null;
+            String acctype = this.getPluginConfig().getStringProperty("premium", null);
+            if (acctype != null) {
+                br.getPage("http://www.save.tv/STV/S/misc/home.cfm?");
+                loginform = br.getFormbyProperty("name", "LoginForm");
+            } else {
+                br.getPage("http://free.save.tv");
+                loginform = br.getForm(0);
+            }
             if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             loginform.put("sUsername", username);
             loginform.put("sPassword", password);
             br.submitForm(loginform);
             for (DownloadLink dl : urls) {
                 String addedlink = dl.getDownloadURL();
+                if (acctype != null) {
+                    addedlink = addedlink.replace("free.save.tv", "save.tv");
+                } else {
+                    if (!addedlink.contains("free.save.tv")) addedlink = addedlink.replace("save.tv", "free.save.tv");
+                }
                 br.getPage(addedlink);
                 if (br.containsHTML("(Leider ist ein Fehler aufgetreten|Bitte versuchen Sie es später noch einmal)")) {
                     dl.setAvailable(false);
@@ -160,50 +198,8 @@ public class SaveTv extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+        return 10;
     }
-
-    // Old available check, very bad...
-    // @Override
-    // public AvailableStatus requestFileInformation(DownloadLink link) throws
-    // IOException, PluginException {
-    // this.setBrowserExclusive();
-    // Account aa = AccountController.getInstance().getValidAccount(this);
-    // if (aa.toString().contains("false")) throw new
-    // PluginException(LinkStatus.ERROR_FATAL,
-    // "Kann Links ohne gültigen Account nicht überprüfen");
-    // Regex accdata = new Regex(aa.toString(), "(.*?):(.*?)$");
-    // String username = accdata.getMatch(0);
-    // String password = accdata.getMatch(1).replace("true", "").trim();
-    // br.setFollowRedirects(true);
-    // br.getPage("http://free.save.tv");
-    // Form loginform = br.getForm(0);
-    // if (loginform == null) throw new
-    // PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-    // loginform.put("sUsername", username);
-    // loginform.put("sPassword", password);
-    // try {
-    // br.submitForm(loginform);
-    // } catch (Exception e) {
-    // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-    // }
-    // br.getPage(link.getDownloadURL());
-    // br.setFollowRedirects(false);
-    // if (br.containsHTML("File does not exist")) throw new
-    // PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-    // if
-    // (br.containsHTML("(Leider ist ein Fehler aufgetreten|Bitte versuchen Sie es später noch einmal)"))
-    // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-    // String filename =
-    // br.getRegex("rand_ueberall\" cellpadding.*?<b>(.*?)</b><br>").getMatch(0);
-    // if (filename == null) filename =
-    // br.getRegex("rowspan=.*?width=.*?>.*?<b>(.*?)</b><br>").getMatch(0);
-    // if (filename == null) throw new
-    // PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-    // link.setFinalFileName(filename.trim() + new Random().nextInt(10) +
-    // ".avi");
-    // return AvailableStatus.TRUE;
-    // }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException {

@@ -32,18 +32,14 @@ public class RsMnkCm extends PluginForDecrypt {
         super(wrapper);
     }
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        String fileId = br.getRegex("iframe.*?src=\"(.*?)\"").getMatch(0);
+        String fileId = br.getRegex("\\.replace\\('(.*?)'").getMatch(0);
         if (fileId == null) { return null; }
         decryptedLinks.add(createDownloadlink(fileId));
         return decryptedLinks;
     }
-
-    // @Override
-
 }

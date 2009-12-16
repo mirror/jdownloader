@@ -38,23 +38,21 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.pluginUtils.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ForDevsToPlayWith.com" }, urls = { "http://[\\w\\.]*?ForDevsToPlayWith\\.com/[a-z0-9]{12}" }, flags = { 0 })
-public class XFileSharingProBasic extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "banashare.com" }, urls = { "http://[\\w\\.]*?banashare\\.com/[a-z0-9]{12}" }, flags = { 0 })
+public class BanaShareCom extends PluginForHost {
 
-    public XFileSharingProBasic(PluginWrapper wrapper) {
+    public BanaShareCom(PluginWrapper wrapper) {
         super(wrapper);
-//        this.enablePremium(COOKIE_HOST + "/premium.html");
+        // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
     // XfileSharingProBasic Version 1.3
-    // This is only for developers to easily implement hosters using the
-    // "xfileshare(pro)" script (more informations can be found on
-    // xfilesharing.net)!
     @Override
     public String getAGBLink() {
         return COOKIE_HOST + "/tos.html";
     }
-    private static final String COOKIE_HOST = "http://azsharing.com";
+
+    private static final String COOKIE_HOST = "http://banashare.com";
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
@@ -104,8 +102,8 @@ public class XFileSharingProBasic extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        boolean resumable = true;
-        int maxchunks = 0;
+        boolean resumable = false;
+        int maxchunks = 1;
         requestFileInformation(downloadLink);
         // If the filesize regex above doesn't match you can copy this part into
         // the available status (and delete it here)
