@@ -1007,6 +1007,7 @@ jd.plugins.decrypter.frshrdfldr.dir.title = Scansione cartella
 jd.plugins.decrypter.lnksvn.pass = Password utente
 jd.plugins.decrypter.stealth.askpassword = E' richiesta la password per il downlaod di %s
 jd.plugins.hoster.filebaseto.serversideerror = Errore server. Riprovare più tardi
+jd.plugins.hoster.lastfm.requestfileinformation.nodownload = Non scaricabile
 jd.plugins.optional.antistandby.jdantistandby = JDAntistandby
 jd.plugins.optional.customizer.columns.packagenamecolumn.tooltip = Il nome del contenitore, se il collegamento corrisponde alla regex. Lasciare vuoto per utilizzare il nome di default!
 jd.plugins.optional.customizer.columns.regexcolumn.regex.empty = Regex non deve essere vuoto!
