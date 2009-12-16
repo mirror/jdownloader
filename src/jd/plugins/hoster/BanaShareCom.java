@@ -38,12 +38,12 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.pluginUtils.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "banashare.com" }, urls = { "http://[\\w\\.]*?banashare\\.com/[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "banashare.com" }, urls = { "http://[\\w\\.]*?banashare\\.com/[a-z0-9]{12}" }, flags = { 2 })
 public class BanaShareCom extends PluginForHost {
 
     public BanaShareCom(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium(COOKIE_HOST + "/premium.html");
+        this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
     // XfileSharingProBasic Version 1.3
@@ -458,7 +458,7 @@ public class BanaShareCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         logger.info("Final downloadlink = " + dllink + " starting the download...");
-        jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
         if (passCode != null) {
             link.setProperty("pass", passCode);
         }
