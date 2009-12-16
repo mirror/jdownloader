@@ -30,6 +30,8 @@ import jd.parser.html.XPath;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
@@ -64,9 +66,14 @@ public class LastFm extends PluginForHost {
         // we should filter these unavailable links.
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
+        
+        if(br.containsHTML("Track not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
-        String title = br.getRegex("\"name\"\\:\"(.*?)\"").getMatch(0);
-        String artist = br.getRegex("\"artistname\"\\:\"(.*?)\"").getMatch(0);
+        String title = br.getRegex("class=\"preview track\">(.*?)</p>").getMatch(0);
+        String artist = br.getRegex("class=\"preview artist\">(.*?)</p>").getMatch(0);
+        title = Encoding.htmlDecode(title);
+        artist = Encoding.htmlDecode(artist);
+
         if (br.containsHTML("Wir haben keine Titel")) {
             link.getLinkStatus().setStatusText(JDL.L("jd.plugins.hoster.LastFm.requestFileInformation.nodownload", "Not Downloadable"));
             link.getLinkStatus().setErrorMessage(JDL.L("jd.plugins.hoster.LastFm.requestFileInformation.nodownload", "Not Downloadable"));
@@ -93,10 +100,12 @@ public class LastFm extends PluginForHost {
     @Override
     public void handleFree(DownloadLink link) throws Exception {
         br.getPage(link.getDownloadURL());
-
-        String artist = br.getRegex("/></span>(.*?)</a>\\p{Space}&raquo;\\p{Space}<a href=").getMatch(0);
-
-        String title = Encoding.urlDecode(link.getDownloadURL().substring(1 + link.getDownloadURL().lastIndexOf("/")), false);
+        if(br.containsHTML("Track not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        
+        String title = br.getRegex("class=\"preview track\">(.*?)</p>").getMatch(0);
+        String artist = br.getRegex("class=\"preview artist\">(.*?)</p>").getMatch(0);
+        title = Encoding.htmlDecode(title);
+        artist = Encoding.htmlDecode(artist);
 
         // getWebSession
         Map<String, String> args = new HashMap<String, String>();
@@ -104,12 +113,10 @@ public class LastFm extends PluginForHost {
         args.put(API_KEY, API_KEY_VALUE);
         args.put(API_METHOD, "auth.getWebSession");
         args.put("y", Long.toString(System.currentTimeMillis() / 1000));
+        args.put(API_SIG, createApiSig(args));
 
-        String apiSig = createApiSig(args);
-        args.put(API_SIG, apiSig);
-
-        String url = createUrl(args);
-        br.getPage(url);
+        br.getPage(createUrl(args));
+        if(br.containsHTML("error")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
         String query = "/lfm/session/key";
         XPath xpath = new XPath(br.toString(), query, false);
@@ -124,8 +131,8 @@ public class LastFm extends PluginForHost {
         args.put(API_METHOD, "track.getplayermenu");
         args.put("y", Long.toString(System.currentTimeMillis() / 1000));
 
-        url = createUrl(args);
-        br.getPage(url);
+        br.getPage(createUrl(args));
+        if(br.containsHTML("error")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
         query = "/lfm/playlists/playlist/url";
         xpath = new XPath(br.toString(), query, false);
@@ -142,12 +149,10 @@ public class LastFm extends PluginForHost {
         args.put("sk", token);
         args.put("viewport", "true");
         args.put("y", Long.toString((System.currentTimeMillis() / 1000)));
+        args.put(API_SIG, createApiSig(args));
 
-        apiSig = createApiSig(args);
-        args.put(API_SIG, apiSig);
-
-        url = createUrl(args);
-        br.getPage(url);
+        br.getPage(createUrl(args));
+        if(br.containsHTML("error")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
         query = "/lfm/playlist/trackList/track/location";
         xpath = new XPath(br.toString(), query, false);
@@ -159,20 +164,16 @@ public class LastFm extends PluginForHost {
         args.remove("viewport");
         args.put("streaming", "true");
         args.put("y", Long.toString((System.currentTimeMillis() / 1000)));
+        args.put(API_SIG, createApiSig(args));
 
-        apiSig = createApiSig(args);
-        args.put(API_SIG, apiSig);
-
-        url = createUrl(args);
-        br.getPage(url);
+        br.getPage(createUrl(args));
+        if(br.containsHTML("error")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
         xpath = new XPath(br.toString(), query, false);
         songLink = xpath.getMatches().get(0);
 
         br.setFollowRedirects(true);
-
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, songLink, false, 1);
-
         dl.startDownload();
     }
 

@@ -80,7 +80,7 @@ public class LstFmDe extends PluginForDecrypt {
         String[] songs = br.getRegex("<a class=\"playbutton\" href=\"(.*?)\\?autostart\"").getColumn(0);
         if (songs != null) {
             for (String song : songs) {
-                String finallink = host + song;
+                String finallink = host + song + lang;
                 links.add(createDownloadlink(finallink.replace(".last", "ik3mg23seryi4521")));
             }
         }
