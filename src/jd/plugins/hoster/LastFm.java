@@ -36,7 +36,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "lastfm.de" }, urls = { "http://wwwik3mg23seryi4521\\.(fm|de|pl|es|fr|it|jp|com\\.br|ru|se|com\\.tr)/(music/.+/_/.+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "lastfm.de" }, urls = { "http://wwwik3mg23seryi4521\\.(fm|de|pl|es|fr|it|jp|com\\.br|ru|se|com\\.tr)/(music/.+/_/.+)" }, flags = { PluginWrapper.DEBUG_ONLY })
 public class LastFm extends PluginForHost {
     private static final HashMap<String, FilePackage> PACKAGE_CACHE = new HashMap<String, FilePackage>();
     private static final String API_ROOT = "http://ext.last.fm/2.0/?";
