@@ -45,21 +45,15 @@ public class RGhostRu extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("Access to the file was restricted") || br.containsHTML("<title>404")||br.containsHTML("File was deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("Access to the file was restricted") || br.containsHTML("<title>404") || br.containsHTML("File was deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<meta name=\"description\" content=\"(.*?). Download").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("title=\"Comments for the file (.*?)\"").getMatch(0);
-        }
+        if (filename == null) filename = br.getRegex("title=\"Comments for the file (.*?)\"").getMatch(0);
         String filesize = br.getRegex("<small>\\((.*?)\\)</small></h1>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML("<b>MD5</b>")) {
-            String md5 = br.getRegex("<b>MD5</b></td><td>(.*?)</td></tr>").getMatch(0);
-            if (md5 != null) link.setMD5Hash(md5.trim());
-        }
-        if (br.containsHTML("<b>SHA1</b>")) {
-            String sha1 = br.getRegex("<b>SHA1</b></td><td>(.*?)</td></tr>").getMatch(0);
-            if (sha1 != null) link.setSha1Hash(sha1.trim());
-        }
+        String md5 = br.getRegex("<b>MD5</b></td><td>(.*?)</td></tr>").getMatch(0);
+        if (md5 != null) link.setMD5Hash(md5.trim());
+        String sha1 = br.getRegex("<b>SHA1</b></td><td>(.*?)</td></tr>").getMatch(0);
+        if (sha1 != null) link.setSha1Hash(sha1.trim());
         link.setName(filename);
         link.setDownloadSize(Regex.getSize(filesize));
         return AvailableStatus.TRUE;
@@ -106,7 +100,7 @@ public class RGhostRu extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return -1;
     }
 
     @Override

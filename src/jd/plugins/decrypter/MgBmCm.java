@@ -21,10 +21,9 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
@@ -43,19 +42,12 @@ public class MgBmCm extends PluginForDecrypt {
         br.getPage(parameter);
 
         /* Error handling */
-        if (br.containsHTML("Image not found")) {
-            logger.warning("Wrong link");
-            logger.warning(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-            return new ArrayList<DownloadLink>();
-        }
+        if (br.containsHTML("Image not found")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
 
-        String links = br.getRegex("'(http://[0-9]\\.imagebam\\.com/dl\\.php\\?ID=.*?)'").getMatch(0);
-        if (links == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        links = "directhttp://" + links;
-        String decryptedlink = links;
-        DownloadLink dl = createDownloadlink(decryptedlink);
-        dl.setName("pic");
-        decryptedLinks.add(dl);
+        String link = br.getRegex("'(http://[0-9]+\\.imagebam\\.com/dl\\.php\\?ID=.*?)'").getMatch(0);
+        if (link == null) return null;
+        String finallink = "directhttp://" + link;
+        decryptedLinks.add(createDownloadlink(finallink));
         return decryptedLinks;
     }
 
