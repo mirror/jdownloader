@@ -25,6 +25,7 @@ import jd.controlling.DownloadWatchDog;
 import jd.controlling.JDLogger;
 import jd.nutils.Formatter;
 import jd.nutils.JDFlags;
+import jd.plugins.download.DownloadInterface;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -323,15 +324,16 @@ public class LinkStatus implements Serializable {
         }
 
         if (isFailed()) return getLongErrorMessage();
+        DownloadInterface dli = downloadLink.getDownloadInstance();
         if (downloadLink.getPlugin() != null && DownloadWatchDog.getInstance().getRemainingIPBlockWaittime(downloadLink.getHost()) > 0 && !downloadLink.getLinkStatus().isPluginActive()) { return JDL.L("gui.downloadlink.hosterwaittime", "[wait for new ip]"); }
         if (downloadLink.getPlugin() != null && DownloadWatchDog.getInstance().getRemainingTempUnavailWaittime(downloadLink.getHost()) > 0 && !downloadLink.getLinkStatus().isPluginActive()) { return JDL.L("gui.downloadlink.hostertempunavail", "[download currently not possible]"); }
-        if (downloadLink.getDownloadInstance() == null && hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
+        if (dli == null && hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
             removeStatus(DOWNLOADINTERFACE_IN_PROGRESS);
         }
         if (hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
             int speed = downloadLink.getDownloadSpeed();
             String chunkString = "";
-            if (downloadLink.getDownloadInstance().getChunkNum() > 1) chunkString = "(" + downloadLink.getDownloadInstance().getChunksDownloading() + "/" + downloadLink.getDownloadInstance().getChunkNum() + ")";
+            if (dli != null && dli.getChunkNum() > 1) chunkString = "(" + dli.getChunksDownloading() + "/" + dli.getChunkNum() + ")";
 
             if (speed > 0) {
                 if (downloadLink.getDownloadSize() < 0) {

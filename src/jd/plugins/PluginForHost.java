@@ -42,6 +42,7 @@ import jd.controlling.AccountController;
 import jd.controlling.CaptchaController;
 import jd.controlling.DownloadController;
 import jd.controlling.JDLogger;
+import jd.controlling.SingleDownloadController;
 import jd.gui.UserIF;
 import jd.gui.swing.components.linkbutton.JLink;
 import jd.gui.swing.jdgui.actions.ActionController;
@@ -598,8 +599,9 @@ public abstract class PluginForHost extends Plugin {
     }
 
     public void sleep(long i, DownloadLink downloadLink, String message) throws PluginException {
+        SingleDownloadController dlc = downloadLink.getDownloadLinkController();
         try {
-            while (i > 0 && downloadLink.getDownloadLinkController() != null && !downloadLink.getDownloadLinkController().isAborted()) {
+            while (i > 0 && dlc != null && !dlc.isAborted()) {
                 i -= 1000;
                 downloadLink.getLinkStatus().setStatusText(message + JDL.LF("gui.download.waittime_status2", "Wait %s", Formatter.formatSeconds(i / 1000)));
                 downloadLink.requestGuiUpdate();
@@ -611,8 +613,13 @@ public abstract class PluginForHost extends Plugin {
         downloadLink.getLinkStatus().setStatusText(null);
     }
 
-    public boolean isAborted(DownloadLink downloadLink) {
-        return (downloadLink.getDownloadLinkController() != null && downloadLink.getDownloadLinkController().isAborted());
+    /*
+     * may only be used from within the plugin, because it only works when
+     * SingleDownloadController is still running
+     */
+    protected boolean isAborted(DownloadLink downloadLink) {
+        SingleDownloadController dlc = downloadLink.getDownloadLinkController();
+        return (dlc != null && dlc.isAborted());
     }
 
     public Browser getBrowser() {

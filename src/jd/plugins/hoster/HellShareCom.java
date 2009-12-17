@@ -51,15 +51,25 @@ public class HellShareCom extends PluginForHost {
 
     public void login(Account account) throws Exception {
         this.setBrowserExclusive();
+        /* to prefer english page */
+        br.getHeaders().put("Accept-Language", "en-gb;q=0.9, en;q=0.8");
         br.setFollowRedirects(false);
         br.getPage("http://www.en.hellshare.com/log-in");
         Form form = br.getForm(0);
         if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         form.put("lgnp7_lg", Encoding.urlEncode(account.getUser()));
         form.put("lgnp7_psw", Encoding.urlEncode(account.getPass()));
+        br.setDebug(true);
         br.setFollowRedirects(true);
         br.submitForm(form);
         br.getPage("http://www.en.hellshare.com/profile");
+        /*
+         * this will change account language to eng,needed because language is
+         * saved in profile
+         */
+        String changetoeng = br.getRegex("href=\"(http://www.en.hellshare.com/-.*?/profile)\"").getMatch(0);
+        if (changetoeng == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.getPage(changetoeng);
         if (!br.containsHTML("credit for downloads") || br.containsHTML("Špatně zadaný login nebo heslo uživatele")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
@@ -112,6 +122,8 @@ public class HellShareCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        /* to prefer english page */
+        br.getHeaders().put("Accept-Language", "en-gb;q=0.9, en;q=0.8");
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("<h1>File not found</h1>") || br.containsHTML("<h1>Soubor nenalezen</h1>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

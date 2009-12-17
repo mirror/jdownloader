@@ -140,6 +140,8 @@ public class Main {
         OSDetector.setOSString(System.getProperty("os.name"));
         // System.setProperty("os.name", "Windows Vista m.a.c");
         System.setProperty("sun.swing.enableImprovedDragGesture", "true");
+        // only use ipv4, because debian changed default stack to ipv6
+        System.setProperty("java.net.preferIPv4Stack", "true");
         LOGGER = JDLogger.getLogger();
         initMACProperties();
         LOGGER.info("Start JDownloader");

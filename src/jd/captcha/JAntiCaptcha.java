@@ -281,7 +281,12 @@ public class JAntiCaptcha {
     private Image sourceImage;
 
     public JAntiCaptcha(String methodName) {
-        methodDirName = JACMethod.forServiceName(methodName);
+        JACMethod method = JACMethod.forServiceName(methodName);
+        if (method == null) {
+            logger.severe("no such method found! " + methodName);
+            return;
+        }
+        methodDirName = method.getFileName();
 
         getJACInfo();
 
@@ -289,7 +294,7 @@ public class JAntiCaptcha {
         long time = System.currentTimeMillis();
         loadMTHFile();
 
-        time = System.currentTimeMillis()-time;
+        time = System.currentTimeMillis() - time;
         System.out.println(time);
         if (Utilities.isLoggerActive()) {
             logger.fine("letter DB loaded: Buchstaben: " + letterDB.size());
@@ -697,15 +702,12 @@ public class JAntiCaptcha {
 
             JLabel lbl = new GuiRunnable<JLabel>() {
                 public JLabel runSave() {
-                    if ((tmp.getGoodDetections() == 0 && tmp.getBadDetections() > 3) || ((double) tmp.getBadDetections() / (double) tmp.getGoodDetections() >= 3)) 
-                        {
-                        return new JLabel("<html><p><font color=\"#ff0000\" "
-        + "size=\"3\">"+tmp.getId() + ": " + tmp.getDecodedValue() + "(" + tmp.getGoodDetections() + "/" + tmp.getBadDetections() + ") Size: " + tmp.toPixelObject(0.85).getSize()+"</font> </p>"
-        + "</html>");
-                        }
+                    if ((tmp.getGoodDetections() == 0 && tmp.getBadDetections() > 3) || ((double) tmp.getBadDetections() / (double) tmp.getGoodDetections() >= 3)) {
+                        return new JLabel("<html><p><font color=\"#ff0000\" " + "size=\"3\">" + tmp.getId() + ": " + tmp.getDecodedValue() + "(" + tmp.getGoodDetections() + "/" + tmp.getBadDetections() + ") Size: " + tmp.toPixelObject(0.85).getSize() + "</font> </p>" + "</html>");
+                    }
 
-                        else
-                    return new JLabel(tmp.getId() + ": " + tmp.getDecodedValue() + "(" + tmp.getGoodDetections() + "/" + tmp.getBadDetections() + ") Size: " + tmp.toPixelObject(0.85).getSize());
+                    else
+                        return new JLabel(tmp.getId() + ": " + tmp.getDecodedValue() + "(" + tmp.getGoodDetections() + "/" + tmp.getBadDetections() + ") Size: " + tmp.toPixelObject(0.85).getSize());
                 }
             }.getReturnValue();
 
@@ -1419,11 +1421,12 @@ public class JAntiCaptcha {
 
             // BasicWindow.showImage(letter.getImage(1),element.getName());
             letter.clean();
-//            letter.autoAlign();
-//            letter.invertIfMoreBackground();
-//            letter.resizetoHeight(15);
+            // letter.autoAlign();
+            // letter.invertIfMoreBackground();
+            // letter.resizetoHeight(15);
             letter.removeSmallObjects(0.3, 0.5, 10);
-//            letter = letter.getSimplified(getJas().getDouble("simplifyFaktor"));
+            // letter =
+            // letter.getSimplified(getJas().getDouble("simplifyFaktor"));
             letter.setDecodedValue(let);
             if (letter == null) continue;
             // BasicWindow.showImage(letter.getImage(1),element.getName());
@@ -1499,7 +1502,7 @@ public class JAntiCaptcha {
         ListIterator<Letter> iter = letterDB.listIterator(letterDB.size());
         while (iter.hasPrevious()) {
             tmp = iter.previous();
-            if (tmp.getBadDetections()>tmp.getGoodDetections()+2) {
+            if (tmp.getBadDetections() > tmp.getGoodDetections() + 2) {
                 if (Utilities.isLoggerActive()) {
                     logger.info("bad Letter entfernt: " + tmp.getDecodedValue() + " (" + tmp.getBadDetections() + "/" + tmp.getGoodDetections() + ")");
                 }
@@ -2255,30 +2258,28 @@ public class JAntiCaptcha {
         main: for (Letter let : letterDB) {
 
             for (Letter n : newDB) {
-                if(let.getDecodedValue().endsWith(n.getDecodedValue()))
-                {
-                LetterComperator lc = new LetterComperator(let, n);
+                if (let.getDecodedValue().endsWith(n.getDecodedValue())) {
+                    LetterComperator lc = new LetterComperator(let, n);
 
-                lc.setOwner(this);
-                lc.run();
+                    lc.setOwner(this);
+                    lc.run();
 
-                n.getElementPixel();
+                    n.getElementPixel();
 
-                if (lc.getValityPercent() <= d) {
-                     BasicWindow.showImage(let.getImage(), " OK ");
-                    // BasicWindow.showImage(n.getImage(), " FILTERED " +
-                    // lc.getValityPercent());
-                    if (n.getElementPixel() > let.getElementPixel()) {
-                        newDB.remove(let);
-                        break;
-                    } else {
-                        continue main;
+                    if (lc.getValityPercent() <= d) {
+                        BasicWindow.showImage(let.getImage(), " OK ");
+                        // BasicWindow.showImage(n.getImage(), " FILTERED " +
+                        // lc.getValityPercent());
+                        if (n.getElementPixel() > let.getElementPixel()) {
+                            newDB.remove(let);
+                            break;
+                        } else {
+                            continue main;
+                        }
                     }
-                }
                 }
             }
             newDB.add(let);
-
 
         }
         letterDB = newDB;

@@ -81,6 +81,8 @@ public class Main {
     }
 
     public static void main(String args[]) {
+        // only use ipv4, because debian changed default stack to ipv6
+        System.setProperty("java.net.preferIPv4Stack", "true");
         try {
             log = new StringBuilder();
             FileHandler handler = new FileHandler("jdupdate.log", false);

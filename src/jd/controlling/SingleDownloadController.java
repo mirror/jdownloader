@@ -53,7 +53,7 @@ public class SingleDownloadController extends Thread {
 
     private static final Object DUPELOCK = new Object();
 
-    private boolean aborted;
+    private boolean aborted = false;
 
     /**
      * Das Plugin, das den aktuellen Download steuert
@@ -88,7 +88,6 @@ public class SingleDownloadController extends Thread {
         downloadLink = dlink;
         linkStatus = downloadLink.getLinkStatus();
         setPriority(Thread.MIN_PRIORITY);
-
         downloadLink.setDownloadLinkController(this);
     }
 
@@ -97,6 +96,8 @@ public class SingleDownloadController extends Thread {
      */
     public SingleDownloadController abortDownload() {
         aborted = true;
+        DownloadInterface dli = downloadLink.getDownloadInstance();
+        if (dli != null) dli.stopDownload();
         interrupt();
         return this;
     }
@@ -166,16 +167,13 @@ public class SingleDownloadController extends Thread {
                 linkStatus.setErrorMessage(JDL.L("plugins.errors.error", "Error: ") + JDUtilities.convertExceptionReadable(e));
             }
 
-            if (isAborted()) {
-                logger.finest("Thread aborted");
+            if (isAborted() && !linkStatus.isFinished()) {
+                linkStatus.setErrorMessage(null);
                 linkStatus.setStatus(LinkStatus.TODO);
                 return;
             }
             if (linkStatus.isFailed()) {
                 logger.warning("\r\nError occured- " + downloadLink.getLinkStatus());
-            }
-            if (aborted) {
-                linkStatus.setErrorMessage(null);
             }
             switch (linkStatus.getLatestStatus()) {
             case LinkStatus.ERROR_LOCAL_IO:
@@ -274,6 +272,11 @@ public class SingleDownloadController extends Thread {
         downloadLink.requestGuiUpdate();
     }
 
+    /**
+     * download aborted by user?
+     * 
+     * @return
+     */
     public boolean isAborted() {
         return aborted;
     }
@@ -611,6 +614,9 @@ public class SingleDownloadController extends Thread {
         } finally {
             linkStatus.setInProgress(false);
             linkStatus.setActive(false);
+            /* cleanup the DownloadInterface/Controller references */
+            downloadLink.setDownloadLinkController(null);
+            downloadLink.setDownloadInstance(null);
         }
     }
 

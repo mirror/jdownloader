@@ -225,12 +225,8 @@ public class Megauploadcom extends PluginForHost {
             return;
         case OFFLINE:
             /* file offline */
-            try {
-                logger.finest(br.getRequest().getHttpConnection() + "");
-            } catch (Exception e) {
-                JDLogger.exception(e);
-            }
-            logger.info("DebugInfo for maybe Wrong FileNotFound: " + br.toString());
+            // logger.info("DebugInfo for maybe Wrong FileNotFound: " +
+            // br.toString());
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         case BLOCKED:
             /* only free users should have to wait on blocked */
@@ -854,7 +850,8 @@ public class Megauploadcom extends PluginForHost {
             return;
         case OFFLINE:
             /* file offline */
-            logger.info("DebugInfo for maybe Wrong FileNotFound: " + br.toString());
+            // logger.info("DebugInfo for maybe Wrong FileNotFound: " +
+            // br.toString());
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         case BLOCKED:
             if (wait != null) {

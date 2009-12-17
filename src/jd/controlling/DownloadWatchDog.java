@@ -365,7 +365,6 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                 links = filePackage.getDownloadLinkList();
                 for (int i = 0; i < links.size(); i++) {
                     DownloadLink link = links.get(i);
-                    link.setAborted(false);
                     /*
                      * do not reset if link is offline, finished , already exist
                      * or pluginerror (because only plugin updates can fix this)

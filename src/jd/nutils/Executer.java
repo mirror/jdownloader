@@ -400,7 +400,6 @@ public class Executer extends Thread implements Runnable {
             if (isDebug()) System.out.println("Out>" + data);
             outputStream.flush();
         } catch (IOException e) {
-            e.printStackTrace();
         }
     }
 

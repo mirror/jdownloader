@@ -95,15 +95,19 @@ public class StatusColumn extends JDTableColumn {
         if (value instanceof LinkGrabberFilePackage) {
             fp = (LinkGrabberFilePackage) value;
             int failedCount = fp.countFailedLinks(false);
-            int size = fp.getDownloadLinks().size();
-            if (failedCount > 0) {
-                if(failedCount == size) {
-                    statuspanel.setText(JDL.LF("gui.linkgrabber.packageofflinepercent", "%s offline", JDUtilities.getPercent(failedCount, size)), null);
-                } else {
-                    statuspanel.setText(JDL.LF("gui.linkgrabber.packageofflinepercent", "%s offline", JDUtilities.getPercent(failedCount, size)) + "/" + JDL.LF("gui.linkgrabber.packageonlinepercent", "%s online", JDUtilities.getPercent(size - failedCount, size)), null);
-                }
+            if (fp.countUncheckedLinks() > 0) {
+                statuspanel.setText("", null);
             } else {
-                statuspanel.setText(JDL.LF("gui.linkgrabber.packageonlinepercent", "%s online", "100.00%"), null);
+                int size = fp.getDownloadLinks().size();
+                if (failedCount > 0) {
+                    if (failedCount == size) {
+                        statuspanel.setText(JDL.LF("gui.linkgrabber.packageofflinepercent", "%s offline", JDUtilities.getPercent(failedCount, size)), null);
+                    } else {
+                        statuspanel.setText(JDL.LF("gui.linkgrabber.packageofflinepercent", "%s offline", JDUtilities.getPercent(failedCount, size)) + "/" + JDL.LF("gui.linkgrabber.packageonlinepercent", "%s online", JDUtilities.getPercent(size - failedCount, size)), null);
+                    }
+                } else {
+                    statuspanel.setText(JDL.L("gui.linkgrabber.packageonlineall", "All online"), null);
+                }
             }
             if (fp.hasCustomIcon()) {
                 statuspanel.setIcon(-1, fp.getCustomIcon(), null, fp.getCustomIconText());

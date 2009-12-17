@@ -47,6 +47,13 @@ public class FileRackCom extends PluginForHost {
         requestFileInformation(link);
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
+        if (br.containsHTML("is already downloaded a file")) {
+            int wait = 10;
+            String time = br.getRegex("Please wait (\\d+) minutes").getMatch(0);
+            if (time != null) wait = Integer.parseInt(time.trim());
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait * 60 * 1000l);
+        }
+        if (br.containsHTML("is already downloads more")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 20 * 60 * 1000l);
         Form[] form = br.getForms();
         form[0].remove("method_premium");
         br.submitForm(form[0]);
@@ -57,16 +64,21 @@ public class FileRackCom extends PluginForHost {
         int sleep = Integer.parseInt(wait);
         sleep(sleep * 1001, link);
         int retry = 0;
+        String dllink = null;
         do {
             if (retry == 5) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             form = br.getForms();
-            String captchaUrl = "http://www.file-rack.com/vimage/img.php?size=" + br.getRegex("<td><img src='vimage/img.php\\?size=(.*?)'></td>").getMatch(0);
-            String captchaCode = getCaptchaCode(captchaUrl, link);
-            form[0].put("vImageCodP", captchaCode);
+            String curl = br.getRegex("<td><img src='vimage/img.php\\?size=(.*?)'></td>").getMatch(0);
+            if (curl != null) {
+                String captchaUrl = "http://www.file-rack.com/vimage/img.php?size=" + curl;
+                String captchaCode = getCaptchaCode(captchaUrl, link);
+                form[0].put("vImageCodP", captchaCode);
+            }
             br.submitForm(form[0]);
+            dllink = br.getRegex(Pattern.compile("<span id=\"btn_download2\">.*<a href=\"(.*?)\" onclick=\"disableimg\\(\\)\">", Pattern.DOTALL)).getMatch(0);
+            if (dllink != null) break;
             retry++;
         } while (br.containsHTML("<b>Verification Code doesn't match </b>"));
-        String dllink = br.getRegex(Pattern.compile("<span id=\"btn_download2\">.*<a href=\"(.*?)\" onclick=\"disableimg\\(\\)\">", Pattern.DOTALL)).getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setDebug(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);

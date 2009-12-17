@@ -176,12 +176,15 @@ public class MediafireCom extends PluginForHost {
 
                 if (redirectURL != null && br.getCookie("http://www.mediafire.com", "ukey") != null) {
                     if (url.contains("download.php") || url.contains("fire.com/file/")) {
-                        br.getPage(redirectURL);
-                        break;
+                        /* new redirect format */
+                        if (!new Regex(redirectURL, "http://download\\d+\\.mediafire").matches()) {
+                            br.getPage(redirectURL);
+                            break;
+                        }
                     }
                     downloadLink.setProperty("type", "direct");
                     if (!downloadLink.getStringProperty("origin", "").equalsIgnoreCase("decrypter")) {
-                        downloadLink.setName(Plugin.extractFileNameFromURL(br.getRedirectLocation()));
+                        downloadLink.setName(Plugin.extractFileNameFromURL(redirectURL));
                     }
                     return AvailableStatus.TRUE;
                 }

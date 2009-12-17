@@ -517,8 +517,13 @@ abstract public class DownloadInterface {
                 linkStatus.setValue(10 * 60000l);
                 error(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("download.error.message.unavailable", "Service temp. unavailable"));
             } catch (IOException e) {
-                if (e.getMessage() != null && e.getMessage().indexOf("timed out") >= 0) {
-                    error(LinkStatus.ERROR_TIMEOUT_REACHED, null);
+                if (e.getMessage() != null && e.getMessage().contains("reset")) {
+                    JDLogger.getLogger().info("Connection reset: network problems!");
+                    linkStatus.setValue(1000l * 60 * 5);
+                    error(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("download.error.message.networkreset", "Network problems"));
+                } else if (e.getMessage() != null && e.getMessage().indexOf("timed out") >= 0) {
+                    JDLogger.getLogger().info("Read timeout: network problems! (too many connections?, firewall/antivirus?)");
+                    error(LinkStatus.ERROR_TIMEOUT_REACHED, JDL.L("download.error.message.networkreset", "Network problems"));
                     JDLogger.exception(e);
                 } else {
                     JDLogger.exception(e);
@@ -714,7 +719,8 @@ abstract public class DownloadInterface {
          * @return
          */
         private boolean isExternalyAborted() {
-            return isInterrupted();
+            DownloadInterface dli = downloadLink.getDownloadInstance();
+            return isInterrupted() || (dli != null && dli.externalDownloadStop());
         }
 
         // /**
@@ -855,22 +861,20 @@ abstract public class DownloadInterface {
 
                         // workaround für fertigen endchunk
                         if (startByte >= fileSize && fileSize > 0) {
-
                             downloadLink.getLinkStatus().removeStatus(LinkStatus.ERROR_DOWNLOAD_FAILED);
                             logger.finer("Is no error. Last chunk is just already finished");
                             return;
                         }
                         error(LinkStatus.ERROR_DOWNLOAD_FAILED, JDL.L("download.error.message.connectioncopyerror", "Could not clone the connection"));
-                        logger.severe("ERROR Chunk (connection copy failed) " + chunks.indexOf(this));
+                        if (!this.isExternalyAborted()) logger.severe("ERROR Chunk (connection copy failed) " + chunks.indexOf(this));
                         return;
                     }
 
                 } else if (startByte > 0) {
                     connection = copyConnection(connection);
-
                     if (connection == null) {
                         error(LinkStatus.ERROR_DOWNLOAD_FAILED, JDL.L("download.error.message.connectioncopyerror", "Could not clone the connection"));
-                        logger.severe("ERROR Chunk (connection copy failed) " + chunks.indexOf(this));
+                        if (!this.isExternalyAborted()) logger.severe("ERROR Chunk (connection copy failed) " + chunks.indexOf(this));
                         return;
                     }
 
@@ -992,9 +996,6 @@ abstract public class DownloadInterface {
                     }
                 }
 
-                if (isInterrupted() || downloadLink.isAborted()) {
-                    userInterrupt = true;
-                }
                 addChunksDownloading(+1);
                 setChunkStartet();
                 download();
@@ -1002,8 +1003,8 @@ abstract public class DownloadInterface {
                 desiredBps = 0;
                 addChunksDownloading(-1);
 
-                if (isInterrupted() || downloadLink.isAborted()) {
-                    logger.severe("ABBORTED BY USER");
+                if (isInterrupted() || dl.externalDownloadStop()) {
+
                 }
                 logger.finer("Chunk finished " + chunks.indexOf(this) + " " + getBytesLoaded() + " bytes");
             } finally {
@@ -1109,7 +1110,7 @@ abstract public class DownloadInterface {
     private boolean fatalErrorOccured = false;
 
     private boolean doFileSizeCheck = true;
-    public boolean userInterrupt = false;
+
     private boolean fakeContentRangeHeader_flag = false;
 
     private Request request = null;
@@ -1123,6 +1124,9 @@ abstract public class DownloadInterface {
     private int chunksStarted = 0;
 
     private Browser browser;
+
+    /* normal stop of download (eg manually or reconnect request) */
+    private boolean externalStop = false;
 
     // public DownloadInterface(PluginForHost plugin, DownloadLink downloadLink,
     // HTTPConnection urlConnection) {
@@ -1527,8 +1531,9 @@ abstract public class DownloadInterface {
     // * @param id
     // */
     protected void error(int id, String string) {
-
-        logger.severe("Error occured: " + LinkStatus.toString(id));
+        if (!externalDownloadStop()) {
+            logger.severe("Error occured: " + LinkStatus.toString(id));
+        }
 
         if (errors.indexOf(id) < 0) {
             errors.add(id);
@@ -1550,9 +1555,7 @@ abstract public class DownloadInterface {
         case LinkStatus.ERROR_DOWNLOAD_FAILED:
             fatalErrorOccured = true;
             terminate();
-
         }
-
     }
 
     /**
@@ -1652,10 +1655,7 @@ abstract public class DownloadInterface {
      * @return
      */
     public boolean handleErrors() {
-        if (userInterrupt) {
-            logger.info("Download interrupted by user input");
-            return false;
-        }
+        if (externalDownloadStop()) return false;
         if (this.doFileSizeCheck && (totaleLinkBytesLoaded <= 0 || totaleLinkBytesLoaded != fileSize && fileSize > 0)) {
             if (totaleLinkBytesLoaded > fileSize) {
                 /*
@@ -1916,7 +1916,6 @@ abstract public class DownloadInterface {
         // }
         try {
             linkStatus.addStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
-            this.chunksStarted = 0;
             setupChunks();
             waitForChunks();
             onChunksReady();
@@ -1955,7 +1954,7 @@ abstract public class DownloadInterface {
      * Bricht den Download komplett ab.
      */
     private void terminate() {
-        logger.severe("A critical Downloaderror occured. Terminate...");
+        if (!externalDownloadStop()) logger.severe("A critical Downloaderror occured. Terminate...");
         synchronized (chunks) {
             Iterator<Chunk> it = chunks.iterator();
             while (it.hasNext()) {
@@ -2040,6 +2039,17 @@ abstract public class DownloadInterface {
 
     public boolean isFirstChunkRangeless() {
         return firstChunkRangeless;
+    }
+
+    /* signal that we stopped download external */
+    public void stopDownload() {
+        if (externalStop) return;
+        logger.severe("externalStop recieved");
+        externalStop = true;
+    }
+
+    public boolean externalDownloadStop() {
+        return externalStop;
     }
 
 }

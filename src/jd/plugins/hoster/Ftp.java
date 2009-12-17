@@ -33,6 +33,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.RAFDownload;
 import jd.plugins.download.DownloadInterface.Chunk;
 
@@ -93,7 +94,8 @@ public class Ftp extends PluginForHost {
                     downloadLink.setDownloadCurrent(event.getProgress());
 
                     if (System.currentTimeMillis() - lastTime > 250) {
-                        downloadLink.getDownloadInstance().getChunks().get(0).getSpeedMeter().addSpeedValue((event.getProgress() - last), System.currentTimeMillis() - lastTime);
+                        DownloadInterface dli = downloadLink.getDownloadInstance();
+                        if (dli != null) dli.getChunks().get(0).getSpeedMeter().addSpeedValue((event.getProgress() - last), System.currentTimeMillis() - lastTime);
                         downloadLink.requestGuiUpdate();
                         last = event.getProgress();
                         lastTime = System.currentTimeMillis();

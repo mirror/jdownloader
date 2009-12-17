@@ -105,8 +105,7 @@ public class StatusColumn extends JDTableColumn {
                 counter++;
             }
             clearSB();
-            if (fp.isFinished()) {
-            } else if (fp.getTotalDownloadSpeed() > 0) {
+            if (fp.getTotalDownloadSpeed() > 0) {
                 sb.append('[').append(fp.getLinksInProgress()).append('/').append(fp.size()).append("] ");
                 sb.append(strETA).append(' ').append(Formatter.formatSeconds(fp.getETA())).append(" @ ").append(Formatter.formatReadable(fp.getTotalDownloadSpeed())).append("/s");
             } else if (fp.getLinksInProgress() > 0) {

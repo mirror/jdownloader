@@ -23,7 +23,7 @@ package jd.controlling;
  * 
  */
 public class SpeedMeter {
-    private static final int capacity = 2;
+    private static final int capacity = 20;
 
     private int c = 0;
     private int lastSpeed = 0;
@@ -81,9 +81,9 @@ public class SpeedMeter {
             }
             if (totalTime > 0) {
                 lastSpeed = (int) (totalValue / totalTime) * 1024;
-            }            
+            }
             return lastSpeed;
-            
+
         }
     }
 

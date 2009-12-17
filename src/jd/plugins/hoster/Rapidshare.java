@@ -572,22 +572,30 @@ public class Rapidshare extends PluginForHost {
             }
             if (Regex.matches(error, Pattern.compile("(Die Datei konnte nicht gefunden werden)"))) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
             if (Regex.matches(error, Pattern.compile("Der Server .*? ist momentan nicht verf.*"))) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.LF("plugin.rapidshare.error.serverunavailable", "The Server %s is currently unavailable.", error.substring(11, error.indexOf(" ist"))), 3600 * 1000l); }
-            if (Regex.matches(error, PATTERM_MATCHER_ALREADY_LOADING)) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Already a download from your ip in progress!", 120 * 1000l); }
+            if (Regex.matches(error, PATTERM_MATCHER_ALREADY_LOADING)) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Already a download from your ip in progress!", 2 * 60 * 1000l); }
             // für java 1.5
             if (new Regex(error, "(kostenlose Nutzung erreicht)|(.*download.{0,3}limit.{1,50}free.{0,3}users.*)").matches()) {
+                if (false) {
+                    /* do not remove this! */
+                    String waitfor = new Regex(br, "es in ca\\.(.*?)Minuten wieder").getMatch(0);
+                    if (waitfor == null) {
+                        waitfor = new Regex(br, "Or try again in about(.*?)minutes").getMatch(0);
 
-                String waitfor = new Regex(br, "es in ca\\.(.*?)Minuten wieder").getMatch(0);
-                if (waitfor == null) {
-                    waitfor = new Regex(br, "Or try again in about(.*?)minutes").getMatch(0);
-
+                    }
+                    long waitTime = 15 * 60 * 1000l;
+                    try {
+                        waitTime = new Long(waitfor.trim()) * 60 * 1000l;
+                    } catch (Exception e) {
+                        logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
+                    }
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitTime);
+                } else {
+                    /*
+                     * changed to 5 mins, because next download could be
+                     * possible earlier
+                     */
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
                 }
-                long waitTime = 15 * 60 * 1000l;
-                try {
-                    waitTime = new Long(waitfor.trim()) * 60 * 1000l;
-                } catch (Exception e) {
-                    logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
-                }
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitTime);
             }
             reportUnknownError(br, 2);
             throw new PluginException(LinkStatus.ERROR_FATAL, dynTranslate(error));

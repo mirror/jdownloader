@@ -37,15 +37,15 @@ public class JACMethod implements Comparable<JACMethod> {
 
     private static ArrayList<JACMethod> methods = null;
 
-    public static String forServiceName(String service) {
+    public static JACMethod forServiceName(String service) {
         for (JACMethod method : getMethods()) {
             if (service.equalsIgnoreCase(method.getServiceName())) {
                 logger.info("Found JAC method for the service " + service + " in directory " + method.getFileName());
-                return method.getFileName();
+                return method;
             }
         }
         logger.info("There is no JAC method for the service " + service + ", now trying default directory!");
-        return service;
+        return null;
     }
 
     public static ArrayList<JACMethod> getMethods() {
@@ -114,8 +114,9 @@ public class JACMethod implements Comparable<JACMethod> {
 
     public static boolean hasMethod(String service) {
         if (service == null) return false;
-        String methodName = forServiceName(service);
-        File method = JDUtilities.getResourceFile(JDUtilities.getJACMethodsDirectory() + "/" + methodName + "/jacinfo.xml");
+        JACMethod methodName = forServiceName(service);
+        if (methodName == null) return false;
+        File method = JDUtilities.getResourceFile(JDUtilities.getJACMethodsDirectory() + "/" + methodName.getFileName() + "/jacinfo.xml");
         return (method.exists() && isAvailableExternMethod(method));
     }
 

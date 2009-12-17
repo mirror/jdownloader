@@ -357,7 +357,7 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
             if (linksFinished > 0) {
                 synchronized (downloadLinkList) {
                     for (DownloadLink lk : downloadLinkList) {
-                        if (!lk.getLinkStatus().hasStatus(LinkStatus.FINISHED) && lk.isEnabled()) {
+                        if (!lk.getLinkStatus().isFinished() && lk.isEnabled()) {
                             value = false;
                             break;
                         } else {

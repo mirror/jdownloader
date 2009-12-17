@@ -70,6 +70,7 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
      * tooltip to be shown in the LinkGrabberTable
      */
     private String customIconText = null;
+    private int lastunchecked = 0;
 
     public boolean isIgnored() {
         return ignorePackage;
@@ -112,16 +113,24 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
     public synchronized int countFailedLinks(boolean forceUpdate) {
         if (!forceUpdate && System.currentTimeMillis() - lastFailCount < 5000) return lastfail;
         int newfail = 0;
+        int unchecked = 0;
         synchronized (downloadLinks) {
             for (DownloadLink dl : downloadLinks) {
-                if ((dl.isAvailabilityStatusChecked() && !dl.isAvailable())) {
+                if (!dl.isAvailabilityStatusChecked()) {
+                    unchecked++;
+                } else if (!dl.isAvailable()) {
                     newfail++;
                 }
             }
         }
         lastFailCount = System.currentTimeMillis();
         lastfail = newfail;
+        lastunchecked = unchecked;
         return lastfail;
+    }
+
+    public int countUncheckedLinks() {
+        return lastunchecked;
     }
 
     public synchronized int countEnabledLinks(boolean forceUpdate) {

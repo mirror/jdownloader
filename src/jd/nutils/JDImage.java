@@ -94,7 +94,9 @@ public class JDImage {
     }
 
     public static ImageIcon getScaledImageIcon(BufferedImage img, int width, int height) {
-        return new ImageIcon(getScaledImage(img, width, height));
+        Image imgico = getScaledImage(img, width, height);
+        if (imgico == null) return null;
+        return new ImageIcon(imgico);
 
     }
 

@@ -255,8 +255,9 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     public DownloadLink addSourcePluginPassword(String sourcePluginPassword) {
         if (sourcePluginPassword == null || sourcePluginPassword.trim().length() == 0) return this;
+        String pwadd = sourcePluginPassword.trim();
         synchronized (sourcePluginPasswordList) {
-            if (!sourcePluginPasswordList.contains(sourcePluginPassword)) sourcePluginPasswordList.add(sourcePluginPassword);
+            if (!sourcePluginPasswordList.contains(pwadd)) sourcePluginPasswordList.add(pwadd);
             return this;
         }
     }
@@ -360,10 +361,12 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * @return Downloadgeschwindigkeit in bytes/sekunde
      */
     public int getDownloadSpeed() {
-        if (!getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) { return 0; }
+        if (!getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) return 0;
         int currspeed = 0;
-        synchronized (this.getDownloadInstance().getChunks()) {
-            for (Chunk ch : this.getDownloadInstance().getChunks()) {
+        DownloadInterface dli = getDownloadInstance();
+        if (dli == null) return 0;
+        synchronized (dli.getChunks()) {
+            for (Chunk ch : dli.getChunks()) {
                 if (ch.inProgress()) currspeed += ch.getSpeedMeter().getSpeed();
             }
         }
@@ -582,10 +585,11 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * @return true falls der Download abgebrochen wurde
      */
     public boolean isAborted() {
-        if (getDownloadLinkController() == null) { return false;
-
-        }
-        return getDownloadLinkController().isAborted();
+        SingleDownloadController dlc = getDownloadLinkController();
+        if (dlc != null) return dlc.isAborted();
+        DownloadInterface dli = this.getDownloadInstance();
+        if (dli != null) return dli.externalDownloadStop();
+        return false;
     }
 
     /**
@@ -719,7 +723,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
                 try {
                     Thread.sleep(200);
                 } catch (InterruptedException e) {
-
                     JDLogger.exception(e);
                 }
             }
@@ -789,17 +792,14 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * @param aborted
      */
     public void setAborted(boolean aborted) {
-        if (aborted == false) {
-            // logger.severe("cannot unabort a link. use reset()");
-            return;
-        }
-        if (getDownloadLinkController() == null) {
-
+        if (aborted == false) return;
+        SingleDownloadController dlc = this.getDownloadLinkController();
+        if (dlc == null) {
             linkStatus.setInProgress(false);
             return;
-
+        } else {
+            dlc.abortDownload();
         }
-        getDownloadLinkController().abortDownload();
     }
 
     public void setAvailable(boolean available) {
@@ -902,12 +902,9 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         this.isEnabled = isEnabled;
         if (!isEnabled) {
             setAborted(true);
-        } else {
-            setAborted(false);
         }
         if (isEnabled == true) {
 
-            setAborted(false);
             if (host != null && plugin == null) {
                 logger.severe("Es ist kein passendes HostPlugin geladen");
                 return;

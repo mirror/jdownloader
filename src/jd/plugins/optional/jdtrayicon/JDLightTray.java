@@ -235,6 +235,7 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
          * (eg autohide feature)
          */
         trayIcon = new TrayIcon(img, "JDownloader");
+        trayIcon.setImageAutoSize(true);
         trayIcon.addActionListener(this);
 
         ma = new TrayMouseAdapter(this, trayIcon);

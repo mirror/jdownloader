@@ -1098,8 +1098,8 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         case JDUnrarConstants.MULTIPART_START_PART_V2:
             name = this.getArchiveName(downloadLink);
             String test = null;
-            String partid = new Regex(downloadLink.getFileOutput(), "(.pa?r?t?\\.?)(\\d*?)\\.").getMatch(0);
-            if ((test = new Regex(downloadLink.getFileOutput(), ".pa?r?t?\\.?(\\d*?)\\.").getMatch(0)) != null) {
+            String partid = new Regex(downloadLink.getName(), "(\\.pa?r?t?\\.?)(\\d+)\\.").getMatch(0);
+            if ((test = new Regex(downloadLink.getName(), "\\.pa?r?t?\\.?(\\d+)\\.").getMatch(0)) != null) {
                 nums = test.length();
                 i = 1;
                 while ((file = new File(new File(downloadLink.getFileOutput()).getParentFile(), name + partid + Formatter.fillString(i + "", "0", "", nums) + ".rar")).exists() || JDUtilities.getController().getDownloadLinkByFileOutput(file, LinkStatus.FINISHED) != null) {
@@ -1110,7 +1110,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
                     i++;
                 }
                 break;
-            } else if ((test = new Regex(downloadLink.getFileOutput(), "(.*)\\.rar$").getMatch(0)) != null) {
+            } else if ((test = new Regex(downloadLink.getName(), "(.*)\\.rar$").getMatch(0)) != null) {
                 ret.add(downloadLink);
                 i = 0;
                 nums = -1;
@@ -1157,8 +1157,8 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         case JDUnrarConstants.MULTIPART_START_PART_V2:
             name = this.getArchiveName(filepath);
             String test = null;
-            String partid = new Regex(filepath, "(.pa?r?t?\\.?)(\\d*?)\\.").getMatch(0);
-            if ((test = new Regex(filepath, ".pa?r?t?\\.?(\\d*?)\\.").getMatch(0)) != null) {
+            String partid = new Regex(filepath, "(\\.pa?r?t?\\.?)(\\d+)\\.").getMatch(0);
+            if ((test = new Regex(filepath, "\\.pa?r?t?\\.?(\\d+)\\.").getMatch(0)) != null) {
                 nums = test.length();
                 i = 1;
                 while ((file = new File(new File(filepath).getParentFile(), name + partid + Formatter.fillString(i + "", "0", "", nums) + ".rar")).exists() || JDUtilities.getController().getDownloadLinkByFileOutput(file, LinkStatus.FINISHED) != null) {
