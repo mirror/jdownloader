@@ -31,34 +31,18 @@ import jd.utils.JDUtilities;
  * @author JD-Team
  */
 public class JACTrain {
-    /**
-     * @param args
-     */
+
     public static void main(String args[]) {
-
         JACTrain main = new JACTrain();
-
         main.go();
     }
 
     private Logger logger = Utilities.getLogger();
 
     private void go() {
-
-        // String hoster="rscat.com";
         final String hoster = "nrdr";
         final JAntiCaptcha jac = new JAntiCaptcha(hoster);
 
-        // jac.runTestMode(new File("1186941165349_captcha.jpg"));
-//        jac.displayLibrary();
-
-        // jac.setShowDebugGui(true);
-        // jac.showPreparedCaptcha(new
-        // File("/home/dwd/.jd_home/captchas/datenklo.net/08.01.2008_18.08.52.gif"));
-
-        // jac.trainCaptcha(new
-        // File("C:/Users/coalado/.jd_home/jd/captcha/methods/"+hoster+"/captchas/"+"captcha08_05_2008_22_20_01"+".jpg"),
-        // 4);
         new GuiRunnable<Object>() {
             // @Override
             public Object runSave() {
@@ -75,12 +59,5 @@ public class JACTrain {
         // jac.addLetterMap();
         // jac.saveMTHFile();
     }
-    // private static class FilterJAR implements FileFilter{
-    // public boolean accept(File f) {
-    // if(f.getName().endsWith(".jar"))
-    // return true;
-    // else
-    // return false;
-    // }
-    // }
+
 }

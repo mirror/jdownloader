@@ -44,7 +44,7 @@ public class JACMethod implements Comparable<JACMethod> {
                 return method;
             }
         }
-        logger.info("There is no JAC method for the service " + service + ", now trying default directory!");
+        logger.info("There is no JAC method for the service " + service + "!");
         return null;
     }
 

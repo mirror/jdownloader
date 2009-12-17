@@ -24,22 +24,13 @@ import java.io.File;
  * @author JD-Team
  */
 public class JACTestrun {
-    /**
-     * @param args
-     */
-    public static void main(String args[]) {
 
+    public static void main(String args[]) {
         JACTestrun main = new JACTestrun();
         main.go();
     }
 
     private void go() {
-
         JAntiCaptcha.testMethod(new File("C:\\Users\\coalado\\.jd_home\\jd\\captcha\\methods\\megaupload.com/"));
-
-        // File[] methods= JAntiCaptcha.getMethods(methodsPath);
-        // logger.info("Found "+methods.length+" Methods");
-        // JAntiCaptcha.testMethods(methods);
-
     }
 }

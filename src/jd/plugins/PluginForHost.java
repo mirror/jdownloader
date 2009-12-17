@@ -613,7 +613,7 @@ public abstract class PluginForHost extends Plugin {
         downloadLink.getLinkStatus().setStatusText(null);
     }
 
-    /*
+    /**
      * may only be used from within the plugin, because it only works when
      * SingleDownloadController is still running
      */

@@ -62,15 +62,16 @@ abstract public class DownloadInterface {
      * Chunk Klasse verwaltet eine einzelne Downloadverbindung.
      * 
      * @author coalado
-     * 
      */
     public class Chunk extends Thread {
         private static final long MIN_BUFFERSIZE = 1024;
 
-        // Wird durch die Speedbegrenzung ein chunk uter diesen Wert geregelt,
-        // so wird er weggelassen. Sehr niedrig geregelte chunks haben einen
-        // kleinen Buffer und eine sehr hohe Intervalzeit.
-        // Das führt zu verstärkt intervalartigem laden und ist ungewünscht
+        /**
+         * Wird durch die Speedbegrenzung ein chunk uter diesen Wert geregelt,
+         * so wird er weggelassen. Sehr niedrig geregelte chunks haben einen
+         * kleinen Buffer und eine sehr hohe Intervalzeit. Das führt zu
+         * verstärkt intervalartigem laden und ist ungewünscht
+         */
         public static final long MIN_CHUNKSIZE = 1 * 1024 * 1024;
 
         private static final int TIME_BASE = 2000;
@@ -94,8 +95,6 @@ abstract public class DownloadInterface {
         private int id = -1;
 
         private InputStream inputStream;
-
-        // private int preBytes = -1;
 
         private long MAX_BUFFERSIZE = 4 * 1024 * 1024;
 
@@ -723,62 +722,6 @@ abstract public class DownloadInterface {
             return isInterrupted() || (dli != null && dli.externalDownloadStop());
         }
 
-        // /**
-        // * Einige Anbieter erlauben das resumen von files, aber nicht
-        // * multistreamloading. Dazu verbieten sie die range 0-xxx. Um das zu
-        // * umgehen werden die ersten bytes via preloading geladen und der
-        // erste
-        // * chunk fängt bei 1-xxx an
-        // *
-        // * @param preBytes
-        // */
-        // public long loadPreBytes() {
-        //
-        // try {
-        //
-        // InputStream inputStream = connection.getInputStream();
-        //
-        // if (inputStream.available() > preBytes) {
-        // preBytes = inputStream.available();
-        // }
-        // ReadableByteChannel channel = Channels.newChannel(inputStream);
-        // /* max 2 gb buffer */
-        // buffer = ByteBuffer.allocateDirect((int) preBytes);
-        //
-        // while (buffer.hasRemaining()) {
-        //
-        // channel.read(buffer);
-        //
-        // }
-        // if (speedDebug) {
-        // logger.finer("loaded Prebytes " + preBytes);
-        // }
-        // if (speedDebug) {
-        // logger.finer("Preloading produced " + inputStream.available() +
-        // " bytes overhead");
-        // }
-        // inputStream.close();
-        // channel.close();
-        // connection.disconnect();
-        //
-        // buffer.flip();
-        //
-        // addPartBytes(buffer.limit());
-        // addToTotalLinkBytesLoaded(buffer.limit());
-        // addChunkBytesLoaded(buffer.limit());
-        // writeBytes(this);
-        // return preBytes;
-        //
-        // } catch (Exception e) {
-        // error(LinkStatus.ERROR_DOWNLOAD_FAILED,
-        // JDUtilities.convertExceptionReadable(e));
-        // addException(e);
-        // logger.log(Level.SEVERE,"Exception occurred",e);
-        // }
-        // return -1;
-        //
-        // }
-
         /**
          * Thread runner
          */
@@ -1062,8 +1005,6 @@ abstract public class DownloadInterface {
 
     public static Logger logger = JDLogger.getLogger();
 
-    // private int status = STATUS_INITIALIZED;
-
     protected int chunkNum = 1;
 
     private Vector<Chunk> chunks = new Vector<Chunk>();
@@ -1084,16 +1025,10 @@ abstract public class DownloadInterface {
 
     protected LinkStatus linkStatus;
 
-    // protected int maxBytes = -1;
-
     protected PluginForHost plugin;
 
     private int readTimeout = 100000;
     private int requestTimeout = 100000;
-
-    // private int totalLoadedBytes = 0;
-
-    // private boolean aborted = false;
 
     private boolean resume = false;
 
@@ -1125,29 +1060,8 @@ abstract public class DownloadInterface {
 
     private Browser browser;
 
-    /* normal stop of download (eg manually or reconnect request) */
+    /** normal stop of download (eg manually or reconnect request) */
     private boolean externalStop = false;
-
-    // public DownloadInterface(PluginForHost plugin, DownloadLink downloadLink,
-    // HTTPConnection urlConnection) {
-    // this(plugin, downloadLink);
-    // connection = urlConnection;
-    // if (connection.getContentLength() > 0)
-    // this.downloadLink.setDownloadSize(connection.getContentLength());
-    // this.downloadLink.setName(Plugin.getFileNameFormHeader(connection));
-    //
-    // fileSize = getFileSize();
-    //
-    // //
-    // int tmp = Math.min(Math.max(1, (int) (fileSize / Chunk.MIN_CHUNKSIZE)),
-    // getChunkNum());
-    // setChunkNum(Math.min(tmp, plugin.getFreeConnections()));
-    // if (tmp != getChunkNum()) {
-    // logger.finer("Corrected Chunknum: " + getChunkNum() + " -->" + tmp);
-    // setChunkNum(tmp);
-    // }
-    //
-    // }
 
     public void setFilenameFix(boolean b) {
         this.fixWrongContentDispositionHeader = b;
@@ -1524,12 +1438,10 @@ abstract public class DownloadInterface {
 
     }
 
-    // /**
-    // * über error() kann ein fehler gemeldet werden. DIe Methode entscheided
-    // * dann ob dieser fehler zu einem Abbruch führen muss
-    // *
-    // * @param id
-    // */
+    /**
+     * über error() kann ein fehler gemeldet werden. DIe Methode entscheided
+     * dann ob dieser fehler zu einem Abbruch führen muss
+     */
     protected void error(int id, String string) {
         if (!externalDownloadStop()) {
             logger.severe("Error occured: " + LinkStatus.toString(id));
@@ -1743,59 +1655,6 @@ abstract public class DownloadInterface {
 
     }
 
-    // public int checkChunkParts() {
-    // int total = 0;
-    // int overhead = 0;
-    // int loaded = 0;
-    // Chunk lastChunk = null;
-    // for (Chunk chunk : chunks) {
-    // total += chunk.getChunkSize();
-    // loaded += chunk.getBytesLoaded();
-    // // logger.info("Chunk "+chunk.getID()+" :
-    // //
-    // "+"("+chunk.loaded+"|"+chunk.getBytesLoaded()+")/"+chunk.getChunkSize());
-    // if (lastChunk == null) {
-    // if (chunk.preBytes > 0) {
-    // if (chunk.startByte != 0) {
-    // logger.severe("First Chunk does not Start at 0");
-    // overhead += 0 - chunk.startByte;
-    // } else if (chunk.startByte != chunk.preBytes) {
-    // logger.severe("PreBytes: " + chunk.preBytes + " First Chunk does not
-    // Start at " + chunk.preBytes);
-    // overhead += chunk.preBytes - chunk.startByte;
-    // }
-    // } else {
-    // // chunk OK
-    // }
-    // } else {
-    // if (chunk.startByte != lastChunk.endByte + 1) {
-    // logger.severe("Chunk " + chunk.getID() + " should start at " +
-    // (lastChunk.endByte + 1) + " but starts at " + chunk.startByte);
-    // overhead += lastChunk.endByte + 1 - chunk.startByte;
-    // } else {
-    // // ok
-    // }
-    // }
-    // lastChunk = chunk;
-    //
-    // }
-    // if (loaded > this.bytesLoaded) {
-    // logger.severe("COunt error. loaded Bytes are " + loaded + " counted: " +
-    // this.bytesLoaded);
-    //
-    // }
-    // if (lastChunk.endByte != fileSize - 1 && lastChunk.endByte != -1) {
-    // logger.severe("last Chunk " + lastChunk.getID() + " Should end at " +
-    // (fileSize - 1) + " But ends at " + lastChunk.endByte);
-    // overhead += lastChunk.endByte - (fileSize - 1);
-    // }
-    // if (total != fileSize) {
-    // logger.severe("Total Chunks Size should be " + fileSize + " but is " +
-    // total);
-    // }
-    // return overhead;
-    // }
-
     /**
      * Setzt den aktuellen readtimeout(nur vor dem dl start)
      * 
@@ -1963,11 +1822,6 @@ abstract public class DownloadInterface {
         }
     }
 
-    // public void abort() {
-    // this.aborted = true;
-    //
-    // }
-
     private void waitForChunks() {
         int i = 0;
         logger.finer("Wait for chunks");
@@ -2011,7 +1865,6 @@ abstract public class DownloadInterface {
      * @param buffer
      * @param currentBytePosition
      */
-
     abstract protected boolean writeChunkBytes(Chunk chunk);
 
     public void setFilesizeCheck(boolean b) {
@@ -2041,7 +1894,7 @@ abstract public class DownloadInterface {
         return firstChunkRangeless;
     }
 
-    /* signal that we stopped download external */
+    /** signal that we stopped download external */
     public void stopDownload() {
         if (externalStop) return;
         logger.severe("externalStop recieved");
