@@ -49,13 +49,16 @@ public class MtlAreRg extends PluginForDecrypt {
         br.setCookiesExclusive(false);
         br.setFollowRedirects(false);
         if (!getUserLogin(parameter)) return null;
-        // Filter links in hide
-        String pagepiece = br.getRegex("<!--HideBegin-->(.*?)<!--HideEnd-->").getMatch(0);
-        if (pagepiece == null) return null;
-        String[] links = HTMLParser.getHttpLinks(pagepiece, "");
-        if (links == null || links.length == 0) return null;
-        for (String link : links) {
-            decryptedLinks.add(createDownloadlink(link));
+        // Filter links in hide(s)
+        String pagepieces[] = br.getRegex("<!--HideBegin-->(.*?)<!--HideEnd-->").getColumn(0);
+        if (pagepieces == null || pagepieces.length == 0) return null;
+        for (String pagepiece : pagepieces) {
+            String[] links = HTMLParser.getHttpLinks(pagepiece, "");
+            if (links != null && links.length != 0) {
+                for (String link : links)
+                    decryptedLinks.add(createDownloadlink(link));
+
+            }
         }
         return decryptedLinks;
 
