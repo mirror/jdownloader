@@ -20,28 +20,28 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "scum.in" }, urls = { "http://[\\w\\.]*?scum\\.in/index\\.php\\?id=\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "scum.in" }, urls = { "http://[\\w\\.]*?scum\\.in/(index\\.php\\?id=\\d+|[0-9]+-.*?\\.html)" }, flags = { 0 })
 public class Scmn extends PluginForDecrypt {
 
     public Scmn(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-
+        String id = new Regex(parameter, "scum\\.in/index\\.php\\?id=(\\d+)").getMatch(0);
+        if (id == null) id = new Regex(parameter, "scum\\.in/(\\d+)-").getMatch(0);
         br.getPage(parameter);
-
-        String captchaCode = getCaptchaCode("http://scum.in/share/includes/captcha.php?t=", param);
-
-        br.postPage("http://scum.in/plugins/home/links.callback.php", "id=" + parameter.substring(parameter.lastIndexOf("=") + 1) + "&captcha=" + captchaCode);
+        String captchaCode = getCaptchaCode("http://scum.in/files/includes/captcha.php?t=", param);
+        br.postPage("http://scum.in/assets/links.callback.php", "id=" + Encoding.htmlDecode(id) + "&captcha=" + captchaCode);
 
         String links[] = br.getRegex("href=\"(.*?)\"").getColumn(0);
         progress.setRange(links.length);
@@ -54,7 +54,5 @@ public class Scmn extends PluginForDecrypt {
 
         return decryptedLinks;
     }
-
-    // @Override
 
 }

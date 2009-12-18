@@ -69,6 +69,7 @@ public class WatTv extends PluginForHost {
                 }
             }
         }
+        if (videoid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         Browser br2 = br.cloneBrowser();
         br2.getPage("http://www.wat.tv/interface/contentv2/" + videoid);
         String sources = br2.toString().replace("\\", "");
