@@ -72,12 +72,17 @@ public class HyperFileShareCom extends PluginForHost {
         if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         url = "http://download.hyperfileshare.com/" + url;
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            if (br.containsHTML("You exceeded your download size limit")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl.startDownload();
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return -1;
     }
 
     @Override
