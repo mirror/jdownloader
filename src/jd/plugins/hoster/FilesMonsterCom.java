@@ -34,7 +34,6 @@ public class FilesMonsterCom extends PluginForHost {
 
     public FilesMonsterCom(PluginWrapper wrapper) {
         super(wrapper);
-        // Premium isn't finished yet
         this.enablePremium("http://filesmonster.com/service.php");
     }
 
@@ -42,7 +41,7 @@ public class FilesMonsterCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.postPage("http://filesmonster.com/login.php", "act=login&user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
-        if (!br.containsHTML(">Your membership type</span></td>.*?<td>Premium</td>") || !br.containsHTML(">Expired\\?</span></td>.*?<td>No <a") || br.containsHTML("Username/Password can not be found in our database") || br.containsHTML("Try to recover your password by 'Password reminder'")) { throw new PluginException(LinkStatus.ERROR_PREMIUM); }
+        if (!br.containsHTML("Your membership type: <span class=.*?>Premium") || br.containsHTML("Username/Password can not be found in our database") || br.containsHTML("Try to recover your password by 'Password reminder'")) { throw new PluginException(LinkStatus.ERROR_PREMIUM); }
     }
 
     @Override
@@ -60,7 +59,7 @@ public class FilesMonsterCom extends PluginForHost {
         if (trafficleft != null) {
             ai.setTrafficLeft(Regex.getSize(trafficleft));
         }
-        String expires = br.getRegex(">Membership expiration</span></td>.*?<td>([0-9]{1,2}/[0-9]{1,2}/[0-9]{1,2} [0-9]{1,2}:[0-9]{1,2})</td>").getMatch(0);
+        String expires = br.getRegex("Membership period ends.*?([0-9]{1,2}/[0-9]{1,2}/[0-9]{1,2} [0-9]{1,2}:[0-9]{1,2}) ").getMatch(0);
         if (expires != null) {
             ai.setValidUntil(Regex.getMilliSeconds(expires, "MM/dd/yy HH:mm", null));
             account.setValid(true);
