@@ -91,18 +91,18 @@ public class FourSharedCom extends PluginForHost {
 
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        String url = br.getRegex("<a href=\"(http://www.4shared.com/get.*?)\" class=\".*?dbtn.*?\" tabindex=\"1\">").getMatch(0);
+        String url = br.getRegex("<a href=\"(http://www.4shared.com/get.*?)\" class=\".*?dbtn.*?\" tabindex=\"1\" onclick=\"return callPostDownload\\(\\);\">").getMatch(0);
         if (url == null) {
             /* maybe directdownload */
             url = br.getRegex("startDownload.*?window\\.location.*?(http://.*?)\"").getMatch(0);
             if (url == null) {
                 /* maybe picture download */
-                url = br.getRegex("<a href=\"(http://dc\\d+\\.4shared.com/download/.*?)\" class=\".*?dbtn.*?\" tabindex=\"1\">").getMatch(0);
+                url = br.getRegex("<a href=\"(http://dc\\d+\\.4shared.com/download/.*?)\" class=\".*?dbtn.*?\" tabindex=\"1\" onclick=\"return callPostDownload\\(\\);\">").getMatch(0);
             }
             if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else {
             br.getPage(url);
-            url = br.getRegex("id=\\'divDLStart\\' >.*?<a href=\\'(.*?)\'>Click here to download this file</a>.*?</div>").getMatch(0);
+            url = br.getRegex("id=\\'divDLStart\\' >.*?<a href=\\'(.*?)\'  onclick=\"return callPostDownload\\(\\);\">Click here to download this file</a>.*?</div>").getMatch(0);
             if (url.contains("linkerror.jsp")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             sleep(Integer.parseInt(br.getRegex(" var c = (\\d+?);").getMatch(0)) * 1000l, downloadLink);
         }
