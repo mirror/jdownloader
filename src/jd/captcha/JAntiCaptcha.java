@@ -57,6 +57,7 @@ import jd.captcha.utils.Utilities;
 import jd.controlling.JDLogger;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.userio.DummyFrame;
+import jd.http.Browser;
 import jd.nutils.Executer;
 import jd.nutils.JDHash;
 import jd.nutils.io.JDIO;
@@ -466,7 +467,7 @@ public class JAntiCaptcha {
 
         for (Letter letter : letterDB) {
 
-            img = (BufferedImage) letter.getFullImage();
+            img = letter.getFullImage();
 
             file = new File(path + "/letterDB/" + i++ + "_" + letter.getDecodedValue() + ".png");
 
@@ -659,6 +660,7 @@ public class JAntiCaptcha {
         while (spw.size() > 0) {
             new GuiRunnable<Object>() {
                 // @Override
+                @Override
                 public Object runSave() {
                     spw.remove(0).destroy();
                     return null;
@@ -676,6 +678,7 @@ public class JAntiCaptcha {
         // final BasicWindow w = BasicWindow.getWindow("Library: " +
         // letterDB.size() + " Datensätze", 400, 300);
         final JFrame w = new GuiRunnable<JFrame>() {
+            @Override
             public JFrame runSave() {
                 return new JFrame();
             }
@@ -683,6 +686,7 @@ public class JAntiCaptcha {
         // w.setLayout(new GridBagLayout());
         sortLetterDB();
         JPanel p = new GuiRunnable<JPanel>() {
+            @Override
             public JPanel runSave() {
                 JPanel bp = new JPanel(new GridLayout(letterDB.size() + 1, 3));
                 w.add(new JScrollPane(bp));
@@ -701,6 +705,7 @@ public class JAntiCaptcha {
             list[i] = tmp;
 
             JLabel lbl = new GuiRunnable<JLabel>() {
+                @Override
                 public JLabel runSave() {
                     if ((tmp.getGoodDetections() == 0 && tmp.getBadDetections() > 3) || ((double) tmp.getBadDetections() / (double) tmp.getGoodDetections() >= 3)) {
                         return new JLabel("<html><p><font color=\"#ff0000\" " + "size=\"3\">" + tmp.getId() + ": " + tmp.getDecodedValue() + "(" + tmp.getGoodDetections() + "/" + tmp.getBadDetections() + ") Size: " + tmp.toPixelObject(0.85).getSize() + "</font> </p>" + "</html>");
@@ -712,12 +717,14 @@ public class JAntiCaptcha {
             }.getReturnValue();
 
             ImageComponent img = new GuiRunnable<ImageComponent>() {
+                @Override
                 public ImageComponent runSave() {
                     return new ImageComponent(tmp.getImage());
                 }
             }.getReturnValue();
 
             final JCheckBox bt = new GuiRunnable<JCheckBox>() {
+                @Override
                 public JCheckBox runSave() {
                     return new JCheckBox("DELETE");
                 }
@@ -747,6 +754,7 @@ public class JAntiCaptcha {
             // }
         }
         JButton b = new GuiRunnable<JButton>() {
+            @Override
             public JButton runSave() {
                 return new JButton("Invoke");
             }
@@ -776,6 +784,7 @@ public class JAntiCaptcha {
             }
         });
         new GuiRunnable<Object>() {
+            @Override
             public Object runSave() {
                 w.pack();
                 w.setVisible(true);
@@ -1824,6 +1833,7 @@ public class JAntiCaptcha {
                 if (f != null) {
                     new GuiRunnable<Object>() {
                         // @Override
+                        @Override
                         public Object runSave() {
                             f.dispose();
                             return null;
@@ -1870,6 +1880,7 @@ public class JAntiCaptcha {
 
         new GuiRunnable<Object>() {
             // @Override
+            @Override
             public Object runSave() {
                 if (f != null) {
                     f.dispose();
@@ -1933,6 +1944,7 @@ public class JAntiCaptcha {
                 if (getCodeFromFileName(captchafile.getName()) == null) {
                     code = new GuiRunnable<String>() {
                         // @Override
+                        @Override
                         public String runSave() {
                             return JOptionPane.showInputDialog("Bitte Captcha Code eingeben (Press enter to confirm " + guess, guess);
                         }
@@ -1942,6 +1954,7 @@ public class JAntiCaptcha {
                     } else if (code == null) {
                         if (new GuiRunnable<Boolean>() {
                             // @Override
+                            @Override
                             public Boolean runSave() {
                                 return JOptionPane.showConfirmDialog(new JFrame(), "Ja (yes) = beenden (close) \t Nein (no) = nächstes Captcha (next captcha)") == JOptionPane.OK_OPTION;
                             }
@@ -1969,6 +1982,7 @@ public class JAntiCaptcha {
         // Zeige das After-prepare Bild an
         new GuiRunnable<Object>() {
             // @Override
+            @Override
             public Object runSave() {
                 f.add(new JLabel("Letter Detection"), Utilities.getGBC(0, 3, 10, 1));
 
@@ -2004,6 +2018,7 @@ public class JAntiCaptcha {
         }
         new GuiRunnable<Object>() {
             // @Override
+            @Override
             public Object runSave() {
                 if (guess != null /* && guess.length() == getLetterNum() */) {
 
@@ -2128,6 +2143,7 @@ public class JAntiCaptcha {
                             public void run() {
                                 final BasicWindow bws = new GuiRunnable<BasicWindow>() {
                                     // @Override
+                                    @Override
                                     public BasicWindow runSave() {
                                         return BasicWindow.showImage(letters[i].getImage(2), "" + letters[i].getDecodedValue());
                                     }
@@ -2140,6 +2156,7 @@ public class JAntiCaptcha {
                                 }
                                 new GuiRunnable<Object>() {
                                     // @Override
+                                    @Override
                                     public Object runSave() {
                                         bws.dispose();
                                         return null;
@@ -2158,6 +2175,7 @@ public class JAntiCaptcha {
                         letterDB.add(letters[i]);
                         new GuiRunnable<Object>() {
                             // @Override
+                            @Override
                             public Object runSave() {
                                 f.add(new JLabel("OK+"), Utilities.getGBC(i + 1, 13, 1, 1));
 
@@ -2168,6 +2186,7 @@ public class JAntiCaptcha {
                     } else {
                         new GuiRunnable<Object>() {
                             // @Override
+                            @Override
                             public Object runSave() {
                                 f.add(new JLabel("OK-"), Utilities.getGBC(i + 1, 13, 1, 1));
 
@@ -2177,6 +2196,7 @@ public class JAntiCaptcha {
                     }
                     new GuiRunnable<Object>() {
                         // @Override
+                        @Override
                         public Object runSave() {
                             f.pack();
 
@@ -2200,6 +2220,7 @@ public class JAntiCaptcha {
                         public void run() {
                             final BasicWindow bws = new GuiRunnable<BasicWindow>() {
                                 // @Override
+                                @Override
                                 public BasicWindow runSave() {
                                     return BasicWindow.showImage(letters[i].getImage(2), "" + letters[i].getDecodedValue());
 
@@ -2213,6 +2234,7 @@ public class JAntiCaptcha {
                             }
                             new GuiRunnable<Object>() {
                                 // @Override
+                                @Override
                                 public Object runSave() {
                                     bws.dispose();
                                     return null;
@@ -2222,6 +2244,7 @@ public class JAntiCaptcha {
                     }).start();
                     new GuiRunnable<Object>() {
                         // @Override
+                        @Override
                         public Object runSave() {
                             f.add(new JLabel("NO +"), Utilities.getGBC(i + 1, 13, 1, 1));
                             f.pack();
@@ -2233,6 +2256,7 @@ public class JAntiCaptcha {
             } else {
                 new GuiRunnable<Object>() {
                     // @Override
+                    @Override
                     public Object runSave() {
                         f.add(new JLabel("-"), Utilities.getGBC(i + 1, 13, 1, 1));
                         f.pack();
@@ -2285,4 +2309,36 @@ public class JAntiCaptcha {
         letterDB = newDB;
         this.saveMTHFile();
     }
+
+    public static String getCaptcha(String path, String host) {
+        if (JACMethod.hasMethod(host)) {
+
+            File file;
+            if (path.contains("http://")) {
+                try {
+                    file = JDUtilities.getResourceFile("captchas/jac_captcha.img");
+                    file.deleteOnExit();
+
+                    Browser.download(file, new Browser().openGetConnection(path));
+                } catch (IOException e) {
+                    return "Could not download captcha image";
+                }
+            } else {
+                file = new File(path);
+                if (!file.exists()) return "File does not exist";
+            }
+
+            try {
+                Image captchaImage = ImageIO.read(file);
+                JAntiCaptcha jac = new JAntiCaptcha(host);
+                Captcha captcha = jac.createCaptcha(captchaImage);
+                return jac.checkCaptcha(file, captcha);
+            } catch (Exception e) {
+                return e.getStackTrace().toString();
+            }
+        } else {
+            return "jDownloader has no method for " + host;
+        }
+    }
+
 }

@@ -121,7 +121,7 @@ public class Rapidshare extends PluginForHost {
         serverMap.put("TeliaSonera #3", "tl3");
     }
 
-    private static Account dummyAccount = new Account("TRAFSHARE", "TRAFSHARE");
+    private static final Account dummyAccount = new Account("TRAFSHARE", "TRAFSHARE");
 
     @Override
     public void correctDownloadLink(DownloadLink link) {

@@ -183,8 +183,8 @@ public class JDL {
         if (DEBUG) return key2;
         if (DATA == null || LOCALE_FILE == null) {
             JDL.setLocale(getConfigLocale());
+            if (DATA == null) return "Error in JDL: DATA==null";
         }
-        if (DATA == null) return "Error in JDL: DATA==null";
         KEY = key2.toLowerCase().hashCode();
         if (DATA.containsKey(KEY)) return DATA.get(KEY);
 

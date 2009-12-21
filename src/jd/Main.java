@@ -22,8 +22,6 @@ import it.sauronsoftware.junique.JUnique;
 import it.sauronsoftware.junique.MessageHandler;
 
 import java.awt.EventQueue;
-import java.awt.Image;
-import java.awt.MediaTracker;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
@@ -41,13 +39,8 @@ import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.imageio.ImageIO;
-import javax.swing.JFrame;
-
 import jd.captcha.JACController;
-import jd.captcha.JACMethod;
 import jd.captcha.JAntiCaptcha;
-import jd.captcha.pixelgrid.Captcha;
 import jd.config.SubConfiguration;
 import jd.controlling.DynamicPluginInterface;
 import jd.controlling.JDController;
@@ -62,7 +55,6 @@ import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.jdgui.JDGuiConstants;
 import jd.gui.swing.jdgui.userio.UserIOGui;
 import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.OSDetector;
 import jd.nutils.OutdatedParser;
 import jd.update.FileUpdate;
@@ -79,56 +71,8 @@ import jd.utils.locale.JDL;
 public class Main {
 
     private static Logger LOGGER;
-    // public static SplashScreen SPLASHSCREEN = null;
     public static final String instanceID = Main.class.getName();
     private static boolean instanceStarted = false;
-
-    public static String getCaptcha(String path, String host) {
-
-        if (JACMethod.hasMethod(host)) {
-
-            File file;
-
-            if (path.contains("http://")) {
-                try {
-                    file = new File(System.getProperty("user.dir"), "jac_captcha.img");
-
-                    Browser br = new Browser();
-                    URLConnectionAdapter httpConnection = br.openGetConnection(path);
-                    if (httpConnection.getLongContentLength() <= 0) return "Could not download captcha image";
-
-                    Browser.download(file, httpConnection);
-                } catch (IOException e) {
-                    return "Downloaderror";
-                }
-            } else {
-                file = new File(path);
-                if (!file.exists()) return "File does not exist";
-            }
-
-            try {
-                JFrame jf = new JFrame();
-                Image captchaImage = ImageIO.read(file);
-                MediaTracker mediaTracker = new MediaTracker(jf);
-                mediaTracker.addImage(captchaImage, 0);
-
-                mediaTracker.waitForID(0);
-
-                mediaTracker.removeImage(captchaImage);
-                JAntiCaptcha jac = new JAntiCaptcha(host);
-                Captcha captcha = jac.createCaptcha(captchaImage);
-                String captchaCode = jac.checkCaptcha(file, captcha);
-                if (path.contains("http://")) file.delete();
-
-                return captchaCode;
-            } catch (Exception e) {
-                return e.getStackTrace().toString();
-            }
-        } else {
-            return "jDownloader has no method for " + host;
-        }
-
-    }
 
     public static boolean returnedfromUpdate() {
         return JDInitFlags.SWITCH_RETURNED_FROM_UPDATE;
@@ -223,7 +167,7 @@ public class Main {
                 if (args.length > i + 2) {
 
                     LOGGER.setLevel(Level.OFF);
-                    String captchaValue = Main.getCaptcha(args[i + 1], args[i + 2]);
+                    String captchaValue = JAntiCaptcha.getCaptcha(args[i + 1], args[i + 2]);
                     System.out.println(captchaValue);
                     System.exit(0);
 
