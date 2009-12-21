@@ -19,7 +19,10 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -27,11 +30,13 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hyperfileshare.com" }, urls = { "http://[\\w\\.]*?hyperfileshare\\.com/(d/|download\\.php\\?code=)[a-fA-F0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hyperfileshare.com" }, urls = { "http://[\\w\\.]*?hyperfileshare\\.com/(d/|download\\.php\\?code=)[a-fA-F0-9]+" }, flags = { 2 })
 public class HyperFileShareCom extends PluginForHost {
 
     public HyperFileShareCom(PluginWrapper wrapper) {
         super(wrapper);
+        // Actually we only got support for free accounts, not for premium!
+        this.enablePremium("http://www.hyperfileshare.com/register.php");
     }
 
     @Override
@@ -83,6 +88,55 @@ public class HyperFileShareCom extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
+    }
+
+    private void login(Account account) throws Exception {
+        this.setBrowserExclusive();
+        br.getPage("http://www.hyperfileshare.com/index.php");
+        br.postPage("http://www.hyperfileshare.com/index.php", "login=" + Encoding.urlEncode(account.getUser()) + "&psw=" + Encoding.urlEncode(account.getPass()) + "&rem_me=1");
+        if (br.getCookie("http://www.hyperfileshare.com", "sid") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        account.setValid(true);
+        ai.setUnlimitedTraffic();
+        ai.setStatus("Registered (free) User");
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(DownloadLink link, Account account) throws Exception {
+        requestFileInformation(link);
+        login(account);
+        br.getPage(link.getDownloadURL());
+        String url = br.getRegex("href=\"(download\\.php\\?code=[a-f0-9]+&sid=[a-f0-9]+&s=\\d)\"").getMatch(0);
+        if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        url = "http://download.hyperfileshare.com/" + url;
+        br.getPage(url);
+        url = null;
+        url = br.getRegex("href=\"(download\\.php\\?code=[a-f0-9]+&sid=[a-f0-9]+&s=\\d)\"").getMatch(0);
+        if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        url = "http://download.hyperfileshare.com/" + url;
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            if (br.containsHTML("You exceeded your download size limit")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return 5;
     }
 
     @Override
