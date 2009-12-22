@@ -45,13 +45,13 @@ import net.miginfocom.swing.MigLayout;
 
 class SplashProgressImage {
 
-    private Image image;
+    private final Image image;
 
     private long startTime = 0;
-    private int dur = 2500;
+    private static final int DUR = 2500;
 
-    public SplashProgressImage(Image i) {
-        image = i;
+    public SplashProgressImage(final Image image) {
+        this.image = image;
     }
 
     public Image getImage() {
@@ -62,7 +62,7 @@ class SplashProgressImage {
         if (this.startTime == 0) {
             this.startTime = System.currentTimeMillis();
         }
-        return Math.min((System.currentTimeMillis() - startTime) / (float) dur, 1.0f);
+        return Math.min((System.currentTimeMillis() - startTime) / (float) DUR, 1.0f);
     }
 
 }
@@ -72,32 +72,37 @@ public class SplashScreen implements ControlListener {
     public static final int SPLASH_FINISH = 0;
     public static final int SPLASH_PROGRESS = 1;
 
-    private ImageIcon image;
+    private final ImageIcon image;
 
-    private JLabel label;
+    // private JLabel label;
 
     private JWindow window;
 
-    private int x;
-    private int y;
+    private final int x;
+    private final int y;
 
     private JProgressBar progress;
 
     private String curString = "";
 
-    private GraphicsDevice gd = null;
+    private final GraphicsDevice gd;
 
     public SplashScreen(JDController controller) throws IOException, AWTException {
 
         LookAndFeelController.setUIManager();
         this.image = new ImageIcon(JDTheme.I("gui.splash"));
 
+        GraphicsDevice gd = null;
         try {
             Object loc = GUIUtils.getConfig().getProperty("LOCATION_OF_MAINFRAME");
-            if (loc != null && loc instanceof Point) {
-                Point point = (Point) loc;
-                if (point.x < 0) point.x = 0;
-                if (point.y < 0) point.y = 0;
+            if (loc instanceof Point) {
+                final Point point = (Point) loc;
+                if (point.x < 0) {
+                    point.x = 0;
+                }
+                if (point.y < 0) {
+                    point.y = 0;
+                }
                 gd = ScreenDevices.getGraphicsDeviceforPoint(point);
             } else {
                 gd = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
@@ -105,9 +110,10 @@ public class SplashScreen implements ControlListener {
         } catch (Exception e) {
             gd = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
         }
-        Rectangle v = gd.getDefaultConfiguration().getBounds();
-        int screenWidth = (int) v.getWidth();
-        int screenHeight = (int) v.getHeight();
+        this.gd = gd;
+        final Rectangle v = gd.getDefaultConfiguration().getBounds();
+        final int screenWidth = (int) v.getWidth();
+        final int screenHeight = (int) v.getHeight();
         x = screenWidth / 2 - image.getIconWidth() / 2;
         y = screenHeight / 2 - image.getIconHeight() / 2;
 
@@ -117,8 +123,8 @@ public class SplashScreen implements ControlListener {
     }
 
     private void initGui() {
-        GraphicsConfiguration gc = gd.getDefaultConfiguration();
-        label = new JLabel();
+        final GraphicsConfiguration gc = gd.getDefaultConfiguration();
+        final JLabel label = new JLabel();
         label.setIcon(image);
 
         window = new JWindow(gc);
@@ -133,7 +139,7 @@ public class SplashScreen implements ControlListener {
 
         progress.setIndeterminate(true);
         window.pack();
-        Rectangle b = gc.getBounds();
+        final Rectangle b = gc.getBounds();
         window.setLocation(b.x + x, b.y + y);
         window.setVisible(true);
 
@@ -161,9 +167,9 @@ public class SplashScreen implements ControlListener {
         }.start();
     }
 
-    public void controlEvent(ControlEvent event) {
+    public void controlEvent(final ControlEvent event) {
         if (event.getID() == SPLASH_PROGRESS) {
-            if (event.getParameter() != null && event.getParameter() instanceof String) {
+            if (event.getParameter() instanceof String) {
                 synchronized (curString) {
                     curString = (String) event.getParameter();
                 }
