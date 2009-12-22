@@ -28,7 +28,7 @@ import jd.plugins.PluginForHost;
 public class HostPluginWrapper extends PluginWrapper implements JDLabelContainer {
     private static final ArrayList<HostPluginWrapper> HOST_WRAPPER = new ArrayList<HostPluginWrapper>();
     private static boolean uninitialized = true;
-    public static Object LOCK = new Object();
+    public static final Object LOCK = new Object();
 
     public static ArrayList<HostPluginWrapper> getHostWrapper() {
         synchronized (LOCK) {
@@ -45,9 +45,10 @@ public class HostPluginWrapper extends PluginWrapper implements JDLabelContainer
     }
 
     private static final String AGB_CHECKED = "AGB_CHECKED";
-    private String revision = "idle";
+    // private String revision = "idle";
+    private final String revision;
 
-    public HostPluginWrapper(String host, String classNamePrefix, String className, String patternSupported, int flags, String revision) {
+    public HostPluginWrapper(final String host, final String classNamePrefix, final String className, final String patternSupported, final int flags, final String revision) {
         super(host, classNamePrefix, className, patternSupported, flags);
         this.revision = Formatter.getRevision(revision);
         synchronized (LOCK) {
@@ -55,9 +56,8 @@ public class HostPluginWrapper extends PluginWrapper implements JDLabelContainer
         }
     }
 
-    public HostPluginWrapper(String host, String simpleName, String pattern, int i, String revision) {
-        this(host, "jd.plugins.hoster.", simpleName, pattern, i, revision);
-
+    public HostPluginWrapper(final String host, final String simpleName, final String pattern, final int flags, final String revision) {
+        this(host, "jd.plugins.hoster.", simpleName, pattern, flags, revision);
     }
 
     @Override
@@ -74,7 +74,7 @@ public class HostPluginWrapper extends PluginWrapper implements JDLabelContainer
         return super.getPluginConfig().getBooleanProperty(AGB_CHECKED, false);
     }
 
-    public void setAGBChecked(Boolean value) {
+    public void setAGBChecked(final Boolean value) {
         super.getPluginConfig().setProperty(AGB_CHECKED, value);
         super.getPluginConfig().save();
     }
@@ -87,7 +87,7 @@ public class HostPluginWrapper extends PluginWrapper implements JDLabelContainer
     public int compareTo(PluginWrapper pw) {
         if (!(pw instanceof HostPluginWrapper)) return super.compareTo(pw);
 
-        HostPluginWrapper plg = (HostPluginWrapper) pw;
+        final HostPluginWrapper plg = (HostPluginWrapper) pw;
         if (this.isLoaded() && plg.isLoaded()) {
             if (this.isPremiumEnabled() && plg.isPremiumEnabled()) return this.getHost().compareToIgnoreCase(plg.getHost());
             if (this.isPremiumEnabled() && !plg.isPremiumEnabled()) return -1;
@@ -107,9 +107,9 @@ public class HostPluginWrapper extends PluginWrapper implements JDLabelContainer
         return getHost();
     }
 
-    public static boolean hasPlugin(String s) {
+    public static boolean hasPlugin(final String data) {
         for (HostPluginWrapper w : getHostWrapper()) {
-            if (w.canHandle(s)) return true;
+            if (w.canHandle(data)) return true;
         }
         return false;
     }
