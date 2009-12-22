@@ -88,7 +88,7 @@ public abstract class PluginWrapper implements Comparable<PluginWrapper> {
     /**
      * internal logger instance
      */
-    protected final Logger logger = JDLogger.getLogger();
+    protected static final Logger logger = JDLogger.getLogger();
 
     /**
      * field to cache the plugininstance if it is loaded already
@@ -172,34 +172,34 @@ public abstract class PluginWrapper implements Comparable<PluginWrapper> {
      * @return plugin instance
      */
     public synchronized Plugin getPlugin() {
-        if (loadedPlugin != null) return loadedPlugin;
-        try {
-            if (CL == null) CL = new URLClassLoader(new URL[] { JDUtilities.getJDHomeDirectoryFromEnvironment().toURI().toURL(), JDUtilities.getResourceFile("java").toURI().toURL() }, Thread.currentThread().getContextClassLoader());
-            logger.finer("load plugin: " + getClassName());
-            Class<?> plgClass;
+        if (loadedPlugin == null) {
             try {
-                plgClass = CL.loadClass(getClassName());
-            } catch (ClassNotFoundException e) {
-                // fallback classloader.
-                logger.severe("Fallback cloassloader used");
-                plgClass = JDUtilities.getJDClassLoader().loadClass(getClassName());
-            }
+                if (CL == null) {
+                    CL = new URLClassLoader(new URL[] { JDUtilities.getJDHomeDirectoryFromEnvironment().toURI().toURL(), JDUtilities.getResourceFile("java").toURI().toURL() }, Thread.currentThread().getContextClassLoader());
+                }
+                logger.finer("load plugin: " + getClassName());
+                Class<?> plgClass;
+                try {
+                    plgClass = CL.loadClass(getClassName());
+                } catch (ClassNotFoundException e) {
+                    // fallback classloader.
+                    logger.severe("Fallback cloassloader used");
+                    plgClass = JDUtilities.getJDClassLoader().loadClass(getClassName());
+                }
 
-            if (plgClass == null) {
-                logger.severe("PLUGIN " + this.getClassName() + "NOT FOUND!");
-                return null;
+                if (plgClass == null) {
+                    logger.severe("PLUGIN " + this.getClassName() + "NOT FOUND!");
+                    return null;
+                }
+                final Class<?>[] classes = new Class[] { PluginWrapper.class };
+                final Constructor<?> con = plgClass.getConstructor(classes);
+                this.loadedPlugin = (Plugin) con.newInstance(new Object[] { this });
+            } catch (Exception e) {
+                logger.severe("Plugin Exception!");
+                JDLogger.exception(e);
             }
-            Class<?>[] classes = new Class[] { PluginWrapper.class };
-            Constructor<?> con = plgClass.getConstructor(classes);
-            classes = null;
-            this.loadedPlugin = (Plugin) con.newInstance(new Object[] { this });
-
-            return loadedPlugin;
-        } catch (Exception e) {
-            logger.severe("Plugin Exception!");
-            JDLogger.exception(e);
         }
-        return null;
+        return loadedPlugin;
     }
 
     /**
@@ -237,10 +237,13 @@ public abstract class PluginWrapper implements Comparable<PluginWrapper> {
      * @param bool
      */
     public void setEnabled(boolean bool) {
-        if (this.alwaysenabled) return;
+        if (this.alwaysenabled) { return; }
+
         getPluginConfig().setProperty("USE_PLUGIN", bool);
         getPluginConfig().save();
-        if (JDUtilities.getController() != null) DownloadController.getInstance().fireGlobalUpdate();
+        if (JDUtilities.getController() != null) {
+            DownloadController.getInstance().fireGlobalUpdate();
+        }
     }
 
     /**
@@ -274,7 +277,6 @@ public abstract class PluginWrapper implements Comparable<PluginWrapper> {
      * 
      * @return
      */
-
     public SubConfiguration getPluginConfig() {
         return SubConfiguration.getConfig(getHost());
     }
@@ -284,11 +286,9 @@ public abstract class PluginWrapper implements Comparable<PluginWrapper> {
      * 
      * @return
      */
-
     public Plugin getNewPluginInstance() {
         try {
             return getPlugin().getClass().getConstructor(new Class[] { PluginWrapper.class }).newInstance(new Object[] { this });
-            //return getPlugin().getClass().newInstance();
         } catch (Exception e) {
             JDLogger.exception(e);
         }
