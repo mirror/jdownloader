@@ -25,7 +25,7 @@ import jd.plugins.PluginForDecrypt;
 public class DecryptPluginWrapper extends PluginWrapper {
     private static final ArrayList<DecryptPluginWrapper> DECRYPT_WRAPPER = new ArrayList<DecryptPluginWrapper>();
     private static volatile boolean uninitialized = true;
-    public static Object LOCK = new Object();
+    public static final Object LOCK = new Object();
 
     public static ArrayList<DecryptPluginWrapper> getDecryptWrapper() {
         synchronized (LOCK) {
@@ -41,9 +41,9 @@ public class DecryptPluginWrapper extends PluginWrapper {
         }
     }
 
-    private String revision;
+    private final String revision;
 
-    public DecryptPluginWrapper(String host, String classNamePrefix, String className, String patternSupported, int flags, String revision) {
+    public DecryptPluginWrapper(final String host, final String classNamePrefix, final String className, final String patternSupported, final int flags, final String revision) {
         super(host, classNamePrefix, className, patternSupported, flags);
         this.revision = Formatter.getRevision(revision);
         synchronized (LOCK) {
@@ -56,7 +56,7 @@ public class DecryptPluginWrapper extends PluginWrapper {
     // this(host, "jd.plugins.decrypter.", className, patternSupported, 0);
     // }
 
-    public DecryptPluginWrapper(String host, String className, String patternSupported, int flags, String revision) {
+    public DecryptPluginWrapper(final String host, final String className, final String patternSupported, final int flags, final String revision) {
         this(host, "jd.plugins.decrypter.", className, patternSupported, flags, revision);
     }
 
@@ -70,7 +70,7 @@ public class DecryptPluginWrapper extends PluginWrapper {
         return revision;
     }
 
-    public static boolean hasPlugin(String s) {
+    public static boolean hasPlugin(final String s) {
         for (DecryptPluginWrapper w : getDecryptWrapper()) {
             if (w.canHandle(s)) return true;
         }
