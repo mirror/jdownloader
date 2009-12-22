@@ -71,7 +71,7 @@ public class Zippysharecom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
 //        String dllink = br.getRegex("ziptime = 0; tuw\\(\\);.*?var.*?= '(http.*?)';").getMatch(0);
-        String dllink = br.getRegex("var pong = '(http.*?)';").getMatch(0);
+        String dllink = br.getRegex("var ping = '(http.*?)';").getMatch(0);
         if (dllink == null) dllink = br.getRegex("<script language=\"Javascript\">.*?(http.*?)';").getMatch(0);
         logger.info("Encoded the zippyshare link...");
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
