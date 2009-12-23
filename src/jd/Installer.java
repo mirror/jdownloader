@@ -21,6 +21,7 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Locale;
 
 import javax.swing.AbstractListModel;
 import javax.swing.JFileChooser;
@@ -74,11 +75,11 @@ public class Installer {
 
     // private boolean error;
 
-    private String languageCode;
+    private final String languageCode;
 
     public Installer() {
         countryCode = JDL.getCountryCodeByIP();
-        if (countryCode != null) languageCode = countryCode.toLowerCase();
+        languageCode = (countryCode != null) ? countryCode.toLowerCase(Locale.getDefault()) : null;
 
         SubConfiguration.getConfig(JDL.CONFIG).setProperty(JDL.LOCALE_PARAM_ID, null);
 
@@ -96,7 +97,7 @@ public class Installer {
         JDUtilities.getConfiguration().save();
 
         if (OSDetector.isWindows()) {
-            String lng = JDL.getCountryCodeByIP();
+            final String lng = JDL.getCountryCodeByIP();
             if (lng.equalsIgnoreCase("de") || lng.equalsIgnoreCase("us")) {
                 new GuiRunnable<Object>() {
 
@@ -116,31 +117,30 @@ public class Installer {
     public static void askInstallFlashgot() {
         final SubConfiguration config = SubConfiguration.getConfig("FLASHGOT");
         if (config.getBooleanProperty("ASKED_TO_INSTALL_FLASHGOT", false)) return;
-        int answer = new GuiRunnable<Integer>() {
+        final int answer = new GuiRunnable<Integer>() {
 
             @Override
             public Integer runSave() {
-                JPanel c = new JPanel(new MigLayout("ins 10,wrap 1", "[grow,fill]", "[][][grow,fill]"));
+                final JPanel content = new JPanel(new MigLayout("ins 10,wrap 1", "[grow,fill]", "[][][grow,fill]"));
 
                 JLabel lbl = new JLabel(JDL.L("installer.gui.message", "After Installation, JDownloader will update to the latest version."));
 
-                c.add(lbl, "pushx,growx,split 2");
+                content.add(lbl, "pushx,growx,split 2");
 
-                Font f = lbl.getFont();
-                f = f.deriveFont(f.getStyle() ^ Font.BOLD);
+                final Font font = lbl.getFont();
 
-                lbl.setFont(f);
-                c.add(new JLabel(JDImage.getScaledImageIcon(JDImage.getImage("logo/jd_logo_54_54"), 32, 32)), "alignx right");
-                c.add(new JSeparator(), "pushx,growx,gapbottom 5");
+                lbl.setFont(font.deriveFont(font.getStyle() ^ Font.BOLD));
+                content.add(new JLabel(JDImage.getScaledImageIcon(JDImage.getImage("logo/jd_logo_54_54"), 32, 32)), "alignx right");
+                content.add(new JSeparator(), "pushx,growx,gapbottom 5");
 
-                c.add(lbl = new JLabel(JDL.L("installer.firefox.message", "Do you want to integrate JDownloader to Firefox?")), "growy,pushy");
-                c.add(lbl = new JLabel(JDImage.getImageIcon("flashgot_logo")), "growy,pushy");
-                c.add(lbl = new JLabel(JDL.L("installer.firefox.message.flashgot", "This installs the famous FlashGot Extension (flashgot.net).")), "growy,pushy");
+                content.add(lbl = new JLabel(JDL.L("installer.firefox.message", "Do you want to integrate JDownloader to Firefox?")), "growy,pushy");
+                content.add(lbl = new JLabel(JDImage.getImageIcon("flashgot_logo")), "growy,pushy");
+                content.add(lbl = new JLabel(JDL.L("installer.firefox.message.flashgot", "This installs the famous FlashGot Extension (flashgot.net).")), "growy,pushy");
 
                 lbl.setVerticalAlignment(SwingConstants.TOP);
                 lbl.setHorizontalAlignment(SwingConstants.LEFT);
 
-                return new ContainerDialog(UserIO.NO_COUNTDOWN, JDL.L("installer.firefox.title", "Install firefox integration?"), c, null, null, null) {
+                return new ContainerDialog(UserIO.NO_COUNTDOWN, JDL.L("installer.firefox.title", "Install firefox integration?"), content, null, null, null) {
                     private static final long serialVersionUID = -7983868276841947499L;
 
                     @Override
@@ -149,7 +149,7 @@ public class Installer {
                     }
 
                     @Override
-                    protected void setReturnValue(boolean b) {
+                    protected void setReturnValue(final boolean b) {
                         config.setProperty("ASKED_TO_INSTALL_FLASHGOT", true);
                         config.save();
                     }
@@ -184,13 +184,15 @@ public class Installer {
                         }
                     }
                 }
-                if (def == null) def = "en";
-                JDLocale sel = SubConfiguration.getConfig(JDL.CONFIG).getGenericProperty(JDL.LOCALE_PARAM_ID, JDL.getInstance(def));
+                if (def == null) {
+                    def = "en";
+                }
+                final JDLocale sel = SubConfiguration.getConfig(JDL.CONFIG).getGenericProperty(JDL.LOCALE_PARAM_ID, JDL.getInstance(def));
 
                 JDL.setLocale(sel);
 
-                JPanel p = getInstallerPanel();
-                JPanel content = new JPanel(new MigLayout("ins 0,wrap 1", "[grow,fill]"));
+                final JPanel p = getInstallerPanel();
+                final JPanel content = new JPanel(new MigLayout("ins 0,wrap 1", "[grow,fill]"));
                 p.add(content);
                 content.add(Factory.createHeader(JDL.L("gui.config.gui.language", "Language"), JDTheme.II("gui.splash.languages", 24, 24)), "growx,pushx");
                 final JList list;
@@ -199,12 +201,13 @@ public class Installer {
                     private ArrayList<JDLocale> ids;
 
                     private ArrayList<JDLocale> getIds() {
-                        if (ids == null) ids = JDL.getLocaleIDs();
-
+                        if (ids == null) {
+                            ids = JDL.getLocaleIDs();
+                        }
                         return ids;
                     }
 
-                    public Object getElementAt(int index) {
+                    public Object getElementAt(final int index) {
                         return getIds().get(index);
                     }
 
@@ -219,7 +222,7 @@ public class Installer {
                 list.setSelectedValue(sel, true);
                 list.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
 
-                    public void valueChanged(ListSelectionEvent e) {
+                    public void valueChanged(final ListSelectionEvent e) {
                         JDL.setConfigLocale((JDLocale) list.getSelectedValue());
                         JDL.setLocale(JDL.getConfigLocale());
                         SubConfiguration.getConfig(JDL.CONFIG).save();
@@ -259,7 +262,7 @@ public class Installer {
                     }
 
                     @Override
-                    protected void setReturnValue(boolean b) {
+                    protected void setReturnValue(final boolean b) {
                         super.setReturnValue(b);
                         if (b) {
                             JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY, br.getCurrentPath());
@@ -275,20 +278,18 @@ public class Installer {
     }
 
     public static void installFirefoxAddon() {
-        File file = JDUtilities.getResourceFile("tools/flashgot.xpi");
-
-        LocalBrowser.openinFirefox(file.getAbsolutePath());
+        LocalBrowser.openinFirefox(JDUtilities.getResourceFile("tools/flashgot.xpi").getAbsolutePath());
     }
 
     public JPanel getInstallerPanel() {
-        JPanel c = new JPanel(new MigLayout("ins 10,wrap 1", "[grow,fill]", "[][grow,fill]"));
+        final JPanel c = new JPanel(new MigLayout("ins 10,wrap 1", "[grow,fill]", "[][grow,fill]"));
 
-        JLabel lbl = new JLabel(JDL.L("installer.gui.message", "After Installation, JDownloader will update to the latest version."));
+        final JLabel lbl = new JLabel(JDL.L("installer.gui.message", "After Installation, JDownloader will update to the latest version."));
 
         if (OSDetector.getOSID() == OSDetector.OS_WINDOWS_VISTA || OSDetector.getOSID() == OSDetector.OS_WINDOWS_7) {
             String dir = JDUtilities.getResourceFile("downloads").getParent().substring(3).toLowerCase();
 
-            if (!JDUtilities.getResourceFile("uninstall.exe").exists()&&(dir.startsWith("programme\\") || dir.startsWith("program files\\"))) {
+            if (!JDUtilities.getResourceFile("uninstall.exe").exists() && (dir.startsWith("programme\\") || dir.startsWith("program files\\"))) {
                 lbl.setText(JDL.LF("installer.vistaDir.warning", "Warning! JD is installed in %s. This causes errors.", JDUtilities.getResourceFile("downloads")));
                 lbl.setForeground(Color.RED);
                 lbl.setBackground(Color.RED);
@@ -301,10 +302,9 @@ public class Installer {
         }
         c.add(lbl, "pushx,growx,split 2");
 
-        Font f = lbl.getFont();
-        f = f.deriveFont(f.getStyle() ^ Font.BOLD);
+        final Font font = lbl.getFont();
 
-        lbl.setFont(f);
+        lbl.setFont(font.deriveFont(font.getStyle() ^ Font.BOLD));
         try {
             c.add(new JLabel(JDImage.getScaledImageIcon(JDImage.getImage("logo/jd_logo_54_54"), 32, 32)), "alignx right");
         } catch (Exception e) {
