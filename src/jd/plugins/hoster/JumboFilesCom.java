@@ -53,17 +53,17 @@ public class JumboFilesCom extends PluginForHost {
         // we need special handling
         if (filesize == null) {
             filesize = br.getRegex("<small>\\((.*?)\\)</small>").getMatch(0);
-            if (filesize == null) filesize = br.getRegex("</b></center></TD></TR>.*?<TR><TD><center>(.*?)</center></TD></TR>").getMatch(0);
+            if (filesize == null) filesize = br.getRegex("<TD><center>.*?<br>(.*?)<br>").getMatch(0);
         }
         if (filename == null) {
             filename = br.getRegex("down_direct\" value=.*?<input type=\"image\" src=.*?</TD></TR>.*?<TR><TD>(.*?)<small").getMatch(0);
-            if (filename == null) filename = br.getRegex("<TR><TD><center><b>(.*?)</b></center>").getMatch(0);
+            if (filename == null) filename = br.getRegex("<TD><center>(.*?)<br>").getMatch(0);
         }
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         filename = filename.replace("&nbsp;", "");
         filename = filename.trim();
         link.setName(filename);
-        link.setDownloadSize(Regex.getSize(filesize));
+        if (filesize != null) link.setDownloadSize(Regex.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
@@ -93,7 +93,8 @@ public class JumboFilesCom extends PluginForHost {
         if (passCode != null) {
             downloadLink.setProperty("pass", passCode);
         }
-        String dllink = br.getRegex("personal download link:</B><BR><A HREF=\"(.*?)\">").getMatch(0);
+        String dllink = br.getRegex("Download</B><BR><A HREF=\"(http.*?)\"").getMatch(0);
+        if(dllink == null)dllink = br.getRegex("\"(http://www[0-9]+\\.jumbofiles.com/.*?/.{12}/.*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         dl.startDownload();
