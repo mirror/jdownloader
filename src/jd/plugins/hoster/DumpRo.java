@@ -21,8 +21,6 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.parser.html.Form;
-import jd.parser.html.InputField;
-import jd.parser.html.Form.MethodType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -35,7 +33,6 @@ public class DumpRo extends PluginForHost {
 
     public DumpRo(PluginWrapper wrapper) {
         super(wrapper);
-        // TODO Auto-generated constructor stub
     }
 
     @Override
@@ -47,22 +44,14 @@ public class DumpRo extends PluginForHost {
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
         this.setBrowserExclusive();
-        br.getPage(link.getDownloadURL());
-        Form[] form = br.getForms();
-        br.submitForm(form[2]);
+        Form dlform = br.getFormbyProperty("name", "download");
+        if (dlform == null) dlform = br.getForm(2);
+        if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.submitForm(dlform);
         br.setFollowRedirects(false);
-
-        String dlform = null;
-        if (br.getRegex("download_file\\('(.*?)','(.*?)',.*?\\);").matches() == false) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dlform = "download.php?action=download&type=file&id=" + br.getRegex("download_file\\('(.*?)','(.*?)',.*?\\);").getMatch(0) + "&act=" + br.getRegex("download_file\\('(.*?)','(.*?)',.*?\\);").getMatch(1);
-
-        Form forms = new Form();
-        forms.setAction(dlform);
-        forms.setMethod(MethodType.POST);
-        InputField nv2 = new InputField("actiune", "download");
-        forms.addInputField(nv2);
-
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, forms, false, 1);
+        String dllink = br.getRegex("window\\.location='(http.*?)'").getMatch(0);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
         dl.startDownload();
 
     }
@@ -71,14 +60,14 @@ public class DumpRo extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
         br.getPage(parameter.getDownloadURL());
-
         if (br.containsHTML("Link invalid")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         Pattern.compile("REGEXP", Pattern.DOTALL);
-        String filename = br.getRegex(Pattern.compile("<td width=\"30%\" align=\"left\"><b>Nume fisier:</b></td>.*<td width=\"70%\" align=\"left\">(.*?)</td>", Pattern.DOTALL)).getMatch(0);
-        String filesize = br.getRegex(Pattern.compile("<td width=\"30%\" align=\"left\"><b>Marime:</b></td>.*<td align=\"left\">(.*?)</td>.*</tr>.*<tr>.*<td width=\"30%\" align=\"left\"><b>Tip:</b></td>", Pattern.DOTALL)).getMatch(0);
+        String filename = br.getRegex(Pattern.compile("<title>Dump - Fisiere -(.*?)</title>", Pattern.DOTALL)).getMatch(0);
+        if (filename == null) filename = br.getRegex(Pattern.compile("<div>Nume fisier:</div>(.*?)<br", Pattern.DOTALL)).getMatch(0);
+        String filesize = br.getRegex(Pattern.compile("<div>Marime:</div>(.*?)<br", Pattern.DOTALL)).getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         parameter.setName(filename.trim());
-        parameter.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
+        parameter.setDownloadSize(Regex.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
