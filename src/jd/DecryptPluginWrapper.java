@@ -70,9 +70,9 @@ public class DecryptPluginWrapper extends PluginWrapper {
         return revision;
     }
 
-    public static boolean hasPlugin(final String s) {
+    public static boolean hasPlugin(final String data) {
         for (DecryptPluginWrapper w : getDecryptWrapper()) {
-            if (w.canHandle(s)) return true;
+            if (w.canHandle(data)) return true;
         }
         return false;
     }
