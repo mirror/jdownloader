@@ -20,17 +20,23 @@ import java.io.IOException;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.http.RandomUserAgent;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "addat.hu" }, urls = { "http://[\\w\\.]*?addat.hu/.+/.+" }, flags = { 0 })
 public class AddatHu extends PluginForHost {
 
+    String id;
+
     public AddatHu(PluginWrapper wrapper) {
         super(wrapper);
+        this.setStartIntervall(2000l);
     }
 
     public String getAGBLink() {
@@ -44,27 +50,32 @@ public class AddatHu extends PluginForHost {
     public void correctDownloadLink(DownloadLink link) {
         String url = link.getDownloadURL();
         Regex regex = new Regex(url, ".*addat.hu/(.*)/");
-        String id = regex.getMatch(0);
+        id = regex.getMatch(0);
         link.setUrlDownload("http://addat.hu/" + id + "/freedownload");
     }
 
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException {
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("Sajnáljuk, de a keresett fájl nem található\\.")) return AvailableStatus.FALSE;
-
+        if (br.containsHTML("Sajnáljuk, de a keresett fájl nem található.")) return AvailableStatus.FALSE;
         String name = br.getRegex(Pattern.compile("<span style=\"font-size: 13px; font-weight: bolder;\">(.*)</span>", Pattern.CASE_INSENSITIVE)).getMatch(0);
         downloadLink.setName(name);
-
         return AvailableStatus.TRUE;
     }
 
     public void handleFree(DownloadLink downloadLink) throws Exception {
         br.setFollowRedirects(true);
         requestFileInformation(downloadLink);
-        String link = br.getRegex(Pattern.compile("<a href=\"(.*)\">\\s*<img border=\"0\" src=\"/images/letoltes_btn.jpg\">", Pattern.CASE_INSENSITIVE)).getMatch(0);
-        jd.plugins.BrowserAdapter.openDownload(br, downloadLink, link, true, 1).startDownload();
+        String dllink = br.getRegex(Pattern.compile("<a href=\"(.*)\">\\s*<img border=\"0\" src=\"/images/letoltes_btn.jpg\">", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // Just to bypass their little protection
+        String activation = "http://addat.hu/stmch.php?id=" + id;
+        br.getPage(activation);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        if (dl.getConnection().getContentType().contains("html")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl.startDownload();
     }
 
     public int getTimegapBetweenConnections() {
@@ -75,8 +86,10 @@ public class AddatHu extends PluginForHost {
         return 1;
     }
 
+    // TODO:This could be set to -1 but the problem is that i dunnu why i can
+    // start that much dls in the browser but not in jd!
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return 5;
     }
 
     public void reset() {
