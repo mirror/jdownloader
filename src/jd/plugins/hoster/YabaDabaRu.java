@@ -45,7 +45,7 @@ public class YabaDabaRu extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("Этот файл не найден")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filesize = br.getRegex("Размер файла:(.*?<br").getMatch(0);
+        String filesize = br.getRegex("Размер файла:(.*?)<br").getMatch(0);
         String filename = br.getRegex("<title>(.*?)&bul.*?Yabadaba").getMatch(0);
         if (filename == null || filesize == null) filename = br.getRegex("Скачать файл</div>.*?<h1>(.*?)</h1>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

@@ -42,7 +42,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "share-links.biz" }, urls = { "http://[\\w\\.]*?share-links\\.biz/_[0-9a-z]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "share-links.biz" }, urls = { "http://[\\w\\.]*?(share-links\\.biz/_[0-9a-z]+|s2l\\.biz/[a-z0-9]+)" }, flags = { 0 })
 public class ShrLnksBz extends PluginForDecrypt {
 
     private static String host = "http://share-links.biz";
@@ -59,7 +59,12 @@ public class ShrLnksBz extends PluginForDecrypt {
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.setFollowRedirects(false);
         br.getPage(parameter);
-        if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
+        String aha = br.getRedirectLocation();
+        if (aha != null) {
+            parameter = aha;
+            br.getPage(aha);
+            br.getPage(aha);
+        }
         /* Error handling */
         if (br.containsHTML("Der Inhalt konnte nicht gefunden werden")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         // Folderpassword+Captcha handling

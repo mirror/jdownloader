@@ -21,14 +21,18 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.html.Form;
+import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xxx-blog.org" }, urls = { "http://[\\w\\.]*?xxx-blog\\.(org|to)/(share|sto|com-|u|filefactory/|relink/)[\\w\\./-]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xxx-blog.org" }, urls = { "http://[\\w\\.]*?xxx-blog\\.(org|to)/((share|sto|com-|u|filefactory/|relink/)[\\w\\./-]+|.*?\\.html|blog/(dvd-rips|scenes|amateur-clips|hd-(scenes|movies)|site-rips|image-sets|games)/.+/)" }, flags = { 0 })
 public class XXXBlg extends PluginForDecrypt {
 
     public XXXBlg(PluginWrapper wrapper) {
@@ -42,17 +46,39 @@ public class XXXBlg extends PluginForDecrypt {
 
         parameter = parameter.substring(parameter.lastIndexOf("http://"));
         br.getPage(parameter);
-        DownloadLink dLink;
-        if (br.getRedirectLocation() != null) {
-            dLink = createDownloadlink(br.getRedirectLocation());
+        if (br.containsHTML("Fehler 404 - Seite nicht gefunden")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        if (parameter.contains("/blog/")) {
+            String fpname = br.getRegex("<title>(.*?)\\| XXX-Blog").getMatch(0);
+            if (fpname == null) fpname = br.getRegex("rel=\"bookmark\" title=\"(.*?)\"").getMatch(0);
+            String pagepiece = br.getRegex("<strong>(.*?)</a></strong></p>").getMatch(0);
+            if (pagepiece == null) pagepiece = br.getRegex("<strong>(.*?)download=highspeed\"").getMatch(0);
+            if (pagepiece == null) return null;
+            String[] links = HTMLParser.getHttpLinks(pagepiece, "");
+            if (links == null || links.length == 0) return null;
+            for (String link : links) {
+                DownloadLink dlink = createDownloadlink(link);
+                dlink.addSourcePluginPassword("xxx-blog.dl.am");
+                dlink.addSourcePluginPassword("xxx-blog.org");
+                decryptedLinks.add(dlink);
+            }
+            if (fpname != null) {
+                FilePackage fp = FilePackage.getInstance();
+                fp.setName(fpname.trim());
+                fp.addLinks(decryptedLinks);
+            }
         } else {
-            Form form = br.getForm(0);
-            if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            dLink = createDownloadlink(form.getAction(null));
+            DownloadLink dLink;
+            if (br.getRedirectLocation() != null) {
+                dLink = createDownloadlink(br.getRedirectLocation());
+            } else {
+                Form form = br.getForm(0);
+                if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                dLink = createDownloadlink(form.getAction(null));
+            }
+            dLink.addSourcePluginPassword("xxx-blog.dl.am");
+            dLink.addSourcePluginPassword("xxx-blog.org");
+            decryptedLinks.add(dLink);
         }
-        dLink.addSourcePluginPassword("xxx-blog.dl.am");
-        dLink.addSourcePluginPassword("xxx-blog.org");
-        decryptedLinks.add(dLink);
 
         return decryptedLinks;
     }
