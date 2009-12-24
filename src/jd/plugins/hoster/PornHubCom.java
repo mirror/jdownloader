@@ -42,7 +42,8 @@ public class PornHubCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         dlUrl = null;
-        String file_name = br.getRegex("video-title-nf\">.*<h1>(.*?)</h1>").getMatch(0);
+        String file_name = br.getRegex("video-title-nf\" style=\"height:[0-9]+px;\">.*<h1>(.*?)</h1>").getMatch(0);
+        System.out.println("Filename " + file_name);
         if (file_name == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String[] linksplit = downloadLink.getDownloadURL().split("=");
         String video_id = linksplit[linksplit.length - 1];
