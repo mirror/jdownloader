@@ -20,6 +20,7 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -48,7 +49,7 @@ public class FullShareNet extends PluginForHost {
         if (filename == null) {
             filename = br.getRegex("\"http://fullshare\\.net/deliver/.*?/(.*?)\"").getMatch(0);
             if (filename == null) {
-                filename = br.getRegex("\"http:.*?/get/.*?/(.*?)\"").getMatch(0);
+                filename = br.getRegex("show/.*?/(.*?)\"").getMatch(0);
             }
         }
         Regex filesize = br.getRegex("<td>GR\\&Ouml;SSE <b>(.*?)</b>(.*?)</td>");
@@ -61,11 +62,17 @@ public class FullShareNet extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        String dllink = br.getRegex("video/divx\" src=\"(.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("src\" value=\"(.*?)\"").getMatch(0);
+        String ttt = br.getRegex("Das Video wurde angefordert. Bitte warten Sie.*?(\\d+).*?Sekunden").getMatch(0);
+        if (ttt != null) {
+            Form dlform = br.getForm(0);
+            if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            int tt = Integer.parseInt(ttt);
+            sleep(tt * 1001l, downloadLink);
+            br.submitForm(dlform);
+        }
+        String dllink = br.getRegex("\"src\" value=\"(.*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         dl.startDownload();
