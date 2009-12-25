@@ -47,7 +47,7 @@ public class JDLocale implements Serializable {
      *            a languagecode like de-AT-custom (language-COUNTRY-extension
      * @see jd.utils.JDGeoCode
      */
-    public JDLocale(String lngGeoCode) {
+    public JDLocale(final String lngGeoCode) {
         this.lngGeoCode = lngGeoCode;
 
         codes = JDGeoCode.parseLanguageCode(lngGeoCode);

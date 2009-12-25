@@ -39,7 +39,12 @@ import jd.utils.EditDistance;
 import jd.utils.JDGeoCode;
 import jd.utils.JDUtilities;
 
-public class JDL {
+public final class JDL {
+    /**
+     * Don't let anyone instantiate this class.
+     */
+    private JDL() {
+    }
 
     private static final HashMap<String, JDLocale> CACHE = new HashMap<String, JDLocale>();
 
@@ -47,7 +52,7 @@ public class JDL {
 
     private static String COUNTRY_CODE = null;
 
-    private static HashMap<Integer, String> DATA = new HashMap<Integer, String>();
+    private static final HashMap<Integer, String> DATA = new HashMap<Integer, String>();
 
     public static boolean DEBUG = false;
 
@@ -76,7 +81,7 @@ public class JDL {
         if (COUNTRY_CODE != null) return COUNTRY_CODE;
 
         if ((COUNTRY_CODE = SubConfiguration.getConfig(JDL.CONFIG).getStringProperty("DEFAULTLANGUAGE", null)) != null) { return COUNTRY_CODE; }
-        Browser br = new Browser();
+        final Browser br = new Browser();
         br.setConnectTimeout(10000);
         br.setReadTimeout(10000);
         try {
@@ -101,7 +106,7 @@ public class JDL {
      * @param lngGeoCode
      * @return
      */
-    public static JDLocale getInstance(String lngGeoCode) {
+    public static JDLocale getInstance(final String lngGeoCode) {
         JDLocale ret;
         if ((ret = CACHE.get(lngGeoCode)) != null) return ret;
         ret = new JDLocale(lngGeoCode);
@@ -115,11 +120,11 @@ public class JDL {
      * @param text
      * @return
      */
-    public static String[] getKeysFor(String text) {
-        ArrayList<Integer> bestKeys = new ArrayList<Integer>();
+    public static String[] getKeysFor(final String text) {
+        final ArrayList<Integer> bestKeys = new ArrayList<Integer>();
         int bestValue = Integer.MAX_VALUE;
         for (Entry<Integer, String> next : DATA.entrySet()) {
-            int dist = EditDistance.getLevenshteinDistance(text, next.getValue());
+            final int dist = EditDistance.getLevenshteinDistance(text, next.getValue());
 
             if (dist < bestValue) {
                 bestKeys.clear();
@@ -130,9 +135,12 @@ public class JDL {
                 bestValue = dist;
             }
         }
-        if (bestKeys.size() == 0) return null;
-        String[] ret = new String[bestKeys.size()];
-        for (int i = 0; i < ret.length; i++) {
+        final int size = bestKeys.size();
+        if (size == 0) return null;
+
+        final String[] ret = new String[size];
+        final int length = ret.length;
+        for (int i = 0; i < length; i++) {
             ret[i] = hashToKey(bestKeys.get(i));
         }
         return ret;
@@ -154,7 +162,7 @@ public class JDL {
     /**
      * saves defaultlocal
      */
-    public static void setConfigLocale(JDLocale l) {
+    public static void setConfigLocale(final JDLocale l) {
         SubConfiguration.getConfig(JDL.CONFIG).setProperty(JDL.LOCALE_PARAM_ID, l);
         SubConfiguration.getConfig(JDL.CONFIG).save();
     }
@@ -165,21 +173,23 @@ public class JDL {
     }
 
     public static ArrayList<JDLocale> getLocaleIDs() {
-        File dir = JDUtilities.getResourceFile(LANGUAGES_DIR);
+        final File dir = JDUtilities.getResourceFile(LANGUAGES_DIR);
         if (!dir.exists()) return null;
-        File[] files = dir.listFiles(new JDFileFilter(null, ".loc", false));
-        ArrayList<JDLocale> ret = new ArrayList<JDLocale>();
+        final File[] files = dir.listFiles(new JDFileFilter(null, ".loc", false));
+        final ArrayList<JDLocale> ret = new ArrayList<JDLocale>();
+        String name = null;
         for (File element : files) {
-            if (JDGeoCode.parseLanguageCode(element.getName().split("\\.")[0]) == null) {
+            name = element.getName().split("\\.")[0];
+            if (JDGeoCode.parseLanguageCode(name) == null) {
                 element.renameTo(new File(element, ".outdated"));
             } else {
-                ret.add(getInstance(element.getName().split("\\.")[0]));
+                ret.add(getInstance(name));
             }
         }
         return ret;
     }
 
-    public static String getLocaleString(String key2, String def) {
+    public static String getLocaleString(final String key2, String def) {
         if (DEBUG) return key2;
         if (DATA == null || LOCALE_FILE == null) {
             JDL.setLocale(getConfigLocale());
@@ -204,10 +214,11 @@ public class JDL {
      * loads the default translation(english) and returns the string for the
      * givven key
      * 
-     * @param key2 stringkey.toLowerCase().hashCode()
+     * @param key2
+     *            stringkey.toLowerCase().hashCode()
      * @return
      */
-    public static String getDefaultLocaleString(int key) {
+    public static String getDefaultLocaleString(final int key) {
         // DEFAULT_DATA nur im absoluten Notfall laden
         loadDefault();
         if (DEFAULT_DATA.containsKey(key)) { return DEFAULT_DATA.get(key); }
@@ -220,27 +231,26 @@ public class JDL {
      * @param hash
      * @return
      */
-    private static String hashToKey(Integer hash) {
-        BufferedReader f = null;
+    private static String hashToKey(final Integer hash) {
+        BufferedReader reader = null;
         try {
-            f = new BufferedReader(new InputStreamReader(new FileInputStream(LOCALE_FILE), "UTF8"));
+            reader = new BufferedReader(new InputStreamReader(new FileInputStream(LOCALE_FILE), "UTF8"));
             String line;
             String key;
-            while ((line = f.readLine()) != null) {
-                if (line.startsWith("#")) continue;
-                int split = line.indexOf("=");
+            while ((line = reader.readLine()) != null) {
+                // if (line.startsWith("#"))
+                if (line.charAt(0) == '#') continue;
+                final int split = line.indexOf('=');
                 if (split <= 0) continue;
 
                 key = line.substring(0, split).trim().toLowerCase();
                 if (hash == key.hashCode()) return key;
-
             }
-
         } catch (Exception e) {
             JDLogger.exception(e);
         } finally {
             try {
-                if (f != null) f.close();
+                if (reader != null) reader.close();
             } catch (Exception e1) {
                 JDLogger.exception(e1);
             }
@@ -253,11 +263,11 @@ public class JDL {
     }
 
     public static boolean isGerman() {
-        String country = System.getProperty("user.country");
+        final String country = System.getProperty("user.country");
         return country != null && country.equalsIgnoreCase("DE");
     }
 
-    public static String L(String key, String def) {
+    public static String L(final String key, final String def) {
         return JDL.getLocaleString(key, def);
     }
 
@@ -269,7 +279,7 @@ public class JDL {
      * @param args
      * @return
      */
-    public static String LF(String key, String def, Object... args) {
+    public static String LF(final String key, final String def, final Object... args) {
         if (DEBUG) return key;
         if (args == null || args.length == 0) {
             JDLogger.getLogger().severe("FIXME: " + key);
@@ -286,7 +296,7 @@ public class JDL {
         if (DEFAULT_DATA == null) {
             System.err.println("JD have to load the default language, there is an missing entry");
             DEFAULT_DATA = new HashMap<Integer, String>();
-            File defaultFile = STATIC_LOCALE == null ? JDUtilities.getResourceFile(LANGUAGES_DIR + DEFAULT_LOCALE.getLngGeoCode() + ".loc") : new File(STATIC_LOCALE);
+            final File defaultFile = STATIC_LOCALE == null ? JDUtilities.getResourceFile(LANGUAGES_DIR + DEFAULT_LOCALE.getLngGeoCode() + ".loc") : new File(STATIC_LOCALE);
             if (defaultFile.exists()) {
                 JDL.parseLanguageFile(defaultFile, DEFAULT_DATA);
             } else {
@@ -295,7 +305,7 @@ public class JDL {
         }
     }
 
-    public static void parseLanguageFile(File file, HashMap<Integer, String> data) {
+    public static void parseLanguageFile(final File file, final HashMap<Integer, String> data) {
 
         JDLogger.getLogger().info("parse lng file " + file);
         data.clear();
@@ -305,17 +315,18 @@ public class JDL {
             return;
         }
 
-        BufferedReader f;
         try {
-            f = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF8"));
+            final BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF8"));
 
             String line;
             String key;
             String value;
-            while ((line = f.readLine()) != null) {
-                if (line.startsWith("#")) continue;
+            while ((line = reader.readLine()) != null) {
+                // if (line.startsWith("#")) continue;
+                if (line.charAt(0) == '#') continue;
 
-                int split = line.indexOf("=");
+                // int split = line.indexOf("=");
+                int split = line.indexOf('=');
                 if (split <= 0) continue;
 
                 key = line.substring(0, split).trim().toLowerCase();
@@ -323,7 +334,7 @@ public class JDL {
                 value = value.replace("\\r", "\r").replace("\\n", "\n");
                 data.put(key.hashCode(), value);
             }
-            f.close();
+            reader.close();
         } catch (IOException e) {
             JDLogger.exception(e);
         }
@@ -331,7 +342,7 @@ public class JDL {
         JDLogger.getLogger().info("parse lng file end " + file);
     }
 
-    public static void setLocale(JDLocale lID) {
+    public static void setLocale(final JDLocale lID) {
         if (lID == null) return;
         LOCALE_ID = lID;
         System.out.println("Loaded language: " + lID);
@@ -344,20 +355,20 @@ public class JDL {
         }
     }
 
-    public static String translate(String to, String msg) {
+    public static String translate(final String to, final String msg) {
         return JDL.translate("auto", to, msg);
     }
 
-    public static String translate(String from, String to, String msg) {
+    public static String translate(final String from, final String to, final String msg) {
         try {
-            LinkedHashMap<String, String> postData = new LinkedHashMap<String, String>();
+            final LinkedHashMap<String, String> postData = new LinkedHashMap<String, String>();
             postData.put("hl", "de");
             postData.put("text", msg);
             postData.put("sl", from);
             postData.put("tl", to);
             postData.put("ie", "UTF8");
 
-            Browser br = new Browser();
+            final Browser br = new Browser();
             br.postPage("http://translate.google.com/translate_t", postData);
 
             return Encoding.UTF8Decode(Encoding.htmlDecode(br.getRegex("<div id\\=result_box dir\\=\"ltr\">(.*?)</div>").getMatch(0)));
@@ -372,9 +383,8 @@ public class JDL {
      * 
      * @param string
      */
-    public static void setStaticLocale(String string) {
+    public static void setStaticLocale(final String string) {
         STATIC_LOCALE = string;
-
     }
 
 }
