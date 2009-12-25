@@ -76,23 +76,23 @@ public class GetExplorer {
 
     public boolean openExplorer(File path) {
         if (path == null) return false;
+
         getExplorerCommand();
-        while (path != null && !path.isDirectory())
+        while (path != null && !path.isDirectory()) {
             path = path.getParentFile();
+        }
+
         if (path != null && explorer != null) {
+            final String spath = path.getAbsolutePath();
+            final String[] paramsArray = (String[]) explorer[2];
+            final int length = paramsArray.length;
+            final String[] finalParams = new String[length];
 
-            String spath = path.getAbsolutePath();
-            String[] paramsArray = (String[]) explorer[2];
-            String[] finalParams = new String[paramsArray.length];
-
-            for (int i = 0; i < paramsArray.length; i++) {
-
+            for (int i = 0; i < length; i++) {
                 finalParams[i] = paramsArray[i].replace("%%path%%", spath);
-
             }
 
             JDUtilities.runCommand((String) explorer[1], finalParams, null, 0);
-
             return true;
         }
         return false;
