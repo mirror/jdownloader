@@ -137,6 +137,15 @@ public class SendspaceCom extends PluginForHost {
         // Do we have to submit a form to enter the "free download area" for the
         // file ?
         if (br.getForm(1) != null) br.submitForm(br.getForm(1));
+        if (br.containsHTML("You have reached your daily download limit")) {
+            int minutes = 0, hours = 0;
+            String tmphrs = br.getRegex("again in.*?(\\d+)h:.*?m or").getMatch(0);
+            if (tmphrs != null) hours = Integer.parseInt(tmphrs);
+            String tmpmin = br.getRegex("again in.*?h:(\\d+)m or").getMatch(0);
+            if (tmpmin != null) minutes = Integer.parseInt(tmpmin);
+            int waittime = ((3600 * hours) + (60 * minutes) + 1) * 1000;
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
+        }
         // Password protected links handling
         String passCode = null;
         if (br.containsHTML("name=\"filepassword\"")) {
