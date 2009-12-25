@@ -35,7 +35,7 @@ public class GetExplorer {
         } else if (OSDetector.isMac()) {
             return new Object[] { "Open", "/usr/bin/open", new String[] { "%%path%%" } };
         } else {
-            Object[][] programms = new Object[][] { { "dolphin", new String[] { "%%path%%" } }, { "konqueror", new String[] { "%%path%%" } }, { "thunar", new String[] { "%%path%%" } }, { "rox", new String[] { "%%path%%" } }, { "pcmanfm", new String[] { "%%path%%" } }, { "nautilus", new String[] { "--browser", "--no-desktop", "%%path%%" } } };
+            final Object[][] programms = new Object[][] { { "dolphin", new String[] { "%%path%%" } }, { "konqueror", new String[] { "%%path%%" } }, { "thunar", new String[] { "%%path%%" } }, { "rox", new String[] { "%%path%%" } }, { "pcmanfm", new String[] { "%%path%%" } }, { "nautilus", new String[] { "--browser", "--no-desktop", "%%path%%" } } };
             try {
                 String[] charset = System.getenv("PATH").split(":");
                 for (String element : charset) {
