@@ -37,7 +37,7 @@ public class JACController {
     private static JComboBox methods;
 
     public static void showDialog(final boolean isTrain) {
-        JFrame frame = new JFrame();
+        final JFrame frame = new JFrame();
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setLayout(new MigLayout("wrap 2"));
         if (isTrain) {
@@ -47,11 +47,10 @@ public class JACController {
         }
         frame.setAlwaysOnTop(true);
         frame.setLocation(20, 20);
-        File[] meths = new File(Utilities.getMethodDir()).listFiles(new FileFilter() {
+        final File[] meths = new File(Utilities.getMethodDir()).listFiles(new FileFilter() {
 
-            public boolean accept(File pathname) {
-                if (pathname.isDirectory()) return true;
-                return false;
+            public boolean accept(final File pathname) {
+                return pathname.isDirectory();
             }
         });
         methods = new JComboBox(meths);
@@ -71,14 +70,14 @@ public class JACController {
         frame.add(methods, "growx, spanx");
         frame.add(new JLabel(chooserText));
         frame.add(chooser, "growx, spanx");
-        JButton btnOK = new JButton(JDL.L("gui.btn_ok", "OK"));
+        final JButton btnOK = new JButton(JDL.L("gui.btn_ok", "OK"));
         btnOK.addActionListener(new ActionListener() {
 
-            public void actionPerformed(ActionEvent e) {
+            public void actionPerformed(final ActionEvent e) {
                 new Thread(new Runnable() {
 
                     public void run() {
-                        JACController jacc = new JACController(new File(chooser.getText()), ((File) methods.getSelectedItem()).getName());
+                        final JACController jacc = new JACController(new File(chooser.getText()), ((File) methods.getSelectedItem()).getName());
                         if (isTrain) {
                             jacc.train();
                         } else {
@@ -98,10 +97,10 @@ public class JACController {
         frame.setVisible(true);
     }
 
-    private JAntiCaptcha jac;
-    private File path;
+    private final JAntiCaptcha jac;
+    private final File path;
 
-    public JACController(File path, String methode) {
+    public JACController(final File path, final String methode) {
         this.path = path;
         jac = new JAntiCaptcha(methode);
     }
