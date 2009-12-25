@@ -72,7 +72,7 @@ public class WebUpdater implements Serializable {
     public static HashMap<String, FileUpdate> getPluginList() {
         if (PLUGIN_LIST == null && JDUtilities.getResourceFile("tmp/hashlist.lst").exists()) {
             PLUGIN_LIST = new HashMap<String, FileUpdate>();
-            WebUpdater updater = new WebUpdater();
+            final WebUpdater updater = new WebUpdater();
 
             // if
             // (SubConfiguration.getConfig("WEBUPDATE").getBooleanProperty(Configuration.PARAM_WEBUPDATE_DISABLE,
@@ -87,15 +87,14 @@ public class WebUpdater implements Serializable {
     }
 
     public static void randomizeMirrors() {
-        ArrayList<String> mirrors = new ArrayList<String>();
-        for (String m : UPDATE_MIRROR)
+        final ArrayList<String> mirrors = new ArrayList<String>();
+        for (String m : UPDATE_MIRROR) {
             mirrors.add(m);
-
-        for (int i = 0; i < UPDATE_MIRROR.length; i++) {
-
-            UPDATE_MIRROR[i] = mirrors.remove((int) (Math.random() * (UPDATE_MIRROR.length - 1 - i)));
         }
-
+        final int length = UPDATE_MIRROR.length - 1;
+        for (int i = 0; i <= length; i++) {
+            UPDATE_MIRROR[i] = mirrors.remove((int) (Math.random() * (length - i)));
+        }
     }
 
     private Browser br;
@@ -116,7 +115,8 @@ public class WebUpdater implements Serializable {
     private File workingdir;
     private String betaBranch;
     /**
-     * if this field !=null, the updater uses this branch and ignores any other branch settings
+     * if this field !=null, the updater uses this branch and ignores any other
+     * branch settings
      */
     private String branch;
 
@@ -196,7 +196,7 @@ public class WebUpdater implements Serializable {
      */
     public String getBranch() {
         try {
-            if(branch!=null)return branch;
+            if (branch != null) return branch;
             String latestBranch = getLatestBranch();
 
             String ret = SubConfiguration.getConfig("WEBUPDATE").getStringProperty(WebUpdater.PARAM_BRANCH);
@@ -649,21 +649,26 @@ public class WebUpdater implements Serializable {
 
     public void cleanUp() {
     }
-/**
- * sets the branch to use. This overwrites the webupdater settings. This means that the updater uses this branch and ignores anything else
- * @param branchtoUse
- */
+
+    /**
+     * sets the branch to use. This overwrites the webupdater settings. This
+     * means that the updater uses this branch and ignores anything else
+     * 
+     * @param branchtoUse
+     */
     public void setBranch(String branchtoUse) {
-       this.branch=branchtoUse;
-        
+        this.branch = branchtoUse;
+
     }
-/**
- * Return the internal browser object
- * @return
- */
-public Browser getBrowser() {
-    // TODO Auto-generated method stub
-    return br;
-}
+
+    /**
+     * Return the internal browser object
+     * 
+     * @return
+     */
+    public Browser getBrowser() {
+        // TODO Auto-generated method stub
+        return br;
+    }
 
 }
