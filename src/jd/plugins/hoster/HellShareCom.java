@@ -62,12 +62,11 @@ public class HellShareCom extends PluginForHost {
         br.setDebug(true);
         br.setFollowRedirects(true);
         br.submitForm(form);
-        br.getPage("http://www.en.hellshare.com/profile");
         /*
          * this will change account language to eng,needed because language is
          * saved in profile
          */
-        String changetoeng = br.getRegex("href=\"(http://www.en.hellshare.com/-.*?/profile)\"").getMatch(0);
+        String changetoeng = br.getRegex("\"(http://www\\.en\\.hellshare\\.com/profile.*?)\"").getMatch(0);
         if (changetoeng == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage(changetoeng);
         if (!br.containsHTML("credit for downloads") || br.containsHTML("Špatně zadaný login nebo heslo uživatele")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -116,7 +115,7 @@ public class HellShareCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return 20;
+        return -1;
     }
 
     @Override
