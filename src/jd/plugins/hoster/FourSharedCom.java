@@ -31,7 +31,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4shared.com" }, urls = { "http://[\\w\\.]*?4shared.com/(file|get)/\\d+?/.*" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4shared.com" }, urls = { "http://[\\w\\.]*?(4shared|4shared-china)\\.com/(file|get)/\\d+?/.*" }, flags = { 2 })
 public class FourSharedCom extends PluginForHost {
 
     public FourSharedCom(PluginWrapper wrapper) {
@@ -136,7 +136,7 @@ public class FourSharedCom extends PluginForHost {
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceAll("red.com/get", "red.com/file"));
+        link.setUrlDownload(link.getDownloadURL().replaceAll("red.com/get", "red.com/file").replace("4shared-china", "4shared"));
     }
 
 }
