@@ -31,7 +31,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ifolder.ru" }, urls = { "http://([\\w.-]*?\\.)?ifolder\\.ru/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ifolder.ru" }, urls = { "http://([\\w.-]*?\\.)?(ifolder\\.ru|files\\.metalarea\\.org)/\\d+" }, flags = { 0 })
 public class IfolderRu extends PluginForHost {
 
     public IfolderRu(PluginWrapper wrapper) {
@@ -41,6 +41,10 @@ public class IfolderRu extends PluginForHost {
     @Override
     public String getAGBLink() {
         return ("http://ifolder.ru/agreement");
+    }
+
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("files.metalarea.org", "ifolder.ru"));
     }
 
     @Override
