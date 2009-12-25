@@ -81,7 +81,7 @@ public class Main {
     public static void main(String args[]) {
 
         System.setProperty("file.encoding", "UTF-8");
-        OSDetector.setOSString(System.getProperty("os.name"));
+        //OSDetector.setOSString(System.getProperty("os.name"));
         // System.setProperty("os.name", "Windows Vista m.a.c");
         System.setProperty("sun.swing.enableImprovedDragGesture", "true");
         // only use ipv4, because debian changed default stack to ipv6
