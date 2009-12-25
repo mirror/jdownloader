@@ -27,9 +27,15 @@ import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 
-public class ClassFinder {
+public final class ClassFinder {
 
-    public static ArrayList<Class<?>> getClasses(String packageName) throws ClassNotFoundException, IOException {
+    /**
+     * Don't let anyone instantiate this class.
+     */
+    private ClassFinder() {
+    }
+
+    public static ArrayList<Class<?>> getClasses(final String packageName) throws ClassNotFoundException, IOException {
         return getClasses(packageName, Thread.currentThread().getContextClassLoader());
     }
 
@@ -44,10 +50,9 @@ public class ClassFinder {
      * @throws IOException
      */
     public static ArrayList<Class<?>> getClasses(String packageName, ClassLoader classLoader) throws ClassNotFoundException, IOException {
-        String path = packageName.replace('.', '/');
-        Enumeration<URL> resources = classLoader.getResources(path);
+        final Enumeration<URL> resources = classLoader.getResources(packageName.replace('.', '/'));
 
-        ArrayList<Class<?>> classes = new ArrayList<Class<?>>();
+        final ArrayList<Class<?>> classes = new ArrayList<Class<?>>();
         while (resources.hasMoreElements()) {
             try {
                 classes.addAll(findPlugins(resources.nextElement(), packageName, classLoader));
@@ -69,8 +74,8 @@ public class ClassFinder {
      * @return
      * @throws ClassNotFoundException
      */
-    private static List<Class<?>> findPlugins(URL directory, String packageName, ClassLoader classLoader) throws ClassNotFoundException {
-        ArrayList<Class<?>> classes = new ArrayList<Class<?>>();
+    private static List<Class<?>> findPlugins(final URL directory, final String packageName, final ClassLoader classLoader) throws ClassNotFoundException {
+        final ArrayList<Class<?>> classes = new ArrayList<Class<?>>();
         File[] files = null;
 
         try {
@@ -81,41 +86,41 @@ public class ClassFinder {
         if (files == null) {
             try {
                 // it's a jar
-                String path = directory.toString().substring(4);
+                final String path = directory.toString().substring(4);
                 // split path | intern path
-                String[] splitted = path.split("!");
+                final String[] splitted = path.split("!");
 
                 splitted[1] = splitted[1].substring(1);
-                File file = new File(new URL(splitted[0]).toURI());
 
-                JarInputStream jarFile = new JarInputStream(new FileInputStream(file));
+                final JarInputStream jarFile = new JarInputStream(new FileInputStream(new File(new URL(splitted[0]).toURI())));
                 JarEntry e;
 
+                String jarName;
                 while ((e = jarFile.getNextJarEntry()) != null) {
-                    if (e.getName().startsWith(splitted[1])) {
-                        Class<?> c = classLoader.loadClass(e.getName().substring(0, e.getName().length() - 6).replace("/", "."));
+                    jarName = e.getName();
+                    if (jarName.startsWith(splitted[1])) {
+                        Class<?> c = classLoader.loadClass(jarName.substring(0, jarName.length() - 6).replace("/", "."));
                         if (c != null) {
                             classes.add(c);
                         }
                     }
                 }
-
             } catch (Throwable e) {
                 e.printStackTrace();
             }
-
         } else {
+            String fileName = null;
             for (File file : files) {
                 try {
+                    fileName = file.getName();
                     if (file.isDirectory()) {
                         try {
-                            classes.addAll(findPlugins(file.toURI().toURL(), packageName + "." + file.getName(), classLoader));
+                            classes.addAll(findPlugins(file.toURI().toURL(), packageName + "." + fileName, classLoader));
                         } catch (MalformedURLException e) {
                             e.printStackTrace();
                         }
-                    } else if (file.getName().endsWith(".class")) {
-                        Class<?> c = classLoader.loadClass(packageName + '.' + file.getName().substring(0, file.getName().length() - 6));
-                        classes.add(c);
+                    } else if (fileName.endsWith(".class")) {
+                        classes.add(classLoader.loadClass(packageName + '.' + fileName.substring(0, fileName.length() - 6)));
                     }
                 } catch (Throwable e) {
                     e.printStackTrace();
