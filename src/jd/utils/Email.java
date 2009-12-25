@@ -29,23 +29,23 @@ import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 
 public class Email {
-    private String host;
+    private final String host;
     private String user;
     private String pass;
     private String senderEmail;
     private String senderName;
 
-    public Email(String smtpHost) {
+    public Email(final String smtpHost) {
         this.host = smtpHost;
     }
 
-    public Email(String smtpHost, String user, String pass) {
+    public Email(final String smtpHost, final String user, final String pass) {
         this.host = smtpHost;
         this.user = user;
         this.pass = pass;
     }
 
-    public void setSender(String email, String name) {
+    public void setSender(final String email, final String name) {
         this.senderEmail = email;
         this.senderName = name;
     }
@@ -54,19 +54,18 @@ public class Email {
         return this.senderName;
     }
 
-    public void sendEmail(String email, String name, String subject, String message) throws MessagingException {
-        Properties props = new Properties();
+    public void sendEmail(final String email, final String name, final String subject, final String message) throws MessagingException {
+        final Properties props = new Properties();
         props.put("mail.smtp.host", host);
         Session session;
         if (user != null) {
-            MailAuthenticator auth = new MailAuthenticator(user, pass);
             props.put("mail.smtp.auth", "true");
-            session = Session.getDefaultInstance(props, auth);
+            session = Session.getDefaultInstance(props, new MailAuthenticator(user, pass));
         } else {
             session = Session.getDefaultInstance(props);
         }
 
-        Message msg = new MimeMessage(session);
+        final Message msg = new MimeMessage(session);
 
         msg.setFrom(new InternetAddress(senderEmail));
 
@@ -100,7 +99,7 @@ public class Email {
          * @param password
          *            String, das Passwort fuer den Mailaccount.
          */
-        public MailAuthenticator(String user, String password) {
+        public MailAuthenticator(final String user, final String password) {
             this.user = user;
             this.password = password;
         }
