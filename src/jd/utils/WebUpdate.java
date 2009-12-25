@@ -61,18 +61,18 @@ public class WebUpdate {
         DYNAMIC_PLUGINS_FINISHED = true;
     }
 
-    private static String getUpdaterMD5(int trycount) {
+    private static String getUpdaterMD5(final int trycount) {
         return WebUpdater.UPDATE_MIRROR[trycount % WebUpdater.UPDATE_MIRROR.length] + "jdupdate.jar.md5";
     }
 
-    private static String getUpdater(int trycount) {
+    private static String getUpdater(final int trycount) {
         return WebUpdater.UPDATE_MIRROR[trycount % WebUpdater.UPDATE_MIRROR.length] + "jdupdate.jar";
     }
 
     public static boolean updateUpdater() {
         final ProgressController progress = new ProgressController(JDL.L("wrapper.webupdate.updatenewupdater", "Downloading new jdupdate.jar"), "gui.images.update");
         progress.increase(1);
-        Thread ttmp = new Thread() {
+        final Thread ttmp = new Thread() {
             public void run() {
                 while (true) {
                     try {
@@ -88,16 +88,17 @@ public class WebUpdate {
         };
         WebUpdater.randomizeMirrors();
         ttmp.start();
-        Browser br = new Browser();
-        br.setReadTimeout(20 * 1000);
-        br.setConnectTimeout(10 * 1000);
-        File file;
-        String localHash = JDHash.getMD5(file = JDUtilities.getResourceFile("jdupdate.jar"));
+        final Browser browser = new Browser();
+        browser.setReadTimeout(20 * 1000);
+        browser.setConnectTimeout(10 * 1000);
+        final File file = JDUtilities.getResourceFile("jdupdate.jar");
+        final String fileAbsolutePath = file.getAbsolutePath();
+        String localHash = JDHash.getMD5(file);
         String remoteHash = null;
         for (int trycount = 0; trycount < 10; trycount++) {
             if (remoteHash == null) {
                 try {
-                    remoteHash = br.getPage(getUpdaterMD5(trycount) + "?t=" + System.currentTimeMillis()).trim();
+                    remoteHash = browser.getPage(getUpdaterMD5(trycount) + "?t=" + System.currentTimeMillis()).trim();
                 } catch (Exception e) {
                     remoteHash = null;
                     errorWait();
@@ -111,19 +112,19 @@ public class WebUpdate {
                 return true;
             }
             if (localHash == null || !remoteHash.equalsIgnoreCase(localHash)) {
-                logger.info("Download " + file.getAbsolutePath() + "");
+                logger.info("Download " + fileAbsolutePath + "");
                 URLConnectionAdapter con = null;
                 try {
-                    con = br.openGetConnection(getUpdater(trycount) + "?t=" + System.currentTimeMillis());
+                    con = browser.openGetConnection(getUpdater(trycount) + "?t=" + System.currentTimeMillis());
                     if (con.isOK()) {
                         File tmp;
-                        Browser.download(tmp = new File(file.getAbsolutePath() + ".tmp"), con);
+                        Browser.download(tmp = new File(fileAbsolutePath + ".tmp"), con);
                         localHash = JDHash.getMD5(tmp);
                         if (remoteHash.equalsIgnoreCase(localHash)) {
                             if ((!file.exists() || file.delete()) && tmp.renameTo(file)) {
                                 ttmp.interrupt();
                                 progress.doFinalize(2000);
-                                logger.info("Update of " + file.getAbsolutePath() + " successfull");
+                                logger.info("Update of " + fileAbsolutePath + " successfull");
                                 return true;
                             } else {
                                 ttmp.interrupt();
@@ -145,14 +146,14 @@ public class WebUpdate {
                     } catch (Exception e2) {
                     }
                 }
-                new File(file.getAbsolutePath() + ".tmp").delete();
+                new File(fileAbsolutePath + ".tmp").delete();
             }
         }
         ttmp.interrupt();
         progress.setColor(Color.RED);
         progress.setStatusText(JDL.LF("wrapper.webupdate.updateUpdater.error_reqeust2", "Could not download new jdupdate.jar"));
         progress.doFinalize(5000);
-        logger.info("Update of " + file.getAbsolutePath() + " failed");
+        logger.info("Update of " + fileAbsolutePath + " failed");
         return false;
     }
 
@@ -212,7 +213,7 @@ public class WebUpdate {
                     updater.filterAvailableUpdates(files);
 
                     boolean coreUp2Date = true;
-                    ArrayList<FileUpdate> tmpfiles = new ArrayList<FileUpdate>();
+                    final ArrayList<FileUpdate> tmpfiles = new ArrayList<FileUpdate>();
                     for (FileUpdate f : files) {
                         // check if jdownloader.jar is up2date
                         if (f.getLocalFile().equals(JDUtilities.getResourceFile("JDownloader.jar"))) {
@@ -225,9 +226,10 @@ public class WebUpdate {
                     }
                     if (coreUp2Date) {
                         doPluginUpdate(updater, tmpfiles);
-
                         for (FileUpdate f : tmpfiles) {
-                            if (f.equals()) files.remove(f);
+                            if (f.equals()) {
+                                files.remove(f);
+                            }
                         }
                     }
                     WebUpdate.setWaitingUpdates(files.size());
@@ -436,16 +438,19 @@ public class WebUpdate {
                         }
                     }
 
-                    DownloadController dlc = DownloadController.getInstance();
-                    if (dlc != null) {
+                    // DownloadController dlc =
+                    // DownloadController.getInstance();
+                    // if (dlc != null) {
+                    if (DownloadController.getInstance() != null) {
                         JDUpdateUtils.backupDataBase();
                     } else {
                         logger.severe("Could not backup. downloadcontroller=null");
                     }
 
-                    if (!WebUpdate.updateUpdater()) {
-
-                    }
+                    // if (!WebUpdate.updateUpdater()) {
+                    //
+                    // }
+                    WebUpdate.updateUpdater();
 
                     final ProgressController pc = new ProgressController(JDL.L("jd.utils.webupdate.progresscontroller.text", "Update is running"), 10, "gui.images.update");
 
@@ -453,7 +458,7 @@ public class WebUpdate {
 
                         updater.getBroadcaster().addListener(new MessageListener() {
 
-                            public void onMessage(MessageEvent event) {
+                            public void onMessage(final MessageEvent event) {
                                 pc.setStatusText(event.getSource().toString() + ": " + event.getMessage());
 
                             }
@@ -495,7 +500,7 @@ public class WebUpdate {
         }.start();
     }
 
-    private static void setWaitingUpdates(int i) {
+    private static void setWaitingUpdates(final int i) {
         waitingUpdates = Math.max(0, i);
     }
 
