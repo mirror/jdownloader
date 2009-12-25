@@ -27,7 +27,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
@@ -40,6 +39,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.logging.Logger;
@@ -87,6 +87,8 @@ import org.xml.sax.InputSource;
  */
 public class JDUtilities {
 
+    private static final Logger LOGGER = JDLogger.getLogger();
+
     /**
      * Die Konfiguration
      */
@@ -123,29 +125,27 @@ public class JDUtilities {
 
     private static int REVISIONINT = -1;
 
-    public static <K extends Comparable<K>, V> TreeMap<K, V> revSortByKey(Map<K, V> map) {
-        TreeMap<K, V> a = new TreeMap<K, V>(new Comparator<K>() {
+    public static <K extends Comparable<K>, V> TreeMap<K, V> revSortByKey(final Map<K, V> map) {
+        final TreeMap<K, V> a = new TreeMap<K, V>(new Comparator<K>() {
 
-            public int compare(K o1, K o2) {
+            public int compare(final K o1, final K o2) {
                 return o2.compareTo(o1);
             }
 
         });
         a.putAll(map);
-
         return a;
     }
 
-    public static <K extends Comparable<K>, V> TreeMap<K, V> sortByKey(Map<K, V> map) {
-        TreeMap<K, V> a = new TreeMap<K, V>(new Comparator<K>() {
+    public static <K extends Comparable<K>, V> TreeMap<K, V> sortByKey(final Map<K, V> map) {
+        final TreeMap<K, V> a = new TreeMap<K, V>(new Comparator<K>() {
 
-            public int compare(K o1, K o2) {
+            public int compare(final K o1, final K o2) {
                 return o1.compareTo(o2);
             }
 
         });
         a.putAll(map);
-
         return a;
     }
 
@@ -175,16 +175,14 @@ public class JDUtilities {
      * @param anchor
      *            Positionierung der Komponente innerhalb der zugewiesen Zelle/n
      */
-    public static void addToGridBag(Container cont, Component comp, int x, int y, int width, int height, int weightX, int weightY, Insets insets, int fill, int anchor) {
+    public static void addToGridBag(final Container cont, final Component comp, final int x, final int y, final int width, final int height, final int weightX, final int weightY, final Insets insets, final int fill, final int anchor) {
         if (cont == null) {
-            JDLogger.getLogger().severe("Container ==null");
-            return;
+            LOGGER.severe("Container ==null");
+        } else if (comp == null) {
+            LOGGER.severe("Componente ==null");
+        } else {
+            JDUtilities.addToGridBag(cont, comp, x, y, width, height, weightX, weightY, insets, 0, 0, fill, anchor);
         }
-        if (comp == null) {
-            JDLogger.getLogger().severe("Componente ==null");
-            return;
-        }
-        JDUtilities.addToGridBag(cont, comp, x, y, width, height, weightX, weightY, insets, 0, 0, fill, anchor);
     }
 
     /**
@@ -219,8 +217,8 @@ public class JDUtilities {
      * @param anchor
      *            Positionierung der Komponente innerhalb der zugewiesen Zelle/n
      */
-    public static void addToGridBag(Container cont, Component comp, int x, int y, int width, int height, int weightX, int weightY, Insets insets, int iPadX, int iPadY, int fill, int anchor) {
-        GridBagConstraints cons = new GridBagConstraints();
+    public static void addToGridBag(final Container cont, final Component comp, final int x, final int y, final int width, final int height, final int weightX, final int weightY, final Insets insets, final int iPadX, final int iPadY, final int fill, final int anchor) {
+        final GridBagConstraints cons = new GridBagConstraints();
         cons.gridx = x;
         cons.gridy = y;
         cons.gridwidth = width;
@@ -239,12 +237,13 @@ public class JDUtilities {
         cont.add(comp, cons);
     }
 
-    public static String convertExceptionReadable(Exception e) {
+    public static String convertExceptionReadable(final Exception e) {
         String s = e.getClass().getName().replaceAll("Exception", "");
-        s = s.substring(s.lastIndexOf(".") + 1);
-        StringBuilder ret = new StringBuilder();
+        s = s.substring(s.lastIndexOf('.') + 1);
+        final StringBuilder ret = new StringBuilder();
         String letter = null;
-        for (int i = 0; i < s.length(); i++) {
+        final int sLength = s.length();
+        for (int i = 0; i < sLength; i++) {
             if ((letter = s.substring(i, i + 1)).equals(letter.toUpperCase())) {
                 ret.append(' ');
                 ret.append(letter);
@@ -252,16 +251,17 @@ public class JDUtilities {
                 ret.append(letter);
             }
         }
-        String message = e.getLocalizedMessage();
-        String rets = ret.toString();
-        return message != null ? rets.trim() + ": " + message : rets.trim();
+        final String message = e.getLocalizedMessage();
+        final String rets = ret.toString().trim();
+        return message != null ? rets + ": " + message : rets;
 
     }
 
-    public static String createContainerString(ArrayList<DownloadLink> downloadLinks, String encryption) {
-        ArrayList<CPluginWrapper> pfc = CPluginWrapper.getCWrapper();
-        for (int i = 0; i < pfc.size(); i++) {
-            String pn = pfc.get(i).getHost();
+    public static String createContainerString(final ArrayList<DownloadLink> downloadLinks, final String encryption) {
+        final ArrayList<CPluginWrapper> pfc = CPluginWrapper.getCWrapper();
+        final int size = pfc.size();
+        for (int i = 0; i < size; i++) {
+            final String pn = pfc.get(i).getHost();
             if (pn.equalsIgnoreCase(encryption)) return pfc.get(i).getPlugin().createContainerString(downloadLinks);
         }
         return null;
@@ -274,24 +274,25 @@ public class JDUtilities {
      * @param encryption
      * @return ciphertext
      */
-    public static String[] encrypt(String string, String encryption) {
-        ArrayList<CPluginWrapper> pfc = CPluginWrapper.getCWrapper();
-        for (int i = 0; i < pfc.size(); i++) {
+    public static String[] encrypt(final String string, final String encryption) {
+        final ArrayList<CPluginWrapper> pfc = CPluginWrapper.getCWrapper();
+        final int size = pfc.size();
+        for (int i = 0; i < size; i++) {
             if (pfc.get(i).getHost().equalsIgnoreCase(encryption)) { return pfc.get(i).getPlugin().encrypt(string); }
         }
         return null;
 
     }
 
-    public static String getUserInput(String message, DownloadLink link) {
+    public static String getUserInput(final String message, final DownloadLink link) {
         return getUserInput(message, null, link);
     }
 
-    public static String getUserInput(String message, String defaultmessage, DownloadLink link) {
+    public static String getUserInput(final String message, final String defaultmessage, final DownloadLink link) {
         try {
             link.getLinkStatus().addStatus(LinkStatus.WAITING_USERIO);
             link.requestGuiUpdate();
-            String code = getUserInput(message, defaultmessage);
+            final String code = getUserInput(message, defaultmessage);
 
             link.requestGuiUpdate();
             return code;
@@ -300,23 +301,20 @@ public class JDUtilities {
         }
     }
 
-    public static String getUserInput(String message, CryptedLink link) {
+    public static String getUserInput(final String message, final CryptedLink link) {
         return getUserInput(message, null, link);
     }
 
-    public static String getUserInput(String message, String defaultmessage, CryptedLink link) {
+    public static String getUserInput(final String message, final String defaultmessage, final CryptedLink link) {
         link.getProgressController().setStatusText(JDL.L("gui.linkgrabber.waitinguserio", "Waiting for user input"));
-        String password = getUserInput(message, defaultmessage);
+        final String password = getUserInput(message, defaultmessage);
         link.getProgressController().setStatusText(null);
         return password;
     }
 
-    public static String getUserInput(String message, String defaultmessage) {
+    public static String getUserInput(final String message, final String defaultmessage) {
         synchronized (USERIO_LOCK) {
-            if (message == null) message = JDL.L("gui.linkgrabber.password", "Password?");
-            if (defaultmessage == null) defaultmessage = "";
-            String password = UserIO.getInstance().requestInputDialog(0, message, defaultmessage);
-            return password;
+            return UserIO.getInstance().requestInputDialog(0, message == null ? JDL.L("gui.linkgrabber.password", "Password?") : message, defaultmessage == null ? "" : defaultmessage);
         }
     }
 
@@ -337,35 +335,21 @@ public class JDUtilities {
         return CONTROLLER;
     }
 
-    public static long getCRC(File file) {
-
+    public static long getCRC(final File file) {
         try {
+            // Computer CRC32 checksum
+            final CheckedInputStream cis = new CheckedInputStream(new FileInputStream(file), new CRC32());
+            // fileSize = file.length();
 
-            CheckedInputStream cis = null;
-            // long fileSize = 0;
-            try {
-                // Computer CRC32 checksum
-                cis = new CheckedInputStream(new FileInputStream(file), new CRC32());
-
-                // fileSize = file.length();
-
-            } catch (FileNotFoundException e) {
-                JDLogger.exception(e);
-                return 0;
-            }
-
-            byte[] buf = new byte[128];
+            final byte[] buf = new byte[128];
             while (cis.read(buf) >= 0) {
             }
 
-            long checksum = cis.getChecksum().getValue();
-            return checksum;
-
+            return cis.getChecksum().getValue();
         } catch (IOException e) {
             JDLogger.exception(e);
             return 0;
         }
-
     }
 
     /**
@@ -374,22 +358,14 @@ public class JDUtilities {
      * 
      * @return
      */
-    public static File getCurrentWorkingDirectory(String id) {
-        if (id == null) id = "";
-
-        String dlDir = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY, null);
-        String lastDir = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_CURRENT_BROWSE_PATH + id, null);
-
-        File dlDirectory;
-        if (dlDir == null) {
-            dlDirectory = new File("");
+    public static File getCurrentWorkingDirectory(final String id) {
+        final String dlDir = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY, null);
+        final String lastDir = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_CURRENT_BROWSE_PATH + (id == null ? "" : id), null);
+        if (lastDir == null) {
+            return (dlDir == null) ? new File("") : new File(dlDir);
         } else {
-            dlDirectory = new File(dlDir);
+            return new File(lastDir);
         }
-
-        if (lastDir == null) return dlDirectory;
-        return new File(lastDir);
-
     }
 
     /**
@@ -407,9 +383,10 @@ public class JDUtilities {
      *         1.603
      */
     public static Double getJavaVersion() {
-        String version = System.getProperty("java.version");
-        int majorVersion = Formatter.filterInt(version.substring(0, version.indexOf(".")));
-        int subversion = Formatter.filterInt(version.substring(version.indexOf(".") + 1));
+        final String version = System.getProperty("java.version");
+        final int dotIndex = version.indexOf('.');
+        final int majorVersion = Formatter.filterInt(version.substring(0, dotIndex));
+        final int subversion = Formatter.filterInt(version.substring(dotIndex + 1));
         return Double.parseDouble(majorVersion + "." + subversion);
     }
 
@@ -422,10 +399,10 @@ public class JDUtilities {
 
     public static JDClassLoader getJDClassLoader() {
         if (JD_CLASSLOADER == null) {
-            File homeDir = JDUtilities.getJDHomeDirectoryFromEnvironment();
+            final File homeDir = JDUtilities.getJDHomeDirectoryFromEnvironment();
             // String url = null;
             // Url Encode des pfads für den Classloader
-            JDLogger.getLogger().finest("Create Classloader: for: " + homeDir.getAbsolutePath());
+            LOGGER.finest("Create Classloader: for: " + homeDir.getAbsolutePath());
             JD_CLASSLOADER = new JDClassLoader(homeDir.getAbsolutePath(), Thread.currentThread().getContextClassLoader());
 
         }
@@ -473,19 +450,17 @@ public class JDUtilities {
             System.out.println("JAR");
             envDir = currentDir.getAbsolutePath();
             break;
-
         default:
             System.out.println("USER");
             envDir = System.getProperty("user.home") + System.getProperty("file.separator") + ".jd_home/";
-
         }
         // System.out.println("ENV " + envDir);
         if (envDir == null) {
             envDir = "." + System.getProperty("file.separator") + ".jd_home/";
-            JDLogger.getLogger().info("JD_HOME from current directory:" + envDir);
+            LOGGER.info("JD_HOME from current directory:" + envDir);
         }
         // System.out.println("ENV " + envDir);
-        File jdHomeDir = new File(envDir);
+        final File jdHomeDir = new File(envDir);
         if (!jdHomeDir.exists()) {
             jdHomeDir.mkdirs();
         }
@@ -494,9 +469,9 @@ public class JDUtilities {
     }
 
     public static String getJDTitle() {
-        StringBuilder ret = new StringBuilder("JDownloader");
+        final StringBuilder ret = new StringBuilder("JDownloader");
 
-        int i = WebUpdate.getWaitingUpdates();
+        final int i = WebUpdate.getWaitingUpdates();
         if (i > 0) {
             ret.append(new char[] { ' ', '(' });
             ret.append(JDL.LF("gui.mainframe.title.updatemessage2", "%s Updates available", i));
@@ -506,9 +481,8 @@ public class JDUtilities {
         return ret.toString();
     }
 
-    public static String getPercent(long downloadCurrent, long downloadMax) {
-        DecimalFormat c = new DecimalFormat("0.00");
-        return c.format(100.0 * downloadCurrent / downloadMax) + "%";
+    public static String getPercent(final long downloadCurrent, final long downloadMax) {
+        return (new DecimalFormat("0.00")).format(100.0 * downloadCurrent / downloadMax) + "%";
     }
 
     /**
@@ -519,18 +493,16 @@ public class JDUtilities {
      * @param containerPath
      * @return Ein passendes Plugin oder null
      */
-    public static PluginsC getPluginForContainer(String container, String containerPath) {
+    public static PluginsC getPluginForContainer(final String container, final String containerPath) {
         if (containerPath != null && CONTAINER_PLUGINS.containsKey(containerPath)) { return CONTAINER_PLUGINS.get(containerPath); }
         PluginsC ret = null;
         for (CPluginWrapper act : CPluginWrapper.getCWrapper()) {
             if (act.getHost().equalsIgnoreCase(container)) {
-
                 ret = (PluginsC) act.getNewPluginInstance();
                 if (containerPath != null) {
                     CONTAINER_PLUGINS.put(containerPath, ret);
                 }
                 return ret;
-
             }
         }
         return null;
@@ -544,28 +516,28 @@ public class JDUtilities {
      *            Der Host, von dem das Plugin runterladen kann
      * @return Ein passendes Plugin oder null
      */
-    public static PluginForDecrypt getPluginForDecrypt(String host) {
+    public static PluginForDecrypt getPluginForDecrypt(final String host) {
         for (DecryptPluginWrapper pHost : DecryptPluginWrapper.getDecryptWrapper()) {
-            if (pHost.getHost().equals(host.toLowerCase())) return pHost.getPlugin();
+            if (pHost.getHost().equals(host.toLowerCase(Locale.getDefault()))) return pHost.getPlugin();
         }
         return null;
     }
 
-    public static PluginForHost getPluginForHost(String host) {
+    public static PluginForHost getPluginForHost(final String host) {
         for (HostPluginWrapper pHost : HostPluginWrapper.getHostWrapper()) {
-            if (pHost.getHost().equals(host.toLowerCase())) return pHost.getPlugin();
+            if (pHost.getHost().equals(host.toLowerCase(Locale.getDefault()))) return pHost.getPlugin();
         }
         return null;
     }
 
-    public static PluginForHost getNewPluginForHostInstance(String host) {
+    public static PluginForHost getNewPluginForHostInstance(final String host) {
         for (HostPluginWrapper pHost : HostPluginWrapper.getHostWrapper()) {
-            if (pHost.getHost().equals(host.toLowerCase())) return (PluginForHost) pHost.getNewPluginInstance();
+            if (pHost.getHost().equals(host.toLowerCase(Locale.getDefault()))) return (PluginForHost) pHost.getNewPluginInstance();
         }
         return null;
     }
 
-    public static OptionalPluginWrapper getOptionalPlugin(String id) {
+    public static OptionalPluginWrapper getOptionalPlugin(final String id) {
         for (OptionalPluginWrapper wrapper : OptionalPluginWrapper.getOptionalWrapper()) {
             if (wrapper.getID() != null && wrapper.getID().equalsIgnoreCase(id)) return wrapper;
         }
@@ -573,7 +545,7 @@ public class JDUtilities {
     }
 
     public static ArrayList<HostPluginWrapper> getPremiumPluginsForHost() {
-        ArrayList<HostPluginWrapper> plugins = new ArrayList<HostPluginWrapper>(HostPluginWrapper.getHostWrapper());
+        final ArrayList<HostPluginWrapper> plugins = new ArrayList<HostPluginWrapper>(HostPluginWrapper.getHostWrapper());
         for (int i = plugins.size() - 1; i >= 0; --i) {
             if (!plugins.get(i).isPremiumEnabled()) plugins.remove(i);
         }
@@ -598,12 +570,12 @@ public class JDUtilities {
         } catch (Throwable t) {
             t.printStackTrace();
         }
-        int rev2 = Integer.parseInt(Formatter.getRevision("$Revision$"));
+        final int rev2 = Integer.parseInt(Formatter.getRevision("$Revision$"));
         return (REVISIONINT = Math.max(rev2, rev));
     }
 
     public static int getRunType() {
-        String caller = (Thread.currentThread().getContextClassLoader().getResource("jd") + "");
+        final String caller = (Thread.currentThread().getContextClassLoader().getResource("jd") + "");
         if (caller.matches("jar\\:.*\\.jar\\!.*")) {
             return RUNTYPE_LOCAL_JARED;
         } else {
@@ -611,7 +583,7 @@ public class JDUtilities {
         }
     }
 
-    public static void setJDargs(String[] args) {
+    public static void setJDargs(final String[] args) {
         JD_ARGUMENTS = args;
     }
 
@@ -634,8 +606,8 @@ public class JDUtilities {
             public void run() {
                 if (JDUtilities.getController() != null) JDUtilities.getController().prepareShutdown(false);
 
-                List<String> lst = ManagementFactory.getRuntimeMXBean().getInputArguments();
-                ArrayList<String> jargs = new ArrayList<String>();
+                final List<String> lst = ManagementFactory.getRuntimeMXBean().getInputArguments();
+                final ArrayList<String> jargs = new ArrayList<String>();
 
                 boolean xmxset = false;
                 boolean xmsset = false;
@@ -676,32 +648,29 @@ public class JDUtilities {
                 System.arraycopy(javaArgs, 0, finalArgs, 0, javaArgs.length);
                 System.arraycopy(JD_ARGUMENTS, 0, finalArgs, javaArgs.length, JD_ARGUMENTS.length);
 
-                ArrayList<File> restartfiles = JDIO.listFiles(JDUtilities.getResourceFile("update"));
-                String javaPath = new File(new File(System.getProperty("sun.boot.library.path")), "javaw.exe").getAbsolutePath();
+                final ArrayList<File> restartfiles = JDIO.listFiles(JDUtilities.getResourceFile("update"));
+                final String javaPath = new File(new File(System.getProperty("sun.boot.library.path")), "javaw.exe").getAbsolutePath();
                 if (restartfiles != null && restartfiles.size() > 0 || tinybypass) {
 
                     if (OSDetector.isMac()) {
-                        JDLogger.getLogger().info(JDUtilities.runCommand("java", new String[] { "-jar", "tools/tinyupdate.jar", "-restart" }, getResourceFile(".").getAbsolutePath(), 0));
+                        LOGGER.info(JDUtilities.runCommand("java", new String[] { "-jar", "tools/tinyupdate.jar", "-restart" }, getResourceFile(".").getAbsolutePath(), 0));
                     } else {
 
                         if (new File(javaPath).exists()) {
-                            JDLogger.getLogger().info(JDUtilities.runCommand(javaPath, new String[] { "-jar", "tools/tinyupdate.jar", "-restart" }, getResourceFile(".").getAbsolutePath(), 0));
-
+                            LOGGER.info(JDUtilities.runCommand(javaPath, new String[] { "-jar", "tools/tinyupdate.jar", "-restart" }, getResourceFile(".").getAbsolutePath(), 0));
                         } else {
-                            JDLogger.getLogger().info(JDUtilities.runCommand("java", new String[] { "-jar", "tools/tinyupdate.jar", "-restart" }, getResourceFile(".").getAbsolutePath(), 0));
-
+                            LOGGER.info(JDUtilities.runCommand("java", new String[] { "-jar", "tools/tinyupdate.jar", "-restart" }, getResourceFile(".").getAbsolutePath(), 0));
                         }
 
                     }
                 } else {
                     if (OSDetector.isMac()) {
-                        JDLogger.getLogger().info(JDUtilities.runCommand("open", new String[] { "-n", "jDownloader.app" }, JDUtilities.getResourceFile(".").getParentFile().getParentFile().getParentFile().getParentFile().getAbsolutePath(), 0));
+                        LOGGER.info(JDUtilities.runCommand("open", new String[] { "-n", "jDownloader.app" }, JDUtilities.getResourceFile(".").getParentFile().getParentFile().getParentFile().getParentFile().getAbsolutePath(), 0));
                     } else {
                         if (new File(javaPath).exists()) {
-                            JDLogger.getLogger().info(JDUtilities.runCommand(javaPath, finalArgs, getResourceFile(".").getAbsolutePath(), 0));
+                            LOGGER.info(JDUtilities.runCommand(javaPath, finalArgs, getResourceFile(".").getAbsolutePath(), 0));
                         } else {
-                            JDLogger.getLogger().info(JDUtilities.runCommand("java", finalArgs, getResourceFile(".").getAbsolutePath(), 0));
-
+                            LOGGER.info(JDUtilities.runCommand("java", finalArgs, getResourceFile(".").getAbsolutePath(), 0));
                         }
                     }
                 }
@@ -711,8 +680,8 @@ public class JDUtilities {
         }).start();
     }
 
-    public static URL getResourceURL(String resource) {
-        JDClassLoader cl = JDUtilities.getJDClassLoader();
+    public static URL getResourceURL(final String resource) {
+        final JDClassLoader cl = JDUtilities.getJDClassLoader();
         if (cl == null) {
             System.err.println("Classloader == null");
             return null;
@@ -728,8 +697,8 @@ public class JDUtilities {
      *            Ressource, die geladen werden soll
      * @return File zu arg
      */
-    public static File getResourceFile(String resource) {
-        URL clURL = getResourceURL(resource);
+    public static File getResourceFile(final String resource) {
+        final URL clURL = getResourceURL(resource);
         if (clURL != null) {
             try {
                 return new File(clURL.toURI());
@@ -739,13 +708,13 @@ public class JDUtilities {
         return null;
     }
 
-    public static File getResourceFile(String resource, boolean mkdirs) {
-        URL clURL = getResourceURL(resource);
+    public static File getResourceFile(final String resource, final boolean mkdirs) {
+        final URL clURL = getResourceURL(resource);
         if (clURL != null) {
             try {
-                File f = new File(clURL.toURI());
+                final File f = new File(clURL.toURI());
                 if (mkdirs) {
-                    File f2 = f.getParentFile();
+                    final File f2 = f.getParentFile();
                     if (f2 != null && !f2.exists()) f2.mkdirs();
                 }
                 return f;
@@ -765,8 +734,8 @@ public class JDUtilities {
      * @return null oder die rückgabe des befehls falls waitforreturn == true
      *         ist
      */
-    public static String runCommand(String command, String[] parameter, String runIn, int waitForReturn) {
-        Executer exec = new Executer(command);
+    public static String runCommand(final String command, final String[] parameter, final String runIn, final int waitForReturn) {
+        final Executer exec = new Executer(command);
         exec.addParameters(parameter);
         exec.setRunin(runIn);
         exec.setWaitTimeout(waitForReturn);
@@ -779,22 +748,20 @@ public class JDUtilities {
         JDUtilities.getConfiguration().save();
     }
 
-    public static String objectToXml(Object obj) throws IOException {
-
-        ByteArrayOutputStream ba;
-        DataOutputStream out = new DataOutputStream(ba = new ByteArrayOutputStream());
-        XMLEncoder xmlEncoder = new XMLEncoder(out);
+    public static String objectToXml(final Object obj) throws IOException {
+        final ByteArrayOutputStream ba = new ByteArrayOutputStream();
+        final DataOutputStream out = new DataOutputStream(ba);
+        final XMLEncoder xmlEncoder = new XMLEncoder(out);
         xmlEncoder.writeObject(obj);
         xmlEncoder.close();
-
         out.close();
         return new String(ba.toByteArray());
     }
 
-    public static Object xmlStringToObjekt(String in) throws IOException {
+    public static Object xmlStringToObjekt(final String in) throws IOException {
         Object objectLoaded = null;
-        ByteArrayInputStream ba = new ByteArrayInputStream(in.getBytes());
-        XMLDecoder xmlDecoder = new XMLDecoder(ba);
+        final ByteArrayInputStream ba = new ByteArrayInputStream(in.getBytes());
+        final XMLDecoder xmlDecoder = new XMLDecoder(ba);
         objectLoaded = xmlDecoder.readObject();
         xmlDecoder.close();
         ba.close();
@@ -806,7 +773,7 @@ public class JDUtilities {
      * 
      * @param CONFIGURATION
      */
-    public static void setConfiguration(Configuration configuration) {
+    public static void setConfiguration(final Configuration configuration) {
         JDUtilities.CONFIGURATION = configuration;
     }
 
@@ -816,7 +783,7 @@ public class JDUtilities {
      * @param con
      *            CONTROLLER
      */
-    public static void setController(JDController con) {
+    public static void setController(final JDController con) {
         CONTROLLER = con;
     }
 
@@ -830,13 +797,12 @@ public class JDUtilities {
      * @param f
      * @param id
      */
-    public static void setCurrentWorkingDirectory(File f, String id) {
-        if (id == null) id = "";
-        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_CURRENT_BROWSE_PATH + id, f.getAbsolutePath());
+    public static void setCurrentWorkingDirectory(final File f, final String id) {
+        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_CURRENT_BROWSE_PATH + (id == null ? "" : id), f.getAbsolutePath());
         JDUtilities.getConfiguration().save();
     }
 
-    public static String removeEndingPoints(String name) {
+    public static String removeEndingPoints(final String name) {
         if (name == null) return null;
         String ret = name.trim();
         while (true) {
@@ -850,26 +816,19 @@ public class JDUtilities {
     }
 
     public synchronized static DatabaseConnector getDatabaseConnector() {
-
         if (DB_CONNECT == null) {
-
             try {
                 DB_CONNECT = new DatabaseConnector();
             } catch (Exception e) {
-                // TODO Auto-generated catch block
                 JDLogger.exception(e);
-                String configpath = JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/config/";
-                Logger logger = JDLogger.getLogger();
+                final String configpath = JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/config/";
                 if (e.getMessage().equals("Database broken!")) {
-                    logger.severe("Database broken! Creating fresh Database");
-
+                    LOGGER.severe("Database broken! Creating fresh Database");
                     if (!new File(configpath + "database.script").delete() || !new File(configpath + "database.properties").delete()) {
-                        logger.severe("Could not delete broken Database");
+                        LOGGER.severe("Could not delete broken Database");
                         UserIO.getInstance().requestMessageDialog("Could not delete broken database. Please remove the JD_HOME/config directory and restart JD");
-
                     }
                 }
-
                 try {
                     DB_CONNECT = new DatabaseConnector();
                 } catch (Exception e1) {
@@ -879,13 +838,11 @@ public class JDUtilities {
                     System.exit(1);
                 }
             }
-
         }
         return DB_CONNECT;
-
     }
 
-    public static boolean openExplorer(File path) {
+    public static boolean openExplorer(final File path) {
         try {
             return new GetExplorer().openExplorer(path);
         } catch (Exception e) {
@@ -894,34 +851,34 @@ public class JDUtilities {
         }
     }
 
-    public static Document parseXmlString(String xmlString, boolean validating) {
+    public static Document parseXmlString(final String xmlString, final boolean validating) {
         if (xmlString == null) return null;
         try {
             // Create a builder factory
-            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            final DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             factory.setValidating(validating);
 
-            InputSource inSource = new InputSource(new StringReader(xmlString));
+            final InputSource inSource = new InputSource(new StringReader(xmlString));
 
             // Create the builder and parse the file
-            Document doc = factory.newDocumentBuilder().parse(inSource);
+            final Document doc = factory.newDocumentBuilder().parse(inSource);
 
             return doc;
         } catch (Exception e) {
-            JDLogger.getLogger().severe(xmlString);
+            LOGGER.severe(xmlString);
             JDLogger.exception(e);
         }
         return null;
     }
 
-    public static String createXmlString(Document doc) {
+    public static String createXmlString(final Document doc) {
         try {
-            Transformer transformer = TransformerFactory.newInstance().newTransformer();
+            final Transformer transformer = TransformerFactory.newInstance().newTransformer();
             transformer.setOutputProperty(OutputKeys.INDENT, "yes");
 
             // initialize StreamResult with File object to save to file
-            StreamResult result = new StreamResult(new StringWriter());
-            DOMSource source = new DOMSource(doc);
+            final StreamResult result = new StreamResult(new StringWriter());
+            final DOMSource source = new DOMSource(doc);
 
             transformer.transform(source, result);
 
@@ -940,8 +897,8 @@ public class JDUtilities {
      * @param key
      * @return String Atribut
      */
-    public static String getAttribute(Node childNode, String key) {
-        NamedNodeMap att = childNode.getAttributes();
+    public static String getAttribute(final Node childNode, final String key) {
+        final NamedNodeMap att = childNode.getAttributes();
         if (att == null || att.getNamedItem(key) == null) { return null; }
         return att.getNamedItem(key).getNodeValue();
     }
