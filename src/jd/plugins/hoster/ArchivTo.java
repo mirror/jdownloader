@@ -20,6 +20,7 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -27,91 +28,60 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "archiv.to" }, urls = { "http://[\\w\\.]*?archiv\\.to/\\?Module\\=Details\\&HashID\\=.*" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "archiv.to" }, urls = { "http://[\\w\\.]*?archiv\\.to/(\\?Module\\=Details\\&HashID\\=|GET/)FILE[A-Z0-9]+" }, flags = { 0 })
 public class ArchivTo extends PluginForHost {
 
     public ArchivTo(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    // @Override
     public String getAGBLink() {
-        return "http://archiv.to/?Module=Policy";
+        return "http://archiv.to/Legal.html";
     }
 
-    // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        try {
-            br.setFollowRedirects(true);
-            br.setCookiesExclusive(true);
-            br.clearCookies(getHost());
-            br.getPage(downloadLink.getDownloadURL());
-        
-            if (!br.containsHTML("MD5 Code") || br.containsHTML("(Datei wurde entfernt)")) {
-                if(br.containsHTML("Originaldatei"))return requestFileInformationStream(downloadLink);
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-            downloadLink.setName(br.getRegex("<a href=\".*?archiv.*?\" style=\"Color.*?\">(.*?)</a></td></tr>").getMatch(0));
-            downloadLink.setMD5Hash(br.getRegex("<td width=\"23%\">MD5 Code</td>\\s*<td width=\"77%\">: ([0-9a-z]*?)</td>").getMatch(0));
-            downloadLink.setDownloadSize(Long.parseLong(br.getRegex("<td width=.*?>Dateigröße</td>\\s*<td width=.*?>: (\\d+?) Bytes \\(.*\\)</td>").getMatch(0)));
-
-            return AvailableStatus.TRUE;
-        } catch (Exception e) {
-            logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
-        }
-        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-    }
-
-    private AvailableStatus requestFileInformationStream(DownloadLink downloadLink) {
-        downloadLink.setName(br.getRegex("<tr>.*?Originaldatei</td>.*?<td.*?>.*?<a href=.*?>(.*?)</a></td>.*?</tr>").getMatch(0));
-        downloadLink.setDownloadSize(Long.parseLong(br.getRegex("<tr>.*?<td.*?>Dateigr..e</td>.*?<td .*?: (\\d+) Bytes \\(~ .*?\\)</td>.*?</tr>").getMatch(0)));
+        br.setFollowRedirects(false);
+        br.setCookiesExclusive(true);
+        br.clearCookies(getHost());
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML("(The desired file could not be found|Maybe owner deleted it or check your Hash again)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex(">Originaldatei</td>.*?<td class=.*?>: <a href=\".*?>(.*?)</a>").getMatch(0);
+        String filesize = br.getRegex(">Dateigr.+e</td>.*?<td class=.*?>:(.*?)\\(").getMatch(0);
+        if (filesize == null) filesize = br.getRegex("\\(~(.*?)\\)").getMatch(0);
+        String md5hash = br.getRegex(">MD5-Hash</td>.*?<td class=.*?>:(.*?)<").getMatch(0);
+        if (filename == null && filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filename == null) filename = new Regex(downloadLink.getDownloadURL(), ".*?FILE([A-Z0-9]+)").getMatch(0) + ".flv";
+        downloadLink.setFinalFileName(filename);
+        if (md5hash != null) downloadLink.setMD5Hash(md5hash.trim());
+        if (filesize != null) downloadLink.setDownloadSize(Regex.getSize(filesize.replace(",", ".")));
         return AvailableStatus.TRUE;
     }
 
-    // @Override
-    /*
-     * /* /* public String getVersion() { return
-     * getVersion("$Revision$"); }
-     */
-
-    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         requestFileInformation(downloadLink);
-        if(!br.containsHTML("MD5 Code")){
-         handleFreeStream(downloadLink);
-         return;
-        }
-      
-        br.getPage(downloadLink.getDownloadURL());
-        String link = br.getRegex("<a href=\"http://ww\\.archiv\\.to/(Get.*?)\" style=").getMatch(0);
-        String dlLink = "http://archiv.to/" + Encoding.htmlDecode(link);
-
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlLink);
+        br.setDebug(true);
+        String browsercontent = Encoding.htmlDecode(br.toString());
+        if (!browsercontent.contains("/gat/") && !browsercontent.contains("/GAT/")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String fileid = new Regex(downloadLink.getDownloadURL(), ".*?(FILE[A-Z0-9]+)").getMatch(0);
+        String dllink = "http://archiv.to/GAT/" + fileid;
+        dllink = Encoding.htmlDecode(dllink);
+        // If it is a flash link we need this
+        if (br.containsHTML("name=\"flashvars\"")) dllink = dllink + "/?start=0";
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         dl.startDownload();
     }
 
-    private void handleFreeStream(DownloadLink downloadLink) throws Exception {
-        String src = br.getRegex("<param name=\"src\" value=\"(.*?)\" />").getMatch(0);
-        br.setDebug(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, src,true,-10);
-        dl.startDownload(); 
-       
-    }
-
-    // @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return -1;
     }
 
-    // @Override
     public void reset() {
     }
 
-    // @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 }
