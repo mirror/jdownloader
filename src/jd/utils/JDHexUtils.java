@@ -20,22 +20,29 @@ import java.io.UnsupportedEncodingException;
 
 import jd.controlling.JDLogger;
 
-public class JDHexUtils {
+public final class JDHexUtils {
+
+    /**
+     * Don't let anyone instantiate this class.
+     */
+    private JDHexUtils() {
+    }
 
     static final byte[] HEX_CHAR_TABLE = { (byte) '0', (byte) '1', (byte) '2', (byte) '3', (byte) '4', (byte) '5', (byte) '6', (byte) '7', (byte) '8', (byte) '9', (byte) 'a', (byte) 'b', (byte) 'c', (byte) 'd', (byte) 'e', (byte) 'f' };
     public static final String REGEX_FIND_ALL_HEX = "[[a-fA-F0-9]{2}]*?";
     public static final String REGEX_MATCH_ALL_HEX = "([[a-fA-F0-9]{2}]*?)";
     public static final String REGEX_HTTP_NEWLINE = JDHexUtils.getHexString("\r") + "{1}" + JDHexUtils.getHexString("\n") + "{1}";
 
-    public static String toString(String hexString) {
+    public static String toString(final String hexString) {
         if (hexString == null) return null;
         return new String(JDHexUtils.getByteArray(hexString));
     }
 
-    public static byte[] getByteArray(String hexString) {
+    public static byte[] getByteArray(final String hexString) {
         if (hexString == null) { return null; }
-        int length = hexString.length();
-        byte[] buffer = new byte[(length + 1) / 2];
+
+        final int length = hexString.length();
+        final byte[] buffer = new byte[(length + 1) / 2];
         boolean evenByte = true;
         byte nextByte = 0;
         int bufferOffset = 0;
@@ -69,8 +76,8 @@ public class JDHexUtils {
         return buffer;
     }
 
-    static public String getHexString(byte[] raw) {
-        byte[] hex = new byte[2 * raw.length];
+    public static String getHexString(final byte[] raw) {
+        final byte[] hex = new byte[2 * raw.length];
         int index = 0;
 
         for (byte b : raw) {
@@ -81,17 +88,16 @@ public class JDHexUtils {
         try {
             return new String(hex, "ASCII");
         } catch (UnsupportedEncodingException e) {
-
             JDLogger.exception(e);
             return null;
         }
     }
 
-    static public String getHexString(String string) {
+    public static String getHexString(final String string) {
+        if (string == null) { return null; }
         try {
-            if (string == null) { return null; }
-            byte[] raw = string.getBytes("ASCII");
-            byte[] hex = new byte[2 * raw.length];
+            final byte[] raw = string.getBytes("ASCII");
+            final byte[] hex = new byte[2 * raw.length];
             int index = 0;
 
             for (byte b : raw) {
@@ -102,7 +108,6 @@ public class JDHexUtils {
 
             return new String(hex, "ASCII");
         } catch (UnsupportedEncodingException e) {
-
             JDLogger.exception(e);
             return null;
         }
