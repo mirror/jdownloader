@@ -25,6 +25,7 @@ import javax.imageio.ImageIO;
 import jd.captcha.JAntiCaptcha;
 import jd.captcha.pixelgrid.Captcha;
 import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.JDHash;
 import jd.nutils.io.JDIO;
 import jd.parser.html.HTMLParser;
@@ -168,7 +169,8 @@ public class LoadImage {
     public boolean directCaptchaLoad(String destination) {
         file = new File(destination, System.currentTimeMillis() + getFileType());
         try {
-            br.cloneBrowser().getDownload(file, imageUrl);
+			URLConnectionAdapter urlc = br.cloneBrowser().openGetConnection(imageUrl);
+            Browser.download(file, urlc);
             return renameCaptcha(file, destination);
         } catch (Exception e) {
         }
