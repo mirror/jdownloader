@@ -36,7 +36,7 @@ public class Cookie {
     private long creationTime = System.currentTimeMillis();
     private long expireTime = -1;
 
-    public Cookie(String host, String key, String value) {
+    public Cookie(final String host, final String key, final String value) {
         this.host = host;
         this.key = key;
         this.value = value;
@@ -52,19 +52,19 @@ public class Cookie {
         return creationTime;
     }
 
-    public void setCreationTime(long time) {
+    public void setCreationTime(final long time) {
         creationTime = time;
     }
 
-    public void setHost(String host) {
+    public void setHost(final String host) {
         this.host = host;
     }
 
-    public void setPath(String path) {
+    public void setPath(final String path) {
         this.path = path;
     }
 
-    public void setExpires(String expires) {
+    public void setExpires(final String expires) {
         if (expires == null) {
             this.expireTime = -1;
             // System.out.println("setExpire: Cookie: no expireDate found! " +
@@ -74,7 +74,7 @@ public class Cookie {
         Date expireDate = null;
         for (String format : dateformats) {
             try {
-                SimpleDateFormat sdf = new SimpleDateFormat(format, Locale.UK);
+                final SimpleDateFormat sdf = new SimpleDateFormat(format, Locale.UK);
                 sdf.setLenient(false);
                 expireDate = sdf.parse(expires);
                 break;
@@ -90,15 +90,15 @@ public class Cookie {
         return;
     }
 
-    public void setValue(String value) {
+    public void setValue(final String value) {
         this.value = value;
     }
 
-    public void setKey(String key) {
+    public void setKey(final String key) {
         this.key = key;
     }
 
-    public void setDomain(String domain) {
+    public void setDomain(final String domain) {
         this.domain = domain;
     }
 
@@ -112,15 +112,16 @@ public class Cookie {
             JDLogger.getLogger().severe("Cookie: no HostTime found! ExpireStatus cannot be checked " + this.host + " " + this.key);
             return false;
         } else {
-            long check = (System.currentTimeMillis() - this.creationTime) + this.hostTime;
+            final long check = (System.currentTimeMillis() - this.creationTime) + this.hostTime;
             // System.out.println(this.host + " " + this.key + " " +
             // this.creationTime + " " + this.hostTime + " " + this.expireTime +
             // " " + check);
-            if (check > this.expireTime) {
-                // System.out.println("Expired: " + this.host + " " + this.key);
-                return true;
-            } else
-                return false;
+            // if (check > this.expireTime) {
+            // // System.out.println("Expired: " + this.host + " " + this.key);
+            // return true;
+            // } else
+            // return false;
+            return check > this.expireTime;
         }
     }
 
@@ -128,7 +129,7 @@ public class Cookie {
         return this.hostTime;
     }
 
-    public void setHostTime(long time) {
+    public void setHostTime(final long time) {
         hostTime = time;
     }
 
@@ -136,33 +137,33 @@ public class Cookie {
         return this.expireTime;
     }
 
-    public void setExpireDate(long time) {
+    public void setExpireDate(final long time) {
         expireTime = time;
     }
 
-    public void setHostTime(String Date) {
-        if (Date == null) {
+    public void setHostTime(final String date) {
+        if (date == null) {
             this.hostTime = -1;
             // System.out.println("Cookie: no HostTime found! " + this.host +
             // " " + this.key);
             return;
         }
-        Date ResponseDate = null;
+        Date responseDate = null;
         for (String format : dateformats) {
             try {
-                SimpleDateFormat sdf = new SimpleDateFormat(format, Locale.UK);
+                final SimpleDateFormat sdf = new SimpleDateFormat(format, Locale.UK);
                 sdf.setLenient(false);
-                ResponseDate = sdf.parse(Date);
+                responseDate = sdf.parse(date);
                 break;
             } catch (Exception e2) {
             }
         }
-        if (ResponseDate != null) {
-            this.hostTime = ResponseDate.getTime();
+        if (responseDate != null) {
+            this.hostTime = responseDate.getTime();
             return;
         }
         this.hostTime = -1;
-        JDLogger.getLogger().severe("Cookie: no Format for " + Date + " found!");
+        JDLogger.getLogger().severe("Cookie: no Format for " + date + " found!");
         return;
     }
 
@@ -190,18 +191,35 @@ public class Cookie {
         return key + "=" + value + " @" + host;
     }
 
-    public void update(Cookie cookie2) {
-        this.setCreationTime(cookie2.getCreationTime());
-        this.setExpireDate(cookie2.getExpireDate());
-        this.setValue(cookie2.getValue());
-        this.setHostTime(cookie2.getCreationTime());
+    public void update(final Cookie cookie2) {
+        this.setCreationTime(cookie2.creationTime);
+        this.setExpireDate(cookie2.expireTime);
+        this.setValue(cookie2.value);
+        // this.setHostTime(cookie2.getCreationTime());
+        this.setHostTime(cookie2.creationTime); // ???
     }
 
+    // /* compares host and key */
+    // public boolean equals(final Cookie cookie2) {
+    // if (cookie2 == this) return true;
+    // if (!cookie2.getHost().equalsIgnoreCase(this.getHost())) return false;
+    // if (!cookie2.getKey().equalsIgnoreCase(this.getKey())) return false;
+    // return true;
+    // }
+
     /* compares host and key */
-    public boolean equals(Cookie cookie2) {
-        if (cookie2 == this) return true;
-        if (!cookie2.getHost().equalsIgnoreCase(this.getHost())) return false;
-        if (!cookie2.getKey().equalsIgnoreCase(this.getKey())) return false;
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null) return false;
+        if (getClass() != obj.getClass()) return false;
+        final Cookie other = (Cookie) obj;
+        if (host == null) {
+            if (other.host != null) return false;
+        } else if (!host.equalsIgnoreCase(other.host)) return false;
+        if (key == null) {
+            if (other.key != null) return false;
+        } else if (!key.equalsIgnoreCase(other.key)) return false;
         return true;
     }
 
