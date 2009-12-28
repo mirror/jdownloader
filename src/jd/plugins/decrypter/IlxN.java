@@ -24,6 +24,7 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
@@ -40,7 +41,16 @@ public class IlxN extends PluginForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(false);
         br.getPage(parameter);
-        if (br.containsHTML("captcha-form")) return null;
+        for (int i = 0; i <= 5; i++) {
+            if (br.containsHTML("captcha.php")) {
+                String captchalink = "http://ilix.in/captcha/captcha.php";
+                String code = getCaptchaCode(captchalink, param);
+                br.postPage(parameter, "n=0&captcha=" + code);
+                if (br.containsHTML("captcha.php")) continue;
+                break;
+            }
+        }
+        if (br.containsHTML("captcha.php")) throw new DecrypterException(DecrypterException.CAPTCHA);
         // "Redirect" links handling
         if (br.containsHTML("src='encrypt.php'")) {
             br.getPage("http://ilix.in/encrypt.php");
@@ -69,10 +79,9 @@ public class IlxN extends PluginForDecrypt {
                     decryptedLinks.add(createDownloadlink(finallink));
                     progress.increase(1);
                 }
-                return decryptedLinks;
             }
         }
-        return null;
+        return decryptedLinks;
     }
 
 }

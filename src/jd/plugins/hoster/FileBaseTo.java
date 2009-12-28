@@ -147,16 +147,23 @@ public class FileBaseTo extends PluginForHost {
         requestFileInformation(downloadLink);
         String formact = downloadLink.getDownloadURL();
         if (br.containsHTML("/captcha/CaptchaImage")) {
-            File captchaFile = getLocalCaptchaFile(".png");
-            String captchaFileURL = br.getRegex("src=\"(/captcha/CaptchaImage\\.php.*?)\"").getMatch(0);
-            String filecid = br.getRegex("cid\"\\s+value=\"(.*?)\"").getMatch(0);
-            Browser.download(captchaFile, br.openGetConnection("http://filebase.to" + captchaFileURL));
-            String capTxt = getCaptchaCode(captchaFile, downloadLink);
-            br.postPage(formact, "uid=" + capTxt + "&cid=" + Encoding.urlEncode(filecid) + "&submit=+++Best%E4tigung+++&session_code=");
-            // if captcha error
-            if (br.containsHTML("Code wurde falsch")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            for (int i = 0; i <= 5; i++) {
+                File captchaFile = getLocalCaptchaFile(".png");
+                String captchaFileURL = br.getRegex("src=\"(/captcha/CaptchaImage\\.php.*?)\"").getMatch(0);
+                String filecid = br.getRegex("cid\"\\s+value=\"(.*?)\"").getMatch(0);
+                Browser.download(captchaFile, br.openGetConnection("http://filebase.to" + captchaFileURL));
+                String capTxt = getCaptchaCode(captchaFile, downloadLink);
+                br.postPage(formact, "uid=" + capTxt + "&cid=" + Encoding.urlEncode(filecid) + "&submit=+++Best%E4tigung+++&session_code=");
+                // if captcha error
+                if (br.containsHTML("Code wurde falsch")) {
+                    br.getPage(downloadLink.getDownloadURL());
+                    continue;
+                }
+                break;
+            }
         }
-
+        // if captcha error after loop
+        if (br.containsHTML("Code wurde falsch")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         String dlAction = br.getRegex("<form action=\"(http.*?)\"").getMatch(0);
         try {
             if (dlAction != null) {

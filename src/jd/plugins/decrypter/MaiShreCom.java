@@ -28,26 +28,28 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flameupload.com" }, urls = { "http://[\\w\\.]*?flameupload\\.com/files/[0-9A-Z]{8}/" }, flags = { 0 })
-public class FlmpldCm extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "maishare.com" }, urls = { "http://[\\w\\.]*?maishare\\.com/files/[0-9A-Z]{8}/" }, flags = { 0 })
+public class MaiShreCom extends PluginForDecrypt {
 
-    public FlmpldCm(PluginWrapper wrapper) {
+    public MaiShreCom(PluginWrapper wrapper) {
         super(wrapper);
     }
+
+    private static final String HOST = "http://www.maishare.com";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         String id = new Regex(parameter, "files/([0-9A-Z]{8})").getMatch(0);
-        parameter = "http://flameupload.com/status.php?uid=" + id;
+        parameter = HOST + "/status.php?uid=" + id;
         br.getPage(parameter);
         /* Error handling */
-        if (!br.containsHTML("<td><img src=")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        if (!br.containsHTML("/redirect") && br.containsHTML("<b>Status</b>")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         String[] redirectLinks = br.getRegex("(/redirect/[0-9A-Z]{8}/\\d+)").getColumn(0);
         if (redirectLinks == null || redirectLinks.length == 0) return null;
         progress.setRange(redirectLinks.length);
         for (String link : redirectLinks) {
-            br.getPage("http://flameupload.com" + link);
+            br.getPage(HOST + link);
             String dllink = br.getRegex("<frame name=\"main\" src=\"(.*?)\">").getMatch(0);
             if (dllink == null) return null;
             decryptedLinks.add(createDownloadlink(dllink));
