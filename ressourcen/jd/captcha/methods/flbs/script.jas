@@ -70,6 +70,7 @@ captcha.prepare.cleanBackgroundByColor(3289855);
 # Convert to blackNwhite
 captcha.prepare.toBlackAndWhite(0.7);
 
+param.useLetterFilter=EasyCaptcha.letterFilter;
 
 #################Letter Prepare Funktionen
 letter.prepare.resizetoHeight(24);

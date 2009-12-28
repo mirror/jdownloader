@@ -437,17 +437,18 @@ public class ColorTrainerGUI {
     }
 
     public static Vector<CPoint> getColors(File folder, String hoster, Vector<CPoint> colorPoints, JFrame owner) {
-        File file = new File(JDUtilities.getJDHomeDirectoryFromEnvironment() + "/" + JDUtilities.getJACMethodsDirectory() + hoster + "/CPoints.xml");
+        JAntiCaptcha jac = new JAntiCaptcha(hoster);
 
+    	File file = new File(JDUtilities.getJDHomeDirectoryFromEnvironment() + "/" + JDUtilities.getJACMethodsDirectory() + jac.getMethodDirName() + "/CPoints.xml");
         File[] list = folder.listFiles();
         Captcha[] cs = new Captcha[15 < list.length ? 15 : list.length];
-        JAntiCaptcha jac = new JAntiCaptcha(hoster);
         if (colorPoints == null) colorPoints = ColorTrainer.load(file);
         ColorTrainerGUI lastCC = null;
         for (int i = 0; i < cs.length; i++) {
             File captchafile = list[i];
             Image captchaImage = Utilities.loadImage(captchafile);
             if (captchaImage == null) continue;
+
             Captcha captcha = jac.createCaptcha(captchaImage);
             if (captcha == null) continue;
             BackGroundImageManager bgit = new BackGroundImageManager(captcha);
@@ -491,7 +492,7 @@ public class ColorTrainerGUI {
      * @return
      */
     public static Vector<CPoint> getColor(EasyMethodFile file, JFrame owner) {
-        return getColors(file.getCaptchaFolder(), file.file.getName(), null, owner);
+        return getColors(file.getCaptchaFolder(), file.getName(), null, owner);
     }
 
     public static void main(String[] args) {
