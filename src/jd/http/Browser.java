@@ -58,21 +58,21 @@ public class Browser {
         private URLConnectionAdapter connection;
         private Exception e = null;
 
-        public BrowserException(String string) {
+        public BrowserException(final String string) {
             super(string);
         }
 
-        public BrowserException(String string, Exception e) {
+        public BrowserException(final String string, final Exception e) {
             this(string);
             this.e = e;
         }
 
-        public BrowserException(String message, URLConnectionAdapter con) {
+        public BrowserException(final String message, final URLConnectionAdapter con) {
             this(message);
             connection = con;
         }
 
-        public BrowserException(String message, URLConnectionAdapter con, Exception e) {
+        public BrowserException(final String message, final URLConnectionAdapter con, final Exception e) {
             this(message, con);
             this.e = e;
         }
@@ -104,12 +104,14 @@ public class Browser {
         return LOGGER;
     }
 
-    public static void setLogger(Logger logger) {
+    public static void setLogger(final Logger logger) {
         Browser.LOGGER = logger;
     }
 
-    public static void setGlobalProxy(JDProxy p) {
-        if (LOGGER != null) LOGGER.info("Use global proxy: " + p);
+    public static void setGlobalProxy(final JDProxy p) {
+        if (LOGGER != null) {
+            LOGGER.info("Use global proxy: " + p);
+        }
         GLOBAL_PROXY = p;
     }
 
@@ -117,12 +119,12 @@ public class Browser {
         return GLOBAL_PROXY;
     }
 
-    private static HashMap<String, Cookies> COOKIES = new HashMap<String, Cookies>();
+    private static final HashMap<String, Cookies> COOKIES = new HashMap<String, Cookies>();
     private HashMap<String, Cookies> cookies = new HashMap<String, Cookies>();
 
     private boolean debug = false;
 
-    private static HashMap<URL, Browser> URL_LINK_MAP = new HashMap<URL, Browser>();
+    private static final HashMap<URL, Browser> URL_LINK_MAP = new HashMap<URL, Browser>();
 
     private HashMap<String, String[]> logins = new HashMap<String, String[]>();
 
@@ -131,9 +133,9 @@ public class Browser {
      * 
      * @param url
      */
-    public void clearCookies(String url) {
-        String host = Browser.getHost(url);
-        Iterator<String> it = getCookies().keySet().iterator();
+    public void clearCookies(final String url) {
+        final String host = Browser.getHost(url);
+        final Iterator<String> it = getCookies().keySet().iterator();
         String check = null;
         while (it.hasNext()) {
             check = it.next();
@@ -145,10 +147,10 @@ public class Browser {
         }
     }
 
-    public void forwardCookies(Request request) throws MalformedURLException {
+    public void forwardCookies(final Request request) throws MalformedURLException {
         if (request == null) { return; }
-        String host = Browser.getHost(request.getUrl());
-        Cookies cookies = getCookies().get(host);
+        final String host = Browser.getHost(request.getUrl());
+        final Cookies cookies = getCookies().get(host);
         if (cookies == null) { return; }
 
         for (Cookie cookie : cookies.getCookies()) {
@@ -160,50 +162,43 @@ public class Browser {
         }
     }
 
-    public void forwardCookies(URLConnectionAdapter con) throws MalformedURLException {
+    public void forwardCookies(final URLConnectionAdapter con) throws MalformedURLException {
         if (con == null) { return; }
-        String host = Browser.getHost(con.getURL().toString());
-        Cookies cookies = getCookies().get(host);
-        String cs = Request.getCookieString(cookies);
+        final String host = Browser.getHost(con.getURL().toString());
+        final Cookies cookies = getCookies().get(host);
+        final String cs = Request.getCookieString(cookies);
         if (cs != null && cs.trim().length() > 0) con.setRequestProperty("Cookie", cs);
     }
 
-    public String getCookie(String url, String string) throws MalformedURLException {
-        String host = Browser.getHost(url);
-        Cookies cookies = getCookies(host);
-        Cookie cookie = cookies.get(string);
-        if (cookie != null) return cookie.getValue();
-        return null;
+    public String getCookie(final String url, final String key) throws MalformedURLException {
+        final String host = Browser.getHost(url);
+        final Cookies cookies = getCookies(host);
+        final Cookie cookie = cookies.get(key);
+
+        return (cookie != null) ? cookie.getValue() : null;
     }
 
     private HashMap<String, Cookies> getCookies() {
-        if (this.cookiesExclusive) return cookies;
-        return COOKIES;
+        return (this.cookiesExclusive) ? cookies : COOKIES;
     }
 
-    public Cookies getCookies(String url) {
-        String host = Browser.getHost(url);
+    public Cookies getCookies(final String url) {
+        final String host = Browser.getHost(url);
         Cookies cookies2 = getCookies().get(host);
         if (cookies2 == null) {
-            cookies2 = new Cookies();
-            getCookies().put(host, cookies2);
+            getCookies().put(host, cookies2 = new Cookies());
         }
         return cookies2;
     }
 
-    public void setCookie(String url, String key, String value) throws MalformedURLException {
-        String host;
-        host = Browser.getHost(url);
+    public void setCookie(final String url, final String key, final String value) throws MalformedURLException {
+        final String host = Browser.getHost(url);
         Cookies cookies;
         if (!getCookies().containsKey(host) || (cookies = getCookies().get(host)) == null) {
             cookies = new Cookies();
             getCookies().put(host, cookies);
         }
-        Cookie cookie = new Cookie();
-        cookie.setHost(host);
-        cookie.setKey(key);
-        cookie.setValue(value);
-        cookies.add(cookie);
+        cookies.add(new Cookie(host, key, value));
     }
 
     /**
@@ -215,11 +210,11 @@ public class Browser {
      * @throws MalformedURLException
      */
 
-    public static String getHost(URL url) {
+    public static String getHost(final URL url) {
         return getHost(url.getHost());
     }
 
-    public static String getHost(String url) {
+    public static String getHost(final String url) {
         if (url == null) return null;
         /* direct ip */
         String ret = new Regex(url, "(.*?://)?(\\d+\\.\\d+\\.\\d+\\.\\d+)(/|$|:)").getMatch(1);
@@ -230,9 +225,9 @@ public class Browser {
         return url;
     }
 
-    public void updateCookies(Request request) throws MalformedURLException {
+    public void updateCookies(final Request request) throws MalformedURLException {
         if (request == null) { return; }
-        String host = Browser.getHost(request.getUrl());
+        final String host = Browser.getHost(request.getUrl());
         Cookies cookies = getCookies().get(host);
         if (cookies == null) {
             cookies = new Cookies();
@@ -269,6 +264,7 @@ public class Browser {
     private static HashMap<String, Integer> REQUEST_INTERVAL_LIMIT_MAP;
     private static HashMap<String, Long> REQUESTTIME_MAP;
     private static boolean VERBOSE = false;
+
     private static final Authenticator AUTHENTICATOR = new Authenticator() {
         protected PasswordAuthentication getPasswordAuthentication() {
             if (this.getRequestingPrompt().contains("SOCKS")) {
@@ -300,12 +296,10 @@ public class Browser {
     }
 
     public Form[] getForms() {
-
         return Form.getForms(this);
-
     }
 
-    public void setCustomCharset(String charset) {
+    public void setCustomCharset(final String charset) {
         this.customCharset = charset;
     }
 
@@ -315,21 +309,20 @@ public class Browser {
      * @param name
      * @return
      */
-    public Form getFormBySubmitvalue(String name) {
-        for (Form f : getForms()) {
+    public Form getFormBySubmitvalue(final String name) {
+        for (Form form : getForms()) {
             try {
-                f.setPreferredSubmit(name);
-                return f;
+                form.setPreferredSubmit(name);
+                return form;
             } catch (IllegalArgumentException e) {
-
             }
         }
         return null;
     }
 
-    public Form getFormbyProperty(String property, String name) {
-        for (Form f : getForms()) {
-            if (f.getStringProperty(property) != null && f.getStringProperty(property).equalsIgnoreCase(name)) return f;
+    public Form getFormbyProperty(final String property, final String name) {
+        for (Form form : getForms()) {
+            if (form.getStringProperty(property) != null && form.getStringProperty(property).equalsIgnoreCase(name)) return form;
         }
         return null;
     }
@@ -341,7 +334,7 @@ public class Browser {
         return headers;
     }
 
-    public String getPage(String string) throws IOException {
+    public String getPage(final String string) throws IOException {
         this.openRequestConnection(this.createGetRequest(string));
         return this.loadConnection(null);
     }
@@ -352,7 +345,7 @@ public class Browser {
      * @param request
      * @throws IOException
      */
-    public void connect(Request request) throws IOException {
+    public void connect(final Request request) throws IOException {
         // sets request BEVOR connection. this enhables to find the request in
         // the protocol handlers
         this.request = request;
@@ -370,9 +363,9 @@ public class Browser {
         }
     }
 
-    private static synchronized void waitForPageAccess(Browser browser, Request request) throws InterruptedException {
+    private static synchronized void waitForPageAccess(final Browser browser, final Request request) throws InterruptedException {
         try {
-            String host = getHost(request.getUrl().getHost());
+            final String host = getHost(request.getUrl().getHost());
             Integer localLimit = null;
             Integer globalLimit = null;
             Long localLastRequest = null;
@@ -405,18 +398,17 @@ public class Browser {
                 // waitForPageAccess(request);
             }
         } finally {
-            String host = getHost(request.getUrl().getHost());
+            final String host = getHost(request.getUrl().getHost());
             if (browser.requestTimeMap != null) {
                 browser.requestTimeMap.put(host, System.currentTimeMillis());
             }
-
             if (REQUESTTIME_MAP != null) {
                 REQUESTTIME_MAP.put(host, System.currentTimeMillis());
             }
         }
     }
 
-    private static void assignURLToBrowserInstance(URL url, Browser browser) {
+    private static void assignURLToBrowserInstance(final URL url, final Browser browser) {
         if (browser == null) {
             URL_LINK_MAP.remove(url);
         } else {
@@ -426,7 +418,7 @@ public class Browser {
         // System.out.println("NO LINKED: " + URL_LINK_MAP);
     }
 
-    public static URL reAssignUrlToBrowserInstance(URL url1, URL url2) {
+    public static URL reAssignUrlToBrowserInstance(final URL url1, final URL url2) {
         assignURLToBrowserInstance(url2, getAssignedBrowserInstance(url1));
         URL_LINK_MAP.remove(url1);
         return url2;
@@ -438,7 +430,7 @@ public class Browser {
      * @param port
      * @param host
      */
-    public static Browser getAssignedBrowserInstance(URL url) {
+    public static Browser getAssignedBrowserInstance(final URL url) {
         return URL_LINK_MAP.get(url);
     }
 
@@ -448,10 +440,13 @@ public class Browser {
      * @param request
      * @throws BrowserException
      */
-    private void checkContentLengthLimit(Request request) throws BrowserException {
-        if (request == null || request.getHttpConnection() == null || request.getHttpConnection().getHeaderField("Content-Length") == null) return;
-        if (Long.parseLong(request.getHttpConnection().getHeaderField("Content-Length")) > limit) {
-            if (LOGGER != null) LOGGER.severe(request.printHeaders());
+    private void checkContentLengthLimit(final Request request) throws BrowserException {
+        if (request == null || request.getHttpConnection() == null || request.getHttpConnection().getHeaderField("Content-Length") == null) {
+            return;
+        } else if (Long.parseLong(request.getHttpConnection().getHeaderField("Content-Length")) > limit) {
+            if (LOGGER != null) {
+                LOGGER.severe(request.printHeaders());
+            }
             throw new BrowserException("Content-length too big", request.getHttpConnection());
         }
     }
@@ -502,8 +497,7 @@ public class Browser {
      * @return
      * @throws Exception
      */
-    public URLConnectionAdapter openFormConnection(Form form) throws Exception {
-
+    public URLConnectionAdapter openFormConnection(final Form form) throws Exception {
         return this.openRequestConnection(this.createFormRequest(form));
     }
 
@@ -514,13 +508,15 @@ public class Browser {
      * @return
      * @throws Exception
      */
-    public Request createFormRequest(Form form) throws Exception {
+    public Request createFormRequest(final Form form) throws Exception {
         String base = null;
 
-        if (request != null) base = request.getUrl().toString();
+        if (request != null) {
+            base = request.getUrl().toString();
+        }
         try {
             // find base in source
-            String sourceBase = this.getRegex("<base.*?href=\"(.+?)\"").getMatch(0).trim();
+            final String sourceBase = this.getRegex("<base.*?href=\"(.+?)\"").getMatch(0).trim();
             // check if valid url
             new URL(sourceBase);
             base = sourceBase;
@@ -532,8 +528,7 @@ public class Browser {
         switch (form.getMethod()) {
 
         case GET:
-
-            String varString = form.getPropertyString();
+            final String varString = form.getPropertyString();
             if (varString != null && !varString.matches("[\\s]*")) {
                 if (action.matches(".*\\?.+")) {
                     action += "&";
@@ -546,37 +541,29 @@ public class Browser {
 
         case POST:
             if (form.getEncoding() == null || !form.getEncoding().toLowerCase().endsWith("form-data")) {
-
                 return this.createPostRequest(action, form.getRequestVariables());
             } else {
-
-                PostFormDataRequest request = (PostFormDataRequest) createPostFormDataRequest(action);
+                final PostFormDataRequest request = (PostFormDataRequest) createPostFormDataRequest(action);
                 if (form.getEncoding() != null) {
                     request.setEncodeType(form.getEncoding());
                 }
+                final int size = form.getInputFields().size();
+                for (int i = 0; i < size; i++) {
+                    final InputField entry = form.getInputFields().get(i);
 
-                for (int i = 0; i < form.getInputFields().size(); i++) {
-                    InputField entry = form.getInputFields().get(i);
-
-                    if (entry.getValue() == null) continue;
-                    if (entry.getType() != null && entry.getType().equalsIgnoreCase("image")) {
-
+                    if (entry.getValue() == null) {
+                        // continue;
+                    } else if (entry.getType() != null && entry.getType().equalsIgnoreCase("image")) {
                         request.addFormData(new FormData(entry.getKey() + ".x", entry.getIntegerProperty("x", (int) (Math.random() * 100)) + ""));
                         request.addFormData(new FormData(entry.getKey() + ".y", entry.getIntegerProperty("y", (int) (Math.random() * 100)) + ""));
-
                     } else if (entry.getType() != null && entry.getType().equalsIgnoreCase("file")) {
                         request.addFormData(new FormData(entry.getKey(), entry.getFileToPost().getName(), entry.getFileToPost()));
-
                     } else if (entry.getKey() != null && entry.getValue() != null) {
-
                         request.addFormData(new FormData(entry.getKey(), entry.getValue()));
-
                     }
                 }
-
                 return request;
             }
-
         }
         return null;
 
@@ -589,7 +576,7 @@ public class Browser {
      * @return
      * @throws IOException
      */
-    public URLConnectionAdapter openGetConnection(String string) throws IOException {
+    public URLConnectionAdapter openGetConnection(final String string) throws IOException {
         return openRequestConnection(this.createGetRequest(string));
 
     }
@@ -597,9 +584,13 @@ public class Browser {
     /**
      * Opens a connection based on the requets object
      */
-    public URLConnectionAdapter openRequestConnection(Request request) throws IOException {
+    public URLConnectionAdapter openRequestConnection(final Request request) throws IOException {
         connect(request);
-        if (isDebug()) if (LOGGER != null) LOGGER.finest("\r\n" + request.printHeaders());
+        if (isDebug()) {
+            if (LOGGER != null) {
+                LOGGER.finest("\r\n" + request.printHeaders());
+            }
+        }
 
         updateCookies(request);
         this.request = request;
@@ -624,9 +615,11 @@ public class Browser {
             currentURL = new URL(string);
         }
 
-        GetRequest request = new GetRequest((string));
+        final GetRequest request = new GetRequest((string));
         request.setCustomCharset(this.customCharset);
-        if (selectProxy() != null) request.setProxy(selectProxy());
+        if (selectProxy() != null) {
+            request.setProxy(selectProxy());
+        }
         // doAuth(request);
         /* set Timeouts */
         request.setConnectTimeout(getConnectTimeout());
@@ -635,7 +628,9 @@ public class Browser {
         request.getHeaders().put("Accept-Language", acceptLanguage);
         // request.setFollowRedirects(doRedirects);
         forwardCookies(request);
-        if (sendref) request.getHeaders().put("Referer", currentURL.toString());
+        if (sendref) {
+            request.getHeaders().put("Referer", currentURL.toString());
+        }
         if (headers != null) {
             mergeHeaders(request);
         }
@@ -650,19 +645,20 @@ public class Browser {
         return request;
     }
 
-    private void mergeHeaders(Request request) {
+    private void mergeHeaders(final Request request) {
         if (headers.isDominant()) {
             request.getHeaders().clear();
         }
-        for (int i = 0; i < headers.size(); i++) {
-
-            if (headers.getValue(i) == null) {
+        final int size = headers.size();
+        String value;
+        for (int i = 0; i < size; i++) {
+            value = headers.getValue(i);
+            if (value == null) {
                 request.getHeaders().remove(headers.getKey(i));
             } else {
-                request.getHeaders().put(headers.getKey(i), headers.getValue(i));
+                request.getHeaders().put(headers.getKey(i), value);
             }
         }
-
     }
 
     private JDProxy selectProxy() {
@@ -673,17 +669,19 @@ public class Browser {
         return GLOBAL_PROXY;
     }
 
-    public Request createGetRequestRedirectedRequest(Request oldrequest) throws IOException {
-        String string = getURL(oldrequest.getLocation());
+    public Request createGetRequestRedirectedRequest(final Request oldrequest) throws IOException {
+        final String string = getURL(oldrequest.getLocation());
         boolean sendref = true;
         if (currentURL == null) {
             sendref = false;
             currentURL = new URL(string);
         }
 
-        GetRequest request = new GetRequest((string));
+        final GetRequest request = new GetRequest((string));
         request.setCustomCharset(this.customCharset);
-        if (selectProxy() != null) request.setProxy(selectProxy());
+        if (selectProxy() != null) {
+            request.setProxy(selectProxy());
+        }
         request.setCookies(oldrequest.getCookies());
         // doAuth(request);
         /* set Timeouts */
@@ -692,7 +690,9 @@ public class Browser {
         request.getHeaders().put("Accept-Language", acceptLanguage);
         // request.setFollowRedirects(doRedirects);
         forwardCookies(request);
-        if (sendref) request.getHeaders().put("Referer", currentURL.toString());
+        if (sendref) {
+            request.getHeaders().put("Referer", currentURL.toString());
+        }
         if (headers != null) {
             mergeHeaders(request);
         }
@@ -713,24 +713,24 @@ public class Browser {
      * @throws BrowserException
      */
     public String getURL(String string) throws BrowserException {
-        if (string == null) string = this.getRedirectLocation();
+        if (string == null) {
+            string = this.getRedirectLocation();
+        }
         if (string == null) { throw new BrowserException("Null URL"); }
         try {
             new URL(string);
-        } catch (Exception e) {
+        } catch (final Exception e) {
             if (request == null || request.getHttpConnection() == null) return string;
-            String base = getBase(string);
+            final String base = getBase(string);
             if (string.startsWith("/") || string.startsWith("\\")) {
                 try {
-
-                    URL bUrl = new URL(base);
+                    final URL bUrl = new URL(base);
                     if (bUrl.getPort() != 80 && bUrl.getPort() > 0) {
                         string = "http://" + new URL(base).getHost() + ":" + bUrl.getPort() + string;
                     } else {
                         string = "http://" + new URL(base).getHost() + string;
                     }
-
-                } catch (MalformedURLException e1) {
+                } catch (final MalformedURLException e1) {
                     e1.printStackTrace();
                 }
             } else {
@@ -740,46 +740,45 @@ public class Browser {
         return Browser.correctURL(Encoding.urlEncode_light(string));
     }
 
-    private String getBase(String string) {
-        if (string == null) return "";
-        String base = getRegex("<base\\s*href=\"(.*?)\">").getMatch(0);
-        if (base != null) return base;
-        String path = request.getHttpConnection().getURL().getPath();
+    private String getBase(final String string) {
+        if (string == null) { return ""; }
+
+        final String base = getRegex("<base\\s*href=\"(.*?)\">").getMatch(0);
+        if (base != null) { return base; }
+
+        final URL url = request.getHttpConnection().getURL();
+        final int port = url.getPort();
+        final String host = url.getHost();
+
+        String path = url.getPath();
         int id;
-        if ((id = path.lastIndexOf("/")) >= 0) {
+        if ((id = path.lastIndexOf('/')) >= 0) {
             path = path.substring(0, id);
         }
-
-        // path.substring(path.lastIndexOf("/"))
-        if (request.getHttpConnection().getURL().getPort() != 80 && request.getHttpConnection().getURL().getPort() > 0) {
-            string = "http://" + request.getHttpConnection().getURL().getHost() + ":" + request.getHttpConnection().getURL().getPort() + path + "/";
-        } else {
-            string = "http://" + request.getHttpConnection().getURL().getHost() + path + "/";
-        }
-        return string;
+        return (port != 80 && port > 0) ? "http://" + host + ":" + port + path + "/" : "http://" + host + path + "/";
     }
 
     /**
      * Opens a Post COnnection based on a variable hashmap
      */
-    public URLConnectionAdapter openPostConnection(String url, LinkedHashMap<String, String> post) throws IOException {
-
+    public URLConnectionAdapter openPostConnection(final String url, final LinkedHashMap<String, String> post) throws IOException {
         return this.openRequestConnection(this.createPostRequest(url, post));
-
     }
 
-    public Request createPostRequestfromRedirectedRequest(Request oldrequest, String postdata) throws IOException {
-        String url = getURL(oldrequest.getLocation());
+    public Request createPostRequestfromRedirectedRequest(final Request oldrequest, final String postdata) throws IOException {
+        final String url = getURL(oldrequest.getLocation());
         boolean sendref = true;
         if (currentURL == null) {
             sendref = false;
             currentURL = new URL(url);
         }
-        HashMap<String, String> post = Request.parseQuery(postdata);
+        final HashMap<String, String> post = Request.parseQuery(postdata);
 
-        PostRequest request = new PostRequest((url));
+        final PostRequest request = new PostRequest((url));
         request.setCustomCharset(this.customCharset);
-        if (selectProxy() != null) request.setProxy(selectProxy());
+        if (selectProxy() != null) {
+            request.setProxy(selectProxy());
+        }
         request.setCookies(oldrequest.getCookies());
         // doAuth(request);
         request.getHeaders().put("Accept-Language", acceptLanguage);
@@ -788,7 +787,9 @@ public class Browser {
         request.setConnectTimeout(getConnectTimeout());
         request.setReadTimeout(getReadTimeout());
         forwardCookies(request);
-        if (sendref) request.getHeaders().put("Referer", currentURL.toString());
+        if (sendref) {
+            request.getHeaders().put("Referer", currentURL.toString());
+        }
         if (post != null) {
             request.addAll(post);
         }
@@ -806,9 +807,11 @@ public class Browser {
             currentURL = new URL(url);
         }
 
-        PostFormDataRequest request = new PostFormDataRequest((url));
+        final PostFormDataRequest request = new PostFormDataRequest((url));
         request.setCustomCharset(this.customCharset);
-        if (selectProxy() != null) request.setProxy(selectProxy());
+        if (selectProxy() != null) {
+            request.setProxy(selectProxy());
+        }
 
         request.getHeaders().put("Accept-Language", acceptLanguage);
 
@@ -816,7 +819,9 @@ public class Browser {
         request.setConnectTimeout(getConnectTimeout());
         request.setReadTimeout(getReadTimeout());
         forwardCookies(request);
-        if (sendref) request.getHeaders().put("Referer", currentURL.toString());
+        if (sendref) {
+            request.getHeaders().put("Referer", currentURL.toString());
+        }
 
         if (headers != null) {
             mergeHeaders(request);
@@ -827,15 +832,14 @@ public class Browser {
     /**
      * Creates a new POstrequest based on a variable hashmap
      */
-    public Request createPostRequest(String url, LinkedHashMap<String, String> post) throws IOException {
-
+    public Request createPostRequest(final String url, final LinkedHashMap<String, String> post) throws IOException {
         return this.createPostRequest(url, PostRequest.variableMaptoArray(post));
     }
 
     /**
      * Creates a new postrequest based an an requestVariable Arraylist
      */
-    private Request createPostRequest(String url, ArrayList<RequestVariable> post) throws IOException {
+    private Request createPostRequest(String url, final ArrayList<RequestVariable> post) throws IOException {
         url = getURL(url);
         boolean sendref = true;
         if (currentURL == null) {
@@ -843,9 +847,11 @@ public class Browser {
             currentURL = new URL(url);
         }
 
-        PostRequest request = new PostRequest((url));
+        final PostRequest request = new PostRequest((url));
         request.setCustomCharset(this.customCharset);
-        if (selectProxy() != null) request.setProxy(selectProxy());
+        if (selectProxy() != null) {
+            request.setProxy(selectProxy());
+        }
         // doAuth(request);
         request.getHeaders().put("Accept-Language", acceptLanguage);
         // request.setFollowRedirects(doRedirects);
@@ -853,7 +859,9 @@ public class Browser {
         request.setConnectTimeout(getConnectTimeout());
         request.setReadTimeout(getReadTimeout());
         forwardCookies(request);
-        if (sendref) request.getHeaders().put("Referer", currentURL.toString());
+        if (sendref) {
+            request.getHeaders().put("Referer", currentURL.toString());
+        }
         if (post != null) {
             request.addAll(post);
 
@@ -867,23 +875,21 @@ public class Browser {
     /**
      * Creates a postrequest based on a querystring
      */
-    public Request createPostRequest(String url, String post) throws MalformedURLException, IOException {
-
+    public Request createPostRequest(final String url, final String post) throws MalformedURLException, IOException {
         return createPostRequest(url, Request.parseQuery(post));
     }
 
     /**
      * OPens a new POst connection based on a query string
      */
-    public URLConnectionAdapter openPostConnection(String url, String post) throws IOException {
-
+    public URLConnectionAdapter openPostConnection(final String url, final String post) throws IOException {
         return openPostConnection(url, Request.parseQuery(post));
     }
 
     /**
      * loads a new page (post)
      */
-    public String postPage(String url, LinkedHashMap<String, String> post) throws IOException {
+    public String postPage(final String url, final LinkedHashMap<String, String> post) throws IOException {
         openPostConnection(url, post);
         return loadConnection(null);
     }
@@ -891,8 +897,7 @@ public class Browser {
     /**
      * loads a new page (POST)
      */
-    public String postPage(String url, String post) throws IOException {
-
+    public String postPage(final String url, final String post) throws IOException {
         return postPage(url, Request.parseQuery(post));
     }
 
@@ -900,67 +905,62 @@ public class Browser {
      * loads a new page (post) the postdata is given by the poststring. it wiull
      * be send as it is
      */
-    public String postPageRaw(String url, String post) throws IOException {
-        PostRequest request = (PostRequest) this.createPostRequest(url, new ArrayList<RequestVariable>());
+    public String postPageRaw(final String url, final String post) throws IOException {
+        final PostRequest request = (PostRequest) this.createPostRequest(url, new ArrayList<RequestVariable>());
         request.setCustomCharset(this.customCharset);
-        if (post != null) request.setPostDataString(post);
+        if (post != null) {
+            request.setPostDataString(post);
+        }
         this.openRequestConnection(request);
         return this.loadConnection(null);
     }
 
-    public void setAcceptLanguage(String acceptLanguage) {
+    public void setAcceptLanguage(final String acceptLanguage) {
         this.acceptLanguage = acceptLanguage;
     }
 
-    public void setConnectTimeout(int connectTimeout) {
+    public void setConnectTimeout(final int connectTimeout) {
         this.connectTimeout = connectTimeout;
     }
 
-    public void setCurrentURL(String string) throws MalformedURLException {
-
+    public void setCurrentURL(final String string) throws MalformedURLException {
         currentURL = new URL(string);
-
     }
 
-    public void setFollowRedirects(boolean b) {
+    public void setFollowRedirects(final boolean b) {
         doRedirects = b;
-
     }
 
     public boolean isFollowingRedirects() {
         return doRedirects;
     }
 
-    public void setHeaders(RequestHeader h) {
+    public void setHeaders(final RequestHeader h) {
         headers = h;
-
     }
 
-    public void setLoadLimit(int i) {
+    public void setLoadLimit(final int i) {
         limit = i;
-
     }
 
-    public void setReadTimeout(int readTimeout) {
+    public void setReadTimeout(final int readTimeout) {
         this.readTimeout = readTimeout;
     }
 
     public String getBaseURL() {
         if (request == null) return null;
 
-        String base = request.getUrl().toString();
-        if (base.matches("http://.*/.*")) {
-            return base.substring(0, base.lastIndexOf("/")) + "/";
-        } else {
-            return base + "/";
-        }
-
+        final String base = request.getUrl().toString();
+        // if (base.matches("http://.*/.*")) {
+        // return base.substring(0, base.lastIndexOf("/")) + "/";
+        // } else {
+        // return base + "/";
+        // }
+        return base.matches("http://.*/.*") ? base.substring(0, base.lastIndexOf("/")) + "/" : base + "/";
     }
 
-    public String submitForm(Form form) throws Exception {
-
+    public String submitForm(final Form form) throws Exception {
         this.openFormConnection(form);
-
         checkContentLengthLimit(request);
         return request.read();
     }
@@ -971,15 +971,15 @@ public class Browser {
         return request.toString();
     }
 
-    public Regex getRegex(String string) {
+    public Regex getRegex(final String string) {
         return new Regex(this, string);
     }
 
-    public Regex getRegex(Pattern compile) {
+    public Regex getRegex(final Pattern compile) {
         return new Regex(this, compile);
     }
 
-    public boolean containsHTML(String regex) {
+    public boolean containsHTML(final String regex) {
         return new Regex(this, regex).matches();
     }
 
@@ -1007,14 +1007,16 @@ public class Browser {
         } catch (IOException e) {
             throw new BrowserException(e.getMessage(), con, e).closeConnection();
         }
-        if (isVerbose()) if (LOGGER != null) LOGGER.finest("\r\n" + ret + "\r\n");
-
+        if (isVerbose()) {
+            if (LOGGER != null) {
+                LOGGER.finest("\r\n" + ret + "\r\n");
+            }
+        }
         return ret;
-
     }
 
     public URLConnectionAdapter getHttpConnection() {
-        if (request == null) return null;
+        if (request == null) { return null; }
         return request.getHttpConnection();
     }
 
@@ -1026,48 +1028,41 @@ public class Browser {
      * @return Erfolg true/false
      * @throws IOException
      */
-    public static void download(File file, URLConnectionAdapter con) throws IOException {
-
+    public static void download(final File file, final URLConnectionAdapter con) throws IOException {
         if (file.isFile()) {
             if (!file.delete()) {
                 System.out.println("Konnte Datei nicht löschen " + file);
                 throw new IOException("Could not overwrite file: " + file);
             }
-
         }
 
-        if (file.getParentFile() != null && !file.getParentFile().exists()) {
-            file.getParentFile().mkdirs();
+        final File parentFile = file.getParentFile();
+        if (parentFile != null && !parentFile.exists()) {
+            parentFile.mkdirs();
         }
         file.createNewFile();
 
-        BufferedOutputStream output = new BufferedOutputStream(new FileOutputStream(file, true));
+        final BufferedOutputStream output = new BufferedOutputStream(new FileOutputStream(file, true));
         BufferedInputStream input;
         if (con.getHeaderField("Content-Encoding") != null && con.getHeaderField("Content-Encoding").equalsIgnoreCase("gzip")) {
-
             input = new BufferedInputStream(new GZIPInputStream(con.getInputStream()));
         } else {
             input = new BufferedInputStream(con.getInputStream());
         }
 
-        byte[] b = new byte[1024];
+        final byte[] b = new byte[1024];
         int len;
         while ((len = input.read(b)) != -1) {
             output.write(b, 0, len);
         }
         output.close();
         input.close();
-
     }
 
-    public void getDownload(File file, String urlString) throws IOException {
-
-        urlString = URLDecoder.decode(urlString, "UTF-8");
-
-        URLConnectionAdapter con = this.openGetConnection(urlString);
+    public void getDownload(final File file, final String urlString) throws IOException {
+        final URLConnectionAdapter con = this.openGetConnection(URLDecoder.decode(urlString, "UTF-8"));
         con.setInstanceFollowRedirects(true);
         download(file, con);
-
     }
 
     /**
@@ -1078,11 +1073,12 @@ public class Browser {
      * @param con
      * @throws IOException
      */
-    public void downloadConnection(File file, URLConnectionAdapter con) throws IOException {
-        if (con == null) con = request.getHttpConnection();
+    public void downloadConnection(final File file, URLConnectionAdapter con) throws IOException {
+        if (con == null) {
+            con = request.getHttpConnection();
+        }
         con.setInstanceFollowRedirects(true);
         download(file, con);
-
     }
 
     /**
@@ -1093,26 +1089,21 @@ public class Browser {
      * @return Erfolg true/false
      * @throws IOException
      */
-    public static void download(File file, String url) throws IOException {
-
+    public static void download(final File file, final String url) throws IOException {
         new Browser().getDownload(file, url);
-
     }
 
-    public Form getForm(int i) {
-        Form[] forms = getForms();
-        if (forms.length <= i) return null;
-        return forms[i];
+    public Form getForm(final int i) {
+        final Form[] forms = getForms();
+        return forms.length <= i ? null : forms[i];
     }
 
     public String getHost() {
-        if (request == null) return null;
-        return request.getUrl().getHost();
-
+        return request == null ? null : request.getUrl().getHost();
     }
 
     public Browser cloneBrowser() {
-        Browser br = new Browser();
+        final Browser br = new Browser();
         br.requestIntervalLimitMap = this.requestIntervalLimitMap;
         br.requestTimeMap = this.requestTimeMap;
         br.acceptLanguage = acceptLanguage;
@@ -1133,28 +1124,24 @@ public class Browser {
         return br;
     }
 
-    public Form[] getForms(String downloadURL) throws IOException {
+    public Form[] getForms(final String downloadURL) throws IOException {
         this.getPage(downloadURL);
         return this.getForms();
-
     }
 
-    public URLConnectionAdapter openFormConnection(int i) throws Exception {
+    public URLConnectionAdapter openFormConnection(final int i) throws Exception {
         return openFormConnection(getForm(i));
-
     }
 
-    public String getMatch(String string) {
+    public String getMatch(final String string) {
         return getRegex(string).getMatch(0);
-
     }
 
     public String getURL() {
-        if (request == null) { return null; }
-        return request.getUrl().toString();
+        return request == null ? null : request.getUrl().toString();
     }
 
-    public void setCookiesExclusive(boolean b) {
+    public void setCookiesExclusive(final boolean b) {
         if (cookiesExclusive == b) return;
         this.cookiesExclusive = b;
         if (b) {
@@ -1175,33 +1162,27 @@ public class Browser {
     }
 
     public String followConnection() throws IOException {
-        String ret = null;
-
         if (request.getHtmlCode() != null) {
             if (LOGGER != null) LOGGER.warning("Request has already been read");
             return null;
         }
         checkContentLengthLimit(request);
-
-        ret = request.read();
-
-        return ret;
-
+        return request.read();
     }
 
     public boolean isDebug() {
         return debug || VERBOSE;
     }
 
-    public void setDebug(boolean debug) {
-        String caller = (Thread.currentThread().getContextClassLoader().getResource("jd") + "");
+    public void setDebug(final boolean debug) {
+        final String caller = (Thread.currentThread().getContextClassLoader().getResource("jd") + "");
 
         if (!caller.matches("jar\\:.*\\.jar\\!.*")) {
             this.debug = debug;
         }
     }
 
-    public void setAuth(String domain, String user, String pass) {
+    public void setAuth(String domain, final String user, final String pass) {
         domain = domain.trim();
         if (domain.indexOf(":") <= 0) {
             domain += ":80";
@@ -1223,45 +1204,42 @@ public class Browser {
                 }
             }
         }
-
         return ret;
     }
 
-    public String submitForm(String formname) throws Exception {
+    public String submitForm(final String formname) throws Exception {
         return this.submitForm(getFormBySubmitvalue(formname));
-
     }
 
-    public String getPage(URL url) throws IOException {
-
+    public String getPage(final URL url) throws IOException {
         return getPage(url + "");
-
     }
 
-    public void setRequest(Request request) throws MalformedURLException {
+    public void setRequest(final Request request) throws MalformedURLException {
         if (request == null) return;
         updateCookies(request);
         this.request = request;
-
         currentURL = request.getUrl();
-
     }
 
-    public Request createRequest(Form form) throws Exception {
+    public Request createRequest(final Form form) throws Exception {
         return createFormRequest(form);
     }
 
-    public Request createRequest(String downloadURL) throws Exception {
+    public Request createRequest(final String downloadURL) throws Exception {
         return createGetRequest(downloadURL);
     }
 
-    public String getXPathElement(String xPath) {
+    public String getXPathElement(final String xPath) {
         return new XPath(this.toString(), xPath, false).getFirstMatch();
-
     }
 
-    public void setProxy(JDProxy proxy) {
-        if (debug) if (LOGGER != null) LOGGER.info("Use local proxy: " + proxy);
+    public void setProxy(final JDProxy proxy) {
+        if (debug) {
+            if (LOGGER != null) {
+                LOGGER.info("Use local proxy: " + proxy);
+            }
+        }
         if (proxy == null) {
             System.err.println("Browser:No proxy");
             this.proxy = null;
@@ -1282,9 +1260,8 @@ public class Browser {
      * 
      * @param b
      */
-    public void forceDebug(boolean b) {
+    public void forceDebug(final boolean b) {
         this.debug = b;
-
     }
 
     /**
@@ -1296,11 +1273,15 @@ public class Browser {
      * @param host
      * @return
      */
-    public PasswordAuthentication getPasswordAuthentication(String host, int port) {
-        if (port <= 0) port = 80;
-        String[] auth = this.getAuth(host + ":" + port);
-        if (auth == null) return null;
-        if (LOGGER != null) LOGGER.finest("Use Authentication for: " + host + ":" + port + ": " + auth[0] + " - " + auth[1]);
+    public PasswordAuthentication getPasswordAuthentication(final String host, int port) {
+        if (port <= 0) {
+            port = 80;
+        }
+        final String[] auth = this.getAuth(host + ":" + port);
+        if (auth == null) { return null; }
+        if (LOGGER != null) {
+            LOGGER.finest("Use Authentication for: " + host + ":" + port + ": " + auth[0] + " - " + auth[1]);
+        }
         return new PasswordAuthentication(auth[0], auth[1].toCharArray());
     }
 
@@ -1309,7 +1290,7 @@ public class Browser {
         CookieHandler.setDefault(null);
         XTrustProvider.install();
         // Now you are telling the JRE to ignore the hostname
-        HostnameVerifier hv = new HostnameVerifier() {
+        final HostnameVerifier hv = new HostnameVerifier() {
             public boolean verify(String arg0, SSLSession arg1) {
                 return true;
             }
@@ -1317,9 +1298,9 @@ public class Browser {
         HttpsURLConnection.setDefaultHostnameVerifier(hv);
     }
 
-    public void setRequestIntervalLimit(String host, int i) {
-        String domain = getHost(host);
-        if (domain == null) return;
+    public void setRequestIntervalLimit(final String host, final int i) {
+        final String domain = getHost(host);
+        if (domain == null) { return; }
         if (this.requestIntervalLimitMap == null) {
             this.requestTimeMap = new HashMap<String, Long>();
             this.requestIntervalLimitMap = new HashMap<String, Integer>();
@@ -1328,8 +1309,8 @@ public class Browser {
 
     }
 
-    public static synchronized void setRequestIntervalLimitGlobal(String host, int i) {
-        String domain = getHost(host);
+    public static synchronized void setRequestIntervalLimitGlobal(final String host, final int i) {
+        final String domain = getHost(host);
         if (domain == null) return;
         if (REQUEST_INTERVAL_LIMIT_MAP == null) {
             REQUEST_INTERVAL_LIMIT_MAP = new HashMap<String, Integer>();
@@ -1342,19 +1323,17 @@ public class Browser {
         return VERBOSE;
     }
 
-    public static void setVerbose(boolean b) {
+    public static void setVerbose(final boolean b) {
         VERBOSE = b;
-
     }
 
     /**
      * Sets the global readtimeout in ms
      * 
-     * @param integerProperty
+     * @param valueMS
      */
-    public static void setGlobalReadTimeout(int valueMS) {
+    public static void setGlobalReadTimeout(final int valueMS) {
         TIMEOUT_READ = valueMS;
-
     }
 
     public static int getGlobalReadTimeout() {
@@ -1366,25 +1345,23 @@ public class Browser {
      * 
      * @param valueMS
      */
-    public static void setGlobalConnectTimeout(int valueMS) {
+    public static void setGlobalConnectTimeout(final int valueMS) {
         TIMEOUT_CONNECT = valueMS;
-
     }
 
     public static int getGlobalConnectTimeout() {
         return TIMEOUT_CONNECT;
-
     }
 
     /**
-     * Returns the first form that has an inputfiled with name key
+     * Returns the first form that has an input filed with name key
      * 
      * @param key
      * @return
      */
-    public Form getFormbyKey(String key) {
+    public Form getFormbyKey(final String key) {
         for (Form f : getForms()) {
-            if (f.hasInputFieldByName(key)) return f;
+            if (f.hasInputFieldByName(key)) { return f; }
         }
         return null;
     }
@@ -1395,7 +1372,7 @@ public class Browser {
      * @param url
      * @return
      */
-    public static String correctURL(String url) {
+    public static String correctURL(final String url) {
         /* check if we need to correct url */
         int begin;
         begin = url.indexOf("://");
@@ -1412,7 +1389,7 @@ public class Browser {
             begin = 0;
         }
         int first = url.indexOf("/", begin);
-        if (first < 0) return ret;
+        if (first < 0) { return ret; }
         ret = url.substring(0, first);
         int endp = url.indexOf("?", first);
         if (endp > 0) {
@@ -1428,7 +1405,7 @@ public class Browser {
         tmp = tmp.replaceAll("/+", "/");
 
         /* filter .. and . */
-        String parts[] = tmp.split("/");
+        final String parts[] = tmp.split("/");
         for (int i = 0; i < parts.length; i++) {
             if (parts[i].equalsIgnoreCase(".")) {
                 parts[i] = "";
@@ -1452,8 +1429,9 @@ public class Browser {
                 tmp = tmp + "/" + part;
             }
         }
-        if (endisslash) tmp = tmp + "/";
-        ret = ret + tmp + (end != null ? end : "");
-        return ret;
+        if (endisslash) {
+            tmp = tmp + "/";
+        }
+        return ret + tmp + (end != null ? end : "");
     }
 }
