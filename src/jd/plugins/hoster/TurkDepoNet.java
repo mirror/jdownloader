@@ -141,7 +141,7 @@ public class TurkDepoNet extends PluginForHost {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
         br.setDebug(true);
-        Form form = br.getFormbyKey("method_free");
+        Form form = br.getFormByKey("method_free");
         if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         form.remove("method_premium");
         br.submitForm(form);

@@ -107,7 +107,7 @@ public class MissUploadCom extends PluginForHost {
         if (freeform == null) {
             freeform = br.getFormBySubmitvalue("Free+Download");
             if (freeform == null) {
-                freeform = br.getFormbyKey("download1");
+                freeform = br.getFormByKey("download1");
             }
         }
         if (freeform != null) br.submitForm(freeform);
@@ -405,7 +405,7 @@ public class MissUploadCom extends PluginForHost {
         if (freeform == null) {
             freeform = br.getFormBySubmitvalue("Free+Download");
             if (freeform == null) {
-                freeform = br.getFormbyKey("download1");
+                freeform = br.getFormByKey("download1");
             }
         }
         if (freeform != null) br.submitForm(freeform);

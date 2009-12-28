@@ -66,7 +66,7 @@ public class CryptdBz extends PluginForDecrypt {
         /* File package handling */
         if (br.containsHTML("name=\"captcha")) {
             for (int i = 0; i <= 1; i++) {
-                Form captchaForm = br.getFormbyKey("captcha");
+                Form captchaForm = br.getFormByKey("captcha");
                 String code = br.getRegex("name=\"captcha_2\" value=\"(.*?)\"").getMatch(0);
                 if (captchaForm == null || code == null) return null;
                 captchaForm.put("captcha", code);

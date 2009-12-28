@@ -55,7 +55,7 @@ public class BMp3Cm extends PluginForDecrypt {
 
         /* Decrypt part */
         for (int i = 0; i <= 1; i++) {
-            Form captchaForm = br.getFormbyKey("captcha");
+            Form captchaForm = br.getFormByKey("captcha");
             if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             String captchalink = null;
             if (br.containsHTML("image.php")) {

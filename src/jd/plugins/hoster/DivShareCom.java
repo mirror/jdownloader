@@ -114,12 +114,12 @@ public class DivShareCom extends PluginForHost {
             pw.put("gallery_password", password);
             br.submitForm(pw);
 
-            pw = br.getFormbyKey("gallery_password");
+            pw = br.getFormByKey("gallery_password");
             if (pw != null) {
                 password = PluginUtils.askPassword(this);
                 pw.put("gallery_password", password);
                 br.submitForm(pw);
-                pw = br.getFormbyKey("gallery_password");
+                pw = br.getFormByKey("gallery_password");
                 if (pw != null) {
                     JDLogger.getLogger().warning("Wrong Password for " + downloadLink + ". YOu will need the correct password to download.");
                 } else {
