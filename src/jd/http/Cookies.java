@@ -26,25 +26,24 @@ import jd.parser.Regex;
 
 public class Cookies {
 
-    private LinkedList<Cookie> cookies = new LinkedList<Cookie>();
+    private final LinkedList<Cookie> cookies = new LinkedList<Cookie>();
 
     public Cookies() {
-
     }
 
-    public Cookies(Cookies cookies) {
+    public Cookies(final Cookies cookies) {
         add(cookies);
     }
 
-    public void add(Cookies newcookies) {
+    public void add(final Cookies newcookies) {
         synchronized (cookies) {
-            for (Cookie cookie : newcookies.getCookies()) {
+            for (final Cookie cookie : newcookies.getCookies()) {
                 add(cookie);
             }
         }
     }
 
-    public void add(Cookie cookie) {
+    public void add(final Cookie cookie) {
         synchronized (cookies) {
             for (Cookie cookie2 : cookies) {
                 if (cookie2.equals(cookie)) {
@@ -56,18 +55,19 @@ public class Cookies {
         }
     }
 
-    public void remove(Cookie cookie) {
+    public void remove(final Cookie cookie) {
         synchronized (cookies) {
-            boolean b = cookies.remove(cookie);
-            if (b == false) {
+            if (!cookies.remove(cookie)) {
                 Cookie del = null;
-                for (Cookie cookie2 : cookies) {
+                for (final Cookie cookie2 : cookies) {
                     if (cookie2.equals(cookie)) {
                         del = cookie2;
                         break;
                     }
                 }
-                if (del != null) cookies.remove(del);
+                if (del != null) {
+                    cookies.remove(del);
+                }
             }
         }
     }
@@ -78,11 +78,11 @@ public class Cookies {
         }
     }
 
-    public Cookie get(String key) {
-        if (key == null) return null;
+    public Cookie get(final String key) {
+        if (key == null) { return null; }
         synchronized (cookies) {
             for (Cookie cookie : cookies) {
-                if (cookie.getKey().equalsIgnoreCase(key)) return cookie;
+                if (cookie.getKey().equalsIgnoreCase(key)) { return cookie; }
             }
             return null;
         }
@@ -96,19 +96,19 @@ public class Cookies {
         return cookies.isEmpty();
     }
 
-    public static Cookies parseCookies(String cookieString, String host, String Date) {
-        Cookies cookies = new Cookies();
+    public static Cookies parseCookies(final String cookieString, final String host, final String Date) {
+        final Cookies cookies = new Cookies();
 
-        String header = cookieString;
+        final String header = cookieString;
 
         String path = null;
         String expires = null;
         String domain = null;
-        LinkedHashMap<String, String> tmp = new LinkedHashMap<String, String>();
-        /* einzelne Cookie Elemente */
-        StringTokenizer st = new StringTokenizer(header, ";");
-        while (true) {
+        final LinkedHashMap<String, String> tmp = new LinkedHashMap<String, String>();
+        /* Cookie individual elements */
+        final StringTokenizer st = new StringTokenizer(header, ";");
 
+        while (true) {
             String key = null;
             String value = null;
             String cookieelement = null;
@@ -118,7 +118,7 @@ public class Cookies {
                 break;
             }
             /* Key and Value */
-            String st2[] = new Regex(cookieelement, "(.*?)=(.+)").getRow(0);
+            final String st2[] = new Regex(cookieelement, "(.*?)=(.+)").getRow(0);
             if (st2 == null || st2.length == 0) {
                 key = null;
             } else if (st2.length == 1) {
@@ -131,49 +131,45 @@ public class Cookies {
             if (key != null) {
                 if (key.equalsIgnoreCase("path")) {
                     path = value;
-                    continue;
-                }
-                if (key.equalsIgnoreCase("expires")) {
+                } else if (key.equalsIgnoreCase("expires")) {
                     expires = value;
-                    continue;
-                }
-                if (key.equalsIgnoreCase("domain")) {
+                } else if (key.equalsIgnoreCase("domain")) {
                     domain = value;
-                    continue;
+                } else {
+                    tmp.put(key, value);
                 }
-
-                tmp.put(key, value);
             } else {
                 break;
             }
-
         }
 
-        for (Iterator<Entry<String, String>> it = tmp.entrySet().iterator(); it.hasNext();) {
-            Entry<String, String> next = it.next();
-            Cookie cookie = new Cookie();
+        for (final Iterator<Entry<String, String>> it = tmp.entrySet().iterator(); it.hasNext();) {
+            final Entry<String, String> next = it.next();
             /*
-             * cookies ohne value sind keine cookies
+             * no cookies are cookies without a value
              */
-            if (next.getValue() == null) continue;
-            cookies.add(cookie);
-            cookie.setHost(host);
-            cookie.setPath(path);
-            cookie.setDomain(domain);
-            cookie.setExpires(expires);
-            cookie.setValue(next.getValue());
-            cookie.setKey(next.getKey());
-            cookie.setHostTime(Date);
+            if (next.getValue() != null) {
+                final Cookie cookie = new Cookie();
+                cookies.add(cookie);
+                cookie.setHost(host);
+                cookie.setPath(path);
+                cookie.setDomain(domain);
+                cookie.setExpires(expires);
+                cookie.setValue(next.getValue());
+                cookie.setKey(next.getKey());
+                cookie.setHostTime(Date);
+            }
         }
 
         return cookies;
 
     }
+
     @Override
     public String toString() {
-        StringBuilder ret = new StringBuilder();
-        for (Cookie el : cookies) {
-            ret.append(el.toString()+"\r\n");
+        final StringBuilder ret = new StringBuilder();
+        for (final Cookie el : cookies) {
+            ret.append(el.toString() + "\r\n");
         }
         return ret.toString();
     }
