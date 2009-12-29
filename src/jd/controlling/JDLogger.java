@@ -43,11 +43,9 @@ public final class JDLogger {
      * @return LogKlasse
      */
     public static Logger getLogger() {
-
         if (LOGGER == null) {
-
             LOGGER = Logger.getLogger(LOGGER_NAME);
-            Formatter formatter = new LogFormatter();
+            final Formatter formatter = new LogFormatter();
             LOGGER.setUseParentHandlers(false);
 
             console = new ConsoleHandler();
@@ -58,29 +56,30 @@ public final class JDLogger {
             LOGGER.setLevel(Level.ALL);
             LOGGER.addHandler(JDLogHandler.getHandler());
             JDLogHandler.getHandler().setFormatter(formatter);
-
         }
         return LOGGER;
     }
 
-    public static void timestamp(String msg) {
+    public static void timestamp(final String msg) {
         getLogger().warning(jd.nutils.Formatter.formatMilliseconds(System.currentTimeMillis()) + " : " + msg);
     }
 
-    public static void exception(Throwable e) {
+    public static void exception(final Throwable e) {
         exception(Level.SEVERE, e);
     }
 
     public static void removeConsoleHandler() {
-        if (console != null) getLogger().removeHandler(console);
+        if (console != null) {
+            getLogger().removeHandler(console);
+        }
         System.err.println("Removed Consolehandler. Start with -debug to see console output");
     }
 
-    public static void addHeader(String string) {
+    public static void addHeader(final String string) {
         getLogger().info("\r\n\r\n--------------------------------------" + string + "-----------------------------------");
     }
 
-    public static void exception(Level level, Throwable e) {
+    public static void exception(final Level level, final Throwable e) {
         getLogger().log(level, level.getName() + " Exception occurred", e);
     }
 
@@ -88,7 +87,7 @@ public final class JDLogger {
         System.out.println("Footstep: " + new Exception().getStackTrace()[1]);
     }
 
-    static public void warning(Object o) {
+    static public void warning(final Object o) {
         getLogger().warning(o.toString());
     }
 
@@ -98,7 +97,7 @@ public final class JDLogger {
      * @param thrown
      * @return
      */
-    public static String getStackTrace(Throwable thrown) {
+    public static String getStackTrace(final Throwable thrown) {
         final StringWriter sw = new StringWriter();
         final PrintWriter pw = new PrintWriter(sw);
         thrown.printStackTrace(pw);
@@ -112,18 +111,20 @@ public final class JDLogger {
      * @param all
      * @return
      */
-    public static String getLog(Level level) {
-        Level tmp = getLogger().getLevel();
-        getLogger().setLevel(level);
+    public static String getLog(final Level level) {
+        final Logger logger = getLogger();
+        final Level tmp = logger.getLevel();
+        logger.setLevel(level);
         try {
-            ArrayList<LogRecord> buff = JDLogHandler.getHandler().getBuffer();
-            StringBuilder sb = new StringBuilder();
+            final ArrayList<LogRecord> buff = JDLogHandler.getHandler().getBuffer();
+            final StringBuilder sb = new StringBuilder();
+            final Formatter formatter = JDLogHandler.getHandler().getFormatter();
             for (LogRecord lr : buff) {
-                sb.append(JDLogHandler.getHandler().getFormatter().format(lr));
+                sb.append(formatter.format(lr));
             }
             return sb.toString();
         } finally {
-            getLogger().setLevel(tmp);
+            logger.setLevel(tmp);
         }
     }
 
