@@ -20,6 +20,7 @@ import java.lang.reflect.Constructor;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -137,9 +138,9 @@ public abstract class PluginWrapper implements Comparable<PluginWrapper> {
      *            {@link PluginWrapper#LOAD_ON_INIT} <br>
      *            {@link PluginWrapper#PATTERN_ACCEPTS_INVALID_URI}
      */
-    public PluginWrapper(String host, String classNamePrefix, String className, String pattern, int flags) {
+    public PluginWrapper(final String host, final String classNamePrefix, final String className, final String pattern, final int flags) {
         this.pattern = (pattern != null) ? Pattern.compile(pattern, Pattern.CASE_INSENSITIVE) : null;
-        this.host = host.toLowerCase();
+        this.host = host.toLowerCase(Locale.getDefault());
         final String classn = (classNamePrefix == null ? "" : classNamePrefix) + className;
         this.className = classn;
         this.flags = flags;
@@ -236,7 +237,7 @@ public abstract class PluginWrapper implements Comparable<PluginWrapper> {
      * 
      * @param bool
      */
-    public void setEnabled(boolean bool) {
+    public void setEnabled(final boolean bool) {
         if (this.alwaysenabled) { return; }
 
         getPluginConfig().setProperty("USE_PLUGIN", bool);
@@ -252,12 +253,12 @@ public abstract class PluginWrapper implements Comparable<PluginWrapper> {
      *            any stringdata
      * @return true if data contains a match to {@link #pattern}
      */
-    public boolean canHandle(String data) {
+    public boolean canHandle(final String data) {
         if (this.isLoaded()) { return getPlugin().canHandle(data); }
         if (data == null) { return false; }
-        Pattern pattern = this.getPattern();
+        final Pattern pattern = this.getPattern();
         if (pattern != null) {
-            Matcher matcher = pattern.matcher(data);
+            final Matcher matcher = pattern.matcher(data);
             if (matcher.find()) { return true; }
         }
         return false;
@@ -307,7 +308,7 @@ public abstract class PluginWrapper implements Comparable<PluginWrapper> {
     /**
      * Delegates the compareTo functionality to hostA.compareTo(hostB)
      */
-    public int compareTo(PluginWrapper plg) {
+    public int compareTo(final PluginWrapper plg) {
         return getHost().toLowerCase().compareTo(plg.getHost().toLowerCase());
     }
 
@@ -327,7 +328,7 @@ public abstract class PluginWrapper implements Comparable<PluginWrapper> {
      *            fully qualified {@link #className}
      * @return
      */
-    public static PluginWrapper getWrapper(String clazz) {
+    public static PluginWrapper getWrapper(final String clazz) {
         return WRAPPER.get(clazz);
     }
 
@@ -338,7 +339,7 @@ public abstract class PluginWrapper implements Comparable<PluginWrapper> {
      *            ully qualified {@link #className}
      * @return
      */
-    public static Plugin getNewInstance(String className) {
+    public static Plugin getNewInstance(final String className) {
         // if (!WRAPPER.containsKey(className)) {
         // JDLogger.exception(new Exception("plugin " + className +
         // " could not be found"));
