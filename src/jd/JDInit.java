@@ -18,6 +18,7 @@ package jd;
 
 import java.awt.Toolkit;
 import java.io.File;
+import java.lang.annotation.Annotation;
 import java.net.MalformedURLException;
 import java.net.Proxy;
 import java.net.URL;
@@ -68,7 +69,7 @@ public class JDInit {
 
     private static final boolean TEST_INSTALLER = false;
 
-    private static Logger logger = jd.controlling.JDLogger.getLogger();
+    private static final Logger LOG = JDLogger.getLogger();
 
     private static ClassLoader CL;
 
@@ -86,7 +87,7 @@ public class JDInit {
         if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL_JARED) {
             String old = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_UPDATE_VERSION, "");
             if (!old.equals(JDUtilities.getRevision())) {
-                logger.info("Detected that JD just got updated");
+                LOG.info("Detected that JD just got updated");
                 JDUtilities.getController().fireControlEvent(new ControlEvent(this, SplashScreen.SPLASH_FINISH));
                 int status = UserIO.getInstance().requestHelpDialog(UserIO.NO_CANCEL_OPTION, JDL.LF("system.update.message.title", "Updated to version %s", JDUtilities.getRevision()), JDL.L("system.update.message", "Update successfull"), JDL.L("system.update.showchangelogv2", "What's new?"), "http://jdownloader.org/changes/index");
                 if (JDFlags.hasAllFlags(status, UserIO.RETURN_OK) && JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_AUTO_SHOW_CHANGELOG, true)) {
@@ -115,12 +116,14 @@ public class JDInit {
                         os = "win";
                     }
                     String tz = System.getProperty("user.timezone");
-                    if (tz == null) tz = "unknown";
-                    Browser br = new Browser();
+                    if (tz == null) {
+                        tz = "unknown";
+                    }
+                    final Browser br = new Browser();
                     br.setConnectTimeout(15000);
                     if (!JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_UPDATE_VERSION, "").equals(JDUtilities.getRevision())) {
                         try {
-                            String prev = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_UPDATE_VERSION, "");
+                            final String prev = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_UPDATE_VERSION, "");
                             br.postPage("http://service.jdownloader.org/tools/s.php", "v=" + JDUtilities.getRevision().replaceAll(",|\\.", "") + "&p=" + prev + "&os=" + os + "&tz=" + Encoding.urlEncode(tz));
                             JDUtilities.getConfiguration().setProperty(Configuration.PARAM_UPDATE_VERSION, JDUtilities.getRevision());
                             JDUtilities.getConfiguration().save();
@@ -145,19 +148,17 @@ public class JDInit {
         Browser.setGlobalConnectTimeout(SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_CONNECT_TIMEOUT, 100000));
 
         if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.USE_PROXY, false)) {
-
-            String host = SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_HOST, "");
-            int port = SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PROXY_PORT, 8080);
-            String user = SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_USER, "");
-            String pass = SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_PASS, "");
-            if (host.trim().equals("")) {
-                JDLogger.getLogger().warning("Proxy disabled. No host");
+            final String host = SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_HOST, "");
+            final int port = SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PROXY_PORT, 8080);
+            final String user = SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_USER, "");
+            final String pass = SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_PASS, "");
+            if ("".equals(host.trim())) {
+                LOG.warning("Proxy disabled. No host");
                 SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.USE_PROXY, false);
                 return;
             }
 
-            JDProxy pr = new JDProxy(Proxy.Type.HTTP, host, port);
-
+            final JDProxy pr = new JDProxy(Proxy.Type.HTTP, host, port);
             if (user != null && user.trim().length() > 0) {
                 pr.setUser(user);
             }
@@ -165,21 +166,19 @@ public class JDInit {
                 pr.setPass(pass);
             }
             Browser.setGlobalProxy(pr);
-
         }
         if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.USE_SOCKS, false)) {
-
-            String user = SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_USER_SOCKS, "");
-            String pass = SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_PASS_SOCKS, "");
-            String host = SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.SOCKS_HOST, "");
-            int port = SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.SOCKS_PORT, 1080);
-            if (host.trim().equals("")) {
-                JDLogger.getLogger().warning("Socks Proxy disabled. No host");
+            final String user = SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_USER_SOCKS, "");
+            final String pass = SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_PASS_SOCKS, "");
+            final String host = SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.SOCKS_HOST, "");
+            final int port = SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.SOCKS_PORT, 1080);
+            if ("".equals(host.trim())) {
+                LOG.warning("Socks Proxy disabled. No host");
                 SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.USE_SOCKS, false);
                 return;
             }
-            JDProxy pr = new JDProxy(Proxy.Type.SOCKS, host, port);
 
+            final JDProxy pr = new JDProxy(Proxy.Type.SOCKS, host, port);
             if (user != null && user.trim().length() > 0) {
                 pr.setUser(user);
             }
@@ -217,7 +216,7 @@ public class JDInit {
         });
     }
 
-    public void initGUI(JDController controller) {
+    public void initGUI(final JDController controller) {
         LookAndFeelController.setUIManager();
 
         Toolkit.getDefaultToolkit().getSystemEventQueue().push(new EDTEventQueue());
@@ -239,10 +238,10 @@ public class JDInit {
                 if (plg.isLoaded()) {
                     try {
                         if (plg.isEnabled() && !plg.getPlugin().startAddon()) {
-                            logger.severe("Error loading Optional Plugin:" + plg.getClassName());
+                            LOG.severe("Error loading Optional Plugin:" + plg.getClassName());
                         }
                     } catch (Throwable e) {
-                        logger.severe("Error loading Optional Plugin: " + e.getMessage());
+                        LOG.severe("Error loading Optional Plugin: " + e.getMessage());
                         JDLogger.exception(e);
                     }
                 }
@@ -255,28 +254,28 @@ public class JDInit {
     /**
      * @param resourceFile
      */
-    private void movePluginUpdates(File dir) {
-        if (!JDUtilities.getResourceFile("update").exists()) return;
-        if (!dir.isDirectory()) return;
-        for (File f : dir.listFiles()) {
+    private void movePluginUpdates(final File dir) {
+        if (!JDUtilities.getResourceFile("update").exists() || !dir.isDirectory()) { return; }
+
+        for (final File f : dir.listFiles()) {
             if (f.isDirectory()) {
                 movePluginUpdates(f);
             } else {
                 // Create relativ path
-                File update = JDUtilities.getResourceFile("update");
-                File root = update.getParentFile();
+                final File update = JDUtilities.getResourceFile("update");
+                final File root = update.getParentFile();
                 String n = JDUtilities.getResourceFile("update").getAbsolutePath();
                 n = f.getAbsolutePath().replace(n, "").substring(1);
-                File newFile = new File(root, n).getAbsoluteFile();
-                logger.info("./update -> real  " + n + " ->" + newFile.getAbsolutePath());
-                logger.info("Exists: " + newFile.exists());
-                if (!newFile.getParentFile().exists()) {
-                    logger.info("Parent Exists: false");
+                final File newFile = new File(root, n).getAbsoluteFile();
+                LOG.info("./update -> real  " + n + " ->" + newFile.getAbsolutePath());
+                LOG.info("Exists: " + newFile.exists());
 
+                if (!newFile.getParentFile().exists()) {
+                    LOG.info("Parent Exists: false");
                     if (newFile.getParentFile().mkdirs()) {
-                        logger.info("^^CREATED");
+                        LOG.info("^^CREATED");
                     } else {
-                        logger.info("^^CREATION FAILED");
+                        LOG.info("^^CREATION FAILED");
                     }
                 }
 
@@ -290,10 +289,10 @@ public class JDInit {
                 }
             }
         }
-        if (dir.list() != null) {
-            if (dir.list().length == 0) dir.delete();
+        final String[] list = dir.list();
+        if (list != null && list.length == 0) {
+            dir.delete();
         }
-
     }
 
     public boolean installerWasVisible() {
@@ -304,7 +303,7 @@ public class JDInit {
         Object obj = JDUtilities.getDatabaseConnector().getData(Configuration.NAME);
 
         if (obj == null) {
-            logger.finest("Fresh install?");
+            LOG.finest("Fresh install?");
             // File file = JDUtilities.getResourceFile(JDUtilities.CONFIG_PATH);
             // if (file.exists()) {
             // logger.info("Wrapping jdownloader.config");
@@ -317,17 +316,13 @@ public class JDInit {
         }
 
         if (!TEST_INSTALLER && obj != null && ((Configuration) obj).getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY) != null) {
-
-            Configuration configuration = (Configuration) obj;
+            final Configuration configuration = (Configuration) obj;
             JDUtilities.setConfiguration(configuration);
-            jd.controlling.JDLogger.getLogger().setLevel(configuration.getGenericProperty(Configuration.PARAM_LOGGER_LEVEL, Level.WARNING));
+            LOG.setLevel(configuration.getGenericProperty(Configuration.PARAM_LOGGER_LEVEL, Level.WARNING));
             JDTheme.setTheme(GUIUtils.getConfig().getStringProperty(JDGuiConstants.PARAM_THEME, "default"));
-
         } else {
-
-            File cfg = JDUtilities.getResourceFile("config");
+            final File cfg = JDUtilities.getResourceFile("config");
             if (!cfg.exists()) {
-
                 if (!cfg.mkdirs()) {
                     System.err.println("Could not create configdir");
                     return null;
@@ -337,9 +332,9 @@ public class JDInit {
                     return null;
                 }
             }
-            Configuration configuration = new Configuration();
+            final Configuration configuration = new Configuration();
             JDUtilities.setConfiguration(configuration);
-            jd.controlling.JDLogger.getLogger().setLevel(configuration.getGenericProperty(Configuration.PARAM_LOGGER_LEVEL, Level.WARNING));
+            LOG.setLevel(configuration.getGenericProperty(Configuration.PARAM_LOGGER_LEVEL, Level.WARNING));
             JDTheme.setTheme(GUIUtils.getConfig().getStringProperty(JDGuiConstants.PARAM_THEME, "default"));
 
             JDUtilities.getDatabaseConnector().saveConfiguration(Configuration.NAME, JDUtilities.getConfiguration());
@@ -350,13 +345,11 @@ public class JDInit {
              */
 
             LookAndFeelController.setUIManager();
-            Installer inst = new Installer();
+            final Installer inst = new Installer();
 
             if (!inst.isAborted()) {
-
-                File home = JDUtilities.getResourceFile(".");
+                final File home = JDUtilities.getResourceFile(".");
                 if (home.canWrite() && !JDUtilities.getResourceFile("noupdate.txt").exists()) {
-
                     // try {
                     // new WebUpdate().doWebupdate(true);
                     // JDUtilities.getConfiguration().save();
@@ -371,28 +364,20 @@ public class JDInit {
                     // Level.SEVERE,"Exception occurred",e);
                     // // System.exit(0);
                     // }
-
                 }
                 if (!home.canWrite()) {
-                    logger.severe("INSTALL abgebrochen");
-
+                    LOG.severe("INSTALL abgebrochen");
                     UserIO.getInstance().requestMessageDialog(JDL.L("installer.error.noWriteRights", "Error. You do not have permissions to write to the dir"));
-
                     JDIO.removeDirectoryOrFile(JDUtilities.getResourceFile("config"));
                     System.exit(1);
                 }
-
             } else {
-                logger.severe("INSTALL abgebrochen2");
-
+                LOG.severe("INSTALL abgebrochen2");
                 UserIO.getInstance().requestMessageDialog(JDL.L("installer.abortInstallation", "Error. User aborted installation."));
-
                 JDIO.removeDirectoryOrFile(JDUtilities.getResourceFile("config"));
                 System.exit(0);
-
             }
         }
-
         return JDUtilities.getConfiguration();
     }
 
@@ -426,19 +411,20 @@ public class JDInit {
 
     public static void loadPluginForDecrypt() {
         try {
-            for (Class<?> c : ClassFinder.getClasses("jd.plugins.decrypter", getPluginClassLoader())) {
+            for (final Class<?> c : ClassFinder.getClasses("jd.plugins.decrypter", getPluginClassLoader())) {
                 try {
-                    logger.finest("Try to load " + c);
+                    LOG.finest("Try to load " + c);
                     if (c != null && c.getAnnotations().length > 0) {
-                        DecrypterPlugin help = (DecrypterPlugin) c.getAnnotations()[0];
+                        final DecrypterPlugin help = (DecrypterPlugin) c.getAnnotations()[0];
 
                         if (help.interfaceVersion() != DecrypterPlugin.INTERFACE_VERSION) {
-                            logger.warning("Outdated Plugin found: " + help);
+                            LOG.warning("Outdated Plugin found: " + help);
                             continue;
                         }
                         String[] names = help.names();
                         String[] patterns = help.urls();
                         int[] flags = help.flags();
+                        final String revision = help.revision();
 
                         // TODO: Change this String to test the changes from
                         // Wordpress/CMS/Redirector/... Decrypters WITHOUT
@@ -446,25 +432,26 @@ public class JDInit {
                         String dump = "";
                         // See if there are cached annotations
                         if (names.length == 0) {
-                            SubConfiguration cfg = SubConfiguration.getConfig("jd.JDInit.loadPluginForDecrypt");
-                            names = cfg.getGenericProperty(c.getName() + "_names_" + dump + help.revision(), names);
-                            patterns = cfg.getGenericProperty(c.getName() + "_pattern_" + dump + help.revision(), patterns);
-                            flags = cfg.getGenericProperty(c.getName() + "_flags_" + dump + help.revision(), flags);
+                            final SubConfiguration cfg = SubConfiguration.getConfig("jd.JDInit.loadPluginForDecrypt");
+                            names = cfg.getGenericProperty(c.getName() + "_names_" + dump + revision, names);
+                            patterns = cfg.getGenericProperty(c.getName() + "_pattern_" + dump + revision, patterns);
+                            flags = cfg.getGenericProperty(c.getName() + "_flags_" + dump + revision, flags);
                         }
                         // if not, try to load them from static functions
                         if (names.length == 0) {
                             names = (String[]) c.getMethod("getAnnotationNames", new Class[] {}).invoke(null, new Object[] {});
                             patterns = (String[]) c.getMethod("getAnnotationUrls", new Class[] {}).invoke(null, new Object[] {});
                             flags = (int[]) c.getMethod("getAnnotationFlags", new Class[] {}).invoke(null, new Object[] {});
-                            SubConfiguration cfg = SubConfiguration.getConfig("jd.JDInit.loadPluginForDecrypt");
-                            cfg.setProperty(c.getName() + "_names_" + help.revision(), names);
-                            cfg.setProperty(c.getName() + "_pattern_" + help.revision(), patterns);
-                            cfg.setProperty(c.getName() + "_flags_" + help.revision(), flags);
+                            final SubConfiguration cfg = SubConfiguration.getConfig("jd.JDInit.loadPluginForDecrypt");
+                            cfg.setProperty(c.getName() + "_names_" + revision, names);
+                            cfg.setProperty(c.getName() + "_pattern_" + revision, patterns);
+                            cfg.setProperty(c.getName() + "_flags_" + revision, flags);
                             cfg.save();
                         }
-                        for (int i = 0; i < names.length; i++) {
+                        final int length = names.length;
+                        for (int i = 0; i < length; i++) {
                             try {
-                                new DecryptPluginWrapper(names[i], c.getSimpleName(), patterns[i], flags[i], help.revision());
+                                new DecryptPluginWrapper(names[i], c.getSimpleName(), patterns[i], flags[i], revision);
                             } catch (Throwable e) {
                                 JDLogger.exception(e);
                             }
@@ -503,19 +490,25 @@ public class JDInit {
 
     public static void loadPluginForHost() {
         try {
-            for (Class<?> c : ClassFinder.getClasses("jd.plugins.hoster", getPluginClassLoader())) {
+            for (final Class<?> c : ClassFinder.getClasses("jd.plugins.hoster", getPluginClassLoader())) {
                 try {
-                    logger.finest("Try to load " + c);
-                    if (c != null && c.getAnnotations().length > 0) {
-                        HostPlugin help = (HostPlugin) c.getAnnotations()[0];
-
+                    LOG.finest("Try to load " + c);
+                    final Annotation[] cAnnotations = (c == null) ? null : c.getAnnotations();
+                    if (cAnnotations != null && cAnnotations.length > 0) {
+                        final HostPlugin help = (HostPlugin) cAnnotations[0];
                         if (help.interfaceVersion() != HostPlugin.INTERFACE_VERSION) {
-                            logger.warning("Outdated Plugin found: " + help);
+                            LOG.warning("Outdated Plugin found: " + help);
                             continue;
                         }
-                        for (int i = 0; i < help.names().length; i++) {
+                        final String cSimpleName = c.getSimpleName();
+                        final String[] names = help.names();
+                        final int length = names.length;
+                        final String revision = help.revision();
+                        final String[] urls = help.urls();
+                        final int[] flags = help.flags();
+                        for (int i = 0; i < length; i++) {
                             try {
-                                new HostPluginWrapper(help.names()[i], c.getSimpleName(), help.urls()[i], help.flags()[i], help.revision());
+                                new HostPluginWrapper(names[i], cSimpleName, urls[i], flags[i], revision);
                             } catch (Throwable e) {
                                 JDLogger.exception(e);
                             }
@@ -531,22 +524,23 @@ public class JDInit {
     }
 
     public void loadPluginOptional() {
-        ArrayList<String> list = new ArrayList<String>();
+        final ArrayList<String> list = new ArrayList<String>();
         try {
-            for (Class<?> c : ClassFinder.getClasses("jd.plugins.optional", JDUtilities.getJDClassLoader())) {
+            for (final Class<?> c : ClassFinder.getClasses("jd.plugins.optional", JDUtilities.getJDClassLoader())) {
                 try {
-                    if (list.contains(c.getName())) {
+                    final String cName = c.getName();
+                    final Annotation[] cAnnotations = c.getAnnotations();
+                    if (list.contains(cName)) {
                         System.out.println("Already loaded:" + c);
                         continue;
                     }
-                    if (c.getAnnotations().length > 0) {
-                        OptionalPlugin help = (OptionalPlugin) c.getAnnotations()[0];
-
+                    if (cAnnotations.length > 0) {
+                        final OptionalPlugin help = (OptionalPlugin) cAnnotations[0];
                         if ((help.windows() && OSDetector.isWindows()) || (help.linux() && OSDetector.isLinux()) || (help.mac() && OSDetector.isMac())) {
                             if (JDUtilities.getJavaVersion() >= help.minJVM() && PluginOptional.ADDON_INTERFACE_VERSION == help.interfaceversion()) {
-                                logger.finest("Init PluginWrapper!");
+                                LOG.finest("Init PluginWrapper!");
                                 new OptionalPluginWrapper(c, help);
-                                list.add(c.getName());
+                                list.add(cName);
                             }
                         }
                     }
@@ -557,7 +551,6 @@ public class JDInit {
         } catch (Throwable e) {
             JDLogger.exception(e);
         }
-
     }
 
 }
