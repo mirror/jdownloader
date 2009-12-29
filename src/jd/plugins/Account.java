@@ -22,6 +22,7 @@ import jd.controlling.AccountController;
 public class Account extends Property {
 
     private static final long serialVersionUID = -7578649066389032068L;
+
     private String user;
     private String pass;
 
@@ -37,26 +38,38 @@ public class Account extends Property {
 
     private long updatetime = 0;
 
-    public Account(String user, String pass) {
-        this.user = user;
-        this.pass = pass;
-        this.hoster = null;
+    /**
+     * 
+     * @param string
+     * @return
+     */
+    private static final String trim(final String string) {
+        return (string == null) ? null : string.trim();
+    }
+
+    /**
+     * 
+     * @param user
+     * @param pass
+     */
+    public Account(final String user, final String pass) {
+        this.user = trim(user);
+        this.pass = trim(pass);
+        // this.hoster = null;
         this.setTmpDisabledIntervalv3(10 * 60 * 1000l);
-        if (this.user != null) this.user = this.user.trim();
-        if (this.pass != null) this.pass = this.pass.trim();
-        valid = true;
     }
 
     public String getPass() {
-        if (pass != null) return pass.trim();
-        return null;
+        // if (pass != null) return pass.trim();
+        // return null;
+        return pass;
     }
 
     public boolean isValid() {
         return valid;
     }
 
-    public void setValid(boolean b) {
+    public void setValid(final boolean b) {
         valid = b;
     }
 
@@ -64,7 +77,7 @@ public class Account extends Property {
         return updatetime;
     }
 
-    public void setUpdateTime(long l) {
+    public void setUpdateTime(final long l) {
         updatetime = l;
     }
 
@@ -72,7 +85,7 @@ public class Account extends Property {
         return hoster;
     }
 
-    public void setHoster(String h) {
+    public void setHoster(final String h) {
         hoster = h;
     }
 
@@ -80,20 +93,21 @@ public class Account extends Property {
         return accinfo;
     }
 
-    public void setAccountInfo(AccountInfo info) {
+    public void setAccountInfo(final AccountInfo info) {
         accinfo = info;
     }
 
     public String getUser() {
-        if (user != null) return user.trim();
-        return null;
+        // if (user != null) return user.trim();
+        // return null;
+        return user;
     }
 
     public boolean isEnabled() {
         return enabled;
     }
 
-    private void readObject(java.io.ObjectInputStream stream) throws java.io.IOException, ClassNotFoundException {
+    private void readObject(final java.io.ObjectInputStream stream) throws java.io.IOException, ClassNotFoundException {
         /* nach dem deserialisieren sollen die transienten neu geholt werden */
         stream.defaultReadObject();
         tmpDisabledIntervalv3 = 10 * 60 * 1000l;
@@ -103,44 +117,56 @@ public class Account extends Property {
     }
 
     public boolean isTempDisabled() {
-        if (tempDisabled && (System.currentTimeMillis() - tmpDisabledTime) > this.getTmpDisabledIntervalv3()) tempDisabled = false;
+        if (tempDisabled && (System.currentTimeMillis() - tmpDisabledTime) > this.getTmpDisabledIntervalv3()) {
+            tempDisabled = false;
+        }
         return tempDisabled;
     }
 
-    public void setEnabled(boolean enabled) {
-        if (this.enabled == enabled) return;
-        this.enabled = enabled;
-        if (enabled && !isValid()) setUpdateTime(0);
-        AccountInfo ai = accinfo;
-        if (enabled && ai != null && ai.isExpired()) setUpdateTime(0);
-        AccountController.getInstance().throwUpdateEvent(null, this);
+    public void setEnabled(final boolean enabled) {
+        if (this.enabled != enabled) {
+            this.enabled = enabled;
+            final AccountInfo ai = accinfo;
+            if (enabled && (!isValid() || ai != null && ai.isExpired())) {
+                setUpdateTime(0);
+            }
+            AccountController.getInstance().throwUpdateEvent(null, this);
+        }
     }
 
-    public void setPass(String pass) {
-        if (this.pass == pass) return;
-        if (pass != null) pass = pass.trim();
-        if (this.pass != null && this.pass.equals(pass)) return;
-        this.pass = pass;
-        accinfo = null;
-        setUpdateTime(0);
-        AccountController.getInstance().throwUpdateEvent(null, this);
+    public void setPass(final String pass) {
+        // if (this.pass == pass) return;
+        // if (pass != null) pass = pass.trim();
+        // if (this.pass != null && this.pass.equals(pass)) return;
+        // this.pass = pass;
+        final String newPass = trim(pass);
+        if (this.pass != newPass && (this.pass == null || !this.pass.equals(newPass))) {
+            this.pass = newPass;
+            accinfo = null;
+            setUpdateTime(0);
+            AccountController.getInstance().throwUpdateEvent(null, this);
+        }
     }
 
-    public void setTempDisabled(boolean tempDisabled) {
-        if (this.tempDisabled == tempDisabled) return;
-        this.tmpDisabledTime = System.currentTimeMillis();
-        this.tempDisabled = tempDisabled;
-        AccountController.getInstance().throwUpdateEvent(null, this);
+    public void setTempDisabled(final boolean tempDisabled) {
+        if (this.tempDisabled != tempDisabled) {
+            this.tmpDisabledTime = System.currentTimeMillis();
+            this.tempDisabled = tempDisabled;
+            AccountController.getInstance().throwUpdateEvent(null, this);
+        }
     }
 
-    public void setUser(String user) {
-        if (this.user == user) return;
-        if (user != null) user = user.trim();
-        if (this.user != null && this.user.equals(user)) return;
-        this.user = user;
-        accinfo = null;
-        setUpdateTime(0);
-        AccountController.getInstance().throwUpdateEvent(null, this);
+    public void setUser(final String user) {
+        // if (this.user == user) return;
+        // if (user != null) user = user.trim();
+        // if (this.user != null && this.user.equals(user)) return;
+        // this.user = user;
+        final String newUser = trim(user);
+        if (this.user != newUser && (this.user == null || !this.user.equals(newUser))) {
+            accinfo = null;
+            setUpdateTime(0);
+            AccountController.getInstance().throwUpdateEvent(null, this);
+        }
     }
 
     // @Override
@@ -158,24 +184,37 @@ public class Account extends Property {
         return tmpDisabledIntervalv3;
     }
 
-    public void setTmpDisabledIntervalv3(long tmpDisabledInterval) {
+    public void setTmpDisabledIntervalv3(final long tmpDisabledInterval) {
         this.tmpDisabledIntervalv3 = tmpDisabledInterval;
     }
 
-    public boolean equals(Account account2) {
+    public boolean equals(final Account account2) {
         if (account2 == this) return true;
+        // if (this.user == null) {
+        // if (account2.user != null) return false;
+        // } else {
+        // if (account2.user == null) return false;
+        // if (!this.user.trim().equalsIgnoreCase(account2.user.trim())) return
+        // false;
+        // }
+        //
+        // if (this.pass == null) {
+        // if (account2.pass != null) return false;
+        // } else {
+        // if (account2.pass == null) return false;
+        // if (!this.pass.trim().equalsIgnoreCase(account2.pass.trim())) return
+        // false;
+        // }
         if (this.user == null) {
-            if (account2.user != null) return false;
+            if (account2.user != null) { return false; }
         } else {
-            if (account2.user == null) return false;
-            if (!this.user.trim().equalsIgnoreCase(account2.user.trim())) return false;
+            if (account2.user == null || !this.user.equalsIgnoreCase(account2.user)) { return false; }
         }
 
         if (this.pass == null) {
-            if (account2.pass != null) return false;
+            if (account2.pass != null) { return false; }
         } else {
-            if (account2.pass == null) return false;
-            if (!this.pass.trim().equalsIgnoreCase(account2.pass.trim())) return false;
+            if (account2.pass == null || !this.pass.equalsIgnoreCase(account2.pass)) { return false; }
         }
         return true;
     }
