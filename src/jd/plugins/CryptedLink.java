@@ -39,9 +39,10 @@ public class CryptedLink extends Property {
     private String decrypterPassword;
 
     public CryptedLink(String cryptedUrl) {
-        this.cryptedUrl = cryptedUrl;
-        this.decrypterPassword = null;
-        this.progress = null;
+        // this.cryptedUrl = cryptedUrl;
+        // this.decrypterPassword = null;
+        // this.progress = null;
+        this(cryptedUrl, null);
     }
 
     public CryptedLink(String cryptedUrl, String pw) {
@@ -50,7 +51,7 @@ public class CryptedLink extends Property {
         this.progress = null;
     }
 
-    public void setProgressController(ProgressController progress) {
+    public void setProgressController(final ProgressController progress) {
         this.progress = progress;
     }
 
@@ -68,7 +69,7 @@ public class CryptedLink extends Property {
     /**
      * Setzt die CryptedUrl zurück, welche vom Decrypter-Plugin verarbeitet wird
      */
-    public void setCryptedUrl(String url) {
+    public void setCryptedUrl(final String url) {
         this.cryptedUrl = url;
     }
 
@@ -84,14 +85,14 @@ public class CryptedLink extends Property {
      * Setzt das Password, welches vom Decrypter-Plugin genutzt werden kann (zb.
      * FolderPassword)
      */
-    public void setDecrypterPassword(String pw) {
+    public void setDecrypterPassword(final String pw) {
         this.decrypterPassword = pw;
     }
 
     /**
      * Gibt die CryptedUrl zurück, welche vom Decrypter-Plugin verarbeitet wird
      */
-    //@Override
+    // @Override
     public String toString() {
         return this.cryptedUrl;
     }
