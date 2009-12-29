@@ -31,7 +31,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hellshare.com" }, urls = { "http://[\\w\\.]*?download\\.((sk|cz|en)\\.hellshare\\.com|hellshare\\.(sk|hu))/.+/[0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hellshare.com" }, urls = { "http://[\\w\\.]*?download\\.((sk|cz|en)\\.hellshare\\.com|hellshare\\.(sk|hu|de))/.+/[0-9]+" }, flags = { 2 })
 public class HellShareCom extends PluginForHost {
 
     public HellShareCom(PluginWrapper wrapper) {

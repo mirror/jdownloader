@@ -58,7 +58,7 @@ public class MegaShareVn extends PluginForHost {
         requestFileInformation(link);
         String dllink = br.getRegex("button-large\\\\\" a href=\\\\\"(.*?)\\\\\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dllink = "http://megashare.vn/" + dllink;
+        if (!dllink.contains("http")) dllink = "http://megashare.vn/" + dllink;
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

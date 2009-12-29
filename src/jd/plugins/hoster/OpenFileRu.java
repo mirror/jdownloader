@@ -68,6 +68,8 @@ public class OpenFileRu extends PluginForHost {
     public void handleFree(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         requestFileInformation(link);
+        // TODO:Find out what that means, i called it "Server error" but i don't
+        // even know what that text means...
         if (br.containsHTML("Причина: поступила жалоба от правообладателя")) throw new PluginException(LinkStatus.ERROR_FATAL, "Server error");
         if (br.containsHTML("Файл удален. Причина: истек срок хранения файла")) throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium");
         // Just a failed try to skip the captcha!

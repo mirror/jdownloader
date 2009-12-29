@@ -85,11 +85,17 @@ public class L4dMapsCom extends PluginForHost {
         br.getPage(parameter.getDownloadURL().replaceAll("(mirrors|file-download|details)", "details"));
         String offlinecheck = br.getRedirectLocation();
         if (offlinecheck != null || br.containsHTML("(404 Not Found|This file could not be found on our system)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("nugget\"><em>(.*?)</em").getMatch(0);
+        String filename = br.getRegex("<title>Download(.*?)for Left 4 Dead").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("You are about to download <a href=\".*?\">(.*?)</a>").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("rel=\"nofollow\" title=\"Download(.*?)\"").getMatch(0);
+            }
+        }
         String filesize = br.getRegex(">Size: <em>(.*?)</em>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         parameter.setName(filename.trim());
-        parameter.setDownloadSize(Regex.getSize(filesize));
+        if (filesize != null) parameter.setDownloadSize(Regex.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
