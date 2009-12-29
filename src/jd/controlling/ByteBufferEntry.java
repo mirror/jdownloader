@@ -23,18 +23,14 @@ public class ByteBufferEntry {
     private int size = 0;
     private boolean unused = true;
 
-    public static ByteBufferEntry getByteBufferEntry(int size) {
-        ByteBufferEntry ret = ByteBufferController.getInstance().getByteBufferEntry(size);
-        if (ret != null) {
-            return ret.getbytebufferentry(size);
-        } else {
-            return new ByteBufferEntry(size).getbytebufferentry(size);
-        }
+    public static ByteBufferEntry getByteBufferEntry(final int size) {
+        final ByteBufferEntry ret = ByteBufferController.getInstance().getByteBufferEntry(size);
+        return (ret != null) ? ret.getbytebufferentry(size) : new ByteBufferEntry(size).getbytebufferentry(size);
     }
 
-    private ByteBufferEntry(int size) {
+    private ByteBufferEntry(final int size) {
         this.size = size;
-        buffer = ByteBuffer.allocateDirect(size);        
+        buffer = ByteBuffer.allocateDirect(size);
         clear();
     }
 
@@ -47,7 +43,7 @@ public class ByteBufferEntry {
         buffer.limit(size);
     }
 
-    public void clear(int size) {
+    public void clear(final int size) {
         this.size = size;
         buffer.clear();
         buffer.limit(size);
@@ -57,12 +53,12 @@ public class ByteBufferEntry {
         return size;
     }
 
-    public void limit(int size) {
+    public void limit(final int size) {
         this.size = size;
         buffer.limit(size);
     }
 
-    protected ByteBufferEntry getbytebufferentry(int size) {
+    protected ByteBufferEntry getbytebufferentry(final int size) {
         unused = false;
         this.size = size;
         clear();
@@ -75,9 +71,10 @@ public class ByteBufferEntry {
      * others to use
      */
     public void setUnused() {
-        if (unused) return;
-        unused = true;
-        ByteBufferController.getInstance().putByteBufferEntry(this);
+        if (!unused) {
+            unused = true;
+            ByteBufferController.getInstance().putByteBufferEntry(this);
+        }
     }
 
 }
