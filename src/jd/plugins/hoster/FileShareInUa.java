@@ -100,7 +100,7 @@ public class FileShareInUa extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return 20;
+        return -1;
     }
 
     @Override
@@ -174,7 +174,7 @@ public class FileShareInUa extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return -1;
     }
 
     @Override

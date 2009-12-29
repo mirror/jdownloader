@@ -79,14 +79,18 @@ public class ExtaBitCom extends PluginForHost {
             rc.getForm().setAction(addedlink);
             rc.setCode(c);
         } else {
-            // *Normal* captcha handling
-            Form dlform = br.getFormbyProperty("id", "cmn_form");
-            String captchaurl = br.getRegex("\"(/capture.*?\\?-?[0-9]+)\"").getMatch(0);
-            if (dlform == null || captchaurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            captchaurl = "http://extabit.com" + captchaurl;
-            String code = getCaptchaCode(captchaurl, link);
-            dlform.put("capture", code);
-            br.submitForm(dlform);
+            for (int i = 0; i <= 5; i++) {
+                // *Normal* captcha handling
+                Form dlform = br.getFormbyProperty("id", "cmn_form");
+                String captchaurl = br.getRegex("\"(/capture.*?\\?-?[0-9]+)\"").getMatch(0);
+                if (dlform == null || captchaurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                captchaurl = "http://extabit.com" + captchaurl;
+                String code = getCaptchaCode(captchaurl, link);
+                dlform.put("capture", code);
+                br.submitForm(dlform);
+                if (br.containsHTML("/capture")) continue;
+                break;
+            }
         }
         if (br.containsHTML("(api.recaptcha.net|/capture)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         br.getPage(addedlink + "?af");

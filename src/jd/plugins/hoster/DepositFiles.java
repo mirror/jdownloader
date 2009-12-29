@@ -93,25 +93,24 @@ public class DepositFiles extends PluginForHost {
             checkErrors();
             if (br.getRedirectLocation() != null && br.getRedirectLocation().indexOf("error") > 0) { throw new PluginException(LinkStatus.ERROR_RETRY); }
             dllink = br.getRegex("<div id=\"download_url\" style=\"display:none;\">.*?<form action=\"(.*?)\" method=\"get").getMatch(0);
-            if (dllink == null) {
-                /* check for captcha */
-                String icid = br.getRegex("get_download_img_code\\.php\\?icid=(.*?)\"").getMatch(0);
-                if (icid != null) {
-                    Form cap = new Form();
-                    cap.setAction(link);
-                    cap.setMethod(Form.MethodType.POST);
-                    cap.put("icid", icid);
-                    // form.put("submit", "Continue");
-                    String captcha = getCaptchaCode("http://depositfiles.com/de/get_download_img_code.php?icid=" + icid, downloadLink);
-                    cap.put("img_code", captcha);
-                    br.submitForm(cap);
+            String icid = br.getRegex("get_download_img_code\\.php\\?icid=(.*?)\"").getMatch(0);
+            /* check for captcha */
+            if (dllink == null && icid != null) {
+                Form cap = new Form();
+                cap.setAction(link);
+                cap.setMethod(Form.MethodType.POST);
+                cap.put("icid", icid);
+                // form.put("submit", "Continue");
+                String captcha = getCaptchaCode("http://depositfiles.com/de/get_download_img_code.php?icid=" + icid, downloadLink);
+                cap.put("img_code", captcha);
+                br.submitForm(cap);
+                dllink = br.getRegex("<div id=\"download_url\" style=\"display:none;\">.*?<form action=\"(.*?)\" method=\"get").getMatch(0);
+                if (dllink == null) {
+                    /* TODO: get correct output here */
+                    if (br.containsHTML("get_download_img_code.php")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                     dllink = br.getRegex("<div id=\"download_url\" style=\"display:none;\">.*?<form action=\"(.*?)\" method=\"get").getMatch(0);
-                    if (dllink == null) {
-                        /* TODO: get correct output here */
-                        if (br.containsHTML("get_download_img_code.php")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
                 }
+
             }
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);

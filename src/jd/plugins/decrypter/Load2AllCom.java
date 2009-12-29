@@ -50,7 +50,7 @@ public class Load2AllCom extends PluginForDecrypt {
             br.getPage(link);
             if (br.containsHTML("Warning")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
             if (!br.containsHTML("gkod.php")) return null;
-            for (int i = 0; i <= 3; i++) {
+            for (int i = 0; i <= 8; i++) {
                 String captchaurl = "http://www.load2all.com/gkod.php?hash=" + Math.random();
                 String code = getCaptchaCode(captchaurl, param);
                 br.postPage(link, "gcode=" + Encoding.urlEncode(code) + "&x=0&y=0");
