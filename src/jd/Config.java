@@ -90,62 +90,62 @@ public class Config {
 
         final Enumeration<Object> keys = defaults.keys();
         while (keys.hasMoreElements()) {
-            Object key = keys.nextElement();
-
+            final Object key = keys.nextElement();
             if (key instanceof String) {
-                if (!tmplaf.hasProperty(key.toString())) {
-                    System.out.println("ORG UI Defauls: " + key.toString() + " : " + defaults.get(key.toString()));
+                final String strKey = (String) key;
+                if (!tmplaf.hasProperty(strKey)) {
+                    System.out.println("ORG UI Defauls: " + strKey + " : " + defaults.get(strKey));
                     // if(next.getKey().toString().equals("PopupMenuUI")){
                     // System.out.println("ORG UI Defauls: " + next);
                     // }
-                    tmplaf.setProperty(key.toString(), defaults.get(key.toString()));
+                    tmplaf.setProperty(strKey, defaults.get(strKey));
                 }
             }
         }
 
         controller.addControlListener(new ControlListener() {
 
-            public void controlEvent(ControlEvent event) {
+            public void controlEvent(final ControlEvent event) {
                 if (event.getSource() == tmplaf && event.getID() == ControlEvent.CONTROL_JDPROPERTY_CHANGED) {
-                    Object value = tmplaf.getProperty(event.getParameter().toString());
-                    if (value == null) value = Property.NULL;
-                    laf.setProperty(event.getParameter().toString(), value);
-                    if (value != null && value != Property.NULL) UIManager.put(event.getParameter().toString(), value);
+                    final String strParam = event.getParameter().toString();
+                    Object value = tmplaf.getProperty(strParam);
+                    if (value == null) {
+                        value = Property.NULL;
+                    }
+                    laf.setProperty(strParam, value);
+                    if (value != null && value != Property.NULL) {
+                        UIManager.put(strParam, value);
+                    }
                     laf.save();
                     SwingUtilities.updateComponentTreeUI(frame);
 
                     frame.pack();
-
                 }
             }
 
         });
         configs = JDUtilities.getDatabaseConnector().getSubConfigurationKeys();
-
         configs.add(0, mainConfig);
 
         sort();
         setCurrentConfig(configs.get(0));
         initGUI();
-
     }
 
     private void sort() {
         Collections.sort(configs, new Comparator<SubConfiguration>() {
 
-            public int compare(SubConfiguration o1, SubConfiguration o2) {
-
+            public int compare(final SubConfiguration o1, final SubConfiguration o2) {
                 return o1.toString().compareToIgnoreCase(o2.toString());
             }
 
         });
-
     }
 
     private int[] getSelectedRows() {
         final int[] rows = table.getSelectedRows();
         final int length = rows.length;
-        int[] ret = new int[length];
+        final int[] ret = new int[length];
 
         for (int i = 0; i < length; ++i) {
             ret[i] = table.convertRowIndexToModel(rows[i]);
@@ -154,26 +154,28 @@ public class Config {
         return ret;
     }
 
-    private void setCurrentConfig(SubConfiguration cfg) {
+    private void setCurrentConfig(final SubConfiguration cfg) {
         currentConfig = cfg;
 
         keys = new ArrayList<String>();
         values = new ArrayList<Object>();
 
         createMap(cfg.getProperties(), keys, values, "");
-        if (tableModel != null) this.tableModel.fireTableDataChanged();
+        if (tableModel != null) {
+            this.tableModel.fireTableDataChanged();
+        }
     }
 
     @SuppressWarnings("unchecked")
-    private void createMap(HashMap<?, ?> hashMap, ArrayList<String> keys, ArrayList<Object> values, String pre) {
+    private void createMap(final HashMap<?, ?> hashMap, final ArrayList<String> keys, final ArrayList<Object> values, String pre) {
         pre = (pre.length() > 0) ? pre + "/" : "";
         for (Entry<?, ?> next : hashMap.entrySet()) {
-            String key = pre + next.getKey();
-            Object nextValue = next.getValue();
+            final String key = pre + next.getKey();
+            final Object value = next.getValue();
             keys.add(key);
-            values.add(nextValue);
-            if (nextValue instanceof HashMap<?, ?>) {
-                createMap((HashMap) nextValue, keys, values, key);
+            values.add(value);
+            if (value instanceof HashMap<?, ?>) {
+                createMap((HashMap) value, keys, values, key);
             }
         }
 
@@ -189,16 +191,15 @@ public class Config {
         configSelection.setEditable(true);
         configSelection.addActionListener(new ActionListener() {
 
-            public void actionPerformed(ActionEvent e) {
+            public void actionPerformed(final ActionEvent e) {
                 if (configSelection.getSelectedItem() instanceof String) {
-                    SubConfiguration conf;
-                    configs.add(conf = SubConfiguration.getConfig(configSelection.getSelectedItem().toString()));
+                    final SubConfiguration conf = SubConfiguration.getConfig(configSelection.getSelectedItem().toString());
+                    configs.add(conf);
                     sort();
                     configSelection.setModel(new DefaultComboBoxModel(configs.toArray(new SubConfiguration[] {})));
                     configSelection.setSelectedItem(conf);
                     setCurrentConfig(conf);
                     tableModel.fireTableDataChanged();
-
                 } else {
                     setCurrentConfig((SubConfiguration) configSelection.getSelectedItem());
                     tableModel.fireTableDataChanged();
@@ -219,8 +220,7 @@ public class Config {
             public void valueChanged(ListSelectionEvent e) {
                 final int[] rows = getSelectedRows();
                 if (rows.length == 0) return;
-                int row = rows[0];
-                Object value = tableModel.getValueAt(row, 1);
+                Object value = tableModel.getValueAt(rows[0], 1);
                 try {
                     new ObjectConverter().toString(value);
                     edit.setEnabled(true);
@@ -230,7 +230,6 @@ public class Config {
                     edit.setEnabled(false);
                     remove.setEnabled(true);
                 }
-
             }
 
         });
@@ -238,7 +237,7 @@ public class Config {
         add.addActionListener(new ActionListener() {
 
             @SuppressWarnings("unchecked")
-            public void actionPerformed(ActionEvent e) {
+            public void actionPerformed(final ActionEvent e) {
                 final String key = UserIOGui.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN, "Enter Key", "Enter your key use / deliminator to create new sub-maps", "NEW_KEY", null, "Create Entry", "Cancel");
                 if (key == null) { return; }
                 if (keys.contains(key)) {
@@ -246,14 +245,13 @@ public class Config {
                     return;
                 }
                 final String result = UserIOGui.getInstance().requestInputDialog(UserIO.STYLE_LARGE | UserIO.NO_COUNTDOWN, "Edit value for " + key, "Please take care to keep xml structure", "<classtype>VALUE</classtype>\r\n e.g.: <boolean>true</boolean>", null, "Save", "Cancel");
-                if (result == null) return;
+                if (result == null) { return; }
                 try {
-
                     if (result != null) {
-                        ObjectConverter oc = new ObjectConverter();
+                        final ObjectConverter oc = new ObjectConverter();
                         oc.toString(new Object());
-                        Object object = oc.toObject(result);
-                        String[] configKeys = key.toString().split("/");
+                        final Object object = oc.toObject(result);
+                        final String[] configKeys = key.toString().split("/");
 
                         HashMap<String, Object> props = currentConfig.getProperties();
 
@@ -263,7 +261,7 @@ public class Config {
                         for (int i = 0; i < length; i++) {
                             String k = configKeys[i];
                             if (i < length) {
-                                Object next = props.get(k);
+                                final Object next = props.get(k);
 
                                 if (next instanceof HashMap<?, ?>) {
                                     System.out.println("sub Hashmap " + k);
@@ -274,16 +272,12 @@ public class Config {
                                 }
                             }
                         }
-
                         currentConfig.setProperty(configKeys[length - 1], object);
-
                         currentConfig.save();
                         setCurrentConfig(currentConfig);
                     }
-
                 } catch (Exception e1) {
                     UserIOGui.getInstance().requestMessageDialog("Could not save object. Failures in XML structure!");
-
                 }
             }
 
@@ -295,29 +289,28 @@ public class Config {
             @SuppressWarnings("unchecked")
             public void actionPerformed(ActionEvent e) {
                 final int[] rows = getSelectedRows();
-                if (rows.length == 0) return;
-                int row = rows[0];
-                Object key = tableModel.getValueAt(row, 0);
-                Object value = tableModel.getValueAt(row, 1);
+                if (rows.length == 0) { return; }
+                final int row = rows[0];
+                final Object key = tableModel.getValueAt(row, 0);
+                final Object value = tableModel.getValueAt(row, 1);
 
                 try {
                     AbstractDialog.setDefaultDimension(new Dimension(550, 400));
-                    ObjectConverter oc = new ObjectConverter();
-                    String valuess = oc.toString(value);
+                    final ObjectConverter oc = new ObjectConverter();
+                    final String valuess = oc.toString(value);
 
-                    String result = UserIOGui.getInstance().requestInputDialog(UserIO.STYLE_LARGE | UserIO.NO_COUNTDOWN, "Edit value for " + key, "Please take care to keep xml structure", valuess, null, "Save", "Cancel");
+                    final String result = UserIOGui.getInstance().requestInputDialog(UserIO.STYLE_LARGE | UserIO.NO_COUNTDOWN, "Edit value for " + key, "Please take care to keep xml structure", valuess, null, "Save", "Cancel");
                     try {
-
                         if (result != null) {
-                            Object object = oc.toObject(result);
-                            String[] configKeys = key.toString().split("/");
+                            final Object object = oc.toObject(result);
+                            final String[] configKeys = key.toString().split("/");
 
                             HashMap<String, Object> props = currentConfig.getProperties();
                             String myKey = null;
                             System.out.println("Save Object " + key);
 
                             for (String k : configKeys) {
-                                Object next = props.get(k);
+                                final Object next = props.get(k);
                                 if (next instanceof HashMap<?, ?>) {
                                     System.out.println("sub Hashmap " + k);
                                     props = (HashMap) next;
@@ -327,23 +320,18 @@ public class Config {
                                     break;
                                 }
                             }
-
                             currentConfig.setProperty(myKey, object);
                             currentConfig.save();
                             setCurrentConfig(currentConfig);
                         }
-
                     } catch (Exception e1) {
                         e1.printStackTrace();
                         UserIOGui.getInstance().requestMessageDialog("Could not save object. Failures in XML structure!");
-
                     }
                 } catch (Exception e1) {
                     e1.printStackTrace();
                 }
-
             }
-
         });
         remove = new JButton(JDTheme.II("gui.images.delete", 24, 24));
         remove.setEnabled(false);
@@ -352,44 +340,35 @@ public class Config {
             @SuppressWarnings("unchecked")
             public void actionPerformed(ActionEvent e) {
                 final int[] rows = getSelectedRows();
-                if (rows.length == 0) return;
-                int row = rows[0];
-                Object key = tableModel.getValueAt(row, 0);
+                if (rows.length == 0) { return; }
+
+                final Object key = tableModel.getValueAt(rows[0], 0);
                 String[] keys = key.toString().split("/");
-                if (keys[keys.length - 1].equals("null")) {
-                    keys[keys.length - 1] = null;
+                final int keysLength = keys.length;
+                if (keys[keysLength - 1].equals("null")) {
+                    keys[keysLength - 1] = null;
                 }
-                if (keys.length == 1) {
-
+                if (keysLength == 1) {
                     currentConfig.setProperty(keys[0], Property.NULL);
-
                     currentConfig.save();
                     setCurrentConfig(currentConfig);
                 } else {
-
                     HashMap<String, Object> props = currentConfig.getProperties();
-
                     for (String k : keys) {
-                        Object next = props.get(k);
+                        final Object next = props.get(k);
                         if (next instanceof HashMap<?, ?>) {
                             System.out.println("sub Hashmap " + k);
                             props = (HashMap) next;
-                        } else if (k != keys[keys.length - 1]) {
-
+                        } else if (k != keys[keysLength - 1]) {
                             System.out.println("error key " + k);
                             return;
-
                         }
                     }
-                    currentConfig.setProperty(keys[keys.length - 1], Property.NULL);
-
+                    currentConfig.setProperty(keys[keysLength - 1], Property.NULL);
                     currentConfig.save();
                     setCurrentConfig(currentConfig);
-
                 }
-
             }
-
         });
         add.setOpaque(false);
         add.setBorderPainted(false);
@@ -424,11 +403,11 @@ public class Config {
         }
 
         @Override
-        public String getColumnName(int col) {
+        public String getColumnName(final int col) {
             return columnNames[col];
         }
 
-        public Object getValueAt(int row, int col) {
+        public Object getValueAt(final int row, final int col) {
             try {
                 switch (col) {
                 case 0:
@@ -442,21 +421,19 @@ public class Config {
                     }
                 }
             } catch (Exception e) {
-
             }
             return "";
         }
 
         @Override
-        public Class<?> getColumnClass(int c) {
+        public Class<?> getColumnClass(final int c) {
             return String.class;
         }
 
         @Override
-        public boolean isCellEditable(int row, int col) {
+        public boolean isCellEditable(final int row, final int col) {
             return false;
         }
 
     }
-
 }
