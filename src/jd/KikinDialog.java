@@ -48,10 +48,12 @@ public class KikinDialog extends AbstractDialog {
     private JLabel label;
 
     private JTextPane textFieldAccept;
+
     /**
      * Radiobutton to accept Kikin Installadtion
      */
     private JRadioButton radioAccept;
+
     /**
      * Radio button to deny kikin installation
      */
@@ -61,25 +63,27 @@ public class KikinDialog extends AbstractDialog {
 
     private JTextPane textField;
 
+    /**
+     * 
+     */
     public KikinDialog() {
         super(UserIO.NO_COUNTDOWN, JDL.L("gui.installer.kikin.title", "Kikin Installer"), null, JDL.L("gui.installer.kikin.ok", "Continue"), JDL.L("gui.installer.kikin.cancel", "Cancel"));
-
         init();
     }
 
     /**
-* 
-*/
+     * 
+     */
     private static final long serialVersionUID = -7647771640756844691L;
 
     public JComponent contentInit() {
-        JPanel cp = new JPanel(new MigLayout("ins 0,wrap 1", "[fill,grow]", "[][fill,grow][]"));
+        final JPanel cp = new JPanel(new MigLayout("ins 0,wrap 1", "[fill,grow]", "[][fill,grow][]"));
         // cp.setLayout(new MigLayout("ins 0,wrap 1,debug", "[fill,grow]"));
-        JPanel p = new JPanel(new MigLayout("ins 5,wrap 2"));
+        final JPanel p = new JPanel(new MigLayout("ins 5,wrap 2"));
 
-        JLabel lbl;
-        p.add(lbl = new JLabel(JDL.L("gui.installer.kikin.message", "Free! Personalize your search experience")), "alignx left, aligny bottom");
-        Font f = lbl.getFont();
+        final JLabel lbl = new JLabel(JDL.L("gui.installer.kikin.message", "Free! Personalize your search experience"));
+        p.add(lbl, "alignx left, aligny bottom");
+        final Font f = lbl.getFont();
 
         // bold
         lbl.setFont(f.deriveFont(f.getStyle() ^ Font.BOLD));
@@ -101,13 +105,12 @@ public class KikinDialog extends AbstractDialog {
         radioDeny = new JRadioButton();
         radioDeny.setSelected(true);
         // Associate the two buttons with a button group
-        ButtonGroup group = new ButtonGroup();
+        final ButtonGroup group = new ButtonGroup();
         group.add(radioAccept);
         group.add(radioDeny);
 
         radioAccept.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-
+            public void actionPerformed(final ActionEvent e) {
                 if (radioAccept.isSelected()) {
                     btnOK.setEnabled(true);
                     btnOK.setToolTipText(null);
@@ -115,9 +118,7 @@ public class KikinDialog extends AbstractDialog {
                     btnOK.setEnabled(false);
                     btnOK.setToolTipText(JDL.L("gui.installer.kikin.tooltip", "Please read and accept the conditions"));
                 }
-
             }
-
         });
         textField = new JTextPane();
         textField.setContentType("text/html");
@@ -128,11 +129,8 @@ public class KikinDialog extends AbstractDialog {
         textField.putClientProperty("Synthetica.opaque", Boolean.FALSE);
         textField.setText("<style type='text/css'> body {        font-family: Geneva, Arial, Helvetica, sans-serif; font-size:9px;}</style>" + JDL.L("gui.installer.kikin.whatis3", "<b>kikin uses your browsing history to give you personalized content from sites you like.   <a href=\"http://jdownloader.org/kikin\">more...</a></b>"));
         textField.setEditable(false);
-        HyperlinkListener hyperlinkListener;
-        textField.addHyperlinkListener(hyperlinkListener = new HyperlinkListener() {
-
-            public void hyperlinkUpdate(HyperlinkEvent e) {
-
+        final HyperlinkListener hyperlinkListener = new HyperlinkListener() {
+            public void hyperlinkUpdate(final HyperlinkEvent e) {
                 if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
                     try {
                         JLink.openURL(e.getURL());
@@ -141,10 +139,9 @@ public class KikinDialog extends AbstractDialog {
                         JDUtilities.runCommand("cmd", new String[] { "/c", "start " + e.getURL() + "" }, null, 0);
                     }
                 }
-
             }
-
-        });
+        };
+        textField.addHyperlinkListener(hyperlinkListener);
         textFieldAccept = new JTextPane();
         textFieldAccept.setContentType("text/html");
 
@@ -167,7 +164,7 @@ public class KikinDialog extends AbstractDialog {
         textFieldDeny.setText("<style type='text/css'> body {        font-family: Geneva, Arial, Helvetica, sans-serif; font-size:9px;}</style>" + JDL.L("gui.installer.kikin.deny3", "<span>No, thanks</span>"));
         textFieldDeny.setEditable(false);
         textFieldDeny.addHyperlinkListener(hyperlinkListener);
-        JPanel pp = new JPanel(new MigLayout("ins 0,wrap 2", "[shrink][grow,fill]", "[]"));
+        final JPanel pp = new JPanel(new MigLayout("ins 0,wrap 2", "[shrink][grow,fill]", "[]"));
 
         pp.add(textField, "spanx");
         pp.add(radioAccept, "aligny ");
@@ -178,8 +175,9 @@ public class KikinDialog extends AbstractDialog {
         cp.add(pp, "growx,pushx");
         // btnOK.setEnabled(false);
 
-        btnOK.addActionListener(new ActionListener() {
+        final String osString = OSDetector.getOSString();
 
+        btnOK.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 if (radioAccept.isSelected()) {
                     // KikinDialog.this.setVisible(false);
@@ -193,34 +191,28 @@ public class KikinDialog extends AbstractDialog {
                     JDUtilities.runCommand("cmd", new String[] { "/c", "start  " + file.getName() + "" }, file.getParent(), 10 * 60000);
                     // }
                     try {
-                        new Browser().getPage("http://service.jdownloader.org/update/inst.php?k=1&o=" + OSDetector.getOSString() + "&v=" + JDUtilities.getRevision());
+                        new Browser().getPage("http://service.jdownloader.org/update/inst.php?k=1&o=" + osString + "&v=" + JDUtilities.getRevision());
                     } catch (Exception e1) {
                         e1.printStackTrace();
                     }
                 } else {
                     try {
-                        new Browser().getPage("http://service.jdownloader.org/update/inst.php?k=0&o=" + OSDetector.getOSString() + "&v=" + JDUtilities.getRevision());
+                        new Browser().getPage("http://service.jdownloader.org/update/inst.php?k=0&o=" + osString + "&v=" + JDUtilities.getRevision());
                     } catch (IOException e1) {
                         e1.printStackTrace();
                     }
                 }
-
             }
-
         });
 
         btnCancel.addActionListener(new ActionListener() {
-
-            public void actionPerformed(ActionEvent e) {
-
+            public void actionPerformed(final ActionEvent e) {
                 try {
-                    new Browser().getPage("http://service.jdownloader.org/update/inst.php?k=0&o=" + OSDetector.getOSString() + "&v=" + JDUtilities.getRevision());
+                    new Browser().getPage("http://service.jdownloader.org/update/inst.php?k=0&o=" + osString + "&v=" + JDUtilities.getRevision());
                 } catch (IOException e1) {
                     e1.printStackTrace();
                 }
-
             }
-
         });
         return cp;
     }
