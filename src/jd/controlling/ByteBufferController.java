@@ -24,22 +24,26 @@ import jd.nutils.Formatter;
 
 public class ByteBufferController {
 
-    private ArrayList<ByteBufferEntry> bufferpool;
+    private final ArrayList<ByteBufferEntry> bufferpool;
 
     public final static String MAXBUFFERSIZE = "MAX_BUFFER_SIZE_V3";
 
     private static ByteBufferController INSTANCE;
 
-    private Comparator<ByteBufferEntry> bytebuffercomp = new Comparator<ByteBufferEntry>() {
-        public int compare(ByteBufferEntry a, ByteBufferEntry b) {
-            return a.capacity() == b.capacity() ? 0 : a.capacity() > b.capacity() ? 1 : -1;
+    private final Comparator<ByteBufferEntry> bytebuffercomp = new Comparator<ByteBufferEntry>() {
+        public int compare(final ByteBufferEntry a, final ByteBufferEntry b) {
+            final int acapacity = a.capacity();
+            final int bcapacity = b.capacity();
+            return acapacity == bcapacity ? 0 : acapacity > bcapacity ? 1 : -1;
         }
     };
 
     protected long bufferEntries = 0;
 
     public synchronized static ByteBufferController getInstance() {
-        if (INSTANCE == null) INSTANCE = new ByteBufferController();
+        if (INSTANCE == null) {
+            INSTANCE = new ByteBufferController();
+        }
         return INSTANCE;
     }
 
@@ -55,7 +59,7 @@ public class ByteBufferController {
 
     private ByteBufferController() {
         bufferpool = new ArrayList<ByteBufferEntry>();
-        Thread thread = new Thread("ByteBuffer debugger") {
+        new Thread("ByteBuffer debugger") {
             public void run() {
                 while (true) {
                     try {
@@ -66,11 +70,10 @@ public class ByteBufferController {
                     ByteBufferController.getInstance().printDebug();
                 }
             }
-        };
-        thread.start();
+        }.start();
     }
 
-    protected ByteBufferEntry getByteBufferEntry(int size) {
+    protected ByteBufferEntry getByteBufferEntry(final int size) {
         ByteBufferEntry ret = null;
         synchronized (bufferpool) {
             for (ByteBufferEntry entry : bufferpool) {
@@ -85,9 +88,11 @@ public class ByteBufferController {
         return null;
     }
 
-    protected void putByteBufferEntry(ByteBufferEntry entry) {
+    protected void putByteBufferEntry(final ByteBufferEntry entry) {
         synchronized (bufferpool) {
-            if (!bufferpool.contains(entry)) bufferpool.add(entry);
+            if (!bufferpool.contains(entry)) {
+                bufferpool.add(entry);
+            }
             Collections.sort(bufferpool, bytebuffercomp);
         }
     }
