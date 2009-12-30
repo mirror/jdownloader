@@ -85,7 +85,7 @@ public class CreaFileCom extends PluginForHost {
         String downarea = "http://creafile.com/handlers.php?h=getdownloadarea";
         br.setFollowRedirects(true);
         String dllink = null;
-        Form dlForm = br.getFormByKey("s_pair");
+        Form dlForm = br.getFormbyKey("s_pair");
         if (dlForm == null) dlForm = br.getForm(1);
         dlForm.remove("Buy+VIP");
         String captchaurl = "http://creafile.com//codeimg.php";

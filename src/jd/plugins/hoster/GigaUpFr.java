@@ -64,7 +64,7 @@ public class GigaUpFr extends PluginForHost {
         String captchaid = (br.getRegex("<img src=\".*?uid=(.*?)\" style=\"margi").getMatch(0));
         String captchaurl = "http://www.gigaup.fr/constru/images/bot_sucker/bot_sucker.php?uid=" + captchaid;
         String code = getCaptchaCode(captchaurl, downloadLink);
-        Form captchaForm = br.getFormByKey("bot_sucker");
+        Form captchaForm = br.getFormbyKey("bot_sucker");
         if (captchaForm == null || captchaid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         captchaForm.remove("dl_file_SSL");
         captchaForm.put("bot_sucker", code);

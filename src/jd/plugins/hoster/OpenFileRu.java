@@ -89,7 +89,7 @@ public class OpenFileRu extends PluginForHost {
         // String dllink =
         // br2.getRegex("'(/files/mg\\.php\\?getlink=1\\&id=[0-9]+)'").getMatch(0);
         for (int i = 0; i <= 5; i++) {
-            Form captchaform = br.getFormByKey("secret");
+            Form captchaform = br.getFormbyKey("secret");
             String captchaurl = br.getRegex("style=\"color:.*?>Повторите.*?/td>.*?<td><img src=\"(.*?)\"").getMatch(0);
             if (captchaform == null || captchaurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             String code = getCaptchaCode("http://openfile.ru" + captchaurl, link);

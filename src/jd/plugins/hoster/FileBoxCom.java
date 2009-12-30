@@ -126,7 +126,7 @@ public class FileBoxCom extends PluginForHost {
         if (dllink == null) {
             Form pwform = null;
             if (br.containsHTML("splash_Pasword")) {
-                pwform = br.getFormByKey("fname");
+                pwform = br.getFormbyKey("fname");
                 if (pwform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 if (link.getStringProperty("pass", null) == null) {
                     passCode = Plugin.getUserInput("Password?", link);
@@ -179,7 +179,7 @@ public class FileBoxCom extends PluginForHost {
         // if (captchaurl == null ) throw new
         // PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // captchaurl = "https://www.filebox.com" + captchaurl;
-        Form DLForm = br.getFormByKey("fname");
+        Form DLForm = br.getFormbyKey("fname");
         if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         if (br.containsHTML("splash_Pasword")) {
             if (downloadLink.getStringProperty("pass", null) == null) {

@@ -1359,7 +1359,7 @@ public class Browser {
      * @param key
      * @return
      */
-    public Form getFormByKey(final String key) {
+    public Form getFormbyKey(final String key) {
         for (Form f : getForms()) {
             if (f.hasInputFieldByName(key)) { return f; }
         }

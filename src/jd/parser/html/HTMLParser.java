@@ -195,6 +195,9 @@ public class HTMLParser {
          * those
          */
         data = data.replaceAll("%3Cbr%20/%3E", "<br />");
+        /* place all replaces here that seperates links */
+        /* replace <br> tags with space so we we can seperate the links */
+        data = data.replaceAll("<br>", " ");
         /*
          * remove all span because they can break url parsing (eg when
          * google-code-prettify is used)

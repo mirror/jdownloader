@@ -150,7 +150,7 @@ public class SendspaceCom extends PluginForHost {
         String passCode = null;
         if (br.containsHTML("name=\"filepassword\"")) {
             for (int i = 0; i < 2; i++) {
-                Form pwform = br.getFormByKey("filepassword");
+                Form pwform = br.getFormbyKey("filepassword");
                 if (pwform == null) pwform = br.getForm(0);
                 if (pwform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 if (downloadLink.getStringProperty("pass", null) == null) {

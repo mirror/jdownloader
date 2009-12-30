@@ -51,7 +51,7 @@ public class FileShareInUa extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
         br.getPage("http://fileshare.in.ua");
-        Form form = br.getFormByKey("auto_login");
+        Form form = br.getFormbyKey("auto_login");
         if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         form.put("email", Encoding.urlEncode(account.getUser()));
         form.put("password", Encoding.urlEncode(account.getPass()));

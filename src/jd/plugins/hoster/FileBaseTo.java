@@ -57,7 +57,7 @@ public class FileBaseTo extends PluginForHost {
         br.setCookie("http://filebase.to", "fb_language", "de");
         br.setFollowRedirects(false);
         br.getPage("http://filebase.to/user/");
-        Form loginform = br.getFormByKey("fb_password");
+        Form loginform = br.getFormbyKey("fb_password");
         loginform.put("fb_username", Encoding.urlEncode(account.getUser()));
         loginform.put("fb_password", Encoding.urlEncode(account.getPass()));
         loginform.put("fb_cookie", "fb_cookie");
@@ -107,7 +107,7 @@ public class FileBaseTo extends PluginForHost {
         login(account);
         // Workaround for streaming files
         br.getPage(downloadLink.getDownloadURL().replace("/files/", "/download/"));
-        Form dlForm = br.getFormByKey("wait");
+        Form dlForm = br.getFormbyKey("wait");
         dlForm = null;
         // in case they rename the form we can maybe still get the link of the
         // page, if not the plugin is defect

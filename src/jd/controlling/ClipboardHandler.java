@@ -22,6 +22,7 @@ import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.StringSelection;
 import java.awt.datatransfer.Transferable;
 import java.io.File;
+import java.net.URI;
 import java.net.URL;
 import java.util.List;
 import java.util.ListIterator;
@@ -178,11 +179,12 @@ public class ClipboardHandler extends Thread implements ControlListener {
                                 StringBuilder sb = new StringBuilder("");
                                 while (izer.hasMoreTokens()) {
                                     /* linux adds file:// */
-                                    String uri = izer.nextToken().replaceFirst("file://", "");
-                                    if (new File(uri).exists()) {
-                                        if (DistributeData.hasContainerPluginFor(uri)) JDController.getInstance().loadContainerFile(new File(uri));
+                                    URI fi = new URI(izer.nextToken());
+                                    File f = new File(fi.getPath());
+                                    if (f.exists()) {
+                                        if (DistributeData.hasContainerPluginFor(fi.getPath())) JDController.getInstance().loadContainerFile(f);
                                     } else if (what == uriListFlavor) {
-                                        sb.append(uri);
+                                        sb.append(fi.getPath());
                                         sb.append("\r\n");
                                     }
                                 }

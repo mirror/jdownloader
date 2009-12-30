@@ -87,7 +87,7 @@ public class GigaPetaCom extends PluginForHost {
         br.setCookie("http://gigapeta.com", "lang", "us");
         br.setDebug(true);
         br.getPage("http://gigapeta.com/");
-        Form loginform = br.getFormByKey("auth_login");
+        Form loginform = br.getFormbyKey("auth_login");
         if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         loginform.put("auth_login", Encoding.urlEncode(account.getUser()));
         loginform.put("auth_passwd", Encoding.urlEncode(account.getPass()));

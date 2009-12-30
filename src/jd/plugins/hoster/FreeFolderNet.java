@@ -64,7 +64,7 @@ public class FreeFolderNet extends PluginForHost {
 
             br.getPage(downloadLink.getDownloadURL());
             br.setFollowRedirects(false);
-            Form captchaForm = br.getFormByKey("captcha");
+            Form captchaForm = br.getFormbyKey("captcha");
             if (captchaForm == null && filename1 != null && filesize != null) { throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium"); }
             if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             String captchaurl = br.getRegex("false\"><img src=\"(.*?)\"").getMatch(0);

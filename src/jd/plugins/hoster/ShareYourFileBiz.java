@@ -107,7 +107,7 @@ public class ShareYourFileBiz extends PluginForHost {
         if (freeform == null) {
             freeform = br.getFormBySubmitvalue("Free+Download");
             if (freeform == null) {
-                freeform = br.getFormByKey("download1");
+                freeform = br.getFormbyKey("download1");
             }
         }
         if (freeform != null) br.submitForm(freeform);

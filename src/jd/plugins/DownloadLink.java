@@ -728,8 +728,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
             }
         }
 
-        // downloadMax = 0;
-        priority = 0;
         chunksProgress = null;
         downloadLinkController = null;
         downloadCurrent = 0;
