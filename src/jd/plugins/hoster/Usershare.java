@@ -46,8 +46,7 @@ public class Usershare extends PluginForHost {
         br.setFollowRedirects(false);
         String passCode = null;
         String linkurl = null;
-        String loginpw = br.getRegex("value=\"login\">(.*?)value=\" Login\"").getMatch(0);
-        if (br.containsHTML("name=\"password\"") && !(loginpw != null && loginpw.contains("password"))) {
+        if (br.containsHTML("(<b>Passwort:</b>|<b>Password:</b>)")) {
             logger.info("The downloadlink seems to be password protected.");
             Form pwform = br.getFormbyProperty("name", "F1");
             if (pwform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -60,7 +59,7 @@ public class Usershare extends PluginForHost {
             pwform.put("password", passCode);
             logger.info("Put password \"" + passCode + "\" entered by user in the DLForm and submitted it.");
             br.submitForm(pwform);
-            if (br.containsHTML("(name=\"password\"|Wrong password)") && !(loginpw != null && loginpw.contains("password"))) {
+            if (br.containsHTML("(Wrong password|<b>Passwort:</b>|<b>Password:</b>)")) {
                 logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
                 link.setProperty("pass", null);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
@@ -70,6 +69,9 @@ public class Usershare extends PluginForHost {
             linkurl = br.getRegex("</a></TD><TD width=\"1%\" nowrap align=right.*?/TD>.*?</Table>.*?<a href=\"(http.*?)\"").getMatch(0);
             if (linkurl == null) {
                 linkurl = br.getRegex("\"(http://[a-zA-Z0-9]+\\.usershare\\.net/files/.*?/.*?/.*?)\"").getMatch(0);
+                if (linkurl == null) {
+                    linkurl = br.getRegex("\"(http://[0-9]+\\..*?:[0-9]+/d/.*?/.*?)\"").getMatch(0);
+                }
             }
         }
         if (passCode != null) {
@@ -85,11 +87,17 @@ public class Usershare extends PluginForHost {
         this.setBrowserExclusive();
         br.getPage(parameter.getDownloadURL());
         if (br.containsHTML("No such user exist") || br.containsHTML("File Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
+        String filename = br.getRegex("class=\"hdr\"><TD colspan=2>(.*?)</TD>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<b>Filename:</b></td><td nowrap>(.*?)</b>").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("<title>Download(.*?)</title>").getMatch(0);
+            }
+        }
         String filesize = br.getRegex("Size:</b></td><td>(.*?)<small>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         parameter.setName(filename.trim());
-        parameter.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
+        parameter.setDownloadSize(Regex.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
