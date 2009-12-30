@@ -10,7 +10,7 @@ public class FsIuA {
 
     public static String getCode(int marginLeft, int width, File file)
     {
-        JAntiCaptcha jac = new JAntiCaptcha("flshren");
+        JAntiCaptcha jac = new JAntiCaptcha("fileshare.in.ua");
         Captcha captcha = jac.createCaptcha(JDImage.getImage(file));
         captcha.crop(-marginLeft, 0, captcha.getWidth()-width+marginLeft, 0);
         captcha.setOrgGrid(captcha.grid);
