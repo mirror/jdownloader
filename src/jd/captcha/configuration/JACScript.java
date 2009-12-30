@@ -17,7 +17,6 @@
 package jd.captcha.configuration;
 
 import java.io.File;
-import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.Hashtable;
 import java.util.Vector;
@@ -106,18 +105,12 @@ public class JACScript {
      */
     public JACScript(JAntiCaptcha owner, String method) {
 
-        try {
-
-            init();
-            this.owner = owner;
-            this.method = method;
-            scriptFile = "script.jas";
-            parseScriptFile();
-            executeParameterCommands();
-        } catch (IOException e) {
-            JDLogger.exception(e);
-        }
-
+        init();
+        this.owner = owner;
+        this.method = method;
+        scriptFile = "script.jas";
+        parseScriptFile();
+        executeParameterCommands();
     }
 
     /**
@@ -1086,7 +1079,7 @@ public class JACScript {
     /**
      * Diese Methode liest das script.jas ein. und parsed es
      */
-    private void parseScriptFile() throws IOException {
+    private void parseScriptFile() {
         if (Utilities.isLoggerActive()) {
             logger.fine("parsing Script.jas");
         }
