@@ -67,6 +67,7 @@ public class ExtaBitCom extends PluginForHost {
         requestFileInformation(link);
         String addedlink = br.getURL();
         br.getPage(addedlink + "?go");
+        if (br.containsHTML("The daily downloads limit from your IP is exceeded")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
         // If the waittime was forced it yould be here but it isn't!
         // Re Captcha handling
         if (br.containsHTML("api.recaptcha.net")) {

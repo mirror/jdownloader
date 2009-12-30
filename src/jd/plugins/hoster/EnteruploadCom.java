@@ -42,7 +42,7 @@ public class EnteruploadCom extends PluginForHost {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
         br.setDebug(true);
-        Form form = br.getForm(0);
+        Form form = br.getForm(1);
         form.setAction(downloadLink.getDownloadURL());
         form.remove("method_premium");
         form.put("referer", Encoding.urlEncode(downloadLink.getDownloadURL()));
@@ -57,41 +57,46 @@ public class EnteruploadCom extends PluginForHost {
             if (tmpsec != null) seconds = Integer.parseInt(tmpsec);
             int waittime = ((3600 * hours) + (60 * minutes) + seconds + 1) * 1000;
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
-        } else {
-            form = br.getFormbyProperty("name", "F1");
-            if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            String captchaurl = br.getRegex(Pattern.compile("<img src=\"(http://www.enterupload.com/captchas/.*?\\.jpg)\">", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
-            String code = getCaptchaCode(captchaurl, downloadLink);
-            form.put("code", code);
-            form.setAction(downloadLink.getDownloadURL());
-            // Ticket Time
-            int tt = Integer.parseInt(br.getRegex("countdown\">(\\d+)</span>").getMatch(0));
-            sleep(tt * 1001, downloadLink);
-            br.submitForm(form);
-            String dllink = br.getRedirectLocation();
-
-            String error = br.getRegex("class=\"err\">(.*?)</font>").getMatch(0);
-            if (error != null) {
-                logger.warning(error);
-                if (error.equalsIgnoreCase("Wrong captcha") || error.equalsIgnoreCase("Expired session")) {
-                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, error, 10000);
-                }
-            }
-            if (br.containsHTML("Download Link Generated")) dllink = br.getRegex("padding:7px;\">\\s+<a\\s+href=\"(.*?)\">").getMatch(0);
-
-            br.setFollowRedirects(true);
-            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            downloadLink.setFinalFileName(null);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
-            dl.startDownload();
         }
+        if (br.containsHTML("You have to wait")) {
+            int minutes = 0, seconds = 0, hours = 0;
+            String tmphrs = br.getRegex("\\s+(\\d+)\\s+hours?").getMatch(0);
+            if (tmphrs != null) hours = Integer.parseInt(tmphrs);
+            String tmpmin = br.getRegex("\\s+(\\d+)\\s+minutes?").getMatch(0);
+            if (tmpmin != null) minutes = Integer.parseInt(tmpmin);
+            String tmpsec = br.getRegex("\\s+(\\d+)\\s+seconds?").getMatch(0);
+            if (tmpsec != null) seconds = Integer.parseInt(tmpsec);
+            int waittime = ((3600 * hours) + (60 * minutes) + seconds + 1) * 1000;
+            logger.info("Detected waittime #1, waiting " + waittime + "milliseconds");
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
+        }
+        form = br.getFormbyProperty("name", "F1");
+        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String captchaurl = br.getRegex(Pattern.compile("<img src=\"(http://www.enterupload.com/captchas/.*?\\.jpg)\">", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
+        String code = getCaptchaCode(captchaurl, downloadLink);
+        form.put("code", code);
+        form.setAction(downloadLink.getDownloadURL());
+        // Ticket Time
+        String ttt = br.getRegex("countdown\">.*?(\\d+).*?</span>").getMatch(0);
+        if (ttt != null) {
+            logger.info("Waittime detected, waiting " + ttt.trim() + " seconds from now on...");
+            int tt = Integer.parseInt(ttt);
+            sleep(tt * 1001, downloadLink);
+        }
+        br.submitForm(form);
+        String dllink = br.getRedirectLocation();
+        if (br.containsHTML("Wrong captcha")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        if (dllink == null) dllink = br.getRegex("padding:7px;\">\\s+<a\\s+href=\"(.*?)\">").getMatch(0);
+        br.setFollowRedirects(true);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        downloadLink.setFinalFileName(null);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dl.startDownload();
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return -1;
     }
 
     @Override
