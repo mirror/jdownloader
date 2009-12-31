@@ -131,7 +131,6 @@ public class Encoding {
         if (isUrl) {
             urlcoded = urlcoded.replaceAll("%2F", "/");
             urlcoded = urlcoded.replaceAll("%3A", ":");
-            urlcoded = urlcoded.replaceAll("\\+", "%20");
             urlcoded = urlcoded.replaceAll("%3F", "?");
             urlcoded = urlcoded.replaceAll("%3D", "=");
             urlcoded = urlcoded.replaceAll("%26", "&");
