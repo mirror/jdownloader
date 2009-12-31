@@ -40,7 +40,9 @@ public class LoShareCom extends PluginForHost {
     public String getAGBLink() {
         return "http://upload.loshare.com/rules.php";
     }
-
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("oshara", "oshare"));
+    }
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -77,18 +79,21 @@ public class LoShareCom extends PluginForHost {
         if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.submitForm(dlform);
         String rticketData = br.getRegex("data' value='(.*?)'>").getMatch(0);
+        if (rticketData == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         Browser br2 = br.cloneBrowser();
         br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br2.postPage("http://loshare.com/ajax.php", "act=rticket&data=" + rticketData);
-        System.out.print(br2.toString());
         String getdlData = br2.getRegex("text\":\"(.*?)\"").getMatch(0);
-        sleep(30 * 1001l, downloadLink);
+        if (getdlData == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // Waittime not needed right now, let's wait and see if they check it
+        // better in the future ;)
+        // sleep(30 * 1001l, downloadLink);
         br2.postPage("http://loshare.com/ajax.php", "act=getdl&data=" + getdlData);
-        String dllink = br.getRegex("url\":\"(http.*?)\"").getMatch(0);
-        System.out.print(br.toString());
+        String dllink = br2.getRegex("url\":\"(http.*?)\"").getMatch(0);
+        String fileRequest = br2.getRegex("file_request\":\"(.*?)\"").getMatch(0);
+        if (dllink == null || fileRequest == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dllink = dllink.replace("\\", "");
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, "X-File-Request=" + fileRequest, true, 1);
         dl.startDownload();
     }
 
@@ -98,7 +103,7 @@ public class LoShareCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return 1;
     }
 
     @Override
