@@ -43,6 +43,7 @@ public class EnteruploadCom extends PluginForHost {
         br.setFollowRedirects(false);
         br.setDebug(true);
         Form form = br.getForm(1);
+        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         form.setAction(downloadLink.getDownloadURL());
         form.remove("method_premium");
         form.put("referer", Encoding.urlEncode(downloadLink.getDownloadURL()));
