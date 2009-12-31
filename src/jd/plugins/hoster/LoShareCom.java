@@ -41,7 +41,7 @@ public class LoShareCom extends PluginForHost {
         return "http://upload.loshare.com/rules.php";
     }
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("oshara", "oshare"));
+        link.setUrlDownload(link.getDownloadURL().replace("loshara", "loshare"));
     }
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {

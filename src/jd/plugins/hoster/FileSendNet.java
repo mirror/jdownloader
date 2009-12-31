@@ -53,7 +53,7 @@ public class FileSendNet extends PluginForHost {
         if (br.containsHTML("File Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = Encoding.htmlDecode(br.getRegex(Pattern.compile("File Name:</strong>\\s+(.*?)\\s+</td>", Pattern.CASE_INSENSITIVE)).getMatch(0));
         String filesize = br.getRegex("File Size:</strong>\\s+(.*?)\\s+</td>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filename == null || filesize == null || filename.matches("") || filesize.length() > 30) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
         return AvailableStatus.TRUE;
