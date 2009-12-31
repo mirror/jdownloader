@@ -57,7 +57,7 @@ public class UploadBearCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.getPage(downloadLink.getDownloadURL() + "&action=request");
-        String dllink = br.getRegex("(http://[0-9]+\\..*?/files/[0-9a-z]+/.*?)\"").getMatch(0);
+        String dllink = br.getRegex("onclick=\"window\\.open\\('(http://[0-9]+\\..*?/files/[0-9a-z]+/.*?)'\\)").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // Html parser didn't work but i wanted to use it when i made this
         // plugin!
