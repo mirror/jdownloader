@@ -119,9 +119,11 @@ public class Freaksharenet extends PluginForHost {
         if (br.containsHTML("Sorry but this File is not avaible")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("Sorry, this Download doesnt exist anymore")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("No Downloadserver. Please try again")) return AvailableStatus.UNCHECKABLE;
-        String filename = br.getRegex("<h1[^>]*>(.*?)</h1>").getMatch(0).trim();
+        String filename = br.getRegex("\"box_heading\" style=\"text-align:center;\">(.*?)- .*?</h1>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(Encoding.htmlDecode(filename.trim()));
+        String filesize = br.getRegex("\"box_heading\" style=\"text-align:center;\">.*?-(.*?)</h1>").getMatch(0);
+        if (filesize != null) downloadLink.setDownloadSize(Regex.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
@@ -134,7 +136,10 @@ public class Freaksharenet extends PluginForHost {
         Form form = br.getForm(1);
         if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // waittime
-        int tt = Integer.parseInt(br.getRegex("var time = (\\d+).[0-9];").getMatch(0));
+        String ttt = br.getRegex("var time = (\\d+).[0-9];").getMatch(0);
+        int tt = 0;
+        if (ttt != null) tt = Integer.parseInt(ttt);
+        if (tt > 180) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, tt * 1001l);
         sleep(tt * 1001l, downloadLink);
         br.submitForm(form);
         form = br.getForm(0);
