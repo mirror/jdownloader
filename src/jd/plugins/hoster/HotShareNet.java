@@ -53,6 +53,10 @@ public class HotShareNet extends PluginForHost {
         br.setCookie("http://www.hotshare.net/", "language", "english");
         br.getPage(downloadLink.getDownloadURL().replaceAll("video", "file").replaceAll("audio", "file"));
         String filename = br.getRegex(Pattern.compile("<h1 class=\"top_title_downloading\"><strong>(.*?)</strong> </h1>")).getMatch(0);
+        if(filename == null) {
+            // if old regular expression won't work anymore, use new one
+            filename = br.getRegex(Pattern.compile("</strong> \\((.*?)\\) </h1>")).getMatch(0);
+        }
         String filesize = br.getRegex(Pattern.compile("<span class=\"arrow1\">Size: <b>(.*?)</b></span> ")).getMatch(0);
         if (filesize == null || filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
