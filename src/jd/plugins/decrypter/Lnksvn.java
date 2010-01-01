@@ -55,7 +55,7 @@ public class Lnksvn extends PluginForDecrypt {
         br.setCookie("http://linksave.in/", "Linksave_Language", "german");
         br.setRequestIntervalLimit("linksave.in", 1000);
         br.getPage(param.getCryptedUrl());
-       
+
         if (br.containsHTML("Ordner nicht gefunden")) return decryptedLinks;
         Form form = br.getFormbyProperty("name", "form");
         for (int retry = 0; retry < 5; retry++) {
@@ -82,15 +82,17 @@ public class Lnksvn extends PluginForDecrypt {
         String[] container = br.getRegex("\\.href\\=unescape\\(\\'(.*?)\\'\\)\\;").getColumn(0);
 
         String[] pages = br.getRegex("\\?s=(\\d+)\\#down").getColumn(0);
+        //if there are less than 30 links, there are no pages links.
+        if (pages.length == 0) pages = new String[] { "1" };
         int pageID = 1;
-        int foundlinks=0;
+        int foundlinks = 0;
         for (String page : pages) {
             if (Integer.parseInt(page) < pageID) break;
             pageID = Integer.parseInt(page);
             if (!page.equals("1")) {
                 br.getPage(param.getCryptedUrl() + "?s=" + page + "#down");
             }
-            foundlinks=decryptedLinks.size();
+            foundlinks = decryptedLinks.size();
             if (container != null && container.length > 0) {
                 for (String c : container) {
                     Browser clone = br.cloneBrowser();
