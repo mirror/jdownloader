@@ -59,7 +59,6 @@ public class SaveTv extends PluginForHost {
                 loginform.put("sUsername", Encoding.urlEncode(account.getUser()));
                 loginform.put("sPassword", Encoding.urlEncode(account.getPass()));
                 br.submitForm(loginform);
-                System.out.print(br.toString());
                 break;
             } else {
                 br.getPage("http://free.save.tv");

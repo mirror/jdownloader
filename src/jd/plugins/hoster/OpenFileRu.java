@@ -49,7 +49,7 @@ public class OpenFileRu extends PluginForHost {
         br.setCookie("http://openfile.ru", "MG_1145", "7");
         br.setFollowRedirects(false);
         br.getPage(parameter.getDownloadURL());
-        if (br.containsHTML("(Файл удален или поступила жалоба от правообладателя|Файл удален. Причина: истек срок хранения файла)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(Файл удален или поступила жалоба от правообладателя|Файл удален. Причина: истек срок хранения файла|Причина: поступила жалоба от правообладателя)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>(.*?)с OpenFile.ru</title>").getMatch(0);
         if (filename == null) filename = br.getRegex("Вы собираетесь скачать файл.*?<b>(.*?)</b>").getMatch(0);
         String filesize = br.getRegex("Размер: <strong>(.*?)</strong>").getMatch(0);
@@ -68,9 +68,6 @@ public class OpenFileRu extends PluginForHost {
     public void handleFree(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         requestFileInformation(link);
-        // TODO:Find out what that means, i called it "Server error" but i don't
-        // even know what that text means...
-        if (br.containsHTML("Причина: поступила жалоба от правообладателя")) throw new PluginException(LinkStatus.ERROR_FATAL, "Server error");
         // Just a failed try to skip the captcha!
         // String id = new Regex(link.getDownloadURL(),
         // "openfile\\.ru/(\\d+)").getMatch(0);

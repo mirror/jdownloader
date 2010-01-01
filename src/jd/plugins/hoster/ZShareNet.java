@@ -51,7 +51,14 @@ public class ZShareNet extends PluginForHost {
         if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("unverified")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         br.getPage("http://zshare.net/myzshare/my-uploads.php");
         String cookiecheck = br.getCookie("http://www.zshare.net", "sid");
-        if (!br.containsHTML("Your premium account will expire in") || cookiecheck == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if ((!br.containsHTML("Your premium account will expire in") && !br.containsHTML("Upgrade your account to Premium")) || cookiecheck == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (br.containsHTML("Your premium account will expire in")) {
+            this.getPluginConfig().setProperty("premium", "1");
+            this.getPluginConfig().save();
+        } else if (br.containsHTML("Upgrade your account to Premium")) {
+            this.getPluginConfig().setProperty("premium", "0");
+            this.getPluginConfig().save();
+        }
     }
 
     @Override
@@ -65,9 +72,15 @@ public class ZShareNet extends PluginForHost {
         }
         String hostedFiles = br.getRegex("<strong>Uploads found:</strong>.*?(\\d+).*?</p>").getMatch(0);
         if (hostedFiles != null) ai.setFilesNum(Long.parseLong(hostedFiles));
-        String daysleft = br.getRegex("Your premium account will expire in.*?(\\d+).*?days").getMatch(0);
-        if (daysleft != null) {
-            ai.setValidUntil(System.currentTimeMillis() + (Long.parseLong(daysleft) * 24 * 60 * 60 * 1000));
+        String acctype = this.getPluginConfig().getStringProperty("premium", null);
+        if (acctype.equals("1")) {
+            String daysleft = br.getRegex("Your premium account will expire in.*?(\\d+).*?days").getMatch(0);
+            if (daysleft != null) {
+                ai.setValidUntil(System.currentTimeMillis() + (Long.parseLong(daysleft) * 24 * 60 * 60 * 1000));
+            }
+            ai.setStatus("Premium User");
+        } else {
+            ai.setStatus("Registered (Free) User");
         }
         account.setValid(true);
         return ai;
@@ -78,16 +91,51 @@ public class ZShareNet extends PluginForHost {
         requestFileInformation(downloadLink);
         login(account);
         br.getPage(downloadLink.getDownloadURL());
-        String dllink = br.getRegex("var link_enc\\=new Array\\(\\'(.*?)\\'\\)").getMatch(0);
+        String acctype = this.getPluginConfig().getStringProperty("premium", null);
+        String dllink = null;
+        int maxchunks = 0;
+        if (acctype.equals("1")) {
+            dllink = br.getRegex("var link_enc\\=new Array\\(\\'(.*?)\\'\\)").getMatch(0);
+        } else {
+            // Handling for registered free accounts!
+            maxchunks = 1;
+            Form download = br.getForm(0);
+            if (download != null) {
+                // Formparameter setzen (zufällige Klickpositionen im Bild)
+                download.put("imageField.x", (Math.random() * 160) + "");
+                download.put("imageField.y", (Math.random() * 60) + "");
+                download.put("imageField", null);
+                // Form abschicken
+                br.submitForm(download);
+                String fnc = br.getRegex("var link_enc\\=new Array\\(\\'(.*?)\\'\\)").getMatch(0);
+                fnc = fnc.replaceAll("\\'\\,\\'", "");
+                dllink = fnc;
+            } else {
+                dllink = br.getRegex("<td bgcolor=\"#CCCCCC\">.*?<img src=\"(http://.*?.zshare.net/download/.*?)\"").getMatch(0);
+                if (dllink == null) {
+                    dllink = br.getRegex("<td bgcolor=\"#CCCCCC\">.*?<img src=\"(.*?)\"").getMatch(0);
+                    if (!dllink.startsWith("/")) dllink = "/" + dllink;
+                }
+            }
+        }
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (acctype.equals("0")) sleep(20 * 1001l, downloadLink);
         dllink = dllink.replaceAll("\\'\\,\\'", "");
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, maxchunks);
+        // Möglicherweise serverfehler...
+        if (!dl.getConnection().isContentDisposition() || dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            if (br.containsHTML("/images/download.gif")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 5 * 60 * 1000l);
+            if (br.containsHTML("404 - Not Found") || br.getHttpConnection().getContentLength() == 0) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.getHeaders().get("Referer") != null && br.getHeaders().get("Referer").contains("token")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl.startDownload();
     }
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return 20;
+        return -1;
     }
 
     @Override
@@ -152,7 +200,7 @@ public class ZShareNet extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return -1;
     }
 
     @Override

@@ -43,7 +43,7 @@ public class XFileSharingProBasic extends PluginForHost {
 
     public XFileSharingProBasic(PluginWrapper wrapper) {
         super(wrapper);
-//        this.enablePremium(COOKIE_HOST + "/premium.html");
+        // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
     // XfileSharingProBasic Version 1.3
@@ -54,6 +54,7 @@ public class XFileSharingProBasic extends PluginForHost {
     public String getAGBLink() {
         return COOKIE_HOST + "/tos.html";
     }
+
     private static final String COOKIE_HOST = "http://azsharing.com";
 
     @Override
@@ -116,7 +117,10 @@ public class XFileSharingProBasic extends PluginForHost {
                 freeform = br.getFormbyKey("download1");
             }
         }
-        if (freeform != null) br.submitForm(freeform);
+        if (freeform != null) {
+            freeform.remove("method_premium");
+            br.submitForm(freeform);
+        }
         /* Errorhandling START */
         // Handling for only-premium links
         if (br.containsHTML("(You can download files up to.*?only|Upgrade your account to download bigger files)")) {
