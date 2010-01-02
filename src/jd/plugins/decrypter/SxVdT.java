@@ -16,74 +16,55 @@
 
 package jd.plugins.decrypter;
 
-import java.io.File;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.Browser;
-import jd.parser.html.Form;
-import jd.parser.html.HTMLParser;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sexvideo.to" }, urls = { "http://[\\w\\.]*(sexvideo\\.to)/.+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sexvideo.to" }, urls = { "http://[\\w\\.]*?sexvideo\\.to/(random|movies|clips|porn-images|dvd-r|hdtv|hentai|magazines|games)/.+" }, flags = { 0 })
 public class SxVdT extends PluginForDecrypt {
 
     public SxVdT(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.getPage(param.getCryptedUrl());
-        if (param.getCryptedUrl().toLowerCase().contains("crypt.sexvideo.to")) {
-            String captcha;
-            String code;
-            Form form;
-            for (int i = 0; i < 5; i++) {
-                captcha = "http://" + br.getHost() + "/" + br.getRegex("id=\"captcha\" SRC=\"([^\"]*)").getMatch(0);
-                code = getCaptchaCode(captcha, param);
-                form = br.getForm(0);
-                form.getInputFieldByType("text").setValue(code);
-                br.submitForm(form);
-                if (!br.containsHTML("id=\"captcha\"")) break;
-            }
-            if (br.containsHTML("id=\"captcha\"")) throw new DecrypterException(DecrypterException.CAPTCHA);
-
-            Form[] links = br.getForms();
-            for (Form form2 : links) {
-                Browser clone = br.cloneBrowser();
-                clone.submitForm(form2);
-                String link = clone.getRegex("content=\"5;URL=([^\"]*)").getMatch(0);
-                decryptedLinks.add(createDownloadlink(link));
-            }
-            if (decryptedLinks.size() == 0) {
-
-                String[] linkar = br.getRegex("<A HREF=\"(dl\\-[^\"]\\.[dlcrsf]{3}\\.html)\" TARGET").getColumn(0);
-                for (String string : linkar) {
-                    File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + "." + string.replaceFirst("\\.html", "").replaceFirst(".*\\.", ""));
-                    if (!container.exists()) container.createNewFile();
-                    Browser clone = br.cloneBrowser();
-                    clone.getDownload(container, "http://" + br.getHost() + "/" + container);
-                    decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
-
-                }
-            }
-        } else {
-            String[] links = HTMLParser.getHttpLinks(br.toString(), param.getCryptedUrl());
-            for (String string : links) {
-                if (string.toLowerCase().contains("crypt.sexvideo.to") || string.toLowerCase().contains("linksave")) decryptedLinks.add(createDownloadlink(string));
-            }
+        if (br.containsHTML("(Download incorrect|You have request a wrong or old download-link)")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        String packagename = br.getRegex("<h3>(.*?)</h3>").getMatch(0);
+        if (packagename == null) packagename = br.getRegex("/search/(.*?)'").getMatch(0);
+        for (int i = 0; i < 3; i++) {
+            String captchaurl = br.getRegex("(captcha/.*?)\"").getMatch(0);
+            if (captchaurl == null) return null;
+            captchaurl = "http://sexvideo.to/img/" + captchaurl;
+            String code = getCaptchaCode(captchaurl, param);
+            br.postPage(param.getCryptedUrl(), "captcha=" + Encoding.htmlDecode(code) + "&submit=Submit%21&cname=&cemail=&ctext=");
+            if (!br.containsHTML("captcha/")) break;
         }
+        if (br.containsHTML("captcha/")) throw new DecrypterException(DecrypterException.CAPTCHA);
+        String[] decryptedlinks = br.getRegex("<button name=\"\" type=\"button\" onclick=\"window\\.open\\('(.*?)'").getColumn(0);
+        if (decryptedlinks == null || decryptedlinks.length == 0) return null;
+        for (String decryptedlink : decryptedlinks) {
+            DownloadLink dl = createDownloadlink(decryptedlink);
+            dl.addSourcePluginPassword("sexvideo.to");
+            decryptedLinks.add(dl);
+        }
+        if (packagename != null) {
+            FilePackage fp = FilePackage.getInstance();
+            fp.setName(packagename.trim());
+            fp.addLinks(decryptedLinks);
+        }
+
         return decryptedLinks;
     }
-
-    // @Override
 
 }

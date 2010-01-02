@@ -127,11 +127,15 @@ public class HotFileCom extends PluginForHost {
         long sleeptime = 0;
         try {
             sleeptime = Long.parseLong(br.getRegex("timerend=d\\.getTime\\(\\)\\+(\\d+);").getMatch(0)) + 1;
+            // for debugging purposes
+            logger.info("Regexed waittime is " + sleeptime + " seconds");
         } catch (Exception e) {
             logger.info("WaittimeRegex broken");
             logger.info(br.toString());
             sleeptime = 60 * 1000l;
         }
+        // Reconnect if the waittime is too big!
+        if (sleeptime > 100) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, sleeptime * 1000l);
         // try to skip waittime, if this fails, fallback to waittime
         if (!this.skipperFailed) {
             form.put("tm", "1245072880");
