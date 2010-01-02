@@ -1,4 +1,4 @@
 <jDownloader>
-<method name="sexvideo.to" author="DwD" services="crypt.sexvideo.to;sexvideo.to"/>
-<format type="png" letterNum="3" />
+<method name="sexvideo.to" author="DwD"  services="sexvideo.to" /> 
+<format type="jpg" letterNum="3" />
 </jDownloader>

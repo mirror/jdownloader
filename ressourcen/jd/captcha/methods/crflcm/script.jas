@@ -38,5 +38,5 @@ param.objectDetectionContrast = 0.5;
 param.relativecontrast=0.85;
 param.autoLetterNum=true;
 param.easyCaptchaRemoveSmallObjects=false;
-param.useSpecialGetLetters=EasyCaptcha.getLetters;
+param.useSpecialGetLetters=CrflcM.getLetters;
 param.useLetterFilter=EasyCaptcha.letterFilter;
