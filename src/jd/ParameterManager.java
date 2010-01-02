@@ -32,21 +32,19 @@ import jd.utils.JDUtilities;
 
 public class ParameterManager {
 
-    private static Logger logger = jd.controlling.JDLogger.getLogger();
+    private static final Logger LOG = jd.controlling.JDLogger.getLogger();
     private static boolean startDownload = false;
     private static final long serialVersionUID = 1L;
 
     public static void showCmdHelp() {
         String[][] help = new String[][] { { JDUtilities.getJDTitle(), "JD-Team" }, { "http://jdownloader.org/\t\t", "http://board.jdownloader.org" + System.getProperty("line.separator") }, { "-h/--help\t", "Show this help message" }, { "-a/--add-link(s)", "Add links" }, { "-co/--add-container(s)", "Add containers" }, { "-d/--start-download", "Start download" }, { "-D/--stop-download", "Stop download" }, { "-H/--hide\t", "Don't open Linkgrabber when adding Links" }, { "-m/--minimize\t", "Minimize download window" }, { "-f/--focus\t", "Get jD to foreground/focus" }, { "-s/--show\t", "Show JAC prepared captchas" }, { "-t/--train\t", "Train a JAC method" }, { "-r/--reconnect\t", "Perform a Reconnect" }, { "-C/--captcha <filepath or url> <method>", "Get code from image using JAntiCaptcha" }, { "-p/--add-password(s)", "Add passwords" },
                 { "-n --new-instance", "Force new instance if another jD is running" } };
-
         for (String helpLine[] : help) {
             System.out.println(helpLine[0] + "\t" + helpLine[1]);
         }
-
     }
 
-    public static void processParameters(String[] input) {
+    public static void processParameters(final String[] input) {
 
         boolean addLinksSwitch = false;
         boolean addContainersSwitch = false;
@@ -74,28 +72,28 @@ public class ParameterManager {
                 addLinksSwitch = true;
                 addContainersSwitch = false;
                 addPasswordsSwitch = false;
-                logger.info(currentArg + " parameter");
+                LOG.info(currentArg + " parameter");
 
             } else if (currentArg.equals("--add-containers") || currentArg.equals("--add-container") || currentArg.equals("-co")) {
 
                 addContainersSwitch = true;
                 addLinksSwitch = false;
                 addPasswordsSwitch = false;
-                logger.info(currentArg + " parameter");
+                LOG.info(currentArg + " parameter");
 
             } else if (currentArg.equals("--add-passwords") || currentArg.equals("--add-password") || currentArg.equals("-p")) {
 
                 addContainersSwitch = false;
                 addLinksSwitch = false;
                 addPasswordsSwitch = true;
-                logger.info(currentArg + " parameter");
+                LOG.info(currentArg + " parameter");
             } else if (currentArg.equals("--start-download") || currentArg.equals("-d")) {
 
                 addLinksSwitch = false;
                 addContainersSwitch = false;
                 addPasswordsSwitch = false;
 
-                logger.info(currentArg + " parameter");
+                LOG.info(currentArg + " parameter");
                 startDownload = true;
 
             } else if (currentArg.equals("--stop-download") || currentArg.equals("-D")) {
@@ -104,7 +102,7 @@ public class ParameterManager {
                 addContainersSwitch = false;
                 addPasswordsSwitch = false;
 
-                logger.info(currentArg + " parameter");
+                LOG.info(currentArg + " parameter");
 
                 DownloadWatchDog.getInstance().stopDownloads();
 
@@ -131,7 +129,7 @@ public class ParameterManager {
                 addPasswordsSwitch = false;
                 UserIF.getInstance().setFrameStatus(UIConstants.WINDOW_STATUS_MINIMIZED);
 
-                logger.info(currentArg + " parameter");
+                LOG.info(currentArg + " parameter");
 
             } else if (currentArg.equals("--focus") || currentArg.equals("-f")) {
                 OptionalPluginWrapper addon = JDUtilities.getOptionalPlugin("trayicon");
@@ -141,7 +139,7 @@ public class ParameterManager {
                 addLinksSwitch = false;
                 addContainersSwitch = false;
                 addPasswordsSwitch = false;
-                logger.info(currentArg + " parameter");
+                LOG.info(currentArg + " parameter");
                 UserIF.getInstance().setFrameStatus(UIConstants.WINDOW_STATUS_FOREGROUND);
 
             } else if (currentArg.equals("--hide") || currentArg.equals("-H")) {
@@ -149,7 +147,7 @@ public class ParameterManager {
                 addLinksSwitch = false;
                 addContainersSwitch = false;
                 addPasswordsSwitch = false;
-                logger.info(currentArg + " parameter");
+                LOG.info(currentArg + " parameter");
                 hideGrabber = true;
 
             } else if (currentArg.equals("--reconnect") || currentArg.equals("-r")) {
@@ -157,7 +155,7 @@ public class ParameterManager {
                 addLinksSwitch = false;
                 addContainersSwitch = false;
                 addPasswordsSwitch = false;
-                logger.info(currentArg + " parameter");
+                LOG.info(currentArg + " parameter");
                 Reconnecter.waitForNewIP(1, true);
 
             } else if (addLinksSwitch && currentArg.charAt(0) != '-') {
@@ -169,12 +167,12 @@ public class ParameterManager {
                 if (new File(currentArg).exists()) {
                     containersToAdd.add(currentArg);
                 } else {
-                    logger.warning("Container does not exist");
+                    LOG.warning("Container does not exist");
                 }
 
             } else if (addPasswordsSwitch && !(currentArg.charAt(0) == '-')) {
 
-                logger.info("Add password: " + currentArg);
+                LOG.info("Add password: " + currentArg);
 
                 PasswordListController.getInstance().addPassword(currentArg, false);
 
@@ -202,21 +200,22 @@ public class ParameterManager {
         }
 
         if (linksToAdd.size() > 0) {
-            logger.info("Links to add: " + linksToAdd.toString());
+            LOG.info("Links to add: " + linksToAdd.toString());
         }
         if (containersToAdd.size() > 0) {
-            logger.info("Containers to add: " + containersToAdd.toString());
+            LOG.info("Containers to add: " + containersToAdd.toString());
         }
 
-        for (int i = 0; i < containersToAdd.size(); i++) {
+        final int size = containersToAdd.size();
+        for (int i = 0; i < size; i++) {
             controller.loadContainerFile(new File(containersToAdd.get(i)), hideGrabber, startDownload);
         }
-        StringBuilder adder = new StringBuilder();
+        final StringBuilder adder = new StringBuilder();
         for (String string : linksToAdd) {
             adder.append(string);
             adder.append('\n');
         }
-        String linksToAddString = adder.toString().trim();
+        final String linksToAddString = adder.toString().trim();
         if (!linksToAddString.equals("")) {
             new DistributeData(linksToAddString, hideGrabber).start();
         }
