@@ -90,7 +90,7 @@ public class Parser {
     }
 
     private String cleanTag(String tag) throws IllegalArgumentException {
-        String test_tag = new String(tag);
+        String test_tag = tag;
         // first remove < and >
         if (test_tag.startsWith("<")) {
             test_tag = test_tag.substring(1);

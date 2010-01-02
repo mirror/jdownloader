@@ -89,7 +89,7 @@ public class LnkbsBz extends PluginForDecrypt {
                     }
                 }
             }
-            logger.finest("LnkbsBz_Linkgrabber: id=" + new Integer(this.Worker_ID) + " finished!");
+            logger.finest("LnkbsBz_Linkgrabber: id=" + this.Worker_ID + " finished!");
             this._status = THREADPASS;
         }
 

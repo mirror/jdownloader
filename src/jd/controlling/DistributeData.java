@@ -88,7 +88,7 @@ public class DistributeData extends Thread {
      */
     public DistributeData(String data) {
         super("JD-DistributeData");
-        this.data = new String(data);
+        this.data = data;
         this.disableDeepEmergencyScan = true;
         foundPasswords = new ArrayList<String>();
     }

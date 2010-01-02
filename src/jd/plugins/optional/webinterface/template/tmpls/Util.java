@@ -33,20 +33,22 @@ package jd.plugins.optional.webinterface.template.tmpls;
 public class Util {
     public static boolean debug = false;
 
-    public static void debug_print(Object o) {
+    public static void debug_print(final Object o) {
         Util.debug_print(o.toString());
     }
 
-    public static void debug_print(String msg) {
+    public static void debug_print(final String msg) {
         if (!debug) { return; }
 
         System.err.println(msg);
     }
 
-    public static String escapeHTML(String element) {
-        String s = new String(element); // don't change the original
-        String[] metas = { "&", "<", ">", "\"" };
-        String[] repls = { "&amp;", "&lt;", "&gt;", "&quot;" };
+    public static String escapeHTML(final String element) {
+        String s = element;
+//      String s = new String(element); // don't change the original
+        // bobbel: a string object is immutable, so no one can change it ;)
+        final String[] metas = { "&", "<", ">", "\"" };
+        final String[] repls = { "&amp;", "&lt;", "&gt;", "&quot;" };
         for (int i = 0; i < metas.length; i++) {
             int pos = 0;
             do {
@@ -61,10 +63,12 @@ public class Util {
         return s;
     }
 
-    public static String escapeQuote(String element) {
-        String s = new String(element); // don't change the original
-        String[] metas = { "\"", "'" };
-        String[] repls = { "\\\"", "\\'" };
+    public static String escapeQuote(final String element) {
+        String s = element;
+//      String s = new String(element); // don't change the original
+        // bobbel: a string object is immutable, so no one can change it ;)
+        final String[] metas = { "\"", "'" };
+        final String[] repls = { "\\\"", "\\'" };
         for (int i = 0; i < metas.length; i++) {
             int pos = 0;
             do {
@@ -79,9 +83,9 @@ public class Util {
         return s;
     }
 
-    public static String escapeURL(String url) {
-        StringBuilder s = new StringBuilder();
-        String no_escape = "./-_";
+    public static String escapeURL(final String url) {
+        final StringBuilder s = new StringBuilder();
+        final String no_escape = "./-_";
 
         for (int i = 0; i < url.length(); i++) {
             char c = url.charAt(i);
@@ -99,15 +103,18 @@ public class Util {
         return s.toString();
     }
 
-    public static boolean isNameChar(char c) {
-        return true;
-    }
+    // method is quite useless, isn't it?
+//    public static boolean isNameChar(char c) {
+//        return true;
+//    }
 
-    public static boolean isNameChar(String s) {
-        String alt_valid = "./+-_";
+    public static boolean isNameChar(final String s) {
+        final String alt_valid = "./+-_";
 
         for (int i = 0; i < s.length(); i++) {
-            if (!Character.isLetterOrDigit(s.charAt(i)) && alt_valid.indexOf(s.charAt(i)) < 0) { return false; }
+            if (!Character.isLetterOrDigit(s.charAt(i)) && alt_valid.indexOf(s.charAt(i)) < 0) {
+                return false;
+            }
         }
         return true;
     }
