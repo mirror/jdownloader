@@ -35,7 +35,12 @@ import jd.utils.JDUtilities;
  * 
  * @author JD-Team
  */
-public class Utilities {
+public final class Utilities {
+    /**
+     * Don't let anyone instantiate this class.
+     */
+    private Utilities() {
+    }
 
     private static Logger logger = JDLogger.getLogger();
 
@@ -58,11 +63,14 @@ public class Utilities {
      * @return User Input /null
      */
     public static File directoryChooser() {
-        JFileChooser fc = new JFileChooser();
+        final JFileChooser fc = new JFileChooser();
         fc.setApproveButtonText("OK");
         fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-        if (fc.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) return fc.getSelectedFile();
-        return null;
+        if (fc.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
+            return fc.getSelectedFile();
+        } else {
+            return null;
+        }
     }
 
     public static String getMethodDir() {
@@ -78,8 +86,8 @@ public class Utilities {
      * @param height
      * @return Default GridBagConstraints
      */
-    public static GridBagConstraints getGBC(int x, int y, int width, int height) {
-        GridBagConstraints gbc = new GridBagConstraints();
+    public static GridBagConstraints getGBC(final int x, final int y, final int width, final int height) {
+        final GridBagConstraints gbc = new GridBagConstraints();
         gbc.gridx = x;
         gbc.gridy = y;
         gbc.gridwidth = width;
@@ -92,13 +100,12 @@ public class Utilities {
         return gbc;
     }
 
-    public static int getJumperStart(int from, int to) {
+    public static int getJumperStart(final int from, final int to) {
         return from + (to - from) / 2;
     }
 
-    public static int getPercent(int a, int b) {
-        if (b == 0) return 100;
-        return a * 100 / b;
+    public static int getPercent(final int a, final int b) {
+        return (b == 0) ? 100 : a * 100 / b;
     }
 
     /**
@@ -109,20 +116,18 @@ public class Utilities {
      * @return Neues Bild
      */
     public static Image loadImage(final File file) {
-        GuiRunnable<Image> run = new GuiRunnable<Image>() {
-            // @Override
+        final GuiRunnable<Image> run = new GuiRunnable<Image>() {
             @Override
             public Image runSave() {
-                JFrame jf = new JFrame();
-                Image img = jf.getToolkit().getImage(file.getAbsolutePath());
-                MediaTracker mediaTracker = new MediaTracker(jf);
+                final JFrame jf = new JFrame();
+                final Image img = jf.getToolkit().getImage(file.getAbsolutePath());
+                final MediaTracker mediaTracker = new MediaTracker(jf);
                 mediaTracker.addImage(img, 0);
                 try {
                     mediaTracker.waitForID(0);
                 } catch (InterruptedException e) {
                     return null;
                 }
-
                 mediaTracker.removeImage(img);
                 return img;
             }
@@ -130,8 +135,8 @@ public class Utilities {
         return run.getReturnValue();
     }
 
-    public static int nextJump(int x, int from, int to, int step) {
-        int start = Utilities.getJumperStart(from, to);
+    public static int nextJump(final int x, final int from, final int to, final int step) {
+        final int start = Utilities.getJumperStart(from, to);
         int ret;
         if (x == start) {
             ret = start + step;
@@ -141,7 +146,6 @@ public class Utilities {
         } else if (x > start) {
             int dif = x - start;
             ret = start - dif;
-
         } else {
             int dif = start - x + step;
             ret = start + dif;
@@ -149,9 +153,7 @@ public class Utilities {
                 ret = start - dif;
             }
         }
-
         return ret;
-
     }
 
     /**
@@ -165,16 +167,16 @@ public class Utilities {
      * @param winkel
      * @return neue Koordinaten
      */
-    public static int[] turnCoordinates(int x, int y, int nullX, int nullY, double winkel) {
+    public static int[] turnCoordinates(final int x, final int y, final int nullX, final int nullY, double winkel) {
         winkel /= 180.0;
-        int newX = x - nullX;
-        int newY = y - nullY;
-        double aktAngle = Math.atan2(newY, newX);
+        final int newX = x - nullX;
+        final int newY = y - nullY;
+        final double aktAngle = Math.atan2(newY, newX);
 
-        int[] ret = new int[2];
-        double radius = Math.sqrt(newX * newX + newY * newY);
-        int yTrans = (int) Math.round(radius * Math.sin((aktAngle + winkel * Math.PI)));
-        int xTrans = (int) Math.round(radius * Math.cos((aktAngle + winkel * Math.PI)));
+        final int[] ret = new int[2];
+        final double radius = Math.sqrt(newX * newX + newY * newY);
+        final int yTrans = (int) Math.round(radius * Math.sin((aktAngle + winkel * Math.PI)));
+        final int xTrans = (int) Math.round(radius * Math.cos((aktAngle + winkel * Math.PI)));
         ret[0] = xTrans + nullX;
         ret[1] = yTrans + nullY;
         return ret;
