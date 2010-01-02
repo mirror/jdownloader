@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -56,6 +57,8 @@ public class WrzucTo extends PluginForHost {
             name = br.getRegex(Pattern.compile("<title>(.*?)</title>", Pattern.DOTALL)).getMatch(0);
         }
         if (name == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String md5 = br.getRegex("md5: \"(.*?)\"").getMatch(0);
+        if (md5 != null) downloadLink.setMD5Hash(md5.trim());
         downloadLink.setName(name.trim());
         downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
         return AvailableStatus.TRUE;
@@ -64,10 +67,21 @@ public class WrzucTo extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        // String jspage =
+        // br.getRegex("\"(http://static\\.wrzuc\\.to/www2/js/WrzucToAdditionalScripts\\.js\\?v=[0-9]+\\.js)\"").getMatch(0);
+        // Browser br2 = br.cloneBrowser();
+        // br2.getPage(jspage);
+        // String aha = br.getCookie("http://www.wrzuc.to", "WrzucTo");
+        String md5 = downloadLink.getMD5Hash();
         String fid = br.getRegex(("file: \"(.*?)\"")).getMatch(0);
-        if (fid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (md5 == null || fid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        // br.getHeaders().put("Accept", "*/*");
+        br.postPage("http://www.wrzuc.to/ajax/server/prepair", "md5=" + Encoding.htmlDecode(md5));
+        // br.getHeaders().put("Accept",
+        // "application/json, text/javascript, */*");
         br.postPage("http://www.wrzuc.to/ajax/server/download_link", "file=" + Encoding.htmlDecode(fid));
+        System.out.print(br.toString());
         String tempid = br.getRegex(("download_link\":\"(.*?)\"")).getMatch(0);
         String server = br.getRegex(("server.*?\":\"(.*?)\"")).getMatch(0);
         if (tempid == null || server == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

@@ -17,29 +17,45 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "usercash.com" }, urls = { "http://[\\w\\.]*?usercash\\.com/" }, flags = { 0 })
-public class SrCshCm extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharemole.com" }, urls = { "http://[\\w\\.]*?sharemole\\.com/[a-z0-9]+" }, flags = { 0 })
+public class ShareMoleCom extends PluginForDecrypt {
 
-    public SrCshCm(PluginWrapper wrapper) {
+    public ShareMoleCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        br.setFollowRedirects(true);
         br.getPage(parameter);
-        String link = br.getRegex(Pattern.compile("URL=(http.*?)\"", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-        if (link == null) return null;
-        decryptedLinks.add(createDownloadlink(link));
+        if (br.containsHTML("(does not exist|or it has been removed)")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        String filename = br.getRegex("<title>(.*?)- Download").getMatch(0);
+        if (filename == null) filename = br.getRegex("<br />Name :(.*?)<br").getMatch(0);
+        String[] links = br.getRegex("<li><a href=(http.*?)target").getColumn(0);
+        if (links.length == 0) return null;
+        if (filename != null) {
+            for (String finallink : links) {
+                DownloadLink dlink = createDownloadlink(finallink.trim());
+                dlink.setFinalFileName(filename);
+                decryptedLinks.add(dlink);
+            }
+        } else {
+            for (String finallink : links) {
+                decryptedLinks.add(createDownloadlink(finallink.trim()));
+            }
+        }
+
         return decryptedLinks;
     }
 }

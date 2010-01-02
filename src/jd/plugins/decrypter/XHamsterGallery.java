@@ -39,10 +39,10 @@ public class XHamsterGallery extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
-        String fpname = br.getRegex("<title>(.*?)</title>").getMatch(0);
-        if (fpname == null) fpname = br.getRegex("width='100%'><tr><td >(.*?)>").getMatch(0);
         /* Error handling */
         if (br.containsHTML("Sorry, no photos found")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        String fpname = br.getRegex("<title>(.*?)</title>").getMatch(0);
+        if (fpname == null) fpname = br.getRegex("width='100%'><tr><td >(.*?)>").getMatch(0);
         String[] redirectLinks = br.getRegex("align=\"center\" width=\"100%\">.*?<a href=\"(http.*?)\"").getColumn(0);
         if (redirectLinks == null || redirectLinks.length == 0) redirectLinks = br.getRegex("\"(http://xhamster.com/photos/view/.*?\\.html)\"").getColumn(0);
         if (redirectLinks == null || redirectLinks.length == 0) return null;
