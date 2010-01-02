@@ -68,7 +68,7 @@ public class AboutDialog extends AbstractDialog {
         }
         cp.add(new JLabel(branch + JDL.LF(JDL_PREFIX + "build", "Build %s", JDUtilities.getRevision())));
 
-        cp.add(new JLabel("© AppWork UG (haftungsbeschränkt) 2007-2009"), "gaptop 5");
+        cp.add(new JLabel("© AppWork UG (haftungsbeschränkt) 2007-2010"), "gaptop 5");
 
         cp.add(new JLabel("Synthetica License Registration Number (#289416475)"), "gaptop 15");
 
