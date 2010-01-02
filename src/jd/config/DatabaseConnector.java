@@ -28,6 +28,7 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.logging.Level;
@@ -226,10 +227,14 @@ public class DatabaseConnector implements Serializable {
             if (isDatabaseShutdown()) return null;
             Object ret = null;
             ret = dbdata.get(name);
+            Statement statement = null;
+            ResultSet rs = null;
+
             try {
                 if (ret == null) {
                     // try to init the table
-                    ResultSet rs = con.createStatement().executeQuery("SELECT * FROM config WHERE name = '" + name + "'");
+                    statement = con.createStatement();
+                    rs = statement.executeQuery("SELECT * FROM config WHERE name = '" + name + "'");
                     if (rs.next()) {
                         ret = rs.getObject(2);
                         dbdata.put(rs.getString(1), ret);
@@ -239,6 +244,22 @@ public class DatabaseConnector implements Serializable {
             } catch (Exception e) {
                 JDLogger.getLogger().warning("Database not available. Create new one: " + name);
                 JDLogger.exception(Level.FINEST, e);
+            } finally {
+                if (rs != null) {
+                    try {
+                        rs.close();
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+                }
+
+                if (statement != null) {
+                    try {
+                        statement.close();
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+                }
             }
             return ret;
         }
@@ -253,23 +274,37 @@ public class DatabaseConnector implements Serializable {
         synchronized (LOCK) {
             if (isDatabaseShutdown()) return null;
             ArrayList<SubConfiguration> ret = new ArrayList<SubConfiguration>();
-            ResultSet rs;
+            Statement statement = null;
+            ResultSet rs = null;
+
             try {
-                rs = con.createStatement().executeQuery("SELECT * FROM config");
+                statement = con.createStatement();
+                rs = statement.executeQuery("SELECT * FROM config");
 
                 while (rs.next()) {
-                    try {
-                        SubConfiguration conf = SubConfiguration.getConfig((String) rs.getObject(1));
-                        if (conf.getProperties().size() > 0) {
-                            ret.add(conf);
-
-                        }
-                    } catch (Exception e) {
-
+                    SubConfiguration conf = SubConfiguration.getConfig(rs.getString(1));
+                    if (conf.getProperties().size() > 0) {
+                        ret.add(conf);
                     }
                 }
             } catch (SQLException e) {
                 e.printStackTrace();
+            } finally {
+                if (rs != null) {
+                    try {
+                        rs.close();
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+                }
+
+                if (statement != null) {
+                    try {
+                        statement.close();
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+                }
             }
             return ret;
         }
@@ -333,13 +368,34 @@ public class DatabaseConnector implements Serializable {
     public Object getLinks() {
         synchronized (LOCK) {
             if (isDatabaseShutdown()) return null;
+            
+            Statement statement = null;
+            ResultSet rs = null;
+
             try {
-                ResultSet rs = con.createStatement().executeQuery("SELECT * FROM links");
+                statement = con.createStatement();
+                rs = statement.executeQuery("SELECT * FROM links");
                 rs.next();
                 return rs.getObject(2);
             } catch (Exception e) {
                 JDLogger.exception(Level.FINEST, e);
                 JDLogger.getLogger().warning("Database not available. Create new one: links");
+            } finally {
+                if (rs != null) {
+                    try {
+                        rs.close();
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+                }
+
+                if (statement != null) {
+                    try {
+                        statement.close();
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+                }
             }
             return null;
         }
