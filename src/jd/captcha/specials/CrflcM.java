@@ -1,8 +1,6 @@
 package jd.captcha.specials;
 
 import java.awt.Color;
-
-import jd.captcha.gui.BasicWindow;
 import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.pixelgrid.Letter;
 import jd.captcha.pixelgrid.PixelGrid;
