@@ -30,7 +30,7 @@ public class ArchivFile {
         return path;
     }
 
-    public void setPath(File file) {
+    public void setPath(final File file) {
         this.path = file;
     }
 
@@ -38,18 +38,17 @@ public class ArchivFile {
 
     private boolean isProtected = false;
 
-    private ArrayList<String> volumes;
+    private final ArrayList<String> volumes;
 
-    public ArchivFile(String name) {
+    public ArchivFile(final String name) {
         this.filepath = name;
         volumes = new ArrayList<String>();
     }
 
-    public void addVolume(String vol) {
-        if (vol == null) return;
-        if (volumes.indexOf(vol) >= 0) return;
-        this.volumes.add(vol);
-
+    public void addVolume(final String vol) {
+        if (vol != null && volumes.indexOf(vol) < 0) {
+            this.volumes.add(vol);
+        }
     }
 
     public String getFilepath() {
@@ -72,19 +71,19 @@ public class ArchivFile {
         return isProtected;
     }
 
-    public void setFilepath(String filepath) {
+    public void setFilepath(final String filepath) {
         this.filepath = filepath;
     }
 
-    public void setPercent(int percent) {
+    public void setPercent(final int percent) {
         this.percent = percent;
     }
 
-    public void setProtected(boolean b) {
+    public void setProtected(final boolean b) {
         this.isProtected = b;
     }
 
-    public void setSize(long size) {
+    public void setSize(final long size) {
         this.size = size;
     }
 
