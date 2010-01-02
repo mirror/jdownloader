@@ -16,6 +16,8 @@
 
 package jd.crypt;
 
+import java.io.IOException;
+
 import jd.controlling.JDLogger;
 
 /**
@@ -1060,9 +1062,12 @@ public class Base64 {
             System.err.println("Error decoding from file " + filename);
         } // end catch: IOException
         finally {
-            try {
-                bis.close();
-            } catch (Exception e) {
+            if (bis != null) {
+                try {
+                    bis.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
         } // end finally
 
