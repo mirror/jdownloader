@@ -86,6 +86,7 @@ public class EnteruploadCom extends PluginForHost {
         }
         br.submitForm(form);
         String dllink = br.getRedirectLocation();
+        if (br.containsHTML("Error happened when generating Download Link")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
         if (br.containsHTML("Wrong captcha")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         if (dllink == null) dllink = br.getRegex("padding:7px;\">\\s+<a\\s+href=\"(.*?)\">").getMatch(0);
         br.setFollowRedirects(true);

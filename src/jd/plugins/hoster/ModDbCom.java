@@ -110,7 +110,7 @@ public class ModDbCom extends PluginForHost {
         // Try to find the link for the selected servers
         if (configuredServer == 1) {
             dllink = br.getRegex("Mirror provided by FDCCDN.*?<a href=\"(.*?)\"").getMatch(0);
-            if (dllink == null) br.getRegex("http://www\\.fdcservers\\.net.*?<a href=\"(.*?)\"").getMatch(0);
+            if (dllink == null) dllink = br.getRegex("http://www\\.fdcservers\\.net.*?<a href=\"(.*?)\"").getMatch(0);
 
         } else if (configuredServer == 2) {
             dllink = br.getRegex("Mirror provided by Mod DB #4.*?<a href=\"(.*?)\"").getMatch(0);
@@ -135,27 +135,32 @@ public class ModDbCom extends PluginForHost {
             if (dllink == null) {
                 dllink = br.getRegex("http://www\\.fdcservers\\.net.*?<a href=\"(.*?)\"").getMatch(0);
                 if (dllink.contains("members/register")) dllink = null;
-            } else if (dllink == null) {
-                dllink = br.getRegex("Mirror provided by Mod DB #4.*?<a href=\"(.*?)\"").getMatch(0);
-                if (dllink.contains("members/register")) dllink = null;
-            } else if (dllink == null) {
-                dllink = br.getRegex("Mirror provided by Mod DB #5.*?<a href=\"(.*?)\"").getMatch(0);
-                if (dllink.contains("members/register")) dllink = null;
-            } else if (dllink == null) {
-                dllink = br.getRegex("Mirror provided by Mod DB #6.*?<a href=\"(.*?)\"").getMatch(0);
-                if (dllink.contains("members/register")) dllink = null;
-            } else if (dllink == null) {
-                dllink = br.getRegex("Mirror provided by Mod DB.*?<a href=\"(.*?)\"").getMatch(0);
-                if (dllink.contains("members/register")) dllink = null;
-            } else if (dllink == null) {
-                dllink = br.getRegex("Click to <a href=\"(.*?)</a>").getMatch(0);
-                if (dllink.contains("members/register")) dllink = null;
-            } else if (dllink == null) {
-                if (singlemirrorpage != null) {
-                    br.getPage("http://www.moddb.com" + singlemirrorpage);
-                    dllink = br.getRegex("Click to <a href=\"(.*?)</a>").getMatch(0);
+                if (dllink == null) {
+                    dllink = br.getRegex("Mirror provided by Mod DB #4.*?<a href=\"(.*?)\"").getMatch(0);
+                    if (dllink.contains("members/register")) dllink = null;
+                    if (dllink == null) {
+                        dllink = br.getRegex("Mirror provided by Mod DB #5.*?<a href=\"(.*?)\"").getMatch(0);
+                        if (dllink.contains("members/register")) dllink = null;
+                        if (dllink == null) {
+                            dllink = br.getRegex("Mirror provided by Mod DB #6.*?<a href=\"(.*?)\"").getMatch(0);
+                            if (dllink.contains("members/register")) dllink = null;
+                            if (dllink == null) {
+                                dllink = br.getRegex("Mirror provided by Mod DB.*?<a href=\"(.*?)\"").getMatch(0);
+                                if (dllink.contains("members/register")) dllink = null;
+                                if (dllink == null) {
+                                    dllink = br.getRegex("Click to <a href=\"(.*?)</a>").getMatch(0);
+                                    if (dllink.contains("members/register")) dllink = null;
+                                    if (dllink == null) {
+                                        if (singlemirrorpage != null) {
+                                            br.getPage("http://www.moddb.com" + singlemirrorpage);
+                                            dllink = br.getRegex("Click to <a href=\"(.*?)</a>").getMatch(0);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
-
             }
         }
         if (dllink == null) {
@@ -170,13 +175,16 @@ public class ModDbCom extends PluginForHost {
             logger.info("There is a problem with getting the dllink by br.getredirectlocation");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        boolean resumable = false;
+        int maxchunks = 1;
         // The moddb servers and the fdcservers servers got different settings
         // so the plugin also got them with this handling
         if (configuredServer != 1 && !dllink.contains("fdccdn")) {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        } else {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+            resumable = true;
+            maxchunks = 0;
         }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
+
         if (dl.getConnection().getContentType().contains("html")) {
             logger.info("invalid final downloadlink (dllink) ?!");
             br.followConnection();
