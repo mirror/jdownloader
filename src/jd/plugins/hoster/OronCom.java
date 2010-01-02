@@ -112,6 +112,25 @@ public class OronCom extends PluginForHost {
                 logger.info("Put password \"" + passCode + "\" entered by user in the DLForm.");
             }
             br.submitForm(DLForm);
+            // Premium also got limits...
+            if (br.containsHTML("You have reached the download-limit")) {
+                String tmphrs = br.getRegex("\\s+(\\d+)\\s+hours?").getMatch(0);
+                String tmpmin = br.getRegex("\\s+(\\d+)\\s+minutes?").getMatch(0);
+                String tmpsec = br.getRegex("\\s+(\\d+)\\s+seconds?").getMatch(0);
+                String tmpdays = br.getRegex("\\s+(\\d+)\\s+days?").getMatch(0);
+                if (tmphrs == null && tmpmin == null && tmpsec == null && tmpdays == null) {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 60 * 60 * 1000l);
+                } else {
+                    int minutes = 0, seconds = 0, hours = 0, days = 0;
+                    if (tmphrs != null) hours = Integer.parseInt(tmphrs);
+                    if (tmpmin != null) minutes = Integer.parseInt(tmpmin);
+                    if (tmpsec != null) seconds = Integer.parseInt(tmpsec);
+                    if (tmpdays != null) days = Integer.parseInt(tmpdays);
+                    int waittime = ((days * 24 * 3600) + (3600 * hours) + (60 * minutes) + seconds + 1) * 1000;
+                    logger.info("Detected waittime #2, waiting " + waittime + "milliseconds");
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
+                }
+            }
             dllink = br.getRedirectLocation();
             if (dllink == null) {
                 if (br.containsHTML("(name=\"password\"|Wrong password)")) {
