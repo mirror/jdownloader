@@ -28,10 +28,10 @@ import org.tmatesoft.svn.core.SVNException;
 import org.tmatesoft.svn.core.wc.SVNRevision;
 
 public class UpdateDevWorkspace {
-    private static void updateSVN(String svnadr, String path) throws SVNException {
-        Subversion svn = new Subversion(svnadr);
+    private static void updateSVN(final String svnadr, final String path) throws SVNException {
+        final Subversion svn = new Subversion(svnadr);
 
-        File dir = new File(JDUtilities.getJDHomeDirectoryFromEnvironment(), path);
+        final File dir = new File(JDUtilities.getJDHomeDirectoryFromEnvironment(), path);
         try {
             svn.cleanUp(dir, true);
         } catch (SVNException e) {
@@ -42,23 +42,18 @@ public class UpdateDevWorkspace {
 
             public void onMessage(MessageEvent event) {
                 System.out.println(event.getMessage());
-
             }
 
         });
 
         try {
-
             svn.update(dir, SVNRevision.HEAD);
             svn.revert(dir);
-            
         } catch (Exception e) {
-
             e.printStackTrace();
             JDIO.removeDirectoryOrFile(dir);
             svn.update(dir, SVNRevision.HEAD);
         }
-
     }
 
     /**
@@ -67,10 +62,9 @@ public class UpdateDevWorkspace {
     public static void main(String[] args) {
         try {
             System.out.println("Update ressources at  " + JDUtilities.getJDHomeDirectoryFromEnvironment());
-           updateSVN("svn://svn.jdownloader.org/jdownloader/trunk/ressourcen/libs/", "libs");
+            updateSVN("svn://svn.jdownloader.org/jdownloader/trunk/ressourcen/libs/", "libs");
             updateSVN("svn://svn.jdownloader.org/jdownloader/trunk/ressourcen/jd/", "jd");
             updateSVN("svn://svn.jdownloader.org/jdownloader/trunk/ressourcen/tools/", "tools");
-
         } catch (SVNException e) {
             e.printStackTrace();
         }
