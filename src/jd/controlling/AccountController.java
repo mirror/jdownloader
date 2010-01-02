@@ -64,7 +64,7 @@ public class AccountController extends SubConfiguration implements ActionListene
 
     private long waittimeAccountInfoUpdate = 15 * 60 * 1000l;
 
-    private final long ballooninterval = 30 * 60 * 1000l;
+    private static final long BALLOON_INTERVAL = 30 * 60 * 1000l;
 
     public static final Object ACCOUNT_LOCK = new Object();
 
@@ -387,7 +387,7 @@ public class AccountController extends SubConfiguration implements ActionListene
             }
         }
         if (ret != null && !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)) {
-            if (System.currentTimeMillis() - lastballoon > ballooninterval) {
+            if (System.currentTimeMillis() - lastballoon > BALLOON_INTERVAL) {
                 lastballoon = System.currentTimeMillis();
                 Balloon.show(JDL.L("gui.ballon.accountmanager.title", "Accountmanager"), JDTheme.II("gui.images.accounts", 32, 32), JDL.L("gui.accountcontroller.globpremdisabled", "Premiumaccounts are globally disabled!<br/>Click <a href='http://jdownloader.org/knowledge/wiki/gui/premiummenu'>here</a> for help."));
             }

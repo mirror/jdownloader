@@ -19,6 +19,7 @@ package jd.http;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map.Entry;
 
 public class RequestHeader {
 
@@ -90,9 +91,9 @@ public class RequestHeader {
     }
 
     public void putAll(final HashMap<String, String> properties) {
-        for (Iterator<String> it = properties.keySet().iterator(); it.hasNext();) {
-            final String key = it.next();
-            final String value = properties.get(key);
+        for (final Entry<String, String> entry : properties.entrySet()) {
+            final String key = entry.getKey();
+            final String value = entry.getValue();
             if (value == null) {
                 remove(key);
             } else {

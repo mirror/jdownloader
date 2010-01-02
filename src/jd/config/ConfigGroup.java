@@ -16,9 +16,12 @@
 
 package jd.config;
 
+import java.io.Serializable;
+
 import javax.swing.ImageIcon;
 
-public class ConfigGroup {
+public class ConfigGroup implements Serializable {
+    private static final long serialVersionUID = 1075652697591884926L;
 
     private ImageIcon icon;
     private String name;

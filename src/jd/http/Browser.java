@@ -147,7 +147,7 @@ public class Browser {
         }
     }
 
-    public void forwardCookies(final Request request) throws MalformedURLException {
+    public void forwardCookies(final Request request) {
         if (request == null) { return; }
         final String host = Browser.getHost(request.getUrl());
         final Cookies cookies = getCookies().get(host);
@@ -162,7 +162,7 @@ public class Browser {
         }
     }
 
-    public void forwardCookies(final URLConnectionAdapter con) throws MalformedURLException {
+    public void forwardCookies(final URLConnectionAdapter con) {
         if (con == null) { return; }
         final String host = Browser.getHost(con.getURL().toString());
         final Cookies cookies = getCookies().get(host);
@@ -170,7 +170,7 @@ public class Browser {
         if (cs != null && cs.trim().length() > 0) con.setRequestProperty("Cookie", cs);
     }
 
-    public String getCookie(final String url, final String key) throws MalformedURLException {
+    public String getCookie(final String url, final String key) {
         final String host = Browser.getHost(url);
         final Cookies cookies = getCookies(host);
         final Cookie cookie = cookies.get(key);
@@ -191,7 +191,7 @@ public class Browser {
         return cookies2;
     }
 
-    public void setCookie(final String url, final String key, final String value) throws MalformedURLException {
+    public void setCookie(final String url, final String key, final String value) {
         final String host = Browser.getHost(url);
         Cookies cookies;
         if (!getCookies().containsKey(host) || (cookies = getCookies().get(host)) == null) {
@@ -225,7 +225,7 @@ public class Browser {
         return url;
     }
 
-    public void updateCookies(final Request request) throws MalformedURLException {
+    public void updateCookies(final Request request) {
         if (request == null) { return; }
         final String host = Browser.getHost(request.getUrl());
         Cookies cookies = getCookies().get(host);
@@ -604,10 +604,31 @@ public class Browser {
     }
 
     /**
-     * Creates a new Getrequest
+     * Creates a new GET request.
+     * 
+     * @param string a string including an url
+     * 
+     * @return the created GET request
+     * 
+     * @throws IOException Signals that an I/O exception has occurred.
      */
+    public Request createGetRequest(final String string) throws IOException {
+        return createGetRequest(string, null);
+    }
 
-    public Request createGetRequest(String string) throws IOException {
+    /**
+     * Creates a new GET request.
+     * 
+     * @param string a string including an url
+     * @param oldRequest the old request for forwarding cookies to
+     *                   the new request. Can be null, to ignore old
+     *                   cookies.
+     * 
+     * @return the created GET request
+     * 
+     * @throws IOException Signals that an I/O exception has occurred.
+     */
+    public Request createGetRequest(String string, final Request oldRequest) throws IOException {
         string = getURL(string);
         boolean sendref = true;
         if (currentURL == null) {
@@ -615,11 +636,17 @@ public class Browser {
             currentURL = new URL(string);
         }
 
-        final GetRequest request = new GetRequest((string));
+        final GetRequest request = new GetRequest(string);
         request.setCustomCharset(this.customCharset);
         if (selectProxy() != null) {
             request.setProxy(selectProxy());
         }
+
+        // if old request is set, use it's cookies for the new request
+        if (oldRequest != null) {
+            request.setCookies(oldRequest.getCookies());
+        }
+
         // doAuth(request);
         /* set Timeouts */
         request.setConnectTimeout(getConnectTimeout());
@@ -669,42 +696,17 @@ public class Browser {
         return GLOBAL_PROXY;
     }
 
-    public Request createGetRequestRedirectedRequest(final Request oldrequest) throws IOException {
-        final String string = getURL(oldrequest.getLocation());
-        boolean sendref = true;
-        if (currentURL == null) {
-            sendref = false;
-            currentURL = new URL(string);
-        }
-
-        final GetRequest request = new GetRequest((string));
-        request.setCustomCharset(this.customCharset);
-        if (selectProxy() != null) {
-            request.setProxy(selectProxy());
-        }
-        request.setCookies(oldrequest.getCookies());
-        // doAuth(request);
-        /* set Timeouts */
-        request.setConnectTimeout(getConnectTimeout());
-        request.setReadTimeout(getReadTimeout());
-        request.getHeaders().put("Accept-Language", acceptLanguage);
-        // request.setFollowRedirects(doRedirects);
-        forwardCookies(request);
-        if (sendref) {
-            request.getHeaders().put("Referer", currentURL.toString());
-        }
-        if (headers != null) {
-            mergeHeaders(request);
-        }
-
-        // if (this.doRedirects && request.getLocation() != null) {
-        // this.openGetConnection(null);
-        // } else {
-        //
-        // currentURL = new URL(string);
-        // }
-        // return this.request.getHttpConnection();
-        return request;
+    /**
+     * Creates a new GET request including cookies from old request.
+     * 
+     * @param oldRequest the old request
+     * 
+     * @return the created GET request
+     * 
+     * @throws IOException Signals that an I/O exception has occurred.
+     */
+    public Request createGetRequestRedirectedRequest(final Request oldRequest) throws IOException {
+        return createGetRequest(oldRequest.getLocation(), oldRequest);
     }
 
     /**
@@ -1215,7 +1217,7 @@ public class Browser {
         return getPage(url + "");
     }
 
-    public void setRequest(final Request request) throws MalformedURLException {
+    public void setRequest(final Request request) {
         if (request == null) return;
         updateCookies(request);
         this.request = request;

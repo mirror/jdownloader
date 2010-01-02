@@ -269,7 +269,7 @@ public class ConfigPanel extends SwitchPanel {
                     old = akt.getConfigEntry().getPropertyInstance().getProperty(akt.getConfigEntry().getPropertyName());
                     if (old == null && akt.getText() != null) {
                         ret = ret.getMax(akt.getConfigEntry().getPropertyType());
-                    } else if (!old.equals(akt.getText())) {
+                    } else if (old != null && !old.equals(akt.getText())) {
                         ret = ret.getMax(akt.getConfigEntry().getPropertyType());
                     }
                 }

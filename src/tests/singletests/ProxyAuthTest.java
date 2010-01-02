@@ -63,7 +63,7 @@ public class ProxyAuthTest {
 
             assertFalse("Coult not connect to proxy", ip.equals("offline"));
 
-            if (ip == null || !(ip instanceof String) || !ip.equals(proxyip)) {
+            if (ip == null || !ip.equals(proxyip)) {
                 fail("Request did not use the proxy");
             }
         } catch (Exception e) {

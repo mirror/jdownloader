@@ -22,30 +22,6 @@ import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.RAFDownload;
 
 public class BrowserAdapter {
-    
-//    /**
-//     * Open download.
-//     * 
-//     * @param br the br
-//     * @param downloadLink the download link
-//     * @param link the link
-//     * 
-//     * @return the download interface
-//     * 
-//     * @throws Exception the exception
-//     */
-//    public static DownloadInterface openDownload(Browser br, DownloadLink downloadLink, String link) throws Exception {
-//        DownloadInterface dl = RAFDownload.download(downloadLink, br.createGetRequest(link));
-//
-//        try {
-//            dl.connect(br);
-//        } catch (PluginException e) {
-//            if (e.getValue() == DownloadInterface.ERROR_REDIRECTED) {
-//                dl = openDownload(br, downloadLink, link);
-//            }
-//        }
-//    }
-
     public static DownloadInterface openDownload(Browser br, DownloadLink downloadLink, String link) throws Exception {
 
         DownloadInterface dl = RAFDownload.download(downloadLink, br.createGetRequest(link));

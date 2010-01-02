@@ -401,7 +401,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
                         }
                         if (currentList2.size() > 0) {
                             /* we have forced linkchecks */
-                            currentList.removeAll(currentList);
+                            currentList.clear();
                             lc.checkLinks(currentList2, false);
                         }
                         if (currentList.size() > 0) afterLinkGrabber(currentList);

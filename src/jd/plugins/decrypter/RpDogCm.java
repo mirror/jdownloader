@@ -68,12 +68,12 @@ public class RpDogCm extends PluginForDecrypt {
             br.getPage(parameter);
         }
         if (br.containsHTML("Please enter the correct security code")) throw new DecrypterException(DecrypterException.CAPTCHA);
-        String decryptedlink = br.getRegex("<h2><a href=\"(.*?)\"").getMatch(0).trim();
+        String decryptedlink = br.getRegex("<h2><a href=\"(.*?)\"").getMatch(0);
         if (decryptedlink == null) {
-            decryptedlink = br.getRegex("</h3><a href=\"(.*?)\"").getMatch(0).trim();
+            decryptedlink = br.getRegex("</h3><a href=\"(.*?)\"").getMatch(0);
         }
         if (decryptedlink == null) return null;
-        decryptedLinks.add(createDownloadlink(decryptedlink));
+        decryptedLinks.add(createDownloadlink(decryptedlink.trim()));
 
         return decryptedLinks;
     }

@@ -22,6 +22,7 @@ import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.LinkedHashMap;
 import java.util.Vector;
+import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
 import jd.config.Configuration;
@@ -116,19 +117,24 @@ public class Utils {
             hlh.append("    [[[STEP]]]" + "\r\n");
             hlh.append("        [[[REQUEST" + httpstrue + rawtrue + "]]]" + "\r\n");
             if (rawmode == true) {
-                for (String key : headers.keySet()) {
+                for (Entry<String, String> entry : headers.entrySet()) {
+                    final String key = entry.getKey();
                     /*
                      * werden vom browser gesetzt
                      */
-                    if (key != null && key.equalsIgnoreCase("referer")) continue;
-                    if (key != null && key.equalsIgnoreCase("host")) {
-                        hlh.append("        Host: %%%routerip%%%" + "\r\n");
-                        continue;
-                    }
                     if (key == null) {
                         hlh.append("        " + headers.get(null) + "\r\n");
-                    } else
-                        hlh.append("        " + key + ": " + headers.get(key) + "\r\n");
+                    } else {
+                        if (key.equalsIgnoreCase("referer")) {
+                            continue;
+                        }
+                        if (key.equalsIgnoreCase("host")) {
+                            hlh.append("        Host: %%%routerip%%%" + "\r\n");
+                            continue;
+                        }
+
+                        hlh.append("        " + key + ": " + entry.getValue() + "\r\n");
+                    }
                 }
             } else {
                 hlh.append("        " + headers.get(null) + "\r\n");
