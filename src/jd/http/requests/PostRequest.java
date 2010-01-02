@@ -21,7 +21,6 @@ import java.io.OutputStreamWriter;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map.Entry;
 
@@ -34,30 +33,27 @@ public class PostRequest extends Request {
     private ArrayList<RequestVariable> postData;
     private String postDataString = null;
 
-    public PostRequest(Form form) throws MalformedURLException {
+    public PostRequest(final Form form) throws MalformedURLException {
         super(form.getAction(null));
 
         postData = new ArrayList<RequestVariable>();
     }
 
-    public PostRequest(String url) throws MalformedURLException {
+    public PostRequest(final String url) throws MalformedURLException {
         super(Browser.correctURL(url));
         postData = new ArrayList<RequestVariable>();
-
     }
 
     // public Request toHeadRequest() throws MalformedURLException {
 
     public String getPostDataString() {
         if (postData.isEmpty()) {
-
-        return postDataString;
-
+            return postDataString;
         }
 
-        StringBuilder buffer = new StringBuilder();
+        final StringBuilder buffer = new StringBuilder();
 
-        for (RequestVariable rv : postData) {
+        for (final RequestVariable rv : postData) {
             if (rv.getKey() != null) {
                 buffer.append("&");
                 buffer.append(rv.getKey());
@@ -70,15 +66,15 @@ public class PostRequest extends Request {
             }
         }
         if (buffer.length() == 0) return "";
-        return buffer.toString().substring(1);
+        return buffer.substring(1);
     }
 
-    public void setPostDataString(String post) {
+    public void setPostDataString(final String post) {
         this.postDataString = post;
     }
 
     // @Override
-    public void postRequest(URLConnectionAdapter httpConnection) throws IOException {
+    public void postRequest(final URLConnectionAdapter httpConnection) throws IOException {
         httpConnection.setDoOutput(true);
         String parameter = postDataString != null ? postDataString : getPostDataString();
         if (parameter != null) {
@@ -86,7 +82,7 @@ public class PostRequest extends Request {
             httpConnection.setRequestProperty("Content-Length", parameter.length() + "");
             httpConnection.connect();
 
-            OutputStreamWriter wr = new OutputStreamWriter(httpConnection.getOutputStream());
+            final OutputStreamWriter wr = new OutputStreamWriter(httpConnection.getOutputStream());
             if (parameter != null) {
                 wr.write(parameter);
             }
@@ -99,33 +95,31 @@ public class PostRequest extends Request {
     }
 
     // @Override
-    public void preRequest(URLConnectionAdapter httpConnection) throws IOException {
+    public void preRequest(final URLConnectionAdapter httpConnection) throws IOException {
         httpConnection.setRequestMethod("POST");
-
     }
 
-    public void addVariable(String key, String value) {
+    public void addVariable(final String key, final String value) {
         postData.add(new RequestVariable(key, value));
-
     }
 
-    public static ArrayList<RequestVariable> variableMaptoArray(LinkedHashMap<String, String> post) {
-        ArrayList<RequestVariable> ret = new ArrayList<RequestVariable>();
-        Entry<String, String> next = null;
-        for (Iterator<Entry<String, String>> it = post.entrySet().iterator(); it.hasNext();) {
-            next = it.next();
-            ret.add(new RequestVariable(next.getKey(), next.getValue()));
+    public static ArrayList<RequestVariable> variableMaptoArray(final LinkedHashMap<String, String> post) {
+        final ArrayList<RequestVariable> ret = new ArrayList<RequestVariable>();
+
+        for (final Entry<String, String> entry : post.entrySet()) {
+            ret.add(new RequestVariable(entry.getKey(), entry.getValue()));
         }
+
         return ret;
     }
 
-    public void addAll(HashMap<String, String> post) {
-        // TODO: Implementieren
+    public void addAll(final HashMap<String, String> post) {
+        for (final Entry<String, String> entry : post.entrySet()) {
+            this.postData.add(new RequestVariable(entry));
+        }
     }
 
-    public void addAll(ArrayList<RequestVariable> post) {
+    public void addAll(final ArrayList<RequestVariable> post) {
         this.postData.addAll(post);
-
     }
-
 }

@@ -16,6 +16,8 @@
 
 package jd.http.requests;
 
+import java.util.Map.Entry;
+
 public class RequestVariable {
 
     private String key;
@@ -42,4 +44,8 @@ public class RequestVariable {
         this.value = value;
     }
 
+    public RequestVariable(Entry<String, String> keyValueEntry) {
+        this.key = keyValueEntry.getKey();
+        this.value = keyValueEntry.getValue();
+    }
 }
