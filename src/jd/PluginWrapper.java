@@ -238,12 +238,12 @@ public abstract class PluginWrapper implements Comparable<PluginWrapper> {
      * @param bool
      */
     public void setEnabled(final boolean bool) {
-        if (this.alwaysenabled) { return; }
-
-        getPluginConfig().setProperty("USE_PLUGIN", bool);
-        getPluginConfig().save();
-        if (JDUtilities.getController() != null) {
-            DownloadController.getInstance().fireGlobalUpdate();
+        if (!this.alwaysenabled) {
+            getPluginConfig().setProperty("USE_PLUGIN", bool);
+            getPluginConfig().save();
+            if (JDUtilities.getController() != null) {
+                DownloadController.getInstance().fireGlobalUpdate();
+            }
         }
     }
 
@@ -259,9 +259,10 @@ public abstract class PluginWrapper implements Comparable<PluginWrapper> {
         final Pattern pattern = this.getPattern();
         if (pattern != null) {
             final Matcher matcher = pattern.matcher(data);
-            if (matcher.find()) { return true; }
+            return matcher.find();
+        } else {
+            return false;
         }
-        return false;
     }
 
     /**
