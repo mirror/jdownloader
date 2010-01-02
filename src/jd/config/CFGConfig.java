@@ -25,7 +25,8 @@ import jd.utils.JDUtilities;
 
 public class CFGConfig extends SubConfiguration implements Serializable {
 
-    private static HashMap<String, CFGConfig> CONFIGS = new HashMap<String, CFGConfig>();
+    private static final HashMap<String, CFGConfig> CONFIGS = new HashMap<String, CFGConfig>();
+
     /**
      * 
      */
@@ -38,10 +39,10 @@ public class CFGConfig extends SubConfiguration implements Serializable {
      * @param name
      */
     @SuppressWarnings("unchecked")
-    private CFGConfig(String name) {
+    private CFGConfig(final String name) {
         this.name = name;
-        File file;
-        Object props = JDIO.loadObject(null, file = JDUtilities.getResourceFile("config/" + name + ".cfg"), false);
+        final File file = JDUtilities.getResourceFile("config/" + name + ".cfg");
+        final Object props = JDIO.loadObject(null, file, false);
         file.getParentFile().mkdirs();
         if (props != null) {
             setProperties((HashMap<String, Object>) props);
@@ -52,11 +53,14 @@ public class CFGConfig extends SubConfiguration implements Serializable {
         JDIO.saveObject(null, getProperties(), JDUtilities.getResourceFile("config/" + name + ".cfg"), null, null, false);
     }
 
-    public static CFGConfig getConfig(String string) {
-        if (CONFIGS.containsKey(string)) return CONFIGS.get(string);
-        CFGConfig ret = new CFGConfig(string);
-        CONFIGS.put(string, ret);
-        return ret;
+    public static CFGConfig getConfig(final String string) {
+        if (CONFIGS.containsKey(string)) {
+            return CONFIGS.get(string);
+        } else {
+            CFGConfig ret = new CFGConfig(string);
+            CONFIGS.put(string, ret);
+            return ret;
+        }
     }
 
 }
