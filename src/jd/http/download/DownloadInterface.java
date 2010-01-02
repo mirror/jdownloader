@@ -21,25 +21,23 @@ import java.util.ArrayList;
 
 abstract public class DownloadInterface {
     private int flags = 0;
-    private ArrayList<DownloadListener> downloadListener;
-    private File outputFile;
+    private final ArrayList<DownloadListener> downloadListener;
+    private final File outputFile;
 
-    public DownloadInterface(int flags, File file) {
+    public DownloadInterface(final int flags, final File file) {
         this.flags = flags;
         this.outputFile = file;
         downloadListener = new ArrayList<DownloadListener>();
     }
 
-    protected void fireEvent(DownloadEvent downloadEvent) {
+    protected void fireEvent(final DownloadEvent downloadEvent) {
         for (DownloadListener dl : downloadListener) {
             dl.onStatus(downloadEvent);
         }
-
     }
 
-    protected void fireEvent(int eventID) {
+    protected void fireEvent(final int eventID) {
         fireEvent(new DownloadEvent(eventID, this));
-
     }
 
     abstract public void setBandwidthLimit(long bytesPerSecond);
@@ -48,10 +46,9 @@ abstract public class DownloadInterface {
 
     abstract public long getBandwidthLimit();
 
-    public void addDownloadListener(DownloadListener downloadListener) {
+    public void addDownloadListener(final DownloadListener downloadListener) {
         this.removeDownloadListener(downloadListener);
         this.downloadListener.add(downloadListener);
-
     }
 
     public File getOutputFile() {
@@ -60,21 +57,19 @@ abstract public class DownloadInterface {
 
     abstract public long getSpeed();
 
-    public void removeDownloadListener(DownloadListener downloadListener) {
+    public void removeDownloadListener(final DownloadListener downloadListener) {
         this.downloadListener.remove(downloadListener);
-
     }
 
-    public void addStatus(int status) {
+    public void addStatus(final int status) {
         this.flags |= status;
-
     }
 
-    public boolean hasStatus(int status) {
+    public boolean hasStatus(final int status) {
         return (this.flags & status) > 0;
     }
 
-    public void removeStatus(int status) {
+    public void removeStatus(final int status) {
         int mask = 0xffffffff;
         mask &= ~status;
         this.flags &= mask;
