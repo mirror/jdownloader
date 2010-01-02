@@ -46,8 +46,10 @@ public class LdT extends PluginForDecrypt {
             String links_page[] = br.getRegex("href=\"(/go/[0-9]+)/\"").getColumn(0);
             String streamlinks[] = br.getRegex("href=\"(/go/[0-9]+/streaming/.*?/)\"").getColumn(0);
             if (links_page == null && streamlinks == null) return null;
-            progress.setRange(links_page.length);
+
             if (links_page != null) {
+                progress.setRange(links_page.length);
+
                 for (String link : links_page) {
                     String golink = "http://iload.to/" + link;
                     br.getPage(golink);
@@ -58,8 +60,10 @@ public class LdT extends PluginForDecrypt {
                     decryptedLinks.add(dl_link);
                     progress.increase(1);
                 }
-                progress.setRange(streamlinks.length);
+
                 if (streamlinks != null) {
+                    progress.setRange(streamlinks.length);
+
                     for (String link : streamlinks) {
                         String golink = "http://iload.to/" + link;
                         br.getPage(golink);

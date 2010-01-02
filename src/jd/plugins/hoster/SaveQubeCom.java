@@ -61,11 +61,13 @@ public class SaveQubeCom extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
 
         Form dlform = br.getFormbyProperty("id", "form_free");
+
+        if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+
         dlform.setAction(downloadLink.getDownloadURL());
         dlform.put("free", "");
         dlform.put("x", "59");
         dlform.put("y", "31");
-        if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.submitForm(dlform);
         String dllink = br.getRegex("<span id=\"db\" style=\"display:none\">.*?<a href=\"(.*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

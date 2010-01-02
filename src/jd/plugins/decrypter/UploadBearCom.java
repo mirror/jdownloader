@@ -43,7 +43,7 @@ public class UploadBearCom extends PluginForDecrypt {
         /* Error handling */
         if (br.containsHTML("This file does not exist")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         String[] redirectLinks = br.getRegex("\"(/link\\.php\\?id=.*?\\&filename=.*?)\"").getColumn(0);
-        if ((redirectLinks.length == 0 || redirectLinks == null) && !br.containsHTML("download.php")) return null;
+        if ((redirectLinks == null || redirectLinks.length == 0) && !br.containsHTML("download.php")) return null;
         if (br.containsHTML("download.php")) {
             String filename = br.getRegex("filename=(.*?)\"").getMatch(0);
             String filesize = br.getRegex("Filesize:</b></td><td>(.*?)</td>").getMatch(0);
