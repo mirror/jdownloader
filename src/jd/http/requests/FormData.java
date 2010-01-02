@@ -20,15 +20,15 @@ import java.io.File;
 
 public class FormData {
 
-    private Type type;
+    private final Type type;
     private String name;
-    private String value;
+    private final String value;
 
     public String getName() {
         return name;
     }
 
-    public void setName(String name) {
+    public void setName(final String name) {
         this.name = name;
     }
 
@@ -48,33 +48,31 @@ public class FormData {
     private File file;
     private String mime;
 
-    public FormData(String name, String value) {
+    public FormData(final String name, final String value) {
         this.type = Type.VARIABLE;
         this.name = name;
         this.value = value;
     }
 
-    public FormData(String name, String filename, byte[] data) {
+    public FormData(final String name, final String filename, final byte[] data) {
         this(name, filename, null, data);
     }
 
-    public FormData(String name, String filename, String mime, byte[] data) {
-        if (mime == null) mime = "application/octet-stream";
-        this.mime = mime;
+    public FormData(final String name, final String filename, final String mime, final byte[] data) {
+        this.mime = (mime == null) ? "application/octet-stream" : mime;
         this.type = Type.DATA;
         this.name = name;
         this.value = filename;
         this.data = data;
     }
 
-    public FormData(String name, String filename, File file) {
+    public FormData(final String name, final String filename, final File file) {
         this(name, filename, null, file);
 
     }
 
-    public FormData(String name, String filename, String mime, File file) {
-        if (mime == null) mime = "application/octet-stream";
-        this.mime = mime;
+    public FormData(final String name, final String filename, final String mime, final File file) {
+        this.mime = (mime == null) ? "application/octet-stream" : mime;
         this.type = Type.FILE;
         this.name = name;
         this.value = filename;
@@ -86,12 +84,10 @@ public class FormData {
     }
 
     public Type getType() {
-    
         return type;
     }
 
     public String getDataType() {
-     
         return this.mime;
     }
 
