@@ -82,16 +82,17 @@ public class FileBaseTo extends PluginForHost {
         if (usedspace != null) ai.setUsedSpace(usedspace.trim());
         String points = br.getRegex("Ihr Punktestand.*?<strong>(\\d+)</strong></td>").getMatch(0);
         if (points != null) ai.setPremiumPoints(Long.parseLong(points));
-        String expires = null;
-        String date = br.getRegex("Gueltig bis.*?<td width=.*?<b>(.*?)um.*?Uhr.*?\\(.*?</b>").getMatch(0);
-        String time = br.getRegex("Gueltig bis.*?<td width=.*?<b>.*?um(.*?)Uhr.*?\\(.*?</b>").getMatch(0);
-        if (date != null || time != null) expires = date.trim() + "|" + time.trim();
-        expires = null;
-        if (expires != null) {
-            ai.setValidUntil(Regex.getMilliSeconds(expires, "dd.MM.yyyy|hh:mm", null));
-            account.setValid(true);
-            return ai;
-        }
+//bobbel: the following commented code does quiet nothing, doesn't it?
+//        String expires = null;
+//        String date = br.getRegex("Gueltig bis.*?<td width=.*?<b>(.*?)um.*?Uhr.*?\\(.*?</b>").getMatch(0);
+//        String time = br.getRegex("Gueltig bis.*?<td width=.*?<b>.*?um(.*?)Uhr.*?\\(.*?</b>").getMatch(0);
+//        if (date != null || time != null) expires = date.trim() + "|" + time.trim();
+//        expires = null;
+//        if (expires != null) {
+//            ai.setValidUntil(Regex.getMilliSeconds(expires, "dd.MM.yyyy|hh:mm", null));
+//            account.setValid(true);
+//            return ai;
+//        }
         String daysleft = br.getRegex("\\(([0-9]+).*?Tage\\)").getMatch(0);
         if (daysleft != null) {
             ai.setValidUntil(System.currentTimeMillis() + (Long.parseLong(daysleft) * 24 * 60 * 60 * 1000));
@@ -121,6 +122,7 @@ public class FileBaseTo extends PluginForHost {
             }
             dl.startDownload();
         }
+        //FIXME dlForm will always be null and would cause a NullPointerException
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlForm, true, 0);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();

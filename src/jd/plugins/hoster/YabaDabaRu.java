@@ -68,7 +68,7 @@ public class YabaDabaRu extends PluginForHost {
         } else {
             logger.warning("Slots are available, browser says:" + br.toString());
         }
-        // I have to ait till someone gives me a log where i can see how to
+        //FIXME I have to ait till someone gives me a log where i can see how to
         // download there!
         String dllink = br.getRegex("dg35z3hzu46ujhrjhnr5j(.*?)wf34wg5e4uz4e").getMatch(0);
         dllink = null;
