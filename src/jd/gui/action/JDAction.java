@@ -44,7 +44,7 @@ public abstract class JDAction extends AbstractAction {
     private ActionListener actionListener;
     private int actionID = -1;
 
-    public void setActionID(int actionID) {
+    public void setActionID(final int actionID) {
         this.actionID = actionID;
     }
 
@@ -57,7 +57,7 @@ public abstract class JDAction extends AbstractAction {
      * @param actionID
      *            optional action id
      */
-    public JDAction(String title, int actionID) {
+    public JDAction(final String title, final int actionID) {
         super(title);
         this.actionID = actionID;
     }
@@ -68,7 +68,7 @@ public abstract class JDAction extends AbstractAction {
      * @param ii
      *            icon of the action
      */
-    public JDAction(String l, ImageIcon ii) {
+    public JDAction(final String l, final ImageIcon ii) {
         super(l, ii);
     }
 
@@ -76,7 +76,7 @@ public abstract class JDAction extends AbstractAction {
      * @param l
      *            Name of the Action
      */
-    public JDAction(String l) {
+    public JDAction(final String l) {
         this(l, -1);
     }
 
@@ -84,11 +84,12 @@ public abstract class JDAction extends AbstractAction {
      * @param key
      *            A JDTHeme Icon Key
      */
-    public void setIcon(String key) {
-        if (key.length() < 3) return;
-        putValue(AbstractAction.SMALL_ICON, JDTheme.II(key, 16, 16));
-        putValue(AbstractAction.LARGE_ICON_KEY, JDTheme.II(key, 24, 24));
-        putValue(IMAGE_KEY, key);
+    public void setIcon(final String key) {
+        if (key.length() >= 3) {
+            putValue(AbstractAction.SMALL_ICON, JDTheme.II(key, 16, 16));
+            putValue(AbstractAction.LARGE_ICON_KEY, JDTheme.II(key, 24, 24));
+            putValue(IMAGE_KEY, key);
+        }
     }
 
     /**
@@ -100,17 +101,15 @@ public abstract class JDAction extends AbstractAction {
      * 
      * @param key
      */
-    public void setMnemonic(String key) {
-        char mnemonic = key.charAt(0);
+    public void setMnemonic(final String key) {
+        final char mnemonic = key.charAt(0);
 
         if (mnemonic != 0 && !key.contentEquals("-")) {
-            Class<?> b = KeyEvent.class;
-            Field f;
+            final Class<?> b = KeyEvent.class;
             try {
-                f = b.getField("VK_" + Character.toUpperCase(mnemonic));
-                int m = (Integer) f.get(null);
+                final Field f = b.getField("VK_" + Character.toUpperCase(mnemonic));
+                final int m = (Integer) f.get(null);
                 putValue(AbstractAction.MNEMONIC_KEY, m);
-
                 putValue(AbstractAction.DISPLAYED_MNEMONIC_INDEX_KEY, getTitle().indexOf(m));
             } catch (Exception e) {
                 JDLogger.exception(e);
@@ -135,9 +134,8 @@ public abstract class JDAction extends AbstractAction {
      * @return
      */
     public KeyStroke getKeyStroke() {
-        Object ret = getValue(ACCELERATOR_KEY);
-        if (ret != null) return (KeyStroke) ret;
-        return null;
+        final Object ret = getValue(ACCELERATOR_KEY);
+        return (ret != null) ? (KeyStroke) ret : null;
     }
 
     /**
@@ -148,14 +146,15 @@ public abstract class JDAction extends AbstractAction {
      * 
      * @param accelerator
      */
-    public void setAccelerator(String accelerator) {
+    public void setAccelerator(final String accelerator) {
         KeyStroke ks;
         if (accelerator != null && accelerator.length() > 0 && !accelerator.equals("-")) {
-            Class<?> b = KeyEvent.class;
-            String[] split = accelerator.split("\\+");
+            final Class<?> b = KeyEvent.class;
+            final String[] split = accelerator.split("\\+");
             int mod = 0;
             try {
-                for (int i = 0; i < split.length - 1; ++i) {
+                final int splitLength = split.length;
+                for (int i = 0; i < splitLength - 1; ++i) {
                     if (new Regex(split[i], "^CTRL$").matches()) {
                         mod = mod | KeyEvent.CTRL_DOWN_MASK;
                     } else if (new Regex(split[i], "^SHIFT$").matches()) {
@@ -170,8 +169,8 @@ public abstract class JDAction extends AbstractAction {
                         JDLogger.getLogger().info(this.getTitle() + " Shortcuts: skipping wrong modifier " + mod + " in " + accelerator);
                     }
                 }
-                Field f = b.getField("VK_" + split[split.length - 1].toUpperCase());
-                int m = (Integer) f.get(null);
+                final Field f = b.getField("VK_" + split[splitLength - 1].toUpperCase());
+                final int m = (Integer) f.get(null);
                 putValue(AbstractAction.ACCELERATOR_KEY, ks = KeyStroke.getKeyStroke(m, mod));
                 JDLogger.getLogger().finest(this.getTitle() + " Shortcuts: mapped " + accelerator + " to " + ks);
             } catch (Exception e) {
@@ -216,9 +215,8 @@ public abstract class JDAction extends AbstractAction {
      * @return
      */
     public boolean isSelected() {
-        Object value = getValue(SELECTED_KEY);
-        if (value == null) return false;
-        return (Boolean) value;
+        final Object value = getValue(SELECTED_KEY);
+        return (value == null) ? false : (Boolean) value;
     }
 
     /**
@@ -227,7 +225,7 @@ public abstract class JDAction extends AbstractAction {
      * @param actionListener
      * @return
      */
-    public JDAction setActionListener(ActionListener actionListener) {
+    public JDAction setActionListener(final ActionListener actionListener) {
         this.actionListener = actionListener;
         return this;
     }
@@ -238,7 +236,7 @@ public abstract class JDAction extends AbstractAction {
      * 
      * @param selected
      */
-    public void setSelected(boolean selected) {
+    public void setSelected(final boolean selected) {
         putValue(SELECTED_KEY, selected);
     }
 
@@ -248,7 +246,7 @@ public abstract class JDAction extends AbstractAction {
      * @param title
      * @return
      */
-    public JDAction setTitle(String title) {
+    public JDAction setTitle(final String title) {
         putValue(NAME, title);
         return this;
     }
@@ -259,7 +257,7 @@ public abstract class JDAction extends AbstractAction {
      * @param ii
      * @return
      */
-    public JDAction setIcon(ImageIcon ii) {
+    public JDAction setIcon(final ImageIcon ii) {
         putValue(SMALL_ICON, ii);
         return this;
 
@@ -275,9 +273,8 @@ public abstract class JDAction extends AbstractAction {
     }
 
     public String getShortCutString() {
-        Object value = getValue(Action.ACCELERATOR_KEY);
-        if (value == null) return null;
-        return ShortCuts.getAcceleratorString((KeyStroke) getValue(Action.ACCELERATOR_KEY));
+        final Object value = getValue(Action.ACCELERATOR_KEY);
+        return (value == null) ? null : ShortCuts.getAcceleratorString((KeyStroke) getValue(Action.ACCELERATOR_KEY));
     }
 
     /**
@@ -287,8 +284,10 @@ public abstract class JDAction extends AbstractAction {
      * @param value
      * @see Property
      */
-    public void setProperty(String string, Object value) {
-        if (properties == null) properties = new Property();
+    public void setProperty(final String string, final Object value) {
+        if (properties == null) {
+            properties = new Property();
+        }
         this.firePropertyChange(string, getProperty(string), value);
         properties.setProperty(string, value);
 
@@ -300,8 +299,10 @@ public abstract class JDAction extends AbstractAction {
      * @param string
      * @see Property
      */
-    public Object getProperty(String string) {
-        if (properties == null) properties = new Property();
+    public Object getProperty(final String string) {
+        if (properties == null) {
+            properties = new Property();
+        }
         return properties.getProperty(string);
     }
 
