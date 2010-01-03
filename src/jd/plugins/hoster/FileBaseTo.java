@@ -27,6 +27,7 @@ import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
+import jd.plugins.BrowserAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -115,7 +116,7 @@ public class FileBaseTo extends PluginForHost {
         if (dlForm == null) {
             String dllink = br.getRegex("\"(http://[0-9]+\\..*?/premium/.*?/.*?)\"").getMatch(0);
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+            dl = BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
             if (!dl.getConnection().isContentDisposition()) {
                 br.followConnection();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -123,7 +124,7 @@ public class FileBaseTo extends PluginForHost {
             dl.startDownload();
         }
         //FIXME dlForm will always be null and would cause a NullPointerException
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlForm, true, 0);
+        dl = BrowserAdapter.openDownload(br, downloadLink, dlForm, true, 0);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -169,12 +170,12 @@ public class FileBaseTo extends PluginForHost {
         String dlAction = br.getRegex("<form action=\"(http.*?)\"").getMatch(0);
         try {
             if (dlAction != null) {
-                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlAction, "wait=" + Encoding.urlEncode("Download - " + downloadLink.getName()));
+                dl = BrowserAdapter.openDownload(br, downloadLink, dlAction, "wait=" + Encoding.urlEncode("Download - " + downloadLink.getName()));
             } else {
                 dlAction = br.getRegex("value=\"(http.*?/download/ticket.*?)\"").getMatch(0);
 
                 if (dlAction == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlAction);
+                dl = BrowserAdapter.openDownload(br, downloadLink, dlAction);
 
             }
             URLConnectionAdapter con = dl.getConnection();

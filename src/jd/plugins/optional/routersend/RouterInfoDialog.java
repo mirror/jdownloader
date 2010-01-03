@@ -88,6 +88,7 @@ public class RouterInfoDialog extends AbstractDialog {
             parent.add(tf, "skip, gapbottom 10");
         }
 
+        @SuppressWarnings("unused")
         public void setEnabled(boolean b) {
             lbl.setEnabled(b);
             cb.setEnabled(b);
