@@ -70,7 +70,7 @@ import jd.utils.locale.JDL;
  */
 public class Main {
 
-    private static Logger LOGGER;
+    private static Logger LOG;
     public static final String instanceID = Main.class.getName();
     private static boolean instanceStarted = false;
 
@@ -86,24 +86,24 @@ public class Main {
         System.setProperty("sun.swing.enableImprovedDragGesture", "true");
         // only use ipv4, because debian changed default stack to ipv6
         System.setProperty("java.net.preferIPv4Stack", "true");
-        LOGGER = JDLogger.getLogger();
+        LOG = JDLogger.getLogger();
         initMACProperties();
-        LOGGER.info("Start JDownloader");
+        LOG.info("Start JDownloader");
         for (String p : args) {
             if (p.equalsIgnoreCase("-debug")) {
                 JDInitFlags.SWITCH_DEBUG = true;
-                LOGGER.info("DEBUG Modus aktiv");
+                LOG.info("DEBUG Modus aktiv");
             } else if (p.equalsIgnoreCase("-brdebug")) {
                 JDInitFlags.SWITCH_DEBUG = true;
                 Browser.setVerbose(true);
-                LOGGER.info("Browser DEBUG Modus aktiv");
+                LOG.info("Browser DEBUG Modus aktiv");
             } else if (p.equalsIgnoreCase("-config")) {
                 new Config();
 
                 return;
             } else if (p.equalsIgnoreCase("-trdebug")) {
                 JDL.DEBUG = true;
-                LOGGER.info("Translation DEBUG Modus aktiv");
+                LOG.info("Translation DEBUG Modus aktiv");
             } else if (p.equalsIgnoreCase("-rfu")) {
                 JDInitFlags.SWITCH_RETURNED_FROM_UPDATE = true;
             }
@@ -123,27 +123,27 @@ public class Main {
                     webConfig.setProperty(WebUpdater.PARAM_BRANCH, null);
                     if (webConfig.hasChanges()) {
                         webConfig.save();
-                        LOGGER.info("Switching back to default JDownloader branch");
+                        LOG.info("Switching back to default JDownloader branch");
                     }
                 } else {
 
                     webConfig.setProperty(WebUpdater.PARAM_BRANCH, args[i + 1]);
                     if (webConfig.hasChanges()) {
                         webConfig.save();
-                        LOGGER.info("Switching to " + args[i + 1] + " JDownloader branch");
+                        LOG.info("Switching to " + args[i + 1] + " JDownloader branch");
                     }
                 }
 
                 i++;
             } else if (args[i].equals("-prot")) {
 
-                LOGGER.finer(args[i] + " " + args[i + 1]);
+                LOG.finer(args[i] + " " + args[i + 1]);
                 i++;
             } else if (args[i].equals("-lng")) {
 
-                LOGGER.finer(args[i] + " " + args[i + 1]);
+                LOG.finer(args[i] + " " + args[i + 1]);
                 if (new File(args[i + 1]).exists() && args[i + 1].trim().endsWith(".loc")) {
-                    LOGGER.info("Use custom languagefile: " + args[i + 1]);
+                    LOG.info("Use custom languagefile: " + args[i + 1]);
                     JDL.setStaticLocale(args[i + 1]);
                 }
                 i++;
@@ -154,7 +154,7 @@ public class Main {
                     JDUtilities.restartJDandWait();
                 }
 
-                LOGGER.finer(args[i] + " parameter");
+                LOG.finer(args[i] + " parameter");
                 JDInitFlags.SWITCH_NEW_INSTANCE = true;
 
             } else if (args[i].equals("--help") || args[i].equals("-h")) {
@@ -166,7 +166,7 @@ public class Main {
 
                 if (args.length > i + 2) {
 
-                    LOGGER.setLevel(Level.OFF);
+                    LOG.setLevel(Level.OFF);
                     String captchaValue = JAntiCaptcha.getCaptcha(args[i + 1], args[i + 2]);
                     System.out.println(captchaValue);
                     System.exit(0);
@@ -224,11 +224,11 @@ public class Main {
             });
             instanceStarted = true;
         } catch (AlreadyLockedException e) {
-            LOGGER.info("existing jD instance found!");
+            LOG.info("existing jD instance found!");
             instanceStarted = false;
         } catch (Exception e) {
             JDLogger.exception(e);
-            LOGGER.severe("Instance Handling not possible!");
+            LOG.severe("Instance Handling not possible!");
             instanceStarted = true;
         }
 
@@ -238,7 +238,7 @@ public class Main {
             JDTheme.setTheme("default");
             if (JDInitFlags.SHOW_SPLASH) {
                 if (GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_SHOW_SPLASH, true)) {
-                    LOGGER.info("init Splash");
+                    LOG.info("init Splash");
                     new GuiRunnable<Object>() {
                         @Override
                         public Object runSave() {
@@ -259,13 +259,13 @@ public class Main {
             start(args);
         } else {
             if (args.length > 0) {
-                LOGGER.info("Send parameters to existing jD instance and exit");
+                LOG.info("Send parameters to existing jD instance and exit");
                 JUnique.sendMessage(instanceID, "" + args.length);
                 for (String arg : args) {
                     JUnique.sendMessage(instanceID, arg);
                 }
             } else {
-                LOGGER.info("There is already a running jD instance");
+                LOG.info("There is already a running jD instance");
                 JUnique.sendMessage(instanceID, "1");
                 JUnique.sendMessage(instanceID, "--focus");
             }
@@ -286,7 +286,7 @@ public class Main {
 
                     main.go();
                     for (String p : args) {
-                        LOGGER.finest("Param: " + p);
+                        LOG.finest("Param: " + p);
                     }
                     ParameterManager.processParameters(args);
                 }
@@ -303,7 +303,7 @@ public class Main {
         JDInitFlags.ENOUGH_MEMORY = !(Runtime.getRuntime().maxMemory() < 100000000);
         if (!JDInitFlags.ENOUGH_MEMORY) {
             JDInitFlags.SHOW_SPLASH = false;
-            LOGGER.warning("Heapcheck: Not enough heap. use: java -Xmx512m -jar JDownloader.jar");
+            LOG.warning("Heapcheck: Not enough heap. use: java -Xmx512m -jar JDownloader.jar");
         }
     }
 
@@ -312,7 +312,7 @@ public class Main {
      */
     private static void javaCheck() {
         if (!CheckJava.check()) {
-            LOGGER.warning("Javacheck: Wrong Java Version! JDownloader needs at least Java 1.5 or higher!");
+            LOG.warning("Javacheck: Wrong Java Version! JDownloader needs at least Java 1.5 or higher!");
             System.exit(0);
         }
         if (JDUtilities.getJavaVersion() < 1.6 && !OSDetector.isMac()) {
@@ -333,8 +333,8 @@ public class Main {
     private static void initMACProperties() {
         // Mac specific //
         if (OSDetector.isMac()) {
-            LOGGER.info("com.apple.mrj.application.growbox.intrudes=false");
-            LOGGER.info("com.apple.mrj.application.apple.menu.about.name=jDownloader");
+            LOG.info("com.apple.mrj.application.growbox.intrudes=false");
+            LOG.info("com.apple.mrj.application.apple.menu.about.name=jDownloader");
             System.setProperty("com.apple.mrj.application.apple.menu.about.name", "jDownloader");
             System.setProperty("com.apple.mrj.application.growbox.intrudes", "false");
             new MacOSController();
@@ -360,8 +360,8 @@ public class Main {
         // JDUtilities.getController().fireControlEvent(new ControlEvent(this,
         // SplashScreen.SPLASH_PROGRESS, "This is JD :)"));
         init.init();
-        LOGGER.info(new Date() + "");
-        LOGGER.info("init Configuration");
+        LOG.info(new Date() + "");
+        LOG.info("init Configuration");
         // JDUtilities.getController().fireControlEvent(new ControlEvent(this,
         // SplashScreen.SPLASH_PROGRESS, "Once upon a time..."));
 
@@ -370,13 +370,13 @@ public class Main {
             UserIO.getInstance().requestMessageDialog("JDownloader cannot create the config files. Make sure, that JD_HOME/config/ exists and is writeable");
         }
         if (JDInitFlags.SWITCH_DEBUG) {
-            LOGGER.info("DEBUG MODE ACTIVATED");
-            LOGGER.setLevel(Level.ALL);
+            LOG.info("DEBUG MODE ACTIVATED");
+            LOG.setLevel(Level.ALL);
         } else {
             JDLogger.removeConsoleHandler();
         }
         if (!OutdatedParser.parseFile(JDUtilities.getResourceFile("outdated.dat"))) {
-            LOGGER.severe("COULD NOT DELETE OUTDATED FILES.RESTART REQUIRED");
+            LOG.severe("COULD NOT DELETE OUTDATED FILES.RESTART REQUIRED");
             int answer = UserIO.getInstance().requestConfirmDialog(0, JDL.L("jd.Main.removerestart.title", "Updater"), JDL.L("jd.Main.removerestart.message", "Could not remove outdated libraries. Restart recommended!"), null, JDL.L("jd.Main.removerestart.ok", "Restart now!"), JDL.L("jd.Main.removerestart.cancel", "Continue"));
             if (UserIO.isOK(answer)) {
                 JDUtilities.restartJD(true);
@@ -389,22 +389,22 @@ public class Main {
 
             }
         }
-        LOGGER.info("init Controller");
+        LOG.info("init Controller");
 
-        LOGGER.info("init Webupdate");
+        LOG.info("init Webupdate");
         JDUtilities.getController().fireControlEvent(new ControlEvent(this, SplashScreen.SPLASH_PROGRESS, JDL.L("gui.splash.progress.webupdate", "Check updates")));
 
-        LOGGER.info("init plugins");
+        LOG.info("init plugins");
         JDUtilities.getController().fireControlEvent(new ControlEvent(this, SplashScreen.SPLASH_PROGRESS, JDL.L("gui.splash.progress.initplugins", "Init plugins")));
 
         init.initPlugins();
 
         Locale.setDefault(Locale.ENGLISH);
 
-        LOGGER.info("init downloadqueue");
+        LOG.info("init downloadqueue");
         JDUtilities.getController().fireControlEvent(new ControlEvent(this, SplashScreen.SPLASH_PROGRESS, JDL.L("gui.splash.progress.controller", "Start controller")));
         init.initControllers();
-        LOGGER.info("init gui");
+        LOG.info("init gui");
         JDUtilities.getController().fireControlEvent(new ControlEvent(this, SplashScreen.SPLASH_PROGRESS, JDL.L("gui.splash.progress.paintgui", "Paint user interface")));
 
         new GuiRunnable<Object>() {
@@ -415,7 +415,7 @@ public class Main {
             }
         }.waitForEDT();
 
-        LOGGER.info("Initialisation finished");
+        LOG.info("Initialisation finished");
 
         HashMap<String, String> head = new HashMap<String, String>();
         head.put("rev", JDUtilities.getRevision());
@@ -426,11 +426,11 @@ public class Main {
 
         for (Object it : propKeys) {
             String key = it.toString();
-            LOGGER.finer(key + "=" + pr.get(key));
+            LOG.finer(key + "=" + pr.get(key));
         }
 
-        LOGGER.info("Revision: " + JDUtilities.getRevision());
-        LOGGER.finer("Runtype: " + JDUtilities.getRunType());
+        LOG.info("Revision: " + JDUtilities.getRevision());
+        LOG.finer("Runtype: " + JDUtilities.getRunType());
 
         init.checkUpdate();
         JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_INIT_COMPLETE, null));
@@ -444,7 +444,7 @@ public class Main {
         /*
          * Keeps the home working directory for developers up2date
          */
-        LOGGER.info("update start");
+        LOG.info("update start");
 
         new Thread() {
             @Override
@@ -465,7 +465,7 @@ public class Main {
         }
         WebUpdate.dynamicPluginsFinished();
 
-        LOGGER.info("update end");
+        LOG.info("update end");
     }
 
     /**
@@ -502,19 +502,19 @@ public class Main {
         } else {
 
             /* dynamics in der public laden */
-            JDLogger.getLogger().finest("Run dynamics");
+            LOG.finest("Run dynamics");
             if (WebUpdater.getPluginList() == null) return;
             for (Entry<String, FileUpdate> entry : WebUpdater.PLUGIN_LIST.entrySet()) {
                 System.out.println("Plugins: " + entry.getKey());
                 if (entry.getKey().startsWith("/jd/dynamics/") && !entry.getKey().contains("DynamicPluginInterface")) {
-                    JDLogger.getLogger().finest("Found dynamic: " + entry.getKey());
+                    LOG.finest("Found dynamic: " + entry.getKey());
                     if (!entry.getValue().equals()) {
 
                         if (!new WebUpdater().updateUpdatefile(entry.getValue())) {
-                            JDLogger.getLogger().warning("Could not update " + entry.getValue());
+                            LOG.warning("Could not update " + entry.getValue());
                             continue;
                         } else {
-                            JDLogger.getLogger().finest("Update OK!");
+                            LOG.finest("Update OK!");
                         }
                     }
                     if (!entry.getKey().contains("$") && !classes.contains(entry.getKey())) classes.add(entry.getKey());
@@ -524,10 +524,10 @@ public class Main {
         for (String clazz : classes) {
             try {
                 Class<?> plgClass;
-                JDLogger.getLogger().finest("Init Dynamic " + clazz);
+                LOG.finest("Init Dynamic " + clazz);
                 plgClass = classLoader.loadClass(clazz.replace("/", ".").replace(".class", "").substring(1));
                 if (plgClass == null) {
-                    JDLogger.getLogger().info("Could not load " + clazz);
+                    LOG.info("Could not load " + clazz);
                     continue;
                 }
                 if (plgClass == DynamicPluginInterface.class) continue;
