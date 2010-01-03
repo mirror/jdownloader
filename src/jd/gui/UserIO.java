@@ -23,7 +23,6 @@ import javax.swing.ImageIcon;
 import javax.swing.ListCellRenderer;
 import javax.swing.filechooser.FileFilter;
 
-import jd.config.SubConfiguration;
 import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.jdgui.JDGuiConstants;
 import jd.gui.userio.NoUserIO;
@@ -103,15 +102,17 @@ public abstract class UserIO {
     private static int COUNTDOWN_TIME = -1;
 
     public static UserIO getInstance() {
-        if (INSTANCE == null) INSTANCE = new NoUserIO();
+        if (INSTANCE == null) {
+            INSTANCE = new NoUserIO();
+        }
         return INSTANCE;
     }
 
-    public static void setInstance(UserIO instance) {
+    public static void setInstance(final UserIO instance) {
         INSTANCE = instance;
     }
 
-    public String requestCaptchaDialog(int flag, String host, ImageIcon icon, File captchafile, String suggestion, String explain) {
+    public String requestCaptchaDialog(final int flag, final String host, final ImageIcon icon, final File captchafile, final String suggestion, final String explain) {
         synchronized (INSTANCE) {
             return showCaptchaDialog(flag, host, icon, captchafile, suggestion, explain);
         }
@@ -119,7 +120,7 @@ public abstract class UserIO {
 
     abstract protected String showCaptchaDialog(int flag, String host, ImageIcon icon, File captchafile, String suggestion, String explain);
 
-    public Point requestClickPositionDialog(File imagefile, String title, String explain) {
+    public Point requestClickPositionDialog(final File imagefile, final String title, final String explain) {
         synchronized (INSTANCE) {
             return showClickPositionDialog(imagefile, title, explain);
         }
@@ -127,7 +128,7 @@ public abstract class UserIO {
 
     abstract protected Point showClickPositionDialog(File imagefile, String title, String explain);
 
-    public int requestHelpDialog(int flag, String title, String message, String helpMessage, String url) {
+    public int requestHelpDialog(final int flag, final String title, final String message, final String helpMessage, final String url) {
         synchronized (INSTANCE) {
             return showHelpDialog(flag, title, message, helpMessage, url);
         }
@@ -135,44 +136,34 @@ public abstract class UserIO {
 
     abstract protected int showHelpDialog(int flag, String title, String message, String helpMessage, String url);
 
-    public int requestConfirmDialog(int flag, String title, String message, ImageIcon icon, String okOption, String cancelOption) {
+    public int requestConfirmDialog(final int flag, final String title, final String message, final ImageIcon icon, final String okOption, final String cancelOption) {
         synchronized (INSTANCE) {
-            if (icon == null) {
-                icon = getDefaultIcon(title + message);
-            }
-            return showConfirmDialog(flag, title, message, icon, okOption, cancelOption);
+            return showConfirmDialog(flag, title, message, icon == null ? getDefaultIcon(title + message) : icon, okOption, cancelOption);
         }
-
     }
 
     abstract protected int showConfirmDialog(int flag, String title, String message, ImageIcon icon, String okOption, String cancelOption);
 
-    public String requestInputDialog(int flag, String title, String message, String defaultMessage, ImageIcon icon, String okOption, String cancelOption) {
-
+    public String requestInputDialog(final int flag, final String title, final String message, final String defaultMessage, final ImageIcon icon, final String okOption, final String cancelOption) {
         synchronized (INSTANCE) {
             return showInputDialog(flag, title, message, defaultMessage, icon, okOption, cancelOption);
         }
-
     }
 
     abstract protected String showInputDialog(int flag, String title, String message, String defaultMessage, ImageIcon icon, String okOption, String cancelOption);
 
-    public String requestTextAreaDialog(String title, String message, String def) {
-
+    public String requestTextAreaDialog(final String title, final String message, final String def) {
         synchronized (INSTANCE) {
             return showTextAreaDialog(title, message, def);
         }
-
     }
 
     abstract protected String showTextAreaDialog(String title, String message, String def);
 
-    public String[] requestTwoTextFieldDialog(String title, String messageOne, String defOne, String messageTwo, String defTwo) {
-
+    public String[] requestTwoTextFieldDialog(final String title, final String messageOne, final String defOne, final String messageTwo, final String defTwo) {
         synchronized (INSTANCE) {
             return showTwoTextFieldDialog(title, messageOne, defOne, messageTwo, defTwo);
         }
-
     }
 
     abstract protected String[] showTwoTextFieldDialog(String title, String messageOne, String defOne, String messageTwo, String defTwo);
@@ -193,35 +184,33 @@ public abstract class UserIO {
      *            multible files choosable? or null for default
      * @return an array of files or null if the user cancel the dialog
      */
-    public File[] requestFileChooser(String id, String title, Integer fileSelectionMode, FileFilter fileFilter, Boolean multiSelection) {
-
+    public File[] requestFileChooser(final String id, final String title, final Integer fileSelectionMode, final FileFilter fileFilter, final Boolean multiSelection) {
         synchronized (INSTANCE) {
             return showFileChooser(id, title, fileSelectionMode, fileFilter, multiSelection);
         }
-
     }
 
     abstract protected File[] showFileChooser(String id, String title, Integer fileSelectionMode, FileFilter fileFilter, Boolean multiSelection);
 
-    public void requestMessageDialog(String message) {
+    public void requestMessageDialog(final String message) {
         requestMessageDialog(0, JDL.L("gui.dialogs.message.title", "Message"), message);
     }
 
-    public void requestMessageDialog(int flag, String message) {
+    public void requestMessageDialog(final int flag, final String message) {
         requestMessageDialog(flag, JDL.L("gui.dialogs.message.title", "Message"), message);
     }
 
-    public void requestMessageDialog(String title, String message) {
+    public void requestMessageDialog(final String title, final String message) {
         requestMessageDialog(0, title, message);
     }
 
-    public void requestMessageDialog(int flag, String title, String message) {
+    public void requestMessageDialog(final int flag, final String title, final String message) {
         synchronized (INSTANCE) {
             showConfirmDialog(UserIO.NO_CANCEL_OPTION | flag, title, message, getIcon(UserIO.ICON_INFO), null, null);
         }
     }
 
-    private ImageIcon getDefaultIcon(String text) {
+    private ImageIcon getDefaultIcon(final String text) {
         if (text.contains("?")) {
             return this.getIcon(ICON_QUESTION);
         } else if (text.matches(JDL.L("userio.errorregex", ".*(error|failed).*"))) {
@@ -236,9 +225,7 @@ public abstract class UserIO {
     public abstract ImageIcon getIcon(int iconInfo);
 
     public static int getCountdownTime() {
-        if (COUNTDOWN_TIME > 0) return COUNTDOWN_TIME;
-        SubConfiguration cfg = GUIUtils.getConfig();
-        return Math.max(2, cfg.getIntegerProperty(JDGuiConstants.PARAM_INPUTTIMEOUT, 20));
+        return (COUNTDOWN_TIME > 0) ? COUNTDOWN_TIME : Math.max(2, GUIUtils.getConfig().getIntegerProperty(JDGuiConstants.PARAM_INPUTTIMEOUT, 20));
     }
 
     /**
@@ -246,23 +233,19 @@ public abstract class UserIO {
      * 
      * @param time
      */
-    public static void setCountdownTime(int time) {
-        if (time <= 0) {
-            COUNTDOWN_TIME = -1;
-        } else {
-            COUNTDOWN_TIME = time;
-        }
+    public static void setCountdownTime(final int time) {
+        COUNTDOWN_TIME = (time > 0) ? time : -1;
     }
 
-    public String requestInputDialog(String message) {
+    public String requestInputDialog(final String message) {
         return requestInputDialog(0, message, null);
     }
 
-    public int requestConfirmDialog(int flag, String question) {
+    public int requestConfirmDialog(final int flag, final String question) {
         return requestConfirmDialog(flag, JDL.L("jd.gui.userio.defaulttitle.confirm", "Please confirm!"), question, this.getDefaultIcon(question), null, null);
     }
 
-    public int requestConfirmDialog(int flag, String title, String question) {
+    public int requestConfirmDialog(final int flag, final String title, final String question) {
         return requestConfirmDialog(flag, title, question, this.getDefaultIcon(title + question), null, null);
     }
 
@@ -276,7 +259,7 @@ public abstract class UserIO {
      *            defaultvalue
      * @return
      */
-    public String requestInputDialog(int flag, String question, String defaultvalue) {
+    public String requestInputDialog(final int flag, final String question, final String defaultvalue) {
         return requestInputDialog(flag, JDL.L("jd.gui.userio.defaulttitle.input", "Please enter!"), question, defaultvalue, this.getDefaultIcon(question), null, null);
     }
 
@@ -304,8 +287,7 @@ public abstract class UserIO {
      * @param answer
      * @return
      */
-    public static boolean isOK(int answer) {
-
+    public static boolean isOK(final int answer) {
         return JDFlags.hasSomeFlags(answer, UserIO.RETURN_OK);
     }
 

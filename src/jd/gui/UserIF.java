@@ -22,11 +22,13 @@ public abstract class UserIF {
     protected static UserIF INSTANCE = null;
 
     public static UserIF getInstance() {
-        if (INSTANCE == null) INSTANCE = new NoUserIF();
+        if (INSTANCE == null) {
+            INSTANCE = new NoUserIF();
+        }
         return INSTANCE;
     }
 
-    public static void setInstance(UserIF instance) {
+    public static void setInstance(final UserIF instance) {
         INSTANCE = instance;
     }
 
@@ -89,5 +91,4 @@ public abstract class UserIF {
      */
     public abstract void setFrameStatus(int id);
 
-   
 }
