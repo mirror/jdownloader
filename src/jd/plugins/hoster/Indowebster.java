@@ -16,8 +16,6 @@
 
 package jd.plugins.hoster;
 
-import java.util.regex.Pattern;
-
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -32,7 +30,6 @@ public class Indowebster extends PluginForHost {
 
     public Indowebster(PluginWrapper wrapper) {
         super(wrapper);
-        // TODO Auto-generated constructor stub
     }
 
     @Override
@@ -45,8 +42,8 @@ public class Indowebster extends PluginForHost {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("Requested file is deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex(Pattern.compile("&quot;<!--INFOLINKS_ON-->(.*?)<!--INFOLINKS_OFF-->&quot;", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
-        String filesize = br.getRegex("Size :</b> (.*?)<").getMatch(0);
+        String filename = br.getRegex("Original name : </b><!--INFOLINKS_ON-->(.*?)<").getMatch(0);
+        String filesize = br.getRegex("<b>Size : </b>(.*?)</div>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setFinalFileName(filename.trim());
         downloadLink.setDownloadSize(Regex.getSize(filesize));
@@ -56,7 +53,7 @@ public class Indowebster extends PluginForHost {
     @Override
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
-        String dl_url = br.getRegex("<div id=\"buttonz\" align=\"center\"> <a href=\"(.*?)\"").getMatch(0);
+        String dl_url = br.getRegex("\\&file=(http.*?)\\&logo").getMatch(0);
         if (dl_url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setDebug(true);
         br.setFollowRedirects(true);
@@ -69,11 +66,12 @@ public class Indowebster extends PluginForHost {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
-    /*
-     * public String getVersion() { return getVersion("$Revision$"); }
-     */
+    @Override
+    public void resetDownloadlink(DownloadLink link) {
+    }
 
 }
