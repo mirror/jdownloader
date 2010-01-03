@@ -95,7 +95,14 @@ public class FileRackCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
         br.getPage(parameter.getDownloadURL());
-        System.out.print(br.toString());
+        // Sometimes links are being replaces with new ones, the following 5
+        // lines find the new link and set it if there is a new link!
+        String movedLink = br.getRegex("document has moved <a href=\"(.*?)\">here</a").getMatch(0);
+        if (movedLink != null) {
+            br.getPage(movedLink);
+            parameter.setUrlDownload(movedLink);
+            logger.info("Link has moved, setting new link \"" + movedLink + "\"");
+        }
         String filename = br.getRegex("<h2>Download File(.*?)</h2>").getMatch(0);
         String filesize = br.getRegex("\\(<b>(.*?)</b>\\)").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

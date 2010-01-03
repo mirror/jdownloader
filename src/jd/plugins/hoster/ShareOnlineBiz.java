@@ -192,6 +192,7 @@ public class ShareOnlineBiz extends PluginForHost {
         /* Überprüfen(Captcha,Password) */
         form.put("captchacode", captchaCode);
         br.submitForm(form);
+        System.out.print(br.toString());
         if (br.containsHTML("Captcha number error or expired") || br.containsHTML("Unfortunately the password you entered is not correct")) {
             if (br.containsHTML("Unfortunately the password you entered is not correct")) {
                 /* PassCode war falsch, also Löschen */
@@ -225,6 +226,7 @@ public class ShareOnlineBiz extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
+            if (br.containsHTML("(Your desired download could not be found|There isn't any usable file behind the URL you've entered)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
