@@ -35,11 +35,9 @@ public class JDGeoCode {
      * @param code
      * @return
      */
-    public static String getNativeLanguage(String code) {
-        String[] ret = LANGUAGES.get(code);
-        if (ret == null) return null;
-        return ret[1];
-
+    public static String getNativeLanguage(final String code) {
+        final String[] ret = LANGUAGES.get(code);
+        return ret == null ? null : ret[1];
     }
 
     /**
@@ -52,24 +50,25 @@ public class JDGeoCode {
      * @param lngCode
      * @return
      */
-    public static String[] parseLanguageCode(String lngCode) {
+    public static String[] parseLanguageCode(final String lngCode) {
         String[] split = lngCode.split("\\-");
         if (split.length == 1) {
-            String languagecode = lngCode.toLowerCase();
-            if (languagecode.trim().length() != 2) return null;
-            return new String[] { lngCode, null, null };
+            final String languagecode = lngCode.toLowerCase().trim();
+            return (languagecode.length() != 2) ? null : new String[] { lngCode, null, null };
         } else if (split.length == 2) {
-
-            boolean h = COUNTRIES.containsKey(split[1].toUpperCase());
-
-            if (split[0].trim().length() != 2) return null;
+            final boolean h = COUNTRIES.containsKey(split[1].toUpperCase());
+            if (split[0].trim().length() != 2) {
+                return null;
+            }
             return new String[] { split[0].toLowerCase(), h ? split[1].toUpperCase() : null, h ? null : split[1] };
         } else {
             split = lngCode.split("\\-");
+            final String split0 = split[0];
+            final String split1 = split[1];
 
-            if (split[0].trim().length() != 2) return null;
-            if (split[1].trim().length() != 2) return null;
-            return new String[] { split[0].toLowerCase(), split[1].toUpperCase(), split[2] };
+            if (split0.trim().length() != 2) return null;
+            if (split1.trim().length() != 2) return null;
+            return new String[] { split0.toLowerCase(), split1.toUpperCase(), split[2] };
         }
     }
 
@@ -540,7 +539,7 @@ public class JDGeoCode {
         COUNTRIES.put("ZW", "Zimbabwe");
     }
 
-    public final static HashMap<String, String> EXTENSIONS = new HashMap<String, String>();
+    public static final HashMap<String, String> EXTENSIONS = new HashMap<String, String>();
     static {
         EXTENSIONS.put("hans", "simplified");
         EXTENSIONS.put("hant", "traditional");
@@ -552,61 +551,65 @@ public class JDGeoCode {
      * @param string
      * @return
      */
-    public static String toLonger(String string) {
-        String[] p = JDGeoCode.parseLanguageCode(string);
-        if (p == null) return null;
-        String language = LANGUAGES.get(p[0])[0];
-        String country = COUNTRIES.get(p[1]);
-        String extension = EXTENSIONS.get(p[2]);
-        if (extension == null) extension = p[2];
-        String ret = language;
-        if (country != null) {
-            ret += " [" + country;
-            if (extension != null) ret += " | " + extension;
-            ret += "]";
-        } else if (extension != null) {
-            ret += " [" + extension + "]";
-        }
+    public static String toLonger(final String string) {
+        final String[] p = JDGeoCode.parseLanguageCode(string);
+        if (p == null) { return null; }
 
-        return ret;
+        final String language = LANGUAGES.get(p[0])[0];
+        final String country = COUNTRIES.get(p[1]);
+        String extension = EXTENSIONS.get(p[2]);
+        if (extension == null) {
+            extension = p[2];
+        }
+        StringBuilder ret = new StringBuilder(language);
+        if (country != null) {
+            ret.append(" [" + country);
+            if (extension != null) {
+                ret.append(" | " + extension);
+            }
+            ret.append("]");
+        } else if (extension != null) {
+            ret.append(" [" + extension + "]");
+        }
+        return ret.toString();
     }
 
-    public static String toLongerNative(String string) {
-        String[] p = JDGeoCode.parseLanguageCode(string);
+    public static String toLongerNative(final String string) {
+        final String[] p = JDGeoCode.parseLanguageCode(string);
         try {
-            String language = LANGUAGES.get(p[0])[1];
-            String country = COUNTRIES.get(p[1]);
+            final String language = LANGUAGES.get(p[0])[1];
+            final String country = COUNTRIES.get(p[1]);
             String extension = EXTENSIONS.get(p[2]);
-            if (extension == null) extension = p[2];
-
-            String ret = language;
-            if (country != null) {
-                ret += " [" + country;
-                if (extension != null) ret += " | " + extension;
-                ret += "]";
-            } else if (extension != null) {
-                ret += " [" + extension + "]";
+            if (extension == null) {
+                extension = p[2];
             }
 
-            return ret;
+            StringBuilder ret = new StringBuilder(language);
+            if (country != null) {
+                ret.append(" [" + country);
+                if (extension != null) {
+                    ret.append(" | " + extension);
+                }
+                ret.append("]");
+            } else if (extension != null) {
+                ret.append(" [" + extension + "]");
+            }
+
+            return ret.toString();
         } catch (Exception e) {
             JDLogger.getLogger().severe("Bad languagecode: " + string);
             return toLongerNative("en");
         }
     }
 
-    public static String longToShort(String lng) {
+    public static String longToShort(final String lng) {
         String[] row = new Regex(lng, "(.*?)\\[(.*)\\|(.*?)\\]").getRow(0);
         if (row != null) { return getLanguageCode(row[0].trim()) + "-" + getCountryCode(row[1].trim()) + "-" + getExtensionCode(row[2].trim()); }
         row = new Regex(lng, "(.*?)\\[(.*)\\]").getRow(0);
         if (row != null) {
-            String countryCode = getCountryCode(row[1].trim());
+            final String countryCode = getCountryCode(row[1].trim());
 
-            if (countryCode != null) {
-                return getLanguageCode(row[0].trim()) + "-" + countryCode;
-            } else {
-                return getLanguageCode(row[0].trim()) + "-" + getExtensionCode(row[1].trim());
-            }
+            return getLanguageCode(row[0].trim()) + "-" + (countryCode != null ? countryCode : getExtensionCode(row[1].trim()));
         }
 
         return getLanguageCode(lng.trim());
@@ -618,9 +621,9 @@ public class JDGeoCode {
      * @param name
      * @return
      */
-    public static String getLanguageCode(String name) {
-        for (Entry<String, String[]> next : LANGUAGES.entrySet()) {
-            if (next.getValue()[0].equalsIgnoreCase(name) || next.getValue()[1].equalsIgnoreCase(name)) return next.getKey();
+    public static String getLanguageCode(final String name) {
+        for (final Entry<String, String[]> next : LANGUAGES.entrySet()) {
+            if (next.getValue()[0].equalsIgnoreCase(name) || next.getValue()[1].equalsIgnoreCase(name)) { return next.getKey(); }
         }
         return null;
     }
@@ -631,9 +634,9 @@ public class JDGeoCode {
      * @param name
      * @return
      */
-    public static String getExtensionCode(String name) {
-        for (Entry<String, String> next : EXTENSIONS.entrySet()) {
-            if (next.getValue().equalsIgnoreCase(name)) return next.getKey();
+    public static String getExtensionCode(final String name) {
+        for (final Entry<String, String> next : EXTENSIONS.entrySet()) {
+            if (next.getValue().equalsIgnoreCase(name)) { return next.getKey(); }
         }
         return name;
     }
@@ -644,9 +647,9 @@ public class JDGeoCode {
      * @param name
      * @return
      */
-    public static String getCountryCode(String name) {
-        for (Entry<String, String> next : COUNTRIES.entrySet()) {
-            if (next.getValue().equalsIgnoreCase(name)) return next.getKey();
+    public static String getCountryCode(final String name) {
+        for (final Entry<String, String> next : COUNTRIES.entrySet()) {
+            if (next.getValue().equalsIgnoreCase(name)) { return next.getKey(); }
         }
         return null;
     }
