@@ -19,6 +19,7 @@ package jd.update;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Locale;
 
 import jd.event.JDBroadcaster;
 import jd.event.MessageEvent;
@@ -35,11 +36,12 @@ public class FileUpdate {
     public static final int ERROR = 2;
     public static final int SERVER_STATS = 3;
     public static final int SUCCESS = 4;
-    public static long WAITTIME_ON_ERROR = 15000;
-    private String localPath;
+    public static final long WAITTIME_ON_ERROR = 15000;
+
+    private final String localPath;
     private String url;
-    private String hash;
-    private ArrayList<Server> serverList;
+    private final String hash;
+    private final ArrayList<Server> serverList = new ArrayList<Server>();
 
     private Server currentServer;
 
@@ -47,13 +49,12 @@ public class FileUpdate {
     private File workingDir;
     private JDBroadcaster<MessageListener, MessageEvent> broadcaster;
 
-    public FileUpdate(String serverString, String hash) {
+    public FileUpdate(String serverString, final String hash) {
         this.hash = hash;
         serverString = serverString.replace("http://78.143.20.68/update/jd/", "");
         String[] dat = new Regex(serverString, "(.*)\\?(.*)").getRow(0);
         this.relURL = serverString;
         if (dat == null) {
-
             localPath = serverString;
         } else {
             localPath = dat[0];
@@ -62,7 +63,7 @@ public class FileUpdate {
         initBroadcaster();
     }
 
-    public FileUpdate(String serverString, String hash, File workingdir) {
+    public FileUpdate(final String serverString, final String hash, final File workingdir) {
         this(serverString, hash);
         this.workingDir = workingdir;
         relURL = serverString;
@@ -73,9 +74,8 @@ public class FileUpdate {
         this.broadcaster = new JDBroadcaster<MessageListener, MessageEvent>() {
 
             @Override
-            protected void fireEvent(MessageListener listener, MessageEvent event) {
+            protected void fireEvent(final MessageListener listener, final MessageEvent event) {
                 listener.onMessage(event);
-
             }
 
         };
@@ -106,44 +106,36 @@ public class FileUpdate {
     }
 
     public boolean exists() {
-
         // if (workingDir != null) {
         return getLocalFile().exists() || this.getLocalTmpFile().exists();
         // } else {
         // return JDUtilities.getResourceFile(getLocalPath()).exists();
         // }
-
     }
 
     public boolean equals() {
-        if (!exists()) return false;
-        String localHash = getLocalHash();
-        if (localHash == null) return false;
-        return localHash.equalsIgnoreCase(hash);
+        if (exists()) {
+            final String localHash = getLocalHash();
+            if (localHash != null) { return localHash.equalsIgnoreCase(hash); }
+        }
+        return false;
     }
 
     private String getLocalHash() {
-        if (this.getLocalTmpFile().exists()) return JDHash.getMD5(getLocalTmpFile());
-        return JDHash.getMD5(getLocalFile());
-
+        return JDHash.getMD5(getLocalTmpFile().exists() ? getLocalTmpFile() : getLocalFile());
     }
 
     public File getLocalFile() {
-        if (workingDir != null) {
-            return new File(workingDir + getLocalPath());
-        } else {
-            return JDUtilities.getResourceFile(getLocalPath());
-        }
-
+        return (workingDir != null) ? new File(workingDir + getLocalPath()) : JDUtilities.getResourceFile(getLocalPath());
     }
 
-    public void reset(ArrayList<Server> availableServers) {
-        this.serverList = new ArrayList<Server>();
+    public void reset(final ArrayList<Server> availableServers) {
+        this.serverList.clear();
         serverList.addAll(availableServers);
     }
 
     public boolean hasServer() {
-        return serverList.size() > 0;
+        return !serverList.isEmpty();
     }
 
     /**
@@ -152,14 +144,13 @@ public class FileUpdate {
      * @return
      * @throws IOException
      */
-    public boolean update(ArrayList<Server> availableServers) {
-
-        Browser br = new Browser();
-        br.setReadTimeout(20 * 1000);
-        br.setConnectTimeout(10 * 1000);
+    public boolean update(final ArrayList<Server> availableServers) {
+        final Browser browser = new Browser();
+        browser.setReadTimeout(20 * 1000);
+        browser.setConnectTimeout(10 * 1000);
         long startTime, endTime;
         for (int retry = 0; retry < 3; retry++) {
-            if (availableServers == null || availableServers.size() == 0) {
+            if (availableServers == null || availableServers.isEmpty()) {
                 System.err.println("no downloadsource available!");
                 return false;
             }
@@ -196,11 +187,10 @@ public class FileUpdate {
                     int response = -1;
                     try {
                         // Open connection
-                        con = br.openGetConnection(url);
+                        con = browser.openGetConnection(url);
                         endTime = System.currentTimeMillis();
                         response = con.getResponseCode();
                         currentServer.setRequestTime(endTime - startTime);
-
                     } catch (Exception e) {
                         // Failed connection.retry next server
                         broadcaster.fireEvent(new MessageEvent(this, ERROR, "Error. Connection error"));
@@ -210,7 +200,6 @@ public class FileUpdate {
                         } catch (Exception e1) {
                         }
                         errorWait();
-                 
                         continue;
                     }
                     // connection estabilished
@@ -245,11 +234,10 @@ public class FileUpdate {
                         con.disconnect();
                     } catch (Exception e) {
                     }
-                    broadcaster.fireEvent(new MessageEvent(this, SERVER_STATS, currentServer + " requesttimeAVG=" + currentServer.getRequestTime() + ""));
-
+                    broadcaster.fireEvent(new MessageEvent(this, SERVER_STATS, currentServer + " requesttimeAVG=" + currentServer.getRequestTime()));
                 }
 
-                String downloadedHash = JDHash.getMD5(tmpFile);
+                final String downloadedHash = JDHash.getMD5(tmpFile);
                 if (downloadedHash != null && downloadedHash.equalsIgnoreCase(hash)) {
                     // hash of fresh downloaded file is ok
                     broadcaster.fireEvent(new MessageEvent(this, SUCCESS, "Hash OK"));
@@ -257,7 +245,7 @@ public class FileUpdate {
                     this.getLocalTmpFile().delete();
                     // tinyupdate has to be updated directly
                     boolean ret;
-                    
+
                     if (tmpFile.getName().startsWith("tinyupdate")) {
                         this.getLocalFile().delete();
                         ret = tmpFile.renameTo(this.getLocalFile());
@@ -283,7 +271,6 @@ public class FileUpdate {
                     }
                 } else {
                     // Download failed. delete tmp file and exit
-
                     broadcaster.fireEvent(new MessageEvent(this, ERROR, "Hash Failed"));
                     currentServer.setRequestTime(100000l);
                     if (hasServer()) {
@@ -306,15 +293,15 @@ public class FileUpdate {
 
     }
 
-    private void errorWait()  {
+    private void errorWait() {
         try {
-            broadcaster.fireEvent(new MessageEvent(this, ERROR,  "Server Busy. Wait "+(WAITTIME_ON_ERROR/1000)+" Seconds"));
+            broadcaster.fireEvent(new MessageEvent(this, ERROR, "Server Busy. Wait " + (WAITTIME_ON_ERROR / 1000) + " Seconds"));
             Thread.sleep(WAITTIME_ON_ERROR);
         } catch (InterruptedException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-        
+
     }
 
     /**
@@ -323,24 +310,18 @@ public class FileUpdate {
      * @return
      */
     public File getLocalTmpFile() {
-        if (workingDir != null) {
-            return new File(new File(workingDir, "update") + getLocalPath());
-        } else {
-            return new File(JDUtilities.getResourceFile("update") + getLocalPath());
-        }
-
+        // if (workingDir != null) {
+        // return new File(new File(workingDir, "update") + getLocalPath());
+        // } else {
+        // return new File(JDUtilities.getResourceFile("update") +
+        // getLocalPath());
+        // }
+        return new File((workingDir != null ? new File(workingDir, "update") : JDUtilities.getResourceFile("update")) + getLocalPath());
     }
 
-    private String mergeUrl(String server, String file) {
-
-        String ret = "";
-        if (server.endsWith("/") || file.startsWith("/")) {
-            ret = server + file;
-        } else {
-            ret = server + "/" + file;
-        }
-        ret = ret.replaceAll("//", "/");
-        return ret.replaceAll("http:/", "http://");
+    private String mergeUrl(final String server, final String file) {
+        final String ret = (server.endsWith("/") || file.charAt(0) == '/') ? server + file : server + "/" + file;
+        return ret.replaceAll("//", "/").replaceAll("http:/", "http://");
     }
 
     /**
@@ -350,13 +331,13 @@ public class FileUpdate {
      */
     private String getURL() {
         Server serv;
-        if (url == null || url.trim().length() == 0) {
+        if (url == null || url.trim().isEmpty()) {
             serv = Server.selectServer(serverList);
             this.currentServer = serv;
             serverList.remove(serv);
             return mergeUrl(serv.getPath(), this.relURL);
         }
-        if (url.toLowerCase().startsWith("http://")) { return url; }
+        if (url.toLowerCase(Locale.getDefault()).startsWith("http://")) { return url; }
         serv = Server.selectServer(serverList);
         this.currentServer = serv;
         serverList.remove(serv);
@@ -364,10 +345,8 @@ public class FileUpdate {
     }
 
     public boolean needsRestart() {
-        String hash = JDHash.getMD5(getLocalTmpFile());
-        if (hash == null) return false;
-        if (hash.equalsIgnoreCase(hash)) return true;
-        return false;
+        final String hash = JDHash.getMD5(getLocalTmpFile());
+        return (hash == null) ? false : hash.equalsIgnoreCase(hash);
     }
 
 }
