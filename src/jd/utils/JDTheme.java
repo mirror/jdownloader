@@ -33,23 +33,30 @@ import jd.nutils.io.JDFileFilter;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
 
-public class JDTheme {
+public final class JDTheme {
+
+    /**
+     * Don't let anyone instantiate this class.
+     */
+    private JDTheme() {
+    }
 
     private static HashMap<String, String> data = new HashMap<String, String>();
 
     private static HashMap<String, String> defaultData;
 
-    private static Logger logger = jd.controlling.JDLogger.getLogger();
+    private static final Logger LOG = JDLogger.getLogger();
 
-    public static String THEME_DIR = "jd/themes/";
+    public static final String THEME_DIR = "jd/themes/";
 
     private static String currentTheme;
 
     public static ArrayList<String> getThemeIDs() {
-        File dir = JDUtilities.getResourceFile(THEME_DIR);
-        if (!dir.exists()) return null;
-        File[] files = dir.listFiles(new JDFileFilter(null, ".icl", false));
-        ArrayList<String> ret = new ArrayList<String>();
+        final File dir = JDUtilities.getResourceFile(THEME_DIR);
+        if (!dir.exists()) { return null; }
+
+        final File[] files = dir.listFiles(new JDFileFilter(null, ".icl", false));
+        final ArrayList<String> ret = new ArrayList<String>();
 
         for (File element : files) {
             ret.add(element.getName().split("\\.")[0]);
@@ -57,24 +64,25 @@ public class JDTheme {
         return ret;
     }
 
-    public static String getThemeValue(String key, String def) {
+    public static String getThemeValue(final String key, String def) {
         if (data == null || defaultData == null) {
-            logger.severe("Use setTheme() first!");
+            LOG.severe("Use setTheme() first!");
             setTheme("default");
         }
 
-        if (data.containsKey(key)) return Encoding.UTF8Decode(data.get(key));
-        logger.warning("Key not found: " + key + " (" + def + ")");
+        if (data.containsKey(key)) { return Encoding.UTF8Decode(data.get(key)); }
+        LOG.warning("Key not found: " + key + " (" + def + ")");
 
         if (defaultData.containsKey(key)) {
             def = Encoding.UTF8Decode(defaultData.get(key));
-            logger.finest("Use default Value: " + def);
+            LOG.finest("Use default Value: " + def);
         }
-        if (def == null) def = key;
+        if (def == null) {
+            def = key;
+        }
         data.put(key, def);
 
         return def;
-
     }
 
     /**
@@ -83,13 +91,12 @@ public class JDTheme {
      * @param key
      * @return
      */
-    public static Color C(String key, String def) {
+    public static Color C(final String key, final String def) {
         return new Color(Integer.parseInt(JDTheme.V(key, def), 16));
     }
 
-    public static Color C(String key, String def, int alpha) {
-
-        String hex = JDTheme.V(key, def);
+    public static Color C(final String key, final String def, final int alpha) {
+        final String hex = JDTheme.V(key, def);
         return new Color(Integer.parseInt(hex.substring(0, 2), 16), Integer.parseInt(hex.substring(2, 4), 16), Integer.parseInt(hex.substring(4), 16), alpha);
     }
 
@@ -99,7 +106,7 @@ public class JDTheme {
      * @param key
      * @return
      */
-    public static Image I(String key) {
+    public static Image I(final String key) {
         return JDImage.getImage(JDTheme.V(key));
     }
 
@@ -111,7 +118,7 @@ public class JDTheme {
      * @param height
      * @return
      */
-    public static Image I(String key, int width, int height) {
+    public static Image I(final String key, final int width, final int height) {
         return JDImage.getImage(JDTheme.V(key)).getScaledInstance(width, height, Image.SCALE_SMOOTH);
     }
 
@@ -121,9 +128,8 @@ public class JDTheme {
      * @param key
      * @return
      */
-    public static ImageIcon II(String key) {
+    public static ImageIcon II(final String key) {
         return II(key, 32, 32);
-
     }
 
     /**
@@ -134,41 +140,40 @@ public class JDTheme {
      * @param height
      * @return
      */
-    public static ImageIcon II(String key, int width, int height) {
-        if (key == null) return null;
-        try {
-            return new ImageIcon(getImage(V(key), width, height));
-        } catch (Exception e) {
-            logger.severe("image not found: " + key + "(" + V(key) + "_" + width + "_" + height);
-            JDLogger.exception(e);
+    public static ImageIcon II(final String key, final int width, final int height) {
+        if (key != null) {
+            try {
+                return new ImageIcon(getImage(V(key), width, height));
+            } catch (Exception e) {
+                LOG.severe("image not found: " + key + "(" + V(key) + "_" + width + "_" + height);
+                JDLogger.exception(e);
+            }
         }
         return null;
     }
 
-    public static Image getImage(String string, int width, int height) {
-        if (string == null) return null;
-        BufferedImage img = JDImage.getImage(string + "_" + width + "_" + height);
-        if (img != null) return img;
-        try {
-
-            return JDImage.getScaledImage(JDImage.getImage(string), width, height);
-        } catch (Exception e) {
-            logger.severe("Could not find image: " + string);
+    public static Image getImage(final String string, final int width, final int height) {
+        if (string != null) {
+            final BufferedImage img = JDImage.getImage(string + "_" + width + "_" + height);
+            if (img != null) { return img; }
+            try {
+                return JDImage.getScaledImage(JDImage.getImage(string), width, height);
+            } catch (Exception e) {
+                LOG.severe("Could not find image: " + string);
+            }
         }
         return null;
     }
 
     public static String getTheme() {
-        if (currentTheme == null) return "default";
-        return currentTheme;
+        return currentTheme == null ? "default" : currentTheme;
     }
 
     public static void setTheme(String themeID) {
         File file = JDUtilities.getResourceFile(THEME_DIR + themeID + ".icl");
 
         if (!file.exists()) {
-
-            logger.severe("Theme " + themeID + " not installed, switch to default theme");
+            LOG.severe("Theme " + themeID + " not installed, switch to default theme");
             themeID = "default";
             // return;
 
@@ -177,19 +182,18 @@ public class JDTheme {
         data = new HashMap<String, String>();
         String str = JDIO.readFileToString(file);
         String[] lines = Regex.getLines(str);
-        for (String element : lines) {
+        for (final String element : lines) {
             int split = element.indexOf("=");
             if (split <= 0 || element.startsWith("#")) {
                 continue;
             }
-            String key = element.substring(0, split).trim();
-            String value = element.substring(split + 1).trim();
+            final String key = element.substring(0, split).trim();
+            final String value = element.substring(split + 1).trim();
             if (data.containsKey(key)) {
-                logger.severe("Dupe found: " + key);
+                LOG.severe("Dupe found: " + key);
             } else {
                 data.put(key, value);
             }
-
         }
         if (themeID.equals("default")) {
             defaultData = data;
@@ -199,29 +203,26 @@ public class JDTheme {
             file = JDUtilities.getResourceFile(THEME_DIR + "default.icl");
 
             if (!file.exists()) {
-                logger.severe("Theme default not installed");
+                LOG.severe("Theme default not installed");
                 return;
             }
             data = new HashMap<String, String>();
             str = JDIO.readFileToString(file);
             lines = Regex.getLines(str);
             for (String element : lines) {
-                int split = element.indexOf("=");
-                if (split <= 0 || element.startsWith("#")) {
+                final int split = element.indexOf("=");
+                if (split <= 0 || element.charAt(0) == '#') {
                     continue;
                 }
-                String key = element.substring(0, split).trim();
-                String value = element.substring(split + 1).trim();
+                final String key = element.substring(0, split).trim();
+                final String value = element.substring(split + 1).trim();
                 if (data.containsKey(key)) {
-                    logger.finer("Dupe found: " + key);
+                    LOG.finer("Dupe found: " + key);
                 } else {
                     data.put(key, value);
                 }
-
             }
-
         }
-
     }
 
     /**
@@ -230,7 +231,7 @@ public class JDTheme {
      * @param key
      * @return
      */
-    public static String V(String key) {
+    public static String V(final String key) {
         return JDTheme.getThemeValue(key, null);
     }
 
@@ -240,7 +241,7 @@ public class JDTheme {
      * @param key
      * @return
      */
-    public static String V(String key, String def) {
+    public static String V(final String key, final String def) {
         return JDTheme.getThemeValue(key, def);
     }
 
