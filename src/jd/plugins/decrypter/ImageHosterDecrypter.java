@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagebam.com", "imagevenue.com", "imageshack.us", "photobucket.com", "freeimagehosting.net", "pixhost.org", "download.su" }, urls = { "http://[\\w\\.]*?imagebam\\.com/image/[a-z0-9]+", "http://[\\w\\.]*?img[0-9]+\\.imagevenue\\.com/img\\.php\\?image=.+", "http://[\\w\\.]*?img[0-9]{1,4}\\.imageshack\\.us/i/[a-z]+\\.[a-zA-Z]{1,3}/", "http://[\\w\\.]*?media\\.photobucket.com/image/.+\\..{3,4}\\?o=[0-9]+", "http://[\\w\\.]*?freeimagehosting\\.net/image\\.php\\?.*?\\..{3,4}", "http://[\\w\\.]*?pixhost\\.org/show/[0-9]+/.*?\\.{3,4}", "http://[\\w\\.]*?download\\.su/(photo/|photo-)[a-z0-9]+" }, flags = { 0, 0, 0, 0, 0, 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagebam.com", "imageshack.us", "photobucket.com", "freeimagehosting.net", "pixhost.org", "download.su" }, urls = { "http://[\\w\\.]*?imagebam\\.com/image/[a-z0-9]+", "http://[\\w\\.]*?img[0-9]{1,4}\\.imageshack\\.us/i/[a-z]+\\.[a-zA-Z]{1,3}/", "http://[\\w\\.]*?media\\.photobucket.com/image/.+\\..{3,4}\\?o=[0-9]+", "http://[\\w\\.]*?freeimagehosting\\.net/image\\.php\\?.*?\\..{3,4}", "http://[\\w\\.]*?pixhost\\.org/show/[0-9]+/.*?\\.{3,4}", "http://[\\w\\.]*?download\\.su/(photo/|photo-)[a-z0-9]+" }, flags = { 0, 0, 0, 0, 0, 0 })
 public class ImageHosterDecrypter extends PluginForDecrypt {
 
     public ImageHosterDecrypter(PluginWrapper wrapper) {
@@ -48,16 +48,6 @@ public class ImageHosterDecrypter extends PluginForDecrypt {
             /* Error handling */
             if (br.containsHTML("Image not found")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
             finallink = br.getRegex("'(http://[0-9]+\\.imagebam\\.com/dl\\.php\\?ID=.*?)'").getMatch(0);
-        } else if (parameter.contains("imagevenue.com")) {
-            /* Error handling */
-            if (br.containsHTML("This image does not exist on this server")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-            finallink = br.getRegex("scaleImg\\(\\)\"  SRC=\"(.*?)\"").getMatch(0);
-            if (finallink == null) return null;
-            String server = new Regex(parameter, "(img[0-9]+\\.imagevenue\\.com/)").getMatch(0);
-            finallink = "http://" + server + finallink;
-            String ending = new Regex(finallink, "imagevenue\\.com.*?\\.(.{3,4}$)").getMatch(0);
-            String filename0 = new Regex(finallink, "imagevenue\\.com/.*?/.*?/\\d+_(.*?_[0-9]{2,})_").getMatch(0);
-            if (ending != null && filename0 != null) filename = filename0 + "." + ending;
         } else if (parameter.contains("imageshack.us")) {
             /* Error handling */
             String offlinecheck = br.getRedirectLocation();

@@ -136,7 +136,7 @@ public class FourSharedCom extends PluginForHost {
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceAll("red.com/get", "red.com/file").replace("4shared-china", "4shared"));
+        link.setUrlDownload(link.getDownloadURL().replaceAll("red.com/get", "red.com/file"));
     }
 
 }

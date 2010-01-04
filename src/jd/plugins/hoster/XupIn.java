@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.RandomUserAgent;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
@@ -60,7 +61,7 @@ public class XupIn extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         br.setDebug(true);
         this.requestFileInformation(downloadLink);
-
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         Form download = br.getForm(0);
         String passCode = null;
         if (download.hasInputFieldByName("vpass")) {
@@ -89,7 +90,7 @@ public class XupIn extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return 1;
     }
 
     @Override

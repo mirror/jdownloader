@@ -21,6 +21,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.RandomUserAgent;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -30,7 +31,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.pluginUtils.Recaptcha;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "iload.to", "lof.cc" }, urls = { "http://[\\w\\.]*?links\\.iload\\.to/links/\\?lid=.+", "http://[\\w\\.]*?lof\\.cc/[a-zA-Z0-9_]+" }, flags = { 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "iload.to", "lof.cc" }, urls = { "http://[\\w\\.]*?links\\.iload\\.to/links/\\?lid=.+", "http://[\\w\\.]*?lof\\.cc/[!a-zA-Z0-9_]+" }, flags = { 0, 0 })
 public class LdTTemp extends PluginForDecrypt {
 
     public LdTTemp(PluginWrapper wrapper) {
@@ -41,7 +42,7 @@ public class LdTTemp extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
-        for (int i = 0; i <= 3; i++) {
+        for (int i = 0; i <= 5; i++) {
             Recaptcha rc = new Recaptcha(br);
             rc.parse();
             rc.load();
@@ -49,9 +50,16 @@ public class LdTTemp extends PluginForDecrypt {
             String c = getCaptchaCode(cf, param);
             rc.setCode(c);
             if (br.containsHTML("(api.recaptcha.net|Das war leider Falsch)")) continue;
+            if (br.containsHTML("das Falsche Captcha eingegeben")) {
+                sleep(60 * 1001l, param);
+                br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+                br.getPage(parameter);
+                continue;
+            }
             break;
         }
-        if (br.containsHTML("(api.recaptcha.net|Das war leider Falsch)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        System.out.print(br.toString());
+        if (br.containsHTML("(api.recaptcha.net|Das war leider Falsch|das Falsche Captcha eingegeben)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         String[] links = HTMLParser.getHttpLinks(br.toString(), "");
         if (links.length == 0) return null;
         for (String finallink : links) {

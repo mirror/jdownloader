@@ -89,7 +89,7 @@ public class AddatHu extends PluginForHost {
     // TODO:This could be set to -1 but the problem is that i dunnu why i can
     // start that much dls in the browser but not in jd!
     public int getMaxSimultanFreeDownloadNum() {
-        return 5;
+        return 4;
     }
 
     public void reset() {
