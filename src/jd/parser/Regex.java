@@ -19,7 +19,6 @@ package jd.parser;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -28,9 +27,10 @@ public class Regex {
 
     private Matcher matcher;
 
-    public Regex(Matcher matcher) {
-        if (matcher == null) return;
-        this.matcher = matcher;
+    public Regex(final Matcher matcher) {
+        if (matcher != null) {
+            this.matcher = matcher;
+        }
     }
 
     /**
@@ -39,7 +39,7 @@ public class Regex {
      * @param data
      * @param pattern
      */
-    public Regex(Object data, Pattern pattern) {
+    public Regex(final Object data, final Pattern pattern) {
         this(data.toString(), pattern);
     }
 
@@ -49,7 +49,7 @@ public class Regex {
      * @param data
      * @param pattern
      */
-    public Regex(Object data, String pattern) {
+    public Regex(final Object data, final String pattern) {
         this(data.toString(), pattern);
     }
 
@@ -61,24 +61,26 @@ public class Regex {
      * @param flags
      *            flags für den Pattern z.B. Pattern.CASE_INSENSITIVE
      */
-    public Regex(Object data, String pattern, int flags) {
+    public Regex(final Object data, final String pattern, final int flags) {
         this(data.toString(), pattern, flags);
     }
 
-    public Regex(String data, Pattern pattern) {
-        if (data == null || pattern == null) return;
-        matcher = pattern.matcher(data);
+    public Regex(final String data, final Pattern pattern) {
+        if (data != null && pattern != null) {
+            matcher = pattern.matcher(data);
+        }
     }
 
-    public Regex(String data, String pattern) {
-        if (data == null || pattern == null) return;
-        matcher = Pattern.compile(pattern, Pattern.CASE_INSENSITIVE | Pattern.DOTALL).matcher(data);
-
+    public Regex(final String data, final String pattern) {
+        if (data != null && pattern != null) {
+            matcher = Pattern.compile(pattern, Pattern.CASE_INSENSITIVE | Pattern.DOTALL).matcher(data);
+        }
     }
 
-    public Regex(String data, String pattern, int flags) {
-        if (data == null || pattern == null) return;
-        matcher = Pattern.compile(pattern, flags).matcher(data);
+    public Regex(final String data, final String pattern, final int flags) {
+        if (data != null && pattern != null) {
+            matcher = Pattern.compile(pattern, flags).matcher(data);
+        }
     }
 
     /**
@@ -87,22 +89,25 @@ public class Regex {
      * @return
      */
     public int count() {
-        if (matcher == null) return 0;
-        matcher.reset();
-        int c = 0;
-        Matcher matchertmp = matcher;
-        while (matchertmp.find()) {
-            c++;
+        if (matcher == null) {
+            return 0;
+        } else {
+            matcher.reset();
+            int c = 0;
+            final Matcher matchertmp = matcher;
+            while (matchertmp.find()) {
+                c++;
+            }
+            return c;
         }
-        return c;
     }
 
-    public String getMatch(int group) {
-        if (matcher == null) return null;
-        Matcher matchertmp = matcher;
-        matcher.reset();
-        if (matchertmp.find()) return matchertmp.group(group + 1);
-
+    public String getMatch(final int group) {
+        if (matcher != null) {
+            final Matcher matcher = this.matcher;
+            matcher.reset();
+            if (matcher.find()) { return matcher.group(group + 1); }
+        }
         return null;
     }
 
@@ -112,8 +117,9 @@ public class Regex {
      * @return
      */
     public Matcher getMatcher() {
-        if (matcher == null) return null;
-        matcher.reset();
+        if (matcher != null) {
+            matcher.reset();
+        }
         return matcher;
     }
 
@@ -123,47 +129,56 @@ public class Regex {
      * @return
      */
     public String[][] getMatches() {
-        if (matcher == null) return null;
-        Matcher matchertmp = matcher;
-        matcher.reset();
-        ArrayList<String[]> ar = new ArrayList<String[]>();
-        while (matchertmp.find()) {
-            int c = matchertmp.groupCount();
-            int d = 1;
-            String[] group;
-            if (c == 0) {
-                group = new String[c + 1];
-                d = 0;
-            } else {
-                group = new String[c];
-            }
+        if (matcher == null) {
+            return null;
+        } else {
+            final Matcher matcher = this.matcher;
+            matcher.reset();
+            final ArrayList<String[]> ar = new ArrayList<String[]>();
+            while (matcher.find()) {
+                int c = matcher.groupCount();
+                int d = 1;
+                String[] group;
+                if (c == 0) {
+                    group = new String[c + 1];
+                    d = 0;
+                } else {
+                    group = new String[c];
+                }
 
-            for (int i = d; i <= c; i++) {
-                group[i - d] = matchertmp.group(i);
+                for (int i = d; i <= c; i++) {
+                    group[i - d] = matcher.group(i);
+                }
+                ar.add(group);
             }
-            ar.add(group);
+            return (ar.size() == 0) ? new String[][] {} : ar.toArray(new String[][] {});
         }
-        if (ar.size() == 0) return new String[][] {};
-        return ar.toArray(new String[][] {});
     }
 
     public String[] getColumn(int x) {
-        if (matcher == null) return null;
-        x++;
-        Matcher matchertmp = matcher;
-        matcher.reset();
+        if (matcher == null) {
+            return null;
+        } else {
+            x++;
+            final Matcher matcher = this.matcher;
+            matcher.reset();
 
-        ArrayList<String> ar = new ArrayList<String>();
-        while (matchertmp.find()) {
-            ar.add(matchertmp.group(x));
+            final ArrayList<String> ar = new ArrayList<String>();
+            while (matcher.find()) {
+                ar.add(matcher.group(x));
+            }
+            return ar.toArray(new String[ar.size()]);
         }
-        return ar.toArray(new String[ar.size()]);
     }
 
     public boolean matches() {
-        if (matcher == null) return false;
-        matcher.reset();
-        return matcher.find();
+        final Matcher matcher = this.matcher;
+        if (matcher == null) {
+            return false;
+        } else {
+            matcher.reset();
+            return matcher.find();
+        }
     }
 
     /**
@@ -171,22 +186,27 @@ public class Regex {
      * 
      * @param matcher
      */
-    public void setMatcher(Matcher matcher) {
+    public void setMatcher(final Matcher matcher) {
         this.matcher = matcher;
     }
 
     @Override
     public String toString() {
-        StringBuilder ret = new StringBuilder();
-        String[][] match = getMatches();
-        for (int i = 0; i < match.length; i++) {
-            for (int j = 0; j < match[i].length; j++) {
+        final StringBuilder ret = new StringBuilder();
+        final String[][] matches = getMatches();
+        final int matchesLength = matches.length;
+        String[] match;
+        int matchLength;
+        for (int i = 0; i < matchesLength; i++) {
+            match = matches[i];
+            matchLength = match.length;
+            for (int j = 0; j < matchLength; j++) {
                 ret.append("match[");
                 ret.append(i);
                 ret.append("][");
                 ret.append(j);
                 ret.append("] = ");
-                ret.append(match[i][j]);
+                ret.append(match[j]);
                 ret.append(System.getProperty("line.separator"));
             }
         }
@@ -194,14 +214,13 @@ public class Regex {
         return ret.toString();
     }
 
-    public static long getMilliSeconds(String wait) {
+    public static long getMilliSeconds(final String wait) {
         String[][] matches = new Regex(wait, "([\\d]+) ?[\\.|\\,|\\:] ?([\\d]+)").getMatches();
         if (matches == null || matches.length == 0) {
             matches = new Regex(wait, Pattern.compile("([\\d]+)")).getMatches();
-
         }
 
-        if (matches == null || matches.length == 0) return -1;
+        if (matches == null || matches.length == 0) { return -1; }
 
         double res = 0;
         if (matches[0].length == 1) {
@@ -218,67 +237,58 @@ public class Regex {
         } else {
             res *= 1000l;
         }
-
         return Math.round(res);
-
     }
 
-    public static long getMilliSeconds(String expire, String timeformat, Locale l) {
-        SimpleDateFormat dateFormat;
+    public static long getMilliSeconds(final String expire, final String timeformat, final Locale l) {
+        if (expire != null) {
+            final SimpleDateFormat dateFormat = (l != null) ? new SimpleDateFormat(timeformat, l) : new SimpleDateFormat(timeformat);
 
-        if (l != null) {
-            dateFormat = new SimpleDateFormat(timeformat, l);
-        } else {
-            dateFormat = new SimpleDateFormat(timeformat);
-        }
-        if (expire == null) return -1;
-
-        Date date;
-        try {
-            date = dateFormat.parse(expire);
-            return (date.getTime());
-        } catch (ParseException e) {
-            // ("Could not format date " + expire + " with formater " +
-            // timeformat + ": " + dateFormat.format(new Date()));
-            e.printStackTrace();
-            // JDLogger.exception(e);
+            try {
+                return (dateFormat.parse(expire).getTime());
+            } catch (ParseException e) {
+                // ("Could not format date " + expire + " with formater " +
+                // timeformat + ": " + dateFormat.format(new Date()));
+                e.printStackTrace();
+                // JDLogger.exception(e);
+            }
         }
         return -1;
-
     }
 
     public String getMatch(int entry, int group) {
-        if (matcher == null) return null;
-        Matcher matchertmp = matcher;
-        matcher.reset();
-        // group++;
-        entry++;
-        int groupCount = 0;
-        while (matchertmp.find()) {
-            if (groupCount == group) return matchertmp.group(entry);
-
-            groupCount++;
+        if (matcher != null) {
+            final Matcher matcher = this.matcher;
+            matcher.reset();
+            // group++;
+            entry++;
+            int groupCount = 0;
+            while (matcher.find()) {
+                if (groupCount == group) { return matcher.group(entry); }
+                groupCount++;
+            }
         }
         return null;
     }
 
-    public String[] getRow(int y) {
-        if (matcher == null) return null;
-        Matcher matchertmp = matcher;
-        matcher.reset();
-        int groupCount = 0;
-        while (matchertmp.find()) {
-            if (groupCount == y) {
-                int c = matchertmp.groupCount();
+    public String[] getRow(final int y) {
+        if (matcher != null) {
+            final Matcher matcher = this.matcher;
+            matcher.reset();
+            int groupCount = 0;
+            while (matcher.find()) {
+                if (groupCount == y) {
+                    final int c = matcher.groupCount();
 
-                String[] group = new String[c];
+                    final String[] group = new String[c];
 
-                for (int i = 1; i <= c; i++) {
-                    group[i - 1] = matchertmp.group(i);
+                    for (int i = 1; i <= c; i++) {
+                        group[i - 1] = matcher.group(i);
+                    }
+                    return group;
                 }
-                return group;
+                groupCount++;
             }
-            groupCount++;
         }
         return null;
     }
@@ -288,7 +298,7 @@ public class Regex {
      * 
      * @param wait
      */
-    public static int getMilliSeconds2(String wait) {
+    public static int getMilliSeconds2(final String wait) {
         String minutes = new Regex(wait, "(\\d*?)[ ]*m").getMatch(0);
         String hours = new Regex(wait, "(\\d*?)[ ]*(h|st)").getMatch(0);
         String seconds = new Regex(wait, "(\\d*?)[ ]*se").getMatch(0);
@@ -305,33 +315,37 @@ public class Regex {
      * @param pattern
      * @return
      */
-    public static String escape(String pattern) {
-        char[] specials = new char[] { '(', '[', '{', '\\', '^', '-', '$', '|', ']', '}', ')', '?', '*', '+', '.' };
-        StringBuilder sb = new StringBuilder();
-        sb.setLength(pattern.length());
+    public static String escape(final String pattern) {
+        final char[] specials = new char[] { '(', '[', '{', '\\', '^', '-', '$', '|', ']', '}', ')', '?', '*', '+', '.' };
+        final int patternLength = pattern.length();
+        final StringBuilder sb = new StringBuilder();
+        sb.setLength(patternLength);
         char act;
-        for (int i = 0; i < pattern.length(); i++) {
+        for (int i = 0; i < patternLength; i++) {
             act = pattern.charAt(i);
             for (char s : specials) {
                 if (act == s) {
                     sb.append('\\');
                     break;
                 }
-
             }
             sb.append(act);
         }
         return sb.toString().trim();
     }
 
-    public static String[] getLines(String arg) {
-        if (arg == null) { return new String[] {}; }
-        String[] temp = arg.split("[\r\n]{1,2}");
-        String[] output = new String[temp.length];
-        for (int i = 0; i < temp.length; i++) {
-            output[i] = temp[i].trim();
+    public static String[] getLines(final String arg) {
+        if (arg == null) {
+            return new String[] {};
+        } else {
+            final String[] temp = arg.split("[\r\n]{1,2}");
+            final int tempLength = temp.length;
+            final String[] output = new String[tempLength];
+            for (int i = 0; i < tempLength; i++) {
+                output[i] = temp[i].trim();
+            }
+            return output;
         }
-        return output;
     }
 
     /**
@@ -341,8 +355,7 @@ public class Regex {
      * @param sizestring
      * @return
      */
-    public static long getSize(String string) {
-
+    public static long getSize(final String string) {
         String[][] matches = new Regex(string, Pattern.compile("([\\d]+)[\\.|\\,|\\:]([\\d]+)", Pattern.CASE_INSENSITIVE)).getMatches();
 
         if (matches == null || matches.length == 0) {
@@ -368,11 +381,11 @@ public class Regex {
         return Math.round(res);
     }
 
-    public static boolean matches(Object str, Pattern pat) {
+    public static boolean matches(final Object str, final Pattern pat) {
         return new Regex(str, pat).matches();
     }
 
-    public static boolean matches(Object page, String string) {
+    public static boolean matches(final Object page, final String string) {
         return new Regex(page, string).matches();
     }
 
