@@ -23,13 +23,13 @@ package jd.controlling;
  * 
  */
 public class SpeedMeter {
-    private static final int capacity = 20;
+    private static final int CAPACITY = 20;
 
     private int c = 0;
     private int lastSpeed = 0;
-    private long[] bytes = new long[capacity];
-    private long[] times = new long[capacity];
-    private Object lock = new Object();
+    private final long[] bytes = new long[CAPACITY];
+    private final long[] times = new long[CAPACITY];
+    private final Object lock = new Object();
 
     // private Logger logger;
     /**
@@ -40,7 +40,7 @@ public class SpeedMeter {
      */
     public SpeedMeter() {
         // logger=JDUtilities.getLogger();
-        for (int i = 0; i < capacity; i++) {
+        for (int i = 0; i < CAPACITY; i++) {
             bytes[i] = 0;
             times[i] = 1;
         }
@@ -51,12 +51,12 @@ public class SpeedMeter {
      * 
      * @param value
      */
-    public void addSpeedValue(long value, long deltaTime) {
+    public void addSpeedValue(final long value, final long deltaTime) {
         synchronized (lock) {
             bytes[c] = value;
             times[c] = deltaTime;
             c++;
-            if (c == capacity) {
+            if (c == CAPACITY) {
                 c = 0;
             }
         }
@@ -72,12 +72,12 @@ public class SpeedMeter {
         synchronized (lock) {
             long totalValue = 0;
             long totalTime = 0;
-            int i = 0;
-            while (i < capacity) {
-                if (bytes[i] == -1) break;
+            for (int i = 0; i < CAPACITY; i++) {
+                if (bytes[i] == -1) {
+                    break;
+                }
                 totalValue += bytes[i];
                 totalTime += times[i];
-                i++;
             }
             if (totalTime > 0) {
                 lastSpeed = (int) (totalValue / totalTime) * 1024;
