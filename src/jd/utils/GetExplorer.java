@@ -29,7 +29,6 @@ public class GetExplorer {
      * @return
      */
     private static Object[] autoGetExplorerCommand() {
-
         if (OSDetector.isWindows()) {
             return new Object[] { "Explorer", "explorer", new String[] { "%%path%%" } };
         } else if (OSDetector.isMac()) {
@@ -37,10 +36,10 @@ public class GetExplorer {
         } else {
             final Object[][] programms = new Object[][] { { "dolphin", new String[] { "%%path%%" } }, { "konqueror", new String[] { "%%path%%" } }, { "thunar", new String[] { "%%path%%" } }, { "rox", new String[] { "%%path%%" } }, { "pcmanfm", new String[] { "%%path%%" } }, { "nautilus", new String[] { "--browser", "--no-desktop", "%%path%%" } } };
             try {
-                String[] charset = System.getenv("PATH").split(":");
+                final String[] charset = System.getenv("PATH").split(":");
                 for (String element : charset) {
                     for (Object[] element2 : programms) {
-                        File fi = new File(element, (String) element2[0]);
+                        final File fi = new File(element, (String) element2[0]);
                         if (fi.isFile()) { return new Object[] { (String) element2[0], fi.getAbsolutePath(), element2[1] }; }
                     }
                 }
@@ -60,7 +59,9 @@ public class GetExplorer {
      */
     public Object[] getExplorerCommand() {
         if (explorer != null) {
-            if (!new File((String) explorer[1]).exists()) explorer = null;
+            if (!new File((String) explorer[1]).exists()) {
+                explorer = null;
+            }
             JDUtilities.getConfiguration().setProperty(Configuration.PARAM_FILE_BROWSER, null);
         }
         if (explorer == null) {
@@ -75,25 +76,25 @@ public class GetExplorer {
     }
 
     public boolean openExplorer(File path) {
-        if (path == null) return false;
-
-        getExplorerCommand();
-        while (path != null && !path.isDirectory()) {
-            path = path.getParentFile();
-        }
-
-        if (path != null && explorer != null) {
-            final String spath = path.getAbsolutePath();
-            final String[] paramsArray = (String[]) explorer[2];
-            final int length = paramsArray.length;
-            final String[] finalParams = new String[length];
-
-            for (int i = 0; i < length; i++) {
-                finalParams[i] = paramsArray[i].replace("%%path%%", spath);
+        if (path != null) {
+            getExplorerCommand();
+            while (path != null && !path.isDirectory()) {
+                path = path.getParentFile();
             }
 
-            JDUtilities.runCommand((String) explorer[1], finalParams, null, 0);
-            return true;
+            if (path != null && explorer != null) {
+                final String spath = path.getAbsolutePath();
+                final String[] paramsArray = (String[]) explorer[2];
+                final int length = paramsArray.length;
+                final String[] finalParams = new String[length];
+
+                for (int i = 0; i < length; i++) {
+                    finalParams[i] = paramsArray[i].replace("%%path%%", spath);
+                }
+
+                JDUtilities.runCommand((String) explorer[1], finalParams, null, 0);
+                return true;
+            }
         }
         return false;
     }
