@@ -32,23 +32,34 @@ import jd.utils.locale.JDL;
  * Diese Klasse stellt Methoden zur Verfügung um in einen String mit
  * Platzhaltern werte einzusetzen
  */
-public class Replacer {
+public final class Replacer {
+
+    /**
+     * Don't let anyone instantiate this class.
+     */
+    private Replacer() {
+    }
 
     private static ArrayList<String[]> KEYS = null;
 
     public static String[] getKeyList() {
-        if (KEYS == null) Replacer.initKeys();
-        String[] keys = new String[KEYS.size()];
-        for (int i = 0; i < KEYS.size(); i++) {
-            keys[i] = "%" + KEYS.get(i)[0] + "%   (" + KEYS.get(i)[1] + ")";
+        if (KEYS == null) {
+            Replacer.initKeys();
+        }
+        final int size = KEYS.size();
+        final String[] keys = new String[size];
+        for (int i = 0; i < size; i++) {
+            final String[] key = KEYS.get(i);
+            keys[i] = "%" + key[0] + "%   (" + key[1] + ")";
         }
         return keys;
     }
 
-    public static String getKey(int index) {
-        if (KEYS == null) Replacer.initKeys();
-        if (index >= KEYS.size()) return null;
-        return KEYS.get(index)[0];
+    public static String getKey(final int index) {
+        if (KEYS == null) {
+            Replacer.initKeys();
+        }
+        return index >= KEYS.size() ? null : KEYS.get(index)[0];
     }
 
     private static void initKeys() {
@@ -73,83 +84,59 @@ public class Replacer {
         KEYS.add(new String[] { "JD.HOME_DIR", JDL.L("replacer.jdhomedirectory", "jDownloader: Homedirectory/Installdirectory") });
     }
 
-    public static String getReplacement(String key) {
-        DownloadLink dLink = JDController.getInstance().getLastFinishedDownloadLink();
+    public static String getReplacement(final String key) {
+        final DownloadLink dLink = JDController.getInstance().getLastFinishedDownloadLink();
 
-        if (key.equalsIgnoreCase("LAST_FINISHED_PACKAGE.PASSWORD")) {
-            if (dLink == null) return "";
-            return dLink.getFilePackage().getPassword();
-        }
+        if (key.equalsIgnoreCase("LAST_FINISHED_PACKAGE.PASSWORD")) { return (dLink == null) ? "" : dLink.getFilePackage().getPassword(); }
 
-        if (key.equalsIgnoreCase("LAST_FINISHED_PACKAGE.AUTO_PASSWORD")) {
-            if (dLink == null) return "";
-            return dLink.getFilePackage().getPasswordAuto().toString();
-        }
+        if (key.equalsIgnoreCase("LAST_FINISHED_PACKAGE.AUTO_PASSWORD")) { return (dLink == null) ? "" : dLink.getFilePackage().getPasswordAuto().toString(); }
 
-        if (key.equalsIgnoreCase("LAST_FINISHED_PACKAGE.FILELIST")) {
-            if (dLink == null) return "";
-            return dLink.getFilePackage().getDownloadLinkList().toString();
-        }
+        if (key.equalsIgnoreCase("LAST_FINISHED_PACKAGE.FILELIST")) { return (dLink == null) ? "" : dLink.getFilePackage().getDownloadLinkList().toString(); }
 
         if (key.equalsIgnoreCase("LAST_FINISHED_PACKAGE.PACKAGENAME")) {
-            if (dLink == null) return "";
-            String name = dLink.getFilePackage().getName();
-            if (name == null || name.equals("") || name.equals(JDL.L("controller.packages.defaultname", "various"))) return dLink.getName();
-            return dLink.getFilePackage().getName();
+            if (dLink == null) {
+                return "";
+            } else {
+                final String name = dLink.getFilePackage().getName();
+                if (name == null || name.equals("") || name.equals(JDL.L("controller.packages.defaultname", "various"))) {
+                    return dLink.getName();
+                } else {
+                    return dLink.getFilePackage().getName();
+                }
+            }
         }
 
-        if (key.equalsIgnoreCase("LAST_FINISHED_PACKAGE.COMMENT")) {
-            if (dLink == null) return "";
-            return dLink.getFilePackage().getComment();
-        }
+        if (key.equalsIgnoreCase("LAST_FINISHED_PACKAGE.COMMENT")) { return (dLink == null) ? "" : dLink.getFilePackage().getComment(); }
 
-        if (key.equalsIgnoreCase("LAST_FINISHED_PACKAGE.DOWNLOAD_DIRECTORY")) {
-            if (dLink == null) return "";
-            return dLink.getFilePackage().getDownloadDirectory();
-        }
+        if (key.equalsIgnoreCase("LAST_FINISHED_PACKAGE.DOWNLOAD_DIRECTORY")) { return (dLink == null) ? "" : dLink.getFilePackage().getDownloadDirectory(); }
 
-        if (key.equalsIgnoreCase("LAST_FINISHED_FILE.DOWNLOAD_PATH")) {
-            if (dLink == null) return "";
-            return dLink.getFileOutput();
-        }
+        if (key.equalsIgnoreCase("LAST_FINISHED_FILE.DOWNLOAD_PATH")) { return (dLink == null) ? "" : dLink.getFileOutput(); }
 
-        if (key.equalsIgnoreCase("LAST_FINISHED_FILE.INFOSTRING")) {
-            if (dLink == null) return "";
-            return dLink.getFileInfomationString();
-        }
+        if (key.equalsIgnoreCase("LAST_FINISHED_FILE.INFOSTRING")) { return (dLink == null) ? "" : dLink.getFileInfomationString(); }
 
-        if (key.equalsIgnoreCase("LAST_FINISHED_FILE.HOST")) {
-            if (dLink == null) return "";
-            return dLink.getHost();
-        }
+        if (key.equalsIgnoreCase("LAST_FINISHED_FILE.HOST")) { return (dLink == null) ? "" : dLink.getHost(); }
 
-        if (key.equalsIgnoreCase("LAST_FINISHED_FILE.NAME")) {
-            if (dLink == null) return "";
-            return dLink.getName();
-        }
+        if (key.equalsIgnoreCase("LAST_FINISHED_FILE.NAME")) { return (dLink == null) ? "" : dLink.getName(); }
 
-        if (key.equalsIgnoreCase("LAST_FINISHED_FILE.FILESIZE")) {
-            if (dLink == null) return "";
-            return dLink.getDownloadSize() + "";
-        }
+        if (key.equalsIgnoreCase("LAST_FINISHED_FILE.FILESIZE")) { return (dLink == null) ? "" : dLink.getDownloadSize() + ""; }
 
-        if (key.equalsIgnoreCase("LAST_FINISHED_FILE.AVAILABLE")) {
-            if (dLink == null) return "";
-            return dLink.isAvailable() ? "YES" : "NO";
-        }
+        if (key.equalsIgnoreCase("LAST_FINISHED_FILE.AVAILABLE")) { return (dLink == null) ? "" : dLink.isAvailable() ? "YES" : "NO"; }
 
         if (key.equalsIgnoreCase("SYSTEM.IP")) {
-            if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) return "IPCheck disabled";
-            return IPCheck.getIPAddress();
+            if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
+                return "IPCheck disabled";
+            } else {
+                return IPCheck.getIPAddress();
+            }
         }
 
         if (key.equalsIgnoreCase("SYSTEM.DATE")) {
-            Calendar c = Calendar.getInstance();
+            final Calendar c = Calendar.getInstance();
             return Formatter.fillInteger(c.get(Calendar.DATE), 2, "0") + "." + Formatter.fillInteger((c.get(Calendar.MONTH) + 1), 2, "0") + "." + c.get(Calendar.YEAR);
         }
 
         if (key.equalsIgnoreCase("SYSTEM.TIME")) {
-            Calendar c = Calendar.getInstance();
+            final Calendar c = Calendar.getInstance();
             return Formatter.fillInteger(c.get(Calendar.HOUR_OF_DAY), 2, "0") + ":" + Formatter.fillInteger(c.get(Calendar.MINUTE), 2, "0") + ":" + Formatter.fillInteger(c.get(Calendar.SECOND), 2, "0");
         }
 
@@ -163,35 +150,43 @@ public class Replacer {
 
     }
 
-    public static String insertVariables(String str) {
-        if (str == null) return "";
-        if (KEYS == null) Replacer.initKeys();
-        for (String[] element : KEYS) {
-            if (str.indexOf("%" + element[0] + "%") >= 0) {
-                JDLogger.getLogger().finer("%" + element[0] + "%" + " --> *****");
-                str = Replacer.replace(str, "%" + element[0] + "%", Replacer.getReplacement(element[0]));
+    public static String insertVariables(final String str) {
+        String ret = "";
+        if (str != null) {
+            ret = str;
+            if (KEYS == null) {
+                Replacer.initKeys();
+            }
+            for (String[] element : KEYS) {
+                if (str.indexOf("%" + element[0] + "%") >= 0) {
+                    JDLogger.getLogger().finer("%" + element[0] + "%" + " --> *****");
+                    ret = Replacer.replace(ret, "%" + element[0] + "%", Replacer.getReplacement(element[0]));
+                }
             }
         }
-        return str;
+        return ret;
     }
 
-    private static String replace(String in, String remove, String replace) {
-        if (in == null || remove == null || remove.length() == 0) { return in; }
-        StringBuilder sb = new StringBuilder();
-        int oldIndex = 0;
-        int newIndex = 0;
-        int remLength = remove.length();
-        while ((newIndex = in.indexOf(remove, oldIndex)) > -1) {
-            sb.append(in.substring(oldIndex, newIndex));
-            sb.append(replace);
+    private static String replace(final String in, final String remove, final String replace) {
+        if (in == null || remove == null || remove.isEmpty()) {
+            return in;
+        } else {
+            final StringBuilder sb = new StringBuilder();
+            int oldIndex = 0;
+            int newIndex = 0;
+            final int remLength = remove.length();
+            while ((newIndex = in.indexOf(remove, oldIndex)) > -1) {
+                sb.append(in.substring(oldIndex, newIndex));
+                sb.append(replace);
 
-            oldIndex = newIndex + remLength;
-        }
+                oldIndex = newIndex + remLength;
+            }
 
-        int inLength = in.length();
-        if (oldIndex < inLength) {
-            sb.append(in.substring(oldIndex, inLength));
+            final int inLength = in.length();
+            if (oldIndex < inLength) {
+                sb.append(in.substring(oldIndex, inLength));
+            }
+            return sb.toString();
         }
-        return sb.toString();
     }
 }
