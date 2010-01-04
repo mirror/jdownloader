@@ -36,7 +36,7 @@ public class FileUpdate {
     public static final int ERROR = 2;
     public static final int SERVER_STATS = 3;
     public static final int SUCCESS = 4;
-    public static final long WAITTIME_ON_ERROR = 15000;
+    public static long WAITTIME_ON_ERROR = 15000;
 
     private final String localPath;
     private String url;
