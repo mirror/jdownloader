@@ -29,7 +29,7 @@ public final class JDLogger {
     /**
      * Don't let anyone instantiate this class.
      */
-    protected JDLogger() {
+    private JDLogger() {
     }
 
     private static Logger LOGGER = null;
