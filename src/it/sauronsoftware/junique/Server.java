@@ -76,7 +76,7 @@ class Server implements Runnable, ConnectionListener {
      *            The message handler used by this server. It could be null if
      *            who has taken the lock is not interested in message handling.
      */
-    public Server(String id, MessageHandler messageHandler) {
+    public Server(final String id, final MessageHandler messageHandler) {
         this.messageHandler = messageHandler;
         this.id = id;
     }
@@ -95,8 +95,8 @@ class Server implements Runnable, ConnectionListener {
             // Opens the server socket.
             try {
                 serverSocket = new ServerSocket();
-                InetAddress localhost = InetAddress.getByName(null);
-                SocketAddress socketAddress = new InetSocketAddress(localhost, 0);
+                final InetAddress localhost = InetAddress.getByName(null);
+                final SocketAddress socketAddress = new InetSocketAddress(localhost, 0);
                 serverSocket.bind(socketAddress);
             } catch (IOException e) {
                 // Release the server socket.
@@ -168,8 +168,8 @@ class Server implements Runnable, ConnectionListener {
         // Multiple connections handled with multi-threading.
         while (!Thread.interrupted()) {
             try {
-                Socket incoming = serverSocket.accept();
-                Connection c = new Connection(id, incoming, this);
+                final Socket incoming = serverSocket.accept();
+                final Connection c = new Connection(id, incoming, this);
                 synchronized (synchLock) {
                     connections.add(c);
                     c.start();

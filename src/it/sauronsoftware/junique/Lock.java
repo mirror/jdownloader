@@ -74,8 +74,8 @@ class Lock {
 	 * @param server
 	 *            The server handling message reception for this lock.
 	 */
-	Lock(String id, File lockFile, File portFile, FileChannel lockFileChannel,
-			FileLock lockFileLock, Server server) {
+	Lock(final String id, final File lockFile, final File portFile, final FileChannel lockFileChannel,
+			final FileLock lockFileLock, final Server server) {
 		super();
 		this.id = id;
 		this.lockFile = lockFile;

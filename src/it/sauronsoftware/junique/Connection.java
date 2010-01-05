@@ -80,7 +80,7 @@ class Connection implements Runnable {
      * @param listener
      *            A connection listener (required).
      */
-    public Connection(String id, Socket socket, ConnectionListener listener) {
+    public Connection(final String id, final Socket socket, final ConnectionListener listener) {
         this.id = id;
         this.socket = socket;
         this.listener = listener;
@@ -175,7 +175,7 @@ class Connection implements Runnable {
         // Loop.
         while (!Thread.interrupted()) {
             try {
-                String message = Message.read(inputStream);
+                final String message = Message.read(inputStream);
                 String response = listener.messageReceived(this, message);
                 if (response == null) {
                     response = "";

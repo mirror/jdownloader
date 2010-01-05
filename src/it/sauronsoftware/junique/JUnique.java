@@ -68,7 +68,7 @@ public final class JUnique {
      * Locks table. Normalized IDs are placed in the key side, while the value
      * is a {@link Lock} object representing the lock details.
      */
-    private static Hashtable<String, Lock> locks = new Hashtable<String, Lock>();
+    private static final Hashtable<String, Lock> LOCKS = new Hashtable<String, Lock>();
 
     static {
         // Creates the lock files dir, if it yet doesn't exist.
@@ -94,7 +94,7 @@ public final class JUnique {
      *             If the lock cannot be acquired, since it has been already
      *             taken in the user-space.
      */
-    public static void acquireLock(String id) throws AlreadyLockedException {
+    public static void acquireLock(final String id) throws AlreadyLockedException {
         acquireLock(id, null);
     }
 
@@ -111,15 +111,15 @@ public final class JUnique {
      *             If the lock cannot be acquired, since it has been already
      *             taken in the user-space.
      */
-    public static void acquireLock(String id, MessageHandler messageHandler) throws AlreadyLockedException {
+    public static void acquireLock(final String id, final MessageHandler messageHandler) throws AlreadyLockedException {
         // Some usefull references.
-        File lockFile;
-        File portFile;
-        FileChannel fileChannel;
-        FileLock fileLock;
-        Server server;
+        final File lockFile;
+        final File portFile;
+        final FileChannel fileChannel;
+        final FileLock fileLock;
+        final Server server;
         // ID normalization.
-        String nid = normalizeID(id);
+        final String nid = normalizeID(id);
         // Locks JUnique.
         j_lock();
         try {
@@ -129,7 +129,7 @@ public final class JUnique {
             // Tries to open the lock file in write mode.
             LOCK_FILES_DIR.mkdirs();
             try {
-                RandomAccessFile raf = new RandomAccessFile(lockFile, "rw");
+                final RandomAccessFile raf = new RandomAccessFile(lockFile, "rw");
                 fileChannel = raf.getChannel();
                 fileLock = fileChannel.tryLock();
                 if (fileLock == null) {
@@ -144,7 +144,7 @@ public final class JUnique {
             server = new Server(id, messageHandler);
             // The lock has been taken. Let's remember it!
             Lock lock = new Lock(id, lockFile, portFile, fileChannel, fileLock, server);
-            locks.put(nid, lock);
+            LOCKS.put(nid, lock);
             // Starts the lock server.
             server.start();
             // Writes the port file.
@@ -177,14 +177,14 @@ public final class JUnique {
      * @param id
      *            The lock ID.
      */
-    public static void releaseLock(String id) {
+    public static void releaseLock(final String id) {
         // ID normalization.
-        String nid = normalizeID(id);
+        final String nid = normalizeID(id);
         // Locks JUnique.
         j_lock();
         try {
             // Searches for the Lock instance.
-            Lock lock = locks.remove(nid);
+            final Lock lock = LOCKS.remove(nid);
             // Is it ok?
             if (lock != null) {
                 releaseLock(lock);
@@ -201,7 +201,7 @@ public final class JUnique {
      * @param lock
      *            The lock to release.
      */
-    private static void releaseLock(Lock lock) {
+    private static void releaseLock(final Lock lock) {
         // Shuts down the lock server.
         lock.getServer().stop();
         // Releases the locked resources.
@@ -233,20 +233,20 @@ public final class JUnique {
      *         be delivered. It returns an empty string if the message has been
      *         delivered but the recipient hasn't supplied a response for it.
      */
-    public static String sendMessage(String id, String message) {
+    public static String sendMessage(final String id, final String message) {
         int port = -1;
         // Locks JUnique.
         j_lock();
         try {
             // ID normalization.
-            String nid = normalizeID(id);
+            final String nid = normalizeID(id);
             // Port file.
-            File portFile = getPortFileForNID(nid);
+            final File portFile = getPortFileForNID(nid);
             // Tries to acquire the port number.
             BufferedReader reader = null;
             try {
                 reader = new BufferedReader(new FileReader(portFile));
-                String line = reader.readLine();
+                final String line = reader.readLine();
                 if (line != null) {
                     port = Integer.parseInt(line);
                 }
@@ -312,11 +312,11 @@ public final class JUnique {
      *            The source ID.
      * @return The normalized ID.
      */
-    private static String normalizeID(String id) {
-        int hashcode = id.hashCode();
-        boolean positive = hashcode >= 0;
-        long longcode = positive ? (long) hashcode : -(long) hashcode;
-        StringBuffer hexstring = new StringBuffer(Long.toHexString(longcode));
+    private static String normalizeID(final String id) {
+        final int hashcode = id.hashCode();
+        final boolean positive = hashcode >= 0;
+        final long longcode = positive ? (long) hashcode : -(long) hashcode;
+        final StringBuffer hexstring = new StringBuffer(Long.toHexString(longcode));
         while (hexstring.length() < 8) {
             hexstring.insert(0, '0');
         }
@@ -335,8 +335,8 @@ public final class JUnique {
      *            The normalized ID.
      * @return The lock file for this normalized ID.
      */
-    private static File getLockFileForNID(String nid) {
-        String filename = normalizeID(nid) + ".lock";
+    private static File getLockFileForNID(final String nid) {
+        final String filename = normalizeID(nid) + ".lock";
         return new File(LOCK_FILES_DIR, filename);
     }
 
@@ -347,8 +347,8 @@ public final class JUnique {
      *            The corresponding normalized ID.
      * @return The port file for this normalized ID.
      */
-    private static File getPortFileForNID(String nid) {
-        String filename = normalizeID(nid) + ".port";
+    private static File getPortFileForNID(final String nid) {
+        final String filename = normalizeID(nid) + ".port";
         return new File(LOCK_FILES_DIR, filename);
     }
 
@@ -361,9 +361,9 @@ public final class JUnique {
         do {
             LOCK_FILES_DIR.mkdirs();
             try {
-                RandomAccessFile raf = new RandomAccessFile(GLOBAL_LOCK_FILE, "rw");
-                FileChannel channel = raf.getChannel();
-                FileLock lock = channel.lock();
+                final RandomAccessFile raf = new RandomAccessFile(GLOBAL_LOCK_FILE, "rw");
+                final FileChannel channel = raf.getChannel();
+                final FileLock lock = channel.lock();
                 globalFileChannel = channel;
                 globalFileLock = lock;
                 break;
@@ -376,8 +376,8 @@ public final class JUnique {
      * Release a previously acquired extra-JVM JUnique lock.
      */
     private static void j_unlock() {
-        FileChannel channel = globalFileChannel;
-        FileLock lock = globalFileLock;
+        final FileChannel channel = globalFileChannel;
+        final FileLock lock = globalFileLock;
         globalFileChannel = null;
         globalFileLock = null;
         try {
@@ -403,15 +403,15 @@ public final class JUnique {
             j_lock();
             try {
                 // Collects nids.
-                ArrayList<String> nids = new ArrayList<String>();
-                for (Enumeration<String> e = locks.keys(); e.hasMoreElements();) {
-                    String nid = e.nextElement();
+                final ArrayList<String> nids = new ArrayList<String>();
+                for (final Enumeration<String> e = LOCKS.keys(); e.hasMoreElements();) {
+                    final String nid = e.nextElement();
                     nids.add(nid);
                 }
                 // Releases any unreleased lock.
-                for (Iterator<String> i = nids.iterator(); i.hasNext();) {
-                    String nid = i.next();
-                    Lock lock = locks.remove(nid);
+                for (final Iterator<String> i = nids.iterator(); i.hasNext();) {
+                    final String nid = i.next();
+                    final Lock lock = LOCKS.remove(nid);
                     releaseLock(lock);
                 }
             } finally {

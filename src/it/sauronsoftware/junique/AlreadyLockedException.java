@@ -39,7 +39,7 @@ public class AlreadyLockedException extends Exception {
      * @param id
      *            The ID already locked.
      */
-    AlreadyLockedException(String id) {
+    AlreadyLockedException(final String id) {
         super("Lock for ID \"" + id + "\" has already been taken");
         this.id = id;
     }

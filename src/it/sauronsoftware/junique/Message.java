@@ -28,6 +28,7 @@ import java.io.OutputStream;
  * @author Carlo Pelliccia
  */
 final class Message {
+    private static final String UTF8 = "UTF-8";
 
 	/**
 	 * It reads a JUnique formatted message from an InputStream.
@@ -38,13 +39,13 @@ final class Message {
 	 * @throws IOException
 	 *             In an I/O error occurs.
 	 */
-	public static String read(InputStream inputStream) throws IOException {
+	public static String read(final InputStream inputStream) throws IOException {
 		// Message length (4 bytes)
-		byte[] b = new byte[4];
+		final byte[] b = new byte[4];
 		if (inputStream.read(b) != 4) {
 			throw new IOException("Unexpected end of stream");
 		}
-		int length = (b[0] << 24) | (b[1] << 16) | (b[2] << 8) | b[3];
+		final int length = (b[0] << 24) | (b[1] << 16) | (b[2] << 8) | b[3];
 		// Length validation.
 		if (length < 0) {
 			throw new IOException("Invalid length block");
@@ -52,12 +53,12 @@ final class Message {
 			return "";
 		} else {
 			// The message in bytes.
-			byte[] message = new byte[length];
+			final byte[] message = new byte[length];
 			if (inputStream.read(message) != length) {
 				throw new IOException("Unexpected end of stream");
 			}
 			// From bytes to string (utf-8).
-			return new String(message, "UTF-8");
+			return new String(message, UTF8);
 		}
 	}
 
@@ -71,7 +72,7 @@ final class Message {
 	 * @throws IOException
 	 *             In an I/O error occurs.
 	 */
-	public static void write(String message, OutputStream outputStream)
+	public static void write(final String message, final OutputStream outputStream)
 			throws IOException {
 		// Is this message null?
 		if (message == null) {
@@ -83,9 +84,9 @@ final class Message {
 			outputStream.flush();
 		} else {
 			// Message length.
-			int length = message.length();
+			final int length = message.length();
 			// The length block.
-			byte[] l = new byte[4];
+			final byte[] l = new byte[4];
 			l[0] = (byte) ((length >> 24) & 0xff);
 			l[1] = (byte) ((length >> 16) & 0xff);
 			l[2] = (byte) ((length >> 8) & 0xff);
@@ -93,7 +94,7 @@ final class Message {
 			outputStream.write(l);
 			outputStream.flush();
 			// Message block.
-			byte[] b = message.getBytes("UTF-8");
+			final byte[] b = message.getBytes(UTF8);
 			outputStream.write(b);
 			outputStream.flush();
 		}
