@@ -78,7 +78,9 @@ public class Browser {
         }
 
         public BrowserException closeConnection() {
-            if (connection != null && connection.isConnected()) connection.disconnect();
+            if (connection != null && connection.isConnected()) {
+                connection.disconnect();
+            }
             return this;
         }
 
@@ -606,11 +608,13 @@ public class Browser {
     /**
      * Creates a new GET request.
      * 
-     * @param string a string including an url
+     * @param string
+     *            a string including an url
      * 
      * @return the created GET request
      * 
-     * @throws IOException Signals that an I/O exception has occurred.
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     public Request createGetRequest(final String string) throws IOException {
         return createGetRequest(string, null);
@@ -619,14 +623,16 @@ public class Browser {
     /**
      * Creates a new GET request.
      * 
-     * @param string a string including an url
-     * @param oldRequest the old request for forwarding cookies to
-     *                   the new request. Can be null, to ignore old
-     *                   cookies.
+     * @param string
+     *            a string including an url
+     * @param oldRequest
+     *            the old request for forwarding cookies to the new request. Can
+     *            be null, to ignore old cookies.
      * 
      * @return the created GET request
      * 
-     * @throws IOException Signals that an I/O exception has occurred.
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     public Request createGetRequest(String string, final Request oldRequest) throws IOException {
         string = getURL(string);
@@ -699,11 +705,13 @@ public class Browser {
     /**
      * Creates a new GET request including cookies from old request.
      * 
-     * @param oldRequest the old request
+     * @param oldRequest
+     *            the old request
      * 
      * @return the created GET request
      * 
-     * @throws IOException Signals that an I/O exception has occurred.
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
      */
     public Request createGetRequestRedirectedRequest(final Request oldRequest) throws IOException {
         return createGetRequest(oldRequest.getLocation(), oldRequest);
