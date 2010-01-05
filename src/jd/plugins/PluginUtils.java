@@ -33,7 +33,7 @@ public class PluginUtils {
     /**
      * Asks the user to entere a password for plugin
      */
-    public static String askPassword(Plugin plg) {
+    public static String askPassword(final Plugin plg) {
         return UserIO.getInstance().requestInputDialog(0, JDL.LF("jd.plugins.PluginUtils.askPassword", "Please enter the password for %s", plg.getHost()), "");
     }
 
@@ -43,24 +43,22 @@ public class PluginUtils {
      * @param plg
      * @param password
      */
-    public static void informPasswordWrong(Plugin plg, String password) {
+    public static void informPasswordWrong(final Plugin plg, final String password) {
         Balloon.show(JDL.LF("jd.plugins.PluginUtils.informPasswordWrong.title", "Password wrong: %s", password), UserIO.getInstance().getIcon(UserIO.ICON_ERROR), JDL.LF("jd.plugins.PluginUtils.informPasswordWrong.message", "The password you entered for %s has been wrong.", plg.getHost()));
-
     }
 
-    public static void evalJSPacker(Browser br) {
-        String regex = "eval\\((.*?\\,\\{\\}\\))\\)";
-        String[] containers = br.getRegex(regex).getColumn(0);
+    public static void evalJSPacker(final Browser br) {
+        final String regex = "eval\\((.*?\\,\\{\\}\\))\\)";
+        final String[] containers = br.getRegex(regex).getColumn(0);
 
         String htmlcode = br.getRequest().getHtmlCode();
         for (String c : containers) {
-            Context cx = Context.enter();
-            Scriptable scope = cx.initStandardObjects();
+            final Context cx = Context.enter();
+            final Scriptable scope = cx.initStandardObjects();
             c = c.replaceAll("return p\\}\\(", " return p}  f(").replaceAll("function\\s*\\(p\\,a\\,c\\,k\\,e\\,d\\)", "function f(p,a,c,k,e,d)");
-            Object result = cx.evaluateString(scope, c, "<cmd>", 1, null);
-            String code = Context.toString(result);
+            final Object result = cx.evaluateString(scope, c, "<cmd>", 1, null);
+            final String code = Context.toString(result);
             htmlcode = htmlcode.replaceFirst(regex, code);
-
         }
         br.getRequest().setHtmlCode(htmlcode);
     }
