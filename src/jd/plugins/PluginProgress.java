@@ -26,7 +26,7 @@ public class PluginProgress {
 
     private Color color;
 
-    public PluginProgress(long current, long total, Color color) {
+    public PluginProgress(final long current, final long total, final Color color) {
         this.total = total;
         this.current = current;
         this.color = color;
@@ -48,15 +48,15 @@ public class PluginProgress {
         return total;
     }
 
-    public void setColor(Color color) {
+    public void setColor(final Color color) {
         this.color = color;
     }
 
-    public void setCurrent(long current) {
+    public void setCurrent(final long current) {
         this.current = current;
     }
 
-    public void setTotal(long total) {
+    public void setTotal(final long total) {
         this.total = total;
     }
 
