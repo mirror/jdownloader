@@ -46,16 +46,16 @@ import jd.utils.locale.JDL;
 
 public abstract class PluginsC extends Plugin {
 
-    public PluginsC(PluginWrapper wrapper) {
+    public PluginsC(final PluginWrapper wrapper) {
         super(wrapper);
         // TODO Auto-generated constructor stub
     }
 
-    private static HashMap<String, ArrayList<DownloadLink>> CONTAINER = new HashMap<String, ArrayList<DownloadLink>>();
+    private static final HashMap<String, ArrayList<DownloadLink>> CONTAINER = new HashMap<String, ArrayList<DownloadLink>>();
 
-    private static HashMap<String, ArrayList<String>> CONTAINERLINKS = new HashMap<String, ArrayList<String>>();
+    private static final HashMap<String, ArrayList<String>> CONTAINERLINKS = new HashMap<String, ArrayList<String>>();
 
-    private static HashMap<String, PluginsC> PLUGINS = new HashMap<String, PluginsC>();
+    private static final HashMap<String, PluginsC> PLUGINS = new HashMap<String, PluginsC>();
 
     private static final int STATUS_NOTEXTRACTED = 0;
 
@@ -76,9 +76,9 @@ public abstract class PluginsC extends Plugin {
     public abstract ContainerStatus callDecryption(File file);
 
     // @Override
-    public synchronized boolean canHandle(String data) {
+    public synchronized boolean canHandle(final String data) {
         if (data == null) { return false; }
-        String match = new Regex(data, this.getSupportedLinks()).getMatch(-1);
+        final String match = new Regex(data, this.getSupportedLinks()).getMatch(-1);
 
         return match != null && match.equalsIgnoreCase(data);
     }
@@ -97,8 +97,8 @@ public abstract class PluginsC extends Plugin {
      * sind.
      */
     private void decryptLinkProtectorLinks() {
-        ArrayList<DownloadLink> tmpDlink = new ArrayList<DownloadLink>();
-        ArrayList<String> tmpURL = new ArrayList<String>();
+        final ArrayList<DownloadLink> tmpDlink = new ArrayList<DownloadLink>();
+        final ArrayList<String> tmpURL = new ArrayList<String>();
 
         int i = 0;
         int c = 0;
@@ -108,16 +108,16 @@ public abstract class PluginsC extends Plugin {
             progress.increase(1);
             progress.setStatusText(JDL.LF("plugins.container.decrypt", "Decrypt link %s", i));
 
-            DistributeData distributeData = new DistributeData(string);
-            ArrayList<DownloadLink> links = distributeData.findLinks();
+            final DistributeData distributeData = new DistributeData(string);
+            final ArrayList<DownloadLink> links = distributeData.findLinks();
 
-            DownloadLink srcLink = cls.get(i);
-            Iterator<DownloadLink> it = links.iterator();
+            final DownloadLink srcLink = cls.get(i);
+            final Iterator<DownloadLink> it = links.iterator();
             progress.addToMax(links.size());
 
             while (it.hasNext()) {
                 progress.increase(1);
-                DownloadLink next = it.next();
+                final DownloadLink next = it.next();
                 tmpDlink.add(next);
                 tmpURL.add(next.getDownloadURL());
 
@@ -146,7 +146,6 @@ public abstract class PluginsC extends Plugin {
                 next.setFilePackage(srcLink.getFilePackage());
                 next.setUrlDownload(null);
                 next.setLinkType(DownloadLink.LINKTYPE_CONTAINER);
-
             }
             i++;
         }
@@ -158,9 +157,9 @@ public abstract class PluginsC extends Plugin {
     /**
      * Erstellt eine Kopie des Containers im Homedir.
      */
-    public synchronized void doDecryption(String parameter) {
+    public synchronized void doDecryption(final String parameter) {
         logger.info("DO STEP");
-        String file = parameter;
+        final String file = parameter;
         if (status == STATUS_ERROR_EXTRACTING) {
             logger.severe("Expired JD Version. Could not extract links");
             return;
@@ -169,14 +168,14 @@ public abstract class PluginsC extends Plugin {
             logger.severe("Containerfile == null");
             return;
         }
-        File f = JDUtilities.getResourceFile(file);
+        final File f = JDUtilities.getResourceFile(file);
         if (md5 == null) {
             md5 = JDHash.getMD5(f);
         }
 
-        String extension = JDIO.getFileExtension(f);
+        final String extension = JDIO.getFileExtension(f);
         if (f.exists()) {
-            File res = JDUtilities.getResourceFile("container/" + md5 + "." + extension, true);
+            final File res = JDUtilities.getResourceFile("container/" + md5 + "." + extension, true);
             if (!res.exists()) {
                 JDIO.copyFile(f, res);
             }
@@ -198,7 +197,7 @@ public abstract class PluginsC extends Plugin {
      *            Der DownloadLink, dessen URL zurückgegeben werden soll
      * @return Die URL als String
      */
-    public synchronized String extractDownloadURL(DownloadLink downloadLink) {
+    public synchronized String extractDownloadURL(final DownloadLink downloadLink) {
         // logger.info("EXTRACT " + downloadLink);
         if (dlU == null) {
             initContainer(downloadLink.getContainerFile(), downloadLink.getGenericProperty("k", new byte[] {}));
@@ -214,22 +213,24 @@ public abstract class PluginsC extends Plugin {
      * 
      * @param downloadLink
      */
-    private void checkWorkaround(DownloadLink downloadLink) {
-        ArrayList<DownloadLink> links = JDUtilities.getDownloadController().getAllDownloadLinks();
-        ArrayList<DownloadLink> failed = new ArrayList<DownloadLink>();
+    private void checkWorkaround(final DownloadLink downloadLink) {
+        final ArrayList<DownloadLink> links = JDUtilities.getDownloadController().getAllDownloadLinks();
+        final ArrayList<DownloadLink> failed = new ArrayList<DownloadLink>();
         int biggestIndex = 0;
-        for (DownloadLink l : links) {
-            if (l.getContainerFile() != null && l.getContainerFile().equalsIgnoreCase(downloadLink.getContainerFile())) {
+        final String dlContainerFile = downloadLink.getContainerFile();
+        for (final DownloadLink l : links) {
+            final String containerFile = l.getContainerFile();
+            if (containerFile != null && containerFile.equalsIgnoreCase(dlContainerFile)) {
                 failed.add(l);
                 biggestIndex = Math.max(biggestIndex, l.getContainerIndex());
             }
         }
 
         if (biggestIndex >= dlU.size()) {
-            ArrayList<DownloadLink> rename = new ArrayList<DownloadLink>();
+            final ArrayList<DownloadLink> rename = new ArrayList<DownloadLink>();
             System.err.println("DLC missmatch found");
             String ren = "";
-            for (DownloadLink l : failed) {
+            for (final DownloadLink l : failed) {
                 if (new File(l.getFileOutput()).exists() && l.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
                     rename.add(l);
                     ren += l.getFileOutput() + "<br>";
@@ -238,7 +239,7 @@ public abstract class PluginsC extends Plugin {
             if (JDFlags.hasAllFlags(UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN | UserIO.STYLE_HTML, "DLC Missmatch", "<b>JD discovered an error while downloading DLC links.</b> <br>The following files may have errors:<br>" + ren + "<br><u> Do you want JD to try to correct them?</u>"), UserIO.RETURN_OK)) {
                 int ffailed = 0;
                 ren = "";
-                for (DownloadLink l : rename) {
+                for (final DownloadLink l : rename) {
                     String name = l.getName();
                     String filename = new File(l.getFileOutput()).getName();
                     l.setUrlDownload(dlU.get(l.getContainerIndex() / 2));
@@ -254,30 +255,24 @@ public abstract class PluginsC extends Plugin {
                                     ffailed++;
                                     ren += l.getFileOutput() + " -> RENAME TO " + newFile + " FAILED<br>";
                                 } else {
-
                                     if (new File(l.getFileOutput()).renameTo(newFile)) {
                                         ren += l.getFileOutput() + " -> " + newFile + "<br>";
                                     } else {
                                         ren += l.getFileOutput() + " -> RENAME TO " + newFile + " FAILED<br>";
                                     }
                                 }
-
                             }
-
                         }
-
                     }
                     l.setUrlDownload(null);
                 }
                 JDFlags.hasAllFlags(UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN | UserIO.STYLE_HTML, "DLC Correction", "<b>Correction result:</b> <br>" + ren + ""), UserIO.RETURN_OK);
-
                 ren = null;
             }
-            for (DownloadLink l : failed) {
+            for (final DownloadLink l : failed) {
                 l.setContainerIndex(l.getContainerIndex() / 2);
             }
         }
-
     }
 
     /**
@@ -287,8 +282,8 @@ public abstract class PluginsC extends Plugin {
      *            Hostname
      * @return Das gefundene Plugin oder null
      */
-    protected PluginForHost findHostPlugin(String data) {
-        for (HostPluginWrapper pHost : HostPluginWrapper.getHostWrapper()) {
+    protected PluginForHost findHostPlugin(final String data) {
+        for (final HostPluginWrapper pHost : HostPluginWrapper.getHostWrapper()) {
             if (pHost.canHandle(data)) return pHost.getPlugin();
         }
         return null;
@@ -313,10 +308,10 @@ public abstract class PluginsC extends Plugin {
      * @param containerFile
      * @return
      */
-    public PluginsC getPlugin(String containerFile) {
+    public PluginsC getPlugin(final String containerFile) {
         if (PLUGINS.containsKey(containerFile)) { return PLUGINS.get(containerFile); }
         try {
-            PluginsC newPlugin = this.getClass().newInstance();
+            final PluginsC newPlugin = this.getClass().newInstance();
             PLUGINS.put(containerFile, newPlugin);
             return newPlugin;
         } catch (InstantiationException e) {
@@ -327,16 +322,16 @@ public abstract class PluginsC extends Plugin {
         return null;
     }
 
-    public synchronized void initContainer(String filename, byte[] bs) {
+    public synchronized void initContainer(String filename, final byte[] bs) {
 
-        File rel = JDUtilities.getResourceFile(filename);
-        File ab = new File(filename);
-        String md;
+        final File rel = JDUtilities.getResourceFile(filename);
+        final File ab = new File(filename);
+        final String md;
 
         if (!rel.exists() && ab.exists()) {
-            String extension = JDIO.getFileExtension(ab);
+            final String extension = JDIO.getFileExtension(ab);
             md = JDHash.getMD5(ab);
-            File newFile = JDUtilities.getResourceFile("container/" + md + "." + extension, true);
+            final File newFile = JDUtilities.getResourceFile("container/" + md + "." + extension, true);
             if (!newFile.exists()) {
                 JDIO.copyFile(ab, newFile);
             }
@@ -375,7 +370,7 @@ public abstract class PluginsC extends Plugin {
                 progress.setStatusText(JDL.LF("plugins.container.found", "Prozess %s links", cls.size()));
                 decryptLinkProtectorLinks();
                 progress.setStatusText(JDL.LF("plugins.container.exit", "Finished. Found %s links", cls.size()));
-                Iterator<DownloadLink> it = cls.iterator();
+                final Iterator<DownloadLink> it = cls.iterator();
                 while (it.hasNext()) {
                     it.next().setLinkType(DownloadLink.LINKTYPE_CONTAINER);
                 }
@@ -401,13 +396,11 @@ public abstract class PluginsC extends Plugin {
                 progress.doFinalize();
             }
             fireControlEvent(ControlEvent.CONTROL_PLUGIN_INACTIVE, this);
-
         }
     }
 
-    public void initContainer(String absolutePath) {
+    public void initContainer(final String absolutePath) {
         this.initContainer(absolutePath, null);
-
     }
 
 }
