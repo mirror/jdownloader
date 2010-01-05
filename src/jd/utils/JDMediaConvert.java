@@ -19,6 +19,7 @@ package jd.utils;
 import java.io.File;
 import java.util.logging.Logger;
 
+import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
 import jd.gui.swing.components.ConvertDialog.ConversionMode;
 import jd.plugins.DownloadLink;
@@ -27,22 +28,22 @@ import de.savemytube.flv.FLV;
 
 public class JDMediaConvert {
 
-    private static Logger logger = jd.controlling.JDLogger.getLogger();
+    private static final Logger LOG = JDLogger.getLogger();
 
-    private static String TempExt = ".tmp$";
+    private static final String TEMP_EXT = ".tmp$";
 
-    public static boolean ConvertFile(DownloadLink downloadlink, ConversionMode InType, ConversionMode OutType) {
-        logger.info("Convert " + downloadlink.getName() + " - " + InType.getText() + " - " + OutType.getText());
+    public static boolean ConvertFile(final DownloadLink downloadlink, final ConversionMode InType, final ConversionMode OutType) {
+        LOG.info("Convert " + downloadlink.getName() + " - " + InType.getText() + " - " + OutType.getText());
         if (InType.equals(OutType)) {
-            logger.info("No Conversion needed, renaming...");
-            File oldone = new File(downloadlink.getFileOutput());
-            File newone = new File(downloadlink.getFileOutput().replaceAll(TempExt, OutType.getExtFirst()));
-            downloadlink.setFinalFileName(downloadlink.getName().replaceAll(TempExt, OutType.getExtFirst()));
+            LOG.info("No Conversion needed, renaming...");
+            final File oldone = new File(downloadlink.getFileOutput());
+            final File newone = new File(downloadlink.getFileOutput().replaceAll(TEMP_EXT, OutType.getExtFirst()));
+            downloadlink.setFinalFileName(downloadlink.getName().replaceAll(TEMP_EXT, OutType.getExtFirst()));
             oldone.renameTo(newone);
             return true;
         }
 
-        ProgressController progress = new ProgressController(JDL.L("convert.progress.convertingto", "Konvertiere zu") + " " + OutType.toString(), 3, null);
+        final ProgressController progress = new ProgressController(JDL.L("convert.progress.convertingto", "Konvertiere zu") + " " + OutType.toString(), 3, null);
         downloadlink.getLinkStatus().setStatusText(JDL.L("convert.progress.convertingto", "Konvertiere zu") + " " + OutType.toString());
         progress.increase(1);
         switch (InType) {
@@ -50,7 +51,7 @@ public class JDMediaConvert {
             // Inputformat FLV
             switch (OutType) {
             case AUDIOMP3:
-                logger.info("Convert FLV to mp3...");
+                LOG.info("Convert FLV to mp3...");
                 new FLV(downloadlink.getFileOutput(), true, true);
                 progress.increase(1);
                 // FLV löschen
@@ -58,31 +59,31 @@ public class JDMediaConvert {
                     new File(downloadlink.getFileOutput()).deleteOnExit();
                 }
                 // AVI löschen
-                if (!new File(downloadlink.getFileOutput().replaceAll(TempExt, ".avi")).delete()) {
-                    new File(downloadlink.getFileOutput().replaceAll(TempExt, ".avi")).deleteOnExit();
+                if (!new File(downloadlink.getFileOutput().replaceAll(TEMP_EXT, ".avi")).delete()) {
+                    new File(downloadlink.getFileOutput().replaceAll(TEMP_EXT, ".avi")).deleteOnExit();
                 }
                 progress.doFinalize();
                 return true;
             case AUDIOMP3_AND_VIDEOFLV:
-                logger.info("Convert FLV to mp3 (keep FLV)...");
+                LOG.info("Convert FLV to mp3 (keep FLV)...");
                 new FLV(downloadlink.getFileOutput(), true, true);
                 progress.increase(1);
                 // AVI löschen
-                if (!new File(downloadlink.getFileOutput().replaceAll(TempExt, ".avi")).delete()) {
-                    new File(downloadlink.getFileOutput().replaceAll(TempExt, ".avi")).deleteOnExit();
+                if (!new File(downloadlink.getFileOutput().replaceAll(TEMP_EXT, ".avi")).delete()) {
+                    new File(downloadlink.getFileOutput().replaceAll(TEMP_EXT, ".avi")).deleteOnExit();
                 }
                 // Rename tmp to flv
                 new File(downloadlink.getFileOutput()).renameTo(new File(downloadlink.getFileOutput().replaceAll(".tmp", ConversionMode.VIDEOFLV.getExtFirst())));
                 progress.doFinalize();
                 return true;
             default:
-                logger.warning("Don't know how to convert " + InType.getText() + " to " + OutType.getText());
+                LOG.warning("Don't know how to convert " + InType.getText() + " to " + OutType.getText());
                 downloadlink.getLinkStatus().setErrorMessage(JDL.L("convert.progress.unknownintype", "Unbekanntes Format"));
                 progress.doFinalize();
                 return false;
             }
         default:
-            logger.warning("Don't know how to convert " + InType.getText() + " to " + OutType.getText());
+            LOG.warning("Don't know how to convert " + InType.getText() + " to " + OutType.getText());
             downloadlink.getLinkStatus().setErrorMessage(JDL.L("convert.progress.unknownintype", "Unbekanntes Format"));
             progress.doFinalize();
             return false;
