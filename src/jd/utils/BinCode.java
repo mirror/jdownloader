@@ -18,52 +18,62 @@ package jd.utils;
 
 import jd.controlling.JDLogger;
 
-public class BinCode {
-    private static String addZero(String bin, int minCount) {
-        for (int j = bin.length(); j < minCount; j++) {
-            bin = "0" + bin;
-        }
-        return bin;
+public final class BinCode {
+    /**
+     * Don't let anyone instantiate this class.
+     */
+    private BinCode() {
     }
 
-    private static String[] binArrayToCodeArray(String[] binArray) {
-        String[] codeArray = new String[binArray.length];
-        for (int i = 0; i < binArray.length; i++) {
+    private static String addZero(final String bin, final int minCount) {
+        final StringBuilder ret = new StringBuilder(bin == null ? "" : bin);
+        for (int j = ret.length(); j < minCount; j++) {
+            ret.insert(0, '0');
+        }
+        return ret.toString();
+    }
+
+    private static String[] binArrayToCodeArray(final String[] binArray) {
+        final int length = binArray.length;
+        final String[] codeArray = new String[length];
+        for (int i = 0; i < length; i++) {
             codeArray[i] = BinCode.prBinToCode(binArray[i]);
         }
         return codeArray;
     }
 
-    public static String binToCode(String bin) {
+    public static String binToCode(final String bin) {
         try {
-            String[] sts = bin.split("\\|");
-            String[] codeArray = BinCode.binArrayToCodeArray(sts);
-            int minCount = sts[0].length();
-            StringBuilder ret = new StringBuilder();
+            final String[] sts = bin.split("\\|");
+            final String[] codeArray = BinCode.binArrayToCodeArray(sts);
+            final int minCount = sts[0].length();
+            final StringBuilder ret = new StringBuilder();
             ret.append(minCount);
-            for (int i = 0; i < sts.length; i++) {
+            final int stsLength = sts.length;
+            for (int i = 0; i < stsLength; i++) {
                 ret.append("|" + codeArray[i]);
             }
             return ret.toString();
         } catch (Exception e) {
-            // TODO: handle exception
+            JDLogger.exception(e);
         }
         return null;
     }
 
-    private static String[] codeArrayToBinArray(String[] codeArray) {
-        String[] binArray = new String[codeArray.length - 1];
-        int minCount = Integer.parseInt(codeArray[0]);
-        for (int i = 1; i < codeArray.length; i++) {
+    private static String[] codeArrayToBinArray(final String[] codeArray) {
+        final int length = codeArray.length;
+        final String[] binArray = new String[length - 1];
+        final int minCount = Integer.parseInt(codeArray[0]);
+        for (int i = 1; i < length; i++) {
             binArray[i - 1] = BinCode.addZero(BinCode.prCodeToBin(codeArray[i]), minCount);
         }
         return binArray;
     }
 
-    public static String codeToString(String code) {
+    public static String codeToString(final String code) {
         try {
-            String[] binArray = BinCode.codeToStringArray(code);
-            StringBuilder ret = new StringBuilder();
+            final String[] binArray = BinCode.codeToStringArray(code);
+            final StringBuilder ret = new StringBuilder();
             boolean last = false;
             for (String element : binArray) {
                 ret.append((last ? "|" : "") + element);
@@ -76,15 +86,15 @@ public class BinCode {
         return null;
     }
 
-    public static String[] codeToStringArray(String code) {
+    public static String[] codeToStringArray(final String code) {
         return BinCode.codeArrayToBinArray(code.split("\\|"));
     }
 
-    private static String prBinToCode(String bin) {
+    private static String prBinToCode(final String bin) {
         return Integer.toString(Integer.parseInt(bin, 2), 36);
     }
 
-    private static String prCodeToBin(String Code) {
+    private static String prCodeToBin(final String Code) {
         return Integer.toBinaryString(Integer.parseInt(Code, 36));
     }
 
