@@ -37,5 +37,7 @@ param.objectColorContrast = 0.3;
 param.objectDetectionContrast = 0.5;
 param.relativecontrast=0.85;
 param.autoLetterNum=true;
-param.useSpecialGetLetters=TrbBt.getLetters;
+param.easyCaptchaRemoveSmallObjects=false;
+param.useSpecialGetLetters=EasyCaptcha.getLetters;
 param.useLetterFilter=EasyCaptcha.letterFilter;
+letter.prepare.resizetoHeight(25);
