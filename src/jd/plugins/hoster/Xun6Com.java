@@ -70,14 +70,14 @@ public class Xun6Com extends PluginForHost {
         br.setFollowRedirects(false);
         Form captchaform = br.getFormbyProperty("name", "myform");
         String captchaurl = br.getRegex("\"(http://xun6\\.com/captcha.*?)\"").getMatch(0);
-        if(captchaurl == null)captchaurl = br.getRegex("\"(http://[a-zA-Z0-9]+\\.xun6\\.com/captcha.*?)\"").getMatch(0);
+        if (captchaurl == null) captchaurl = br.getRegex("\"(http://[a-zA-Z0-9]+\\.xun6\\.com/captcha.*?)\"").getMatch(0);
         if (captchaurl == null || captchaform == null) {
             logger.warning("Captchaform or captchaurl is null");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         captchaform.remove(null);
         String passCode = null;
-        for (int i = 0; i <= 3; i++) {
+        for (int i = 0; i <= 5; i++) {
             // Password protected links handling
             if (br.containsHTML("name=\"downloadpw\"")) {
                 if (downloadLink.getStringProperty("pass", null) == null) {
@@ -103,11 +103,14 @@ public class Xun6Com extends PluginForHost {
             downloadLink.setProperty("pass", null);
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
-        String dllink = br.getRegex("downloadlink\" href=\"(.*?)\"").getMatch(0);
-        if (dllink == null) {
+        String domain = br.getRegex("domain = \"(.*?)\";").getMatch(0);
+        String dirname = br.getRegex("dirname = \"(.*?)\"").getMatch(0);
+        String basename = br.getRegex("basename = \"(.*?)\"").getMatch(0);
+        if (domain == null || dirname == null || basename == null) {
             logger.warning("dllink regex is broken");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        String dllink = "http://" + domain + dirname + "/" + basename;
         if (passCode != null) {
             downloadLink.setProperty("pass", passCode);
         }
@@ -118,7 +121,7 @@ public class Xun6Com extends PluginForHost {
             sleep(tt * 1001, downloadLink);
         }
         jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
-        if (!(dl.getConnection().isContentDisposition())) {
+        if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -131,7 +134,7 @@ public class Xun6Com extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 5;
+        return 2;
     }
 
     @Override

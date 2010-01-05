@@ -87,7 +87,7 @@ public class XFileSharingProBasic extends PluginForHost {
         if (filesize == null) {
             filesize = br.getRegex("\\(([0-9]+ bytes)\\)").getMatch(0);
             if (filesize == null) {
-                filesize = br.getRegex("</font>.*?\\((.*?)\\).*?</font>").getMatch(0);
+                filesize = br.getRegex("</font>[ ]+\\((.*?)\\)(.*?)</font>").getMatch(0);
             }
         }
         if (filename == null) {
@@ -123,7 +123,7 @@ public class XFileSharingProBasic extends PluginForHost {
         }
         /* Errorhandling START */
         // Handling for only-premium links
-        if (br.containsHTML("(You can download files up to.*?only|Upgrade your account to download bigger files)")) {
+        if (br.containsHTML("(You can download files up to.*?only|Upgrade your account to download bigger files|This file reached max downloads)")) {
             String filesizelimit = br.getRegex("You can download files up to(.*?)only").getMatch(0);
             if (filesizelimit != null) {
                 filesizelimit = filesizelimit.trim();
@@ -134,7 +134,6 @@ public class XFileSharingProBasic extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium");
             }
         }
-        if (br.containsHTML("This file reached max downloads")) { throw new PluginException(LinkStatus.ERROR_FATAL, "This file reached max downloads"); }
         if (br.containsHTML("You have to wait")) {
             int minutes = 0, seconds = 0, hours = 0;
             String tmphrs = br.getRegex("\\s+(\\d+)\\s+hours?").getMatch(0);
