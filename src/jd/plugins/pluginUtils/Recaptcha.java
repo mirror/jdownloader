@@ -49,6 +49,14 @@ public class Recaptcha {
     private final Browser br;
     private String challenge;
     private String server;
+    private String captchaAddress;
+    private String id;
+    private Browser rcBr;
+    private Form form;
+
+    public Recaptcha(final Browser br) {
+        this.br = br;
+    }
 
     public String getChallenge() {
         return challenge;
@@ -74,13 +82,20 @@ public class Recaptcha {
         this.captchaAddress = captchaAddress;
     }
 
-    private String captchaAddress;
-    private String id;
-    private Browser rcBr;
-    private Form form;
+    public String getId() {
+        return id;
+    }
 
-    public Recaptcha(final Browser br) {
-        this.br = br;
+    public void setId(final String id) {
+        this.id = id;
+    }
+
+    public Form getForm() {
+        return form;
+    }
+
+    public void setForm(final Form form) {
+        this.form = form;
     }
 
     public void parse() throws IOException, PluginException {
@@ -97,14 +112,6 @@ public class Recaptcha {
         } else {
             id = form.getRegex("k=(.*?)\"").getMatch(0);
         }
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(final String id) {
-        this.id = id;
     }
 
     public void load() throws IOException {
@@ -130,13 +137,4 @@ public class Recaptcha {
         return br;
 
     }
-
-    public Form getForm() {
-        return form;
-    }
-
-    public void setForm(final Form form) {
-        this.form = form;
-    }
-
 }
