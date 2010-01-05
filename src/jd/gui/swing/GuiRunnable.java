@@ -28,7 +28,6 @@ import jd.controlling.JDLogger;
 public abstract class GuiRunnable<T> implements Runnable {
 
     public GuiRunnable() {
-
     }
 
     private static final long serialVersionUID = 7777074589566807490L;
@@ -43,7 +42,7 @@ public abstract class GuiRunnable<T> implements Runnable {
         return started;
     }
 
-    private void setStarted(boolean started) {
+    private void setStarted(final boolean started) {
         this.started = started;
     }
 
@@ -64,7 +63,9 @@ public abstract class GuiRunnable<T> implements Runnable {
      */
     public void waitForEDT() {
         if (done) return;
-        if (!isStarted()) start();
+        if (!isStarted()) {
+            start();
+        }
         if (!SwingUtilities.isEventDispatchThread()) {
             if (lock != null) {
                 synchronized (lock) {
