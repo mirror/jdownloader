@@ -31,37 +31,34 @@ public class Handler extends sun.net.www.protocol.http.Handler {
         this(null, -1);
     }
 
-    public Handler(String proxy, int port) {
+    public Handler(final String proxy, final int port) {
         this.proxy = proxy;
         this.proxyPort = port;
     }
 
     @Override
-    protected URLConnection openConnection(URL u) throws IOException {
+    protected URLConnection openConnection(final URL u) throws IOException {
         return openConnection(u, (Proxy) null);
     }
 
     @Override
-    protected URLConnection openConnection(URL u, Proxy p) throws IOException {
-
+    protected URLConnection openConnection(final URL u, final Proxy p) throws IOException {
         String urlCorrect = u.toString();
         if (urlCorrect.startsWith("jdp")) {
             urlCorrect = "http" + urlCorrect.substring(3);
         }
         if (u.getUserInfo() != null) {
-            String[] logins = u.getUserInfo().split(":");
+            final String[] logins = u.getUserInfo().split(":");
             Browser.getAssignedBrowserInstance(u).setAuth(u.getHost(), logins[0], logins.length > 1 ? logins[1] : "");
         }
         if (p == null) {
             return new HTTPConnection(Browser.reAssignUrlToBrowserInstance(u, new URL(urlCorrect)), (Proxy) null, this);
 
         } else {
-            JDProxy pr = Browser.getAssignedBrowserInstance(u).getRequest().getProxy();
+            final JDProxy pr = Browser.getAssignedBrowserInstance(u).getRequest().getProxy();
 
-            if (pr == null) throw new IOException("Proxy Mapping failed.");
+            if (pr == null) { throw new IOException("Proxy Mapping failed."); }
             return new HTTPConnection(Browser.reAssignUrlToBrowserInstance(u, new URL(urlCorrect)), pr, this);
-
         }
-
     }
 }
