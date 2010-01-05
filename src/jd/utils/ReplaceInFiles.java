@@ -52,11 +52,11 @@ public class ReplaceInFiles {
 
             @Override
             public Object runSave() {
-                JDFileChooser fc = new JDFileChooser();
+                final JDFileChooser fc = new JDFileChooser();
                 UserIO.setInstance(UserIOGui.getInstance());
                 fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
                 if (fc.showOpenDialog(null) == JDFileChooser.APPROVE_OPTION) {
-                    File ret = fc.getSelectedFile();
+                    final File ret = fc.getSelectedFile();
                     if (ret != null) {
                         String pat = UserIO.getInstance().requestInputDialog("Define filepattern");
                         String find = UserIO.getInstance().requestInputDialog("Find pattern");
@@ -64,27 +64,25 @@ public class ReplaceInFiles {
                         replaceInFiles(scanDir(ret, pat), find, replace);
                     }
                 }
-
                 return null;
             }
 
         }.waitForEDT();
-
     }
 
-    private static void replaceInFiles(ArrayList<File> scanDir, String find, String replace) {
-        long id = System.currentTimeMillis();
+    private static void replaceInFiles(final ArrayList<File> scanDir, final String find, final String replace) {
+        final long id = System.currentTimeMillis();
         boolean ok = false;
-        for (File f : scanDir) {
-            String l = JDIO.readFileToString(f);
+        for (final File f : scanDir) {
+            final String l = JDIO.readFileToString(f);
 
-            String newL = Pattern.compile(find, Pattern.DOTALL | Pattern.CASE_INSENSITIVE).matcher(l).replaceAll(replace);
+            final String newL = Pattern.compile(find, Pattern.DOTALL | Pattern.CASE_INSENSITIVE).matcher(l).replaceAll(replace);
 
-            DiffMatchPatch diff = new DiffMatchPatch();
-            LinkedList<Diff> diffs = diff.diffMain(l, newL, true);
-            String html = diffPrettyHtml(diffs);
+            final DiffMatchPatch diff = new DiffMatchPatch();
+            final LinkedList<Diff> diffs = diff.diffMain(l, newL, true);
+            final String html = diffPrettyHtml(diffs);
             if (!ok) {
-                int ret = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.STYLE_HTML | UserIO.STYLE_LARGE, "Diffs found in  " + id, html, null, null, null);
+                final int ret = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.STYLE_HTML | UserIO.STYLE_LARGE, "Diffs found in  " + id, html, null, null, null);
                 if (JDFlags.hasSomeFlags(ret, UserIO.RETURN_CANCEL)) { return; }
                 if (JDFlags.hasSomeFlags(ret, UserIO.RETURN_DONT_SHOW_AGAIN, UserIO.RETURN_OK)) {
                     ok = true;
@@ -92,16 +90,14 @@ public class ReplaceInFiles {
             }
             System.out.println(html);
             JDIO.writeLocalFile(f, newL);
-
         }
-
     }
 
-    public static String diffPrettyHtml(LinkedList<Diff> diffs) {
-        StringBuilder html = new StringBuilder();
+    public static String diffPrettyHtml(final LinkedList<Diff> diffs) {
+        final StringBuilder html = new StringBuilder();
         int i = 0;
-        for (Diff aDiff : diffs) {
-            String text = aDiff.text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\n", "<BR>");
+        for (final Diff aDiff : diffs) {
+            final String text = aDiff.text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\n", "<BR>");
             switch (aDiff.operation) {
             case INSERT:
                 html.append("<span STYLE=\"color:#000000;background:#00FF00;border=1\" TITLE=\"i=").append(i).append("\">").append(text).append("</span>");
@@ -129,13 +125,14 @@ public class ReplaceInFiles {
     }
 
     private static ArrayList<File> scanDir(File dir, String pat) {
-        ArrayList<File> ret = new ArrayList<File>();
+        final ArrayList<File> ret = new ArrayList<File>();
 
-        for (File f : dir.listFiles()) {
+        for (final File f : dir.listFiles()) {
             if (f.isDirectory()) {
                 ret.addAll(scanDir(f, pat));
             } else {
-                if (!f.getAbsolutePath().contains(".svn") && new Regex(f.getAbsolutePath(), pat).matches()) {
+                final String absolutePath = f.getAbsolutePath();
+                if (!absolutePath.contains(".svn") && new Regex(absolutePath, pat).matches()) {
                     System.out.println("Find in file: " + f);
                     ret.add(f);
                 }
