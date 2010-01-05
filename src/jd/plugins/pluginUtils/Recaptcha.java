@@ -46,7 +46,7 @@ import jd.plugins.PluginException;
  */
 public class Recaptcha {
 
-    private Browser br;
+    private final Browser br;
     private String challenge;
     private String server;
 
@@ -54,7 +54,7 @@ public class Recaptcha {
         return challenge;
     }
 
-    public void setChallenge(String challenge) {
+    public void setChallenge(final String challenge) {
         this.challenge = challenge;
     }
 
@@ -62,7 +62,7 @@ public class Recaptcha {
         return server;
     }
 
-    public void setServer(String server) {
+    public void setServer(final String server) {
         this.server = server;
     }
 
@@ -70,7 +70,7 @@ public class Recaptcha {
         return captchaAddress;
     }
 
-    public void setCaptchaAddress(String captchaAddress) {
+    public void setCaptchaAddress(final String captchaAddress) {
         this.captchaAddress = captchaAddress;
     }
 
@@ -79,30 +79,31 @@ public class Recaptcha {
     private Browser rcBr;
     private Form form;
 
-    public Recaptcha(Browser br) {
+    public Recaptcha(final Browser br) {
         this.br = br;
     }
 
     public void parse() throws IOException, PluginException {
-
-        Form[] forms = br.getForms();
+        final Form[] forms = br.getForms();
         form = null;
-        for (Form f : forms) {
+        for (final Form f : forms) {
             if (f.getInputField("recaptcha_challenge_field") != null) {
                 form = f;
                 break;
             }
         }
-        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        id = form.getRegex("k=(.*?)\"").getMatch(0);
-
+        if (form == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
+            id = form.getRegex("k=(.*?)\"").getMatch(0);
+        }
     }
 
     public String getId() {
         return id;
     }
 
-    public void setId(String id) {
+    public void setId(final String id) {
         this.id = id;
     }
 
@@ -114,12 +115,12 @@ public class Recaptcha {
         captchaAddress = server + "image?c=" + challenge;
     }
 
-    public File downloadCaptcha(File captchaFile) throws IOException {
+    public File downloadCaptcha(final File captchaFile) throws IOException {
         Browser.download(captchaFile, rcBr.openGetConnection(captchaAddress));
         return captchaFile;
     }
 
-    public Browser setCode(String code) throws Exception {
+    public Browser setCode(final String code) throws Exception {
         // <textarea name="recaptcha_challenge_field" rows="3"
         // cols="40"></textarea>\n <input type="hidden"
         // name="recaptcha_response_field" value="manual_challenge"/>
@@ -134,7 +135,7 @@ public class Recaptcha {
         return form;
     }
 
-    public void setForm(Form form) {
+    public void setForm(final Form form) {
         this.form = form;
     }
 
