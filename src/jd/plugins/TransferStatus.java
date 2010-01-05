@@ -40,15 +40,15 @@ public class TransferStatus implements Serializable {
         return supportspremium;
     }
 
-    public void setResumeSupport(boolean b) {
+    public void setResumeSupport(final boolean b) {
         supportsresume = b;
     }
 
-    public void setPremiumSupport(boolean b) {
+    public void setPremiumSupport(final boolean b) {
         supportspremium = b;
     }
 
-    public void usePremium(boolean b) {
+    public void usePremium(final boolean b) {
         usespremium = b;
     }
 
