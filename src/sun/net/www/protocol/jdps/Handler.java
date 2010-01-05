@@ -32,41 +32,38 @@ public class Handler extends sun.net.www.protocol.https.Handler {
         this(null, -1);
     }
 
-    public Handler(String proxy, int port) {
+    public Handler(final String proxy, final int port) {
         this.proxy = proxy;
         this.proxyPort = port;
     }
 
     @Override
-    protected URLConnection openConnection(URL u) throws IOException {
+    protected URLConnection openConnection(final URL u) throws IOException {
         return openConnection(u, (Proxy) null);
     }
 
     @Override
-    protected URLConnection openConnection(URL u, Proxy p) throws IOException {
+    protected URLConnection openConnection(final URL u, final Proxy p) throws IOException {
         String urlCorrect = u.toString();
         if (urlCorrect.startsWith("jdp")) {
             urlCorrect = "http" + urlCorrect.substring(3);
         }
         if (u.getUserInfo() != null) {
-            String[] logins = u.getUserInfo().split(":");
+            final String[] logins = u.getUserInfo().split(":");
             Browser.getAssignedBrowserInstance(u).setAuth(u.getHost(), logins[0], logins.length > 1 ? logins[1] : "");
         }
 
-        URL nurl = Browser.reAssignUrlToBrowserInstance(u, new URL(urlCorrect));
-
-        URLConnection con = p == null ? nurl.openConnection() : nurl.openConnection(p);
+        final URL nurl = Browser.reAssignUrlToBrowserInstance(u, new URL(urlCorrect));
+        final URLConnection con = p == null ? nurl.openConnection() : nurl.openConnection(p);
         if (p == null) {
             return new HTTPsConnection(con, (JDProxy) null);
         } else {
-            Browser br = Browser.getAssignedBrowserInstance(u);
-            Request request = br.getRequest();
-            JDProxy pr = request.getProxy();
-            if (pr == null) throw new IOException("Proxy Mapping failed.");
+            final Browser br = Browser.getAssignedBrowserInstance(u);
+            final Request request = br.getRequest();
+            final JDProxy pr = request.getProxy();
+            if (pr == null) { throw new IOException("Proxy Mapping failed."); }
             return new HTTPsConnection(con, pr);
-
         }
-
     }
 
 }
