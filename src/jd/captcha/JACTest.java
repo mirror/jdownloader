@@ -37,7 +37,7 @@ public class JACTest {
     }
 
     private void go() {
-        String hoster = "lnkbs";
+        String hoster = "xfileseek.com";
 
         JAntiCaptcha jac = new JAntiCaptcha(hoster);
 
@@ -65,13 +65,13 @@ public class JACTest {
         // File(JDUtilities.getJDHomeDirectoryFromEnvironment
         // ().getAbsolutePath()+"/jd/captcha/methods"+"/"+hoster+"/captchas/"+
         // "securedin1730080724541.jpg"),4);
-        File[] list = JDUtilities.getResourceFile("/captchas/" + hoster).listFiles();
+        File[] list = JDUtilities.getResourceFile("/captchas/" + jac.getMethodDirName()).listFiles();
         int id = (int) (Math.random() * (list.length - 1));
         // id=21;
         System.out.println("ID: " + id);
         // File f = new
         // File("/home/dwd/.jd_home/captchas/linkbase.biz/400.png");
-        File f = list[id];
+        File f = list[2];
         System.out.println(f + "");
         // System.out.println(jac.checkCaptcha(f));
         jac.showPreparedCaptcha(f);
