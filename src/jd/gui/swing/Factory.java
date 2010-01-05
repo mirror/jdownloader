@@ -35,15 +35,21 @@ import jd.gui.swing.components.linkbutton.JLink;
 import jd.utils.JDTheme;
 import net.miginfocom.swing.MigLayout;
 
-public class Factory {
+public final class Factory {
 
-    public static JPanel createHeader(ConfigGroup group) {
+    /**
+     * Don't let anyone instantiate this class.
+     */
+    private Factory() {
+    }
+
+    public static JPanel createHeader(final ConfigGroup group) {
         return createHeader(group.getName(), group.getIcon());
     }
 
-    public static JPanel createHeader(String name, ImageIcon icon) {
-        JPanel ret = new JPanel(new MigLayout("ins 0", "[]10[grow,fill]3[]"));
-        JLink label;
+    public static JPanel createHeader(final String name, final ImageIcon icon) {
+        final JPanel ret = new JPanel(new MigLayout("ins 0", "[]10[grow,fill]3[]"));
+        final JLink label;
         try {
             ret.add(label = new JLink("<html><u><b>" + name + "</b></u></html>", icon, new URL("http://wiki.jdownloader.org/quickhelp/" + name.replace(" ", "-"))));
             label.setIconTextGap(8);
@@ -58,17 +64,12 @@ public class Factory {
         return ret;
     }
 
-    public static JButton createButton(String string, Icon i) {
+    public static JButton createButton(final String string, final Icon i) {
         return createButton(string, i, null);
     }
 
-    public static JButton createButton(String string, Icon i, ActionListener listener) {
-        JButton bt;
-        if (i != null) {
-            bt = new JButton(string, i);
-        } else {
-            bt = new JButton(string);
-        }
+    public static JButton createButton(final String string, final Icon i, final ActionListener listener) {
+        final JButton bt = (i != null) ? new JButton(string, i) : new JButton(string);
 
         bt.setContentAreaFilled(false);
         bt.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
