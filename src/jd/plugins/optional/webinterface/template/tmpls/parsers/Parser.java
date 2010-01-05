@@ -50,46 +50,49 @@ public class Parser {
     public Parser() {
     }
 
-    public Parser(String[] args) throws ArrayIndexOutOfBoundsException, IllegalArgumentException {
-        if (args.length % 2 != 0) { throw new ArrayIndexOutOfBoundsException("odd number of arguments passed"); }
+    public Parser(final String[] args) throws ArrayIndexOutOfBoundsException, IllegalArgumentException {
+        final int length = args.length;
+        if (length % 2 != 0) { throw new ArrayIndexOutOfBoundsException("odd number of arguments passed"); }
 
-        for (int i = 0; i < args.length; i += 2) {
-            if (args[i].equals("case_sensitive")) {
-                String cs = args[i + 1];
+        for (int i = 0; i < length; i += 2) {
+            String arg = args[i];
+            String arg1 = args[i + 1];
+            if (arg.equals("case_sensitive")) {
+                String cs = arg1;
                 if (cs.equals("") || cs.equals("0")) {
                     case_sensitive = false;
                 } else {
                     case_sensitive = true;
                 }
-            } else if (args[i].equals("strict")) {
-                String s = args[i + 1];
+            } else if (arg.equals("strict")) {
+                String s = arg1;
                 if (s.equals("") || s.equals("0")) {
                     strict = false;
                 } else {
                     strict = true;
                 }
-            } else if (args[i].equals("loop_context_vars")) {
-                String s = args[i + 1];
+            } else if (arg.equals("loop_context_vars")) {
+                String s = arg1;
                 if (s.equals("") || s.equals("0")) {
                     loop_context_vars = false;
                 } else {
                     loop_context_vars = true;
                 }
 
-            } else if (args[i].equals("global_vars")) {
-                String s = args[i + 1];
+            } else if (arg.equals("global_vars")) {
+                String s = arg1;
                 if (s.equals("") || s.equals("0")) {
                     global_vars = false;
                 } else {
                     global_vars = true;
                 }
             } else {
-                throw new IllegalArgumentException(args[i]);
+                throw new IllegalArgumentException(arg);
             }
         }
     }
 
-    private String cleanTag(String tag) throws IllegalArgumentException {
+    private String cleanTag(final String tag) throws IllegalArgumentException {
         String test_tag = tag;
         // first remove < and >
         if (test_tag.startsWith("<")) {
@@ -115,8 +118,8 @@ public class Parser {
         return test_tag;
     }
 
-    public Element getElement(Properties p) throws NoSuchElementException {
-        String type = p.getProperty("type");
+    public Element getElement(final Properties p) throws NoSuchElementException {
+        final String type = p.getProperty("type");
 
         if (type.equals("if")) {
             return new If(p.getProperty("name"));
@@ -130,7 +133,7 @@ public class Parser {
     }
 
     private Properties getTagProps(String tag) throws IllegalArgumentException, NullPointerException {
-        Properties p = new Properties();
+        final Properties p = new Properties();
 
         tag = cleanTag(tag);
 
@@ -182,7 +185,7 @@ public class Parser {
         } else {
             // = means name=value pairs.
             // use a StringTokenizer
-            StringTokenizer st = new StringTokenizer(tag, " =");
+            final StringTokenizer st = new StringTokenizer(tag, " =");
             while (st.hasMoreTokens()) {
                 String key, value;
                 key = st.nextToken().toLowerCase();
@@ -209,7 +212,7 @@ public class Parser {
             }
         }
 
-        String name = p.getProperty("name");
+        final String name = p.getProperty("name");
         // if not case sensitive, and not special variable, flatten case
         // never flatten case for includes
         if (!case_sensitive && !p.getProperty("type").equals("include") && !(name.startsWith("__") && name.endsWith("__"))) {
@@ -224,8 +227,8 @@ public class Parser {
         return p;
     }
 
-    private String getTagType(String tag) {
-        int sp = tag.indexOf(" ");
+    private String getTagType(final String tag) {
+        final int sp = tag.indexOf(" ");
         String tag_type = "";
         if (sp < 0) {
             tag_type = tag.toLowerCase();
@@ -245,10 +248,10 @@ public class Parser {
         }
     }
 
-    public Vector<Object> parseLine(String line) throws IllegalArgumentException {
-        Vector<Object> parts = new Vector<Object>();
+    public Vector<Object> parseLine(final String line) throws IllegalArgumentException {
+        final Vector<Object> parts = new Vector<Object>();
 
-        char[] c = line.toCharArray();
+        final char[] c = line.toCharArray();
         int i = 0;
 
         StringBuilder temp = new StringBuilder();
@@ -314,7 +317,7 @@ public class Parser {
                 }
 
                 // now it must be a template tag
-                String tag_type = getTagType(test_tag);
+                final String tag_type = getTagType(test_tag);
 
                 if (tag_type == null) {
                     if (strict) {
@@ -343,7 +346,7 @@ public class Parser {
                 // get its properties
 
                 Util.debug_print("Checking: " + tag);
-                Properties tag_props = getTagProps(tag.toString());
+                final Properties tag_props = getTagProps(tag.toString());
 
                 if (tag_props.containsKey("name")) {
                     Util.debug_print("name: " + tag_props.getProperty("name"));
