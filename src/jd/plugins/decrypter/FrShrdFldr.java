@@ -32,7 +32,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4shared.com" }, urls = { "http://[\\w\\.]*?4shared\\.com/dir/\\d+/[\\w]+/?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4shared.com" }, urls = { "http://[\\w\\.]*?(4shared|4shared-china)\\.com/dir/\\d+/[\\w]+/?" }, flags = { 0 })
 public class FrShrdFldr extends PluginForDecrypt {
 
     public FrShrdFldr(PluginWrapper wrapper) {
@@ -52,7 +52,7 @@ public class FrShrdFldr extends PluginForDecrypt {
         //if (!br.containsHTML("dirPwdVerified="))  -- Don't work correctly on all 4shared folders :( 
         
         //scan simple 
-        links = br.getRegex("<a href=\"(http://[\\w\\.]*?4shared.com/file/.*?)\"").getColumn(0);
+        links = br.getRegex("<a href=\"(http://[\\w\\.]*?(4shared|4shared-china)\\.com/file/.*?)\"").getColumn(0);
         for (String dl : links) {
             DownloadLink dlink;
             dlink = createDownloadlink(dl);
@@ -62,7 +62,7 @@ public class FrShrdFldr extends PluginForDecrypt {
         }
 
         //scan verified
-        links = br.getRegex("<a href=\"(http://[\\w\\.]*?4shared.com/file/.*?)\\?dirPwdVerified").getColumn(0);
+        links = br.getRegex("<a href=\"(http://[\\w\\.]*?(4shared|4shared-china)\\.com/file/.*?)\\?dirPwdVerified").getColumn(0);
         for (String dl : links) {
             DownloadLink dlink;
             dlink = createDownloadlink(dl);
@@ -73,11 +73,11 @@ public class FrShrdFldr extends PluginForDecrypt {
         
         //scan all possible tabs
         for (int i = 0; i < pages.length - 1; i++) {
-            String url = "http://www.4shared.com" + burl + "&ajax=true&firstFileToShow=" + pages[i] + "&sortsMode=NAME&sortsAsc=&random=0.9519735221243086";
+            String url =  "http://" + br.getHost() + burl + "&ajax=true&firstFileToShow=" + pages[i] + "&sortsMode=NAME&sortsAsc=&random=0.9519735221243086";
             br.getPage(url);
 
             //scan simple 
-            links = br.getRegex("<a href=\"(http://[\\w\\.]*?4shared.com/file/.*?)\"").getColumn(0);
+            links = br.getRegex("<a href=\"(http://[\\w\\.]*?(4shared|4shared-china)\\.com/file/.*?)\"").getColumn(0);
             for (String dl : links) {
                 DownloadLink dlink;
                 dlink = createDownloadlink(dl);
@@ -87,7 +87,7 @@ public class FrShrdFldr extends PluginForDecrypt {
             }
 
             //scan verified
-            links = br.getRegex("<a href=\"(http://[\\w\\.]*?4shared.com/file/.*?)\\?dirPwdVerified").getColumn(0);
+            links = br.getRegex("<a href=\"(http://[\\w\\.]*?(4shared|4shared-china)\\.com/file/.*?)\\?dirPwdVerified").getColumn(0);
             for (String dl : links) {
                 DownloadLink dlink;
                 dlink = createDownloadlink(dl);
@@ -130,7 +130,7 @@ public class FrShrdFldr extends PluginForDecrypt {
         
         progress.setRange(links.size());
         for (int i = 0; i < links.size(); i++) {
-            String url = "http://www.4shared.com" + burl + "&ajax=true&changedir=" + links.get(i) + "&sortsMode=NAME&sortsAsc=&random=0.1863370989474954";
+            String url = "http://" + br.getHost() + burl + "&ajax=true&changedir=" + links.get(i) + "&sortsMode=NAME&sortsAsc=&random=0.1863370989474954";
             br.getPage(url);
             name = br.getRegex("<input type=\"text\" class=\"fnamefieldinv\" id=\"fnamefield1\"\\s+readonly=\"\\w+\"\\s+style=\".+?\"\\s+value=\"(.+?)\"\\s+/>").getMatch(0).trim();            
             replaceA(names, links.get(i), name);
@@ -169,7 +169,7 @@ public class FrShrdFldr extends PluginForDecrypt {
         }
 
         String script = br.getRegex("src=\"(/account/homeScript.*?)\"").getMatch(0);
-        br.cloneBrowser().getPage("http://4shared.com" + script);
+        br.cloneBrowser().getPage("http://" + br.getHost() + script);
         String burl = br.getRegex("var bUrl = \"(/account/changedir.jsp\\?sId=.*?)\";").getMatch(0);
         String name = br.getRegex("hidden\" name=\"defaultZipName\" value=\"(.*?)\">").getMatch(0).trim();
         
