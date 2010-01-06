@@ -41,7 +41,7 @@ public class ShortCuts {
 
     public static String getAcceleratorString(KeyStroke ks) {
         if (ks == null) return null;
-        StringBuilder builder = new StringBuilder();
+        final StringBuilder builder = new StringBuilder();
         builder.append(getModifiersText(ks.getModifiers()));
         if (builder.length() > 0) builder.append('+');
         if (ks.getKeyCode() == KeyEvent.VK_UNDEFINED) {
@@ -63,8 +63,8 @@ public class ShortCuts {
      * 
      *                       Modified with translation code by JDTEam
      */
-    private static String getModifiersText(int modifiers) {
-        StringBuilder buf = new StringBuilder();
+    private static String getModifiersText(final int modifiers) {
+        final StringBuilder buf = new StringBuilder();
 
         if ((modifiers & KeyEvent.CTRL_DOWN_MASK) != 0) {
             if (buf.length() > 0) buf.append('+');
@@ -118,12 +118,12 @@ public class ShortCuts {
      *                       recommended, but there is not better solution
      * 
      */
-    private static String getVKText(int keyCode) {
-        int expected_modifiers = (Modifier.PUBLIC | Modifier.STATIC | Modifier.FINAL);
-        Field[] fields = KeyEvent.class.getDeclaredFields();
-        for (int i = 0; i < fields.length; i++) {
+    private static String getVKText(final int keyCode) {
+        final int expected_modifiers = (Modifier.PUBLIC | Modifier.STATIC | Modifier.FINAL);
+        final Field[] fields = KeyEvent.class.getDeclaredFields();
+        for (final Field field : fields) {
             try {
-                if (fields[i].getModifiers() == expected_modifiers && fields[i].getType() == Integer.TYPE && fields[i].getName().startsWith("VK_") && fields[i].getInt(KeyEvent.class) == keyCode) { return JDL.L(JDL_PREFIX + fields[i].getName(), fields[i].getName().substring(3)); }
+                if (field.getModifiers() == expected_modifiers && field.getType() == Integer.TYPE && field.getName().startsWith("VK_") && field.getInt(KeyEvent.class) == keyCode) { return JDL.L(JDL_PREFIX + field.getName(), field.getName().substring(3)); }
             } catch (IllegalAccessException e) {
             }
         }
