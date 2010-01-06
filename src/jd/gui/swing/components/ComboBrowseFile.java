@@ -59,24 +59,23 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
 
     private boolean dispatchingDisabled = false;
 
-    public ComboBrowseFile(String string) {
-        Vector<String> list = SubConfiguration.getConfig("GUI").getGenericProperty(string, new Vector<String>());
+    public ComboBrowseFile(final String string) {
+        final Vector<String> list = SubConfiguration.getConfig("GUI").getGenericProperty(string, new Vector<String>());
         setFiles(list);
 
         this.setName(string);
         initGUI();
     }
 
-    public ComboBrowseFile(Vector<String> files) {
+    public ComboBrowseFile(final Vector<String> files) {
         super();
-        if (files == null) files = new Vector<String>();
-        setFiles(files);
+        setFiles(files == null ? new Vector<String>() : files);
         initGUI();
     }
 
-    public void actionPerformed(ActionEvent e) {
+    public void actionPerformed(final ActionEvent e) {
         if (e.getSource() == cmboInput) {
-            Object sel = cmboInput.getSelectedItem();
+            final Object sel = cmboInput.getSelectedItem();
             if (sel != null) {
                 setCurrentPath(new File(sel.toString()));
             }
@@ -91,7 +90,6 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
                 l.actionPerformed(new ActionEvent(this, e.getID(), e.getActionCommand()));
             }
         }
-
     }
 
     /**
@@ -114,7 +112,7 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
     private File getDirectoryFromTxtInput() {
         File directory = null;
 
-        Object sel = cmboInput.getSelectedItem();
+        final Object sel = cmboInput.getSelectedItem();
         if (sel != null) {
             directory = new File(sel.toString());
             if (directory.exists()) {
@@ -148,13 +146,16 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
     }
 
     private File getPath() {
-        JDFileChooser fc = new JDFileChooser();
-        if (approveButtonText != null) fc.setApproveButtonText(approveButtonText);
+        final JDFileChooser fc = new JDFileChooser();
+        if (approveButtonText != null) {
+            fc.setApproveButtonText(approveButtonText);
+        }
         fc.setFileSelectionMode(fileSelectionMode);
-        if (fileFilter != null) fc.setFileFilter(fileFilter);
+        if (fileFilter != null) {
+            fc.setFileFilter(fileFilter);
+        }
         fc.setCurrentDirectory(getDirectoryFromTxtInput());
-        if (fc.showOpenDialog(this) == JDFileChooser.APPROVE_OPTION) return fc.getSelectedFile();
-        return null;
+        return fc.showOpenDialog(this) == JDFileChooser.APPROVE_OPTION ? fc.getSelectedFile() : null;
     }
 
     public String getText() {
@@ -213,11 +214,11 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
      * @param approveButtonText
      *            the approveButtonText to set
      */
-    public void setApproveButtonText(String approveButtonText) {
+    public void setApproveButtonText(final String approveButtonText) {
         this.approveButtonText = approveButtonText;
     }
 
-    public void setButtonText(String text) {
+    public void setButtonText(final String text) {
         btnBrowse.setText(text);
     }
 
@@ -226,24 +227,27 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
      *            the currentPath to set
      */
     public void setCurrentPath(final File currentPath) {
-        if (currentPath == null || currentPath.equals(this.currentPath)) return;
-        this.currentPath = currentPath;
-        String item = currentPath.toString();
-        files.remove(item);
-        files.add(0, item);
+        if (currentPath != null && !currentPath.equals(this.currentPath)) {
+            this.currentPath = currentPath;
+            final String item = currentPath.toString();
+            files.remove(item);
+            files.add(0, item);
 
-        SubConfiguration.getConfig("GUI").setProperty(getName(), new Vector<String>(files.subList(0, Math.min(files.size(), 20))));
-        SubConfiguration.getConfig("GUI").save();
+            SubConfiguration guiConfig = SubConfiguration.getConfig("GUI");
+            guiConfig.setProperty(getName(), new Vector<String>(files.subList(0, Math.min(files.size(), 20))));
+            guiConfig.save();
 
-        if (getText() != null && getText().equalsIgnoreCase(currentPath.toString())) return;
-        synchronized (LOCK) {
-            dispatchingDisabled = true;
-            cmboInput.setSelectedIndex(0);
-            dispatchingDisabled = false;
+            final String text = getText();
+            if (text == null || !text.equalsIgnoreCase(currentPath.toString())) {
+                synchronized (LOCK) {
+                    dispatchingDisabled = true;
+                    cmboInput.setSelectedIndex(0);
+                    dispatchingDisabled = false;
+                }
+                /* EXPERIMENTAL: rausgenommen da freezes verursacht hat */
+                // cmboInput.invalidate();
+            }
         }
-        /* EXPERIMENTAL: rausgenommen da freezes verursacht hat */
-        // cmboInput.invalidate();
-
     }
 
     public void setEditable(final boolean value) {
@@ -268,16 +272,20 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
      * @param fileFilter
      *            the fileFilter to set
      */
-    public void setFileFilter(FileFilter fileFilter) {
+    public void setFileFilter(final FileFilter fileFilter) {
         this.fileFilter = fileFilter;
         for (int i = files.size() - 1; i >= 0; --i) {
-            if (!fileFilter.accept(new File(files.get(i)))) files.remove(i);
+            if (!fileFilter.accept(new File(files.get(i)))) {
+                files.remove(i);
+            }
         }
     }
 
-    private void setFiles(Vector<String> files) {
+    private void setFiles(final Vector<String> files) {
         for (int i = files.size() - 1; i >= 0; --i) {
-            if (!new File(files.get(i)).exists()) files.remove(i);
+            if (!new File(files.get(i)).exists()) {
+                files.remove(i);
+            }
         }
         this.files = files;
     }
@@ -286,15 +294,19 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
      * @param fileSelectionMode
      *            the fileSelectionMode to set
      */
-    public void setFileSelectionMode(int fileSelectionMode) {
+    public void setFileSelectionMode(final int fileSelectionMode) {
         this.fileSelectionMode = fileSelectionMode;
         if (fileSelectionMode == JFileChooser.DIRECTORIES_ONLY) {
             for (int i = files.size() - 1; i >= 0; --i) {
-                if (!new File(files.get(i)).isDirectory()) files.remove(i);
+                if (!new File(files.get(i)).isDirectory()) {
+                    files.remove(i);
+                }
             }
         } else if (fileSelectionMode == JFileChooser.FILES_ONLY) {
             for (int i = files.size() - 1; i >= 0; --i) {
-                if (!new File(files.get(i)).isFile()) files.remove(i);
+                if (!new File(files.get(i)).isFile()) {
+                    files.remove(i);
+                }
             }
         }
     }
@@ -322,7 +334,7 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
      * @param l
      *            the <code>ActionListener</code> to be added
      */
-    public void addActionListener(ActionListener l) {
+    public void addActionListener(final ActionListener l) {
         listenerList.add(l);
     }
 
@@ -332,7 +344,7 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
      * @param l
      *            the <code>ActionListener</code> to be removed
      */
-    public void removeActionListener(ActionListener l) {
+    public void removeActionListener(final ActionListener l) {
         listenerList.remove(l);
     }
 
