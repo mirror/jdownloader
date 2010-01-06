@@ -57,7 +57,7 @@ public abstract class ReconnectMethod {
              * disabled ipcheck, let run 1 reconnect round and guess it has been
              * successful
              */
-            doReconnectInteral(1);
+            doReconnectInternal(1);
             Reconnecter.setCurrentIP("na");
             return true;
         }
@@ -66,11 +66,12 @@ public abstract class ReconnectMethod {
         int retry = 0;
         if (maxretries <= -1) {
             while (true) {
-                if ((ret = doReconnectInteral(++retry)) == true) break;
+                if ((ret = doReconnectInternal(++retry)) == true) break;
             }
         } else {
+            if (maxretries == 0) maxretries = 1;
             for (retry = 0; retry <= maxretries; retry++) {
-                if ((ret = doReconnectInteral(retry + 1)) == true) break;
+                if ((ret = doReconnectInternal(retry + 1)) == true) break;
             }
         }
         return ret;
@@ -81,7 +82,7 @@ public abstract class ReconnectMethod {
         return IPCheck.getIPAddress();
     }
 
-    public final boolean doReconnectInteral(int retry) {
+    public final boolean doReconnectInternal(int retry) {
         ProgressController progress = new ProgressController(this.toString(), 10, "gui.images.reconnect");
         progress.setStatusText(JDL.L("reconnect.progress.1_retries", "Reconnect #") + retry);
         try {

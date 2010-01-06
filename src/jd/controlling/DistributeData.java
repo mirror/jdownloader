@@ -40,6 +40,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDTheme;
+import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 /**
@@ -167,6 +168,7 @@ public class DistributeData extends Thread {
         if (decryptedLinks.isEmpty()) return false;
         final ArrayList<DownloadLink> newdecryptedLinks = new ArrayList<DownloadLink>();
         final ArrayList<DownloadLink> notdecryptedLinks = new ArrayList<DownloadLink>();
+        final PluginForHost directhttp = JDUtilities.getPluginForHost("DirectHTTP");
         class DThread extends Thread implements JDRunnable {
             private DownloadLink link = null;
 
@@ -182,39 +184,44 @@ public class DistributeData extends Thread {
                     url = Encoding.urlDecode(url, true);
                 }
                 boolean coulddecrypt = false;
-                for (DecryptPluginWrapper pDecrypt : DecryptPluginWrapper.getDecryptWrapper()) {
-                    if (pDecrypt.isEnabled() && pDecrypt.canHandle(url)) {
-                        try {
-                            PluginForDecrypt plg = (PluginForDecrypt) pDecrypt.getNewPluginInstance();
+                if (directhttp != null && directhttp.getWrapper().isEnabled() && directhttp.getWrapper().canHandle(url)) {
+                    /* prevent endless loops for directhttp links */
+                    coulddecrypt = false;
+                } else {
+                    for (DecryptPluginWrapper pDecrypt : DecryptPluginWrapper.getDecryptWrapper()) {
+                        if (pDecrypt.isEnabled() && pDecrypt.canHandle(url)) {
+                            try {
+                                PluginForDecrypt plg = (PluginForDecrypt) pDecrypt.getNewPluginInstance();
 
-                            CryptedLink[] decryptableLinks = plg.getDecryptableLinks(url);
-                            url = plg.cutMatches(url);
-                            // Reicht die Decrypter Passwörter weiter
-                            for (CryptedLink cLink : decryptableLinks) {
-                                cLink.setDecrypterPassword(link.getDecrypterPassword());
-                            }
-
-                            // Reiche Properties weiter
-                            for (CryptedLink cLink : decryptableLinks) {
-                                cLink.setProperties(link.getProperties());
-                            }
-
-                            ArrayList<DownloadLink> dLinks = plg.decryptLinks(decryptableLinks);
-
-                            /* Das Plugin konnte arbeiten */
-                            coulddecrypt = true;
-                            if (dLinks != null && dLinks.size() > 0) {
-                                // Reicht die Passwörter weiter
-                                for (DownloadLink dLink : dLinks) {
-                                    dLink.addSourcePluginPasswordList(link.getSourcePluginPasswordList());
+                                CryptedLink[] decryptableLinks = plg.getDecryptableLinks(url);
+                                url = plg.cutMatches(url);
+                                // Reicht die Decrypter Passwörter weiter
+                                for (CryptedLink cLink : decryptableLinks) {
+                                    cLink.setDecrypterPassword(link.getDecrypterPassword());
                                 }
-                                synchronized (newdecryptedLinks) {
-                                    newdecryptedLinks.addAll(dLinks);
+
+                                // Reiche Properties weiter
+                                for (CryptedLink cLink : decryptableLinks) {
+                                    cLink.setProperties(link.getProperties());
                                 }
+
+                                ArrayList<DownloadLink> dLinks = plg.decryptLinks(decryptableLinks);
+
+                                /* Das Plugin konnte arbeiten */
+                                coulddecrypt = true;
+                                if (dLinks != null && dLinks.size() > 0) {
+                                    // Reicht die Passwörter weiter
+                                    for (DownloadLink dLink : dLinks) {
+                                        dLink.addSourcePluginPasswordList(link.getSourcePluginPasswordList());
+                                    }
+                                    synchronized (newdecryptedLinks) {
+                                        newdecryptedLinks.addAll(dLinks);
+                                    }
+                                }
+                                break;
+                            } catch (Exception e) {
+                                JDLogger.exception(e);
                             }
-                            break;
-                        } catch (Exception e) {
-                            JDLogger.exception(e);
                         }
                     }
                 }
