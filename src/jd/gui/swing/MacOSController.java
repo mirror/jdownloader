@@ -16,6 +16,8 @@
 
 package jd.gui.swing;
 
+import javax.swing.JFrame;
+
 import jd.controlling.JDController;
 import jd.gui.swing.dialog.AboutDialog;
 
@@ -33,12 +35,12 @@ public class MacOSController extends Application {
     private class Handler extends ApplicationAdapter {
 
         @Override
-        public void handleQuit(ApplicationEvent e) {
+        public void handleQuit(final ApplicationEvent e) {
             JDController.getInstance().exit();
         }
 
         @Override
-        public void handleAbout(ApplicationEvent e) {
+        public void handleAbout(final ApplicationEvent e) {
             e.setHandled(true);
             new GuiRunnable<Object>() {
 
@@ -52,10 +54,12 @@ public class MacOSController extends Application {
         }
 
         @Override
-        public void handleReOpenApplication(ApplicationEvent e) {
-            if (SwingGui.getInstance() == null || SwingGui.getInstance().getMainFrame() == null) return;
-            if (!SwingGui.getInstance().getMainFrame().isVisible()) {
-                SwingGui.getInstance().getMainFrame().setVisible(true);
+        public void handleReOpenApplication(final ApplicationEvent e) {
+            final SwingGui swingGui = SwingGui.getInstance();
+            if (swingGui == null || swingGui.getMainFrame() == null) return;
+            final JFrame mainFrame = swingGui.getMainFrame();
+            if (!mainFrame.isVisible()) {
+                mainFrame.setVisible(true);
             }
         }
 
