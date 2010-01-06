@@ -70,7 +70,7 @@ public abstract class ReconnectMethod {
             }
         } else {
             if (maxretries == 0) maxretries = 1;
-            for (retry = 0; retry <= maxretries; retry++) {
+            for (retry = 0; retry < maxretries; retry++) {
                 if ((ret = doReconnectInternal(retry + 1)) == true) break;
             }
         }
