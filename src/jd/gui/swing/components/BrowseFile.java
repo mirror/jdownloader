@@ -49,14 +49,14 @@ public class BrowseFile extends JPanel implements ActionListener {
         this(null);
     }
 
-    public BrowseFile(LayoutManager layout) {
+    public BrowseFile(final LayoutManager layout) {
         super(layout != null ? layout : new MigLayout("ins 0", "[grow 100,fill,160:null:null]3[grow 30,fill]"));
         initGUI();
     }
 
-    public void actionPerformed(ActionEvent e) {
-        File newPath;
-        ActionEvent event = new ActionEvent(this, ActionEvent.ACTION_PERFORMED, "");
+    public void actionPerformed(final ActionEvent e) {
+        final File newPath;
+        final ActionEvent event = new ActionEvent(this, ActionEvent.ACTION_PERFORMED, "");
 
         if (e.getSource() == txtInput) {
             newPath = new File(txtInput.getText());
@@ -69,7 +69,6 @@ public class BrowseFile extends JPanel implements ActionListener {
                 dispatchEvent(event);
             }
         }
-
     }
 
     /**
@@ -92,7 +91,7 @@ public class BrowseFile extends JPanel implements ActionListener {
      */
     private File getDirectoryFromTxtInput() {
         File directory = null;
-        String stringPath = txtInput.getText();
+        final String stringPath = txtInput.getText();
 
         if (null != stringPath) {
             directory = new File(txtInput.getText());
@@ -104,7 +103,6 @@ public class BrowseFile extends JPanel implements ActionListener {
                 directory = null;
             }
         }
-
         return directory;
     }
 
@@ -120,16 +118,15 @@ public class BrowseFile extends JPanel implements ActionListener {
     }
 
     private File getPath() {
-        JDFileChooser fc = new JDFileChooser();
+        final JDFileChooser fc = new JDFileChooser();
         fc.setApproveButtonText(approveButtonText);
         fc.setFileSelectionMode(fileSelectionMode);
         fc.setCurrentDirectory(getDirectoryFromTxtInput());
         if (fc.showOpenDialog(this) == JDFileChooser.APPROVE_OPTION) {
-            File ret = fc.getSelectedFile();
-            return ret;
+            return fc.getSelectedFile();
+        } else {
+            return null;
         }
-        return null;
-
     }
 
     public String getText() {
@@ -152,7 +149,7 @@ public class BrowseFile extends JPanel implements ActionListener {
      * @param approveButtonText
      *            the approveButtonText to set
      */
-    public void setApproveButtonText(String approveButtonText) {
+    public void setApproveButtonText(final String approveButtonText) {
         this.approveButtonText = approveButtonText;
     }
 
@@ -165,11 +162,10 @@ public class BrowseFile extends JPanel implements ActionListener {
      *            the currentPath to set
      */
     public void setCurrentPath(final File currentPath) {
-        if (currentPath == null) { return; }
-        this.currentPath = currentPath;
-
-        txtInput.setText(currentPath.getAbsolutePath());
-
+        if (currentPath != null) {
+            this.currentPath = currentPath;
+            txtInput.setText(currentPath.getAbsolutePath());
+        }
     }
 
     public void setEditable(boolean value) {
@@ -178,25 +174,21 @@ public class BrowseFile extends JPanel implements ActionListener {
     }
 
     // @Override
-    public void setEnabled(boolean value) {
+    public void setEnabled(final boolean value) {
         txtInput.setEnabled(value);
         btnBrowse.setEnabled(value);
-
     }
 
     /**
      * @param fileSelectionMode
      *            the fileSelectionMode to set
      */
-    public void setFileSelectionMode(int fileSelectionMode) {
+    public void setFileSelectionMode(final int fileSelectionMode) {
         this.fileSelectionMode = fileSelectionMode;
     }
 
-    public void setText(String text) {
-        if (text == null) {
-            text = "";
-        }
-        setCurrentPath(new File(text));
+    public void setText(final String text) {
+        setCurrentPath(new File(text == null ? "" : text));
     }
 
     public JTextField getTextField() {
