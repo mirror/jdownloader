@@ -36,50 +36,50 @@ public abstract class SwingGui extends UserIF implements ControlListener, Window
     /**
      * Invoked when a window has been opened.
      */
-    public void windowOpened(WindowEvent e) {
+    public void windowOpened(final WindowEvent e) {
     }
 
     /**
      * Invoked when a window is in the process of being closed. The close
      * operation can be overridden at this point.
      */
-    public void windowClosing(WindowEvent e) {
+    public void windowClosing(final WindowEvent e) {
     }
 
     /**
      * Invoked when a window has been closed.
      */
-    public void windowClosed(WindowEvent e) {
+    public void windowClosed(final WindowEvent e) {
     }
 
     /**
      * Invoked when a window is iconified.
      */
-    public void windowIconified(WindowEvent e) {
+    public void windowIconified(final WindowEvent e) {
     }
 
     /**
      * Invoked when a window is de-iconified.
      */
-    public void windowDeiconified(WindowEvent e) {
+    public void windowDeiconified(final WindowEvent e) {
     }
 
     /**
      * Invoked when a window is activated.
      */
-    public void windowActivated(WindowEvent e) {
+    public void windowActivated(final WindowEvent e) {
     }
 
     /**
      * Invoked when a window is de-activated.
      */
-    public void windowDeactivated(WindowEvent e) {
+    public void windowDeactivated(final WindowEvent e) {
     }
 
     /**
      * Invoked when a window state is changed.
      */
-    public void windowStateChanged(WindowEvent e) {
+    public void windowStateChanged(final WindowEvent e) {
     }
 
     /**
@@ -87,7 +87,7 @@ public abstract class SwingGui extends UserIF implements ControlListener, Window
      * the Window, or one of its subcomponents, will receive keyboard events.
      * 
      */
-    public void windowGainedFocus(WindowEvent e) {
+    public void windowGainedFocus(final WindowEvent e) {
     }
 
     /**
@@ -96,17 +96,15 @@ public abstract class SwingGui extends UserIF implements ControlListener, Window
      * subcomponents.
      * 
      */
-    public void windowLostFocus(WindowEvent e) {
+    public void windowLostFocus(final WindowEvent e) {
     }
 
     private static final long serialVersionUID = 7164420260634468080L;
 
     private static SwingGui INSTANCE = null;
 
-    public SwingGui(String string) {
-
+    public SwingGui(final String string) {
         mainFrame = new JFrame(string);
-
     }
 
     /**
@@ -133,7 +131,7 @@ public abstract class SwingGui extends UserIF implements ControlListener, Window
      * 
      * @param ins
      */
-    public static void setInstance(SwingGui ins) {
+    public static void setInstance(final SwingGui ins) {
         INSTANCE = ins;
     }
 
@@ -148,15 +146,13 @@ public abstract class SwingGui extends UserIF implements ControlListener, Window
      */
     public static boolean checkEDT() {
         if (!JDInitFlags.SWITCH_DEBUG) return true;
-        Thread th = Thread.currentThread();
+        final Thread th = Thread.currentThread();
 
         if (!SwingUtilities.isEventDispatchThread()) {
-
             JDLogger.exception(new RuntimeException("EDT Violation! Runs in " + th));
             return false;
         }
         return true;
-
     }
 
     /**
@@ -165,6 +161,5 @@ public abstract class SwingGui extends UserIF implements ControlListener, Window
      * @param view
      */
     abstract public void disposeView(SwitchPanel view);
-
 
 }
