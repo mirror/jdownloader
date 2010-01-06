@@ -39,23 +39,23 @@ public class JUndoManager {
      * 
      * @param area
      */
-    public static void addUndoRedo(JTextComponent area) {
+    public static void addUndoRedo(final JTextComponent area) {
 
         final UndoManager undo = new UndoManager();
 
         // Listen for undo and redo events
         area.getDocument().addUndoableEditListener(new UndoableEditListener() {
-            public void undoableEditHappened(UndoableEditEvent evt) {
+            public void undoableEditHappened(final UndoableEditEvent evt) {
                 undo.addEdit(evt.getEdit());
             }
         });
 
         // action for the undo command
-        AbstractAction undo_action = new AbstractAction() {
+        final AbstractAction undo_action = new AbstractAction() {
 
             private static final long serialVersionUID = -1151050746658519934L;
 
-            public void actionPerformed(ActionEvent evt) {
+            public void actionPerformed(final ActionEvent evt) {
                 try {
                     if (undo.canUndo()) {
                         undo.undo();
@@ -68,11 +68,11 @@ public class JUndoManager {
         };
 
         // action for the redo command
-        AbstractAction redo_action = new AbstractAction() {
+        final AbstractAction redo_action = new AbstractAction() {
 
             private static final long serialVersionUID = 7373087464871959970L;
 
-            public void actionPerformed(ActionEvent evt) {
+            public void actionPerformed(final ActionEvent evt) {
                 try {
                     if (undo.canRedo()) {
                         undo.redo();
