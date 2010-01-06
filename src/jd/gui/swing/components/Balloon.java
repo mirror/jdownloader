@@ -51,22 +51,25 @@ public class Balloon {
     /**
      * Displays only if mainframe is hidden
      */
-    public static void showIfHidden(String title, ImageIcon icon, String htmlmessage) {
-        if (SwingGui.getInstance() != null && !SwingGui.getInstance().getMainFrame().isActive()) Balloon.show(title, icon, htmlmessage);
+    public static void showIfHidden(final String title, final ImageIcon icon, final String htmlmessage) {
+        final SwingGui swingGui = SwingGui.getInstance();
+        if (swingGui != null && !swingGui.getMainFrame().isActive()) {
+            Balloon.show(title, icon, htmlmessage);
+        }
     }
 
-    public static void show(String title, ImageIcon icon, String htmlmessage) {
+    public static void show(final String title, final ImageIcon icon, final String htmlmessage) {
         Balloon.show(title, null, icon, htmlmessage);
     }
 
-    public static void show(String title, ImageIcon ii, ImageIcon icon, String htmlmessage) {
-        if (LASTSTRING != null && LASTSTRING.equals(title + htmlmessage)) return;
-        LASTSTRING = title + htmlmessage;
-
-        show(title, ii, createDefault(icon, htmlmessage));
+    public static void show(final String title, final ImageIcon ii, final ImageIcon icon, final String htmlmessage) {
+        if (LASTSTRING == null || !LASTSTRING.equals(title + htmlmessage)) {
+            LASTSTRING = title + htmlmessage;
+            show(title, ii, createDefault(icon, htmlmessage));
+        }
     }
 
-    public static void show(final String title, ImageIcon ii, final JPanel panel) {
+    public static void show(final String title, final ImageIcon ii, final JPanel panel) {
         if (!GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_SHOW_BALLOON, true)) return;
 
         final ImageIcon icon;
@@ -94,7 +97,7 @@ public class Balloon {
                     }
 
                     @Override
-                    public void setVisible(boolean b) {
+                    public void setVisible(final boolean b) {
 
                         if (b) {
                             Balloon.add(this);
@@ -103,7 +106,6 @@ public class Balloon {
                                 @Override
                                 protected Object doInBackground() throws Exception {
                                     Thread.sleep(COUNTDOWN);
-
                                     return null;
                                 }
 
@@ -115,7 +117,6 @@ public class Balloon {
                                             dispose();
                                         }
                                     } catch (Exception e) {
-
                                     }
                                 }
 
@@ -130,22 +131,22 @@ public class Balloon {
 
                 };
 
-                JLabel lbl = new JLabel(title);
+                final JLabel lbl = new JLabel(title);
                 lbl.setIcon(icon);
 
-                JLabel bt = new JLabel("[X]");
+                final JLabel bt = new JLabel("[X]");
                 bt.addMouseListener(new JDMouseAdapter() {
                     @Override
-                    public void mouseClicked(MouseEvent e) {
+                    public void mouseClicked(final MouseEvent e) {
                         w.setVisible(false);
                         w.dispose();
                     }
                 });
 
-                JPanel titlePanel = new JPanel(new MigLayout("ins 0", "[grow,fill][]"));
+                final JPanel titlePanel = new JPanel(new MigLayout("ins 0", "[grow,fill][]"));
                 titlePanel.addMouseListener(new JDMouseAdapter() {
                     @Override
-                    public void mouseClicked(MouseEvent e) {
+                    public void mouseClicked(final MouseEvent e) {
                         SwingGui.getInstance().getMainFrame().setVisible(true);
                         SwingGui.getInstance().getMainFrame().toFront();
                     }
@@ -153,7 +154,7 @@ public class Balloon {
                 titlePanel.add(lbl);
                 titlePanel.add(bt, "aligny top,alignx right");
 
-                JPanel container = new JPanel();
+                final JPanel container = new JPanel();
                 container.setBorder(BorderFactory.createLineBorder(container.getBackground().darker()));
                 container.setLayout(new MigLayout("ins 5,wrap 1", "[grow,fill]", "[][][grow,fill]"));
                 container.add(titlePanel);
@@ -172,8 +173,10 @@ public class Balloon {
         }.start();
     }
 
-    protected static void add(JWindow window) {
-        if (WINDOWS == null) WINDOWS = new ArrayList<JWindow>();
+    protected static void add(final JWindow window) {
+        if (WINDOWS == null) {
+            WINDOWS = new ArrayList<JWindow>();
+        }
         synchronized (WINDOWS) {
             WINDOWS.add(window);
         }
@@ -186,49 +189,42 @@ public class Balloon {
     }
 
     private synchronized static void layout() {
-        int y = 0;
         int width = 0;
-        for (JWindow w : WINDOWS) {
+        for (final JWindow w : WINDOWS) {
             try {
                 width = Math.max(Math.min((int) w.getPreferredSize().getWidth(), 350), width);
             } catch (Exception e) {
 
             }
         }
-        for (JWindow w : WINDOWS) {
+        for (final JWindow w : WINDOWS) {
             try {
                 w.setSize(width, w.getHeight());
             } catch (Exception e) {
-
             }
-
         }
-
-        for (JWindow w : WINDOWS) {
+        int y = 0;
+        for (final JWindow w : WINDOWS) {
             try {
                 locate(w, y);
                 y += w.getHeight() + 3;
-
             } catch (Exception e) {
-
             }
         }
     }
 
-    protected static void remove(JWindow window) {
+    protected static void remove(final JWindow window) {
         synchronized (WINDOWS) {
             WINDOWS.remove(window);
         }
         layout();
-
     }
 
-    private static void locate(JWindow w, int y) {
-        Point point = Screen.getDockBottomRight(w);
+    private static void locate(final JWindow w, final int y) {
+        final Point point = Screen.getDockBottomRight(w);
         point.x -= GAP;
         point.y -= (GAP + y);
         w.setLocation(point);
-
     }
 
     private static JPanel createDefault(final ImageIcon ii, final String string2) {
@@ -236,12 +232,11 @@ public class Balloon {
 
             @Override
             public JPanel runSave() {
-
-                JPanel p = new JPanel(new MigLayout("ins 0", "[fill,grow]"));
+                final JPanel p = new JPanel(new MigLayout("ins 0", "[fill,grow]"));
                 if (ii != null) {
                     p.add(new JLabel(ii), "split 2,alignx left, aligny top");
                 }
-                JTextPane textField = new JTextPane();
+                final JTextPane textField = new JTextPane();
                 p.add(textField, "pushx,growx");
                 textField.setContentType("text/html");
                 textField.setBorder(null);
@@ -253,8 +248,8 @@ public class Balloon {
                 textField.addHyperlinkListener(JLink.getHyperlinkListener());
                 return p;
             }
-        }.getReturnValue();
 
+        }.getReturnValue();
     }
 
 }
