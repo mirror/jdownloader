@@ -227,7 +227,7 @@ public class HTMLParser {
             }
         }
 
-        String protocolPattern = "(flashget|h.{2,3}|httpviajd|httpsviajd|https|ccf|dlc|ftp|jd|rsdf|jdlist)";
+        String protocolPattern = "(flashget|h.{2,3}|directhttp|httpviajd|httpsviajd|https|ccf|dlc|ftp|jd|rsdf|jdlist)";
         if (!data.matches(".*<.*>.*")) {
             int c = new Regex(data, "(" + protocolPattern + "://|(?<!://)www\\.)").count();
             if (c == 0)
@@ -265,7 +265,9 @@ public class HTMLParser {
         }
         String pro = "http";
         if (url != null && url.trim().length() > 0) {
-
+            if (url.startsWith("directhttp://")) {
+                pro = "directhttp";
+            }
             if (url.startsWith("https://")) {
                 pro = "https";
             }
