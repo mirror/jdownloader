@@ -20,6 +20,7 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -27,7 +28,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "insertshare.com" }, urls = { "http://[\\w\\.]*?insertshare\\.com/download/[0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "insertshare.com" }, urls = { "http://[\\w\\.]*?insertshare\\.com/download/[0-9A-Z]+" }, flags = { 0 })
 public class InsertShareCom extends PluginForHost {
 
     public InsertShareCom(PluginWrapper wrapper) {
@@ -44,8 +45,8 @@ public class InsertShareCom extends PluginForHost {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("Invalid download link")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<p><h1>Downloading(.*?)\\|.*?</h1></p>").getMatch(0);
-        String filesize = br.getRegex("<p><h1>Downloading.*?\\|(.*?)</h1></p>").getMatch(0);
+        String filename = br.getRegex("<h3>Downloading(.*?)\\|.*?</h3>").getMatch(0);
+        String filesize = br.getRegex("<h3>Downloading.*?\\|(.*?)</h3>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         link.setName(filename.trim());
         link.setDownloadSize(Regex.getSize(filesize));
@@ -55,9 +56,17 @@ public class InsertShareCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        String dllink = br.getRegex("self\\.location\\.href=\\(\\\\'(http.*?)\\\\'").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        Form dlform = br.getForm(0);
+        if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String waittime = br.getRegex("window\\.onload  = display_c\\((\\d+)\\);").getMatch(0);
+        int sleep = 60;
+        if (waittime != null) Integer.parseInt(waittime);
+        if (sleep < 100) {
+            sleep(sleep * 1001, downloadLink);
+        } else {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, sleep * 1001);
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlform, false, 1);
         if (dl.getConnection().getContentType().contains("html")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl.startDownload();
     }
@@ -68,7 +77,7 @@ public class InsertShareCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return 1;
     }
 
     @Override
