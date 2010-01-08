@@ -19,6 +19,7 @@ package jd.controlling;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Locale;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
@@ -54,7 +55,7 @@ public class DistributeData extends Thread {
     /**
      * Der Logger
      */
-    private static Logger logger = jd.controlling.JDLogger.getLogger();
+    private static final Logger LOG = JDLogger.getLogger();
 
     /**
      * Aufruf von Clipboard Überwachung
@@ -76,7 +77,7 @@ public class DistributeData extends Thread {
     private String orgData;
 
     private boolean filterNormalHTTP = false;
-    private ArrayList<String> foundPasswords;
+    private final ArrayList<String> foundPasswords = new ArrayList<String>();
 
     private boolean autostart = false;
 
@@ -87,71 +88,71 @@ public class DistributeData extends Thread {
      * @param data
      *            Daten, die verteilt werden sollen
      */
-    public DistributeData(String data) {
+    public DistributeData(final String data) {
         super("JD-DistributeData");
         this.data = data;
         this.disableDeepEmergencyScan = true;
-        foundPasswords = new ArrayList<String>();
     }
 
-    public DistributeData setDisableDeepEmergencyScan(boolean b) {
+    public DistributeData setDisableDeepEmergencyScan(final boolean b) {
         this.disableDeepEmergencyScan = b;
         return this;
     }
 
-    public DistributeData setHideGrabber(boolean b) {
+    public DistributeData setHideGrabber(final boolean b) {
         this.hideGrabber = b;
         return this;
     }
 
-    public DistributeData setAutostart(boolean b) {
+    public DistributeData setAutostart(final boolean b) {
         this.autostart = b;
         return this;
     }
 
-    public DistributeData(String data, boolean hideGrabber) {
+    public DistributeData(final String data, final boolean hideGrabber) {
         this(data);
         this.hideGrabber = hideGrabber;
         this.disableDeepEmergencyScan = true;
     }
 
-    public DistributeData setFilterNormalHTTP(boolean b) {
+    public DistributeData setFilterNormalHTTP(final boolean b) {
         this.filterNormalHTTP = b;
         return this;
     }
 
-    static public boolean hasContainerPluginFor(String tmp) {
+    static public boolean hasContainerPluginFor(final String tmp) {
         for (CPluginWrapper cDecrypt : CPluginWrapper.getCWrapper()) {
             if (cDecrypt.isEnabled() && cDecrypt.canHandle(tmp)) return true;
         }
         return false;
     }
 
-    static public boolean hasPluginFor(String tmp, boolean filterNormalHTTP) {
-        String data = tmp;
-        if (DecryptPluginWrapper.getDecryptWrapper() == null) return false;
-        data = data.replaceAll("jd://", "http://");
-        for (DecryptPluginWrapper pDecrypt : DecryptPluginWrapper.getDecryptWrapper()) {
-            if (pDecrypt.isEnabled() && pDecrypt.canHandle(data)) return true;
-        }
-        for (HostPluginWrapper pHost : HostPluginWrapper.getHostWrapper()) {
-            if (pHost.isEnabled() && pHost.canHandle(data)) return true;
-        }
-        data = Encoding.urlDecode(data, true);
-        for (DecryptPluginWrapper pDecrypt : DecryptPluginWrapper.getDecryptWrapper()) {
-            if (pDecrypt.isEnabled() && pDecrypt.canHandle(data)) return true;
-        }
-        for (HostPluginWrapper pHost : HostPluginWrapper.getHostWrapper()) {
-            if (pHost.isEnabled() && pHost.canHandle(data)) return true;
-        }
-        if (!filterNormalHTTP) {
-            data = data.replaceAll("http://", "httpviajd://");
-            data = data.replaceAll("https://", "httpsviajd://");
-            for (DecryptPluginWrapper pDecrypt : DecryptPluginWrapper.getDecryptWrapper()) {
+    static public boolean hasPluginFor(final String tmp, final boolean filterNormalHTTP) {
+        if (DecryptPluginWrapper.getDecryptWrapper() != null) {
+            String data = tmp;
+            data = data.replaceAll("jd://", "http://");
+            for (final DecryptPluginWrapper pDecrypt : DecryptPluginWrapper.getDecryptWrapper()) {
                 if (pDecrypt.isEnabled() && pDecrypt.canHandle(data)) return true;
             }
-            for (HostPluginWrapper pHost : HostPluginWrapper.getHostWrapper()) {
+            for (final HostPluginWrapper pHost : HostPluginWrapper.getHostWrapper()) {
                 if (pHost.isEnabled() && pHost.canHandle(data)) return true;
+            }
+            data = Encoding.urlDecode(data, true);
+            for (final DecryptPluginWrapper pDecrypt : DecryptPluginWrapper.getDecryptWrapper()) {
+                if (pDecrypt.isEnabled() && pDecrypt.canHandle(data)) return true;
+            }
+            for (final HostPluginWrapper pHost : HostPluginWrapper.getHostWrapper()) {
+                if (pHost.isEnabled() && pHost.canHandle(data)) return true;
+            }
+            if (!filterNormalHTTP) {
+                data = data.replaceAll("http://", "httpviajd://");
+                data = data.replaceAll("https://", "httpsviajd://");
+                for (final DecryptPluginWrapper pDecrypt : DecryptPluginWrapper.getDecryptWrapper()) {
+                    if (pDecrypt.isEnabled() && pDecrypt.canHandle(data)) return true;
+                }
+                for (final HostPluginWrapper pHost : HostPluginWrapper.getHostWrapper()) {
+                    if (pHost.isEnabled() && pHost.canHandle(data)) return true;
+                }
             }
         }
         return false;
@@ -164,15 +165,15 @@ public class DistributeData extends Thread {
      * @param decryptedLinks
      * @return
      */
-    private boolean deepDecrypt(ArrayList<DownloadLink> decryptedLinks) {
+    private boolean deepDecrypt(final ArrayList<DownloadLink> decryptedLinks) {
         if (decryptedLinks.isEmpty()) return false;
         final ArrayList<DownloadLink> newdecryptedLinks = new ArrayList<DownloadLink>();
         final ArrayList<DownloadLink> notdecryptedLinks = new ArrayList<DownloadLink>();
         final PluginForHost directhttp = JDUtilities.getPluginForHost("DirectHTTP");
         class DThread extends Thread implements JDRunnable {
-            private DownloadLink link = null;
+            private final DownloadLink link;
 
-            public DThread(DownloadLink link) {
+            public DThread(final DownloadLink link) {
                 this.link = link;
             }
 
@@ -188,12 +189,12 @@ public class DistributeData extends Thread {
                     /* prevent endless loops for directhttp links */
                     coulddecrypt = false;
                 } else {
-                    for (DecryptPluginWrapper pDecrypt : DecryptPluginWrapper.getDecryptWrapper()) {
+                    for (final DecryptPluginWrapper pDecrypt : DecryptPluginWrapper.getDecryptWrapper()) {
                         if (pDecrypt.isEnabled() && pDecrypt.canHandle(url)) {
                             try {
-                                PluginForDecrypt plg = (PluginForDecrypt) pDecrypt.getNewPluginInstance();
+                                final PluginForDecrypt plg = (PluginForDecrypt) pDecrypt.getNewPluginInstance();
 
-                                CryptedLink[] decryptableLinks = plg.getDecryptableLinks(url);
+                                final CryptedLink[] decryptableLinks = plg.getDecryptableLinks(url);
                                 url = plg.cutMatches(url);
                                 // Reicht die Decrypter Passwörter weiter
                                 for (CryptedLink cLink : decryptableLinks) {
@@ -205,13 +206,13 @@ public class DistributeData extends Thread {
                                     cLink.setProperties(link.getProperties());
                                 }
 
-                                ArrayList<DownloadLink> dLinks = plg.decryptLinks(decryptableLinks);
+                                final ArrayList<DownloadLink> dLinks = plg.decryptLinks(decryptableLinks);
 
                                 /* Das Plugin konnte arbeiten */
                                 coulddecrypt = true;
-                                if (dLinks != null && dLinks.size() > 0) {
+                                if (dLinks != null && !dLinks.isEmpty()) {
                                     // Reicht die Passwörter weiter
-                                    for (DownloadLink dLink : dLinks) {
+                                    for (final DownloadLink dLink : dLinks) {
                                         dLink.addSourcePluginPasswordList(link.getSourcePluginPasswordList());
                                     }
                                     synchronized (newdecryptedLinks) {
@@ -237,12 +238,11 @@ public class DistributeData extends Thread {
             }
         }
 
-        Jobber decryptJobbers = new Jobber(4);
+        final Jobber decryptJobbers = new Jobber(4);
         for (int b = decryptedLinks.size() - 1; b >= 0; b--) {
-            DThread dthread = new DThread(decryptedLinks.get(b));
-            decryptJobbers.add(dthread);
+            decryptJobbers.add(new DThread(decryptedLinks.get(b)));
         }
-        int todo = decryptJobbers.getJobsAdded();
+        final int todo = decryptJobbers.getJobsAdded();
         decryptJobbers.start();
         while (decryptJobbers.getJobsFinished() != todo) {
             try {
@@ -254,7 +254,7 @@ public class DistributeData extends Thread {
         decryptedLinks.clear();
         decryptedLinks.addAll(newdecryptedLinks);
         decryptedLinks.addAll(notdecryptedLinks);
-        return newdecryptedLinks.size() > 0;
+        return !newdecryptedLinks.isEmpty();
     }
 
     /**
@@ -289,7 +289,7 @@ public class DistributeData extends Thread {
             data = data.replaceAll("httpviajd://", "http://");
             data = data.replaceAll("httpsviajd://", "https://");
         }
-        for (DownloadLink link : ret) {
+        for (final DownloadLink link : ret) {
             link.addSourcePluginPasswordList(foundPasswords);
         }
         return ret;
@@ -300,23 +300,22 @@ public class DistributeData extends Thread {
      * 
      * @return
      */
-    private ArrayList<DownloadLink> quickHosterCheck(String data) {
-        String lowercasedata = data.toLowerCase();
+    private ArrayList<DownloadLink> quickHosterCheck(final String data) {
+        final String lowercasedata = data.toLowerCase(Locale.getDefault());
         /*
          * multiple links without new line
          */
         if (new Regex(data, " http").count() > 1) return null;
-        for (HostPluginWrapper pw : HostPluginWrapper.getHostWrapper()) {
-            Pattern pattern = pw.getPattern();
+        for (final HostPluginWrapper pw : HostPluginWrapper.getHostWrapper()) {
+            final Pattern pattern = pw.getPattern();
 
             if (lowercasedata.contains(pw.getHost().toLowerCase())) {
-                String match = new Regex(data, pattern).getMatch(-1);
+                final String match = new Regex(data, pattern).getMatch(-1);
                 if (match != null && (match.equals(data) || (match.length() > 10 + pw.getHost().length() && data.startsWith(match) && (match.length() * 2) > data.length()))) {
-                    DownloadLink dl = new DownloadLink((PluginForHost) pw.getNewPluginInstance(), null, pw.getHost(), Encoding.urlDecode(match, true), true);
-                    ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+                    final DownloadLink dl = new DownloadLink((PluginForHost) pw.getNewPluginInstance(), null, pw.getHost(), Encoding.urlDecode(match, true), true);
+                    final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
                     ret.add(dl);
                     return ret;
-
                 }
             }
         }
@@ -324,9 +323,8 @@ public class DistributeData extends Thread {
     }
 
     private ArrayList<DownloadLink> findLinksIntern() {
-
-        ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
-        ArrayList<HostPluginWrapper> pHostAll = HostPluginWrapper.getHostWrapper();
+        final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
+        final ArrayList<HostPluginWrapper> pHostAll = HostPluginWrapper.getHostWrapper();
         if (pHostAll.size() == 0) return new ArrayList<DownloadLink>();
         this.orgData = data;
         reformDataString();
@@ -336,16 +334,14 @@ public class DistributeData extends Thread {
 
         // Edit Coa:
         // Hier werden auch die SourcePLugins in die Downloadlinks gesetzt
-        ArrayList<DownloadLink> alldecrypted = handleDecryptPlugins();
+        final ArrayList<DownloadLink> alldecrypted = handleDecryptPlugins();
 
-        for (DownloadLink decrypted : alldecrypted) {
+        for (final DownloadLink decrypted : alldecrypted) {
             if (!checkdecrypted(pHostAll, links, decrypted)) {
-                if (decrypted.getDownloadURL() != null) {
-                    if (!filterNormalHTTP) {
-                        decrypted.setUrlDownload(decrypted.getDownloadURL().replaceAll("http://", "httpviajd://"));
-                        decrypted.setUrlDownload(decrypted.getDownloadURL().replaceAll("https://", "httpsviajd://"));
-                        checkdecrypted(pHostAll, links, decrypted);
-                    }
+                if (decrypted.getDownloadURL() != null && !filterNormalHTTP) {
+                    decrypted.setUrlDownload(decrypted.getDownloadURL().replaceAll("http://", "httpviajd://"));
+                    decrypted.setUrlDownload(decrypted.getDownloadURL().replaceAll("https://", "httpsviajd://"));
+                    checkdecrypted(pHostAll, links, decrypted);
                 }
             }
         }
@@ -355,51 +351,60 @@ public class DistributeData extends Thread {
         return links;
     }
 
-    private boolean checkdecrypted(ArrayList<HostPluginWrapper> pHostAll, ArrayList<DownloadLink> links, DownloadLink decrypted) {
-        if (decrypted.getDownloadURL() == null) return true;
-        if (LinkGrabberController.isFiltered(decrypted)) return true;
+    private boolean checkdecrypted(final ArrayList<HostPluginWrapper> pHostAll, final ArrayList<DownloadLink> links, final DownloadLink decrypted) {
+        if (decrypted.getDownloadURL() == null || LinkGrabberController.isFiltered(decrypted)) return true;
         boolean gothost = false;
-        for (HostPluginWrapper pHost : pHostAll) {
+        for (final HostPluginWrapper pHost : pHostAll) {
             try {
                 if (pHost.canHandle(decrypted.getDownloadURL())) {
-                    ArrayList<DownloadLink> dLinks = pHost.getPlugin().getDownloadLinks(decrypted.getDownloadURL(), decrypted.getFilePackage() != FilePackage.getDefaultFilePackage() ? decrypted.getFilePackage() : null);
+                    final ArrayList<DownloadLink> dLinks = pHost.getPlugin().getDownloadLinks(decrypted.getDownloadURL(), decrypted.getFilePackage() != FilePackage.getDefaultFilePackage() ? decrypted.getFilePackage() : null);
                     gothost = true;
-                    if (!pHost.isEnabled()) break;
-                    for (int c = 0; c < dLinks.size(); c++) {
-                        dLinks.get(c).addSourcePluginPasswordList(decrypted.getSourcePluginPasswordList());
-                        dLinks.get(c).setSourcePluginComment(decrypted.getSourcePluginComment());
-                        dLinks.get(c).setName(decrypted.getName());
-                        dLinks.get(c).setFinalFileName(decrypted.getFinalFileName());
-                        dLinks.get(c).setBrowserUrl(decrypted.getBrowserUrl());
-                        if (decrypted.isAvailabilityStatusChecked()) dLinks.get(c).setAvailable(decrypted.isAvailable());
-                        dLinks.get(c).setProperties(decrypted.getProperties());
-                        dLinks.get(c).getLinkStatus().setStatusText(decrypted.getLinkStatus().getStatusString());
-                        dLinks.get(c).setDownloadSize(decrypted.getDownloadSize());
-                        dLinks.get(c).setSubdirectory(decrypted);
+                    if (!pHost.isEnabled()) {
+                        break;
+                    }
+                    final int dLinksSize = dLinks.size();
+                    DownloadLink dl = null;
+                    for (int c = 0; c < dLinksSize; c++) {
+                        dl = dLinks.get(c);
+                        dl.addSourcePluginPasswordList(decrypted.getSourcePluginPasswordList());
+                        dl.setSourcePluginComment(decrypted.getSourcePluginComment());
+                        dl.setName(decrypted.getName());
+                        dl.setFinalFileName(decrypted.getFinalFileName());
+                        dl.setBrowserUrl(decrypted.getBrowserUrl());
+                        if (decrypted.isAvailabilityStatusChecked()) {
+                            dl.setAvailable(decrypted.isAvailable());
+                        }
+                        dl.setProperties(decrypted.getProperties());
+                        dl.getLinkStatus().setStatusText(decrypted.getLinkStatus().getStatusString());
+                        dl.setDownloadSize(decrypted.getDownloadSize());
+                        dl.setSubdirectory(decrypted);
                     }
                     links.addAll(dLinks);
                     break;
                 }
             } catch (Exception e) {
-                logger.severe("Decrypter/Search Fehler: " + e.getMessage());
+                LOG.severe("Decrypter/Search Fehler: " + e.getMessage());
                 JDLogger.exception(e);
             }
         }
         return gothost;
     }
 
-    private void useHoster(ArrayList<DownloadLink> links) {
-        for (HostPluginWrapper pHost : HostPluginWrapper.getHostWrapper()) {
-            if (pHost.canHandle(pHost.isAcceptOnlyURIs() ? data : orgData)) {
-                ArrayList<DownloadLink> dl = pHost.getPlugin().getDownloadLinks(pHost.isAcceptOnlyURIs() ? data : orgData, null);
-                if (pHost.isAcceptOnlyURIs()) {
+    private void useHoster(final ArrayList<DownloadLink> links) {
+        for (final HostPluginWrapper pHost : HostPluginWrapper.getHostWrapper()) {
+            final boolean isAcceptOnlyURIs = pHost.isAcceptOnlyURIs();
+            if (pHost.canHandle(isAcceptOnlyURIs ? data : orgData)) {
+                final ArrayList<DownloadLink> dl = pHost.getPlugin().getDownloadLinks(isAcceptOnlyURIs ? data : orgData, null);
+                if (isAcceptOnlyURIs) {
                     data = pHost.getPlugin().cutMatches(data);
                 } else {
                     orgData = pHost.getPlugin().cutMatches(orgData);
                 }
                 if (!pHost.isEnabled()) continue;
-                for (DownloadLink dll : dl) {
-                    if (LinkGrabberController.isFiltered(dll)) continue;
+                for (final DownloadLink dll : dl) {
+                    if (LinkGrabberController.isFiltered(dll)) {
+                        continue;
+                    }
                     links.add(dll);
                 }
             }
@@ -416,16 +421,16 @@ public class DistributeData extends Thread {
         if (DecryptPluginWrapper.getDecryptWrapper() == null) return decryptedLinks;
 
         class DThread extends Thread implements JDRunnable {
-            private CryptedLink[] decryptableLinks = null;
-            private PluginForDecrypt plg = null;
+            private final CryptedLink[] decryptableLinks;
+            private final PluginForDecrypt plg;
 
-            public DThread(PluginForDecrypt plg, CryptedLink[] decryptableLinks) {
+            public DThread(final PluginForDecrypt plg, final CryptedLink[] decryptableLinks) {
                 this.decryptableLinks = decryptableLinks;
                 this.plg = plg;
             }
 
             public void run() {
-                ArrayList<DownloadLink> tmp = plg.decryptLinks(decryptableLinks);
+                final ArrayList<DownloadLink> tmp = plg.decryptLinks(decryptableLinks);
                 synchronized (decryptedLinks) {
                     decryptedLinks.addAll(tmp);
                 }
@@ -435,28 +440,25 @@ public class DistributeData extends Thread {
                 run();
             }
         }
-        Jobber decryptJobbers = new Jobber(4);
-        for (DecryptPluginWrapper pDecrypt : DecryptPluginWrapper.getDecryptWrapper()) {
+        final Jobber decryptJobbers = new Jobber(4);
+        for (final DecryptPluginWrapper pDecrypt : DecryptPluginWrapper.getDecryptWrapper()) {
             if (pDecrypt.isEnabled() && pDecrypt.canHandle(pDecrypt.isAcceptOnlyURIs() ? data : orgData)) {
-
                 try {
-                    PluginForDecrypt plg = (PluginForDecrypt) pDecrypt.getNewPluginInstance();
+                    final PluginForDecrypt plg = (PluginForDecrypt) pDecrypt.getNewPluginInstance();
 
-                    CryptedLink[] decryptableLinks = plg.getDecryptableLinks(plg.isAcceptOnlyURIs() ? data : orgData);
+                    final CryptedLink[] decryptableLinks = plg.getDecryptableLinks(plg.isAcceptOnlyURIs() ? data : orgData);
                     if (plg.isAcceptOnlyURIs()) {
                         data = plg.cutMatches(data);
                     } else {
                         orgData = plg.cutMatches(orgData);
                     }
-
-                    DThread dthread = new DThread(plg, decryptableLinks);
-                    decryptJobbers.add(dthread);
+                    decryptJobbers.add(new DThread(plg, decryptableLinks));
                 } catch (Exception e) {
                     JDLogger.exception(e);
                 }
             }
         }
-        int todo = decryptJobbers.getJobsAdded();
+        final int todo = decryptJobbers.getJobsAdded();
         decryptJobbers.start();
         while (decryptJobbers.getJobsFinished() != todo) {
             try {
@@ -468,7 +470,7 @@ public class DistributeData extends Thread {
         int i = 1;
         while (deepDecrypt(decryptedLinks)) {
             i++;
-            logger.info("Deepdecrypt depths: " + i);
+            LOG.info("Deepdecrypt depths: " + i);
         }
         return decryptedLinks;
     }
@@ -478,7 +480,7 @@ public class DistributeData extends Thread {
      */
     private void reformDataString() {
         if (data != null) {
-            String tmp = HTMLParser.getHttpLinkList(data);
+            final String tmp = HTMLParser.getHttpLinkList(data);
             if (!(tmp.length() == 0)) {
                 data = tmp;
             }
@@ -494,21 +496,21 @@ public class DistributeData extends Thread {
         if (data == null || data.length() == 0 || !new Regex(data, "//.*?\\.").matches()) return;
         ArrayList<DownloadLink> links = findLinks();
 
-        if (links.size() == 0 && !disableDeepEmergencyScan) {
-            String[] ls = HTMLParser.getHttpLinks(data, null);
+        if (links.isEmpty() && !disableDeepEmergencyScan) {
+            final String[] ls = HTMLParser.getHttpLinks(data, null);
             if (ls.length > 0) {
                 String txt = "\r\n";
-                for (String l : ls)
+                for (final String l : ls) {
                     txt += l + "\r\n";
-                logger.warning("No supported links found -> search for links in source code of all urls");
+                }
+                LOG.warning("No supported links found -> search for links in source code of all urls");
 
-                String title = JDL.L("gui.dialog.deepdecrypt.title", "Deep decryption?");
-                String message = JDL.LF("gui.dialog.deepdecrypt.message", "JDownloader has not found anything on %s\r\n-------------------------------\r\nJD now loads this page to look for further links.", txt + "");
-                int res = UserIO.getInstance().requestConfirmDialog(0, title, message, JDTheme.II("gui.images.search", 32, 32), JDL.L("gui.btn_continue", "Continue"), null);
+                final String title = JDL.L("gui.dialog.deepdecrypt.title", "Deep decryption?");
+                final String message = JDL.LF("gui.dialog.deepdecrypt.message", "JDownloader has not found anything on %s\r\n-------------------------------\r\nJD now loads this page to look for further links.", txt);
+                final int res = UserIO.getInstance().requestConfirmDialog(0, title, message, JDTheme.II("gui.images.search", 32, 32), JDL.L("gui.btn_continue", "Continue"), null);
+
                 if (JDFlags.hasAllFlags(res, UserIO.RETURN_OK)) {
-
                     data = getLoadLinkString(data);
-
                     links = findLinks();
                 }
             }
@@ -518,7 +520,7 @@ public class DistributeData extends Thread {
         LinkGrabberController.getInstance().addLinks(links, hideGrabber, autostart);
     }
 
-    public void setLinkData(ArrayList<DownloadLink> linkData) {
+    public void setLinkData(final ArrayList<DownloadLink> linkData) {
         this.linkData = linkData;
     }
 
@@ -526,14 +528,14 @@ public class DistributeData extends Thread {
         return data;
     }
 
-    private static String getLoadLinkString(String linkstring) {
-        StringBuffer sb = new StringBuffer();
-        String[] links = HTMLParser.getHttpLinks(linkstring, null);
-        ProgressController pc = new ProgressController(JDL.LF("gui.addurls.progress", "Parse %s URL(s)", links.length), links.length, null);
-        int i = 0;
+    private static String getLoadLinkString(final String linkstring) {
+        final StringBuffer sb = new StringBuffer();
+        final String[] links = HTMLParser.getHttpLinks(linkstring, null);
+        final ProgressController pc = new ProgressController(JDL.LF("gui.addurls.progress", "Parse %s URL(s)", links.length), links.length, null);
+        int count = 0;
 
-        for (String l : links) {
-            Browser br = new Browser();
+        for (final String l : links) {
+            final Browser br = new Browser();
 
             try {
                 new URL(l);
@@ -541,16 +543,14 @@ public class DistributeData extends Thread {
 
                 br.getPage(l);
 
-                String[] found = HTMLParser.getHttpLinks(br + "", l);
-                for (String f : found) {
-
-                    i++;
+                final String[] found = HTMLParser.getHttpLinks(br.toString(), l);
+                for (final String f : found) {
+                    count++;
                     sb.append("\r\n" + f);
                 }
-
             } catch (Exception e1) {
             }
-            pc.setStatusText(JDL.LF("gui.addurls.progress.found", "Parse %s URL(s). Found %s links", links.length, i));
+            pc.setStatusText(JDL.LF("gui.addurls.progress.found", "Parse %s URL(s). Found %s links", links.length, count));
             pc.increase(1);
 
         }
