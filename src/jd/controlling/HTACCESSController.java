@@ -37,13 +37,15 @@ public class HTACCESSController implements ActionListener, ListController {
     private boolean saveinprogress;
 
     public static synchronized HTACCESSController getInstance() {
-        if (INSTANCE == null) INSTANCE = new HTACCESSController();
+        if (INSTANCE == null) {
+            INSTANCE = new HTACCESSController();
+        }
         return INSTANCE;
     }
 
     private HTACCESSController() {
         CONFIG = SubConfiguration.getConfig("HTACCESSLIST");
-        HashMap<String, String[]> defaultentry = new HashMap<String, String[]>();
+        final HashMap<String, String[]> defaultentry = new HashMap<String, String[]>();
         defaultentry.put("example.com", new String[] { "username", "passwd" });
         LIST = CONFIG.getGenericProperty("LIST2", defaultentry);
         asyncSaveIntervalTimer = new Timer(2000, this);
@@ -53,50 +55,55 @@ public class HTACCESSController implements ActionListener, ListController {
         saveSync();
     }
 
-    public void add(String url, String username, String passwd) {
-        if (url == null || url.length() == 0) return;
-        String host = Browser.getHost(url.trim()).toLowerCase();
-        if (username == null) username = "";
-        if (passwd == null) passwd = "";
-        synchronized (LIST) {
-            LIST.remove(host);
-            LIST.put(host, new String[] { username.trim(), passwd.trim() });
+    public void add(final String url, String username, String passwd) {
+        if (url != null && !url.isEmpty()) {
+            final String host = Browser.getHost(url.trim()).toLowerCase();
+            if (username == null) username = "";
+            if (passwd == null) passwd = "";
+            synchronized (LIST) {
+                LIST.remove(host);
+                LIST.put(host, new String[] { username.trim(), passwd.trim() });
+            }
         }
     }
 
     public static String[] getUserDatafromBasicauth(String basicauth) {
-        if (basicauth == null || basicauth.length() == 0) return null;
+        if (basicauth == null || basicauth.isEmpty()) return null;
         if (basicauth.startsWith("Basic")) basicauth = new Regex(basicauth, "Basic (.*?)$").getMatch(0);
         basicauth = Encoding.Base64Decode(basicauth);
-        String[] dat = new Regex(basicauth, ("(.*?):(.*?)$")).getRow(0);
+        final String[] dat = new Regex(basicauth, ("(.*?):(.*?)$")).getRow(0);
         return new String[] { dat[0], dat[1] };
     }
 
-    public void add(String url, String basicauth) {
-        if (url == null || url.length() == 0) return;
-        String host = Browser.getHost(url.trim()).toLowerCase();
-        String[] user = getUserDatafromBasicauth(basicauth);
-        if (user == null) return;
-        synchronized (LIST) {
-            LIST.remove(host);
-            LIST.put(host, user);
+    public void add(final String url, final String basicauth) {
+        if (url != null && !url.isEmpty()) {
+            final String host = Browser.getHost(url.trim()).toLowerCase();
+            final String[] user = getUserDatafromBasicauth(basicauth);
+            if (user == null) return;
+            synchronized (LIST) {
+                LIST.remove(host);
+                LIST.put(host, user);
+            }
         }
     }
 
-    public String get(String url) {
-        if (url == null || url.length() == 0) return null;
-        String host = Browser.getHost(url.trim()).toLowerCase();
-        synchronized (LIST) {
-            if (!LIST.containsKey(host)) return null;
-            return "Basic " + Encoding.Base64Encode(LIST.get(host)[0] + ":" + LIST.get(host)[1]);
+    public String get(final String url) {
+        if (url != null && !url.isEmpty()) {
+            final String host = Browser.getHost(url.trim()).toLowerCase();
+            synchronized (LIST) {
+                if (!LIST.containsKey(host)) return null;
+                return "Basic " + Encoding.Base64Encode(LIST.get(host)[0] + ":" + LIST.get(host)[1]);
+            }
         }
+        return null;
     }
 
-    public void remove(String url) {
-        if (url == null || url.length() == 0) return;
-        String host = Browser.getHost(url.trim()).toLowerCase();
-        synchronized (LIST) {
-            LIST.remove(host);
+    public void remove(final String url) {
+        if (url != null && !url.isEmpty()) {
+            final String host = Browser.getHost(url.trim()).toLowerCase();
+            synchronized (LIST) {
+                LIST.remove(host);
+            }
         }
     }
 
@@ -104,23 +111,24 @@ public class HTACCESSController implements ActionListener, ListController {
         return LIST;
     }
 
-    public void setList(String list) {
-        String[] pws = Regex.getLines(list);
+    public void setList(final String list) {
+        final String[] pws = Regex.getLines(list);
         synchronized (LIST) {
             LIST.clear();
-            for (String pw : pws) {
-                String[] dat = new Regex(pw, "(.*?)%%%%(.*?)%%%%(.*?)$").getRow(0);
-                if (dat == null) continue;
-                add(dat[0], dat[1], dat[2]);
+            for (final String pw : pws) {
+                final String[] dat = new Regex(pw, "(.*?)%%%%(.*?)%%%%(.*?)$").getRow(0);
+                if (dat != null) {
+                    add(dat[0], dat[1], dat[2]);
+                }
             }
         }
     }
 
     public String getList() {
         synchronized (LIST) {
-            StringBuilder sb = new StringBuilder();
-            for (String host : LIST.keySet()) {
-                String auth[] = LIST.get(host);
+            final StringBuilder sb = new StringBuilder();
+            for (final String host : LIST.keySet()) {
+                final String auth[] = LIST.get(host);
                 sb.append(host + " %%%% " + auth[0] + " %%%% " + auth[1]);
             }
             return sb.toString().trim();
@@ -152,7 +160,7 @@ public class HTACCESSController implements ActionListener, ListController {
         JDController.releaseDelayExit(id);
     }
 
-    public void actionPerformed(ActionEvent arg0) {
+    public void actionPerformed(final ActionEvent arg0) {
         if (arg0.getSource() == asyncSaveIntervalTimer) {
             saveAsync();
         }
