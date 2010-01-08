@@ -20,18 +20,18 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 class ExceptionHandler implements Thread.UncaughtExceptionHandler {
-    private Logger logger;
+    private final Logger logger;
 
-    public ExceptionHandler(Logger logger) {
+    public ExceptionHandler(final Logger logger) {
         super();
         this.logger = logger;
     }
 
-    public void uncaughtException(Thread t, Throwable e) {
+    public void uncaughtException(final Thread t, final Throwable e) {
         handle(e);
     }
 
-    public void handle(Throwable throwable) {
+    public void handle(final Throwable throwable) {
         try {
             logger.log(Level.SEVERE, "Uncaught Exception occurred", throwable);
         } catch (Throwable t) {
@@ -40,7 +40,7 @@ class ExceptionHandler implements Thread.UncaughtExceptionHandler {
         }
     }
 
-    public static void register(Logger logger) {
+    public static void register(final Logger logger) {
         Thread.setDefaultUncaughtExceptionHandler(new ExceptionHandler(logger));
         System.setProperty("sun.awt.exception.handler", ExceptionHandler.class.getName());
     }
