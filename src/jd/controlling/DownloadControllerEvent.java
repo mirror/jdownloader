@@ -19,11 +19,11 @@ package jd.controlling;
 import jd.event.JDEvent;
 
 public class DownloadControllerEvent extends JDEvent {
-    public DownloadControllerEvent(Object source, int ID) {
+    public DownloadControllerEvent(final Object source, final int ID) {
         super(source, ID);
     }
 
-    public DownloadControllerEvent(Object source, int ID, Object param) {
+    public DownloadControllerEvent(final Object source, final int ID, final Object param) {
         super(source, ID, param);
     }
 
