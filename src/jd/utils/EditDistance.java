@@ -90,48 +90,74 @@ public final class EditDistance {
 
     /**
      * erweitert die Funktionalität von Levenshtein um die Fähigkeit, zwei
-     * vertauschte Zeichen zu identifizieren z.B. Pron<-->Porn ist aber
-     * wesentlich langsamer als Levenshtein
+     * vertauschte Zeichen zu identifizieren z.B. Pron<-->Porn
      * 
      * @param s
      * @param t
      * @return
      */
-    public static int damerauLevenshteinDistance(final String src, final String dest) {
-        final int str1Length = src.length();
-        final int str2Length = dest.length();
-        final int[][] d = new int[str1Length + 1][str2Length + 1];
-        int i, j, cost;
-        final char[] str1 = src.toCharArray();
-        final char[] str2 = dest.toCharArray();
+    public final static int damerauLevenshteinDistance(String l1, String l2) {
+        if (l1 == null || l2 == null) { throw new IllegalArgumentException("Letter must not be null"); }
 
-        for (i = 0; i <= str1Length; i++) {
-            d[i][0] = i;
+        int n = l1.length();
+        int m = l2.length();
+
+        if (n == 0) {
+            return m;
+        } else if (m == 0) { return n; }
+        int p[], d[], c[];
+        {
+            int n1 = n + 1;
+            p = new int[n1]; // 'previous' cost array, horizontally
+            d = new int[n1]; // cost array, horizontally
+            c = new int[n1]; // 'previous previous' cost array, horizontally
         }
-        for (j = 0; j <= str2Length; j++) {
-            d[0][j] = j;
+        // indexes into strings s and t
+        int i; // iterates through s
+        int j; // iterates through t
+        int j1, j2, i1, i2;
+        char t_j;
+
+        int cost = 0; // cost
+
+        for (i = 1; i <= n; i++) {
+            p[i] = i;
         }
-        for (i = 1; i <= str1Length; i++) {
-            for (j = 1; j <= str2Length; j++) {
 
-                if (str1[i - 1] == str2[j - 1])
-                    cost = 0;
-                else
-                    cost = 1;
+        // c=p;
+        for (j = 1; j <= m; j++) {
+            j1 = j;
+            j2 = --j1;
+            j2--;
+            t_j = l2.charAt(j1);
 
-                d[i][j] = Math.min(d[i - 1][j] + 1, // Deletion
-                        Math.min(d[i][j - 1] + 1, // Insertion
-                                d[i - 1][j - 1] + cost)); // Substitution
+            d[0] = j;
 
-                if ((i > 1) && (j > 1) && (str1[i - 1] == str2[j - 2]) && (str1[i - 2] == str2[j - 1])) {
-                    // System.out.println(d[i][j]+":"+Math.min(d[i][j], d[i -
-                    // 2][j - 2] + cost));
-                    d[i][j] = Math.min(d[i][j], d[i - 2][j - 2] + cost);
-                    System.out.println("d:" + d[i - 2][j - 2]);
+            for (i = 1; i <= n; i++) {
+                i1 = i - 1;
+                cost = (l1.charAt(i1) == t_j) ? 0 : 1;
+                // minimum of cell to the left+1, to the top+1, diagonally left
+                // and up +cost
+                d[i] = Math.min(d[i1] + 1, Math.min(p[i] + 1, p[i1] + cost));
+                // Damerau
+                if (i > 1 && j > 1 && l1.charAt(i1) == l2.charAt(j2) && l1.charAt(i2 = i1 - 1) == l2.charAt(j1)) {
+                    d[i] = Math.min(d[i], c[i2] + (cost > 0 ? 1 : cost));
                 }
             }
+            // previous of previous for Damerau
+            for (i = 0; i <= n; i++) {
+                c[i] = p[i];
+            }
+            // copy current distance counts to 'previous row' distance counts
+            int[] _d = p;
+            p = d;
+            d = _d;
         }
-        return d[str1Length][str2Length];
+
+        // our last action in the above loop was to switch d and p, so p now
+        // actually has the most recent cost counts
+        return p[n];
+
     }
 
 }
