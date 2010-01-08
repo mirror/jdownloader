@@ -41,46 +41,50 @@ import jd.utils.JDUtilities;
 
 class DownloadControllerBroadcaster extends JDBroadcaster<DownloadControllerListener, DownloadControllerEvent> {
 
-    protected void fireEvent(DownloadControllerListener listener, DownloadControllerEvent event) {
+    protected void fireEvent(final DownloadControllerListener listener, final DownloadControllerEvent event) {
         listener.onDownloadControllerEvent(event);
     }
 }
 
 class Optimizer {
 
-    private HashMap<String, ArrayList<DownloadLink>> url_links = new HashMap<String, ArrayList<DownloadLink>>();
+    private final HashMap<String, ArrayList<DownloadLink>> url_links = new HashMap<String, ArrayList<DownloadLink>>();
 
-    private Object lock = new Object();
+    private final Object lock = new Object();
 
     private static Optimizer INSTANCE = null;
 
     private DownloadController INSTANCE2 = null;
 
-    public synchronized static Optimizer getINSTANCE(DownloadController INSTANCE2) {
-        if (INSTANCE == null) INSTANCE = new Optimizer(INSTANCE2);
+    public synchronized static Optimizer getINSTANCE(final DownloadController INSTANCE2) {
+        if (INSTANCE == null) {
+            INSTANCE = new Optimizer(INSTANCE2);
+        }
         return INSTANCE;
     }
 
-    private Optimizer(DownloadController INSTANCE2) {
+    private Optimizer(final DownloadController INSTANCE2) {
         this.INSTANCE2 = INSTANCE2;
         init();
     }
 
     private void init() {
-        ArrayList<DownloadLink> links = INSTANCE2.getAllDownloadLinks();
-        for (DownloadLink link : links) {
-            String url = link.getDownloadURL().trim();
+        final ArrayList<DownloadLink> links = INSTANCE2.getAllDownloadLinks();
+        for (final DownloadLink link : links) {
+            final String url = link.getDownloadURL().trim();
             if (url != null) {
                 if (!url_links.containsKey(url)) {
                     url_links.put(url, new ArrayList<DownloadLink>());
                 }
-                ArrayList<DownloadLink> tmp = url_links.get(url);
-                if (!tmp.contains(link)) tmp.add(link);
+                final ArrayList<DownloadLink> tmp = url_links.get(url);
+                if (!tmp.contains(link)) {
+                    tmp.add(link);
+                }
             }
         }
     }
 
-    public ArrayList<DownloadLink> getLinkswithURL(String url) {
+    public ArrayList<DownloadLink> getLinkswithURL(final String url) {
         if (url == null || url.length() == 0) return null;
         synchronized (lock) {
             return url_links.get(url.trim());
@@ -139,11 +143,11 @@ public class DownloadController implements FilePackageListener, DownloadControll
         broadcaster.addListener(this);
     }
 
-    public void addListener(DownloadControllerListener l) {
+    public void addListener(final DownloadControllerListener l) {
         broadcaster.addListener(l);
     }
 
-    public void removeListener(DownloadControllerListener l) {
+    public void removeListener(final DownloadControllerListener l) {
         broadcaster.removeListener(l);
     }
 
@@ -160,21 +164,21 @@ public class DownloadController implements FilePackageListener, DownloadControll
         }
         if (packages == null) {
             packages = new ArrayList<FilePackage>();
-            File file = JDUtilities.getResourceFile("backup/links.linkbackup");
+            final File file = JDUtilities.getResourceFile("backup/links.linkbackup");
             if (file.exists()) {
                 logger.warning("Strange: No Linklist,Try to restore from backup file");
                 controller.loadContainerFile(file);
             }
             return;
         } else if (packages.size() == 0 && Main.returnedfromUpdate()) {
-            File file = JDUtilities.getResourceFile("backup/links.linkbackup");
+            final File file = JDUtilities.getResourceFile("backup/links.linkbackup");
             if (file.exists() && file.lastModified() >= System.currentTimeMillis() - 10 * 60 * 1000l) {
                 logger.warning("Strange: Empty Linklist,Try to restore from backup file");
                 controller.loadContainerFile(file);
             }
             return;
         }
-        for (FilePackage filePackage : packages) {
+        for (final FilePackage filePackage : packages) {
             filePackage.addListener(this);
             filePackage.update_linksDisabled();
             for (DownloadLink downloadLink : filePackage.getDownloadLinkList()) {
@@ -212,7 +216,7 @@ public class DownloadController implements FilePackageListener, DownloadControll
 
     public void saveDownloadLinksSyncnonThread() {
         asyncSaveIntervalTimer.stop();
-        String id = JDController.requestDelayExit("downloadcontroller");
+        final String id = JDController.requestDelayExit("downloadcontroller");
         synchronized (packages) {
             saveinprogress = true;
             JDUtilities.getDatabaseConnector().saveLinks(packages);
@@ -276,10 +280,10 @@ public class DownloadController implements FilePackageListener, DownloadControll
      */
     @SuppressWarnings("unchecked")
     private ArrayList<FilePackage> loadDownloadLinks() throws Exception {
-        Object obj = JDUtilities.getDatabaseConnector().getLinks();
+        final Object obj = JDUtilities.getDatabaseConnector().getLinks();
         if (obj != null && obj instanceof ArrayList && (((ArrayList) obj).size() == 0 || ((ArrayList) obj).size() > 0 && ((ArrayList) obj).get(0) instanceof FilePackage)) {
-            ArrayList<FilePackage> packages = (ArrayList<FilePackage>) obj;
-            Iterator<FilePackage> iterator = packages.iterator();
+            final ArrayList<FilePackage> packages = (ArrayList<FilePackage>) obj;
+            final Iterator<FilePackage> iterator = packages.iterator();
             DownloadLink localLink;
             PluginForHost pluginForHost = null;
             PluginsC pluginForContainer = null;
@@ -342,9 +346,9 @@ public class DownloadController implements FilePackageListener, DownloadControll
             }
             return packages;
         } else if (obj != null && obj instanceof Vector && (((Vector) obj).size() == 0 || ((Vector) obj).size() > 0 && ((Vector) obj).get(0) instanceof FilePackage)) {
-            Vector<FilePackage> packages = (Vector<FilePackage>) obj;
-            ArrayList<FilePackage> convert = new ArrayList<FilePackage>();
-            Iterator<FilePackage> iterator = packages.iterator();
+            final Vector<FilePackage> packages = (Vector<FilePackage>) obj;
+            final ArrayList<FilePackage> convert = new ArrayList<FilePackage>();
+            final Iterator<FilePackage> iterator = packages.iterator();
             DownloadLink localLink;
             PluginForHost pluginForHost = null;
             PluginsC pluginForContainer = null;
@@ -422,92 +426,99 @@ public class DownloadController implements FilePackageListener, DownloadControll
         return packages;
     }
 
-    public void addAll(ArrayList<FilePackage> links) {
+    public void addAll(final ArrayList<FilePackage> links) {
         synchronized (DownloadController.ControllerLock) {
             synchronized (packages) {
-                for (int i = 0; i < links.size(); i++) {
+                final int linksSize = links.size();
+                for (int i = 0; i < linksSize; i++) {
                     addPackage(links.get(i));
                 }
             }
         }
     }
 
-    public void addPackage(FilePackage fp) {
-        if (fp == null) return;
-        synchronized (DownloadController.ControllerLock) {
-            synchronized (packages) {
-                if (!packages.contains(fp)) {
-                    fp.addListener(this);
-                    packages.add(fp);
-                    broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.ADD_FILEPACKAGE, fp));
+    public void addPackage(final FilePackage fp) {
+        if (fp != null) {
+            synchronized (DownloadController.ControllerLock) {
+                synchronized (packages) {
+                    if (!packages.contains(fp)) {
+                        fp.addListener(this);
+                        packages.add(fp);
+                        broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.ADD_FILEPACKAGE, fp));
+                    }
                 }
             }
         }
     }
 
-    public int indexOf(FilePackage fp) {
+    public int indexOf(final FilePackage fp) {
         return packages.indexOf(fp);
     }
 
-    public int addPackageAt(FilePackage fp, int index, int repos) {
-        if (fp == null) return repos;
-        synchronized (DownloadController.ControllerLock) {
-            synchronized (packages) {
-                if (packages.size() == 0) {
-                    addPackage(fp);
-                    return repos;
-                }
-                boolean newadded = false;
-                if (packages.contains(fp)) {
-                    int posa = this.indexOf(fp);
-                    if (posa < index) {
-                        index -= ++repos;
+    public int addPackageAt(final FilePackage fp, int index, int repos) {
+        if (fp != null) {
+            synchronized (DownloadController.ControllerLock) {
+                synchronized (packages) {
+                    if (packages.size() == 0) {
+                        addPackage(fp);
+                        return repos;
                     }
-                    packages.remove(fp);
-                    if (index > packages.size() - 1) {
-                        packages.add(fp);
-                    } else if (index < 0) {
-                        packages.add(0, fp);
-                    } else
-                        packages.add(index, fp);
-                } else {
-                    if (index > packages.size() - 1) {
-                        packages.add(fp);
-                    } else if (index < 0) {
-                        packages.add(0, fp);
-                    } else
-                        packages.add(index, fp);
-                    newadded = true;
-                }
-                if (newadded) {
-                    fp.addListener(this);
-                    broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.ADD_FILEPACKAGE, fp));
-                } else {
-                    broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.REFRESH_STRUCTURE));
+                    boolean newadded = false;
+                    if (packages.contains(fp)) {
+                        int posa = this.indexOf(fp);
+                        if (posa < index) {
+                            index -= ++repos;
+                        }
+                        packages.remove(fp);
+                        if (index > packages.size() - 1) {
+                            packages.add(fp);
+                        } else if (index < 0) {
+                            packages.add(0, fp);
+                        } else
+                            packages.add(index, fp);
+                    } else {
+                        if (index > packages.size() - 1) {
+                            packages.add(fp);
+                        } else if (index < 0) {
+                            packages.add(0, fp);
+                        } else
+                            packages.add(index, fp);
+                        newadded = true;
+                    }
+                    if (newadded) {
+                        fp.addListener(this);
+                        broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.ADD_FILEPACKAGE, fp));
+                    } else {
+                        broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.REFRESH_STRUCTURE));
+                    }
                 }
             }
         }
         return repos;
     }
 
-    public void addAllAt(ArrayList<FilePackage> links, int index) {
+    public void addAllAt(final ArrayList<FilePackage> links, final int index) {
         synchronized (DownloadController.ControllerLock) {
             synchronized (packages) {
                 int repos = 0;
-                for (int i = 0; i < links.size(); i++) {
+                final int linksSize = links.size();
+                for (int i = 0; i < linksSize; i++) {
                     repos = addPackageAt(links.get(i), index + i, repos);
                 }
             }
         }
     }
 
-    public void removePackage(FilePackage fp2) {
-        if (fp2 == null) return;
-        synchronized (DownloadController.ControllerLock) {
-            synchronized (packages) {
-                fp2.abortDownload();
-                fp2.removeListener(this);
-                if (packages.remove(fp2)) broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.REMOVE_FILPACKAGE, fp2));
+    public void removePackage(final FilePackage fp2) {
+        if (fp2 != null) {
+            synchronized (DownloadController.ControllerLock) {
+                synchronized (packages) {
+                    fp2.abortDownload();
+                    fp2.removeListener(this);
+                    if (packages.remove(fp2)) {
+                        broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.REMOVE_FILPACKAGE, fp2));
+                    }
+                }
             }
         }
     }
@@ -522,9 +533,9 @@ public class DownloadController implements FilePackageListener, DownloadControll
      * @return Alle DownloadLinks zurück
      */
     public ArrayList<DownloadLink> getAllDownloadLinks() {
-        ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         synchronized (packages) {
-            for (FilePackage fp : packages) {
+            for (final FilePackage fp : packages) {
                 ret.addAll(fp.getDownloadLinkList());
             }
         }
@@ -534,24 +545,28 @@ public class DownloadController implements FilePackageListener, DownloadControll
     /**
      * Returns all needful downloadinformation
      */
-    public void getDownloadStatus(DownloadInformations ds) {
+    public void getDownloadStatus(final DownloadInformations ds) {
         ds.reset();
         ds.addRunningDownloads(DownloadWatchDog.getInstance().getActiveDownloads());
         synchronized (packages) {
-            for (FilePackage fp : packages) {
+            LinkStatus linkStatus;
+            boolean isEnabled;
+            for (final FilePackage fp : packages) {
                 ds.addPackages(1);
                 ds.addDownloadLinks(fp.getDownloadLinkList().size());
-                for (DownloadLink l : fp.getDownloadLinkList()) {
-                    if (!l.getLinkStatus().hasStatus(LinkStatus.ERROR_ALREADYEXISTS) && l.isEnabled()) {
+                for (final DownloadLink l : fp.getDownloadLinkList()) {
+                    linkStatus = l.getLinkStatus();
+                    isEnabled = l.isEnabled();
+                    if (!linkStatus.hasStatus(LinkStatus.ERROR_ALREADYEXISTS) && isEnabled) {
                         ds.addTotalDownloadSize(l.getDownloadSize());
                         ds.addCurrentDownloadSize(l.getDownloadCurrent());
                     }
 
-                    if (l.getLinkStatus().hasStatus(LinkStatus.ERROR_ALREADYEXISTS)) {
+                    if (linkStatus.hasStatus(LinkStatus.ERROR_ALREADYEXISTS)) {
                         ds.addDuplicateDownloads(1);
-                    } else if (!l.isEnabled()) {
+                    } else if (!isEnabled) {
                         ds.addDisabledDownloads(1);
-                    } else if (l.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
+                    } else if (linkStatus.hasStatus(LinkStatus.FINISHED)) {
                         ds.addFinishedDownloads(1);
                     }
                 }
@@ -566,17 +581,18 @@ public class DownloadController implements FilePackageListener, DownloadControll
     // return false;
     // }
 
-    public boolean hasDownloadLinkwithURL(String url) {
-        if (url == null) return false;
-        url = url.trim();
-        for (DownloadLink dl : getAllDownloadLinks()) {
-            if (dl.getDownloadURL() != null && dl.getDownloadURL().equalsIgnoreCase(url)) return true;
+    public boolean hasDownloadLinkwithURL(final String url) {
+        if (url != null) {
+            final String correctUrl = url.trim();
+            for (final DownloadLink dl : getAllDownloadLinks()) {
+                if (correctUrl.equalsIgnoreCase(dl.getDownloadURL())) return true;
+            }
         }
         return false;
     }
 
-    public DownloadLink getFirstLinkThatBlocks(DownloadLink link) {
-        for (DownloadLink nextDownloadLink : getAllDownloadLinks()) {
+    public DownloadLink getFirstLinkThatBlocks(final DownloadLink link) {
+        for (final DownloadLink nextDownloadLink : getAllDownloadLinks()) {
             if (nextDownloadLink != link) {
                 if ((nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) && nextDownloadLink.getFileOutput().equalsIgnoreCase(link.getFileOutput())) {
                     if (new File(nextDownloadLink.getFileOutput()).exists()) {
@@ -584,7 +600,6 @@ public class DownloadController implements FilePackageListener, DownloadControll
                          * fertige datei sollte auch auf der platte sein und
                          * nicht nur als fertig in der liste
                          */
-
                         return nextDownloadLink;
                     }
                 }
@@ -595,7 +610,7 @@ public class DownloadController implements FilePackageListener, DownloadControll
     }
 
     @SuppressWarnings("unchecked")
-    public void move(Object src2, Object dst, byte mode) {
+    public void move(Object src2, Object dst, final byte mode) {
         boolean type = false; /* false=downloadLink,true=filepackage */
         Object src = null;
         FilePackage fp = null;
@@ -691,7 +706,7 @@ public class DownloadController implements FilePackageListener, DownloadControll
                         switch (mode) {
                         case MOVE_UP: {
                             int curpos = 0;
-                            for (FilePackage item : (ArrayList<FilePackage>) src) {
+                            for (final FilePackage item : (ArrayList<FilePackage>) src) {
                                 curpos = indexOf(item);
                                 addPackageAt(item, curpos - 1, 0);
                             }
@@ -699,7 +714,7 @@ public class DownloadController implements FilePackageListener, DownloadControll
                             return;
                         case MOVE_DOWN: {
                             int curpos = 0;
-                            ArrayList<FilePackage> fps = ((ArrayList<FilePackage>) src);
+                            final ArrayList<FilePackage> fps = ((ArrayList<FilePackage>) src);
                             for (int i = fps.size() - 1; i >= 0; i--) {
                                 curpos = indexOf(fps.get(i));
                                 addPackageAt(fps.get(i), curpos + 2, 0);
@@ -721,7 +736,7 @@ public class DownloadController implements FilePackageListener, DownloadControll
                         switch (mode) {
                         case MOVE_UP: {
                             int curpos = 0;
-                            for (DownloadLink item : (ArrayList<DownloadLink>) src) {
+                            for (final DownloadLink item : (ArrayList<DownloadLink>) src) {
                                 curpos = item.getFilePackage().indexOf(item);
                                 item.getFilePackage().add(curpos - 1, item, 0);
                                 if (curpos == 0) {
@@ -733,7 +748,7 @@ public class DownloadController implements FilePackageListener, DownloadControll
                             return;
                         case MOVE_DOWN: {
                             int curpos = 0;
-                            ArrayList<DownloadLink> links = ((ArrayList<DownloadLink>) src);
+                            final ArrayList<DownloadLink> links = ((ArrayList<DownloadLink>) src);
                             for (int i = links.size() - 1; i >= 0; i--) {
                                 curpos = links.get(i).getFilePackage().indexOf(links.get(i));
                                 links.get(i).getFilePackage().add(curpos + 2, links.get(i), 0);
@@ -745,8 +760,8 @@ public class DownloadController implements FilePackageListener, DownloadControll
                         }
                             return;
                         case MOVE_TOP: {
-                            ArrayList<ArrayList<DownloadLink>> split = splitByFilePackage((ArrayList<DownloadLink>) src);
-                            for (ArrayList<DownloadLink> links : split) {
+                            final ArrayList<ArrayList<DownloadLink>> split = splitByFilePackage((ArrayList<DownloadLink>) src);
+                            for (final ArrayList<DownloadLink> links : split) {
                                 if (links.get(0).getFilePackage().indexOf(links.get(0)) == 0) {
                                     addPackageAt(links.get(0).getFilePackage(), 0, 0);
                                 }
@@ -755,8 +770,8 @@ public class DownloadController implements FilePackageListener, DownloadControll
                         }
                             return;
                         case MOVE_BOTTOM: {
-                            ArrayList<ArrayList<DownloadLink>> split = splitByFilePackage((ArrayList<DownloadLink>) src);
-                            for (ArrayList<DownloadLink> links : split) {
+                            final ArrayList<ArrayList<DownloadLink>> split = splitByFilePackage((ArrayList<DownloadLink>) src);
+                            for (final ArrayList<DownloadLink> links : split) {
                                 if (links.get(0).getFilePackage().indexOf(links.get(links.size() - 1)) == links.get(0).getFilePackage().size() - 1) {
                                     addPackageAt(links.get(0).getFilePackage(), size() + 1, 0);
                                 }
@@ -774,24 +789,24 @@ public class DownloadController implements FilePackageListener, DownloadControll
         }
     }
 
-    public static ArrayList<ArrayList<DownloadLink>> splitByFilePackage(ArrayList<DownloadLink> links) {
-        ArrayList<ArrayList<DownloadLink>> ret = new ArrayList<ArrayList<DownloadLink>>();
+    public static ArrayList<ArrayList<DownloadLink>> splitByFilePackage(final ArrayList<DownloadLink> links) {
+        final ArrayList<ArrayList<DownloadLink>> ret = new ArrayList<ArrayList<DownloadLink>>();
         boolean added = false;
-        for (DownloadLink link : links) {
+        for (final DownloadLink link : links) {
             if (ret.size() == 0) {
-                ArrayList<DownloadLink> tmp = new ArrayList<DownloadLink>();
+                final ArrayList<DownloadLink> tmp = new ArrayList<DownloadLink>();
                 tmp.add(link);
                 ret.add(tmp);
             } else {
                 added = false;
-                for (ArrayList<DownloadLink> check : ret) {
+                for (final ArrayList<DownloadLink> check : ret) {
                     if (link.getFilePackage() == check.get(0).getFilePackage()) {
                         added = true;
                         check.add(link);
                     }
                 }
                 if (added == false) {
-                    ArrayList<DownloadLink> tmp = new ArrayList<DownloadLink>();
+                    final ArrayList<DownloadLink> tmp = new ArrayList<DownloadLink>();
                     tmp.add(link);
                     ret.add(tmp);
                 }
@@ -800,7 +815,7 @@ public class DownloadController implements FilePackageListener, DownloadControll
         return ret;
     }
 
-    public void actionPerformed(ActionEvent arg0) {
+    public void actionPerformed(final ActionEvent arg0) {
         if (arg0.getSource() == asyncSaveIntervalTimer) {
             this.saveDownloadLinksSync();
         }
@@ -815,11 +830,11 @@ public class DownloadController implements FilePackageListener, DownloadControll
         broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.REFRESH_ALL));
     }
 
-    public void fireDownloadLinkUpdate(Object param) {
+    public void fireDownloadLinkUpdate(final Object param) {
         broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.REFRESH_SPECIFIC, param));
     }
 
-    public void onDownloadControllerEvent(DownloadControllerEvent event) {
+    public void onDownloadControllerEvent(final DownloadControllerEvent event) {
         switch (event.getID()) {
         case DownloadControllerEvent.ADD_DOWNLOADLINK:
         case DownloadControllerEvent.REMOVE_DOWNLOADLINK:
@@ -833,7 +848,7 @@ public class DownloadController implements FilePackageListener, DownloadControll
         }
     }
 
-    public void onFilePackageEvent(FilePackageEvent event) {
+    public void onFilePackageEvent(final FilePackageEvent event) {
         switch (event.getID()) {
         case FilePackageEvent.DOWNLOADLINK_ADDED:
             broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.ADD_DOWNLOADLINK, event.getParameter()));
@@ -847,7 +862,6 @@ public class DownloadController implements FilePackageListener, DownloadControll
         case FilePackageEvent.FILEPACKAGE_EMPTY:
             this.removePackage((FilePackage) event.getSource());
             break;
-
         }
     }
 }
