@@ -40,7 +40,9 @@ public class PasswordListController implements ActionListener, DownloadControlle
     private boolean saveinprogress;
 
     public static synchronized PasswordListController getInstance() {
-        if (INSTANCE == null) INSTANCE = new PasswordListController();
+        if (INSTANCE == null) {
+            INSTANCE = new PasswordListController();
+        }
         return INSTANCE;
     }
 
@@ -56,7 +58,8 @@ public class PasswordListController implements ActionListener, DownloadControlle
 
     /**
      * <b>Warning: only use single passwords here, not multiple in one
-     * string</b><br><br>
+     * string</b><br>
+     * <br>
      * 
      * add pw to pwlist<br>
      * 
