@@ -43,35 +43,35 @@ public class DownloadInformations {
         duplicateDownloads = 0;
     }
 
-    protected void addTotalDownloadSize(long size) {
+    protected void addTotalDownloadSize(final long size) {
         totalDownloadSize += size;
     }
 
-    protected void addCurrentDownloadSize(long size) {
+    protected void addCurrentDownloadSize(final long size) {
         currentDownloadSize += size;
     }
 
-    protected void addPackages(int size) {
+    protected void addPackages(final int size) {
         packages += size;
     }
 
-    protected void addDownloadLinks(int size) {
+    protected void addDownloadLinks(final int size) {
         downloadLinks += size;
     }
 
-    protected void addDisabledDownloads(int size) {
+    protected void addDisabledDownloads(final int size) {
         disabledDownloads += size;
     }
 
-    protected void addRunningDownloads(int size) {
+    protected void addRunningDownloads(final int size) {
         runningDownloads += size;
     }
 
-    protected void addFinishedDownloads(int size) {
+    protected void addFinishedDownloads(final int size) {
         finishedDownloads += size;
     }
 
-    protected void addDuplicateDownloads(int size) {
+    protected void addDuplicateDownloads(final int size) {
         duplicateDownloads += size;
     }
 
