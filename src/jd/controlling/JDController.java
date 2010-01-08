@@ -55,7 +55,9 @@ import jd.utils.locale.JDL;
 public class JDController implements ControlListener {
 
     public static JDController getInstance() {
-        if (INSTANCE == null) INSTANCE = new JDController();
+        if (INSTANCE == null) {
+            INSTANCE = new JDController();
+        }
         return INSTANCE;
     }
 
