@@ -82,8 +82,8 @@ public class LnkCrptWs extends PluginForDecrypt {
 
         // Different captcha types
         boolean valid = true;
-        for (int i = 0; i < 15; ++i) {
-            Form captcha = br.getForm(0);
+        for (int i = 0; i < 15; i++) {
+            Form captcha = br.getForm(i);
             String url = null;
             if (captcha != null) {
                 url = captcha.getRegex("src=\"([^\"]*\\.php\\?id=[^\"]*)\"[^>]*style=\"cursor:(?![^>]*display[^>]*none)").getMatch(0);
