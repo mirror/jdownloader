@@ -44,7 +44,7 @@ public class SociFilesCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("or was removed") || br.containsHTML("is not existed")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(or was removed|is not existed)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex(">Filename:</span>(.*?)</li>").getMatch(0);
         if (filename == null) filename = br.getRegex("<title>Download(.*?)- SociFiles\\.com</title>").getMatch(0);
         String filesize = br.getRegex(">Size:</span>(.*?)</li>").getMatch(0);
@@ -64,6 +64,10 @@ public class SociFilesCom extends PluginForHost {
         String dllink = br.getRedirectLocation();
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        if (dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl.startDownload();
     }
 

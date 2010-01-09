@@ -16,6 +16,8 @@
 
 package jd.plugins.hoster;
 
+import java.io.IOException;
+
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -25,43 +27,43 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "indowebster.com" }, urls = { "http://[\\w\\.]*?indowebster\\.com/[^\\s]+\\.html" }, flags = { 0 })
-public class Indowebster extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileuploadx.de" }, urls = { "http://[\\w\\.]*?fileuploadx\\.de/[0-9]+" }, flags = { 0 })
+public class FileUploadXDe extends PluginForHost {
 
-    public Indowebster(PluginWrapper wrapper) {
+    public FileUploadXDe(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
     public String getAGBLink() {
-        return "http://www.indowebster.com/policy-tos.php";
+        return "http://www.fileuploadx.de/agb.php";
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("Requested file is deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("Original name : </b><!--INFOLINKS_ON-->(.*?)<").getMatch(0);
-        String filesize = br.getRegex("<b>Size : </b>(.*?)</div>").getMatch(0);
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("Invalid download link")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("File Name.*?/b>(.*?)\\(<a").getMatch(0);
+        String filesize = br.getRegex("File Size.*?/b>(.*?)<br>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        downloadLink.setFinalFileName(filename.trim());
-        downloadLink.setDownloadSize(Regex.getSize(filesize));
+        link.setName(filename.trim());
+        link.setDownloadSize(Regex.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(DownloadLink link) throws Exception {
-        requestFileInformation(link);
-        String dl_url = br.getRegex("\\&file=(http.*?)\\&logo").getMatch(0);
-        if (dl_url == null) {
-            logger.warning("Final link is null!");
+    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        requestFileInformation(downloadLink);
+        br.setFollowRedirects(false);
+        String dllink = br.getRegex("Download File Now\" onClick=\"window\\.location=\\\\'(http.*?)\\\\'\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("'(http://www\\.fileuploadx\\.de/download2\\.php\\?a=[0-9]+&b=.*?)\\\\'").getMatch(0);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        if (dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        logger.info("Final link = " + dl_url);
-        br.setDebug(true);
-        br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dl_url, true, 1);
         dl.startDownload();
     }
 

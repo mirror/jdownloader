@@ -176,6 +176,7 @@ public class BigAndFreeCom extends PluginForHost {
             return ai;
         }
         ai.setStatus("Premium User");
+        ai.setUnlimitedTraffic();
         account.setValid(true);
         return ai;
     }
@@ -184,22 +185,28 @@ public class BigAndFreeCom extends PluginForHost {
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         requestFileInformation(downloadLink);
         login(account);
+        br.setFollowRedirects(false);
         br.setDebug(true);
-        br.getPage(downloadLink.getDownloadURL());
-        Form premform = br.getForm(1);
-        if (premform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        premform.setPreferredSubmit("chosen_prem");
-        br.submitForm(premform);
-        String dllink = br.getRegex("Direct Link:.*?value=\"(http.*?)\"").getMatch(0);
+        String addedlink = downloadLink.getDownloadURL();
+        br.getPage(addedlink);
+        String current = br.getRegex("name=\"current\" value=\"(.*?)\"").getMatch(0);
+        if (current == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String toPost = "current=" + current + "&limit_reached=0&download_now=Click+here+to+download";
+        br.postPage(addedlink, toPost);
+        System.out.print(br.toString());
+        String dllink = br.getRedirectLocation();
         if (dllink == null) {
-            dllink = br.getRegex("Proxy Link:.*?value=\"(http.*?)\"").getMatch(0);
+            dllink = br.getRegex("Direct Link:.*?value=\"(http.*?)\"").getMatch(0);
             if (dllink == null) {
                 dllink = br.getRegex("Proxy Link:.*?value=\"(http.*?)\"").getMatch(0);
+                if (dllink == null) {
+                    dllink = br.getRegex("Proxy Link:.*?value=\"(http.*?)\"").getMatch(0);
+                }
             }
         }
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        if (!(dl.getConnection().isContentDisposition()) && !dl.getConnection().getContentType().contains("octet")) {
+        if (!(dl.getConnection().isContentDisposition()) || dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML("performing system maintenance")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Currently performing system maintenance", 60 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

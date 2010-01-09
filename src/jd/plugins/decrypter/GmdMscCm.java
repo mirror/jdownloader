@@ -29,10 +29,10 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gmd-music.com" }, urls = { "http://[\\w\\.]*?(gmd-music\\.com|uploadr\\.eu)/download/\\d+_[\\w-]+/" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gmd-music.com" }, urls = { "http://[\\w\\.]*?gmd-music\\.com/download/\\d+_[\\w-]+/" }, flags = { 0 })
 public class GmdMscCm extends PluginForDecrypt {
 
-    private String domain = null;
+    private String domain = "http://gmd-music.com/";
 
     public GmdMscCm(PluginWrapper wrapper) {
         super(wrapper);
@@ -42,11 +42,6 @@ public class GmdMscCm extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-
-        if (parameter.matches(".*?gmd-music\\.com.*?"))
-            domain = "http://gmd-music.com/";
-        else if (parameter.matches(".*?uploadr\\.eu.*?")) domain = "http://uploadr.eu/";
-
         br.getPage(parameter);
         String[] redirectLinks = br.getRegex("onclick='self.window.location = \"(redirect/\\d+_[\\w-]+/)\";").getColumn(0);
 

@@ -20,13 +20,12 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "adf.ly", "fileonfly.com", "datafilehost.com" }, urls = { "http://[\\w\\.]*?adf\\.ly/[a-z0-9]+", "http://[\\w\\.]*?fileonfly\\.com/get/[a-z0-9]+", "http://[\\w\\.]*?datafilehost\\.com/download-[a-z0-9]+\\.html" }, flags = { 0, 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "adf.ly", "fileonfly.com" }, urls = { "http://[\\w\\.]*?adf\\.ly/[a-z0-9]+", "http://[\\w\\.]*?fileonfly\\.com/get/[a-z0-9]+" }, flags = { 0, 0 })
 public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginForDecrypt {
 
     public DecrypterForRedirectServicesWithoutDirectRedirects(PluginWrapper wrapper) {
@@ -38,15 +37,10 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
         String parameter = param.toString();
         br.setFollowRedirects(false);
         String finallink = null;
-        if (!parameter.contains("fileonfly.com") && !parameter.contains("datafilehost.com")) br.getPage(parameter);
+        if (!parameter.contains("fileonfly.com")) br.getPage(parameter);
         if (parameter.contains("adf.ly"))
             finallink = br.getRegex("default_location = '(.*?)';").getMatch(0);
-        else if (parameter.contains("fileonfly.com"))
-            finallink = "directhttp://" + parameter;
-        else if (parameter.contains("datafilehost.com")) {
-            String fileid = new Regex(parameter, "datafilehost\\.com/download-([a-z0-9]+)\\.html").getMatch(0);
-            finallink = "directhttp://http://www.datafilehost.com/get.php?file=" + fileid;
-        }
+        else if (parameter.contains("fileonfly.com")) finallink = "directhttp://" + parameter;
         if (finallink == null) return null;
         decryptedLinks.add(createDownloadlink(finallink));
 

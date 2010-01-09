@@ -103,6 +103,9 @@ public class RmFrksNt extends PluginForDecrypt {
             br.getPage(downlink);
             // Last change was here
             String gotu = br.getRegex("\"(http://www\\.rom-freaks\\.net/got.*?_[a-zA-Z0-9]+.*?\\.html)\"").getMatch(0);
+            if (gotu == null && br.containsHTML("http-equiv=\"refresh\"")) {
+                logger.warning("Found one non-working link, link = " + dlink);
+            }
             if (gotu == null) return null;
             br.getPage(gotu);
             String frameto = br.getRegex("\"(http://www.rom-freaks\\.net/frameto-.*?\\.html)\"").getMatch(0);
