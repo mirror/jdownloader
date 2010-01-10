@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -60,11 +61,9 @@ public class XvideosCom extends PluginForHost {
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
         br.setFollowRedirects(false);
-        String infolink = link.getDownloadURL();
-        br.getPage(infolink);
-        String dllink = br.getRegex("flv_url=(.*?\\.flv)&").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("flv_url=(.*?\\.mp4)&").getMatch(0);
+        String dllink = br.getRegex("flv_url=(.*?)\\&").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dllink = Encoding.htmlDecode(dllink);
         link.setFinalFileName(null);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         dl.startDownload();
