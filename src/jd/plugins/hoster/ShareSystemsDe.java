@@ -31,7 +31,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharesystems.de" }, urls = { "http://[//w//.]*?sharesystems\\.de/.*&hash=(.*)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharesystems.de" }, urls = { "http://[//w//.]*?sharesystems\\.de/.*hash=(.*)" }, flags = { 2 })
 /**
  * Plugin for sharesystems. Written on adminrequest. Uses API given by sharesystems.de
  */

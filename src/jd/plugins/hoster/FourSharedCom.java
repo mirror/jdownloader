@@ -104,7 +104,12 @@ public class FourSharedCom extends PluginForHost {
             br.getPage(url);
             url = br.getRegex("id=\\'divDLStart\\' >.*?<a href=\\'(.*?)\'  onclick=\"return callPostDownload\\(\\);\">Click here to download this file</a>.*?</div>").getMatch(0);
             if (url.contains("linkerror.jsp")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            sleep(Integer.parseInt(br.getRegex(" var c = (\\d+?);").getMatch(0)) * 1000l, downloadLink);
+            // Ticket Time
+            String ttt = br.getRegex(" var c = (\\d+?);").getMatch(0);
+            int tt = 40;
+            logger.info("Waittime detected, waiting " + ttt.trim() + " seconds from now on...");
+            tt = Integer.parseInt(ttt);
+            sleep(tt * 1000l, downloadLink);
         }
         br.setDebug(true);
 
@@ -117,6 +122,7 @@ public class FourSharedCom extends PluginForHost {
         }
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
+            if (br.containsHTML("(Servers Upgrade|4shared servers are currently undergoing a short-time maintenance)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
