@@ -223,7 +223,7 @@ public class Browser {
         if (ret != null) return ret;
         /* normal url */
         ret = new Regex(url, ".*?([^.:/]+\\.[^.:/]+)(/|$|:)").getMatch(0);
-        if (ret != null) return ret;
+        if (ret != null) return ret.toLowerCase();
         return url;
     }
 
