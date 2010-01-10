@@ -949,6 +949,10 @@ public class Browser {
         headers = h;
     }
 
+    public void setHeader(final String field, final String value) {
+        getHeaders().put(field, value);
+    }
+
     public void setLoadLimit(final int i) {
         limit = i;
     }
