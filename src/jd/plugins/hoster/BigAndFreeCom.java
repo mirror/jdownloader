@@ -193,7 +193,6 @@ public class BigAndFreeCom extends PluginForHost {
         if (current == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String toPost = "current=" + current + "&limit_reached=0&download_now=Click+here+to+download";
         br.postPage(addedlink, toPost);
-        System.out.print(br.toString());
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
             dllink = br.getRegex("Direct Link:.*?value=\"(http.*?)\"").getMatch(0);
