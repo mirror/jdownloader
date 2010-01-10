@@ -408,7 +408,7 @@ public abstract class Request {
         httpConnection.setCharset(this.customCharset);
         this.htmlCode = read(httpConnection);
         readTime = System.currentTimeMillis() - tima;
-        return htmlCode != null ? htmlCode.toString() : null;
+        return htmlCode;
     }
 
     public static String read(URLConnectionAdapter con) throws IOException {
