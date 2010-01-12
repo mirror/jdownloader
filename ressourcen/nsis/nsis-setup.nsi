@@ -10,9 +10,10 @@ RequestExecutionLevel user
 !define COMPANY "AppWork UG (haftungsbeschränkt)"
 !define URL http://www.jdownloader.org
 !define APPNAME "JDownloader"
+!define SHORTNAME "JDownloader"
 
-!define INSTDIR_USER "$PROFILE\${APPNAME}"
-!define INSTDIR_ADMIN "$PROGRAMFILES\${APPNAME}"
+!define INSTDIR_USER "$PROFILE\${SHORTNAME}"
+!define INSTDIR_ADMIN "$PROGRAMFILES\${SHORTNAME}"
 
 # MUI Symbol Definitions
 !define MUI_ICON .\res\install.ico
@@ -24,7 +25,7 @@ RequestExecutionLevel user
 # Java Check
 !define JRE_VERSION "1.6"
 !define JRE_SILENT 0
-!define JRE_URL "http://javadl.sun.com/webapps/download/AutoDL?BundleId=33787"
+!define JRE_URL "http://javadl.sun.com/webapps/download/AutoDL?BundleId=36668"
 
 # Included files
 !AddPluginDir plugins
