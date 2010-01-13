@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.logging.Logger;
 
 import jd.config.Configuration;
@@ -284,6 +285,20 @@ public class SingleDownloadController extends Thread {
     private void onDownloadFinishedSuccessFull(DownloadLink downloadLink) {
         if ((System.currentTimeMillis() - startTime) > 30000) Balloon.showIfHidden(JDL.L("ballon.download.successfull.title", "Download"), JDTheme.II("gui.images.ok", 32, 32), JDL.LF("ballon.download.successfull.message", "<b>%s<b><hr>finished successfully", downloadLink.getName() + " (" + Formatter.formatReadable(downloadLink.getDownloadSize()) + ")"));
         downloadLink.setProperty(DownloadLink.STATIC_OUTPUTFILE, downloadLink.getFileOutput());
+
+        // set all links to disabled that point to the same file location
+        // - prerequisite: 'skip link' option selected
+        // TODO WORKAROUND FOR NOW.. WILL BE HANDLED BY A MIRROR MANAGER IN THE FUTURE
+        if (SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_FILE_EXISTS, 1) == 1) {
+            ArrayList<DownloadLink> links = DownloadController.getInstance().getAllDownloadLinks();
+            for (DownloadLink link : links) {
+                if (downloadLink != link && downloadLink.getFileOutput().equals(link.getFileOutput())) {
+                    link.getLinkStatus().setErrorMessage(JDL.L("controller.status.fileexists.skip", "File already exists."));
+                    link.setEnabled(false);
+                    DownloadController.getInstance().fireDownloadLinkUpdate(downloadLink);
+                }
+            }
+        }
 
         DownloadController.getInstance().fireDownloadLinkUpdate(downloadLink);
         if (JDUtilities.getController().isContainerFile(new File(downloadLink.getFileOutput()))) {
