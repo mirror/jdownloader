@@ -160,6 +160,7 @@ public class ShareOnlineBiz extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, url, true, 1);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
+            if (br.getRequest().getHeaders().get("Referer").contains("DL_FileNotFound")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

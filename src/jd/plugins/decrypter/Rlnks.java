@@ -16,14 +16,15 @@
 
 package jd.plugins.decrypter;
 
+import java.awt.Point;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Random;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
@@ -72,8 +73,10 @@ public class Rlnks extends PluginForDecrypt {
                     for (int i = 0; i < 5; i++) {
                         if (!captcharetry) {
                             brc = br.cloneBrowser();
+                            brc.setCookiesExclusive(true);
+                            brc.getHeaders().put("User-Agent", RandomUserAgent.generate());
                             try {
-                                Thread.sleep((i + 1) * 100);
+                                Thread.sleep((i + 1) * 1000);
                             } catch (Exception e) {
                             }
                             brc.getPage("http://www.relink.us/frame.php?" + match);
@@ -81,7 +84,7 @@ public class Rlnks extends PluginForDecrypt {
                         captcharetry = false;
                         if (brc.getRedirectLocation() != null && brc.getRedirectLocation().contains("relink.us/getfile")) {
                             try {
-                                Thread.sleep((i + 1) * 100);
+                                Thread.sleep((i + 1) * 500);
                             } catch (Exception e) {
                             }
                             brc.getPage(brc.getRedirectLocation());
@@ -100,11 +103,9 @@ public class Rlnks extends PluginForDecrypt {
                                 Browser temp = brc.cloneBrowser();
                                 temp.getDownload(file, "http://www.relink.us/core/captcha/circlecaptcha.php");
                                 /* at the moment they dont check clickcaptcha ;) */
-                                // Point p =
-                                // UserIO.getInstance().requestClickPositionDialog(file,
-                                // "relink.us", "blaaa");
-                                f.put("button.x", new Random().nextInt(100) + "");
-                                f.put("button.y", new Random().nextInt(100) + "");
+                                Point p = UserIO.getInstance().requestClickPositionDialog(file, "relink.us", "blaaa");
+                                f.put("button.x", p.x + "");
+                                f.put("button.y", p.y + "");
                                 brc.submitForm(f);
                                 captcharetry = true;
                             }
@@ -152,18 +153,17 @@ public class Rlnks extends PluginForDecrypt {
         }
         if (okay == false) throw new DecrypterException(DecrypterException.CAPTCHA);
         progress.setRange(0);
-        decryptLinks(decryptedLinks);
-        String more_links[] = new Regex(page, Pattern.compile("<a href=\"(go\\.php\\?id=[a-zA-Z0-9]+\\&seite=\\d+)\">", Pattern.CASE_INSENSITIVE)).getColumn(0);
-        for (String link : more_links) {
-            br.getPage("http://relink.us/" + link);
-            decryptLinks(decryptedLinks);
+        if (!decryptContainer(page, parameter, "dlc", decryptedLinks)) {
+            if (!decryptContainer(page, parameter, "ccf", decryptedLinks)) {
+                decryptContainer(page, parameter, "rsdf", decryptedLinks);
+            }
         }
-
         if (decryptedLinks.size() == 0) {
-            if (!decryptContainer(page, parameter, "dlc", decryptedLinks)) {
-                if (!decryptContainer(page, parameter, "ccf", decryptedLinks)) {
-                    decryptContainer(page, parameter, "rsdf", decryptedLinks);
-                }
+            decryptLinks(decryptedLinks);
+            String more_links[] = new Regex(page, Pattern.compile("<a href=\"(go\\.php\\?id=[a-zA-Z0-9]+\\&seite=\\d+)\">", Pattern.CASE_INSENSITIVE)).getColumn(0);
+            for (String link : more_links) {
+                br.getPage("http://relink.us/" + link);
+                decryptLinks(decryptedLinks);
             }
         }
         if (decryptedLinks.size() == 0 && br.containsHTML("swf/cnl2.swf")) throw new DecrypterException("CNL2 only, open this link in Browser");
