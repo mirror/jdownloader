@@ -67,12 +67,12 @@ import jd.utils.locale.JDL;
  */
 public abstract class PluginForHost extends Plugin {
 
-    public PluginForHost(PluginWrapper wrapper) {
+    public PluginForHost(final PluginWrapper wrapper) {
         super(wrapper);
         config.setIcon(getHosterIcon());
     }
 
-    protected String getCaptchaCode(String captchaAddress, DownloadLink downloadLink) throws IOException, PluginException {
+    protected String getCaptchaCode(final String captchaAddress, final DownloadLink downloadLink) throws IOException, PluginException {
         return getCaptchaCode(getHost(), captchaAddress, downloadLink);
     }
 
@@ -81,51 +81,53 @@ public abstract class PluginForHost extends Plugin {
         return wrapper.getVersion();
     }
 
-    protected String getCaptchaCode(String method, String captchaAddress, DownloadLink downloadLink) throws IOException, PluginException {
+    protected String getCaptchaCode(final String method, final String captchaAddress, final DownloadLink downloadLink) throws IOException, PluginException {
         if (captchaAddress == null) {
             logger.severe("Captcha Adresse nicht definiert");
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
-        File captchaFile = getLocalCaptchaFile();
+        final File captchaFile = getLocalCaptchaFile();
         try {
             Browser.download(captchaFile, br.cloneBrowser().openGetConnection(captchaAddress));
         } catch (Exception e) {
             logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
-        String captchaCode = getCaptchaCode(method, captchaFile, downloadLink);
+        final String captchaCode = getCaptchaCode(method, captchaFile, downloadLink);
         return captchaCode;
     }
 
-    protected String getCaptchaCode(File captchaFile, DownloadLink downloadLink) throws PluginException {
+    protected String getCaptchaCode(final File captchaFile, final DownloadLink downloadLink) throws PluginException {
         return getCaptchaCode(getHost(), captchaFile, downloadLink);
     }
 
-    protected String getCaptchaCode(String methodname, File captchaFile, DownloadLink downloadLink) throws PluginException {
+    protected String getCaptchaCode(final String methodname, final File captchaFile, final DownloadLink downloadLink) throws PluginException {
         return getCaptchaCode(methodname, captchaFile, 0, downloadLink, null, null);
     }
 
-    protected String getCaptchaCode(String method, File file, int flag, DownloadLink link, String defaultValue, String explain) throws PluginException {
-        String status = link.getLinkStatus().getStatusText();
+    protected String getCaptchaCode(final String method, final File file, final int flag, final DownloadLink link, final String defaultValue, final String explain) throws PluginException {
+        final LinkStatus linkStatus = link.getLinkStatus();
+        final String status = linkStatus.getStatusText();
+        final DownloadController downloadConstroller = DownloadController.getInstance();
         try {
-            link.getLinkStatus().addStatus(LinkStatus.WAITING_USERIO);
-            link.getLinkStatus().setStatusText(JDL.L("gui.downloadview.statustext.jac", "Captcha recognition"));
+            linkStatus.addStatus(LinkStatus.WAITING_USERIO);
+            linkStatus.setStatusText(JDL.L("gui.downloadview.statustext.jac", "Captcha recognition"));
             try {
-                BufferedImage img = ImageIO.read(file);
-                link.getLinkStatus().setStatusIcon(JDImage.getScaledImageIcon(img, 16, 16));
+                final BufferedImage img = ImageIO.read(file);
+                linkStatus.setStatusIcon(JDImage.getScaledImageIcon(img, 16, 16));
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            DownloadController.getInstance().fireDownloadLinkUpdate(link);
-            String cc = new CaptchaController(getHost(), getHosterIcon(), method, file, defaultValue, explain).getCode(flag);
+            downloadConstroller.fireDownloadLinkUpdate(link);
+            final String cc = new CaptchaController(getHost(), getHosterIcon(), method, file, defaultValue, explain).getCode(flag);
 
             if (cc == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             return cc;
         } finally {
-            link.getLinkStatus().removeStatus(LinkStatus.WAITING_USERIO);
-            link.getLinkStatus().setStatusText(status);
-            link.getLinkStatus().setStatusIcon(null);
-            DownloadController.getInstance().fireDownloadLinkUpdate(link);
+            linkStatus.removeStatus(LinkStatus.WAITING_USERIO);
+            linkStatus.setStatusText(status);
+            linkStatus.setStatusIcon(null);
+            downloadConstroller.fireDownloadLinkUpdate(link);
         }
     }
 
@@ -136,8 +138,8 @@ public abstract class PluginForHost extends Plugin {
     protected DownloadInterface dl = null;
     private int maxConnections = 50;
 
-    private static HashMap<String, Long> LAST_CONNECTION_TIME = new HashMap<String, Long>();
-    private static HashMap<String, Long> LAST_STARTED_TIME = new HashMap<String, Long>();
+    private static final HashMap<String, Long> LAST_CONNECTION_TIME = new HashMap<String, Long>();
+    private static final HashMap<String, Long> LAST_STARTED_TIME = new HashMap<String, Long>();
     private Long WAIT_BETWEEN_STARTS = 0L;
 
     private boolean enablePremium = false;
@@ -149,7 +151,7 @@ public abstract class PluginForHost extends Plugin {
     private ImageIcon hosterIcon;
     private MenuAction premiumAction;
 
-    public boolean checkLinks(DownloadLink[] urls) {
+    public boolean checkLinks(final DownloadLink[] urls) {
         return false;
     }
 
@@ -159,7 +161,7 @@ public abstract class PluginForHost extends Plugin {
         super.clean();
     }
 
-    protected int waitForFreeConnection(DownloadLink downloadLink) throws InterruptedException {
+    protected int waitForFreeConnection(final DownloadLink downloadLink) throws InterruptedException {
         int free;
         while ((free = getMaxConnections() - getCurrentConnections()) <= 0) {
             Thread.sleep(1000);
@@ -175,45 +177,40 @@ public abstract class PluginForHost extends Plugin {
     }
 
     @Override
-    public void actionPerformed(ActionEvent e) {
-        if (e.getID() == 1) {
+    public void actionPerformed(final ActionEvent e) {
+        final int eID = e.getID();
+        if (eID == 1) {
             UserIF.getInstance().requestPanel(UserIF.Panels.CONFIGPANEL, config);
-
             return;
         }
-        if (e.getID() == 2) {
-
+        if (eID == 2) {
             UserIF.getInstance().requestPanel(UserIF.Panels.PREMIUMCONFIG, null);
             ActionController.getToolBarAction("action.premiumview.addacc").actionPerformed(new ActionEvent(this, 0, "addaccount"));
             return;
         }
-
-        if (e.getID() == 3) {
-
+        if (eID == 3) {
             UserIF.getInstance().requestPanel(UserIF.Panels.PREMIUMCONFIG, null);
-
             try {
                 JLink.openURL(getBuyPremiumUrl());
             } catch (Exception ex) {
             }
-
             return;
         }
-        ArrayList<Account> accounts = getPremiumAccounts();
-        if (e.getID() >= 200) {
-            int accountID = e.getID() - 200;
-            Account account = accounts.get(accountID);
+        final ArrayList<Account> accounts = getPremiumAccounts();
+        if (eID >= 200) {
+            final int accountID = eID - 200;
+            final Account account = accounts.get(accountID);
             UserIF.getInstance().requestPanel(UserIF.Panels.PREMIUMCONFIG, account);
 
-        } else if (e.getID() >= 100) {
-            int accountID = e.getID() - 100;
+        } else if (eID >= 100) {
+            final int accountID = eID - 100;
             Account account = accounts.get(accountID);
             account.setEnabled(!account.isEnabled());
         }
     }
 
     /** default fetchAccountInfo, set account valid to true */
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         account.setValid(true);
         return null;
     }
@@ -228,9 +225,9 @@ public abstract class PluginForHost extends Plugin {
 
     @Override
     public ArrayList<MenuAction> createMenuitems() {
-
         if (!enablePremium) return null;
-        ArrayList<MenuAction> menuList = new ArrayList<MenuAction>();
+
+        final ArrayList<MenuAction> menuList = new ArrayList<MenuAction>();
         MenuAction account;
         MenuAction m;
 
@@ -250,40 +247,41 @@ public abstract class PluginForHost extends Plugin {
 
             int i = 1;
             int c = 0;
-            for (Account a : accounts) {
-                if (a == null) continue;
-                try {
-                    c++;
-                    if (getAccountwithoutUsername()) {
-                        if (a.getPass() == null || a.getPass().trim().length() == 0) continue;
-                        account = new MenuAction("account." + getHost() + "." + i, 0);
-                        account.setTitle(i++ + ". " + "Account " + (i - 1));
-                        account.setType(ToolBarAction.Types.CONTAINER);
-                    } else {
-                        if (a.getUser() == null || a.getUser().trim().length() == 0) continue;
-                        account = new MenuAction("account." + getHost() + "." + i, 0);
-                        account.setTitle(i++ + ". " + a.getUser());
-                        account.setType(ToolBarAction.Types.CONTAINER);
+            for (final Account a : accounts) {
+                if (a != null) {
+                    try {
+                        c++;
+                        if (getAccountwithoutUsername()) {
+                            if (a.getPass() == null || a.getPass().trim().length() == 0) continue;
+                            account = new MenuAction("account." + getHost() + "." + i, 0);
+                            account.setTitle(i++ + ". " + "Account " + (i - 1));
+                            account.setType(ToolBarAction.Types.CONTAINER);
+                        } else {
+                            if (a.getUser() == null || a.getUser().trim().length() == 0) continue;
+                            account = new MenuAction("account." + getHost() + "." + i, 0);
+                            account.setTitle(i++ + ". " + a.getUser());
+                            account.setType(ToolBarAction.Types.CONTAINER);
+                        }
+                        m = AccountMenuItemSyncer.getInstance().get(a);
+
+                        if (m == null) {
+                            m = new MenuAction("plugins.PluginForHost.enable_premium", 100 + c - 1);
+                        }
+                        m.setActionID(100 + c - 1);
+                        m.setSelected(a.isEnabled());
+                        m.setActionListener(this);
+                        account.addMenuItem(m);
+
+                        AccountMenuItemSyncer.getInstance().map(a, m);
+
+                        m = new MenuAction("plugins.PluginForHost.premiumInfo", 200 + c - 1);
+                        m.setActionListener(this);
+                        account.addMenuItem(m);
+                        premiumAction.addMenuItem(account);
+
+                    } catch (Exception e) {
+                        JDLogger.exception(e);
                     }
-                    m = AccountMenuItemSyncer.getInstance().get(a);
-
-                    if (m == null) {
-                        m = new MenuAction("plugins.PluginForHost.enable_premium", 100 + c - 1);
-                    }
-                    m.setActionID(100 + c - 1);
-                    m.setSelected(a.isEnabled());
-                    m.setActionListener(this);
-                    account.addMenuItem(m);
-
-                    AccountMenuItemSyncer.getInstance().map(a, m);
-
-                    m = new MenuAction("plugins.PluginForHost.premiumInfo", 200 + c - 1);
-                    m.setActionListener(this);
-                    account.addMenuItem(m);
-                    premiumAction.addMenuItem(account);
-
-                } catch (Exception e) {
-                    JDLogger.exception(e);
                 }
             }
 
@@ -298,7 +296,6 @@ public abstract class PluginForHost extends Plugin {
         m.setActionListener(this);
 
         return menuList;
-
     }
 
     public abstract String getAGBLink();
@@ -307,7 +304,7 @@ public abstract class PluginForHost extends Plugin {
         enablePremium(null);
     }
 
-    protected void enablePremium(String url) {
+    protected void enablePremium(final String url) {
         premiumurl = url;
         enablePremium = true;
     }
@@ -324,10 +321,10 @@ public abstract class PluginForHost extends Plugin {
      *            Ein Text mit beliebig vielen Downloadlinks dieses Anbieters
      * @return Ein ArrayList mit den gefundenen Downloadlinks
      */
-    public ArrayList<DownloadLink> getDownloadLinks(String data, FilePackage fp) {
-
+    public ArrayList<DownloadLink> getDownloadLinks(final String data, final FilePackage fp) {
         ArrayList<DownloadLink> links = null;
-        String[] hits = new Regex(data, getSupportedLinks()).getColumn(-1);
+
+        final String[] hits = new Regex(data, getSupportedLinks()).getColumn(-1);
         if (hits != null && hits.length > 0) {
             links = new ArrayList<DownloadLink>();
             for (String file : hits) {
@@ -341,13 +338,12 @@ public abstract class PluginForHost extends Plugin {
                 try {
                     // Zwecks Multidownload braucht jeder Link seine eigene
                     // Plugininstanz
-                    PluginForHost plg = (PluginForHost) wrapper.getNewPluginInstance();
-                    DownloadLink link = new DownloadLink(plg, file.substring(file.lastIndexOf("/") + 1, file.length()), getHost(), file, true);
+                    final PluginForHost plg = (PluginForHost) wrapper.getNewPluginInstance();
+                    final DownloadLink link = new DownloadLink(plg, file.substring(file.lastIndexOf("/") + 1, file.length()), getHost(), file, true);
                     links.add(link);
                     if (fp != null) {
                         link.setFilePackage(fp);
                     }
-
                 } catch (IllegalArgumentException e) {
                     JDLogger.exception(e);
                 } catch (SecurityException e) {
@@ -359,7 +355,7 @@ public abstract class PluginForHost extends Plugin {
     }
 
     /** überschreiben falls die downloadurl erst rekonstruiert werden muss */
-    public void correctDownloadLink(DownloadLink link) throws Exception {
+    public void correctDownloadLink(final DownloadLink link) throws Exception {
     }
 
     /**
@@ -381,7 +377,7 @@ public abstract class PluginForHost extends Plugin {
      * @param downloadLink
      * @return
      */
-    public String getFileInformationString(DownloadLink downloadLink) {
+    public String getFileInformationString(final DownloadLink downloadLink) {
         return downloadLink.getName() + " (" + Formatter.formatReadable(downloadLink.getDownloadSize()) + ")";
     }
 
@@ -440,16 +436,18 @@ public abstract class PluginForHost extends Plugin {
         LAST_CONNECTION_TIME.put(getHost(), time);
     }
 
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
-        link.getLinkStatus().addStatus(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.getLinkStatus().setErrorMessage(JDL.L("plugins.hoster.nopremiumsupport", "Plugin has no handlePremium Method!"));
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        final LinkStatus linkStatus = link.getLinkStatus();
+        linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFECT);
+        linkStatus.setErrorMessage(JDL.L("plugins.hoster.nopremiumsupport", "Plugin has no handlePremium Method!"));
     }
 
     public abstract void handleFree(DownloadLink link) throws Exception;
 
-    public void handle(DownloadLink downloadLink) throws Exception {
-        downloadLink.getTransferStatus().usePremium(false);
-        downloadLink.getTransferStatus().setResumeSupport(false);
+    public void handle(final DownloadLink downloadLink) throws Exception {
+        final TransferStatus transferStatus = downloadLink.getTransferStatus();
+        transferStatus.usePremium(false);
+        transferStatus.setResumeSupport(false);
         try {
             while (waitForNextStartAllowed(downloadLink)) {
             }
@@ -464,11 +462,13 @@ public abstract class PluginForHost extends Plugin {
         }
 
         Account account = null;
-        if (enablePremium) account = AccountController.getInstance().getValidAccount(this);
+        if (enablePremium) {
+            account = AccountController.getInstance().getValidAccount(this);
+        }
         if (account != null) {
-            long before = downloadLink.getDownloadCurrent();
+            final long before = downloadLink.getDownloadCurrent();
             try {
-                downloadLink.getTransferStatus().usePremium(true);
+                transferStatus.usePremium(true);
                 handlePremium(downloadLink, account);
                 if (dl != null && dl.getConnection() != null) {
                     try {
@@ -482,10 +482,11 @@ public abstract class PluginForHost extends Plugin {
                 logger.info(downloadLink.getLinkStatus().getLongErrorMessage());
             }
 
-            long traffic = Math.max(0, downloadLink.getDownloadCurrent() - before);
+            final long traffic = Math.max(0, downloadLink.getDownloadCurrent() - before);
             boolean throwupdate = false;
+            final AccountInfo accountInfo = account.getAccountInfo();
             synchronized (AccountController.ACCOUNT_LOCK) {
-                AccountInfo ai = account.getAccountInfo();
+                final AccountInfo ai = accountInfo;
                 if (traffic > 0 && ai != null && !ai.isUnlimitedTraffic()) {
                     long left = Math.max(0, ai.getTrafficLeft() - traffic);
                     ai.setTrafficLeft(left);
@@ -498,23 +499,29 @@ public abstract class PluginForHost extends Plugin {
                     throwupdate = true;
                 }
             }
-            if (throwupdate) AccountController.getInstance().throwUpdateEvent(this, account);
+            if (throwupdate) {
+                AccountController.getInstance().throwUpdateEvent(this, account);
+            }
             if (downloadLink.getLinkStatus().hasStatus(LinkStatus.ERROR_PREMIUM)) {
                 if (downloadLink.getLinkStatus().getValue() == PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE) {
                     logger.severe("Premium Account " + account.getUser() + ": Traffic Limit reached");
                     account.setTempDisabled(true);
-                    if (account.getAccountInfo() != null) account.getAccountInfo().setStatus(downloadLink.getLinkStatus().getErrorMessage());
+                    if (accountInfo != null) {
+                        accountInfo.setStatus(downloadLink.getLinkStatus().getErrorMessage());
+                    }
                 } else if (downloadLink.getLinkStatus().getValue() == PluginException.VALUE_ID_PREMIUM_DISABLE) {
                     account.setEnabled(false);
-                    if (account.getAccountInfo() != null) account.getAccountInfo().setStatus(downloadLink.getLinkStatus().getErrorMessage());
+                    if (accountInfo != null) accountInfo.setStatus(downloadLink.getLinkStatus().getErrorMessage());
                     logger.severe("Premium Account " + account.getUser() + ": expired:" + downloadLink.getLinkStatus().getLongErrorMessage());
                 } else {
                     account.setEnabled(false);
-                    if (account.getAccountInfo() != null) account.getAccountInfo().setStatus(downloadLink.getLinkStatus().getErrorMessage());
+                    if (accountInfo != null) accountInfo.setStatus(downloadLink.getLinkStatus().getErrorMessage());
                     logger.severe("Premium Account " + account.getUser() + ":" + downloadLink.getLinkStatus().getLongErrorMessage());
                 }
             } else {
-                if (account.getAccountInfo() != null) account.getAccountInfo().setStatus(JDL.L("plugins.hoster.premium.status_ok", "Account is ok"));
+                if (accountInfo != null) {
+                    accountInfo.setStatus(JDL.L("plugins.hoster.premium.status_ok", "Account is ok"));
+                }
             }
         } else {
             try {
@@ -550,11 +557,12 @@ public abstract class PluginForHost extends Plugin {
     }
 
     public void setAGBChecked(boolean value) {
-        getPluginConfig().setProperty(AGB_CHECKED, value);
-        getPluginConfig().save();
+        final SubConfiguration pluginConfig = getPluginConfig();
+        pluginConfig.setProperty(AGB_CHECKED, value);
+        pluginConfig.save();
     }
 
-    public static synchronized void setCurrentConnections(int CurrentConnections) {
+    public static synchronized void setCurrentConnections(final int CurrentConnections) {
         currentConnections = CurrentConnections;
     }
 
@@ -566,8 +574,8 @@ public abstract class PluginForHost extends Plugin {
         WAIT_BETWEEN_STARTS = interval;
     }
 
-    public boolean waitForNextStartAllowed(DownloadLink downloadLink) throws InterruptedException {
-        long time = Math.max(0, WAIT_BETWEEN_STARTS - (System.currentTimeMillis() - getLastTimeStarted()));
+    public boolean waitForNextStartAllowed(final DownloadLink downloadLink) throws InterruptedException {
+        final long time = Math.max(0, WAIT_BETWEEN_STARTS - (System.currentTimeMillis() - getLastTimeStarted()));
         if (time > 0) {
             try {
                 sleep(time, downloadLink);
@@ -581,7 +589,7 @@ public abstract class PluginForHost extends Plugin {
     }
 
     public boolean waitForNextConnectionAllowed() throws InterruptedException {
-        long time = Math.max(0, getTimegapBetweenConnections() - (System.currentTimeMillis() - getLastConnectionTime()));
+        final long time = Math.max(0, getTimegapBetweenConnections() - (System.currentTimeMillis() - getLastConnectionTime()));
         if (time > 0) {
             Thread.sleep(time);
             return true;
@@ -590,11 +598,11 @@ public abstract class PluginForHost extends Plugin {
         }
     }
 
-    public void setMaxConnections(int maxConnections) {
+    public void setMaxConnections(final int maxConnections) {
         this.maxConnections = maxConnections;
     }
 
-    public void sleep(long i, DownloadLink downloadLink) throws PluginException {
+    public void sleep(final long i, final DownloadLink downloadLink) throws PluginException {
         sleep(i, downloadLink, "");
     }
 
