@@ -135,7 +135,7 @@ public class HotFileCom extends PluginForHost {
             sleeptime = 60 * 1000l;
         }
         // Reconnect if the waittime is too big!
-        if (sleeptime > 100) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, sleeptime * 1000l);
+        if (sleeptime > 100) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, sleeptime);
         // try to skip waittime, if this fails, fallback to waittime
         if (!this.skipperFailed) {
             form.put("tm", "1245072880");
