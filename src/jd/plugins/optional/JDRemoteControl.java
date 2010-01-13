@@ -25,6 +25,7 @@ import java.io.File;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Random;
 import java.util.Vector;
 import java.util.Map.Entry;
@@ -36,12 +37,17 @@ import jd.config.Configuration;
 import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.controlling.DistributeData;
+import jd.controlling.DownloadController;
 import jd.controlling.DownloadWatchDog;
 import jd.controlling.JDLogger;
+import jd.controlling.LinkGrabberController;
 import jd.controlling.reconnect.Reconnecter;
 import jd.event.ControlListener;
 import jd.gui.UserIO;
+import jd.gui.swing.jdgui.GUIUtils;
+import jd.gui.swing.jdgui.JDGuiConstants;
 import jd.gui.swing.jdgui.menu.MenuAction;
+import jd.gui.swing.jdgui.views.linkgrabberview.LinkGrabberPanel;
 import jd.http.Browser;
 import jd.nrouter.IPCheck;
 import jd.nutils.Formatter;
@@ -54,9 +60,11 @@ import jd.parser.Regex;
 import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkGrabberFilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.WebUpdate;
 import jd.utils.locale.JDL;
@@ -70,6 +78,12 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
     private static final String PARAM_PORT = "PORT";
     private static final String PARAM_ENABLED = "ENABLED";
     private final SubConfiguration subConfig;
+
+    private static final String LINK_TYPE_OFFLINE = "offline"; // offline links
+    private static final String LINK_TYPE_AVAIL = "available"; // on download
+
+    // list and
+    // grabber
 
     public JDRemoteControl(PluginWrapper wrapper) {
         super(wrapper);
@@ -129,6 +143,9 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
 
                 commandvec.add("/get/downloadstatus");
                 infovector.add("Get Downloadstatus<br/>Values: RUNNING, NOT_RUNNING, STOPPING");
+                
+                commandvec.add("/get/grabber");
+                infovector.add("Get all links as XML that are currently held by the link grabber.");
 
                 commandvec.add("/get/downloads/currentcount");
                 infovector.add("Get amount of current downloads");
@@ -192,7 +209,22 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
 
                 commandvec.add("/action/set/premiumenabled/(true|false)");
                 infovector.add("Set Use Premium enabled or not");
+                
+                commandvec.add("/action/grabber/join/(destination-package-name)/(package-name-to-join)/(another-package-name)/(and so on..)");
+                infovector.add("Join all given link grabber packages after the first into the first one.");
 
+                commandvec.add("/action/grabber/rename/(from-name)/(to-name)");
+                infovector.add("Rename link grabber package");
+                
+                commandvec.add("/action/grabber/addall");
+                infovector.add("Schedule all packages as download that are located in the link grabber.");
+                
+                commandvec.add("/action/grabber/add/(package-name-1)/(package-name-2)/(another-package-name)/(and so on..)");
+                infovector.add("Schedule all given grabber packages as download.");
+                
+                commandvec.add("/action/grabber/remove/(type)/(type2)/(..)");
+                infovector.add("Remove specified links from grabber. Possible values: 'offline' for offline links and 'available' for links that are already scheduled as download.");
+                
                 response.addContent("<?xml version=\"1.0\" encoding=\"UTF-8\"?><!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" lang=\"en\"><head><title>JDRemoteControl Help</title><style type=\"text/css\">a {    font-size: 14px;    text-decoration: none;    background: none;    color: #599ad6;}a:hover {    text-decoration: underline;    color:#333333;}body {    color: #333333;    background:#f0f0f0;    font-family: Verdana, Arial, Helvetica, sans-serif;    font-size: 14px;    vertical-align: top;  }.underline{    text-decoration:underline;  }</style></head><body><br /><b>JDRemoteControl " + getVersion()
                         + "<br /><br />Usage:</b><br />&nbsp;<br />1)Replace %X% with your value<br />Sample: /action/save/container/C:\\backup.dlc <br />2)Replace (true|false) with true or false<br /><table border=\"0\" cellspacing=\"5\">");
                 for (int commandcount = 0; commandcount < commandvec.size(); commandcount++) {
@@ -302,6 +334,16 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
             } else if (request.getRequestUrl().equals("/get/downloadstatus")) {
                 // Get downloadstatus
                 response.addContent(DownloadWatchDog.getInstance().getDownloadStatus().toString());
+            } else if (request.getRequestUrl().matches("/get/grabber")) {
+                // Get grabber content as xml
+                for (LinkGrabberFilePackage fp : LinkGrabberController.getInstance().getPackages()) {
+                    Element fp_xml = addGrabberPackage(xml, fp);
+
+                    for (DownloadLink dl : fp.getDownloadLinks()) {
+                        fp_xml.appendChild(addDownloadLink(xml, dl));
+                    }
+                }
+                response.addContent(JDUtilities.createXmlString(xml));
             } else if (request.getRequestUrl().equals("/action/start")) {
                 // Do Start Download
                 DownloadWatchDog.getInstance().startDownloads();
@@ -512,6 +554,240 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                 } else {
                     response.addContent("newprem=" + newuseprem + " (CHANGED=false)");
                 }
+            } else if (request.getRequestUrl().matches("(?is).*/action/grabber/join/.*")) {
+                // join link grabber packages: usage .../join/<destpackage>/<package1>/<package2>/(...)
+
+                String[] data = new Regex(request.getRequestUrl(), "(?is).*/action/grabber/join/(.*)").getMatch(0).split("/");
+                // BAD style accessing any upper layer
+                if (LinkGrabberPanel.getLinkGrabber().isRunning()) {
+                    response.addContent("ERROR: Link grabber is currently running. Please try again in a few seconds.");
+                } else if (data.length < 3) {
+
+                    response.addContent("Too few request parametes: check /help for instructions");
+                } else {
+
+                    LinkGrabberFilePackage destPackage = null;
+
+                    synchronized (LinkGrabberController.ControllerLock) {
+                        List<LinkGrabberFilePackage> srcPackages = new ArrayList<LinkGrabberFilePackage>();
+
+                        // find destination package
+                        for (LinkGrabberFilePackage pack : LinkGrabberController.getInstance().getPackages()) {
+                            if (pack.getName().equals(data[0])) {
+                                destPackage = pack;
+                                break;
+                            }
+                        }
+
+                        if (destPackage == null) {
+                            response.addContent("ERROR: Package '" + data[0] + "' not found!");
+                        } else {
+
+                            // iterate packages; add all to tmp package list
+                            // that
+                            // match
+                            // the
+                            // given join names
+                            for (LinkGrabberFilePackage pack : LinkGrabberController.getInstance().getPackages()) {
+                                for (String src : data) {
+                                    if (pack.getName().equals(src) && pack != destPackage /*
+                                                                                           * force
+                                                                                           * unequal
+                                                                                           */) {
+                                        srcPackages.add(pack);
+                                    }
+                                }
+                            }
+
+                            // process src
+                            for (LinkGrabberFilePackage pack : srcPackages) {
+                                destPackage.addAll(pack.getDownloadLinks());
+                                LinkGrabberController.getInstance().removePackage(pack);
+                            }
+
+                            // prepare response
+                            if (srcPackages.size() > 0) {
+                                if (srcPackages.size() < data.length - 1) {
+                                    response.addContent("WARNING: Not all packages were found. ");
+                                }
+
+                                response.addContent("Joined " + srcPackages.size() + " packages into '" + data[0] + "': ");
+
+                                for (int i = 0; i < srcPackages.size(); ++i) {
+                                    if (i != 0) {
+                                        response.addContent(", ");
+                                    }
+
+                                    response.addContent("'" + srcPackages.get(i).getName() + "'");
+                                }
+                            } else {
+                                response.addContent("ERROR: No packages joined into '" + data[0] + "'!");
+                            }
+                        }
+                    }
+                }
+            } else if (request.getRequestUrl().matches("(?is).*/action/grabber/rename/.*")) {
+                // rename link grabber package: usage .../rename/from/to
+                if (LinkGrabberPanel.getLinkGrabber().isRunning()) {
+                    response.addContent("ERROR: Link grabber is currently running. Please try again in a few seconds.");
+                } else {
+                    String[] data = new Regex(request.getRequestUrl(), "(?is).*/action/grabber/rename/(.*)").getMatch(0).split("/");
+
+                    LinkGrabberFilePackage destPackage = null;
+
+                    synchronized (LinkGrabberController.ControllerLock) {
+                        // find destination package
+                        for (LinkGrabberFilePackage pack : LinkGrabberController.getInstance().getPackages()) {
+                            if (pack.getName().equals(data[0])) {
+                                destPackage = pack;
+                                break;
+                            }
+                        }
+
+                        if (destPackage == null) {
+                            response.addContent("ERROR: Package '" + data[0] + "' not found!");
+                        } else {
+                            destPackage.setName(data[1]);
+                            LinkGrabberController.getInstance().throwRefresh();
+                            response.addContent("Package '" + data[0] + "' renamed to '" + data[1] + "'.");
+                        }
+                    }
+                }
+
+            } else if (request.getRequestUrl().matches("(?is).*/action/grabber/addall") || request.getRequestUrl().matches("(?is).*/action/grabber/add/.*")) {
+                // add all links in grabber to download list or
+                // add single packages separated by slashes:
+                // add/pack1/pack2/pack3/...
+                if (LinkGrabberPanel.getLinkGrabber().isRunning()) {
+                    response.addContent("ERROR: Link grabber is currently running. Please try again in a few seconds.");
+                } else {
+                    response.addContent("The following packages are now scheduled for download: ");
+
+                    synchronized (LinkGrabberController.ControllerLock) {
+                        List<LinkGrabberFilePackage> packages = new ArrayList<LinkGrabberFilePackage>();
+                        if (request.getRequestUrl().matches("(?is).*/action/grabber/add/.*")) {
+                            // add requested
+                            String[] data = new Regex(request.getRequestUrl(), "(?is).*/action/grabber/add/(.*)").getMatch(0).split("/");
+                            for (LinkGrabberFilePackage pack : LinkGrabberController.getInstance().getPackages()) {
+                                for (String name : data) {
+                                    if (name.equalsIgnoreCase(pack.getName())) {
+                                        packages.add(pack);
+                                    }
+                                }
+                            }
+                        } else {
+                            // all
+                            packages.addAll(LinkGrabberController.getInstance().getPackages());
+                        }
+
+                        boolean avail = (packages.size() > 0);
+                        boolean hit = false;
+                        for (LinkGrabberFilePackage pack : packages) {
+                            ArrayList<DownloadLink> links = pack.getDownloadLinks();
+
+                            ArrayList<FilePackage> fps = new ArrayList<FilePackage>();
+                            FilePackage fp = FilePackage.getInstance();
+                            fp.setName(pack.getName());
+                            fp.setName(pack.getName());
+                            fp.setComment(pack.getComment());
+                            fp.setPassword(pack.getPassword());
+                            fp.setExtractAfterDownload(pack.isExtractAfterDownload());
+                            fp.setDownloadDirectory(pack.getDownloadDirectory());
+                            if (pack.useSubDir()) {
+                                File file = new File(new File(pack.getDownloadDirectory()), fp.getName());
+                                fp.setDownloadDirectory(file.getAbsolutePath());
+                                if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_CREATE_SUBFOLDER_BEFORE_DOWNLOAD, false)) {
+                                    if (!file.exists()) {
+                                        if (!file.mkdirs()) {
+                                            logger.severe("could not create " + file.toString());
+                                            fp.setDownloadDirectory(pack.getDownloadDirectory());
+                                        }
+                                    }
+                                }
+                            }
+                            for (DownloadLink link : links) {
+                                if (link.getFilePackage() == FilePackage.getDefaultFilePackage()) {
+                                    fp.add(link);
+                                    if (!fps.contains(fp)) fps.add(fp);
+                                } else {
+                                    if (!fps.contains(link.getFilePackage())) fps.add(link.getFilePackage());
+                                }
+                            }
+                            // LinkCheck.getLinkChecker().checkLinksandWait(links);
+                            if (GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_INSERT_NEW_LINKS_AT, false)) {
+                                DownloadController.getInstance().addAllAt(fps, 0);
+                            } else {
+                                DownloadController.getInstance().addAll(fps);
+                            }
+
+                            if (hit) {
+                                response.addContent(", ");
+                            }
+                            response.addContent("'" + pack.getName() + "'");
+
+                            // remove package from link grabber
+                            LinkGrabberController.getInstance().removePackage(pack);
+                            hit = true;
+                        }
+
+                        if (!avail) {
+                            response.addContent("(none)");
+                        }
+                    }
+                }
+
+            } else if (request.getRequestUrl().matches("(?is).*/action/grabber/remove/.*")) {
+                // remove specified links from grabber:
+                // offline, available (in grabber and download list)
+                if (LinkGrabberPanel.getLinkGrabber().isRunning()) {
+                    response.addContent("ERROR: Link grabber is currently running. Please try again in a few seconds.");
+                } else {
+                    String[] data = new Regex(request.getRequestUrl(), "(?is).*/action/grabber/remove/(.*)").getMatch(0).split("/");
+
+                    if (data.length == 0) {
+                        response.addContent("Too few request parametes: check /help for instructions");
+                    } else {
+                        synchronized (LinkGrabberController.ControllerLock) {
+                            response.addContent("Removing links from grabber of type: ");
+                            for (int i = 0; i < data.length; ++i) {
+                                if (i > 0) {
+                                    response.addContent(", ");
+                                }
+                                if (data[i].equals(LINK_TYPE_OFFLINE) || data[i].equals(LINK_TYPE_AVAIL)) {
+                                    response.addContent(data[i]);
+                                } else {
+                                    response.addContent("(unknown type: " + data[i] + ")");
+                                }
+                            }
+
+                            // determine links to delete
+                            List<String> delLinks = new ArrayList<String>();
+                            List<String> delPackages = new ArrayList<String>();
+                            List<LinkGrabberFilePackage> packages = new ArrayList<LinkGrabberFilePackage>(LinkGrabberController.getInstance().getPackages());
+                            for (LinkGrabberFilePackage pack : packages) {
+
+                                List<DownloadLink> links = new ArrayList<DownloadLink>(pack.getDownloadLinks());
+                                for (DownloadLink link : links) {
+                                    for (String type : data) {
+                                        if ((type.equals(LINK_TYPE_OFFLINE) && link.getAvailableStatus().equals(AvailableStatus.FALSE)) || (type.equals(LINK_TYPE_AVAIL) && link.getLinkStatus().hasStatus(LinkStatus.ERROR_ALREADYEXISTS))) {
+                                            pack.remove(link);
+                                            delLinks.add(link.getDownloadURL());
+                                        }
+                                    }
+                                }
+
+                                // delete packages that are empty
+                                if (pack.getDownloadLinks().size() == 0) {
+                                    // LinkGrabberController.getInstance().removePackage(pack);
+                                    delPackages.add(pack.getName());
+                                }
+
+                            }
+
+                            response.addContent(" - " + delLinks.size() + " links removed (" + delLinks + ") which left " + delPackages.size() + " empty packages (" + delPackages + ").");
+                        }
+                    }
+                }
             } else {
                 response.addContent("JDRemoteControl - Malformed Request. use /help");
             }
@@ -540,6 +816,14 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
             element.setAttribute("file_hoster", dl.getHost());
             element.setAttribute("file_status", dl.getLinkStatus().getStatusString().toString());
             element.setAttribute("file_speed", dl.getDownloadSpeed() + "");
+            return element;
+        }
+
+        private Element addGrabberPackage(Document xml, LinkGrabberFilePackage fp) {
+            Element element = xml.createElement("package");
+            xml.getFirstChild().appendChild(element);
+            element.setAttribute("package_name", fp.getName());
+            element.setAttribute("package_linkstotal", fp.size() + "");
             return element;
         }
 
