@@ -42,10 +42,15 @@ public class FilesMailRu extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replace("wge4zu4rjfsdehehztiuxw", "files.mail.ru"));
     }
 
+    public String folderID = this.getPluginConfig().getStringProperty("folderID", null);
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        String folderID = new Regex(downloadLink.getDownloadURL(), "mail\\.ru/([A-Z0-9]+)").getMatch(0);
+        this.getPluginConfig().setProperty("folderID", "http://files.mail.ru/" + folderID);
+        this.getPluginConfig().save();
         // At the moment jd gets the russian version of the site. Errorhandling
         // also works for English but filesize handling doesn't so if this
         // plugin get's broken that's on of the first things to check
@@ -55,7 +60,8 @@ public class FilesMailRu extends PluginForHost {
                 downloadLink.setDownloadSize(Long.valueOf(size));
                 return AvailableStatus.TRUE;
             } else {
-                br.followConnection();
+                logger.info("folderID does exist, accessing page " + folderID + " to renew the ticket");
+                br.getPage(folderID);
                 if (br.containsHTML("(was not found|were deleted by sender|Не найдено файлов, отправленных с кодом|<b>Ошибка</b>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 // This part is to find the filename in case the downloadurl
                 // redirects to the folder it comes from
@@ -91,7 +97,8 @@ public class FilesMailRu extends PluginForHost {
         br.setFollowRedirects(true);
         String dllink = null;
         if (br.openGetConnection(downloadLink.getDownloadURL()).getContentType().contains("html")) {
-            br.followConnection();
+            logger.info("folderID does exist, accessing page " + folderID + " to renew the ticket");
+            br.getPage(folderID);
             // Find the downloadlink if the actual one redirects to the previous
             // downloadpage (folder)
             String finalfilename = downloadLink.getFinalFileName();
