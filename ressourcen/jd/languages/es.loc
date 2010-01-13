@@ -1246,7 +1246,6 @@ plugins.decrypt.rbkprrws.mirrordialog.nfo = Archivo NFO
 plugins.decrypt.rbkprrws.mirrordialog.sample = Ejemplo de video de
 plugins.decrypt.rslayer.captchaexpired = Código captcha expirado
 plugins.decrypt.shrlnksbz.desc = Lea la combinacion del fondo y clickee la combinacion correcta.
-plugins.decrypter.uploadreu.badpassorcaptcha = Ha ingresado una contraseña incorrecta 5 veces. Por favor, revise sus datos.
 plugins.decrypter.urtcutcom.badpassword = Ha ingresado una contraseña incorrecta 5 veces. Por favor, revise sus datos.
 plugins.error.downloadfailed = Descarga fallada
 plugins.errors.disconnect = ¿Desconectado?
