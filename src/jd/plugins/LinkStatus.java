@@ -169,7 +169,7 @@ public class LinkStatus implements Serializable {
 
     private static final long serialVersionUID = 3885661829491436448L;
 
-    private DownloadLink downloadLink;
+    private final DownloadLink downloadLink;
     private String errorMessage;
 
     private int lastestStatus = TODO;
@@ -182,7 +182,7 @@ public class LinkStatus implements Serializable {
 
     private ImageIcon statusIcon;
 
-    public LinkStatus(DownloadLink downloadLink) {
+    public LinkStatus(final DownloadLink downloadLink) {
         this.downloadLink = downloadLink;
     }
 
@@ -192,7 +192,7 @@ public class LinkStatus implements Serializable {
      * 
      * @param status
      */
-    public void addStatus(int status) {
+    public void addStatus(final int status) {
         this.status |= status;
         if (JDFlags.hasSomeFlags(status, FINISHED)) {
             if (downloadLink.getFinishedDate() == -1l) downloadLink.setFinishedDate(System.currentTimeMillis());
@@ -260,13 +260,13 @@ public class LinkStatus implements Serializable {
         return lastestStatus;
     }
 
-    public void setLatestStatus(int s) {
+    public void setLatestStatus(final int s) {
         lastestStatus = s;
     }
 
     public long getRemainingWaittime() {
-        long now = System.currentTimeMillis();
-        long ab = waitUntil - now;
+        final long now = System.currentTimeMillis();
+        final long ab = waitUntil - now;
         return Math.max(0l, ab);
     }
 
@@ -277,7 +277,7 @@ public class LinkStatus implements Serializable {
      * @return Statusstring mit eventl Wartezeit
      */
     public String getStatusString() {
-        StringBuilder ret = new StringBuilder();
+        final StringBuilder ret = new StringBuilder();
         if (hasStatus(LinkStatus.ERROR_POST_PROCESS)) {
             if (getErrorMessage() != null) {
                 ret.append(getErrorMessage());
@@ -324,14 +324,14 @@ public class LinkStatus implements Serializable {
         }
 
         if (isFailed()) return getLongErrorMessage();
-        DownloadInterface dli = downloadLink.getDownloadInstance();
+        final DownloadInterface dli = downloadLink.getDownloadInstance();
         if (downloadLink.getPlugin() != null && DownloadWatchDog.getInstance().getRemainingIPBlockWaittime(downloadLink.getHost()) > 0 && !downloadLink.getLinkStatus().isPluginActive()) { return JDL.L("gui.downloadlink.hosterwaittime", "[wait for new ip]"); }
         if (downloadLink.getPlugin() != null && DownloadWatchDog.getInstance().getRemainingTempUnavailWaittime(downloadLink.getHost()) > 0 && !downloadLink.getLinkStatus().isPluginActive()) { return JDL.L("gui.downloadlink.hostertempunavail", "[download currently not possible]"); }
         if (dli == null && hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
             removeStatus(DOWNLOADINTERFACE_IN_PROGRESS);
         }
         if (hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
-            int speed = downloadLink.getDownloadSpeed();
+            final int speed = downloadLink.getDownloadSpeed();
             String chunkString = "";
             if (dli != null && dli.getChunkNum() > 1) chunkString = "(" + dli.getChunksDownloading() + "/" + dli.getChunkNum() + ")";
 
@@ -362,7 +362,7 @@ public class LinkStatus implements Serializable {
         return value;
     }
 
-    private boolean hasOnlyStatus(int statusCode) {
+    private boolean hasOnlyStatus(final int statusCode) {
         return (status & ~statusCode) == 0;
     }
 
@@ -372,7 +372,7 @@ public class LinkStatus implements Serializable {
      * @param status
      * @return
      */
-    public boolean hasStatus(int status) {
+    public boolean hasStatus(final int status) {
         return (this.status & status) != 0;
     }
 
@@ -388,12 +388,12 @@ public class LinkStatus implements Serializable {
         return hasStatus(PLUGIN_IN_PROGRESS);
     }
 
-    public boolean isStatus(int status) {
+    public boolean isStatus(final int status) {
         return this.status == status;
     }
 
     /** Entfernt eine Statusid */
-    public void removeStatus(int status) {
+    public void removeStatus(final int status) {
         int mask = 0xffffffff;
         mask &= ~status;
         this.status &= mask;
@@ -414,12 +414,13 @@ public class LinkStatus implements Serializable {
         waitUntil = 0;
     }
 
-    public void setErrorMessage(String string) {
-        if (downloadLink.isAborted() && string != null) return;
-        errorMessage = string;
+    public void setErrorMessage(final String string) {
+        if (!downloadLink.isAborted() || string == null) {
+            errorMessage = string;
+        }
     }
 
-    public void setInProgress(boolean b) {
+    public void setInProgress(final boolean b) {
         if (b) {
             addStatus(PLUGIN_IN_PROGRESS);
         } else {
@@ -427,7 +428,7 @@ public class LinkStatus implements Serializable {
         }
     }
 
-    public void setActive(boolean b) {
+    public void setActive(final boolean b) {
         if (b) {
             addStatus(PLUGIN_ACTIVE);
         } else {
@@ -441,7 +442,7 @@ public class LinkStatus implements Serializable {
      * 
      * @param status
      */
-    public void setStatus(int status) {
+    public void setStatus(final int status) {
         if (status == FINISHED) {
             resetWaitTime();
         }
@@ -452,22 +453,22 @@ public class LinkStatus implements Serializable {
         lastestStatus = status;
     }
 
-    public void setStatusText(String l) {
+    public void setStatusText(final String l) {
         statusText = l;
     }
 
-    public void setValue(long i) {
+    public void setValue(final long i) {
         value = i;
     }
 
-    public void setWaitTime(long milliSeconds) {
+    public void setWaitTime(final long milliSeconds) {
         waitUntil = System.currentTimeMillis() + milliSeconds;
         totalWaitTime = milliSeconds;
     }
 
-    public static String toString(int status) {
-        Field[] fields = LinkStatus.class.getDeclaredFields();
-        for (Field field : fields) {
+    public static String toString(final int status) {
+        final Field[] fields = LinkStatus.class.getDeclaredFields();
+        for (final Field field : fields) {
             if (field.getModifiers() == 25) {
                 int value;
                 try {
@@ -485,11 +486,11 @@ public class LinkStatus implements Serializable {
 
     @Override
     public String toString() {
-        Field[] fields = this.getClass().getDeclaredFields();
-        StringBuilder sb = new StringBuilder();
+        final Field[] fields = this.getClass().getDeclaredFields();
+        final StringBuilder sb = new StringBuilder();
         sb.append(Formatter.fillString(Integer.toBinaryString(status), "0", "", 32) + " <Statuscode\r\n");
         String latest = "";
-        for (Field field : fields) {
+        for (final Field field : fields) {
             if (field.getModifiers() == 25) {
                 int value;
                 try {
@@ -506,7 +507,7 @@ public class LinkStatus implements Serializable {
             }
         }
 
-        StringBuilder ret = new StringBuilder(latest);
+        final StringBuilder ret = new StringBuilder(latest);
         ret.append(sb.toString());
 
         if (statusText != null) {
@@ -518,7 +519,7 @@ public class LinkStatus implements Serializable {
         return ret.toString();
     }
 
-    public void setRetryCount(int retryCount) {
+    public void setRetryCount(final int retryCount) {
         this.retryCount = retryCount;
     }
 
@@ -554,32 +555,34 @@ public class LinkStatus implements Serializable {
      * use this function to reset linkstatus to TODO, if no notResetifFlag match
      */
     public void resetStatus(int... notResetifFlag) {
-        if (this.downloadLink == null) return;
-        int curState = LinkStatus.TODO;
-        int curLState = LinkStatus.TODO;
-        String tmp2 = null;
-        String tmp3 = null;
-        int resetFlag = 0;
-        for (int flag : notResetifFlag) {
-            resetFlag = resetFlag | flag;
-        }
-        for (int flag : notResetifFlag) {
-            if (downloadLink.getLinkStatus().hasStatus(flag)) {
-                curState = downloadLink.getLinkStatus().getStatus();
-                curLState = downloadLink.getLinkStatus().getLatestStatus();
-                tmp2 = downloadLink.getLinkStatus().getErrorMessage();
-                tmp3 = downloadLink.getLinkStatus().getStatusText();
-                break;
+        if (this.downloadLink != null) {
+            int curState = LinkStatus.TODO;
+            int curLState = LinkStatus.TODO;
+            String tmp2 = null;
+            String tmp3 = null;
+            int resetFlag = 0;
+            for (final int flag : notResetifFlag) {
+                resetFlag = resetFlag | flag;
             }
+            final LinkStatus linkStatus = downloadLink.getLinkStatus();
+            for (final int flag : notResetifFlag) {
+                if (linkStatus.hasStatus(flag)) {
+                    curState = linkStatus.getStatus();
+                    curLState = linkStatus.getLatestStatus();
+                    tmp2 = linkStatus.getErrorMessage();
+                    tmp3 = linkStatus.getStatusText();
+                    break;
+                }
+            }
+            // filter flags
+            curState = JDFlags.filterFlags(curState, resetFlag | LinkStatus.TODO);
+            curLState = JDFlags.filterFlags(curLState, resetFlag | LinkStatus.TODO);
+            /* reset and if needed restore the old state */
+            linkStatus.reset();
+            linkStatus.setStatus(curState);
+            linkStatus.setLatestStatus(curLState);
+            linkStatus.setErrorMessage(tmp2);
+            linkStatus.setStatusText(tmp3);
         }
-        // filter flags
-        curState = JDFlags.filterFlags(curState, resetFlag | LinkStatus.TODO);
-        curLState = JDFlags.filterFlags(curLState, resetFlag | LinkStatus.TODO);
-        /* reset and if needed restore the old state */
-        downloadLink.getLinkStatus().reset();
-        downloadLink.getLinkStatus().setStatus(curState);
-        downloadLink.getLinkStatus().setLatestStatus(curLState);
-        downloadLink.getLinkStatus().setErrorMessage(tmp2);
-        downloadLink.getLinkStatus().setStatusText(tmp3);
     }
 }
