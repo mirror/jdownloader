@@ -478,13 +478,21 @@ public class Rapidshare extends PluginForHost {
             // Download
             dl = new RAFDownload(this, downloadLink, request);
             // long startTime = System.currentTimeMillis();
-            URLConnectionAdapter con = dl.connect();
-            if (con.getHeaderField("Location") != null) {
-                con.disconnect();
-                request = br.createGetRequest(con.getHeaderField("Location"));
-                dl = new RAFDownload(this, downloadLink, request);
-                // long startTime = System.currentTimeMillis();
+            URLConnectionAdapter con;
+            try {
+                // connect() throws an exception if there is a location header
                 con = dl.connect();
+            } catch (Exception e) {
+                con = dl.getConnection();
+                if (con != null && con.getHeaderField("Location") != null) {
+                    con.disconnect();
+                    request = br.createGetRequest(con.getHeaderField("Location"));
+                    dl = new RAFDownload(this, downloadLink, request);
+                    // long startTime = System.currentTimeMillis();
+                    con = dl.connect();
+                } else {
+                    throw e;
+                }
             }
             if (!con.isContentDisposition() && con.getHeaderField("Cache-Control") != null) {
                 con.disconnect();
