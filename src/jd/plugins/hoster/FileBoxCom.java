@@ -106,7 +106,7 @@ public class FileBoxCom extends PluginForHost {
         if (filename == null) filename = br.getRegex("Filename</label>.*?title=\"(.*?)\"").getMatch(0);
         String filesize = br.getRegex("File size</label>.*?\\((.*?)\\)").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        link.setName(filename);
+        link.setFinalFileName(filename);
         if (filesize != null) {
             link.setDownloadSize(Regex.getSize(filesize));
         }
@@ -205,21 +205,31 @@ public class FileBoxCom extends PluginForHost {
             downloadLink.setProperty("pass", null);
             throw new PluginException(LinkStatus.ERROR_RETRY);
         }
-        Form finalform = br.getFormbyProperty("name", "F1");
-        if (finalform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // Waittime...is skipable right now but in case they change it just use
-        // the following code (tested)
-        // String ttt = br.getRegex("countdown\">(\\d+)</span>").getMatch(0);
-        // if (ttt != null) {
-        // int tt = Integer.parseInt(ttt);
-        // sleep(tt * 1001, downloadLink);
-        // }
-        if (passCode != null) {
-            downloadLink.setProperty("pass", passCode);
+        // If the user wants to download a picture, he can only do this by using
+        // this link...
+        String piclink = br.getRegex("\"/cgi-bin/proxy\\.cgi\\?url=(http.*?)\"").getMatch(0);
+        if (piclink == null) {
+            Form finalform = br.getFormbyProperty("name", "F1");
+            if (finalform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            // Waittime...is skipable right now but in case they change it just
+            // use
+            // the following code (tested)
+            // String ttt =
+            // br.getRegex("countdown\">(\\d+)</span>").getMatch(0);
+            // if (ttt != null) {
+            // int tt = Integer.parseInt(ttt);
+            // sleep(tt * 1001, downloadLink);
+            // }
+            if (passCode != null) {
+                downloadLink.setProperty("pass", passCode);
+            }
+            jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalform, false, 1);
+        } else {
+            jd.plugins.BrowserAdapter.openDownload(br, downloadLink, piclink, false, 1);
         }
-        jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalform, false, 1);
-        if (!(dl.getConnection().isContentDisposition())) {
+        if ((dl.getConnection().getContentType().contains("html"))) {
             br.followConnection();
+            if (br.containsHTML(">Free Registration<")) throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable by using a registered account!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

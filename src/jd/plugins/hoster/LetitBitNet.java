@@ -58,10 +58,11 @@ public class LetitBitNet extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         br.postPage(downloadLink.getDownloadURL(), "en.x=10&en.y=8&vote_cr=en");
         String filename = br.getRegex("<span>File::</span>(.*?)</h1>").getMatch(0);
-        String size = br.getRegex("<span>File size::</span>(.*?)</h1>").getMatch(0);
-        if (filename == null || size == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filesize = br.getRegex("<span>Size of file::</span>(.*?)</h1>").getMatch(0);
+        if (filesize == null) filesize = br.getRegex("<span>File size::</span>(.*?)</h1>").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
-        downloadLink.setDownloadSize(Regex.getSize(size));
+        if (filesize != null) downloadLink.setDownloadSize(Regex.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 

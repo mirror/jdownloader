@@ -20,11 +20,9 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.parser.Regex;
-import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -61,23 +59,27 @@ public class FileSplashCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
-        // Form um auf "Datei herunterladen" zu klicken
-        Form DLForm = br.getFormbyProperty("name", "F1");
-        if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String dllink = br.getRegex("\"(http://cherryload\\.us/files/.*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("<br>.*?<br>.*?<a href=\"(http.*?)\"").getMatch(0);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String passCode = null;
-        if (br.containsHTML("name=\"password\"")) {
-            if (downloadLink.getStringProperty("pass", null) == null) {
-                passCode = Plugin.getUserInput("Password?", downloadLink);
-            } else {
-                /* gespeicherten PassCode holen */
-                passCode = downloadLink.getStringProperty("pass", null);
-            }
-            DLForm.put("password", passCode);
+        // if (br.containsHTML("name=\"password\"")) {
+        // if (downloadLink.getStringProperty("pass", null) == null) {
+        // passCode = Plugin.getUserInput("Password?", downloadLink);
+        // } else {
+        // /* gespeicherten PassCode holen */
+        // passCode = downloadLink.getStringProperty("pass", null);
+        // }
+        // DLForm.put("password", passCode);
+        // }
+        // Ticket Time
+        String ttt = br.getRegex("countdown\">.*?(\\d+).*?</span>").getMatch(0);
+        if (ttt != null) {
+            logger.info("Waittime detected, waiting " + ttt.trim() + " seconds from now on...");
+            int tt = Integer.parseInt(ttt);
+            sleep(tt * 1001, downloadLink);
         }
-        // waittime
-        int tt = Integer.parseInt(br.getRegex("countdown\">(\\d+)</span>").getMatch(0));
-        sleep(tt * 1001, downloadLink);
-        jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLForm, false, 1);
+        jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (!(dl.getConnection().isContentDisposition())) {
             br.followConnection();
             if (br.containsHTML("Wrong password")) {
@@ -99,7 +101,7 @@ public class FileSplashCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return -1;
     }
 
     @Override

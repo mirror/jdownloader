@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -66,11 +67,9 @@ public class XnXxCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        String dllink = br.getRegex("flv_url=(http.*?\\.(flv|mp4))").getMatch(0);
-        if (dllink == null) {
-            dllink = br.getRegex("(http://(videocache[0-9]+\\.xvideos|[a-z0-9]+\\.xvideos)\\.com/flv/.*?/videos/flv/.*?/xvideos\\.com.*?\\.(flv|mp4))").getMatch(0);
-        }
-        if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        String dllink = br.getRegex("flv_url=(http.*?)\\&amp;").getMatch(0);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dllink = Encoding.htmlDecode(dllink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         dl.startDownload();
     }
