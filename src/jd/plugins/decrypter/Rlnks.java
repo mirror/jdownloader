@@ -98,6 +98,11 @@ public class Rlnks extends PluginForDecrypt {
                                 decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(url)));
                                 break;
                             } else {
+                                /*
+                                 * TODO: captcha handling not working at the
+                                 * moment, loop
+                                 */
+                                if (true) return;
                                 Form f = brc.getForm(0);
                                 File file = this.getLocalCaptchaFile();
                                 Browser temp = brc.cloneBrowser();
