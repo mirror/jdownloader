@@ -48,8 +48,11 @@ public class FilesMailRu extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        String folderID = new Regex(downloadLink.getDownloadURL(), "mail\\.ru/([A-Z0-9]+)").getMatch(0);
-        this.getPluginConfig().setProperty("folderID", "http://files.mail.ru/" + folderID);
+        if (downloadLink.getFinalFileName() == null && this.getPluginConfig().getStringProperty("folderID", null) == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        this.getPluginConfig().setProperty("finalName", downloadLink.getFinalFileName());
+        this.getPluginConfig().save();
+        String folderIDregexed = new Regex(downloadLink.getDownloadURL(), "mail\\.ru/([A-Z0-9]+)").getMatch(0);
+        this.getPluginConfig().setProperty("folderID", "http://files.mail.ru/" + folderIDregexed);
         this.getPluginConfig().save();
         // At the moment jd gets the russian version of the site. Errorhandling
         // also works for English but filesize handling doesn't so if this
@@ -65,7 +68,7 @@ public class FilesMailRu extends PluginForHost {
                 if (br.containsHTML("(was not found|were deleted by sender|Не найдено файлов, отправленных с кодом|<b>Ошибка</b>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 // This part is to find the filename in case the downloadurl
                 // redirects to the folder it comes from
-                String finalfilename = downloadLink.getFinalFileName();
+                String finalfilename = this.getPluginConfig().getStringProperty("finalName", null);
                 if (finalfilename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 String[] linkinformation = br.getRegex("<td class=\"name\">(.*?)<td class=\"do\">").getColumn(0);
                 if (linkinformation.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -101,7 +104,7 @@ public class FilesMailRu extends PluginForHost {
             br.getPage(folderID);
             // Find the downloadlink if the actual one redirects to the previous
             // downloadpage (folder)
-            String finalfilename = downloadLink.getFinalFileName();
+            String finalfilename = this.getPluginConfig().getStringProperty("finalName", null);
             if (finalfilename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             String[] linkinformation = br.getRegex("<td class=\"name\">(.*?)<td class=\"do\">").getColumn(0);
             if (linkinformation.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

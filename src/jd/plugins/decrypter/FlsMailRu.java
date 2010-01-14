@@ -53,14 +53,14 @@ public class FlsMailRu extends PluginForDecrypt {
             String filesize = new Regex(info, "<td>(.*?{1,15})</td>").getMatch(0);
             DownloadLink finallink = createDownloadlink(directlink.replace("files.mail.ru", "wge4zu4rjfsdehehztiuxw"));
             // Maybe that helps id jd gets the english version of the site!
-            if (!filesize.contains("MB")) {
-                filesize = filesize.replace("Г", "G");
-                filesize = filesize.replace("М", "M");
-                filesize = filesize.replace("к", "k");
-                filesize = filesize.replace("Б", "");
-                filesize = filesize + "b";
-            }
             if (filesize != null) {
+                if (!filesize.contains("MB")) {
+                    filesize = filesize.replace("Г", "G");
+                    filesize = filesize.replace("М", "M");
+                    filesize = filesize.replace("к", "k");
+                    filesize = filesize.replace("Б", "");
+                    filesize = filesize + "b";
+                }
                 finallink.setDownloadSize(Regex.getSize(filesize));
             }
             finallink.setFinalFileName(filename);
