@@ -70,7 +70,7 @@ public class Usershare extends PluginForHost {
             if (linkurl == null) {
                 linkurl = br.getRegex("\"(http://[a-zA-Z0-9]+\\.usershare\\.net/files/.*?/.*?/.*?)\"").getMatch(0);
                 if (linkurl == null) {
-                    linkurl = br.getRegex("\"(http://[0-9]+\\..*?:[0-9]+/d/.*?/.*?)\"").getMatch(0);
+                    linkurl = br.getRegex("href=\"(http://[0-9]+\\..*?:[0-9]+/d/.*?/.*?)\"").getMatch(0);
                 }
             }
         }
@@ -78,6 +78,7 @@ public class Usershare extends PluginForHost {
             link.setProperty("pass", passCode);
         }
         if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.setDebug(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, linkurl, true, -4);
         dl.startDownload();
     }
