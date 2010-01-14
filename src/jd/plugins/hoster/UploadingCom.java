@@ -176,6 +176,9 @@ public class UploadingCom extends PluginForHost {
     public AvailableStatus fileCheck(DownloadLink downloadLink) throws PluginException, IOException {
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("but due to abuse or through deletion by")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("file was removed")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        
+        
         String filesize = br.getRegex("File size: <b>(.*?)</b>").getMatch(0);
         String filename = br.getRegex(">Download(.*?)for free on uploading.com").getMatch(0);
         if (filename == null) {
