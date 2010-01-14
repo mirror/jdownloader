@@ -47,7 +47,6 @@ public class WebShareNet extends PluginForHost {
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("Súbor sa nenašiel")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<br><h3>(.*?)</h3>").getMatch(0);
-        filename = null;
         if (filename == null) filename = br.getRegex("id=\"ffilename\" value=\"(.*?)_[0-9]+\"").getMatch(0);
         String filesize = br.getRegex("Veľkosť súboru:(.*?)<br").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
