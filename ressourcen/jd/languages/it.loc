@@ -998,7 +998,6 @@ jd.main.removerestart.cancel = Continua
 jd.main.removerestart.message = Impossibile rimuovere le librerie obsolete. È consigliato il riavvio!
 jd.main.removerestart.ok = Riavvia ora!
 jd.main.removerestart.title = Updater
-jd.plugins.decrypt.bstmvs.captchainputwrong = Dati immessi errati, inserire un'ora tipo 4:30
 jd.plugins.decrypter.frshrdfldr.dir.cancel = File
 jd.plugins.decrypter.frshrdfldr.dir.message = Effettuare la scansione di tutte le sotto cartelle o solo dei file in questa cartella?
 jd.plugins.decrypter.frshrdfldr.dir.ok = Sotto cartella
