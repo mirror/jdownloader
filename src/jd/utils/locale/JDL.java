@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Random;
 import java.util.Map.Entry;
@@ -355,24 +354,21 @@ public final class JDL {
         }
     }
 
-    public static String translate(final String to, final String msg) {
+    public static Translation translate(final String to, final String msg) {
         return JDL.translate("auto", to, msg);
     }
 
-    public static String translate(final String from, final String to, final String msg) {
+    public static Translation translate(final String from, final String to, final String msg) {
         try {
-            final LinkedHashMap<String, String> postData = new LinkedHashMap<String, String>();
-            postData.put("hl", "de");
-            postData.put("text", msg);
-            postData.put("sl", from);
-            postData.put("tl", to);
-            postData.put("ie", "UTF8");
 
+            Translation trans = new Translation(msg, to);
             final Browser br = new Browser();
-            br.postPage("http://translate.google.com/translate_t", postData);
+            br.getPage("http://www.google.com/uds/Gtranslate?callback=google.language.callbacks.id101&context=22&q=" + Encoding.urlEncode(msg) + "&langpair=|en&key=notsupplied&v=1.0");
 
-            return Encoding.UTF8Decode(Encoding.htmlDecode(br.getRegex("<div id\\=result_box dir\\=\"ltr\">(.*?)</div>").getMatch(0)));
-        } catch (IOException e) {
+            trans.setTranslated(Encoding.UTF8Decode(Encoding.htmlDecode(br.getRegex("\"translatedText\":\"(.*?)\",\"detectedSourceLanguage\":\"(.*?)\"").getMatch(0))));
+            trans.setSourceLanguage(Encoding.UTF8Decode(Encoding.htmlDecode(br.getRegex("\"translatedText\":\"(.*?)\",\"detectedSourceLanguage\":\"(.*?)\"").getMatch(1))));
+            return trans;
+        } catch (Exception e) {
             JDLogger.exception(e);
             return null;
         }
