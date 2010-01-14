@@ -80,7 +80,7 @@ public class FilesMailRu extends PluginForHost {
                         filesize = filesize.replace("Г", "G");
                         filesize = filesize.replace("М", "M");
                         filesize = filesize.replace("к", "k");
-                        filesize = filesize.replace("Б", "");
+                        filesize = filesize.replaceAll("(Б|б)", "");
                         filesize = filesize + "b";
                         downloadLink.setFinalFileName(filename);
                         downloadLink.setDownloadSize(Regex.getSize(filesize));

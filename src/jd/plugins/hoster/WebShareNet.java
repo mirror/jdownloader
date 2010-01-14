@@ -65,7 +65,7 @@ public class WebShareNet extends PluginForHost {
         String code = getCaptchaCode(captchaurl, downloadLink);
         captchaForm.put("captcha", code);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, captchaForm, false, 1);
-        if (dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("html")) {
+        if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML("(Zadali ste nesprávny overovací kód|/captcha)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

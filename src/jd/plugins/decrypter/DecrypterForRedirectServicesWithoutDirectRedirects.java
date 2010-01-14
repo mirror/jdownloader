@@ -20,12 +20,13 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "adf.ly", "fileonfly.com" }, urls = { "http://[\\w\\.]*?adf\\.ly/[a-z0-9]+", "http://[\\w\\.]*?fileonfly\\.com/get/[a-z0-9]+" }, flags = { 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "adf.ly", "download.su" }, urls = { "http://[\\w\\.]*?adf\\.ly/[a-z0-9]+", "http://[\\w\\.]*?download\\.su/go/\\?id=.*?=/files/\\d+/.+" }, flags = { 0, 0 })
 public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginForDecrypt {
 
     public DecrypterForRedirectServicesWithoutDirectRedirects(PluginWrapper wrapper) {
@@ -37,10 +38,13 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
         String parameter = param.toString();
         br.setFollowRedirects(false);
         String finallink = null;
-        if (!parameter.contains("fileonfly.com")) br.getPage(parameter);
+        br.getPage(parameter);
         if (parameter.contains("adf.ly"))
             finallink = br.getRegex("default_location = '(.*?)';").getMatch(0);
-        else if (parameter.contains("fileonfly.com")) finallink = "directhttp://" + parameter;
+        else if (parameter.contains("download.su")) {
+            String rspart = new Regex(parameter + "\"", "(/files.*?)\"").getMatch(0);
+            finallink = "http://rapidshare.com" + rspart;
+        }
         if (finallink == null) return null;
         decryptedLinks.add(createDownloadlink(finallink));
 
