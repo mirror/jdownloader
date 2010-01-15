@@ -43,7 +43,7 @@ public class LetitBitNet extends PluginForHost {
         super(wrapper);
         this.setAccountwithoutUsername(true);
         this.setStartIntervall(4000l);
-        enablePremium("http://letitbit.net/");
+        enablePremium("http://letitbit.net/page/premium.php");
     }
 
     @Override
@@ -69,13 +69,14 @@ public class LetitBitNet extends PluginForHost {
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         requestFileInformation(downloadLink);
-        Form form = br.getForm(3);
+        Form form = br.getForm(4);
+        if (form == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         form.put("pass", Encoding.urlEncode(account.getPass()));
         br.submitForm(form);
-        /* we have to wait little because server too buggy */
-        sleep(5000, downloadLink);
         String url = br.getRegex("(http://[^/]*?/download.*?/.*?)(\"|')").getMatch(0);
         if (url == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        /* we have to wait little because server too buggy */
+        sleep(5000, downloadLink);
         br.setDebug(true);
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 0);
