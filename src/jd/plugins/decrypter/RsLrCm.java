@@ -107,12 +107,18 @@ public class RsLrCm extends PluginForDecrypt {
                 progress.setRange(layerLinks.length);
                 for (String element : layerLinks) {
                     br.getPage("http://rs-layer.com/link-" + element + ".html");
-                    String link = br.getRegex("<frame.*?name=\"file\".*?src=\"(.*?)\".*?>").getMatch(0);
+                    String link = Encoding.htmlDecode(br.getRegex("<i?frame.*?src=\"(.*?)\".*?>").getMatch(0));
+
                     if (link != null) {
-                        String dllink = "http://rs-layer.com/" + link;
-                        br.getPage(dllink);
-                        String finallink = br.getRegex("src=\"(.*?)\"").getMatch(0);
-                        if (link != null) decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(finallink)));
+                        if (link.startsWith("http://")) {
+                            decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(link)));
+                        } else {
+
+                            String dllink = "http://rs-layer.com/" + link;
+                            br.getPage(dllink);
+                            String finallink = br.getRegex("src=\"(.*?)\"").getMatch(0);
+                            decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(finallink)));
+                        }
                     }
                     progress.increase(1);
                 }
