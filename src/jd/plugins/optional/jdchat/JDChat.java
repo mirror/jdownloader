@@ -1314,7 +1314,7 @@ public class JDChat extends PluginOptional implements ControlListener {
                     return;
                 }
                 String t;
-                t = JDL.translate(tofrom[0], tofrom[1], Utils.prepareMsg(rest.substring(end).trim()));
+                t = JDL.translate(tofrom[0], tofrom[1], Utils.prepareMsg(rest.substring(end).trim())).getTranslated();
                 lastCommand = "/translate " + rest.substring(0, end).trim() + " ";
                 textField.setText(t);
             } else if (Regex.matches(cmd, CMD_TOPIC)) {
