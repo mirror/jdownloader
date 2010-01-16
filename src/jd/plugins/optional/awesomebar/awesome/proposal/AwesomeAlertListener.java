@@ -13,7 +13,7 @@ import jd.plugins.optional.awesomebar.awesome.AwesomeProposalRequestListener;
 
 public class AwesomeAlertListener implements AwesomeProposalRequestListener {
 
-	@Override
+	
 	public void performAction(AwesomeAction action) {
 		try {
 			Thread.sleep(2000);
@@ -24,7 +24,7 @@ public class AwesomeAlertListener implements AwesomeProposalRequestListener {
 		System.out.println( ((action.getProposal().getRequest().getCommand().startsWith("a")) ? "Alert" : "Print") +": " + action.getProposal().getRequest().getParams());
 	}
 
-	@Override
+
 	public void requestProposal(AwesomeProposalRequest request) {
 		
 		try {
@@ -47,12 +47,12 @@ public class AwesomeAlertListener implements AwesomeProposalRequestListener {
 
 	}
 
-	@Override
+
 	public List<String> getKeywords() {
 		return Arrays.asList("alert", "print","noimage");
 	}
 
-	@Override
+
 	public float getRankingMultiplier() {
 		return 0.95f;
 	}

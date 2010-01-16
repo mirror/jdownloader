@@ -39,7 +39,7 @@ public class AwesomeProposalListModel extends AbstractListModel implements Obser
 		}
 	}
 
-	@Override
+	
 	public Component getElementAt(int index) {
 		try {
 			this.awesome.returnedProposalsLock.readLock().lock();
@@ -49,7 +49,7 @@ public class AwesomeProposalListModel extends AbstractListModel implements Obser
 		}
 	}
 
-	@Override
+
 	public int getSize() {
 		try {
 			countLock.readLock().lock();
@@ -59,7 +59,7 @@ public class AwesomeProposalListModel extends AbstractListModel implements Obser
 		}
 	}
 
-	@Override
+	
 	public void update(Observable arg0, Object e) {
 		Awesome.EVENTTYPE event = (Awesome.EVENTTYPE) e;
 

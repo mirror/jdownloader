@@ -44,7 +44,7 @@ public class AwesomeProposal implements Comparable<AwesomeProposal> {
 		return source;
 	}
 
-	@Override
+
 	public int compareTo(AwesomeProposal o) {
 		int ratingThis = 0;
 		int ratingCompare = 0;

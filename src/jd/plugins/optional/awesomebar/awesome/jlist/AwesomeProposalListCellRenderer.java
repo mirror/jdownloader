@@ -16,7 +16,7 @@ public class AwesomeProposalListCellRenderer extends JPanel implements ListCellR
 	 */
 	private static final long serialVersionUID = -5846868530031974952L;
 
-	@Override
+	
 	public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
 		this.removeAll();
 		this.add((Component) value);

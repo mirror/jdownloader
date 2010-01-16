@@ -35,6 +35,7 @@ import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
+import jd.plugins.optional.awesomebar.CustomToolbarAction;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
@@ -134,7 +135,13 @@ public class ToolBar extends JToolBar {
                 action.init();
 
                 ab = null;
+
+                if (action instanceof CustomToolbarAction) {
+                    ((CustomToolbarAction)action).addTo(this);
+                    continue;
+                }
                 switch (action.getType()) {
+
                 case NORMAL:
                     ab = add(action);
                     lastseperator = false;

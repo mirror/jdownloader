@@ -64,7 +64,13 @@ public class ActionController {
             TOOLBAR_ACTION_LIST.add(action);
         }
     }
-
+    public static void unRegister(ToolBarAction action) {
+        synchronized (TOOLBAR_ACTION_LIST) {
+            if (!TOOLBAR_ACTION_LIST.contains(action)) return;
+        
+            TOOLBAR_ACTION_LIST.remove(action);
+        }
+    }
     /**
      * Defines all possible actions
      */

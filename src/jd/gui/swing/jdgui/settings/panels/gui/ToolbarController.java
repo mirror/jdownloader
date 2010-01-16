@@ -38,6 +38,7 @@ import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.gui.swing.jdgui.components.toolbar.MainToolBar;
 import jd.gui.swing.jdgui.components.toolbar.ToolBar;
 import jd.gui.swing.jdgui.settings.ConfigPanel;
+import jd.plugins.optional.awesomebar.CustomToolbarAction;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
@@ -65,6 +66,9 @@ public class ToolbarController extends ConfigPanel {
         WHITELIST.add("toolbar.quickconfig.clipboardoberserver");
         WHITELIST.add("toolbar.quickconfig.reconnecttoggle");
         WHITELIST.add("toolbar.control.stopmark");
+
+        // addons
+        WHITELIST.add("addons.awsomebar");
 
         WHITELIST.add("separator");
         WHITELIST.add("scheduler");
@@ -151,13 +155,16 @@ public class ToolbarController extends ConfigPanel {
         }
 
         public Object getValueAt(final int rowIndex, final int columnIndex) {
-            if (columnIndex == 0) return list.contains(actions.get(rowIndex).getID());
+            if (columnIndex == 0) {
+                if (actions.get(rowIndex).force()) return true;
+                return list.contains(actions.get(rowIndex).getID());
+            }
             return actions.get(rowIndex);
         }
 
         @Override
         public boolean isCellEditable(int rowIndex, int columnIndex) {
-            return columnIndex == 0;
+            return columnIndex == 0 && !actions.get(rowIndex).force();
         }
 
         @Override
@@ -217,7 +224,17 @@ public class ToolbarController extends ConfigPanel {
     @Override
     public void onShow() {
         super.onShow();
-        setActions(ActionController.getActions());
+        setActions(actions = ActionController.getActions());
+
+        new GuiRunnable<Object>() {
+
+            @Override
+            public Object runSave() {
+                tableModel.fireTableDataChanged();
+                return null;
+            }
+
+        }.start();
     }
 
     /**
@@ -225,7 +242,7 @@ public class ToolbarController extends ConfigPanel {
      * 
      * @param actions2
      */
-    private void setActions(ArrayList<ToolBarAction> actions2) {
+    public static ArrayList<String> setActions(ArrayList<ToolBarAction> actions2) {
 
         Collections.sort(actions2, new Comparator<ToolBarAction>() {
             public int compare(ToolBarAction o1, ToolBarAction o2) {
@@ -234,11 +251,12 @@ public class ToolbarController extends ConfigPanel {
                 return ia < ib ? -1 : 1;
             }
         });
-
-        this.list = new ArrayList<String>();
+        ArrayList<String> list = new ArrayList<String>();
         list.addAll(GUIUtils.getConfig().getGenericProperty("TOOLBAR", ToolBar.DEFAULT_LIST));
+        boolean resortRequired = false;
         for (Iterator<ToolBarAction> it = actions2.iterator(); it.hasNext();) {
             ToolBarAction a = it.next();
+            if (a instanceof CustomToolbarAction) continue;
             if (a.getValue(ToolBarAction.IMAGE_KEY) == null) {
                 it.remove();
                 list.remove(a.getID());
@@ -249,18 +267,40 @@ public class ToolbarController extends ConfigPanel {
                 list.remove(a.getID());
                 continue;
             }
-
-        }
-        this.actions = actions2;
-        new GuiRunnable<Object>() {
-
-            @Override
-            public Object runSave() {
-                tableModel.fireTableDataChanged();
-                return null;
+            if (a.force() && !list.contains(a.getID())) {
+                list.add(a.getID());
+                resortRequired = true;
             }
 
-        }.start();
+        }
+        if (resortRequired) {
+            Collections.sort(list, new Comparator<String>() {
+                public int compare(String o1, String o2) {
+                    int ia = WHITELIST.indexOf(o1);
+                    int ib = WHITELIST.indexOf(o2);
+                    return ia < ib ? -1 : 1;
+                }
+            });
+            while (list.remove("toolbar.separator")) {
+            }
+            // adds separatores based on WHITELIST order
+            for (int i = 1; i < list.size(); i++) {
+                int b = WHITELIST.indexOf(list.get(i));
+                int a = WHITELIST.indexOf(list.get(i - 1));
+                if (a > 0 && b > 0) {
+                    for (int ii = a; ii < b; ii++) {
+                        if (WHITELIST.get(ii).equals("separator")) {
+                            list.add(i, "toolbar.separator");
+                            i++;
+                            break;
+                        }
+                    }
+                }
+            }
+
+        }
+        MainToolBar.getInstance().setList(list.toArray(new String[] {}));
+        return list;
     }
 
     @Override

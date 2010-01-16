@@ -25,22 +25,22 @@ public class AwesomeProposalDetailPanel extends JPanel implements ListSelectionL
 		this.proposalList.getModel().addListDataListener(this);
 	}
 
-	@Override
+
 	public void valueChanged(ListSelectionEvent e) {
 		updateDetailPanel();
 	}
 	
-	@Override
+
 	public void contentsChanged(ListDataEvent arg0) {
 		updateDetailPanel();
 	}
 
-	@Override
+	
 	public void intervalAdded(ListDataEvent arg0) {
 		updateDetailPanel();
 	}
 
-	@Override
+
 	public void intervalRemoved(ListDataEvent arg0) {
 		updateDetailPanel();
 	}

@@ -159,4 +159,12 @@ public abstract class ToolBarAction extends JDAction {
         return type;
     }
 
+    /** if this method returns true, the action cannot be disabled
+     * @return
+     */
+    public boolean force() {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
 }

@@ -14,12 +14,12 @@ import jd.plugins.optional.awesomebar.awesome.AwesomeProposalRequestListener;
 public class AwesomeShoutListener implements AwesomeProposalRequestListener
 {
 
-	@Override
+	
 	public void performAction(AwesomeAction action) {
 		System.out.println("SHOUT: " + action.getProposal().getRequest().getParams().toUpperCase());
 	}
 	
-	@Override public void requestProposal(AwesomeProposalRequest request)
+	public void requestProposal(AwesomeProposalRequest request)
 	{
 		if(request.getParams().equals("")){
 			new AwesomeProposal(this,request, new JLabel(
@@ -32,12 +32,12 @@ public class AwesomeShoutListener implements AwesomeProposalRequestListener
 		System.out.println("Shout-Proposal submitted.");
 	}
 
-	@Override
+
 	public List<String> getKeywords() {
 		return Arrays.asList( "alerter", "shout" );
 	}
 
-	@Override
+	
 	public float getRankingMultiplier() {
 		return 0.95f;
 	}
