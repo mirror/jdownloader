@@ -77,7 +77,35 @@ public class SuperFastFileCom extends PluginForHost {
             int waittime = ((3600 * hours) + (60 * minutes) + seconds + 1) * 1000;
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
         }
-        if (br.containsHTML("You have reached the download-limit")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
+        if (br.containsHTML("You have reached the download-limit")) {
+            String tmphrs = br.getRegex("\\s+(\\d+)\\s+hours?").getMatch(0);
+            String tmpmin = br.getRegex("\\s+(\\d+)\\s+minutes?").getMatch(0);
+            String tmpsec = br.getRegex("\\s+(\\d+)\\s+seconds?").getMatch(0);
+            String tmpdays = br.getRegex("\\s+(\\d+)\\s+days?").getMatch(0);
+            if (tmphrs == null && tmpmin == null && tmpsec == null && tmpdays == null) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 60 * 60 * 1000l);
+            } else {
+                int minutes = 0, seconds = 0, hours = 0, days = 0;
+                if (tmphrs != null) hours = Integer.parseInt(tmphrs);
+                if (tmpmin != null) minutes = Integer.parseInt(tmpmin);
+                if (tmpsec != null) seconds = Integer.parseInt(tmpsec);
+                if (tmpdays != null) days = Integer.parseInt(tmpdays);
+                int waittime = ((days * 24 * 3600) + (3600 * hours) + (60 * minutes) + seconds + 1) * 1000;
+                logger.info("Detected waittime #2, waiting " + waittime + "milliseconds");
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
+            }
+        }
+        if (br.containsHTML("(You can download files up to.*?only|Upgrade your account to download bigger files|This file reached max downloads)")) {
+            String filesizelimit = br.getRegex("You can download files up to(.*?)only").getMatch(0);
+            if (filesizelimit != null) {
+                filesizelimit = filesizelimit.trim();
+                logger.warning("As free user you can download files up to " + filesizelimit + " only");
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Free users can only download files up to " + filesizelimit);
+            } else {
+                logger.warning("Only downloadable via premium");
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium");
+            }
+        }
         // Form um auf "Datei herunterladen" zu klicken
         Form DLForm = br.getFormbyProperty("name", "F1");
         if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

@@ -34,7 +34,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "Only4Devs2Test.com" }, urls = { "http://[\\w\\.]*?Only4Devs2Test\\.com/\\?d=[A-Z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "Only4Devs2Test.com" }, urls = { "http://[\\w\\.]*?Only4Devs2Test\\.com/(\\?d|download\\.php\\?id)=[A-Z0-9]+" }, flags = { 0 })
 public class MhfScriptBasic extends PluginForHost {
 
     public MhfScriptBasic(PluginWrapper wrapper) {
@@ -42,20 +42,24 @@ public class MhfScriptBasic extends PluginForHost {
         // this.enablePremium("http://Only4Devs2Test.com/register.php?g=3");
     }
 
+    // MhfScriptBasic 1.0
     // This plugin is for developers to easily implement hosters using the MHF
     // script, it's still just a beta but i will improve it till it works for
     // nearly all of those hosters!
     @Override
     public String getAGBLink() {
-        return "http://Only4Devs2Test.com/rules.php";
+        return COOKIE_HOST + "/rules.php";
     }
+
+    public String finalLink = null;
+    private static final String COOKIE_HOST = "http://Only4Devs2Test.com";
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
-        // br.setCustomCharset("UTF-8");
         br.setFollowRedirects(true);
-        br.setCookie("http://Only4Devs2Test.com", "mfh_mylang", "en");
+        br.setCookie(COOKIE_HOST, "mfh_mylang", "en");
+        br.setCookie(COOKIE_HOST, "yab_mylang", "en");
         br.getPage(parameter.getDownloadURL());
         if (br.containsHTML("Your requested file is not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<b>File name:</b></td>.*?<td align=.*?width=.*?>(.*?)</td>").getMatch(0);
@@ -89,7 +93,7 @@ public class MhfScriptBasic extends PluginForHost {
                     captchaform = br.getFormbyProperty("name", "valideform");
                 }
             }
-            String captchaurl = "http://Only4Devs2Test.com/captcha.php";
+            String captchaurl = COOKIE_HOST + "/captcha.php";
             if (captchaform == null || !br.containsHTML("captcha.php")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             if (br.containsHTML("downloadpw")) {
                 if (link.getStringProperty("pass", null) == null) {
@@ -130,18 +134,9 @@ public class MhfScriptBasic extends PluginForHost {
             link.setProperty("pass", passCode);
         }
         if (br.containsHTML("You have got max allowed bandwidth size per hour")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
-        String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
-        String dllink = null;
-        if (sitelinks == null || sitelinks.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        for (String alink : sitelinks) {
-            alink = Encoding.htmlDecode(alink);
-            if (alink.contains("access_key=") || alink.contains("getfile.php?")) {
-                dllink = alink;
-                break;
-            }
-        }
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
+        findLink(link);
+        if (finalLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, finalLink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -149,10 +144,23 @@ public class MhfScriptBasic extends PluginForHost {
         dl.startDownload();
     }
 
+    public void findLink(DownloadLink link) throws Exception {
+        String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
+        if (sitelinks == null || sitelinks.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        for (String alink : sitelinks) {
+            alink = Encoding.htmlDecode(alink);
+            if (alink.contains("access_key=") || alink.contains("getfile.php?")) {
+                finalLink = alink;
+                break;
+            }
+        }
+    }
+
     public void login(Account account) throws Exception {
         setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.setCookie("http://filecruz.com", "mfh_mylang", "en");
+        br.setCookie(COOKIE_HOST, "mfh_mylang", "en");
+        br.setCookie(COOKIE_HOST, "yab_mylang", "en");
         br.getPage("http://filecruz.com/login.php");
         Form form = br.getFormbyProperty("name", "lOGIN");
         if (form == null) form = br.getForm(0);
