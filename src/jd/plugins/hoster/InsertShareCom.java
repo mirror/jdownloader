@@ -45,6 +45,7 @@ public class InsertShareCom extends PluginForHost {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("Invalid download link")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("Currently a lot of free users are downloading files")) return AvailableStatus.UNCHECKABLE;
         String filename = br.getRegex("<h3>Downloading(.*?)\\|.*?</h3>").getMatch(0);
         String filesize = br.getRegex("<h3>Downloading.*?\\|(.*?)</h3>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -56,6 +57,7 @@ public class InsertShareCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        if (br.containsHTML("Currently a lot of free users are downloading files")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No free slots available", 60 * 1000l);
         Form dlform = br.getForm(0);
         if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String waittime = br.getRegex("window\\.onload  = display_c\\((\\d+)\\);").getMatch(0);
