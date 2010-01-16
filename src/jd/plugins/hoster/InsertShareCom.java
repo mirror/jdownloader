@@ -62,7 +62,7 @@ public class InsertShareCom extends PluginForHost {
         if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String waittime = br.getRegex("display_c\\((\\d+)\\)").getMatch(0);
         int sleep = 60;
-        if (waittime != null) Integer.parseInt(waittime);
+        if (waittime != null)sleep= Integer.parseInt(waittime);
         if (sleep < 180) {
             sleep(sleep * 1001, downloadLink);
         } else {
