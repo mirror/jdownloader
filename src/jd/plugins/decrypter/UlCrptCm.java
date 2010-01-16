@@ -34,6 +34,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "urlcrypt.com" }, urls = { "http://[\\w\\.]*?urlcrypt\\.com/open-.*?\\.htm" }, flags = { 0 })
 public class UlCrptCm extends PluginForDecrypt {
@@ -55,7 +56,7 @@ public class UlCrptCm extends PluginForDecrypt {
             br.getPage(parameter);
         }
         /* Error handling */
-        if (br.containsHTML("Ordner nicht gefunden")) return decryptedLinks;
+        if (br.containsHTML("Ordner nicht gefunden")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
 
         if (br.containsHTML("geben Sie bitte jetzt das Passwort ein") || br.containsHTML("Sicherheitsabfrage")) {
             Form captchaForm = br.getForm(0);
