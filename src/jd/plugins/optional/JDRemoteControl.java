@@ -80,10 +80,13 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
     private final SubConfiguration subConfig;
 
     private static final String LINK_TYPE_OFFLINE = "offline"; // offline links
-    private static final String LINK_TYPE_AVAIL = "available"; // on download
+    private static final String LINK_TYPE_AVAIL = "available"; // links present
+                                                               // on download
+                                                               // list and
+                                                               // grabber
 
-    // list and
-    // grabber
+    private static final String ERROR_LINK_GRABBER_RUNNING = "ERROR: Link grabber is currently running. Please try again in a few seconds.";
+    private static final String ERROR_TOO_FEW_PARAMETERS = "ERROR: Too few request parametes: check /help for instructions";
 
     public JDRemoteControl(PluginWrapper wrapper) {
         super(wrapper);
@@ -143,7 +146,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
 
                 commandvec.add("/get/downloadstatus");
                 infovector.add("Get Downloadstatus<br/>Values: RUNNING, NOT_RUNNING, STOPPING");
-                
+
                 commandvec.add("/get/grabber");
                 infovector.add("Get all links as XML that are currently held by the link grabber.");
 
@@ -209,22 +212,22 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
 
                 commandvec.add("/action/set/premiumenabled/(true|false)");
                 infovector.add("Set Use Premium enabled or not");
-                
+
                 commandvec.add("/action/grabber/join/(destination-package-name)/(package-name-to-join)/(another-package-name)/(and so on..)");
                 infovector.add("Join all given link grabber packages after the first into the first one.");
 
                 commandvec.add("/action/grabber/rename/(from-name)/(to-name)");
                 infovector.add("Rename link grabber package");
-                
+
                 commandvec.add("/action/grabber/addall");
                 infovector.add("Schedule all packages as download that are located in the link grabber.");
-                
+
                 commandvec.add("/action/grabber/add/(package-name-1)/(package-name-2)/(another-package-name)/(and so on..)");
                 infovector.add("Schedule all given grabber packages as download.");
-                
+
                 commandvec.add("/action/grabber/remove/(type)/(type2)/(..)");
                 infovector.add("Remove specified links from grabber. Possible values: 'offline' for offline links and 'available' for links that are already scheduled as download.");
-                
+
                 response.addContent("<?xml version=\"1.0\" encoding=\"UTF-8\"?><!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" lang=\"en\"><head><title>JDRemoteControl Help</title><style type=\"text/css\">a {    font-size: 14px;    text-decoration: none;    background: none;    color: #599ad6;}a:hover {    text-decoration: underline;    color:#333333;}body {    color: #333333;    background:#f0f0f0;    font-family: Verdana, Arial, Helvetica, sans-serif;    font-size: 14px;    vertical-align: top;  }.underline{    text-decoration:underline;  }</style></head><body><br /><b>JDRemoteControl " + getVersion()
                         + "<br /><br />Usage:</b><br />&nbsp;<br />1)Replace %X% with your value<br />Sample: /action/save/container/C:\\backup.dlc <br />2)Replace (true|false) with true or false<br /><table border=\"0\" cellspacing=\"5\">");
                 for (int commandcount = 0; commandcount < commandvec.size(); commandcount++) {
@@ -555,15 +558,16 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                     response.addContent("newprem=" + newuseprem + " (CHANGED=false)");
                 }
             } else if (request.getRequestUrl().matches("(?is).*/action/grabber/join/.*")) {
-                // join link grabber packages: usage .../join/<destpackage>/<package1>/<package2>/(...)
+                // join link grabber packages: usage
+                // .../join/<destpackage>/<package1>/<package2>/(...)
 
                 String[] data = new Regex(request.getRequestUrl(), "(?is).*/action/grabber/join/(.*)").getMatch(0).split("/");
                 // BAD style accessing any upper layer
                 if (LinkGrabberPanel.getLinkGrabber().isRunning()) {
-                    response.addContent("ERROR: Link grabber is currently running. Please try again in a few seconds.");
-                } else if (data.length < 3) {
+                    response.addContent(ERROR_LINK_GRABBER_RUNNING);
+                } else if (data.length < 2) {
 
-                    response.addContent("Too few request parametes: check /help for instructions");
+                    response.addContent(ERROR_TOO_FEW_PARAMETERS);
                 } else {
 
                     LinkGrabberFilePackage destPackage = null;
@@ -629,7 +633,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
             } else if (request.getRequestUrl().matches("(?is).*/action/grabber/rename/.*")) {
                 // rename link grabber package: usage .../rename/from/to
                 if (LinkGrabberPanel.getLinkGrabber().isRunning()) {
-                    response.addContent("ERROR: Link grabber is currently running. Please try again in a few seconds.");
+                    response.addContent(ERROR_LINK_GRABBER_RUNNING);
                 } else {
                     String[] data = new Regex(request.getRequestUrl(), "(?is).*/action/grabber/rename/(.*)").getMatch(0).split("/");
 
@@ -659,7 +663,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                 // add single packages separated by slashes:
                 // add/pack1/pack2/pack3/...
                 if (LinkGrabberPanel.getLinkGrabber().isRunning()) {
-                    response.addContent("ERROR: Link grabber is currently running. Please try again in a few seconds.");
+                    response.addContent(ERROR_LINK_GRABBER_RUNNING);
                 } else {
                     response.addContent("The following packages are now scheduled for download: ");
 
@@ -740,12 +744,12 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                 // remove specified links from grabber:
                 // offline, available (in grabber and download list)
                 if (LinkGrabberPanel.getLinkGrabber().isRunning()) {
-                    response.addContent("ERROR: Link grabber is currently running. Please try again in a few seconds.");
+                    response.addContent(ERROR_LINK_GRABBER_RUNNING);
                 } else {
                     String[] data = new Regex(request.getRequestUrl(), "(?is).*/action/grabber/remove/(.*)").getMatch(0).split("/");
 
                     if (data.length == 0) {
-                        response.addContent("Too few request parametes: check /help for instructions");
+                        response.addContent(ERROR_TOO_FEW_PARAMETERS);
                     } else {
                         synchronized (LinkGrabberController.ControllerLock) {
                             response.addContent("Removing links from grabber of type: ");
