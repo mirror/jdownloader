@@ -56,7 +56,7 @@ Var ADMINATINSTALL
 !insertmacro MUI_LANGUAGE German
 
 # Installer attributes
-OutFile JDownloaderSetup.exe
+OutFile .\dist\JDownloaderSetup.exe
 #TODO: Switch to current User dir if no admin rights granted.
 InstallDir ${INSTDIR_USER}
 CRCCheck on
@@ -83,7 +83,7 @@ Section $(SecJDMain_TITLE) SecJDMain
     
     SetOutPath $INSTDIR    
     SetOverwrite on
-    File /r C:\JD-Install\files\*    
+    File /r .\files\*    
     SetOutPath $SMPROGRAMS\$StartMenuGroup
     CreateShortcut $SMPROGRAMS\$StartMenuGroup\JDownloader.lnk $INSTDIR\JDownloader.exe
     CreateShortcut "$SMPROGRAMS\$StartMenuGroup\JDownloader Support.lnk" http://jdownloader.org/knowledge/index
