@@ -48,8 +48,9 @@ public class FilesMailRu extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        downloadLink.setUrlDownload("http://content3.files.mail.ru/HVSC9K/452704fafc872e12417aa53c29123a30");
         if (downloadLink.getFinalFileName() == null && this.getPluginConfig().getStringProperty("folderID", null) == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        this.getPluginConfig().setProperty("finalName", downloadLink.getFinalFileName());
+        if (downloadLink.getFinalFileName() != null) this.getPluginConfig().setProperty("finalName", downloadLink.getFinalFileName());
         this.getPluginConfig().save();
         String folderIDregexed = new Regex(downloadLink.getDownloadURL(), "mail\\.ru/([A-Z0-9]+)").getMatch(0);
         this.getPluginConfig().setProperty("folderID", "http://files.mail.ru/" + folderIDregexed);
@@ -122,8 +123,8 @@ public class FilesMailRu extends PluginForHost {
                     // seconds else the server doesn't allow starting the
                     // download
                     String ttt = br.getRegex("файлы через.*?(\\d+).*?сек").getMatch(0);
-                    int tt = 10;
                     if (ttt == null) ttt = br.getRegex("download files in.*?(\\d+).*?sec").getMatch(0);
+                    int tt = 10;
                     if (ttt != null) tt = Integer.parseInt(ttt);
                     sleep(tt * 1001, downloadLink);
                 }

@@ -28,7 +28,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "insertshare.com" }, urls = { "http://[\\w\\.]*?insertshare\\.com/download/[0-9A-Z]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "insertshare.com" }, urls = { "http://[\\w\\.]*?insertshare\\.com/download/[0-9A-Z-]+" }, flags = { 0 })
 public class InsertShareCom extends PluginForHost {
 
     public InsertShareCom(PluginWrapper wrapper) {
@@ -60,13 +60,13 @@ public class InsertShareCom extends PluginForHost {
         if (br.containsHTML("Currently a lot of free users are downloading files")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No free slots available", 60 * 1000l);
         Form dlform = br.getForm(0);
         if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String waittime = br.getRegex("window\\.onload  = display_c\\((\\d+)\\);").getMatch(0);
+        String waittime = br.getRegex("display_c\\((\\d+)\\)").getMatch(0);
         int sleep = 60;
         if (waittime != null) Integer.parseInt(waittime);
-        if (sleep < 100) {
+        if (sleep < 180) {
             sleep(sleep * 1001, downloadLink);
         } else {
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, sleep * 1001);
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, sleep * 1001l);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlform, false, 1);
         if (dl.getConnection().getContentType().contains("html")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
