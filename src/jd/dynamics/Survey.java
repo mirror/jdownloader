@@ -37,6 +37,7 @@ public class Survey extends DynamicPluginInterface {
                         // TODO Auto-generated catch block
                         e.printStackTrace();
                     }
+                    SubConfiguration.getConfig("survey").save();
 
 //                }
 //            }
