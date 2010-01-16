@@ -34,8 +34,8 @@ import jd.controlling.JDLogger;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.actions.ActionController;
+import jd.gui.swing.jdgui.actions.CustomToolbarAction;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
-import jd.plugins.optional.awesomebar.CustomToolbarAction;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 

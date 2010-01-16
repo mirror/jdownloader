@@ -74,7 +74,6 @@ import jd.nutils.io.JDIO;
 import jd.parser.Regex;
 import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
-import jd.plugins.optional.awesomebar.CustomToolbarAction;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import jd.utils.locale.JDLocale;
@@ -152,7 +151,7 @@ public class JDChat extends PluginOptional implements ControlListener {
     private MenuAction activateAction;
     private JTabbedPane tabbedPane;
     private JButton closeTab;
-    private CustomToolbarAction toolbarAction;
+
 
     public JDChat(PluginWrapper wrapper) {
         super(wrapper);
@@ -631,54 +630,7 @@ public class JDChat extends PluginOptional implements ControlListener {
         COMMANDS.add("/translate entosv ");
         COMMANDS.add("/translate entoes ");
         COMMANDS.add("/translate entocs ");
-        this.toolbarAction = new CustomToolbarAction("addons.awsomebar") {
-            private JPanel cp;
-
-            /**
-             * is called before every toolbar rebuild
-             */
-            @Override
-            public void init() {
-                // TODO Auto-generated method stub
-
-            }
-
-            // cannot be disabled
-
-            public boolean force() {
-                // TODO Auto-generated method stub
-                return true;
-            }
-
-            /**
-             * Gets called when initializing the instance
-             */
-            @Override
-            public void initDefaults() {
-                cp = new JPanel(new MigLayout("ins 5"));
-                cp.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, cp.getBackground().darker().darker()));
-                cp.setBackground(Color.RED);
-                // textfield
-                JTextField tf = new JTextField();
-                cp.add(tf, "width 100!");
-
-            }
-
-            /**
-             * has to add something to the toolbar
-             */
-            @Override
-            public void addTo(Object toolBar) {
-                // Toolbara ctions might be used by other components, too
-                // iot's up to the custom action to implement them
-                if (toolBar instanceof ToolBar) {
-                    ToolBar tb = (ToolBar) toolBar;
-                    tb.add(cp, "");
-                }
-
-            }
-
-        };
+       
     }
 
     @Override
@@ -1416,8 +1368,7 @@ public class JDChat extends PluginOptional implements ControlListener {
     @Override
     public void setGuiEnable(boolean b) {
         if (b) {
-            ActionController.register(toolbarAction);
-            ToolbarController.setActions(ActionController.getActions());
+            
 
             if (view == null) {
                 initGUI();
@@ -1455,8 +1406,7 @@ public class JDChat extends PluginOptional implements ControlListener {
                 }
             }.start();
         } else {
-            ActionController.unRegister(toolbarAction);
-            ToolbarController.setActions(ActionController.getActions());
+            
             if (frame != null) {
                 SwingGui.getInstance().disposeView(view);
                 this.stopAddon();

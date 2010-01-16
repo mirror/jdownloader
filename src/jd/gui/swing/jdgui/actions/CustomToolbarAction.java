@@ -1,10 +1,8 @@
 /**
  * 
  */
-package jd.plugins.optional.awesomebar;
+package jd.gui.swing.jdgui.actions;
 
-import jd.gui.swing.jdgui.actions.ActionController;
-import jd.gui.swing.jdgui.actions.ToolBarAction;
 
 /**
  * @author unkown

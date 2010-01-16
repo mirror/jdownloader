@@ -34,11 +34,11 @@ import jd.config.Configuration;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.jdgui.actions.ActionController;
+import jd.gui.swing.jdgui.actions.CustomToolbarAction;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.gui.swing.jdgui.components.toolbar.MainToolBar;
 import jd.gui.swing.jdgui.components.toolbar.ToolBar;
 import jd.gui.swing.jdgui.settings.ConfigPanel;
-import jd.plugins.optional.awesomebar.CustomToolbarAction;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
