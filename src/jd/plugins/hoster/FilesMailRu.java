@@ -48,7 +48,6 @@ public class FilesMailRu extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        downloadLink.setUrlDownload("http://content3.files.mail.ru/HVSC9K/452704fafc872e12417aa53c29123a30");
         if (downloadLink.getFinalFileName() == null && this.getPluginConfig().getStringProperty("folderID", null) == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (downloadLink.getFinalFileName() != null) this.getPluginConfig().setProperty("finalName", downloadLink.getFinalFileName());
         this.getPluginConfig().save();
