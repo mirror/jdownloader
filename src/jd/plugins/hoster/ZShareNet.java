@@ -145,9 +145,9 @@ public class ZShareNet extends PluginForHost {
         if (downloadLink.getDownloadURL().contains(".html")) {
             br.setFollowRedirects(false);
             br.getPage(downloadLink.getDownloadURL());
-            br.getPage(br.getRedirectLocation().replaceFirst("zshare.net/(download|video|audio|flash)", "zshare.net/download"));
+            br.getPage(br.getRedirectLocation().replaceFirst("zshare.net/(download|video|audio|flash|image)", "zshare.net/download"));
         } else {
-            br.getPage(downloadLink.getDownloadURL().replaceFirst("zshare.net/(download|video|audio|flash)", "zshare.net/download"));
+            br.getPage(downloadLink.getDownloadURL().replaceFirst("zshare.net/(download|video|audio|flash|image)", "zshare.net/download"));
         }
         if (br.containsHTML("File Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("File Name:.*?<font color=\"#666666\".*?>(.*?)</font>").getMatch(0);
