@@ -998,7 +998,6 @@ jd.main.removerestart.cancel = Continuar
 jd.main.removerestart.message = No pudieron removerse algunas librerías antiguas. (se recomienda reiniciar)
 jd.main.removerestart.ok = Reiniciar ahora!
 jd.main.removerestart.title = Actualizador
-jd.plugins.decrypt.bstmvs.captchainputwrong = Formato incorrecto, ingrese la hora de las siguiente manera: 4:30
 jd.plugins.decrypter.frshrdfldr.dir.cancel = Archivo
 jd.plugins.decrypter.frshrdfldr.dir.message = Desea escanear todas las subcarpetas o solo los archivos en esta carpeta?
 jd.plugins.decrypter.frshrdfldr.dir.ok = Subcarpeta
