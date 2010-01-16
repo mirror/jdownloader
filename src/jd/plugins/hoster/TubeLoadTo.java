@@ -59,7 +59,7 @@ public class TubeLoadTo extends PluginForHost {
                 dllink = br.getRegex("\"(http://tl[0-9]+\\.tubeload\\.to/file-[0-9]+/.*?/.*?)\"").getMatch(0);
             }
         }
-        if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         dl.startDownload();
     }

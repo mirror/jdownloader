@@ -53,6 +53,8 @@ public class DataLoadingCom extends PluginForHost {
         return "http://www.data-loading.com/en/rules.html";
     }
 
+    public String freeOrPremium = null;
+
     public void login(Account account) throws Exception {
         setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -65,8 +67,8 @@ public class DataLoadingCom extends PluginForHost {
         form.put("pass", Encoding.urlEncode(account.getPass()));
         form.put("autologin", "0");
         br.submitForm(form);
-        String premium = br.getRegex("<b>Your Package</b></td>.*?<b>(.*?)</b></A>").getMatch(0);
-        if (br.getCookie("data-loading.com", "yab_passhash") == null || br.getCookie("data-loading.com", "yab_uid").equals("0") || !premium.equals("Premium")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        freeOrPremium = br.getRegex("<b>Your Package</b></td>.*?<b>(.*?)</b></A>").getMatch(0);
+        if (br.getCookie("data-loading.com", "yab_passhash") == null || br.getCookie("data-loading.com", "yab_uid").equals("0") || freeOrPremium == null || (!freeOrPremium.equals("Premium") && !freeOrPremium.equals("Registriert"))) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
     @Override
@@ -78,12 +80,6 @@ public class DataLoadingCom extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-
-        String premium = br.getRegex("<b>Your Package</b></td>.*?<b>(.*?)</b></A>").getMatch(0);
-        if (!premium.equals("Premium")) {
-            account.setValid(true);
-            return ai;
-        }
         String expired = br.getRegex("Expired\\?</b></td>.*?<td align=.*?>(.*?)<").getMatch(0);
         if (expired != null) {
             if (expired.trim().equalsIgnoreCase("No"))
@@ -91,8 +87,9 @@ public class DataLoadingCom extends PluginForHost {
             else if (expired.equalsIgnoreCase("Yes")) ai.setExpired(true);
         }
 
-        String expires = br.getRegex("Package Expire Date</b></td>.*?<td align=.*?>(.*?)</td>").getMatch(0).trim();
-        if (expires != null) {
+        String expires = br.getRegex("Package Expire Date</b></td>.*?<td align=.*?>(.*?)</td>").getMatch(0);
+        if (expires != null && !expires.equals("Never")) {
+            expires = expires.trim();
             String[] e = expires.split("/");
             Calendar cal = new GregorianCalendar(Integer.parseInt("20" + e[2]), Integer.parseInt(e[0]) - 1, Integer.parseInt(e[1]));
             ai.setValidUntil(cal.getTimeInMillis());
@@ -116,8 +113,11 @@ public class DataLoadingCom extends PluginForHost {
         if (points != null) {
             ai.setPremiumPoints(Integer.parseInt(points.trim()));
         }
-
-        ai.setStatus("Account OK");
+        if (freeOrPremium.equals("Premium")) {
+            ai.setStatus("Premium User");
+        } else {
+            ai.setStatus("Registered (Free) User");
+        }
         account.setValid(true);
 
         return ai;
@@ -128,38 +128,42 @@ public class DataLoadingCom extends PluginForHost {
         login(account);
         br.setCookie("http://data-loading.com", "yab_mylang", "en");
         br.getPage(parameter.getDownloadURL());
-        if (br.containsHTML("You have got max allowed download sessions from the same IP")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
-        String passCode = null;
-        if (br.containsHTML("downloadpw")) {
-            Form pwform = br.getFormbyProperty("name", "myform");
-            if (pwform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            if (parameter.getStringProperty("pass", null) == null) {
-                passCode = Plugin.getUserInput("Password?", parameter);
-            } else {
-                /* gespeicherten PassCode holen */
-                passCode = parameter.getStringProperty("pass", null);
+        if (freeOrPremium.equals("Premium")) {
+            if (br.containsHTML("You have got max allowed download sessions from the same IP")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
+            String passCode = null;
+            if (br.containsHTML("downloadpw")) {
+                Form pwform = br.getFormbyProperty("name", "myform");
+                if (pwform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (parameter.getStringProperty("pass", null) == null) {
+                    passCode = Plugin.getUserInput("Password?", parameter);
+                } else {
+                    /* gespeicherten PassCode holen */
+                    passCode = parameter.getStringProperty("pass", null);
+                }
+                pwform.put("downloadpw", passCode);
+                br.submitForm(pwform);
             }
-            pwform.put("downloadpw", passCode);
-            br.submitForm(pwform);
-        }
-        if (br.containsHTML("You have got max allowed download sessions from the same IP")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
-        if (br.containsHTML("Password Error")) {
-            logger.warning("Wrong password!");
-            parameter.setProperty("pass", null);
-            throw new PluginException(LinkStatus.ERROR_RETRY);
-        }
+            if (br.containsHTML("You have got max allowed download sessions from the same IP")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
+            if (br.containsHTML("Password Error")) {
+                logger.warning("Wrong password!");
+                parameter.setProperty("pass", null);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
 
-        if (passCode != null) {
-            parameter.setProperty("pass", passCode);
+            if (passCode != null) {
+                parameter.setProperty("pass", passCode);
+            }
+            String linkurl = br.getRegex("<input.*document.location=\"(.*?)\";").getMatch(0);
+            if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, linkurl, true, -2);
+            if (!(dl.getConnection().isContentDisposition())) {
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl.startDownload();
+        } else {
+            doFree2(parameter);
         }
-        String linkurl = br.getRegex("<input.*document.location=\"(.*?)\";").getMatch(0);
-        if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, linkurl, true, -2);
-        if (!(dl.getConnection().isContentDisposition())) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
     }
 
     @Override
@@ -185,9 +189,7 @@ public class DataLoadingCom extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
-    @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
+    public void doFree2(DownloadLink downloadLink) throws Exception {
         String passCode = null;
         // Captcha required or not ?
         if (br.containsHTML("captcha.php")) {
@@ -262,6 +264,12 @@ public class DataLoadingCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 1000l);
         }
         dl.startDownload();
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        doFree2(downloadLink);
     }
 
     @Override
