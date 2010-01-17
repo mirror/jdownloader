@@ -157,7 +157,13 @@ public class BadongoCom extends PluginForHost {
             if (br.getRedirectLocation() != null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             handleErrors(br);
             /* Waittime */
-            sleep(45500, downloadLink);
+            String ttt = br.getRegex("var check_n = (\\d+)").getMatch(0);
+            int tt = 60;
+            if (ttt != null) {
+                logger.info("Waittime found by rexes is " + ttt + " seconds.");
+                tt = Integer.parseInt(ttt);
+            }
+            sleep(tt * 1001, downloadLink);
             /* File or Video Link */
             String fileOrVid = "";
             if (realURL.contains("file/"))
