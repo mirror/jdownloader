@@ -7,6 +7,11 @@ public class Translation {
     private String sourceLanguage;
     private String translated;
 
+    public Translation(String msg, String to) {
+        this.original = msg;
+        this.destLanguage = to;
+    }
+
     public String getOriginal() {
         return original;
     }
@@ -39,11 +44,9 @@ public class Translation {
         this.translated = translated;
     }
 
-    public Translation(String msg, String to) {
-        this.original=msg;
-        this.destLanguage=to;
+    @Override
+    public String toString() {
+        return translated;
     }
-
-  
 
 }

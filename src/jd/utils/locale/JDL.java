@@ -364,9 +364,9 @@ public final class JDL {
             Translation trans = new Translation(msg, to);
             final Browser br = new Browser();
             br.getPage("http://www.google.com/uds/Gtranslate?callback=google.language.callbacks.id101&context=22&q=" + Encoding.urlEncode(msg) + "&langpair=|en&key=notsupplied&v=1.0");
-
-            trans.setTranslated(Encoding.UTF8Decode(Encoding.htmlDecode(br.getRegex("\"translatedText\":\"(.*?)\",\"detectedSourceLanguage\":\"(.*?)\"").getMatch(0))));
-            trans.setSourceLanguage(Encoding.UTF8Decode(Encoding.htmlDecode(br.getRegex("\"translatedText\":\"(.*?)\",\"detectedSourceLanguage\":\"(.*?)\"").getMatch(1))));
+            String[] match = br.getRegex("\"translatedText\":\"(.*?)\",\"detectedSourceLanguage\":\"(.*?)\"").getRow(0);
+            trans.setTranslated(Encoding.UTF8Decode(Encoding.htmlDecode(match[0])));
+            trans.setSourceLanguage(Encoding.UTF8Decode(Encoding.htmlDecode(match[1])));
             return trans;
         } catch (Exception e) {
             JDLogger.exception(e);

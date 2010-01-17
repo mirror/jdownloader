@@ -35,12 +35,10 @@ import java.util.Date;
 import java.util.TreeMap;
 import java.util.regex.Pattern;
 
-import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JMenuBar;
-import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
@@ -62,13 +60,10 @@ import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.components.Balloon;
 import jd.gui.swing.components.linkbutton.JLink;
-import jd.gui.swing.jdgui.actions.ActionController;
-import jd.gui.swing.jdgui.components.toolbar.ToolBar;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelListener;
 import jd.gui.swing.jdgui.menu.MenuAction;
-import jd.gui.swing.jdgui.settings.panels.gui.ToolbarController;
 import jd.nutils.OSDetector;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
@@ -151,7 +146,6 @@ public class JDChat extends PluginOptional implements ControlListener {
     private MenuAction activateAction;
     private JTabbedPane tabbedPane;
     private JButton closeTab;
-
 
     public JDChat(PluginWrapper wrapper) {
         super(wrapper);
@@ -630,7 +624,7 @@ public class JDChat extends PluginOptional implements ControlListener {
         COMMANDS.add("/translate entosv ");
         COMMANDS.add("/translate entoes ");
         COMMANDS.add("/translate entocs ");
-       
+
     }
 
     @Override
@@ -1368,7 +1362,6 @@ public class JDChat extends PluginOptional implements ControlListener {
     @Override
     public void setGuiEnable(boolean b) {
         if (b) {
-            
 
             if (view == null) {
                 initGUI();
@@ -1406,7 +1399,7 @@ public class JDChat extends PluginOptional implements ControlListener {
                 }
             }.start();
         } else {
-            
+
             if (frame != null) {
                 SwingGui.getInstance().disposeView(view);
                 this.stopAddon();

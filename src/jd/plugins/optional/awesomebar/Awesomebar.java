@@ -3,13 +3,11 @@ package jd.plugins.optional.awesomebar;
 import java.awt.Dimension;
 import java.awt.event.KeyEvent;
 
-import javax.swing.BorderFactory;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 
-import jd.gui.swing.jdgui.components.toolbar.ToolBar;
 import jd.plugins.optional.awesomebar.awesome.Awesome;
 import jd.plugins.optional.awesomebar.awesome.AwesomeAction;
 import jd.plugins.optional.awesomebar.awesome.AwesomeProposalDetailPanel;
