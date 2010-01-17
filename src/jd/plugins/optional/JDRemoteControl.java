@@ -81,9 +81,9 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
 
     private static final String LINK_TYPE_OFFLINE = "offline"; // offline links
     private static final String LINK_TYPE_AVAIL = "available"; // links present
-                                                               // on download
-                                                               // list and
-                                                               // grabber
+    // on download
+    // list and
+    // grabber
 
     private static final String ERROR_LINK_GRABBER_RUNNING = "ERROR: Link grabber is currently running. Please try again in a few seconds.";
     private static final String ERROR_TOO_FEW_PARAMETERS = "ERROR: Too few request parametes: check /help for instructions";
@@ -343,7 +343,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                     Element fp_xml = addGrabberPackage(xml, fp);
 
                     for (DownloadLink dl : fp.getDownloadLinks()) {
-                        fp_xml.appendChild(addDownloadLink(xml, dl));
+                        fp_xml.appendChild(addGrabberLink(xml, dl));
                     }
                 }
                 response.addContent(JDUtilities.createXmlString(xml));
@@ -561,7 +561,8 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                 // join link grabber packages: usage
                 // .../join/<destpackage>/<package1>/<package2>/(...)
 
-                String[] data = new Regex(request.getRequestUrl(), "(?is).*/action/grabber/join/(.*)").getMatch(0).split("/");
+                String[] data = new Regex(request.getRequestUrl(), "(?is).*/action/grabber/join/(.*)").getMatch(0).replaceAll("//", "/").split("/");
+
                 // BAD style accessing any upper layer
                 if (LinkGrabberPanel.getLinkGrabber().isRunning()) {
                     response.addContent(ERROR_LINK_GRABBER_RUNNING);
@@ -635,7 +636,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                 if (LinkGrabberPanel.getLinkGrabber().isRunning()) {
                     response.addContent(ERROR_LINK_GRABBER_RUNNING);
                 } else {
-                    String[] data = new Regex(request.getRequestUrl(), "(?is).*/action/grabber/rename/(.*)").getMatch(0).split("/");
+                    String[] data = new Regex(request.getRequestUrl(), "(?is).*/action/grabber/rename/(.*)").getMatch(0).replaceAll("//", "/").split("/");
 
                     LinkGrabberFilePackage destPackage = null;
 
@@ -671,7 +672,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                         List<LinkGrabberFilePackage> packages = new ArrayList<LinkGrabberFilePackage>();
                         if (request.getRequestUrl().matches("(?is).*/action/grabber/add/.*")) {
                             // add requested
-                            String[] data = new Regex(request.getRequestUrl(), "(?is).*/action/grabber/add/(.*)").getMatch(0).split("/");
+                            String[] data = new Regex(request.getRequestUrl(), "(?is).*/action/grabber/add/(.*)").getMatch(0).replaceAll("//", "/").split("/");
                             for (LinkGrabberFilePackage pack : LinkGrabberController.getInstance().getPackages()) {
                                 for (String name : data) {
                                     if (name.equalsIgnoreCase(pack.getName())) {
@@ -746,7 +747,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                 if (LinkGrabberPanel.getLinkGrabber().isRunning()) {
                     response.addContent(ERROR_LINK_GRABBER_RUNNING);
                 } else {
-                    String[] data = new Regex(request.getRequestUrl(), "(?is).*/action/grabber/remove/(.*)").getMatch(0).split("/");
+                    String[] data = new Regex(request.getRequestUrl(), "(?is).*/action/grabber/remove/(.*)").getMatch(0).replaceAll("//", "/").split("/");
 
                     if (data.length == 0) {
                         response.addContent(ERROR_TOO_FEW_PARAMETERS);
@@ -820,6 +821,17 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
             element.setAttribute("file_hoster", dl.getHost());
             element.setAttribute("file_status", dl.getLinkStatus().getStatusString().toString());
             element.setAttribute("file_speed", dl.getDownloadSpeed() + "");
+            return element;
+        }
+
+        private Element addGrabberLink(Document xml, DownloadLink dl) {
+            Element element = xml.createElement("file");
+            element.setAttribute("file_name", dl.getName());
+            element.setAttribute("file_package", dl.getFilePackage().getName());
+            element.setAttribute("file_hoster", dl.getHost());
+            element.setAttribute("file_status", dl.getLinkStatus().getStatusString().toString());
+            element.setAttribute("file_download_url", dl.getDownloadURL().toString());
+            element.setAttribute("file_browser_url", dl.getBrowserUrl().toString());
             return element;
         }
 
