@@ -20,57 +20,42 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
 //multiload.cz by pspzockerscene
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "multiload.cz" }, urls = { "http://[\\w\\.]*?multiload\\.cz/(stahnout/[0-9]+/|html/stahnout_process\\.php\\?akce=download&id=[0-9]+&server=[0-9])" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "multiload.cz" }, urls = { "http://[\\w\\.]*?multiload\\.cz/stahnout/[0-9]+/" }, flags = { 0 })
 public class MltLadCz extends PluginForDecrypt {
 
     public MltLadCz(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.setFollowRedirects(false);
         br.getPage(parameter);
-
         /* Error handling */
-        if (br.containsHTML("soubor neexistuje")) {
-            logger.warning("The requested document was not found on this server.");
-            logger.warning(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-            return new ArrayList<DownloadLink>();
-        }
-
-        /* Single part handling */
-        if (parameter.contains("server")) {
-            if (br.getRedirectLocation() == null) return decryptedLinks;
-            decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
-            return decryptedLinks;
-        }
+        if (br.containsHTML("soubor neexistuje")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         /* File package handling */
-        String[] links = br.getRegex("<li><a href=\"(/html/.*?)\"").getColumn(0);
-        if (links == null || links.length == 0) return null;
-        progress.setRange(links.length);
-        for (String link : links) {
-            String link0 = "http://www.multiload.cz" + link;
-            String link1 = link0.replace("amp;", "");
-            br.getPage(link1);
-            String finallink = br.getRedirectLocation();
-            if (finallink == null) return decryptedLinks;
-            DownloadLink dl = createDownloadlink(br.getRedirectLocation());
-            decryptedLinks.add(dl);
-            progress.increase(1);
+        ArrayList<String> allinks = new ArrayList<String>();
+        String pagepieces[] = br.getRegex("class=\"(manager-linky|manager-linky multishare-kod)\">(.*?)</p>").getColumn(1);
+        for (String pagepiece : pagepieces) {
+            String[] links = HTMLParser.getHttpLinks(pagepiece, "");
+            for (String link : links) {
+                if (!link.contains("multiload.cz")) allinks.add(link);
+            }
+        }
+        if (allinks == null) return null;
+        for (String finallink : allinks) {
+            decryptedLinks.add(createDownloadlink(finallink));
         }
         return decryptedLinks;
     }
-
-    // @Override
-
 }

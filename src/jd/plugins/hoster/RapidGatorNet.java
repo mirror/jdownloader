@@ -42,6 +42,7 @@ public class RapidGatorNet extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.setCustomCharset("UTF-8");
         br.setCookie("http://rapidgator.net/", "language", "en");
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("_notfound")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -63,14 +64,15 @@ public class RapidGatorNet extends PluginForHost {
         int tt = 60;
         if (ttt != null) tt = Integer.parseInt(ttt);
         sleep(tt * 1001, downloadLink);
-        
+        br.getPage(downloadLink.getDownloadURL() + "&s=download");
         if (br.containsHTML("(Sorry, there is no download slots at this moment|Please try to download your file later)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No free slots available at the moment!");
-        br.getPage(downloadLink.getDownloadURL() + "&s=queue");
-        String dllink = null;
+        String dllink = br.getRegex("<p>Your link: <a href=\"(http.*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\"(http://dl\\.rapidgator\\.net/\\?dlsession=.*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        if (dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("html")) {
+        if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            if (br.containsHTML("Sorry, old link")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
