@@ -68,7 +68,7 @@ public class ToolbarController extends ConfigPanel {
         WHITELIST.add("toolbar.control.stopmark");
 
         // addons
-        WHITELIST.add("addons.awsomebar");
+        WHITELIST.add("addons.awesomebar");
 
         WHITELIST.add("separator");
         WHITELIST.add("scheduler");
@@ -256,6 +256,10 @@ public class ToolbarController extends ConfigPanel {
         boolean resortRequired = false;
         for (Iterator<ToolBarAction> it = actions2.iterator(); it.hasNext();) {
             ToolBarAction a = it.next();
+            if (a.force() && !list.contains(a.getID())) {
+                list.add(a.getID());
+                resortRequired = true;
+            }
             if (a instanceof CustomToolbarAction) continue;
             if (a.getValue(ToolBarAction.IMAGE_KEY) == null) {
                 it.remove();
@@ -267,11 +271,6 @@ public class ToolbarController extends ConfigPanel {
                 list.remove(a.getID());
                 continue;
             }
-            if (a.force() && !list.contains(a.getID())) {
-                list.add(a.getID());
-                resortRequired = true;
-            }
-
         }
         if (resortRequired) {
             Collections.sort(list, new Comparator<String>() {
