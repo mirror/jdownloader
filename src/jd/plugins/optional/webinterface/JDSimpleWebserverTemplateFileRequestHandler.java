@@ -267,7 +267,7 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
                     double percent = next.getPercent() / 100.0;
                     h_info.put("download_status", Single_Status);
                     h_info.put("info_var", JDL.L("download.chunks.connection", "Verbindung") + " " + i);
-                    h_info.put("info_value", Formatter.formatReadable((int) next.getBytesPerSecond()) + "/s " + f.format(next.getPercent() / 100.0) + " %");
+                    h_info.put("info_value", Formatter.formatReadable(next.getSpeed()) + "/s " + f.format(next.getPercent() / 100.0) + " %");
                     h_info.put("info_percent", f.format(percent));
                     h_info.put("download_id", i - 1);/*
                                                       * von 0 anfangen für js
@@ -382,7 +382,7 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
             h.put("downloads", v2);
             v.addElement(h);
         }
-        t.setParam("config_current_speed", JDUtilities.getController().getSpeedMeter() / 1024);
+        t.setParam("config_current_speed", "" + (DownloadWatchDog.getInstance().getConnectionManager().getIncommingBandwidthUsage() / 1024));
 
         t.setParam("config_max_downloads", SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2));
         t.setParam("config_max_speed", SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0));

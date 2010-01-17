@@ -95,7 +95,10 @@ public class Ftp extends PluginForHost {
 
                     if (System.currentTimeMillis() - lastTime > 250) {
                         DownloadInterface dli = downloadLink.getDownloadInstance();
-                        if (dli != null) dli.getChunks().get(0).getSpeedMeter().addSpeedValue((event.getProgress() - last), System.currentTimeMillis() - lastTime);
+                        /* TODO: change ftp to meteredinputStream */
+                        // if (dli != null)
+                        // dli.getChunks().get(0).getSpeedMeter().addSpeedValue((event.getProgress()
+                        // - last), System.currentTimeMillis() - lastTime);
                         downloadLink.requestGuiUpdate();
                         last = event.getProgress();
                         lastTime = System.currentTimeMillis();

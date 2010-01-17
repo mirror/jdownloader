@@ -19,7 +19,6 @@ package jd.plugins.download;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
@@ -40,8 +39,8 @@ import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.ByteBufferController;
 import jd.controlling.ByteBufferEntry;
+import jd.controlling.DownloadWatchDog;
 import jd.controlling.JDLogger;
-import jd.controlling.SpeedMeter;
 import jd.http.Browser;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
@@ -55,6 +54,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.net.meteredconnection.MeteredInputStream;
+import org.appwork.utils.speedmeter.AverageSpeedMeter;
 
 abstract public class DownloadInterface {
 
@@ -94,7 +96,7 @@ abstract public class DownloadInterface {
 
         private int id = -1;
 
-        private InputStream inputStream;
+        private MeteredInputStream inputStream;
 
         private long MAX_BUFFERSIZE = 4 * 1024 * 1024;
 
@@ -115,8 +117,6 @@ abstract public class DownloadInterface {
         private boolean chunkinprogress = false;
 
         private boolean clonedconnection = false;
-
-        private SpeedMeter speed = new SpeedMeter();
 
         /**
          * Die Connection wird entsprechend der start und endbytes neu
@@ -162,8 +162,9 @@ abstract public class DownloadInterface {
             chunkinprogress = b;
         }
 
-        public SpeedMeter getSpeedMeter() {
-            return speed;
+        public long getSpeed() {
+            if (inputStream == null) return 0;
+            return inputStream.getSpeedMeter();
         }
 
         private void setChunkStartet() {
@@ -312,7 +313,7 @@ abstract public class DownloadInterface {
                 logger.finer("resume Chunk with " + totalPartBytes + "/" + getChunkSize() + " at " + getCurrentBytesPosition());
             }
             try {
-                bufferSize = getBufferSize(getMaximalSpeed());
+                bufferSize = MAX_BUFFERSIZE;
                 if (endByte > 0 && bufferSize > endByte - getCurrentBytesPosition() + 1) {
                     bufferSize = (int) (endByte - getCurrentBytesPosition() + 1);
                 }
@@ -331,9 +332,9 @@ abstract public class DownloadInterface {
                 connection.setReadTimeout(getReadTimeout());
                 connection.setConnectTimeout(getRequestTimeout());
                 if (connection.getHeaderField("Content-Encoding") != null && connection.getHeaderField("Content-Encoding").equalsIgnoreCase("gzip")) {
-                    inputStream = new GZIPInputStream(connection.getInputStream());
+                    inputStream = new MeteredInputStream(DownloadWatchDog.getInstance().getConnectionManager().getManagedThrottledInputStream(new GZIPInputStream(connection.getInputStream())), new AverageSpeedMeter(5));
                 } else {
-                    inputStream = connection.getInputStream();
+                    inputStream = new MeteredInputStream(DownloadWatchDog.getInstance().getConnectionManager().getManagedThrottledInputStream(connection.getInputStream()), new AverageSpeedMeter(5));
                 }
 
                 source = Channels.newChannel(inputStream);
@@ -347,22 +348,17 @@ abstract public class DownloadInterface {
                 long tempBuff = 0;
                 long addWait = 0;
                 ByteBuffer bufferInternBuffer = buffer.buffer;
-                int ti = 0;
                 blockStart = System.currentTimeMillis();
 
                 while (!isExternalyAborted()) {
                     bytes = 0;
-                    ti = getTimeInterval();
                     timer = System.currentTimeMillis();
-                    if (speedDebug) {
-                        logger.finer("load Block buffer: " + bufferInternBuffer.hasRemaining() + "/" + bufferInternBuffer.capacity() + " interval: " + ti);
-                    }
 
                     /* Anfangslimit für Speedregulierung */
                     if (bufferInternBuffer.capacity() > 10240) {
                         bufferInternBuffer.limit(10240);
                     }
-                    while ((bytes < buffer.size()) && !isExternalyAborted() && (System.currentTimeMillis() - timer < ti)) {
+                    while ((bytes < buffer.size()) && !isExternalyAborted()) {
 
                         /* stückchenweise vergrößern des buffers */
                         if (bufferInternBuffer.position() + 10240 < buffer.size()) {
@@ -443,57 +439,6 @@ abstract public class DownloadInterface {
                         break;
                     }
 
-                    // War der Download des Buffers zu schnell, wird hier eine
-                    // Pause eingelegt
-
-                    tempBuff = getBufferSize(getMaximalSpeed());
-                    // Falls der Server bei den Ranges schlampt und als endByte
-                    // immer das Dateiende angibt wird hier der Buffer
-                    // korrigiert um overhead zu vermeiden.
-                    if (tempBuff > endByte - getCurrentBytesPosition() + 1 && endByte > 0) {
-                        tempBuff = (int) (endByte - getCurrentBytesPosition()) + 1;
-                    }
-
-                    bufferSize = Math.max(128, tempBuff);
-                    try {
-                        /* max 2gb buffer */
-                        if ((int) bufferSize > buffer.capacity()) {
-                            buffer.setUnused();
-                            buffer = ByteBufferEntry.getByteBufferEntry((int) bufferSize);
-                            bufferInternBuffer = buffer.buffer;
-                        } else {
-                            buffer.clear((int) bufferSize);
-                        }
-
-                    } catch (Exception e) {
-                        JDLogger.exception(e);
-                        error(LinkStatus.ERROR_FATAL, JDL.L("download.error.message.outofmemory", "The downloadsystem is out of memory"));
-                        return;
-                    }
-                    try {
-                        // 0.995 ist eine Anpassung an die Zeit, die die
-                        // unerfasste Schleife noch frisst. das macht am ende
-                        // ein paar wenige bytes/sekunde in der speederfassung
-                        // aus.
-                        addWait = (long) (0.995 * (ti - (System.currentTimeMillis() - timer)));
-
-                        if (speedDebug) {
-                            logger.finer("Wait " + addWait + " " + ti);
-                        }
-                        if (addWait > 0 && DownloadLink.isSpeedLimited()) {
-                            Thread.sleep(addWait);
-                        }
-                    } catch (Exception e) {
-                        // logger.log(Level.SEVERE,"Exception occurred",e);
-                    }
-                    deltaTime = System.currentTimeMillis() - timer;
-                    if (deltaTime == 0) deltaTime = 1;
-                    bytesPerSecond = 1000 * bytes / deltaTime;
-                    speed.addSpeedValue(bytes, deltaTime);
-                    if (speedDebug) {
-                        logger.finer(downloadLink.getDownloadSpeed() + " loaded" + bytes + " b in " + deltaTime + " ms: " + bytesPerSecond + "(" + desiredBps + ") ");
-                    }
-
                 }
                 if (getCurrentBytesPosition() < endByte && endByte > 0 || getCurrentBytesPosition() <= 0) {
 
@@ -568,44 +513,12 @@ abstract public class DownloadInterface {
         }
 
         /**
-         * Schränkt die Buffergröße ein.
-         * 
-         * @param maxspeed
-         * @return
-         */
-        private long getBufferSize(long maxspeed) {
-            if (speedDebug) {
-                logger.finer("speed " + maxspeed);
-            }
-            if (!DownloadLink.isSpeedLimited()) return (int) MAX_BUFFERSIZE;
-            maxspeed *= TIME_BASE / 1000;
-            long max = Math.max(MIN_BUFFERSIZE, maxspeed);
-            long bufferSize = Math.min(MAX_BUFFERSIZE, max);
-            // logger.finer(MIN_BUFFERSIZE+"<>"+maxspeed+"-"+MAX_BUFFERSIZE+"><"+
-            // max);
-            bufferTimeFaktor = Math.max(0.1, (double) bufferSize / maxspeed);
-            if (speedDebug) {
-                logger.finer("Maxspeed= " + maxspeed + " buffer=" + bufferSize + "time: " + getTimeInterval());
-            }
-            return bufferSize;
-        }
-
-        /**
          * Gibt die Geladenen ChunkBytes zurück
          * 
          * @return
          */
         public long getBytesLoaded() {
             return getCurrentBytesPosition() - startByte;
-        }
-
-        /**
-         * Gibt die aktuelle Downloadgeschwindigkeit des chunks zurück
-         * 
-         * @return
-         */
-        public long getBytesPerSecond() {
-            return bytesPerSecond;
         }
 
         public long getChunkSize() {
@@ -674,20 +587,6 @@ abstract public class DownloadInterface {
 
         public long getStartByte() {
             return startByte;
-        }
-
-        /**
-         * Über buffersize und timeinterval wird die Downloadgeschwindigkeit
-         * eingestellt. Eine zu hohe Intervalzeit sorgt für stark
-         * intervalartiges laden und unregelmäsige gui aktualisierungen. Der
-         * Download "ruckelt". Zu kleine Intervalzeiten belasten die Festplatte
-         * sehr
-         * 
-         * @return
-         */
-        private int getTimeInterval() {
-            if (!DownloadLink.isSpeedLimited()) return TIME_BASE;
-            return Math.min(TIME_BASE * 5, (int) (TIME_BASE * bufferTimeFaktor));
         }
 
         /**
@@ -1385,60 +1284,6 @@ abstract public class DownloadInterface {
     }
 
     /**
-     * Verteilt den verfügbraen downloadspeed auf die Chunks
-     */
-    private void assignChunkSpeeds() {
-        int MAX_ALLOWED_OVERHEAD = 10 * 1024;
-        int allowedLinkSpeed = downloadLink.getSpeedLimit();
-        int mChunk = (int) (allowedLinkSpeed / chunkNum * 0.4);
-        int currentSpeed = 0;
-
-        Chunk next;
-
-        synchronized (chunks) {
-
-            Iterator<Chunk> it = chunks.iterator();
-            while (it.hasNext()) {
-                next = it.next();
-                if (next.isAlive()) {
-                    currentSpeed += next.bytesPerSecond;
-                }
-
-            }
-
-            int overhead = allowedLinkSpeed - currentSpeed;
-            if (Math.abs(overhead) < MAX_ALLOWED_OVERHEAD) {
-                it = chunks.iterator();
-
-                while (it.hasNext()) {
-                    next = it.next();
-                    if (next.isAlive()) {
-                        next.checkTimeout(180000);
-                        // next.setMaximalSpeed(Math.max(mChunk, (int)
-                        // next.bytesPerSecond + overhead / Math.max(1,
-                        // getRunningChunks())));
-                    }
-
-                }
-                return;
-            }
-
-            it = chunks.iterator();
-
-            while (it.hasNext()) {
-                next = it.next();
-                if (next.isAlive()) {
-                    next.checkTimeout(180000);
-                    next.setMaximalSpeed(Math.max(mChunk, (int) next.bytesPerSecond + overhead / Math.max(1, getRunningChunks())));
-                }
-
-            }
-
-        }
-
-    }
-
-    /**
      * über error() kann ein fehler gemeldet werden. DIe Methode entscheided
      * dann ob dieser fehler zu einem Abbruch führen muss
      */
@@ -1846,10 +1691,6 @@ abstract public class DownloadInterface {
             // checkChunkParts();
             downloadLink.setDownloadCurrent(totaleLinkBytesLoaded);
             downloadLink.requestGuiUpdate();
-            if (i == 1000 / interval) {
-                assignChunkSpeeds();
-                i = 0;
-            }
 
         }
 

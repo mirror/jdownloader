@@ -492,13 +492,6 @@ public class JDController implements ControlListener {
         return JDUtilities.getDownloadController().getPackages();
     }
 
-    /**
-     * @return gibt das globale speedmeter zurück
-     */
-    public int getSpeedMeter() {
-        return DownloadWatchDog.getInstance().getTotalSpeed();
-    }
-
     public boolean isContainerFile(File file) {
         ArrayList<CPluginWrapper> pluginsForContainer = CPluginWrapper.getCWrapper();
         CPluginWrapper pContainer;

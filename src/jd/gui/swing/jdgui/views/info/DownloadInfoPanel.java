@@ -18,6 +18,7 @@ package jd.gui.swing.jdgui.views.info;
 
 import jd.controlling.DownloadController;
 import jd.controlling.DownloadInformations;
+import jd.controlling.DownloadWatchDog;
 import jd.gui.swing.GuiRunnable;
 import jd.nutils.Formatter;
 import jd.utils.JDTheme;
@@ -30,7 +31,7 @@ public class DownloadInfoPanel extends InfoPanel {
     private static final String JDL_PREFIX = "jd.gui.swing.jdgui.views.info.DownloadInfoPanel.";
     private DownloadInformations ds;
     private DownloadController dlc;
-    private int speed;
+    private long speed;
 
     public DownloadInfoPanel() {
         super();
@@ -66,7 +67,7 @@ public class DownloadInfoPanel extends InfoPanel {
             @Override
             public Object runSave() {
                 dlc.getDownloadStatus(ds);
-                speed = JDUtilities.getController().getSpeedMeter();
+                speed = DownloadWatchDog.getInstance().getConnectionManager().getIncommingBandwidthUsage();
                 updateInfo(JDL.L(JDL_PREFIX + "speed", "Downloadspeed"), Formatter.formatReadable(speed) + "/s");
                 updateInfo(JDL.L(JDL_PREFIX + "eta", "Download complete in"), Formatter.formatSeconds(speed == 0 ? -1 : (ds.getTotalDownloadSize() - ds.getCurrentDownloadSize()) / speed));
                 updateInfo(JDL.L(JDL_PREFIX + "packages", "Package(s)"), ds.getPackagesCount());

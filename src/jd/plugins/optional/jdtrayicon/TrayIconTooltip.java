@@ -20,6 +20,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 
 import jd.controlling.DownloadInformations;
+import jd.controlling.DownloadWatchDog;
 import jd.gui.swing.components.JWindowTooltip;
 import jd.gui.swing.jdgui.components.JDProgressBar;
 import jd.nutils.Formatter;
@@ -69,14 +70,14 @@ public class TrayIconTooltip extends JWindowTooltip {
         lblDlRunning.setText(String.valueOf(ds.getRunningDownloads()));
         lblDlFinished.setText(String.valueOf(ds.getFinishedDownloads()));
         lblDlTotal.setText(String.valueOf(ds.getDownloadCount()));
-        lblSpeed.setText(Formatter.formatReadable(JDUtilities.getController().getSpeedMeter()) + "/s");
+        lblSpeed.setText(Formatter.formatReadable(DownloadWatchDog.getInstance().getConnectionManager().getIncommingBandwidthUsage()) + "/s");
 
         lblProgress.setText(Formatter.formatFilesize(ds.getCurrentDownloadSize(), 0) + " / " + Formatter.formatFilesize(ds.getTotalDownloadSize(), 0));
         prgTotal.setMaximum(ds.getTotalDownloadSize());
         prgTotal.setValue(ds.getCurrentDownloadSize());
 
         long etanum = 0;
-        if (JDUtilities.getController().getSpeedMeter() > 1024) etanum = (ds.getTotalDownloadSize() - ds.getCurrentDownloadSize()) / JDUtilities.getController().getSpeedMeter();
+        if (DownloadWatchDog.getInstance().getConnectionManager().getIncommingBandwidthUsage() > 1024) etanum = (ds.getTotalDownloadSize() - ds.getCurrentDownloadSize()) / DownloadWatchDog.getInstance().getConnectionManager().getIncommingBandwidthUsage();
 
         lblETA.setText(Formatter.formatSeconds(etanum));
     }

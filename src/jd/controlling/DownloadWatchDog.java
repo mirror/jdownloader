@@ -35,6 +35,8 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.net.throttledconnection.ThrottledConnectionManager;
+
 /**
  * Dieser Controller verwaltet die downloads. Während StartDownloads.java für
  * die Steuerung eines einzelnen Downloads zuständig ist, ist DownloadWatchdog
@@ -71,8 +73,6 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
 
     private boolean paused = false;
 
-    private int totalSpeed = 0;
-
     private Thread watchDogThread = null;
 
     private DownloadController dlc = null;
@@ -92,6 +92,8 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
     private STATE downloadStatus = STATE.NOT_RUNNING;
 
     private static DownloadWatchDog INSTANCE;
+
+    private ThrottledConnectionManager connectionManager;
 
     public synchronized static DownloadWatchDog getInstance() {
         if (INSTANCE == null) {
@@ -161,8 +163,14 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
     }
 
     private DownloadWatchDog() {
+        connectionManager = new ThrottledConnectionManager();
+        connectionManager.setIncommingBandwidthLimit(SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0) * 1000);
         dlc = DownloadController.getInstance();
         dlc.addListener(this);
+    }
+
+    public ThrottledConnectionManager getConnectionManager() {
+        return connectionManager;
     }
 
     public void setStopMark(Object entry) {
@@ -324,7 +332,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
         for (SingleDownloadController singleDownloadController : cons) {
             al.add(singleDownloadController.abortDownload().getDownloadLink());
         }
-        final DownloadController downloadController = DownloadController.getInstance(); 
+        final DownloadController downloadController = DownloadController.getInstance();
         downloadController.fireDownloadLinkUpdate(al);
         boolean check = true;
         while (true) {
@@ -557,14 +565,6 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
         return SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN_PER_HOST, 0);
     }
 
-    /**
-     * @return the totalSpeed
-     */
-    public int getTotalSpeed() {
-        if (downloadStatus == STATE.NOT_RUNNING) return 0;
-        return totalSpeed;
-    }
-
     boolean isDownloadLinkActive(final DownloadLink nextDownloadLink) {
         synchronized (DownloadControllers) {
             return DownloadControllers.containsKey(nextDownloadLink);
@@ -620,7 +620,6 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                     aborted = false;
                     aborting = false;
                     int stopCounter = 5;
-                    int currentTotalSpeed = 0;
                     int inProgress = 0;
                     while (aborted != true) {
                         Reconnecter.setReconnectRequested(false);
@@ -634,7 +633,6 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                                 fps.addAll(dlc.getPackages());
                             }
                         }
-                        currentTotalSpeed = 0;
                         inProgress = 0;
                         updates.clear();
                         try {
@@ -718,35 +716,13 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                                         if (linkStatus.hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
                                             /* link is downloading atm */
                                             inProgress++;
-                                            currentTotalSpeed += link.getDownloadSpeed();
                                         }
                                     }
                                 }
                             }
                             /* request a reconnect if allowed and needed */
                             Reconnecter.doReconnectIfRequested(false);
-                            if (inProgress > 0) {
-                                /* calc speed */
-                                for (final FilePackage filePackage : fps) {
-                                    Iterator<DownloadLink> iter = filePackage.getDownloadLinkList().iterator();
-                                    int maxspeed = SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0) * 1024;
-                                    if (maxspeed == 0) {
-                                        maxspeed = Integer.MAX_VALUE;
-                                    }
-                                    int overhead = maxspeed - currentTotalSpeed;
-                                    totalSpeed = currentTotalSpeed;
-                                    DownloadLink element;
-                                    while (iter.hasNext()) {
-                                        element = iter.next();
-                                        if (element.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
-                                            element.setSpeedLimit(element.getDownloadSpeed() + overhead / inProgress);
-                                        }
-                                    }
-                                }
-                            } else {
-                                /* no downloads in progress, speed=0 */
-                                totalSpeed = 0;
-                            }
+
                             if (updates.size() > 0) {
                                 /* fire gui updates */
                                 DownloadController.getInstance().fireDownloadLinkUpdate(updates);
@@ -780,7 +756,6 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                                          * countdown reached, prepare to stop
                                          * downloadwatchdog
                                          */
-                                        totalSpeed = 0;
                                         break;
                                     }
                                 }
@@ -838,14 +813,6 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
             ret++;
         }
         return ret;
-    }
-
-    /**
-     * @param totalSpeed
-     *            the totalSpeed to set
-     */
-    public void setTotalSpeed(final int totalSpeed) {
-        this.totalSpeed = totalSpeed;
     }
 
     private boolean reachedStopMark() {

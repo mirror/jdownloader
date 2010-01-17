@@ -330,7 +330,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                 response.addContent(JDUtilities.createXmlString(xml));
             } else if (request.getRequestUrl().equals("/get/speed")) {
                 // Get current Speed
-                response.addContent(JDUtilities.getController().getSpeedMeter() / 1000);
+                response.addContent(DownloadWatchDog.getInstance().getConnectionManager().getIncommingBandwidthUsage() / 1000);
             } else if (request.getRequestUrl().equals("/get/isreconnect")) {
                 // Get IsReconnect
                 response.addContent(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true));

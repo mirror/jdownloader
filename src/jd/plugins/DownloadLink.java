@@ -360,14 +360,14 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * 
      * @return Downloadgeschwindigkeit in bytes/sekunde
      */
-    public int getDownloadSpeed() {
+    public long getDownloadSpeed() {
         if (!getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) return 0;
-        int currspeed = 0;
+        long currspeed = 0;
         DownloadInterface dli = getDownloadInstance();
         if (dli == null) return 0;
         synchronized (dli.getChunks()) {
             for (Chunk ch : dli.getChunks()) {
-                if (ch.inProgress()) currspeed += ch.getSpeedMeter().getSpeed();
+                if (ch.inProgress()) currspeed += ch.getSpeed();
             }
         }
         return currspeed;
@@ -516,20 +516,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
             this.globalSpeedLimit = Integer.MAX_VALUE;
         }
         return this.globalSpeedLimit;
-    }
-
-    /**
-     * Setzt das Globale Speed Limit! in bytes/s
-     * 
-     * @param maximalspeed
-     */
-    public void setSpeedLimit(int maximalspeed) {
-        maximalspeed = Math.max(20, maximalspeed);
-        // logger.info(this + " LINKSPEED: " + maximalspeed);
-        int diff = Math.abs(this.globalSpeedLimit - maximalspeed);
-        if (diff > 500) {
-            this.globalSpeedLimit = maximalspeed;
-        }
     }
 
     /**
