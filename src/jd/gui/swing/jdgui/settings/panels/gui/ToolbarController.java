@@ -224,7 +224,7 @@ public class ToolbarController extends ConfigPanel {
     @Override
     public void onShow() {
         super.onShow();
-        setActions(actions = ActionController.getActions());
+        list=setActions(actions = ActionController.getActions());
 
         new GuiRunnable<Object>() {
 
