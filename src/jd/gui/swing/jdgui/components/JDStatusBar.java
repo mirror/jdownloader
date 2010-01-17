@@ -27,6 +27,7 @@ import javax.swing.event.ChangeListener;
 import jd.config.Configuration;
 import jd.config.Property;
 import jd.config.SubConfiguration;
+import jd.controlling.DownloadWatchDog;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.swing.components.JDSpinner;
@@ -101,6 +102,7 @@ public class JDStatusBar extends JPanel implements ChangeListener, ControlListen
             if (event.getParameter().equals(Configuration.PARAM_DOWNLOAD_MAX_SPEED)) {
                 SwingUtilities.invokeLater(new Runnable() {
                     public void run() {
+                        DownloadWatchDog.getInstance().getConnectionManager().setIncommingBandwidthLimit(p.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0) * 1000);
                         setSpinnerSpeed(p.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0));
                     }
                 });

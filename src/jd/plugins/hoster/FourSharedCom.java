@@ -91,13 +91,13 @@ public class FourSharedCom extends PluginForHost {
 
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        String url = br.getRegex("<a href=\"(http://[\\w\\.]*?(4shared|4shared-china)\\.com/get.*?)\" class=\".*?dbtn.*?\" tabindex=\"1\" onclick=\"return callPostDownload\\(\\);\">").getMatch(0);
+        String url = br.getRegex("<a href=\"(http://[\\w\\.]*?(4shared|4shared-china)\\.com/get.*?)\" class=\".*?dbtn.*?\" tabindex=\"1\"").getMatch(0);
         if (url == null) {
             /* maybe directdownload */
             url = br.getRegex("startDownload.*?window\\.location.*?(http://.*?)\"").getMatch(0);
             if (url == null) {
                 /* maybe picture download */
-                url = br.getRegex("<a href=\"(http://dc\\d+\\.(4shared|4shared-china)\\.com/download/.*?)\" class=\".*?dbtn.*?\" tabindex=\"1\" onclick=\"return callPostDownload\\(\\);\">").getMatch(0);
+                url = br.getRegex("<a href=\"(http://dc\\d+\\.(4shared|4shared-china)\\.com/download/.*?)\" class=\".*?dbtn.*?\" tabindex=\"1\"").getMatch(0);
             }
             if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else {
@@ -107,8 +107,10 @@ public class FourSharedCom extends PluginForHost {
             // Ticket Time
             String ttt = br.getRegex(" var c = (\\d+?);").getMatch(0);
             int tt = 40;
-            logger.info("Waittime detected, waiting " + ttt.trim() + " seconds from now on...");
-            if (ttt != null) tt = Integer.parseInt(ttt);
+            if (ttt != null) {
+                logger.info("Waittime detected, waiting " + ttt.trim() + " seconds from now on...");
+                tt = Integer.parseInt(ttt);
+            }
             sleep(tt * 1000l, downloadLink);
         }
         br.setDebug(true);

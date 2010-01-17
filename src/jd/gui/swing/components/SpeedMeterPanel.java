@@ -102,7 +102,7 @@ public class SpeedMeterPanel extends JPanel implements ActionListener, MouseList
                 while (!this.isInterrupted()) {
                     update();
                     if (nextCacheEntry < System.currentTimeMillis()) {
-                        cache[i] = JDUtilities.getController().getSpeedMeter();
+                        cache[i] = (int) DownloadWatchDog.getInstance().getConnectionManager().getIncommingBandwidthUsage();
                         i++;
                         i = i % cache.length;
                         nextCacheEntry = System.currentTimeMillis() + ((window * 1000) / CAPACITY);
@@ -177,7 +177,7 @@ public class SpeedMeterPanel extends JPanel implements ActionListener, MouseList
 
         g2.setFont(f);
 
-        String txt = Formatter.formatReadable(JDUtilities.getController().getSpeedMeter()) + "/s";
+        String txt = Formatter.formatReadable(DownloadWatchDog.getInstance().getConnectionManager().getIncommingBandwidthUsage()) + "/s";
         FontMetrics fmetrics = g2.getFontMetrics();
 
         int len = fmetrics.stringWidth(txt);
@@ -189,15 +189,15 @@ public class SpeedMeterPanel extends JPanel implements ActionListener, MouseList
             if (limitpx > height / 2) {
                 g2.drawString((DownloadWatchDog.getInstance().isPaused() ? JDL.L("gui.speedmeter.pause", "pause") + " " : "") + Formatter.formatReadable(limit) + "/s", 5, limitpx - 4);
                 g2.setColor(fontCol);
-                g2.drawString(Formatter.formatReadable(JDUtilities.getController().getSpeedMeter()) + "/s", width - len - 5, limitpx - 4);
+                g2.drawString(Formatter.formatReadable(DownloadWatchDog.getInstance().getConnectionManager().getIncommingBandwidthUsage()) + "/s", width - len - 5, limitpx - 4);
             } else {
                 g2.drawString((DownloadWatchDog.getInstance().isPaused() ? JDL.L("gui.speedmeter.pause", "pause") + " " : "") + Formatter.formatReadable(limit) + "/s", 5, limitpx + 12);
                 g2.setColor(fontCol);
-                g2.drawString(Formatter.formatReadable(JDUtilities.getController().getSpeedMeter()) + "/s", width - len - 5, limitpx + 12);
+                g2.drawString(Formatter.formatReadable(DownloadWatchDog.getInstance().getConnectionManager().getIncommingBandwidthUsage()) + "/s", width - len - 5, limitpx + 12);
             }
         } else {
             g2.setColor(fontCol);
-            g2.drawString(Formatter.formatReadable(JDUtilities.getController().getSpeedMeter()) + "/s", width - len - 5, 12);
+            g2.drawString(Formatter.formatReadable(DownloadWatchDog.getInstance().getConnectionManager().getIncommingBandwidthUsage()) + "/s", width - len - 5, 12);
         }
     }
 
