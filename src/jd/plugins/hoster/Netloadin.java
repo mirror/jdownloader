@@ -46,7 +46,8 @@ public class Netloadin extends PluginForHost {
     static private final String DOWNLOAD_CAPTCHA = "download_captcha.tpl";
     static private final String DOWNLOAD_LIMIT = "download_limit.tpl";
     static private final String DOWNLOAD_START = "download_load.tpl";
-    static private final String DOWNLOAD_STARTXMAS = "download_load_xmas.tpl"; // Die neue XMAS edition ;)
+    static private final String DOWNLOAD_STARTXMAS = "download_load_xmas.tpl";
+    static private final String DOWNLOAD_STARTXMAS2 = "download_load_xmas2.tpl";
     private String LINK_PASS = null;
 
     static private final Pattern DOWNLOAD_WAIT_TIME = Pattern.compile("countdown\\(([0-9]*),'change", Pattern.CASE_INSENSITIVE);
@@ -102,7 +103,7 @@ public class Netloadin extends PluginForHost {
                 return;
             }
             if (br.containsHTML(FILE_DAMAGED)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.netloadin.errors.fileondmgserver", "File on damaged server"), 20 * 60 * 1000l);
-            if ((!br.containsHTML(DOWNLOAD_START)&&!br.containsHTML(DOWNLOAD_STARTXMAS)) || url == null) {
+            if ((!br.containsHTML(DOWNLOAD_START) && !br.containsHTML(DOWNLOAD_STARTXMAS) && !br.containsHTML(DOWNLOAD_STARTXMAS2)) || url == null) {
                 linkStatus.setErrorMessage(JDL.L("plugins.hoster.netloadin.errors.dlnotfound", "Download link not found"));
                 logger.severe(br.toString());
                 linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFECT);
