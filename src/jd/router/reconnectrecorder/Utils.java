@@ -33,10 +33,15 @@ import jd.parser.Regex;
 import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
 
-public class Utils {
+public final class Utils {
+    /**
+     * Don't let anyone instantiate this class.
+     */
+    private Utils() {
+    }
 
-    public static String readline(BufferedInputStream in) {
-        StringBuilder data = new StringBuilder("");
+    public static String readline(final BufferedInputStream in) {
+        final StringBuilder data = new StringBuilder("");
         int c;
         try {
             in.mark(1);
@@ -52,23 +57,25 @@ public class Utils {
             }
             if (c == 13) {
                 in.mark(1);
-                if (in.read() != 10) in.reset();
+                if (in.read() != 10) {
+                    in.reset();
+                }
             }
         } catch (Exception e) {
         }
         return data.toString();
     }
 
-    public static ByteBuffer readheader(InputStream in) {
+    public static ByteBuffer readheader(final InputStream in) {
         ByteBuffer bigbuffer = ByteBuffer.allocateDirect(4096);
-        byte[] minibuffer = new byte[1];
+        final byte[] minibuffer = new byte[1];
         int position;
         int c;
         boolean complete = false;
         try {
             while ((c = in.read(minibuffer)) >= 0) {
                 if (bigbuffer.remaining() < 1) {
-                    ByteBuffer newbuffer = ByteBuffer.allocateDirect((bigbuffer.capacity() * 2));
+                    final ByteBuffer newbuffer = ByteBuffer.allocateDirect((bigbuffer.capacity() * 2));
                     bigbuffer.flip();
                     newbuffer.put(bigbuffer);
                     bigbuffer = newbuffer;
@@ -97,7 +104,7 @@ public class Utils {
                 return buf.get();
             }
 
-            public synchronized int read(byte[] bytes, int off, int len) throws IOException {
+            public synchronized int read(final byte[] bytes, final int off, int len) throws IOException {
                 // Read only what's left
                 if (!buf.hasRemaining()) { return -1; }
                 len = Math.min(len, buf.remaining());
@@ -111,13 +118,17 @@ public class Utils {
         if (!new Regex(headers.get(null), ".*?\\.(gif|jpg|png|bmp|ico|css).*?").matches()) {
             String httpstrue = "";
             String rawtrue = "";
-            if (ishttps) httpstrue = " https=\"true\"";
-            if (rawmode) rawtrue = " raw=\"true\"";
-            StringBuilder hlh = new StringBuilder();
+            if (ishttps) {
+                httpstrue = " https=\"true\"";
+            }
+            if (rawmode) {
+                rawtrue = " raw=\"true\"";
+            }
+            final StringBuilder hlh = new StringBuilder();
             hlh.append("    [[[STEP]]]" + "\r\n");
             hlh.append("        [[[REQUEST" + httpstrue + rawtrue + "]]]" + "\r\n");
             if (rawmode == true) {
-                for (Entry<String, String> entry : headers.entrySet()) {
+                for (final Entry<String, String> entry : headers.entrySet()) {
                     final String key = entry.getKey();
                     /*
                      * werden vom browser gesetzt
@@ -156,11 +167,11 @@ public class Utils {
         }
     }
 
-    public static void rewriteLocationHeader(ProxyThread instance) {
+    public static void rewriteLocationHeader(final ProxyThread instance) {
         String location = JDHexUtils.toString(new Regex(instance.buffer, Pattern.compile(JDHexUtils.getHexString("Location: ") + "(.*?)" + JDHexUtils.REGEX_HTTP_NEWLINE, Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0));
         if (location != null) {
             if (new Regex(location, "https?://(.*?)/?").getMatch(0) != null) {
-                String oldlocation = location;
+                final String oldlocation = location;
                 location = new Regex(location, "https?://.*?/(.+)", Pattern.DOTALL).getMatch(0);
                 if (!oldlocation.startsWith("https")) {
                     if (location != null) {
@@ -181,11 +192,11 @@ public class Utils {
         }
     }
 
-    public static void rewriteHostHeader(ProxyThread instance) {
+    public static void rewriteHostHeader(final ProxyThread instance) {
         String host = JDHexUtils.toString(new Regex(instance.buffer, Pattern.compile(JDHexUtils.getHexString("Host: ") + "(.*?)" + JDHexUtils.REGEX_HTTP_NEWLINE, Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0));
         if (host != null) {
             if (new Regex(host, "(.*?):?").getMatch(0) != null) {
-                String oldhost = host;
+                final String oldhost = host;
                 host = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_IP, null);
                 instance.buffer = instance.buffer.replaceAll(JDHexUtils.getHexString("Host: " + oldhost), JDHexUtils.getHexString("Host: " + host));
                 instance.renewbuffer = true;
@@ -193,12 +204,12 @@ public class Utils {
         }
     }
 
-    public static void rewriteConnectionHeader(ProxyThread instance) {
+    public static void rewriteConnectionHeader(final ProxyThread instance) {
         String con = JDHexUtils.toString(new Regex(instance.buffer, Pattern.compile(JDHexUtils.getHexString("Connection: ") + "(.*?)" + JDHexUtils.REGEX_HTTP_NEWLINE, Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0));
         if (con != null) {
-            String type = new Regex(con, "(.+)").getMatch(0);
+            final String type = new Regex(con, "(.+)").getMatch(0);
             if (type != null && !type.equalsIgnoreCase("close")) {
-                String oldcon = con;
+                final String oldcon = con;
                 con = "close";
                 instance.buffer = instance.buffer.replaceAll(JDHexUtils.getHexString("Connection: " + oldcon), JDHexUtils.getHexString("Connection: " + con));
                 instance.renewbuffer = true;
@@ -206,7 +217,7 @@ public class Utils {
         }
     }
 
-    public static void rewriteRefererHeader(ProxyThread instance) {
+    public static void rewriteRefererHeader(final ProxyThread instance) {
         String ref = JDHexUtils.toString(new Regex(instance.buffer, Pattern.compile(JDHexUtils.getHexString("Referer: ") + "(.*?)" + JDHexUtils.REGEX_HTTP_NEWLINE, Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0));
         if (ref != null) {
             if (new Regex(ref, "https?://(.*?)/?").getMatch(0) != null) {
