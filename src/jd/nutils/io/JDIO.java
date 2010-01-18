@@ -43,8 +43,14 @@ import javax.swing.JFileChooser;
 import jd.controlling.JDLogger;
 import jd.nutils.JDHash;
 import jd.parser.Regex;
+import jd.utils.StringUtil;
 
-public class JDIO {
+public final class JDIO {
+    /**
+     * Don't let anyone instantiate this class.
+     */
+    private JDIO() {
+    }
 
     /**
      * Das aktuelle Verzeichnis (Laden/Speichern)
@@ -58,7 +64,7 @@ public class JDIO {
      * @param content
      * @return true/False je nach Erfolg des Schreibvorgangs
      */
-    public static boolean writeLocalFile(File file, String content) {
+    public static boolean writeLocalFile(final File file, final String content) {
         return writeLocalFile(file, content, false);
     }
 
@@ -69,7 +75,7 @@ public class JDIO {
      * @param content
      * @return true/False je nach Erfolg des Schreibvorgangs
      */
-    public static boolean writeLocalFile(File file, String content, boolean append) {
+    public static boolean writeLocalFile(final File file, final String content, final boolean append) {
         try {
             if (!append && file.isFile() && !file.delete()) {
                 System.err.println("Konnte Datei nicht löschen " + file);
@@ -78,8 +84,10 @@ public class JDIO {
             if (file.getParent() != null && !file.getParentFile().exists()) {
                 file.getParentFile().mkdirs();
             }
-            if (!append || !file.isFile()) file.createNewFile();
-            BufferedWriter f = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file, append), "UTF8"));
+            if (!append || !file.isFile()) {
+                file.createNewFile();
+            }
+            final BufferedWriter f = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file, append), "UTF8"));
 
             f.write(content);
             f.close();
@@ -90,7 +98,7 @@ public class JDIO {
         }
     }
 
-    public static String validateFileandPathName(String name) {
+    public static String validateFileandPathName(final String name) {
         if (name == null) { return null; }
         return name.replaceAll("([\\\\|<|>|\\||\"|:|\\*|\\?|/|\\x00])+", "_");
     }
@@ -102,7 +110,7 @@ public class JDIO {
      * @param bytearray
      * @return Erfolg true/false
      */
-    public static boolean saveToFile(File file, byte[] b) {
+    public static boolean saveToFile(final File file, final byte[] b) {
         try {
             if (file.isFile()) {
                 if (!file.delete()) {
@@ -114,7 +122,7 @@ public class JDIO {
                 file.getParentFile().mkdirs();
             }
             file.createNewFile();
-            BufferedOutputStream output = new BufferedOutputStream(new FileOutputStream(file, true));
+            final BufferedOutputStream output = new BufferedOutputStream(new FileOutputStream(file, true));
             output.write(b, 0, b.length);
             output.close();
             return true;
@@ -142,13 +150,14 @@ public class JDIO {
      * @param asXML
      *            Soll das Objekt in eine XML Datei gespeichert werden?
      */
-    public static void saveObject(Component frame, Object objectToSave, File fileOutput, String name, String extension, boolean asXML) {
-
-        if (fileOutput != null) fileOutput.getParentFile().mkdirs();
+    public static void saveObject(final Component frame, final Object objectToSave, File fileOutput, final String name, final String extension, final boolean asXML) {
+        if (fileOutput != null) {
+            fileOutput.getParentFile().mkdirs();
+        }
 
         if (fileOutput == null) {
-            JDFileFilter fileFilter = new JDFileFilter(extension, extension, true);
-            JFileChooser fileChooserSave = new JFileChooser();
+            final JDFileFilter fileFilter = new JDFileFilter(extension, extension, true);
+            final JFileChooser fileChooserSave = new JFileChooser();
             fileChooserSave.setFileFilter(fileFilter);
             fileChooserSave.setSelectedFile(new File(((name != null) ? name : "*") + ((extension != null) ? extension : ".*")));
             if (currentDirectory != null) {
@@ -163,7 +172,6 @@ public class JDIO {
         if (fileOutput != null) {
             if (fileOutput.isDirectory()) {
                 fileOutput = new File(fileOutput, name + extension);
-
             }
 
             JDIO.waitOnObject(fileOutput);
@@ -173,14 +181,14 @@ public class JDIO {
                 fileOutput.delete();
             }
             try {
-                FileOutputStream fos = new FileOutputStream(fileOutput);
-                BufferedOutputStream buff = new BufferedOutputStream(fos);
+                final FileOutputStream fos = new FileOutputStream(fileOutput);
+                final BufferedOutputStream buff = new BufferedOutputStream(fos);
                 if (asXML) {
-                    XMLEncoder xmlEncoder = new XMLEncoder(buff);
+                    final XMLEncoder xmlEncoder = new XMLEncoder(buff);
                     xmlEncoder.writeObject(objectToSave);
                     xmlEncoder.close();
                 } else {
-                    ObjectOutputStream oos = new ObjectOutputStream(buff);
+                    final ObjectOutputStream oos = new ObjectOutputStream(buff);
                     oos.writeObject(objectToSave);
                     oos.close();
                 }
@@ -191,12 +199,11 @@ public class JDIO {
             } catch (IOException e) {
                 JDLogger.exception(e);
             }
-            String hashPost = JDHash.getMD5(fileOutput);
+            final String hashPost = JDHash.getMD5(fileOutput);
             if (hashPost == null) {
                 System.err.println("Schreibfehler: " + fileOutput + " Datei wurde nicht erstellt");
             }
             JDIO.saveReadObject.remove(fileOutput);
-
         } else {
             System.err.println("Schreibfehler: Fileoutput: null");
         }
@@ -204,14 +211,13 @@ public class JDIO {
 
     public static Vector<File> saveReadObject = new Vector<File>();
 
-    public static void waitOnObject(File file) {
+    public static void waitOnObject(final File file) {
         int c = 0;
         while (saveReadObject.contains(file)) {
             if (c++ > 1000) { return; }
             try {
                 Thread.sleep(1);
             } catch (InterruptedException e) {
-
                 JDLogger.exception(e);
             }
         }
@@ -230,10 +236,10 @@ public class JDIO {
      *            Soll das Objekt von einer XML Datei aus geladen werden?
      * @return Das geladene Objekt
      */
-    public static Object loadObject(Component frame, File fileInput, boolean asXML) {
+    public static Object loadObject(final Component frame, File fileInput, final boolean asXML) {
         Object objectLoaded = null;
         if (fileInput == null) {
-            JFileChooser fileChooserLoad = new JFileChooser();
+            final JFileChooser fileChooserLoad = new JFileChooser();
             if (currentDirectory != null) {
                 fileChooserLoad.setCurrentDirectory(currentDirectory);
             }
@@ -248,10 +254,10 @@ public class JDIO {
             saveReadObject.add(fileInput);
 
             try {
-                FileInputStream fis = new FileInputStream(fileInput);
-                BufferedInputStream buff = new BufferedInputStream(fis);
+                final FileInputStream fis = new FileInputStream(fileInput);
+                final BufferedInputStream buff = new BufferedInputStream(fis);
                 if (asXML) {
-                    XMLDecoder xmlDecoder = new XMLDecoder(new BufferedInputStream(buff));
+                    final XMLDecoder xmlDecoder = new XMLDecoder(new BufferedInputStream(buff));
                     objectLoaded = xmlDecoder.readObject();
                     xmlDecoder.close();
                 } else {
@@ -280,11 +286,11 @@ public class JDIO {
      * @return
      * @throws IOException
      */
-    public static byte[] readFileToByteArray(File file) throws IOException {
-        InputStream is = new FileInputStream(file);
+    public static byte[] readFileToByteArray(final File file) throws IOException {
+        final InputStream is = new FileInputStream(file);
 
         // Get the size of the file
-        long length = file.length();
+        final long length = file.length();
 
         // You cannot create an array using a long type.
         // It needs to be an int type.
@@ -295,7 +301,7 @@ public class JDIO {
         }
 
         // Create the byte array to hold the data
-        byte[] bytes = new byte[(int) length];
+        final byte[] bytes = new byte[(int) length];
 
         // Read in the bytes
         int offset = 0;
@@ -319,23 +325,23 @@ public class JDIO {
      * @param file
      * @return File Content als String
      */
-    public static String readFileToString(File file) {
-        if (file == null) return null;
+    public static String readFileToString(final File file) {
+        if (file == null) { return null; }
         if (!file.exists()) { return ""; }
-        BufferedReader f;
+        final BufferedReader f;
         try {
             f = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF8"));
 
             String line;
-            StringBuffer ret = new StringBuffer();
-            String sep = System.getProperty("line.separator");
+            final StringBuffer ret = new StringBuffer();
+            // String sep = System.getProperty("line.separator");
+            final String sep = StringUtil.LINE_SEPARATOR;
             while ((line = f.readLine()) != null) {
                 ret.append(line + sep);
             }
             f.close();
             return ret.toString();
         } catch (IOException e) {
-
             JDLogger.exception(e);
         }
         return "";
@@ -347,16 +353,16 @@ public class JDIO {
      * @param ret
      * @return
      */
-    public static String getFileExtension(File ret) {
+    public static String getFileExtension(final File ret) {
         if (ret == null) { return null; }
         return getFileExtension(ret.getAbsolutePath());
 
     }
 
-    public static String getFileExtension(String str) {
+    public static String getFileExtension(final String str) {
         if (str == null) { return null; }
 
-        int i3 = str.lastIndexOf(".");
+        final int i3 = str.lastIndexOf(".");
 
         if (i3 > 0) { return str.substring(i3 + 1); }
         return null;
@@ -369,7 +375,7 @@ public class JDIO {
      * @param out
      * @returns boolean whether its succeessfull or not
      */
-    public static boolean copyFile(File in, File out) {
+    public static boolean copyFile(final File in, final File out) {
         if (!in.exists()) return false;
         FileChannel inChannel = null;
         FileChannel outChannel = null;
@@ -383,8 +389,8 @@ public class JDIO {
             }
             try {
                 // magic number for Windows, 64Mb - 32Kb), we use 16Mb here
-                int maxCount = (16 * 1024 * 1024) - (32 * 1024);
-                long size = inChannel.size();
+                final int maxCount = (16 * 1024 * 1024) - (32 * 1024);
+                final long size = inChannel.size();
                 long position = 0;
                 while (position < size) {
                     position += inChannel.transferTo(position, maxCount, outChannel);
@@ -405,15 +411,14 @@ public class JDIO {
         return success;
     }
 
-    public static boolean removeDirectoryOrFile(File dir) {
+    public static boolean removeDirectoryOrFile(final File dir) {
         if (dir.isDirectory()) {
-            String[] children = dir.list();
-            for (String element : children) {
+            final String[] children = dir.list();
+            for (final String element : children) {
                 boolean success = JDIO.removeDirectoryOrFile(new File(dir, element));
                 if (!success) return false;
             }
         }
-
         return dir.delete();
     }
 
@@ -424,11 +429,11 @@ public class JDIO {
      * @param dir
      * @return
      */
-    public static ArrayList<File> listFiles(File dir) {
+    public static ArrayList<File> listFiles(final File dir) {
         if (!dir.isDirectory()) return null;
-        ArrayList<File> ret = new ArrayList<File>();
+        final ArrayList<File> ret = new ArrayList<File>();
 
-        for (File f : dir.listFiles()) {
+        for (final File f : dir.listFiles()) {
             if (f.isDirectory()) {
                 ret.addAll(listFiles(f));
             } else {
@@ -446,18 +451,15 @@ public class JDIO {
      * @param parentFile
      * @param string
      */
-    public static void removeByPattern(File parentFile, final Pattern pattern) {
-
+    public static void removeByPattern(final File parentFile, final Pattern pattern) {
         removeRekursive(parentFile, new FileSelector() {
 
             @Override
-            public boolean doIt(File file) {
-
+            public boolean doIt(final File file) {
                 return Regex.matches(file.getAbsolutePath(), pattern);
             }
 
         });
-
     }
 
     public static abstract class FileSelector {
@@ -471,16 +473,14 @@ public class JDIO {
      * @param file
      * @param fileSelector
      */
-    public static void removeRekursive(File file, FileSelector fileSelector) {
-        for (File f : file.listFiles()) {
+    public static void removeRekursive(final File file, final FileSelector fileSelector) {
+        for (final File f : file.listFiles()) {
             if (f.isDirectory()) {
                 removeRekursive(f, fileSelector);
             }
             if (fileSelector.doIt(f)) {
                 f.delete();
             }
-
         }
-
     }
 }
