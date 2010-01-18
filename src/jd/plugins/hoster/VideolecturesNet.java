@@ -42,23 +42,23 @@ public class VideolecturesNet extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         br.getPage(downloadLink.getDownloadURL());
-        
+
         String[] data = br.getRegex("streamer: \"(.+?)/([^/]+?)\",.*?file: \"(.+?)\"").getRow(0);
-        downloadLink.setFinalFileName(br.getRegex("<title>(.+?)</title>").getMatch(0).trim()+".flv");
+        downloadLink.setFinalFileName(br.getRegex("<title>(.+?)</title>").getMatch(0).trim() + ".flv");
         rtmpLink = data[0] + "/" + data[1] + "" + data[2];
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
-     
-        // Download here 
+
+        // Download here
         /** See {@link #Ftp} for example download */
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return -1;
     }
 
     @Override

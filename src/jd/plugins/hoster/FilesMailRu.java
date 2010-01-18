@@ -43,12 +43,16 @@ public class FilesMailRu extends PluginForHost {
     }
 
     public String folderID = this.getPluginConfig().getStringProperty("folderID", null);
+    public boolean iHaveToWait = false;
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        if (downloadLink.getFinalFileName() == null && this.getPluginConfig().getStringProperty("folderID", null) == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (downloadLink.getFinalFileName() == null && this.getPluginConfig().getStringProperty("folderID", null) == null) {
+            logger.warning("final filename and folderID are bot null for unknown reasons!");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (downloadLink.getFinalFileName() != null) this.getPluginConfig().setProperty("finalName", downloadLink.getFinalFileName());
         this.getPluginConfig().save();
         String folderIDregexed = new Regex(downloadLink.getDownloadURL(), "mail\\.ru/([A-Z0-9]+)").getMatch(0);
@@ -60,23 +64,48 @@ public class FilesMailRu extends PluginForHost {
         try {
             if (!br.openGetConnection(downloadLink.getDownloadURL()).getContentType().contains("html")) {
                 long size = br.getHttpConnection().getLongContentLength();
+                if (size == 0) {
+                    logger.warning("Filesize observer by the direct URL is 0...");
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
                 downloadLink.setDownloadSize(Long.valueOf(size));
+                iHaveToWait = false;
                 return AvailableStatus.TRUE;
             } else {
-                logger.info("folderID does exist, accessing page " + folderID + " to renew the ticket");
+                logger.info("Directlink is outdated, accessing link " + folderID + " to renew the ticket!");
                 br.getPage(folderID);
-                if (br.containsHTML("(was not found|were deleted by sender|Не найдено файлов, отправленных с кодом|<b>Ошибка</b>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                if (br.containsHTML("(was not found|were deleted by sender|Не найдено файлов, отправленных с кодом|<b>Ошибка</b>)")) {
+                    logger.info("Link is 100% offline, found errormessage on the page!");
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
                 // This part is to find the filename in case the downloadurl
                 // redirects to the folder it comes from
                 String finalfilename = this.getPluginConfig().getStringProperty("finalName", null);
                 if (finalfilename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 String[] linkinformation = br.getRegex("<td class=\"name\">(.*?)<td class=\"do\">").getColumn(0);
-                if (linkinformation.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (linkinformation.length == 0) {
+                    logger.warning("Critical error : Couldn't get the linkinformation");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 for (String info : linkinformation) {
                     if (info.contains(finalfilename)) {
+                        // regex the new downloadlink and save it!
+                        String directlink = new Regex(info, "\"(http://.*?\\.files\\.mail\\.ru/.*?/.*?)\"").getMatch(0);
+                        if (directlink == null) {
+                            logger.warning("Critical error occured: The final downloadlink couldn't be found in the available check!");
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                        downloadLink.setUrlDownload(directlink);
+                        // If the previous direct link was wrong we have to set
+                        // a new one (code above) and wait about 10 secs
+                        iHaveToWait = true;
+                        logger.info("Set new UrlDownload, link = " + downloadLink.getDownloadURL() + " waittime is enabled!");
                         String filesize = new Regex(info, "<td>(.*?{1,15})</td>").getMatch(0);
                         String filename = new Regex(info, "href=\".*?onclick=\"return.*?\">(.*?)<").getMatch(0);
-                        if (filesize == null || filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                        if (filesize == null || filename == null) {
+                            logger.warning("filename and filesize regex of linkinformation seem to be broken!");
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
                         filesize = filesize.replace("Г", "G");
                         filesize = filesize.replace("М", "M");
                         filesize = filesize.replace("к", "k");
@@ -97,43 +126,16 @@ public class FilesMailRu extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        br.setFollowRedirects(true);
-        String dllink = null;
-        if (br.openGetConnection(downloadLink.getDownloadURL()).getContentType().contains("html")) {
-            logger.info("folderID does exist, accessing page " + folderID + " to renew the ticket");
-            br.getPage(folderID);
-            // Find the downloadlink if the actual one redirects to the previous
-            // downloadpage (folder)
-            String finalfilename = this.getPluginConfig().getStringProperty("finalName", null);
-            if (finalfilename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            String[] linkinformation = br.getRegex("<td class=\"name\">(.*?)<td class=\"do\">").getColumn(0);
-            if (linkinformation.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            for (String info : linkinformation) {
-                if (info.contains(finalfilename)) {
-                    String directlink = new Regex(info, "\"(http://.*?\\.files\\.mail\\.ru/.*?/.*?)\"").getMatch(0);
-                    if (directlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    dllink = directlink;
-                    // Set the new downloadlink so when the user stops the
-                    // download and tries again he doesn't have to wait the 10
-                    // Seconds to start!
-                    downloadLink.setUrlDownload(dllink);
-                    // Ticket Time
-                    // If we get the dllink this way we have to wait about 10
-                    // seconds else the server doesn't allow starting the
-                    // download
-                    String ttt = br.getRegex("файлы через.*?(\\d+).*?сек").getMatch(0);
-                    if (ttt == null) ttt = br.getRegex("download files in.*?(\\d+).*?sec").getMatch(0);
-                    int tt = 10;
-                    if (ttt != null) tt = Integer.parseInt(ttt);
-                    sleep(tt * 1001, downloadLink);
-                }
-            }
-        } else {
-            dllink = downloadLink.getDownloadURL();
+        br.setFollowRedirects(false);
+        if (iHaveToWait) {
+            String ttt = br.getRegex("файлы через.*?(\\d+).*?сек").getMatch(0);
+            if (ttt == null) ttt = br.getRegex("download files in.*?(\\d+).*?sec").getMatch(0);
+            int tt = 10;
+            if (ttt != null) tt = Integer.parseInt(ttt);
+            sleep(tt * 1001, downloadLink);
         }
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        if (!(dl.getConnection().isContentDisposition())) {
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, 0);
+        if ((dl.getConnection().getContentType().contains("html"))) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
