@@ -22,6 +22,9 @@ import java.io.File;
 import java.net.URL;
 import java.util.ArrayList;
 
+import javax.crypto.Cipher;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 import javax.swing.JFrame;
 
 import jd.Installer;
@@ -30,7 +33,6 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
 import jd.config.SubConfiguration;
-import jd.controlling.CNL2;
 import jd.controlling.DistributeData;
 import jd.controlling.JDLogger;
 import jd.controlling.LinkGrabberController;
@@ -39,11 +41,8 @@ import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.nutils.JDFlags;
+import jd.nutils.encoding.Base64;
 import jd.nutils.encoding.Encoding;
-import jd.nutils.httpserver.Handler;
-import jd.nutils.httpserver.HttpServer;
-import jd.nutils.httpserver.Request;
-import jd.nutils.httpserver.Response;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -53,10 +52,14 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginOptional;
 import jd.update.WebUpdater;
+import jd.utils.JDHexUtils;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.WebUpdate;
 import jd.utils.locale.JDL;
+
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.Scriptable;
 
 @OptionalPlugin(rev = "$Revision$", defaultEnabled = true, id = "externinterface", interfaceversion = 5)
 public class JDExternInterface extends PluginOptional {
@@ -68,6 +71,58 @@ public class JDExternInterface extends PluginOptional {
     public JDExternInterface(PluginWrapper wrapper) {
         super(wrapper);
         handler = new RequestHandler();
+    }
+
+    public static String decrypt(byte[] b, byte[] key) {
+        Cipher cipher;
+        try {
+            IvParameterSpec ivSpec = new IvParameterSpec(key);
+            SecretKeySpec skeySpec = new SecretKeySpec(key, "AES");
+            cipher = Cipher.getInstance("AES/CBC/NoPadding");
+            cipher.init(Cipher.DECRYPT_MODE, skeySpec, ivSpec);
+            return new String(cipher.doFinal(b));
+        } catch (Exception e) {
+            JDLogger.exception(e);
+        }
+        return null;
+    }
+
+    /**
+     * @param crypted
+     * @param jk
+     * @param k
+     * @param passwords
+     * @param source
+     */
+    public static void decrypt(String crypted, String jk, String k, String password, String source) {
+        byte[] key;
+
+        if (jk != null) {
+            Context cx = Context.enter();
+            Scriptable scope = cx.initStandardObjects();
+            String fun = jk + "  f()";
+            Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
+
+            key = JDHexUtils.getByteArray(Context.toString(result));
+            Context.exit();
+        } else {
+            key = JDHexUtils.getByteArray(k);
+        }
+        byte[] baseDecoded = Base64.decode(crypted);
+        String decryted = decrypt(baseDecoded, key).trim();
+
+        String passwords[] = Regex.getLines(password);
+
+        ArrayList<DownloadLink> links = new DistributeData(Encoding.htmlDecode(decryted)).findLinks();
+        for (DownloadLink link : links)
+            link.addSourcePluginPasswords(passwords);
+        for (DownloadLink l : links) {
+            if (source != null) {
+                l.setBrowserUrl(source);
+            }
+        }
+        LinkGrabberController.getInstance().addLinks(links, false, false);
+
     }
 
     @Override
@@ -124,6 +179,10 @@ public class JDExternInterface extends PluginOptional {
         public void handle(Request request, Response response) {
             splitPath = request.getRequestUrl().substring(1).split("[/|\\\\]");
             namespace = splitPath[0];
+            
+           JDLogger.getLogger().finer(request.toString());
+           JDLogger.getLogger().finer(request.getParameters().toString());
+           
             try {
                 if (namespace.equalsIgnoreCase("update")) {
 
@@ -202,7 +261,7 @@ public class JDExternInterface extends PluginOptional {
                         String passwords = Encoding.urlDecode(request.getParameters().get("passwords"), false);
                         String source = Encoding.urlDecode(request.getParameters().get("source"), false);
                         try {
-                            CNL2.decrypt(crypted, jk, k, passwords, source);
+                            decrypt(crypted, jk, k, passwords, source);
 
                             response.addContent("success\r\n");
                             new GuiRunnable<Object>() {
