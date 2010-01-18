@@ -47,6 +47,7 @@ public class FileRackCom extends PluginForHost {
         requestFileInformation(link);
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
+        if (br.containsHTML("The file is not fully uploaded")) throw new PluginException(LinkStatus.ERROR_FATAL, "The file you're trying to download isn't fully uploaded yet!");
         if (br.containsHTML("is already downloaded a file")) {
             int wait = 10;
             String time = br.getRegex("Please wait (\\d+) minutes").getMatch(0);
