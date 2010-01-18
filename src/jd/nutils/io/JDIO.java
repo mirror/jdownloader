@@ -415,7 +415,7 @@ public final class JDIO {
         if (dir.isDirectory()) {
             final String[] children = dir.list();
             for (final String element : children) {
-                boolean success = JDIO.removeDirectoryOrFile(new File(dir, element));
+                boolean success = removeDirectoryOrFile(new File(dir, element));
                 if (!success) return false;
             }
         }
