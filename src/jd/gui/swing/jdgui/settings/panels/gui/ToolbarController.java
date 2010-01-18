@@ -178,29 +178,7 @@ public class ToolbarController extends ConfigPanel {
                 }
                 GUIUtils.getConfig().setProperty("TOOLBAR", list);
                 GUIUtils.getConfig().save();
-                Collections.sort(list, new Comparator<String>() {
-                    public int compare(String o1, String o2) {
-                        int ia = WHITELIST.indexOf(o1);
-                        int ib = WHITELIST.indexOf(o2);
-                        return ia < ib ? -1 : 1;
-                    }
-                });
-                while (list.remove("toolbar.separator")) {
-                }
-                // adds separatores based on WHITELIST order
-                for (int i = 1; i < list.size(); i++) {
-                    int b = WHITELIST.indexOf(list.get(i));
-                    int a = WHITELIST.indexOf(list.get(i - 1));
-                    if (a > 0 && b > 0) {
-                        for (int ii = a; ii < b; ii++) {
-                            if (WHITELIST.get(ii).equals("separator")) {
-                                list.add(i, "toolbar.separator");
-                                i++;
-                                break;
-                            }
-                        }
-                    }
-                }
+                list=resort(list);
                 MainToolBar.getInstance().setList(list.toArray(new String[] {}));
             }
         }
@@ -252,6 +230,7 @@ public class ToolbarController extends ConfigPanel {
             }
         });
         ArrayList<String> list = new ArrayList<String>();
+
         list.addAll(GUIUtils.getConfig().getGenericProperty("TOOLBAR", ToolBar.DEFAULT_LIST));
         boolean resortRequired = false;
         for (Iterator<ToolBarAction> it = actions2.iterator(); it.hasNext();) {
@@ -273,32 +252,36 @@ public class ToolbarController extends ConfigPanel {
             }
         }
         if (resortRequired) {
-            Collections.sort(list, new Comparator<String>() {
-                public int compare(String o1, String o2) {
-                    int ia = WHITELIST.indexOf(o1);
-                    int ib = WHITELIST.indexOf(o2);
-                    return ia < ib ? -1 : 1;
-                }
-            });
-            while (list.remove("toolbar.separator")) {
+            list = resort(list);
+        }
+        MainToolBar.getInstance().setList(list.toArray(new String[] {}));
+        return list;
+    }
+    
+    public static ArrayList<String> resort(ArrayList<String> list){
+        Collections.sort(list, new Comparator<String>() {
+            public int compare(String o1, String o2) {
+                int ia = WHITELIST.indexOf(o1);
+                int ib = WHITELIST.indexOf(o2);
+                return ia < ib ? -1 : 1;
             }
-            // adds separatores based on WHITELIST order
-            for (int i = 1; i < list.size(); i++) {
-                int b = WHITELIST.indexOf(list.get(i));
-                int a = WHITELIST.indexOf(list.get(i - 1));
-                if (a > 0 && b > 0) {
-                    for (int ii = a; ii < b; ii++) {
-                        if (WHITELIST.get(ii).equals("separator")) {
-                            list.add(i, "toolbar.separator");
-                            i++;
-                            break;
-                        }
+        });
+        while (list.remove("toolbar.separator")) {
+        }
+        // adds separatores based on WHITELIST order
+        for (int i = 1; i < list.size(); i++) {
+            int b = WHITELIST.indexOf(list.get(i));
+            int a = WHITELIST.indexOf(list.get(i - 1));
+            if (a > 0 && b > 0) {
+                for (int ii = a; ii < b; ii++) {
+                    if (WHITELIST.get(ii).equals("separator")) {
+                        list.add(i, "toolbar.separator");
+                        i++;
+                        break;
                     }
                 }
             }
-
         }
-        MainToolBar.getInstance().setList(list.toArray(new String[] {}));
         return list;
     }
 
