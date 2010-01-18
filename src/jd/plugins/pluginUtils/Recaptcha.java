@@ -135,6 +135,5 @@ public class Recaptcha {
         form.put("recaptcha_response_field", Encoding.urlEncode(code));
         br.submitForm(form);
         return br;
-
     }
 }
