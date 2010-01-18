@@ -36,7 +36,7 @@ public class RapidGatorNet extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://about.socifiles.com/terms-of-service";
+        return "http://rapidgator.net/?content=terms";
     }
 
     @Override

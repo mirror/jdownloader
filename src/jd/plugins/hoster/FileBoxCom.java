@@ -34,14 +34,16 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filebox.com" }, urls = { "http://[\\w\\.]*?filebox\\.com/(.*?/[0-9a-z]{12}|[0-9a-z]{12})" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filebox.com" }, urls = { "(http://|https://)[\\w\\.]*?filebox\\.com/(.*?/[0-9a-z]{12}|[0-9a-z]{12})" }, flags = { 2 })
 public class FileBoxCom extends PluginForHost {
 
     public FileBoxCom(PluginWrapper wrapper) {
         super(wrapper);
         enablePremium("http://www.filebox.com/premium.html");
     }
-
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("https://", "http://"));
+    }
     public boolean registered = false;
 
     @Override
@@ -51,6 +53,7 @@ public class FileBoxCom extends PluginForHost {
 
     public void login(Account account) throws Exception {
         this.setBrowserExclusive();
+        registered = false;
         br.setFollowRedirects(true);
         br.setCookie("http://www.filebox.com", "lang", "english");
         br.getPage("http://www.filebox.com/");
@@ -237,7 +240,7 @@ public class FileBoxCom extends PluginForHost {
         }
         if ((dl.getConnection().getContentType().contains("html"))) {
             br.followConnection();
-            if (br.containsHTML(">Free Registration<")) throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable by using a registered account!");
+            if (br.containsHTML(">Free Registration<")) throw new PluginException(LinkStatus.ERROR_FATAL, "Register for free and add your free filebox account like a premium account to download this file!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
