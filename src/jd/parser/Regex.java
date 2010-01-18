@@ -23,6 +23,8 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jd.utils.StringUtil;
+
 public class Regex {
 
     private Matcher matcher;
@@ -207,7 +209,8 @@ public class Regex {
                 ret.append(j);
                 ret.append("] = ");
                 ret.append(match[j]);
-                ret.append(System.getProperty("line.separator"));
+                //ret.append(System.getProperty("line.separator"));
+                ret.append(StringUtil.LINE_SEPARATOR);
             }
         }
         matcher.reset();
