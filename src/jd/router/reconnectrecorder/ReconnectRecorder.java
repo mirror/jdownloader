@@ -33,8 +33,8 @@ public class ReconnectRecorder {
     static final String PROPERTY_PORT = "PARAM_PORT";
     static String auth;
 
-    static public void startServer(String serverip, boolean rawmode) {
-        steps = new Vector<String>();        
+    static public void startServer(String serverip, final boolean rawmode) {
+        steps = new Vector<String>();
         auth = null;
         running = true;
         steps.add("[[[HSRC]]]");
@@ -43,7 +43,7 @@ public class ReconnectRecorder {
             Server_Socket_HTTP = new ServerSocket(SubConfiguration.getConfig("ReconnectRecorder").getIntegerProperty(ReconnectRecorder.PROPERTY_PORT, 8972));
             Server_Socket_HTTPS = new ServerSocket(SubConfiguration.getConfig("ReconnectRecorder").getIntegerProperty(ReconnectRecorder.PROPERTY_PORT, 8972) + 1);
             if (serverip.contains(":")) {
-                String ports = new Regex(serverip, ".*?:(\\d+)").getMatch(0);
+                final String ports = new Regex(serverip, ".*?:(\\d+)").getMatch(0);
                 port = Integer.parseInt(ports);
                 serverip = new Regex(serverip, "(.*?):").getMatch(0);
             }
@@ -56,7 +56,9 @@ public class ReconnectRecorder {
 
     static public void stopServer() {
         running = false;
-        if (steps != null) steps.add("[[[/HSRC]]]");
+        if (steps != null) {
+            steps.add("[[[/HSRC]]]");
+        }
         try {
             Server_Socket_HTTP.close();
         } catch (Exception e) {
@@ -70,13 +72,13 @@ public class ReconnectRecorder {
     }
 
     static public class JDRRServer extends Thread {
-        ServerSocket Server_Socket = null;
-        String serverip;
-        int port;
-        boolean ishttps = false;
-        boolean israw = false;
+        final ServerSocket Server_Socket;// = null;
+        final String serverip;
+        final int port;
+        final boolean ishttps;// = false;
+        final boolean israw;// = false;
 
-        public JDRRServer(ServerSocket Server_Socket, String server, int port, boolean ishttps, boolean israw) {
+        public JDRRServer(final ServerSocket Server_Socket, final String server, final int port, final boolean ishttps, final boolean israw) {
             this.Server_Socket = Server_Socket;
             this.serverip = server;
             this.setName("JDRRServer " + port + " " + server);
@@ -94,8 +96,7 @@ public class ReconnectRecorder {
                     break;
                 }
                 if (running) {
-                    Proxy record = new Proxy(Client_Socket, steps, serverip, port, ishttps, israw);
-                    record.start();
+                    (new Proxy(Client_Socket, steps, serverip, port, ishttps, israw)).start();
                 }
             }
             running = false;
