@@ -79,7 +79,7 @@ public class MultiShareCz extends PluginForHost {
         br.setCustomCharset("utf-8");
         br.setFollowRedirects(true);
         br.getPage("http://www.multishare.cz/");
-        br.postPage("http://www.multishare.cz/html/prihlaseni_process.php", "jmeno=" + Encoding.urlEncode(account.getUser()) + "&heslo=" + Encoding.urlEncode(account.getPass()) + "&trvale=ano&akce=Přihlásit");
+        br.postPage("http://www.multishare.cz/html/prihlaseni_process.php", "jmeno=" + Encoding.urlEncode(account.getUser()) + "&heslo=" + Encoding.urlEncode(account.getPass()) + "&trvale=ano&akce=P%C5%99ihl%C3%A1sit");
         if (br.getCookie("http://www.multishare.cz", "sess_ID") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
