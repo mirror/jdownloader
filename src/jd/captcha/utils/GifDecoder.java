@@ -323,7 +323,7 @@ public class GifDecoder {
      * 
      * @return BufferedImage representation of frame, or null if n is invalid.
      */
-    public BufferedImage getFrame(int n) {
+    public BufferedImage getFrame(final int n) {
         BufferedImage im = null;
         if (n >= 0 && n < frameCount) {
             im = frames.get(n).image;
@@ -399,7 +399,7 @@ public class GifDecoder {
      *            containing GIF file.
      * @return read status code (0 = no errors)
      */
-    public int read(BufferedInputStream is) {
+    public int read(final BufferedInputStream is) {
         init();
         if (is != null) {
             try {
@@ -518,10 +518,10 @@ public class GifDecoder {
      *            int number of colors to read
      * @return int array containing 256 colors (packed ARGB with full alpha)
      */
-    protected int[] readColorTable(int ncolors) {
-        int nbytes = 3 * ncolors;
+    protected int[] readColorTable(final int ncolors) {
+        final int nbytes = 3 * ncolors;
         int[] tab = null;
-        byte[] c = new byte[nbytes];
+        final byte[] c = new byte[nbytes];
         int n = 0;
         try {
             n = in.read(c);
