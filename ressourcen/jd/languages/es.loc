@@ -1007,6 +1007,7 @@ jd.plugins.decrypter.stealth.askpassword = Contraseña requerida para %s
 jd.plugins.hoster.filebaseto.serversideerror = Error del servidor. Reintente mas tarde.
 jd.plugins.hoster.lastfm.requestfileinformation.nodownload = No descargable
 jd.plugins.optional.antistandby.jdantistandby = JD AntiSuspension
+jd.plugins.optional.awesomebar.awesomebar = JD AwesomeBar
 jd.plugins.optional.customizer.columns.packagenamecolumn.tooltip = El nombre del paquete, si el enlace coincide con el Regex. Dejar vacio para usar el nombre por defecto.
 jd.plugins.optional.customizer.columns.regexcolumn.regex.empty = Regex no puede quedar vacio!
 jd.plugins.optional.customizer.columns.regexcolumn.regex.malformed = Regex invalido: %s
