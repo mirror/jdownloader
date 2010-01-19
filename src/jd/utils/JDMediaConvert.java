@@ -52,26 +52,18 @@ public class JDMediaConvert {
             switch (OutType) {
             case AUDIOMP3:
                 LOG.info("Convert FLV to mp3...");
-                new FLV(downloadlink.getFileOutput(), true, true);
+                new FLV(downloadlink.getFileOutput(), true, false);
                 progress.increase(1);
                 // FLV löschen
                 if (!new File(downloadlink.getFileOutput()).delete()) {
                     new File(downloadlink.getFileOutput()).deleteOnExit();
                 }
-                // AVI löschen
-                if (!new File(downloadlink.getFileOutput().replaceAll(TEMP_EXT, ".avi")).delete()) {
-                    new File(downloadlink.getFileOutput().replaceAll(TEMP_EXT, ".avi")).deleteOnExit();
-                }
                 progress.doFinalize();
                 return true;
             case AUDIOMP3_AND_VIDEOFLV:
                 LOG.info("Convert FLV to mp3 (keep FLV)...");
-                new FLV(downloadlink.getFileOutput(), true, true);
+                new FLV(downloadlink.getFileOutput(), true, false);
                 progress.increase(1);
-                // AVI löschen
-                if (!new File(downloadlink.getFileOutput().replaceAll(TEMP_EXT, ".avi")).delete()) {
-                    new File(downloadlink.getFileOutput().replaceAll(TEMP_EXT, ".avi")).deleteOnExit();
-                }
                 // Rename tmp to flv
                 new File(downloadlink.getFileOutput()).renameTo(new File(downloadlink.getFileOutput().replaceAll(".tmp", ConversionMode.VIDEOFLV.getExtFirst())));
                 progress.doFinalize();

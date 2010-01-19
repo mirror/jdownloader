@@ -17,9 +17,11 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -65,8 +67,6 @@ public class Netloadin extends PluginForHost {
         if (id == null) id = new Regex(link, "netload\\.in\\/([a-zA-Z0-9]+)\\/.+").getMatch(0);
         return id;
     }
-
-    private String fileStatusText;
 
     public Netloadin(PluginWrapper wrapper) {
         super(wrapper);
@@ -396,65 +396,71 @@ public class Netloadin extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException {
+    public boolean checkLinks(DownloadLink[] urls) {
+        if (urls == null || urls.length == 0) { return false; }
         try {
-            this.setBrowserExclusive();
-            br.setConnectTimeout(15000);
-
-            String id = Netloadin.getID(downloadLink.getDownloadURL());
-
-            String page = null;
-            IOException ex = null;
-            for (int i = 0; i < 5; i++) {
-                Thread.sleep(500 + (i * 200));
-                ex = null;
-                try {
-                    page = br.getPage("http://netload.in/share/fileinfos2.php?bz=1&file_id=" + id);
-                    break;
-                } catch (IOException e2) {
-                    ex = e2;
+            Browser br = new Browser();
+            br.setCookiesExclusive(true);
+            StringBuilder sb = new StringBuilder();
+            ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
+            int index = 0;
+            while (true) {
+                links.clear();
+                while (true) {
+                    /* we test 100 links at once */
+                    if (index == urls.length || links.size() > 100) break;
+                    links.add(urls[index]);
+                    index++;
                 }
+                sb.delete(0, sb.capacity());
+                sb.append("auth=BVm96BWDSoB4WkfbEhn42HgnjIe1ilMt&bz=1&md5=1&file_id=");
+                int c = 0;
+                for (DownloadLink dl : links) {
+                    if (c > 0) sb.append(";");
+                    sb.append(Netloadin.getID(dl.getDownloadURL()));
+                    c++;
+                }
+                br.postPage("http://api.netload.in/info.php", sb.toString());
+                String infos[][] = br.getRegex(Pattern.compile("(.*?);(.*?);(\\d+);(.*?);([0-9a-fA-F]+)")).getMatches();
+                for (DownloadLink dl : links) {
+                    String id = Netloadin.getID(dl.getDownloadURL());
+                    int hit = -1;
+                    for (int i = 0; i < infos.length; i++) {
+                        if (infos[i][0].equalsIgnoreCase(id)) {
+                            hit = i;
+                            break;
+                        }
+                    }
+                    if (hit == -1) {
+                        /* id not in response, so its offline */
+                        dl.setAvailable(false);
+                    } else {
+                        dl.setFinalFileName(infos[hit][1].trim());
+                        dl.setDownloadSize(Regex.getSize(infos[hit][2]));
+                        if (infos[hit][3].trim().equalsIgnoreCase("online")) {
+                            dl.setAvailable(true);
+                            dl.setMD5Hash(infos[hit][4].trim());
+                        } else {
+                            dl.setAvailable(false);
+                        }
+                    }
+                }
+                if (index == urls.length) break;
             }
-            if (page == null && ex != null) throw ex;
-            if (page == null || Regex.matches(page, "unknown file_data") || Regex.matches(page, "unknown_file_data")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            if (page != null && Regex.matches(page, "unknown_server_data")) return websiteFileCheck(downloadLink);
-
-            String[] entries = br.getRegex("(.*?);(.*?);(.*?);(.*?);(.*)").getRow(0);
-
-            if (entries == null) {
-                entries = br.getRegex(";(.*?);(.*?);(.*?)").getRow(0);
-                if (entries == null || entries.length < 3) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                downloadLink.setDownloadSize(Regex.getSize(entries[1] + " bytes"));
-                downloadLink.setFinalFileName(entries[0]);
-                fileStatusText = JDL.L("plugins.hoster.netloadin.errors.mightbeoffline", "Might be offline");
-                downloadLink.getLinkStatus().setStatusText(fileStatusText);
-                return AvailableStatus.TRUE;
-            }
-
-            if (entries.length < 3) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-
-            downloadLink.setFinalFileName(entries[1]);
-            fileStatusText = entries[2];
-            downloadLink.setDownloadSize(Regex.getSize(entries[2] + " bytes"));
-
-            downloadLink.setMD5Hash(entries[4].trim());
-            if (entries[3].equalsIgnoreCase("online")) { return AvailableStatus.TRUE; }
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } catch (PluginException e2) {
-            throw e2;
-        } catch (IOException e) {
-            logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
-            return websiteFileCheck(downloadLink);
-
         } catch (Exception e) {
-            logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
+            return false;
         }
-        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        return true;
     }
 
     @Override
-    public String getFileInformationString(DownloadLink downloadLink) {
-        return downloadLink.getName() + " (" + fileStatusText + ")";
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException {
+        DownloadLink urls[] = new DownloadLink[1];
+        urls[0] = downloadLink;
+        checkLinks(urls);
+        if (!downloadLink.isAvailabilityStatusChecked()) return AvailableStatus.UNCHECKED;
+        if (downloadLink.isAvailable()) return AvailableStatus.TRUE;
+        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
     @Override
