@@ -21,14 +21,15 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filestube.com" }, urls = { "http://[\\w\\.]*?filestube\\.com/.+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filestube.com" }, urls = { "http://[\\w\\.]*?filestube\\.com/.+\\.html" }, flags = { 0 })
 public class FlStbCm extends PluginForDecrypt {
 
     public FlStbCm(PluginWrapper wrapper) {
@@ -41,32 +42,39 @@ public class FlStbCm extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         FilePackage fp = FilePackage.getInstance();
         br.getPage(parameter.toString());
-        String fpName = br.getRegex("<title>(.*?)- Download").getMatch(0).trim();
-        //Hmm this plugin should always have a name with that mass of alternative ways to get the name
-        if (fpName == null) {
-            fpName = br.getRegex("content=\"Download(.*?)from").getMatch(0).trim();
+        if (br.containsHTML("(Requested file was not found|Error 404 -)")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        if (parameter.toString().contains("/go.html")) {
+            String finallink = br.getRegex("<noframes> <br /> <a href=\"(.*?)\"").getMatch(0);
+            if (finallink == null) finallink = br.getRegex("<iframe style=\".*?\" src=\"(.*?)\"").getMatch(0);
+            if (finallink == null) return null;
+            decryptedLinks.add(createDownloadlink(finallink));
+        } else {
+            String fpName = br.getRegex("<title>(.*?)- Download").getMatch(0);
+            // Hmm this plugin should always have a name with that mass of
+            // alternative ways to get the name
             if (fpName == null) {
-                fpName = br.getRegex("\">Download:(.*?)</h2>").getMatch(0).trim();
+                fpName = br.getRegex("content=\"Download(.*?)from").getMatch(0);
                 if (fpName == null) {
-                    fpName = br.getRegex("widgetTitle: '(.*?)',").getMatch(0).trim();
+                    fpName = br.getRegex("\">Download:(.*?)</h2>").getMatch(0);
                     if (fpName == null) {
-                        fpName = br.getRegex("&quot;\\](.*?)\\[/url\\]\"").getMatch(0).trim();
+                        fpName = br.getRegex("widgetTitle: '(.*?)',").getMatch(0);
+                        if (fpName == null) {
+                            fpName = br.getRegex("&quot;\\](.*?)\\[/url\\]\"").getMatch(0);
+                        }
                     }
                 }
             }
+            String pagePiece = br.getRegex(Pattern.compile("overflow: auto\">(.*?)</pre>", Pattern.DOTALL)).getMatch(0);
+            String temp[] = pagePiece.split("<br />");
+            if (temp == null) return null;
+            if (temp == null || temp.length == 0) return null;
+            for (String data : temp)
+                decryptedLinks.add(createDownloadlink(data));
+            if (fpName != null) {
+                fp.setName(fpName.trim());
+                fp.addLinks(decryptedLinks);
+            }
         }
-        fp.setName(fpName);
-        String temp = br.getRegex(Pattern.compile("overflow(.*?)/pre>", Pattern.DOTALL)).getMatch(0);
-        if (temp == null) return null;
-        String[] links = HTMLParser.getHttpLinks(temp, "");
-        if (links == null || links.length == 0) return null;
-        progress.setRange(links.length);
-        for (String data : links) {
-            decryptedLinks.add(createDownloadlink(data));
-            progress.increase(1);
-        }
-        fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }
-
 }

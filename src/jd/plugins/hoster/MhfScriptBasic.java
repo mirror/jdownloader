@@ -64,12 +64,12 @@ public class MhfScriptBasic extends PluginForHost {
         if (br.containsHTML("Your requested file is not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<b>File name:</b></td>.*?<td align=.*?width=.*?>(.*?)</td>").getMatch(0);
         if (filename == null) {
-            br.getRegex("\"Click this to report for(.*?)\"").getMatch(0);
+            filename = br.getRegex("\"Click this to report for(.*?)\"").getMatch(0);
             if (filename == null) {
-                br.getRegex("<title>(.*?)</title>").getMatch(0);
-            }
-            if (filename == null) {
-                br.getRegex("content=\"(.*?), The best file hosting service").getMatch(0);
+                filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
+                if (filename == null) {
+                    filename = br.getRegex("content=\"(.*?), The best file hosting service").getMatch(0);
+                }
             }
         }
         String filesize = br.getRegex("<b>File size:</b></td>.*?<td align=.*?>(.*?)</td>").getMatch(0);
