@@ -106,7 +106,7 @@ public class AppSceneOrg extends PluginForHost {
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
         String finallink = br.getRedirectLocation();
-        jd.plugins.BrowserAdapter.openDownload(br, link, finallink, true, 0);
+        jd.plugins.BrowserAdapter.openDownload(br, link, finallink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

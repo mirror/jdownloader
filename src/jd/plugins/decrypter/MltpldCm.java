@@ -41,6 +41,9 @@ public class MltpldCm extends PluginForDecrypt {
         String parameter = param.toString();
         br.getPage(parameter);
         if (br.containsHTML("(the link you have clicked is not available|Invalid link|The file has been deleted because it was violating our|No htmlCode read)")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        String directMultiuploadLink = br.getRegex("<div id=\"downloadbutton_\" style=\".*?><a href=\"(.*?)\"").getMatch(0);
+        if (directMultiuploadLink == null) directMultiuploadLink = br.getRegex("\"(http://[a-z0-9]+\\.multiupload\\.com:[0-9]+/files/[A-Za-z0-9]{40,}/.*?)\"").getMatch(0);
+        if (directMultiuploadLink != null) decryptedLinks.add(createDownloadlink("directhttp://" + directMultiuploadLink));
         if (!parameter.contains("_")) {
             String[] redirectLinks = br.getRegex(Pattern.compile("id=\"urlhref_.*?\">(.*?)</a></div>")).getColumn(0);
             if (redirectLinks == null || redirectLinks.length == 0) return null;

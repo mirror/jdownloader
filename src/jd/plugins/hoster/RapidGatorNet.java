@@ -69,7 +69,7 @@ public class RapidGatorNet extends PluginForHost {
         String dllink = br.getRegex("<p>Your link: <a href=\"(http.*?)\"").getMatch(0);
         if (dllink == null) dllink = br.getRegex("\"(http://dl\\.rapidgator\\.net/\\?dlsession=.*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML("Sorry, old link")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
