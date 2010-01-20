@@ -1309,7 +1309,6 @@ plugins.hoster.netloadin.errors.couldnotfollow = Server: impossibile trovare il 
 plugins.hoster.netloadin.errors.damagedfile = File danneggiato
 plugins.hoster.netloadin.errors.dlnotfound = Collegamento per download non trovato
 plugins.hoster.netloadin.errors.fileondmgserver = File su server danneggiato
-plugins.hoster.netloadin.errors.mightbeoffline = Potrebbe essere offline
 plugins.hoster.nopremiumsupport = Il plugin non può usare il metodo Premium!
 plugins.hoster.passquestion = Collegamento '%s' protetto da password; Inserire password:
 plugins.hoster.premium.status_ok = Account OK
