@@ -56,8 +56,6 @@ public class RAFDownload extends DownloadInterface {
 
     protected long hdWritesPerSecond;
 
-    private FileChannel outputChannel;
-
     private RandomAccessFile outputFile;
 
     protected File[] partFiles;
@@ -88,17 +86,7 @@ public class RAFDownload extends DownloadInterface {
         }
         logger.info("Close File. Let AV programs run");
         try {
-            outputChannel.force(false);
-        } catch (Exception e) {
-            // JDLogger.getLogger().log(Level.SEVERE,"Exception occurred",e);
-        }
-        try {
             outputFile.close();
-        } catch (Exception e) {
-            // JDLogger.getLogger().log(Level.SEVERE,"Exception occurred",e);
-        }
-        try {
-            outputChannel.close();
         } catch (Exception e) {
             // JDLogger.getLogger().log(Level.SEVERE,"Exception occurred",e);
         }
@@ -215,10 +203,8 @@ public class RAFDownload extends DownloadInterface {
 
         } catch (Exception e) {
             try {
-                if (outputChannel != null) outputChannel.force(false);
                 logger.info("CLOSE HD FILE");
                 if (outputFile != null) outputFile.close();
-                if (outputChannel != null) outputChannel.close();
             } catch (Exception e2) {
                 JDLogger.exception(e2);
             }
@@ -292,8 +278,6 @@ public class RAFDownload extends DownloadInterface {
             new File(downloadLink.getFileOutput()).getParentFile().mkdirs();
         }
         outputFile = new RandomAccessFile(downloadLink.getFileOutput() + ".part", "rw");
-
-        outputChannel = outputFile.getChannel();
     }
 
     private void setupResume() throws FileNotFoundException {
@@ -323,9 +307,9 @@ public class RAFDownload extends DownloadInterface {
     // @Override
     protected boolean writeChunkBytes(Chunk chunk) {
         try {
-            synchronized (outputChannel) {
+            synchronized (outputFile) {
                 outputFile.seek(chunk.getWritePosition());
-                outputChannel.write(chunk.buffer.buffer);
+                outputFile.write(chunk.buffer.getBuffer(), 0, chunk.buffer.getMark());
                 if (chunk.getID() >= 0) {
                     downloadLink.getChunksProgress()[chunk.getID()] = chunk.getCurrentBytesPosition() - 1;
                 }

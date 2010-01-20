@@ -85,26 +85,26 @@ public class Formatter {
             case 0:
                 return c.format(value) + " B";
             case 1:
-                return c.format(value) + " KB";
+                return c.format(value) + " KiB";
             case 2:
-                return c.format(value) + " MB";
+                return c.format(value) + " MiB";
             case 3:
-                return c.format(value) + " GB";
+                return c.format(value) + " GiB";
             case 4:
-                return c.format(value) + " TB";
+                return c.format(value) + " TiB";
             }
         }
         return null;
     }
 
-    public static String formatReadable(long value) {
-        if (value < 0) value = 0;
+    public static String formatReadable(long fileSize) {
+        if (fileSize < 0) fileSize = 0;
         DecimalFormat c = new DecimalFormat("0.00");
-        if (value >= (1024 * 1024 * 1024 * 1024l)) return c.format(value / (1024 * 1024 * 1024 * 1024.0)) + " TB";
-        if (value >= (1024 * 1024 * 1024l)) return c.format(value / (1024 * 1024 * 1024.0)) + " GB";
-        if (value >= (1024 * 1024l)) return c.format(value / (1024 * 1024.0)) + " MB";
-        if (value >= 1024l) return c.format(value / 1024.0) + " KB";
-        return value + " B";
+        if (fileSize >= (1024 * 1024 * 1024 * 1024l)) return c.format(fileSize / (1024 * 1024 * 1024 * 1024.0)) + " TiB";
+        if (fileSize >= (1024 * 1024 * 1024l)) return c.format(fileSize / (1024 * 1024 * 1024.0)) + " GiB";
+        if (fileSize >= (1024 * 1024l)) return c.format(fileSize / (1024 * 1024.0)) + " MiB";
+        if (fileSize >= 1024l) return c.format(fileSize / 1024.0) + " KiB";
+        return fileSize + " B";
     }
 
     public static String fillString(String binaryString, String pre, String post, int length) {
