@@ -21,6 +21,7 @@ import jd.gui.swing.components.ConvertDialog.ConversionMode;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -137,14 +138,20 @@ public class Youtube extends PluginForHost {
 
     public void login(Account account, Browser br) throws Exception {
         if (br == null) br = this.br;
+        br.setDebug(true);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        /* TODO: google accounts with youtube profile do not work yet */
         br.getPage("http://www.youtube.com/");
         br.getPage("https://www.google.com/accounts/ServiceLogin?uilel=3&service=youtube&passive=true&continue=http%3A%2F%2Fwww.youtube.com%2Fsignin%3Faction_handle_signin%3Dtrue%26nomobiletemp%3D1%26hl%3Den_US%26next%3D%252Findex&hl=en_US&ltmpl=sso");
+        Form form = br.getForm(1);
+        form.put("continue", Encoding.urlEncode_light("http%3A%2F%2Fwww.youtube.com%2Fsignin%3Faction_handle_signin%3Dtrue%26amp%3Bnomobiletemp%3D1%26amp%3Bhl%3Den_US%26amp%3Bnext%3D%252Findex"));
+        form.put("Email", Encoding.urlEncode(account.getUser()));
+        form.put("Passwd", Encoding.urlEncode(account.getPass()));
         br.setFollowRedirects(false);
         String cook = br.getCookie("http://www.google.com", "GALX");
         if (cook == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.postPage("https://www.google.com/accounts/ServiceLoginAuth?service=youtube", "ltmpl=sso&continue=http%3A%2F%2Fwww.youtube.com%2Fsignin%3Faction_handle_signin%3Dtrue%26nomobiletemp%3D1%26hl%3Den_US%26next%3D%252F&service=youtube&uilel=3&ltmpl=sso&hl=en_US&ltmpl=sso&GALX=" + cook + "&Email=" + Encoding.urlEncode(account.getUser()) + "&Passwd=" + Encoding.urlEncode(account.getPass()) + "&PersistentCookie=yes&rmShown=1&signIn=Sign+in&asts=");
+        br.submitForm(form);
         if (br.getRedirectLocation() == null) {
             String page = Encoding.htmlDecode(br.toString());
             String red = new Regex(page, "url='(http://.*?)'").getMatch(0);

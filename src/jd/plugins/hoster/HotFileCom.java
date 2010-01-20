@@ -93,7 +93,9 @@ public class HotFileCom extends PluginForHost {
             finalUrl = br.getRedirectLocation();
         } else {
             finalUrl = br.getRegex("<h3 style='margin-top: 20px'><a href=\"(.*?hotfile.*?)\">Click here to download</a></h3>").getMatch(0);
+            if (finalUrl == null) finalUrl = br.getRegex("table id=\"download_file\".*?<a href=\"(.*?)\"").getMatch(0);/* polish */
         }
+        br.setFollowRedirects(true);
         if (finalUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalUrl, true, 0);
         dl.setFilenameFix(true);
@@ -105,8 +107,17 @@ public class HotFileCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setCookie("http://hotfile.com", "lang", "en");
         br.getPage(parameter.getDownloadURL());
+        if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
         String filename = br.getRegex("Downloading <b>(.+?)</b>").getMatch(0);
+        if (filename == null) {
+            /* polish users get this */
+            filename = br.getRegex("Downloading:</strong>(.*?)<").getMatch(0);
+        }
         String filesize = br.getRegex("<span class=\"size\">(.*?)</span>").getMatch(0);
+        if (filesize == null) {
+            /* polish users get this */
+            filesize = br.getRegex("Downloading:</strong>.*?span.*?strong>(.*?)<").getMatch(0);
+        }
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         parameter.setName(filename.trim());
         parameter.setDownloadSize(Regex.getSize(filesize.trim()));
@@ -163,6 +174,7 @@ public class HotFileCom extends PluginForHost {
             if (!br.containsHTML("Click here to download")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
         String dl_url = br.getRegex("<h3 style='margin-top: 20px'><a href=\"(.*?)\">Click here to download</a>").getMatch(0);
+        if (dl_url == null) dl_url = br.getRegex("table id=\"download_file\".*?<a href=\"(.*?)\"").getMatch(0);/* polish */
         if (dl_url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setFollowRedirects(true);
         br.setDebug(true);
