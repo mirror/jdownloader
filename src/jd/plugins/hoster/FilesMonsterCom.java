@@ -174,7 +174,7 @@ public class FilesMonsterCom extends PluginForHost {
         br.postPage(fmurl + "ajax.php", "act=rticket&data=" + data);
         data = br.getRegex("\\{\"text\":\"(.*?)\"").getMatch(0);
         /* wait */
-        sleep(1000l * (Long.parseLong(wait) + 2), downloadLink);
+        sleep(1000l * (Long.parseLong(wait) + 4), downloadLink);
         /* request download information */
         br.postPage(fmurl + "ajax.php", "act=getdl&data=" + data);
         String url = br.getRegex("\\{\"url\":\"(.*?)\"").getMatch(0);
