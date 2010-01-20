@@ -7,6 +7,8 @@ import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
+import jd.utils.JDUtilities;
+
 
 import net.miginfocom.swing.MigLayout;
 
@@ -14,12 +16,9 @@ public class AwesomeUtils {
 	
 	private static final MigLayout ProposalListElementMigLayout = new MigLayout("insets 0, fill","[left]");
 	
-	public static final ImageIcon defaultIcon = new ImageIcon(".\\src\\awesome\\proposal\\res\\default.png");
+	public static final ImageIcon defaultIcon = new ImageIcon(JDUtilities.getResourceFile("jd/img/awesomebar/default.png").getAbsolutePath());
 	
 	public static Component createProposalListElement(AwesomeProposalRequestListener source, AwesomeProposalRequest request){
-		JPanel panel = new JPanel(ProposalListElementMigLayout);
-		panel.setOpaque(false);
-		
 		String matchingKeyword = null;
 		for(String keyword : source.getKeywords())
 		{
@@ -28,25 +27,35 @@ public class AwesomeUtils {
 				break;
 			}
 		}
-		
-		//TODO: Better image implementation
-		String icon = ".\\src\\awesome\\proposal\\res\\"+matchingKeyword+".png";
-
-		JLabel img;
-		if(new File(icon).exists()){
-			img = new JLabel(new ImageIcon(icon));
-		}
-		else
+		if(matchingKeyword == null)
 		{
-			img = new JLabel(defaultIcon);
+		    matchingKeyword = source.getKeywords().get(0);
 		}
-		JLabel label = new JLabel(matchingKeyword+" "+request.getParams());
-		panel.add(img);
-		panel.add(label);
-
-		
-		
-		return panel;
+		return createProposalListElement(source,request,matchingKeyword);
 	}
+	
+	   public static Component createProposalListElement(AwesomeProposalRequestListener source, AwesomeProposalRequest request, String keyword){
+	        JPanel panel = new JPanel(ProposalListElementMigLayout);
+	        panel.setOpaque(false);
+	        
+	        //TODO: Better image implementation
+	        String icon = JDUtilities.getResourceFile("jd/img/awesomebar/"+keyword+".png").getAbsolutePath();
+
+	        JLabel img;
+	        if(new File(icon).exists()){
+	            img = new JLabel(new ImageIcon(icon));
+	        }
+	        else
+	        {
+	            img = new JLabel(defaultIcon);
+	        }
+	        JLabel label = new JLabel(keyword+" "+request.getParams());
+	        panel.add(img);
+	        panel.add(label);
+
+	        
+	        
+	        return panel;
+	    }
 	
 }

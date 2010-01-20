@@ -1,4 +1,4 @@
-package jd.plugins.optional.awesomebar.awesome.jlist;
+package jd.plugins.optional.awesomebar.awesome.gui.jlist;
 import java.awt.Component;
 import java.util.Observable;
 import java.util.Observer;

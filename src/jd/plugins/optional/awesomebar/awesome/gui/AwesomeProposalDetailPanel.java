@@ -1,4 +1,6 @@
-package jd.plugins.optional.awesomebar.awesome;
+package jd.plugins.optional.awesomebar.awesome.gui;
+
+import java.awt.Color;
 
 import javax.swing.JPanel;
 import javax.swing.event.ListDataEvent;
@@ -6,7 +8,8 @@ import javax.swing.event.ListDataListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
-import jd.plugins.optional.awesomebar.awesome.jlist.AwesomeProposalJList;
+import jd.plugins.optional.awesomebar.awesome.gui.jlist.AwesomeProposalJList;
+import net.miginfocom.swing.MigLayout;
 
 
 public class AwesomeProposalDetailPanel extends JPanel implements ListSelectionListener, ListDataListener {
@@ -19,8 +22,10 @@ public class AwesomeProposalDetailPanel extends JPanel implements ListSelectionL
 	private final AwesomeProposalJList proposalList;
 
 	public AwesomeProposalDetailPanel(AwesomeProposalJList proposalList) {
-		super();
+		super(new MigLayout("insets 20"));
 		this.proposalList = proposalList;
+		this.setBackground(new Color(200,200,200));
+		//this.setBorder(BorderFactory.createLineBorder(new Color(200,200,200), 2));//BorderFactory.createEtchedBorder(new Color(200,200,200),new Color(200,200,200).brighter()));// .createLineBorder(Color.black));
 		this.proposalList.getSelectionModel().addListSelectionListener(this);
 		this.proposalList.getModel().addListDataListener(this);
 	}

@@ -23,11 +23,11 @@ public class AwesomeShoutListener implements AwesomeProposalRequestListener
 	{
 		if(request.getParams().equals("")){
 			new AwesomeProposal(this,request, new JLabel(
-					"I'd like to shout something."),0.5f);			
+					"I'd like to shout something."),null,0.5f);			
 		}
 		else{
 			new AwesomeProposal(this,request,new JLabel(
-				"I'd like to shout " + request.getParams()), 1.0f);
+				"I'd like to shout " + request.getParams()),null, 1.0f);
 		}
 		System.out.println("Shout-Proposal submitted.");
 	}

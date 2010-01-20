@@ -10,10 +10,10 @@ import javax.swing.ListSelectionModel;
 
 import jd.plugins.optional.awesomebar.awesome.Awesome;
 import jd.plugins.optional.awesomebar.awesome.AwesomeAction;
-import jd.plugins.optional.awesomebar.awesome.AwesomeProposalDetailPanel;
-import jd.plugins.optional.awesomebar.awesome.jlist.AwesomeProposalJList;
-import jd.plugins.optional.awesomebar.awesome.jlist.AwesomeProposalListModel;
-import jd.plugins.optional.awesomebar.awesome.jlist.AwesomeProposalListSelectionModel;
+import jd.plugins.optional.awesomebar.awesome.gui.AwesomeProposalDetailPanel;
+import jd.plugins.optional.awesomebar.awesome.gui.jlist.AwesomeProposalJList;
+import jd.plugins.optional.awesomebar.awesome.gui.jlist.AwesomeProposalListModel;
+import jd.plugins.optional.awesomebar.awesome.gui.jlist.AwesomeProposalListSelectionModel;
 import net.miginfocom.swing.MigLayout;
 
 public class Awesomebar_testcase extends JFrame {

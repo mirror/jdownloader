@@ -14,6 +14,7 @@ import javax.swing.event.EventListenerList;
 
 import jd.plugins.optional.awesomebar.awesome.proposal.AwesomeAlertListener;
 import jd.plugins.optional.awesomebar.awesome.proposal.AwesomeShoutListener;
+import jd.plugins.optional.awesomebar.awesome.proposal.AwesomeStartStopListener;
 
 public class Awesome extends Observable {
     private Map<String, EventListenerList> keywords = new HashMap<String, EventListenerList>();
@@ -39,6 +40,7 @@ public class Awesome extends Observable {
         /* TODO: Implement Plugin system */
         this.registerListener(new AwesomeAlertListener());
         this.registerListener(new AwesomeShoutListener());
+        this.registerListener(new AwesomeStartStopListener());
     }
 
     // this.command stuff

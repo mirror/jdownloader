@@ -21,7 +21,8 @@ public class AwesomeAlertListener implements AwesomeProposalRequestListener {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} //Simulate time expense
-		System.out.println( ((action.getProposal().getRequest().getCommand().startsWith("a")) ? "Alert" : "Print") +": " + action.getProposal().getRequest().getParams());
+		
+		System.out.println( ((String)action.getProposal().getActionID()) +": " + action.getProposal().getRequest().getParams());
 	}
 
 
@@ -37,11 +38,11 @@ public class AwesomeAlertListener implements AwesomeProposalRequestListener {
 		String command = (request.getCommand().startsWith("a")) ? "alert" : "print";
 		if (request.getParams().equals("")) {
 			new AwesomeProposal(
-					this, request,new JLabel("I'd like to "+command+" something after 2 seconds."), 0.55f);
+					this, request,new JLabel("I'd like to "+command+" something after 2 seconds."),command, 0.55f);
 		} else {
 			new AwesomeProposal(
 					this, request, new JLabel("I'd like to "+command+" "
-							+ request.getParams()+" after 2 seconds."), 1.1f);
+							+ request.getParams()+" after 2 seconds."),command, 1.1f);
 		}
 		System.out.println("Alert-Proposal submitted.");
 

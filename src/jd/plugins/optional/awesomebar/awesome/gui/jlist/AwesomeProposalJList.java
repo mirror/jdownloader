@@ -1,4 +1,4 @@
-package jd.plugins.optional.awesomebar.awesome.jlist;
+package jd.plugins.optional.awesomebar.awesome.gui.jlist;
 
 import javax.swing.JList;
 import javax.swing.ListSelectionModel;

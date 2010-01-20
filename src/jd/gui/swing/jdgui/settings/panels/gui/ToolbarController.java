@@ -49,11 +49,17 @@ import org.jdesktop.swingx.renderer.JRendererLabel;
 public class ToolbarController extends ConfigPanel {
     private static final ArrayList<String> WHITELIST = new ArrayList<String>();
     static {
+
+        
         // controlls
         WHITELIST.add("toolbar.control.start");
         WHITELIST.add("toolbar.control.pause");
         WHITELIST.add("toolbar.control.stop");
 
+        //Awesomebar at the beginning (because of the fadeout)
+        WHITELIST.add("separator");
+        WHITELIST.add("addons.awesomebar");
+        
         // move
         WHITELIST.add("separator");
         WHITELIST.add("action.downloadview.movetotop");
@@ -66,9 +72,6 @@ public class ToolbarController extends ConfigPanel {
         WHITELIST.add("toolbar.quickconfig.clipboardoberserver");
         WHITELIST.add("toolbar.quickconfig.reconnecttoggle");
         WHITELIST.add("toolbar.control.stopmark");
-
-        // addons
-        WHITELIST.add("addons.awesomebar");
 
         WHITELIST.add("separator");
         WHITELIST.add("scheduler");

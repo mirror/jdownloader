@@ -10,6 +10,7 @@ public class AwesomeProposal implements Comparable<AwesomeProposal> {
 	private final AwesomeProposalRequest request;
 	private final Component proposal;
 	private final Component proposalListElement;
+	private final Object actionid;
 
 	/**
 	 * @return the original proposal request
@@ -44,6 +45,12 @@ public class AwesomeProposal implements Comparable<AwesomeProposal> {
 		return source;
 	}
 
+    /**
+     * @return the actionid
+     */
+    public Object getActionID() {
+        return actionid;
+    }
 
 	public int compareTo(AwesomeProposal o) {
 		int ratingThis = 0;
@@ -75,19 +82,21 @@ public class AwesomeProposal implements Comparable<AwesomeProposal> {
 		}
 	}
 
-	public AwesomeProposal(AwesomeProposalRequestListener source, AwesomeProposalRequest request, Component proposal, float match) {
-		this.source = source;
+	public AwesomeProposal(AwesomeProposalRequestListener source, AwesomeProposalRequest request, Component proposal, Object actionid, float match) {
+	    this.source = source;
 		this.request = request;
 		this.proposal = proposal;
+		this.actionid = actionid;
 		this.proposalListElement = AwesomeUtils.createProposalListElement(this.source, this.request);
 		this.relevance = match;
 		this.request.getSource().addProposal(this);
 	}
 
-	public AwesomeProposal(AwesomeProposalRequestListener source, AwesomeProposalRequest request, Component proposal, Container proposalListElement, float match) {
+	public AwesomeProposal(AwesomeProposalRequestListener source, AwesomeProposalRequest request, Component proposal, Object actionid, Component proposalListElement, float match) {
 		this.source = source;
 		this.request = request;
 		this.proposal = proposal;
+		this.actionid = actionid;
 		this.proposalListElement = proposalListElement;
 		this.relevance = match;
 		this.request.getSource().addProposal(this);
