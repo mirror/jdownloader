@@ -19,7 +19,7 @@ package jd.utils;
 /**
  * 
  * @author JDTeam
- *
+ * 
  */
 public final class StringUtil {
     /**
@@ -27,6 +27,6 @@ public final class StringUtil {
      */
     private StringUtil() {
     }
-    
+
     public static final String LINE_SEPARATOR = System.getProperty("line.separator");
 }

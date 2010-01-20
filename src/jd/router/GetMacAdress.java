@@ -22,8 +22,15 @@ import jd.controlling.JDLogger;
 import jd.nutils.OSDetector;
 import jd.parser.Regex;
 import jd.utils.JDUtilities;
+import jd.utils.StringUtil;
 
-public class GetMacAdress {
+public final class GetMacAdress {
+    /**
+     * Don't let anyone instantiate this class.
+     */
+    private GetMacAdress() {
+    }
+
     public static String getMacAddress() throws Exception {
         try {
             return GetMacAdress.getMacAddress(RouterInfoCollector.getRouterIP());
@@ -33,15 +40,14 @@ public class GetMacAdress {
         return null;
     }
 
-    public static String getMacAddress(InetAddress hostAddress) throws Exception {
-        String resultLine = callArpTool(hostAddress.getHostAddress());
+    public static String getMacAddress(final InetAddress hostAddress) throws Exception {
+        final String resultLine = callArpTool(hostAddress.getHostAddress());
         String rd = new Regex(resultLine, "..?[:\\-]..?[:\\-]..?[:\\-]..?[:\\-]..?[:\\-]..?").getMatch(-1).replaceAll("-", ":");
         if (rd == null) return null;
         rd = rd.replaceAll("\\s", "0");
-        String[] d = rd.split("[:\\-]");
-        StringBuilder ret = new StringBuilder(18);
-        for (String string : d) {
-
+        final String[] d = rd.split("[:\\-]");
+        final StringBuilder ret = new StringBuilder(18);
+        for (final String string : d) {
             if (string.length() < 2) {
                 ret.append('0');
             }
@@ -51,25 +57,25 @@ public class GetMacAdress {
         return ret.toString().substring(0, 17);
     }
 
-    private static String callArpTool(String ipAddress) throws Exception {
+    private static String callArpTool(final String ipAddress) throws Exception {
         if (OSDetector.isWindows()) return callArpToolWindows(ipAddress);
         return callArpToolDefault(ipAddress);
     }
 
-    private static String callArpToolWindows(String ipAddress) throws Exception {
-        ProcessBuilder pb = new ProcessBuilder(new String[] { "ping", ipAddress });
+    private static String callArpToolWindows(final String ipAddress) throws Exception {
+        final ProcessBuilder pb = new ProcessBuilder(new String[] { "ping", ipAddress });
         pb.start();
-        String[] parts = JDUtilities.runCommand("arp", new String[] { "-a" }, null, 10).split(System.getProperty("line.separator"));
+        final String[] parts = JDUtilities.runCommand("arp", new String[] { "-a" }, null, 10).split(StringUtil.LINE_SEPARATOR);
         pb.directory();
-        for (String part : parts) {
+        for (final String part : parts) {
             if (part.indexOf(ipAddress) > -1) { return part; }
         }
         return null;
     }
 
-    private static String callArpToolDefault(String ipAddress) throws Exception {
+    private static String callArpToolDefault(final String ipAddress) throws Exception {
         String out = null;
-        InetAddress hostAddress = InetAddress.getByName(ipAddress);
+        final InetAddress hostAddress = InetAddress.getByName(ipAddress);
         ProcessBuilder pb = null;
         try {
             pb = new ProcessBuilder(new String[] { "ping", ipAddress });
@@ -94,7 +100,9 @@ public class GetMacAdress {
                     }
                 }
             } catch (Exception e) {
-                if (pb != null) pb.directory();
+                if (pb != null) {
+                    pb.directory();
+                }
             }
         }
         return out;
