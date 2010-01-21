@@ -56,7 +56,10 @@ public class NarodRu extends PluginForHost {
 
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (compatible; MSIE 6.0; Windows NT 5.0; YB/3.5.2.0;. NET CLR 1.1.4322)");
+        /*
+         * no captcha because of http://userscripts.org/scripts/review/64343
+         */
+        br.getHeaders().put("User-Agent", "Firefox/3.5.1 YB/4.2.0");
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("<title>404</title>") || br.containsHTML("Файл удален с сервиса")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String name = br.getRegex(Pattern.compile("<dt class=\"name\"><i class=\"b-old-icon b-old-icon-arc\"></i>(.*?)</dt>")).getMatch(0);
@@ -81,6 +84,11 @@ public class NarodRu extends PluginForHost {
         boolean needpassword = br.containsHTML("input id=\"password");
         String passCode = null;
         for (int i = 1; i <= 10; i++) {
+            /*
+             * first check because of our little workaround we no longer need a
+             * captcha ;)
+             */
+            if (br.containsHTML("href=\"/disk/start/")) break;
             br.getPage("http://narod.ru/disk/getcapchaxml/?rnd=1");
             String captchaKey = br.getRegex(Pattern.compile("<number.*>(.*?)</number>")).getMatch(0);
             String captchaUrl = "http://u.captcha.yandex.net/image?key=" + captchaKey;
@@ -107,7 +115,6 @@ public class NarodRu extends PluginForHost {
                 downloadLink.getStringProperty("pass", null);
                 continue;
             }
-            if (br.containsHTML("href=\"/disk/start/")) break;
         }
         if (!br.containsHTML("href=\"/disk/start/")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         if (br.containsHTML("input id=\"password")) {
