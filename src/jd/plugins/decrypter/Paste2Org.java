@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.RandomUserAgent;
 import jd.parser.Regex;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
@@ -45,6 +46,7 @@ public class Paste2Org extends PluginForDecrypt {
             String id = new Regex(parameter, "followup/(\\d+)").getMatch(0);
             parameter = "http://paste2.org/p/" + id;
         }
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.getPage(parameter);
         /* Error handling */
         if (br.containsHTML("Page Not Found")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or there are no links to add"));

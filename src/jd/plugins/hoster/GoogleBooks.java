@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
+import jd.captcha.easy.load.LoadImage;
 import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
 import jd.plugins.DownloadLink;
@@ -75,6 +76,10 @@ public class GoogleBooks extends PluginForHost {
             }
 
         }
+        // Get and set the correct ending of the file!
+        String correctEnding = LoadImage.getFileType(dllink, dl.getConnection().getContentType());
+        String wrongEnding = link.getName().substring(link.getName().lastIndexOf('.'));
+        if (correctEnding != null && wrongEnding != null) link.setFinalFileName(link.getName().replace(wrongEnding, correctEnding));
         dl.startDownload();
 
     }

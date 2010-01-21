@@ -42,22 +42,19 @@ public class FilesMailRu extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replace("wge4zu4rjfsdehehztiuxw", "files.mail.ru"));
     }
 
-    public String folderID = this.getPluginConfig().getStringProperty("folderID", null);
     public boolean iHaveToWait = false;
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        if (downloadLink.getFinalFileName() == null && this.getPluginConfig().getStringProperty("folderID", null) == null) {
+        if (downloadLink.getName() == null && downloadLink.getStringProperty("folderID", null) == null) {
             logger.warning("final filename and folderID are bot null for unknown reasons!");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (downloadLink.getFinalFileName() != null) this.getPluginConfig().setProperty("finalName", downloadLink.getFinalFileName());
-        this.getPluginConfig().save();
+        if (downloadLink.getName() != null) downloadLink.setProperty("finalFilename", downloadLink.getName());
         String folderIDregexed = new Regex(downloadLink.getDownloadURL(), "mail\\.ru/([A-Z0-9]+)").getMatch(0);
-        this.getPluginConfig().setProperty("folderID", "http://files.mail.ru/" + folderIDregexed);
-        this.getPluginConfig().save();
+        downloadLink.setProperty("folderID", "http://files.mail.ru/" + folderIDregexed);
         // At the moment jd gets the russian version of the site. Errorhandling
         // also works for English but filesize handling doesn't so if this
         // plugin get's broken that's on of the first things to check
@@ -72,15 +69,15 @@ public class FilesMailRu extends PluginForHost {
                 iHaveToWait = false;
                 return AvailableStatus.TRUE;
             } else {
-                logger.info("Directlink is outdated, accessing link " + folderID + " to renew the ticket!");
-                br.getPage(folderID);
+                logger.info("Directlink is outdated, accessing link " + downloadLink.getStringProperty("folderID", null) + " to renew the ticket!");
+                br.getPage(downloadLink.getStringProperty("folderID", null));
                 if (br.containsHTML("(was not found|were deleted by sender|Не найдено файлов, отправленных с кодом|<b>Ошибка</b>)")) {
                     logger.info("Link is 100% offline, found errormessage on the page!");
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 // This part is to find the filename in case the downloadurl
                 // redirects to the folder it comes from
-                String finalfilename = this.getPluginConfig().getStringProperty("finalName", null);
+                String finalfilename = downloadLink.getStringProperty("finalFilename", null);
                 if (finalfilename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 String[] linkinformation = br.getRegex("<td class=\"name\">(.*?)<td class=\"do\">").getColumn(0);
                 if (linkinformation.length == 0) {
