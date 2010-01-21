@@ -179,10 +179,10 @@ public class JDExternInterface extends PluginOptional {
         public void handle(Request request, Response response) {
             splitPath = request.getRequestUrl().substring(1).split("[/|\\\\]");
             namespace = splitPath[0];
-            
-           JDLogger.getLogger().finer(request.toString());
-           JDLogger.getLogger().finer(request.getParameters().toString());
-           
+
+            JDLogger.getLogger().finer(request.toString());
+            JDLogger.getLogger().finer(request.getParameters().toString());
+
             try {
                 if (namespace.equalsIgnoreCase("update")) {
 
@@ -214,10 +214,13 @@ public class JDExternInterface extends PluginOptional {
                         /* parse the post data */
                         String urls[] = Regex.getLines(Encoding.htmlDecode(request.getParameters().get("urls")));
                         String passwords[] = Regex.getLines(Encoding.htmlDecode(request.getParameters().get("passwords")));
+                        String source = Encoding.urlDecode(request.getParameters().get("source"), false);
                         if (urls.length != 0) {
                             ArrayList<DownloadLink> links = new DistributeData(Encoding.htmlDecode(request.getParameters().get("urls"))).findLinks();
-                            for (DownloadLink link : links)
+                            for (DownloadLink link : links) {
                                 link.addSourcePluginPasswords(passwords);
+                                if (source != null) link.setBrowserUrl(source);
+                            }
                             LinkGrabberController.getInstance().addLinks(links, false, false);
                             new GuiRunnable<Object>() {
 
@@ -293,7 +296,7 @@ public class JDExternInterface extends PluginOptional {
                     response.addContent(jdpath + "\r\n");
                     response.addContent("java -Xmx512m -jar " + jdpath + "\r\n");
 
-                    if (request.getHeader("referer") == null || !request.getHeader("referer").endsWith(getPluginConfig().getIntegerProperty("INTERFACE_PORT", 9666) + "/flashgot")) {
+                    if (request.getHeader("referer") == null || (!request.getHeader("referer").equalsIgnoreCase("http://localhost:" + getPluginConfig().getIntegerProperty("INTERFACE_PORT", 9666) + "/flashgot") && !request.getHeader("referer").equalsIgnoreCase("http://127.0.0.1:" + getPluginConfig().getIntegerProperty("INTERFACE_PORT", 9666) + "/flashgot"))) {
                         /*
                          * security check for flashgot referer, skip asking if
                          * we find valid flashgot referer

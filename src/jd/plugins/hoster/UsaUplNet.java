@@ -30,9 +30,9 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "usaupload.net" }, urls = { "http://[\\w\\.]*?usaupload\\.net/d/[a-z0-9]{11}" }, flags = { 0 })
-public class UsaUploadNet extends PluginForHost {
+public class UsaUplNet extends PluginForHost {
 
-    public UsaUploadNet(PluginWrapper wrapper) {
+    public UsaUplNet(PluginWrapper wrapper) {
         super(wrapper);
     }
 

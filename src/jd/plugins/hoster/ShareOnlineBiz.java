@@ -160,7 +160,9 @@ public class ShareOnlineBiz extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, url, true, 1);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
-            if (br.getRequest().getHeaders().get("Referer").contains("DL_FileNotFound")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+
+            if (br.containsHTML("any usable file behind the URL you")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML("Your desired download could not be found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -227,7 +229,8 @@ public class ShareOnlineBiz extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
-            if (br.containsHTML("(Your desired download could not be found|There isn't any usable file behind the URL you've entered)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML("any usable file behind the URL you")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML("Your desired download could not be found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
