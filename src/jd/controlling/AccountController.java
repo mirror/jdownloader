@@ -231,8 +231,8 @@ public class AccountController extends SubConfiguration implements ActionListene
     public int validAccounts() {
         int count = 0;
         synchronized (hosteraccounts) {
-            for (ArrayList<Account> accs : hosteraccounts.values()) {
-                for (Account acc : accs) {
+            for (final ArrayList<Account> accs : hosteraccounts.values()) {
+                for (final Account acc : accs) {
                     if (acc.isEnabled()) {
                         count++;
                     }
@@ -243,35 +243,36 @@ public class AccountController extends SubConfiguration implements ActionListene
     }
 
     private void addAccount(final String host, final Account account) {
-        if (host == null || account == null) return;
-        synchronized (hosteraccounts) {
-            if (hosteraccounts.containsKey(host)) {
-                final ArrayList<Account> haccounts = hosteraccounts.get(host);
-                synchronized (haccounts) {
-                    boolean b = haccounts.contains(account);
-                    if (!b) {
-                        boolean b2 = false;
-                        ArrayList<Account> temp = new ArrayList<Account>(haccounts);
-                        for (Account acc : temp) {
-                            if (acc.equals(account)) {
-                                b2 = true;
-                                break;
+        if (host != null && account != null) {
+            synchronized (hosteraccounts) {
+                if (hosteraccounts.containsKey(host)) {
+                    final ArrayList<Account> haccounts = hosteraccounts.get(host);
+                    synchronized (haccounts) {
+                        boolean b = haccounts.contains(account);
+                        if (!b) {
+                            boolean b2 = false;
+                            final ArrayList<Account> temp = new ArrayList<Account>(haccounts);
+                            for (final Account acc : temp) {
+                                if (acc.equals(account)) {
+                                    b2 = true;
+                                    break;
+                                }
+                            }
+                            if (!b2) {
+                                haccounts.add(account);
+                                b = true;
                             }
                         }
-                        if (!b2) {
-                            haccounts.add(account);
-                            b = true;
+                        if (b) {
+                            this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.ACCOUNT_ADDED, host, account));
                         }
                     }
-                    if (b) {
-                        this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.ACCOUNT_ADDED, host, account));
-                    }
+                } else {
+                    final ArrayList<Account> haccounts = new ArrayList<Account>();
+                    haccounts.add(account);
+                    hosteraccounts.put(host, haccounts);
+                    this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.ACCOUNT_ADDED, host, account));
                 }
-            } else {
-                final ArrayList<Account> haccounts = new ArrayList<Account>();
-                haccounts.add(account);
-                hosteraccounts.put(host, haccounts);
-                this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.ACCOUNT_ADDED, host, account));
             }
         }
     }
@@ -287,7 +288,7 @@ public class AccountController extends SubConfiguration implements ActionListene
                 boolean b = haccounts.remove(account);
                 if (!b) {
                     final ArrayList<Account> temp = new ArrayList<Account>(haccounts);
-                    for (Account acc : temp) {
+                    for (final Account acc : temp) {
                         if (acc.equals(account)) {
                             // account = acc;
                             // b = haccounts.remove(account);
