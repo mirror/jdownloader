@@ -370,7 +370,6 @@ gui.installer.kikin.deny3 = <span>Όχι, ευχαριστώ</span>
 gui.installer.kikin.message = Ελεύθερα! Εξατομικεύστε την εμπειρία αναζήτησης
 gui.installer.kikin.ok = Συνέχεια
 gui.installer.kikin.title = Εγκατάσταση του Kikin 
-gui.installer.kikin.tooltip = Παρακαλώ διαβάστε και αποδεχθείτε τους όρους
 gui.installer.kikin.whatis3 = <b>Το kikin χρησιμοποιεί το Ιστορικό Πλοήγησης για να σας προσφέρει εξατομικευμένο περιεχόμενο από τις ιστοσελίδες που σας αρέσουν.   <a href="http://jdownloader.org/kikin">Περισσότερα...</a></b>
 gui.javacheck.html = <link href='http://jdownloader.org/jdcss.css' rel='stylesheet' type='text/css' /><div style='width:534px;height;200px'><h2>Χρησιμοποιείται λανθασμένη έκδοση Java. Παρακαλώ χρησιμοποιήστε την αυθεντική Sun Java. Να αρχίσει το JDownloader οπωσδήποτε;<table width='100%%'><tr><th colspan='2'>Έκδοση Java:</th></tr><tr><th>Runtime Name</th><td>%s</td></tr><tr><th>Runtime Version</th><td>%s</td></tr></table></div>
 gui.javacheck.newerjavaavailable.msg = Αν και το JDownloader τρέχει στην έκδοση Java που έχετε, σας συμβουλεύουμε αν εγκαταστήσετε όλες τις τελευταίες ενημερώσεις. \r\nΤο JDownloader θα τρέχει πιο σταθερά, γρήγορα και θα δείχνει καλύτερα. \r\n\r\nΕπισκευθείτε το http://jdownloader.org/download.
