@@ -48,7 +48,7 @@ public abstract class Interaction extends Property implements Serializable {
     public abstract String toString();
 
     public static void deleteInteractions() {
-        SubConfiguration config = SubConfiguration.getConfig(CONFIG_INTERACTIONS);
+        final SubConfiguration config = SubConfiguration.getConfig(CONFIG_INTERACTIONS);
         if (config.hasProperty(PARAM_INTERACTIONS)) {
             config.setProperty(PARAM_INTERACTIONS, Property.NULL);
             config.save();

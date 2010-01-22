@@ -47,15 +47,15 @@ public class InteractionTrigger implements Serializable {
     /**
      * Triggerbeschreibung
      */
-    private String description;
+    private final String description;
     /**
      * EventiD
      */
-    private int eventID;
+    private final int eventID;
     /**
      * Trigger Name
      */
-    private String name;
+    private final String name;
 
     /**
      * Erstellt einen neuen Trigger. ACHTUNG: Beim Instanzieren werden die
@@ -67,7 +67,7 @@ public class InteractionTrigger implements Serializable {
      * @param name
      * @param description
      */
-    public InteractionTrigger(int id, String name, String description) {
+    public InteractionTrigger(final int id, final String name, final String description) {
         this.eventID = id;
         this.name = name;
         this.description = description;
