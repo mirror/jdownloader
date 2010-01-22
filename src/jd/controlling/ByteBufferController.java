@@ -50,7 +50,7 @@ public class ByteBufferController {
     public void printDebug() {
         long free = 0;
         synchronized (bufferpool) {
-            for (ByteBufferEntry entry : bufferpool) {
+            for (final ByteBufferEntry entry : bufferpool) {
                 free += entry.capacity();
             }
         }
@@ -76,7 +76,7 @@ public class ByteBufferController {
     protected ByteBufferEntry getByteBufferEntry(final int size) {
         ByteBufferEntry ret = null;
         synchronized (bufferpool) {
-            for (ByteBufferEntry entry : bufferpool) {
+            for (final ByteBufferEntry entry : bufferpool) {
                 if (entry.capacity() >= size) {
                     ret = entry;
                     bufferpool.remove(entry);
