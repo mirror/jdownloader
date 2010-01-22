@@ -120,18 +120,18 @@ public class ControlEvent extends AWTEvent {
     /**
      * Die ID des Ereignisses
      */
-    private int controlID;
+    private final int controlID;
 
     /**
      * Ein optionaler Parameter
      */
-    private Object parameter;
+    private final Object parameter;
 
-    public ControlEvent(Object source, int controlID) {
+    public ControlEvent(final Object source, final int controlID) {
         this(source, controlID, null);
     }
 
-    public ControlEvent(Object source, int controlID, Object parameter) {
+    public ControlEvent(final Object source, int controlID, final Object parameter) {
         super(source, controlID);
         this.controlID = controlID;
         this.parameter = parameter;

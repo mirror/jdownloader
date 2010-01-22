@@ -17,17 +17,17 @@
 package jd.event;
 
 public abstract class JDEvent {
-    
-    private int ID;
-    private Object source;
+
+    private final int ID;
+    private final Object source;
     private Object parameter;
 
-    public JDEvent(Object source, int ID) {
+    public JDEvent(final Object source, final int ID) {
         this.source = source;
         this.ID = ID;
     }
 
-    public JDEvent(Object source, int ID, Object parameter) {
+    public JDEvent(final Object source, final int ID, final Object parameter) {
         this(source, ID);
         this.parameter = parameter;
     }
@@ -47,7 +47,5 @@ public abstract class JDEvent {
     public String toString() {
         return "[source:" + source + ", controlID:" + ID + ", parameter:" + parameter + "]";
     }
-
-
 
 }

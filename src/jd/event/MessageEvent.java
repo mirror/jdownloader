@@ -24,15 +24,14 @@ public class MessageEvent extends JDEvent {
         return message;
     }
 
-    public void setMessage(String message) {
+    public void setMessage(final String message) {
         this.message = message;
     }
 
-    public MessageEvent(Object source, int ID, String parameter) {
+    public MessageEvent(final Object source, final int ID, final String parameter) {
         super(source, ID);
-        this.message=parameter;
+        this.message = parameter;
         // TODO Auto-generated constructor stub
     }
-
 
 }
