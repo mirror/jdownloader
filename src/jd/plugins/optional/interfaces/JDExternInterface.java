@@ -281,6 +281,10 @@ public class JDExternInterface extends PluginOptional {
                     } else {
                         response.addContent(JDUtilities.getJDTitle() + "\r\n");
                     }
+                } else if (request.getRequestUrl().equalsIgnoreCase("/jdcheck.js")) {
+                    
+                    response.addContent("var jdownloader=1;\r\n");
+        
                 } else if (request.getRequestUrl().equalsIgnoreCase("/crossdomain.xml")) {
                     response.addContent("<?xml version=\"1.0\"?>\r\n");
                     response.addContent("<!DOCTYPE cross-domain-policy SYSTEM \"http://www.macromedia.com/xml/dtds/cross-domain-policy.dtd\">\r\n");
