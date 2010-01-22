@@ -21,6 +21,7 @@ import java.util.logging.Logger;
 import jd.config.ConfigContainer;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
+import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
 import jd.gui.UserIF;
 import jd.nrouter.IPCheck;
@@ -30,7 +31,9 @@ import jd.utils.locale.JDL;
 
 public abstract class ReconnectMethod {
 
-    protected static Logger logger = jd.controlling.JDLogger.getLogger();
+    private static final String NA = "na";
+
+    protected static final Logger LOG = JDLogger.getLogger();
 
     public static final String PARAM_RECONNECT_TYPE = "RECONNECT_TYPE";
 
@@ -58,7 +61,7 @@ public abstract class ReconnectMethod {
              * successful
              */
             doReconnectInternal(1);
-            Reconnecter.setCurrentIP("na");
+            Reconnecter.setCurrentIP(NA);
             return true;
         }
         int maxretries = JDUtilities.getConfiguration().getIntegerProperty(PARAM_RETRIES, 5);
@@ -66,40 +69,49 @@ public abstract class ReconnectMethod {
         int retry = 0;
         if (maxretries <= -1) {
             while (true) {
-                if ((ret = doReconnectInternal(++retry)) == true) break;
+                if ((ret = doReconnectInternal(++retry)) == true) {
+                    break;
+                }
             }
         } else {
-            if (maxretries == 0) maxretries = 1;
+            if (maxretries == 0) {
+                maxretries = 1;
+            }
             for (retry = 0; retry < maxretries; retry++) {
-                if ((ret = doReconnectInternal(retry + 1)) == true) break;
+                if ((ret = doReconnectInternal(retry + 1)) == true) {
+                    break;
+                }
             }
         }
         return ret;
     }
 
     private String getIP() {
-        if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) return "na";
+        if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
+            return NA;
+        }
         return IPCheck.getIPAddress();
     }
 
-    public final boolean doReconnectInternal(int retry) {
-        ProgressController progress = new ProgressController(this.toString(), 10, "gui.images.reconnect");
+    public final boolean doReconnectInternal(final int retry) {
+        final ProgressController progress = new ProgressController(this.toString(), 10, "gui.images.reconnect");
         progress.setStatusText(JDL.L("reconnect.progress.1_retries", "Reconnect #") + retry);
         try {
-            int waittime = JDUtilities.getConfiguration().getIntegerProperty(PARAM_IPCHECKWAITTIME, 5);
-            int waitForIp = JDUtilities.getConfiguration().getIntegerProperty(PARAM_WAITFORIPCHANGE, 30);
+            final Configuration configuration = JDUtilities.getConfiguration();
+            final int waittime = configuration.getIntegerProperty(PARAM_IPCHECKWAITTIME, 5);
+            final int waitForIp = configuration.getIntegerProperty(PARAM_WAITFORIPCHANGE, 30);
 
-            logger.info("Starting " + this.toString() + " #" + retry);
-            String preIp = getIP();
+            LOG.info("Starting " + this.toString() + " #" + retry);
+            final String preIp = getIP();
 
             progress.increase(1);
             progress.setStatusText(JDL.L("reconnect.progress.2_oldIP", "Reconnect Old IP:") + preIp);
             if (!runCommands(progress)) {
                 progress.doFinalize();
-                logger.severe("An error occured while processing the reconnect ... Terminating");
+                LOG.severe("An error occured while processing the reconnect ... Terminating");
                 return false;
             }
-            logger.finer("Initial Waittime: " + waittime + " seconds");
+            LOG.finer("Initial Waittime: " + waittime + " seconds");
             try {
                 Thread.sleep(waittime * 1000);
             } catch (InterruptedException e) {
@@ -107,9 +119,9 @@ public abstract class ReconnectMethod {
             String afterIP = getIP();
             progress.setStatusText(JDL.LF("reconnect.progress.3_ipcheck", "Reconnect New IP: %s / %s", afterIP, preIp));
             long endTime = System.currentTimeMillis() + waitForIp * 1000;
-            logger.info("Wait " + waitForIp + " sec for new ip");
-            while (System.currentTimeMillis() <= endTime && (afterIP.equals(preIp) || afterIP.equals("na"))) {
-                logger.finer("IP before: " + preIp + " after: " + afterIP);
+            LOG.info("Wait " + waitForIp + " sec for new ip");
+            while (System.currentTimeMillis() <= endTime && (afterIP.equals(preIp) || afterIP.equals(NA))) {
+                LOG.finer("IP before: " + preIp + " after: " + afterIP);
                 try {
                     Thread.sleep(5 * 1000);
                 } catch (InterruptedException e) {
@@ -119,15 +131,15 @@ public abstract class ReconnectMethod {
             }
             if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
                 /* stop here when ipcheck is disabled */
-                Reconnecter.setCurrentIP("na");
+                Reconnecter.setCurrentIP(NA);
                 return true;
             }
-            logger.finer("IP before: " + preIp + " after: " + afterIP);
-            if (afterIP.equals("na") && !afterIP.equals(preIp)) {
-                logger.warning("JD could disconnect your router, but could not connect afterwards. Try to rise the option 'Wait until first IP Check'");
+            LOG.finer("IP before: " + preIp + " after: " + afterIP);
+            if (afterIP.equals(NA) && !afterIP.equals(preIp)) {
+                LOG.warning("JD could disconnect your router, but could not connect afterwards. Try to rise the option 'Wait until first IP Check'");
                 endTime = System.currentTimeMillis() + 120 * 1000;
-                while (System.currentTimeMillis() <= endTime && (afterIP.equals(preIp) || afterIP.equals("na"))) {
-                    logger.finer("IP before: " + preIp + " after: " + afterIP);
+                while (System.currentTimeMillis() <= endTime && (afterIP.equals(preIp) || afterIP.equals(NA))) {
+                    LOG.finer("IP before: " + preIp + " after: " + afterIP);
                     try {
                         Thread.sleep(5 * 1000);
                     } catch (InterruptedException e) {
@@ -137,14 +149,14 @@ public abstract class ReconnectMethod {
                 }
             }
 
-            if (!afterIP.equals(preIp) && !afterIP.equals("na")) {
-                logger.finer("IP before: " + preIp + " after: " + afterIP);
+            if (!afterIP.equals(preIp) && !afterIP.equals(NA)) {
+                LOG.finer("IP before: " + preIp + " after: " + afterIP);
                 /* Reconnect scheint erfolgreich gewesen zu sein */
                 /* nun IP validieren */
                 if (!IPAddress.validateIP(afterIP)) {
-                    logger.warning("IP " + afterIP + " was filtered by mask: " + SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.PARAM_GLOBAL_IP_MASK, "\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).)" + "{3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b"));
+                    LOG.warning("IP " + afterIP + " was filtered by mask: " + SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.PARAM_GLOBAL_IP_MASK, "\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).)" + "{3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b"));
                     UserIF.getInstance().displayMiniWarning(JDL.L("reconnect.ipfiltered.warning.title", "Wrong IP!"), JDL.LF("reconnect.ipfiltered.warning.short", "Die IP %s wurde als nicht erlaubt identifiziert", afterIP));
-                    Reconnecter.setCurrentIP("na");
+                    Reconnecter.setCurrentIP(NA);
                     return false;
                 } else {
                     progress.doFinalize();

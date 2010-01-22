@@ -68,14 +68,14 @@ public class BatchReconnect extends ReconnectMethod {
         final String batch = configuration.getStringProperty(PROPERTY_BATCHTEXT, "");
 
         final String[] lines = Regex.getLines(batch);
-        logger.info("Using Batch-Mode: using " + command + " as interpreter! (default: windows(cmd.exe) linux&mac(/bin/bash) )");
+        LOG.info("Using Batch-Mode: using " + command + " as interpreter! (default: windows(cmd.exe) linux&mac(/bin/bash) )");
         for (final String element : lines) {
             cmds[cmdsLength1] = element;
             /*
              * if we have multiple lines, wait for each line to finish until
              * starting the next one
              */
-            logger.finer("Execute Batchline: " + JDUtilities.runCommand(command, cmds, executeIn, lines.length >= 2 ? waitForReturn : -1));
+            LOG.finer("Execute Batchline: " + JDUtilities.runCommand(command, cmds, executeIn, lines.length >= 2 ? waitForReturn : -1));
         }
 
         return true;

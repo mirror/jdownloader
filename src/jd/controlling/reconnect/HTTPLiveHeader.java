@@ -53,7 +53,7 @@ import org.w3c.dom.NodeList;
  */
 public class HTTPLiveHeader extends ReconnectMethod {
 
-    private Configuration configuration;
+    private final Configuration configuration;
 
     private HashMap<String, String> headerProperties;
 
@@ -68,16 +68,16 @@ public class HTTPLiveHeader extends ReconnectMethod {
      * 
      * REGEX ARE COMPLETE DIFFERENT AND DO NOT TRIM
      */
-    private static String[] splitLines(String source) {
+    private static String[] splitLines(final String source) {
         return source.split("\r\n|\r|\n");
     }
 
     // @Override
-    protected boolean runCommands(ProgressController progress) {
+    protected boolean runCommands(final ProgressController progress) {
         String script;
         if (configuration.getIntegerProperty(ReconnectMethod.PARAM_RECONNECT_TYPE, ReconnectMethod.LIVEHEADER) == ReconnectMethod.CLR) {
             /* konvertiert CLR zu Liveheader */
-            String[] ret = CLRLoader.createLiveHeader(configuration.getStringProperty(Configuration.PARAM_HTTPSEND_REQUESTS_CLR));
+            final String[] ret = CLRLoader.createLiveHeader(configuration.getStringProperty(Configuration.PARAM_HTTPSEND_REQUESTS_CLR));
             if (ret != null) {
                 script = ret[1];
             } else {
@@ -86,13 +86,13 @@ public class HTTPLiveHeader extends ReconnectMethod {
         } else {
             script = configuration.getStringProperty(Configuration.PARAM_HTTPSEND_REQUESTS);
         }
-        String user = configuration.getStringProperty(Configuration.PARAM_HTTPSEND_USER);
-        String pass = configuration.getStringProperty(Configuration.PARAM_HTTPSEND_PASS);
-        String ip = configuration.getStringProperty(Configuration.PARAM_HTTPSEND_IP);
+        final String user = configuration.getStringProperty(Configuration.PARAM_HTTPSEND_USER);
+        final String pass = configuration.getStringProperty(Configuration.PARAM_HTTPSEND_PASS);
+        final String ip = configuration.getStringProperty(Configuration.PARAM_HTTPSEND_IP);
 
         if (script == null || script.length() == 0) {
             progress.doFinalize();
-            logger.severe("No LiveHeader Script found");
+            LOG.severe("No LiveHeader Script found");
             return false;
         }
 
@@ -104,7 +104,7 @@ public class HTTPLiveHeader extends ReconnectMethod {
         script = script.replaceAll("</REQUEST>", "]]></REQUEST>");
         script = script.replaceAll("<RESPONSE(.*?)>", "<RESPONSE$1><![CDATA[");
         script = script.replaceAll("</RESPONSE.*>", "]]></RESPONSE>");
-        Document xmlScript;
+        final Document xmlScript;
         variables = new HashMap<String, String>();
         variables.put("user", user);
         variables.put("pass", pass);
@@ -124,69 +124,72 @@ public class HTTPLiveHeader extends ReconnectMethod {
             xmlScript = JDUtilities.parseXmlString(script, false);
             if (xmlScript == null) {
                 progress.doFinalize();
-                logger.severe("Error while parsing the xml string: " + script);
+                LOG.severe("Error while parsing the xml string: " + script);
                 return false;
             }
-            Node root = xmlScript.getChildNodes().item(0);
+            final Node root = xmlScript.getChildNodes().item(0);
             if (root == null || !root.getNodeName().equalsIgnoreCase("HSRC")) {
                 progress.doFinalize();
-                logger.severe("Root Node must be [[[HSRC]]]*[/HSRC]");
+                LOG.severe("Root Node must be [[[HSRC]]]*[/HSRC]");
                 return false;
             }
 
-            NodeList steps = root.getChildNodes();
+            final NodeList steps = root.getChildNodes();
             progress.addToMax(steps.getLength());
             for (int step = 0; step < steps.getLength(); step++) {
                 progress.setStatusText(JDL.L("interaction.liveHeader.progress.3_step", "(STEP)HTTPLiveHeader :") + step);
                 progress.increase(1);
-                Node current = steps.item(step);
+                final Node current = steps.item(step);
 
                 if (current.getNodeType() == 3) continue;
 
                 if (!current.getNodeName().equalsIgnoreCase("STEP")) {
                     progress.doFinalize();
-                    logger.severe("Root Node should only contain [[[STEP]]]*[[[/STEP]]] ChildTag: " + current.getNodeName());
+                    LOG.severe("Root Node should only contain [[[STEP]]]*[[[/STEP]]] ChildTag: " + current.getNodeName());
                     return false;
                 }
-                NodeList toDos = current.getChildNodes();
-                for (int toDoStep = 0; toDoStep < toDos.getLength(); toDoStep++) {
-                    Node toDo = toDos.item(toDoStep);
+                final NodeList toDos = current.getChildNodes();
+                final int toDosLength = toDos.getLength();
+                for (int toDoStep = 0; toDoStep < toDosLength; toDoStep++) {
+                    final Node toDo = toDos.item(toDoStep);
 
                     progress.setStatusText(JDL.LF("interaction.liveHeader.progress.4_step", "(%s)HTTPLiveHeader", toDo.getNodeName()));
 
                     if (toDo.getNodeName().equalsIgnoreCase("DEFINE")) {
 
-                        NamedNodeMap attributes = toDo.getAttributes();
+                        final NamedNodeMap attributes = toDo.getAttributes();
                         for (int attribute = 0; attribute < attributes.getLength(); attribute++) {
-                            String key = attributes.item(attribute).getNodeName();
+                            final String key = attributes.item(attribute).getNodeName();
                             String value = attributes.item(attribute).getNodeValue();
-                            String[] tmp = value.split("\\%\\%\\%(.*?)\\%\\%\\%");
-                            String[] params = new Regex(value, "%%%(.*?)%%%").getColumn(-1);
+                            final String[] tmp = value.split("\\%\\%\\%(.*?)\\%\\%\\%");
+                            final String[] params = new Regex(value, "%%%(.*?)%%%").getColumn(-1);
                             if (params.length > 0) {
-                                StringBuilder req;
+                                final StringBuilder req;
                                 if (value.startsWith(params[0])) {
                                     req = new StringBuilder();
-                                    logger.finer("Variables: " + variables);
-                                    logger.finer("Headerproperties: " + headerProperties);
-                                    for (int i = 0; i <= tmp.length; i++) {
-                                        logger.finer("Replace variable: ********(" + params[i - 1] + ")");
+                                    LOG.finer("Variables: " + variables);
+                                    LOG.finer("Headerproperties: " + headerProperties);
+                                    final int tmpLength = tmp.length;
+                                    for (int i = 0; i <= tmpLength; i++) {
+                                        LOG.finer("Replace variable: ********(" + params[i - 1] + ")");
 
                                         req.append(getModifiedVariable(params[i - 1]));
-                                        if (i < tmp.length) {
+                                        if (i < tmpLength) {
                                             req.append(tmp[i]);
                                         }
                                     }
                                 } else {
                                     req = new StringBuilder(tmp[0]);
-                                    logger.finer("Variables: " + variables);
-                                    logger.finer("Headerproperties: " + headerProperties);
-                                    for (int i = 1; i <= tmp.length; i++) {
+                                    LOG.finer("Variables: " + variables);
+                                    LOG.finer("Headerproperties: " + headerProperties);
+                                    final int tmpLength = tmp.length;
+                                    for (int i = 1; i <= tmpLength; i++) {
                                         if (i > params.length) {
                                             continue;
                                         }
-                                        logger.finer("Replace variable: *********(" + params[i - 1] + ")");
+                                        LOG.finer("Replace variable: *********(" + params[i - 1] + ")");
                                         req.append(getModifiedVariable(params[i - 1]));
-                                        if (i < tmp.length) {
+                                        if (i < tmpLength) {
                                             req.append(tmp[i]);
                                         }
                                     }
@@ -198,12 +201,12 @@ public class HTTPLiveHeader extends ReconnectMethod {
                             variables.put(key, value);
                         }
 
-                        logger.finer("Variables set: " + variables);
+                        LOG.finer("Variables set: " + variables);
                     }
 
                     if (toDo.getNodeName().equalsIgnoreCase("PARSE")) {
-                        String[] parseLines = splitLines(toDo.getChildNodes().item(0).getNodeValue().trim());
-                        for (String parseLine : parseLines) {
+                        final String[] parseLines = splitLines(toDo.getChildNodes().item(0).getNodeValue().trim());
+                        for (final String parseLine : parseLines) {
                             String varname = new Regex(parseLine, "(.*?):").getMatch(0);
                             String pattern = new Regex(parseLine, ".*?:(.+)").getMatch(0);
                             if (varname != null && pattern != null) {
@@ -212,10 +215,10 @@ public class HTTPLiveHeader extends ReconnectMethod {
                                 String found = br.getRegex(pattern).getMatch(0);
                                 if (found != null) {
                                     found = found.trim();
-                                    logger.finer("Parse: Varname=" + varname + " Pattern=" + pattern + "->" + found);
+                                    LOG.finer("Parse: Varname=" + varname + " Pattern=" + pattern + "->" + found);
                                     variables.put(varname, found);
                                 } else {
-                                    logger.finer("Parse: Varname=" + varname + " Pattern=" + pattern + "->NOT FOUND!");
+                                    LOG.finer("Parse: Varname=" + varname + " Pattern=" + pattern + "->NOT FOUND!");
                                 }
                             }
                         }
@@ -226,10 +229,10 @@ public class HTTPLiveHeader extends ReconnectMethod {
                         boolean israw = false;
                         if (toDo.getChildNodes().getLength() != 1) {
                             progress.doFinalize();
-                            logger.severe("A REQUEST Tag is not allowed to have childTags.");
+                            LOG.severe("A REQUEST Tag is not allowed to have childTags.");
                             return false;
                         }
-                        NamedNodeMap attributes = toDo.getAttributes();
+                        final NamedNodeMap attributes = toDo.getAttributes();
                         if (attributes.getNamedItem("https") != null) {
                             ishttps = true;
                         }
@@ -248,40 +251,40 @@ public class HTTPLiveHeader extends ReconnectMethod {
                         } catch (Exception e) {
                         }
                         if (retbr == null || !retbr.getHttpConnection().isOK()) {
-                            logger.severe("Request error!");
+                            LOG.severe("Request error!");
                         } else {
                             br = retbr;
                         }
 
                     }
                     if (toDo.getNodeName().equalsIgnoreCase("RESPONSE")) {
-                        logger.finer("get Response");
+                        LOG.finer("get Response");
                         if (toDo.getChildNodes().getLength() != 1) {
                             progress.doFinalize();
-                            logger.severe("A RESPONSE Tag is not allowed to have childTags.");
+                            LOG.severe("A RESPONSE Tag is not allowed to have childTags.");
                             return false;
                         }
 
-                        NamedNodeMap attributes = toDo.getAttributes();
+                        final NamedNodeMap attributes = toDo.getAttributes();
                         if (attributes.getNamedItem("keys") == null) {
                             progress.doFinalize();
-                            logger.severe("A RESPONSE Node needs a Keys Attribute: " + toDo);
+                            LOG.severe("A RESPONSE Node needs a Keys Attribute: " + toDo);
                             return false;
                         }
 
-                        String[] keys = attributes.getNamedItem("keys").getNodeValue().split("\\;");
+                        final String[] keys = attributes.getNamedItem("keys").getNodeValue().split("\\;");
                         getVariables(toDo.getChildNodes().item(0).getNodeValue().trim(), keys, br);
 
                     }
                     if (toDo.getNodeName().equalsIgnoreCase("WAIT")) {
-                        NamedNodeMap attributes = toDo.getAttributes();
-                        Node item = attributes.getNamedItem("seconds");
+                        final NamedNodeMap attributes = toDo.getAttributes();
+                        final Node item = attributes.getNamedItem("seconds");
                         if (item == null) {
-                            logger.severe("A Wait Step needs a Waittimeattribute: e.g.: <WAIT seconds=\"15\"/>");
+                            LOG.severe("A Wait Step needs a Waittimeattribute: e.g.: <WAIT seconds=\"15\"/>");
                             return false;
                         }
-                        logger.finer("Wait " + item.getNodeValue() + " seconds");
-                        int seconds = Formatter.filterInt(item.getNodeValue());
+                        LOG.finer("Wait " + item.getNodeValue() + " seconds");
+                        final int seconds = Formatter.filterInt(item.getNodeValue());
                         Thread.sleep(seconds * 1000);
                     }
                 }
@@ -289,73 +292,75 @@ public class HTTPLiveHeader extends ReconnectMethod {
         } catch (Exception e) {
             JDLogger.exception(e);
             progress.doFinalize();
-            logger.severe(e.getCause() + " : " + e.getMessage());
+            LOG.severe(e.getCause() + " : " + e.getMessage());
             return false;
         }
 
         return true;
     }
 
-    private Browser doRequest(String request, Browser br, boolean ishttps, boolean israw) {
+    private Browser doRequest(String request, final Browser br, final boolean ishttps, final boolean israw) {
         try {
-            String requestType;
-            String path;
-            StringBuilder post = new StringBuilder();
+            final String requestType;
+            final String path;
+            final StringBuilder post = new StringBuilder();
             String host = null;
-            String http = "http://";
-            if (ishttps) http = "https://";
-            if (logger.isLoggable(Level.FINEST)) {
+            final String http = (ishttps) ? "https://" : "http://";
+            if (LOG.isLoggable(Level.FINEST)) {
                 br.forceDebug(true);
             } else {
                 br.forceDebug(false);
             }
-            HashMap<String, String> requestProperties = new HashMap<String, String>();
-            if (israw) br.setHeaders(new RequestHeader());
+            final HashMap<String, String> requestProperties = new HashMap<String, String>();
+            if (israw) {
+                br.setHeaders(new RequestHeader());
+            }
             String[] tmp = request.split("\\%\\%\\%(.*?)\\%\\%\\%");
             // ArrayList<String> params =
             // SimpleMatches.getAllSimpleMatches(request,
             // "%%%°%%%", 1);
-            String[] params = new Regex(request, "%%%(.*?)%%%").getColumn(0);
+            final String[] params = new Regex(request, "%%%(.*?)%%%").getColumn(0);
             if (params.length > 0) {
-                StringBuilder req;
+                final StringBuilder req;
                 if (request.startsWith(params[0])) {
                     req = new StringBuilder();
-                    logger.finer("Variables: " + variables);
-                    logger.finer("Headerproperties: " + headerProperties);
-                    for (int i = 0; i <= tmp.length; i++) {
-                        logger.finer("Replace variable: " + getModifiedVariable(params[i - 1]) + "(" + params[i - 1] + ")");
+                    LOG.finer("Variables: " + variables);
+                    LOG.finer("Headerproperties: " + headerProperties);
+                    final int tmpLength = tmp.length;
+                    for (int i = 0; i <= tmpLength; i++) {
+                        LOG.finer("Replace variable: " + getModifiedVariable(params[i - 1]) + "(" + params[i - 1] + ")");
                         req.append(getModifiedVariable(params[i - 1]));
-                        if (i < tmp.length) {
+                        if (i < tmpLength) {
                             req.append(tmp[i]);
                         }
                     }
                 } else {
                     req = new StringBuilder(tmp[0]);
-                    logger.finer("Variables: " + variables);
-                    logger.finer("Headerproperties: " + headerProperties);
-                    for (int i = 1; i <= tmp.length; i++) {
+                    LOG.finer("Variables: " + variables);
+                    LOG.finer("Headerproperties: " + headerProperties);
+                    final int tmpLength = tmp.length;
+                    for (int i = 1; i <= tmpLength; i++) {
                         if (i > params.length) {
                             continue;
                         }
-                        logger.finer("Replace variable: " + getModifiedVariable(params[i - 1]) + "(" + params[i - 1] + ")");
+                        LOG.finer("Replace variable: " + getModifiedVariable(params[i - 1]) + "(" + params[i - 1] + ")");
                         req.append(getModifiedVariable(params[i - 1]));
-                        if (i < tmp.length) {
+                        if (i < tmpLength) {
                             req.append(tmp[i]);
                         }
                     }
                 }
-
                 request = req.toString();
             }
-            String[] requestLines = splitLines(request);
+            final String[] requestLines = splitLines(request);
             if (requestLines.length == 0) {
-                logger.severe("Parse Fehler:" + request);
+                LOG.severe("Parse Fehler:" + request);
                 return null;
             }
             // RequestType
             tmp = requestLines[0].split(" ");
             if (tmp.length < 2) {
-                logger.severe("Konnte Requesttyp nicht finden: " + requestLines[0]);
+                LOG.severe("Konnte Requesttyp nicht finden: " + requestLines[0]);
                 return null;
             }
             requestType = tmp[0];
@@ -363,7 +368,8 @@ public class HTTPLiveHeader extends ReconnectMethod {
             boolean headersEnd = false;
             // Zerlege request
 
-            for (int li = 1; li < requestLines.length; li++) {
+            final int requestLinesLength = requestLines.length;
+            for (int li = 1; li < requestLinesLength; li++) {
 
                 if (headersEnd) {
                     post.append(requestLines[li]);
@@ -372,12 +378,11 @@ public class HTTPLiveHeader extends ReconnectMethod {
                 }
                 if (requestLines[li].trim().length() == 0) {
                     headersEnd = true;
-
                     continue;
                 }
                 String[] p = requestLines[li].split("\\:");
                 if (p.length < 2) {
-                    logger.warning("Syntax Fehler in: " + requestLines[li] + "\r\n Vermute Post Parameter");
+                    LOG.warning("Syntax Fehler in: " + requestLines[li] + "\r\n Vermute Post Parameter");
                     headersEnd = true;
                     li--;
                     continue;
@@ -390,7 +395,7 @@ public class HTTPLiveHeader extends ReconnectMethod {
             }
 
             if (host == null) {
-                logger.severe("Host nicht gefunden: " + request);
+                LOG.severe("Host nicht gefunden: " + request);
                 return null;
             }
             try {
@@ -402,19 +407,18 @@ public class HTTPLiveHeader extends ReconnectMethod {
                 if (requestType.equalsIgnoreCase("GET")) {
                     br.getPage(http + host + path);
                 } else if (requestType.equalsIgnoreCase("POST")) {
-                    String poster = post.toString().trim();
-
+                    final String poster = post.toString().trim();
                     br.postPageRaw(http + host + path, poster);
                 } else if (requestType.equalsIgnoreCase("AUTH")) {
-                    logger.finer("Convert AUTH->GET");
+                    LOG.finer("Convert AUTH->GET");
                     br.getPage(http + host + path);
                 } else {
-                    logger.severe("Unknown requesttyp: " + requestType);
+                    LOG.severe("Unknown requesttyp: " + requestType);
                     return null;
                 }
                 return br;
             } catch (IOException e) {
-                logger.severe("IO Error: " + e.getLocalizedMessage());
+                LOG.severe("IO Error: " + e.getLocalizedMessage());
                 JDLogger.exception(e);
                 return null;
             }
@@ -427,9 +431,9 @@ public class HTTPLiveHeader extends ReconnectMethod {
 
     @SuppressWarnings("unchecked")
     public static ArrayList<String[]> getLHScripts() {
-        File[] list = new File(new File(JDUtilities.getJDHomeDirectoryFromEnvironment(), "jd"), "router").listFiles();
-        ArrayList<String[]> ret = new ArrayList<String[]>();
-        for (File element : list) {
+        final File[] list = new File(new File(JDUtilities.getJDHomeDirectoryFromEnvironment(), "jd"), "router").listFiles();
+        final ArrayList<String[]> ret = new ArrayList<String[]>();
+        for (final File element : list) {
             if (element.isFile() && element.getName().toLowerCase().matches(".*\\.xml$")) {
                 ret.addAll((Collection<? extends String[]>) JDIO.loadObject(new JFrame(), element, true));
             }
@@ -470,23 +474,23 @@ public class HTTPLiveHeader extends ReconnectMethod {
         return ret;
     }
 
-    private void getVariables(String patStr, String[] keys, Browser br) {
-        logger.info("GetVariables");
+    private void getVariables(final String patStr, final String[] keys, final Browser br) {
+        LOG.info("GetVariables");
         if (br == null) return;
         // patStr="<title>(.*?)</title>";
-        logger.finer(patStr);
+        LOG.finer(patStr);
         Pattern pattern = Pattern.compile(patStr, Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
 
         // logger.info(requestInfo.getHtmlCode());
-        Matcher matcher = pattern.matcher(br + "");
-        logger.info("Matches: " + matcher.groupCount());
+        final Matcher matcher = pattern.matcher(br + "");
+        LOG.info("Matches: " + matcher.groupCount());
         if (matcher.find() && matcher.groupCount() > 0) {
             for (int i = 0; i < keys.length && i < matcher.groupCount(); i++) {
                 variables.put(keys[i], matcher.group(i + 1));
-                logger.info("Set Variable: " + keys[i] + " = " + matcher.group(i + 1));
+                LOG.info("Set Variable: " + keys[i] + " = " + matcher.group(i + 1));
             }
         } else {
-            logger.severe("Regular Expression without matches: " + patStr);
+            LOG.severe("Regular Expression without matches: " + patStr);
         }
 
     }

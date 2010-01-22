@@ -38,7 +38,7 @@ import jd.utils.locale.JDL;
  */
 public class ExternReconnect extends ReconnectMethod {
 
-    private Configuration configuration;
+    private final Configuration configuration;
 
     private static final String PROPERTY_RECONNECT_COMMAND = "InteractionExternReconnect_Command";
 
@@ -55,35 +55,39 @@ public class ExternReconnect extends ReconnectMethod {
     protected void initConfig() {
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFILE, configuration, PROPERTY_RECONNECT_COMMAND, JDL.L("interaction.externreconnect.command", "Befehl (absolute Pfade verwenden)")));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, configuration, PROPERTY_RECONNECT_PARAMETER, JDL.L("interaction.externreconnect.parameter", "Parameter (1 Parameter/Zeile)")));
-        if (OSDetector.isWindows()) config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, PROPERTY_RECONNECT_DUMMYBAT, JDL.L("interaction.externreconnect.dummybat", "Use special executer for windows")).setDefaultValue(true));
+        if (OSDetector.isWindows()) {
+            config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, PROPERTY_RECONNECT_DUMMYBAT, JDL.L("interaction.externreconnect.dummybat", "Use special executer for windows")).setDefaultValue(true));
+        }
     }
 
-    protected boolean runCommands(ProgressController progress) {
-        int waitForReturn = configuration.getIntegerProperty(PROPERTY_IP_WAIT_FOR_RETURN, 0);
-        String command = configuration.getStringProperty(PROPERTY_RECONNECT_COMMAND, "").trim();
+    protected boolean runCommands(final ProgressController progress) {
+        final int waitForReturn = configuration.getIntegerProperty(PROPERTY_IP_WAIT_FOR_RETURN, 0);
+        final String command = configuration.getStringProperty(PROPERTY_RECONNECT_COMMAND, "").trim();
         if (command.length() == 0) return false;
-        File f = new File(command);
+
+        final File f = new File(command);
         if (!f.exists()) return false;
-        String t = f.getAbsolutePath();
-        String executeIn = t.substring(0, t.indexOf(f.getName()) - 1).trim();
+        
+        final String t = f.getAbsolutePath();
+        final String executeIn = t.substring(0, t.indexOf(f.getName()) - 1).trim();
         if (OSDetector.isWindows() && configuration.getBooleanProperty(PROPERTY_RECONNECT_DUMMYBAT, true)) {
             /*
              * for windows we create a temporary batchfile that calls our
              * external tool and redirect its streams to nul
              */
-            File bat = getDummyBat();
+            final File bat = getDummyBat();
             if (bat == null) return false;
             try {
-                BufferedWriter output = new BufferedWriter(new FileWriter(bat));
+                final BufferedWriter output = new BufferedWriter(new FileWriter(bat));
                 if (executeIn.contains(" ")) {
                     output.write("cd \"" + executeIn + "\"\r\n");
                 } else {
                     output.write("cd " + executeIn + "\r\n");
                 }
-                String parameter = configuration.getStringProperty(PROPERTY_RECONNECT_PARAMETER);
-                String[] params = Regex.getLines(parameter);
-                StringBuilder sb = new StringBuilder(" ");
-                for (String param : params) {
+                final String parameter = configuration.getStringProperty(PROPERTY_RECONNECT_PARAMETER);
+                final String[] params = Regex.getLines(parameter);
+                final StringBuilder sb = new StringBuilder(" ");
+                for (final String param : params) {
                     sb.append(param);
                     sb.append(" ");
                 }
@@ -97,11 +101,11 @@ public class ExternReconnect extends ReconnectMethod {
                 JDLogger.exception(e);
                 return false;
             }
-            logger.finer("Execute Returns: " + JDUtilities.runCommand(bat.toString(), new String[0], executeIn, waitForReturn));
+            LOG.finer("Execute Returns: " + JDUtilities.runCommand(bat.toString(), new String[0], executeIn, waitForReturn));
         } else {
             /* other os, normal handling */
-            String parameter = configuration.getStringProperty(PROPERTY_RECONNECT_PARAMETER);
-            logger.finer("Execute Returns: " + JDUtilities.runCommand(command, Regex.getLines(parameter), executeIn, waitForReturn));
+            final String parameter = configuration.getStringProperty(PROPERTY_RECONNECT_PARAMETER);
+            LOG.finer("Execute Returns: " + JDUtilities.runCommand(command, Regex.getLines(parameter), executeIn, waitForReturn));
         }
         return true;
     }
@@ -115,12 +119,14 @@ public class ExternReconnect extends ReconnectMethod {
         int number = 0;
         while (true) {
             if (number == 100) {
-                logger.severe("Cannot create dummy Bat file, please delete all recon_*.bat files in tmp folder!");
+                LOG.severe("Cannot create dummy Bat file, please delete all recon_*.bat files in tmp folder!");
                 return null;
             }
-            File tmp = JDUtilities.getResourceFile("tmp/recon_" + number + ".bat", true);
+            final File tmp = JDUtilities.getResourceFile("tmp/recon_" + number + ".bat", true);
             if (tmp.exists()) {
-                if (tmp.delete()) return tmp;
+                if (tmp.delete()) {
+                    return tmp;
+                }
                 tmp.deleteOnExit();
             } else {
                 return tmp;
