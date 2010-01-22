@@ -20,12 +20,12 @@ import jd.event.JDEvent;
 
 public class LinkGrabberFilePackageEvent extends JDEvent {
 
-    public LinkGrabberFilePackageEvent(Object source, int ID) {
+    public LinkGrabberFilePackageEvent(final Object source, final int ID) {
         super(source, ID);
         // TODO Auto-generated constructor stub
     }
 
-    public LinkGrabberFilePackageEvent(Object source, int ID, Object param) {
+    public LinkGrabberFilePackageEvent(final Object source, final int ID, final Object param) {
         super(source, ID, param);
         // TODO Auto-generated constructor stub
     }
