@@ -98,7 +98,8 @@ public class Installer {
 
         if (OSDetector.isWindows()) {
             final String lng = JDL.getCountryCodeByIP();
-            if (lng.equalsIgnoreCase("de") || lng.equalsIgnoreCase("us")) {
+        
+            if (JDL.isEurope(lng)||JDL.isNorthAmerica(lng)||JDL.isSouthAmerica(lng)) {
                 new GuiRunnable<Object>() {
 
                     @Override
