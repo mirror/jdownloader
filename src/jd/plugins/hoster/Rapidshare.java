@@ -828,6 +828,9 @@ public class Rapidshare extends PluginForHost {
             postTarget = getURL(serverstrings, getServerName(server3Abb), postTarget);
         } else if (serverstrings.length > 0) {
             logger.severe("Kein Server gefunden 1");
+            for(String s:serverstrings){
+                logger.finer(s);
+            }
         } else {
             logger.severe("Kein Server gefunden 2");
 
