@@ -133,13 +133,15 @@ public class ClipboardHandler extends Thread implements ControlListener {
          * https://bugzilla.mozilla.org/show_bug.cgi?id=385421, it would be good
          * if we have utf8 charset
          */
-        for (DataFlavor flav : trans.getTransferDataFlavors()) {
+        for (final DataFlavor flav : trans.getTransferDataFlavors()) {
             if (flav.getMimeType().contains("html") && flav.getRepresentationClass().isInstance(tmpByteArray)) {
                 /*
                  * we use first hit and search UTF-8
                  */
-                if (htmlFlavor != null) htmlFlavor = flav;
-                String charSet = new Regex(flav.toString(), "charset=(.*?)]").getMatch(0);
+                if (htmlFlavor != null) {
+                    htmlFlavor = flav;
+                }
+                final String charSet = new Regex(flav.toString(), "charset=(.*?)]").getMatch(0);
                 if (charSet != null && charSet.equalsIgnoreCase("UTF-8")) {
                     /* we found utf-8 encoding, so lets use that */
                     htmlFlavor = flav;
@@ -168,21 +170,23 @@ public class ClipboardHandler extends Thread implements ControlListener {
                 try {
                     /* get current content of clipboard */
                     synchronized (LOCK) {
-                        DataFlavor what = getCurrentClipboardContent();
+                        final DataFlavor what = getCurrentClipboardContent();
                         if ((lastDataFlavor == null || lastString == null || lastDataFlavor != what) && currentString != null && what != null) {
                             /* DataFlavor changed so lets parse it */
                             lastDataFlavor = what;
                             if (what == uriListFlavor || what == fileListFlavor) {
                                 // url-lists are defined by rfc 2483 as
                                 // crlf-delimited
-                                StringTokenizer izer = new StringTokenizer(currentString, "\r\n");
-                                StringBuilder sb = new StringBuilder("");
+                                final StringTokenizer izer = new StringTokenizer(currentString, "\r\n");
+                                final StringBuilder sb = new StringBuilder("");
                                 while (izer.hasMoreTokens()) {
                                     /* linux adds file:// */
-                                    URI fi = new URI(izer.nextToken());
-                                    File f = new File(fi.getPath());
+                                    final URI fi = new URI(izer.nextToken());
+                                    final File f = new File(fi.getPath());
                                     if (f.exists()) {
-                                        if (DistributeData.hasContainerPluginFor(fi.getPath())) JDController.getInstance().loadContainerFile(f);
+                                        if (DistributeData.hasContainerPluginFor(fi.getPath())) {
+                                            JDController.getInstance().loadContainerFile(f);
+                                        }
                                     } else if (what == uriListFlavor) {
                                         sb.append(fi.getPath());
                                         sb.append("\r\n");
@@ -190,8 +194,10 @@ public class ClipboardHandler extends Thread implements ControlListener {
                                 }
                                 /* check if we have unhandled uri */
                                 if (sb.length() > 0) {
-                                    String parse = sb.toString();
-                                    if (!CNL2.checkText(parse)) new DistributeData(parse).start();
+                                    final String parse = sb.toString();
+                                    if (!CNL2.checkText(parse)) {
+                                        new DistributeData(parse).start();
+                                    }
                                 }
                             } else if (what == urlFlavor || what == stringFlavor) {
                                 /* parse plaintext content */
@@ -201,7 +207,9 @@ public class ClipboardHandler extends Thread implements ControlListener {
                                 }
                             } else if (what == htmlFlavor) {
                                 /* parse html content, get all links */
-                                if (!CNL2.checkText(currentString)) new DistributeData(currentString).start();
+                                if (!CNL2.checkText(currentString)) {
+                                    new DistributeData(currentString).start();
+                                }
                             }
                             lastString = currentString;
                         } else {
@@ -232,7 +240,7 @@ public class ClipboardHandler extends Thread implements ControlListener {
 
     public String getCurrentClipboardLinks() {
         synchronized (LOCK) {
-            DataFlavor what = getCurrentClipboardContent();
+            final DataFlavor what = getCurrentClipboardContent();
             if (what == urlFlavor || what == stringFlavor || what == htmlFlavor) {
                 return currentString;
             } else
@@ -255,11 +263,11 @@ public class ClipboardHandler extends Thread implements ControlListener {
                              * fileListFlavors occur in Windows, we use only
                              * those files we have Plugins for
                              */
-                            List list = (List) cur.getTransferData(fileListFlavor);
-                            ListIterator it = list.listIterator();
-                            StringBuilder sb = new StringBuilder("");
+                            final List list = (List) cur.getTransferData(fileListFlavor);
+                            final ListIterator it = list.listIterator();
+                            final StringBuilder sb = new StringBuilder("");
                             while (it.hasNext()) {
-                                File f = (File) it.next();
+                                final File f = (File) it.next();
                                 if (DistributeData.hasContainerPluginFor(f.toString())) {
                                     sb.append(f.toString());
                                     sb.append("\r\n");
@@ -274,7 +282,7 @@ public class ClipboardHandler extends Thread implements ControlListener {
                             currentString = ((String) cur.getTransferData(stringFlavor));
                         } else if (what == htmlFlavor) {
                             try {
-                                String charSet = new Regex(htmlFlavor.toString(), "charset=(.*?)]").getMatch(0);
+                                final String charSet = new Regex(htmlFlavor.toString(), "charset=(.*?)]").getMatch(0);
                                 byte[] html = (byte[]) cur.getTransferData(htmlFlavor);
                                 if (OSDetector.isLinux()) {
                                     /*
@@ -288,13 +296,16 @@ public class ClipboardHandler extends Thread implements ControlListener {
                                      * and discard 0 bytes if they are in
                                      * intervalls
                                      */
-                                    byte[] html2 = new byte[html.length];
+                                    final int htmlLength = html.length;
+                                    final byte[] html2 = new byte[htmlLength];
 
                                     int o = 0;
-                                    for (int i = 6; i < html.length - 1; i++) {
+                                    for (int i = 6; i < htmlLength - 1; i++) {
                                         // System.out.print(html[i] +
                                         // " ");
-                                        if (html[i] != 0) html2[o++] = html[i];
+                                        if (html[i] != 0) {
+                                            html2[o++] = html[i];
+                                        }
                                     }
                                     html = html2;
                                     currentString = new String(html, "UTF-8");
@@ -363,12 +374,11 @@ public class ClipboardHandler extends Thread implements ControlListener {
         setEnabled(!isEnabled());
     }
 
-    public void controlEvent(ControlEvent event) {
+    public void controlEvent(final ControlEvent event) {
         if (event.getID() == ControlEvent.CONTROL_INIT_COMPLETE && event.getSource() instanceof Main) {
             setEnabled(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, true));
             JDUtilities.getController().removeControlListener(this);
         }
-
     }
 
 }
