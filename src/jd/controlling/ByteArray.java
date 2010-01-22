@@ -2,7 +2,7 @@ package jd.controlling;
 
 public class ByteArray {
 
-    private byte[] buffer = null;
+    private final byte[] buffer;
     private int mark = 0;
 
     /**
@@ -10,7 +10,7 @@ public class ByteArray {
      * 
      * @param size
      */
-    public ByteArray(int size) {
+    public ByteArray(final int size) {
         buffer = new byte[size];
     }
 
@@ -28,7 +28,7 @@ public class ByteArray {
      * 
      * @param filled
      */
-    public void setMark(int mark) {
+    public void setMark(final int mark) {
         this.mark = mark;
     }
 
