@@ -100,6 +100,39 @@ public final class JDL {
     }
 
     /**
+     * Based on http://en.wikipedia.org/wiki/List_of_country_calling_codes
+     * 
+     * @param code
+     * @return
+     */
+    public static boolean isNorthAmerica(String code) {
+        code = code.toUpperCase();
+        String[] table = new String[] { "US", "CA", "BS", "BB", "AI", "AG", "VG", "VI", "KY", "BM", "GD", "TC", "MS", "MP", "GU", "AS", "LC", "DM", "VC", "PR", "DO", "DO", "DO", "TT", "KN", "JM", "PR" };
+
+        for (String c : table)
+            if (c.equals(code)) return true;
+        return false;
+    }
+
+    public static boolean isEurope(String code) {
+        code = code.toUpperCase();
+        String[] table = new String[] { "GR", "NL", "BE", "FR", "ES", "GI", "PT", "LU", "IE", "IS", "AL", "MT", "CY", "FI", "AX", "BG", "HU", "LT", "LV", "EE", "MD", "AM", "QN", "BY", "AD", "MC", "SM", "VA", "UA", "RS", "ME", "HR", "SI", "BA", "EU", "MK", "IT", "VA", "RO", "CH", "CZ", "SK", "LI", "AT", "GB", "GG", "IM", "JE", "DK", "SE", "NO", "SJ", "PL", "DE" };
+
+        for (String c : table)
+            if (c.equals(code)) return true;
+        return false;
+    }
+
+    public static boolean isSouthAmerica(String code) {
+        code = code.toUpperCase();
+        String[] table = new String[] { "FK", "BZ", "GT", "SV", "HN", "NI", "CR", "PA", "PM", "HT", "PE", "MX", "CU", "AR", "BR", "CL", "CO", "VE", "GP", "BL", "MF", "BO", "GY", "EC", "GF", "PY", "MQ", "SR", "UY", "AN" };
+
+        for (String c : table)
+            if (c.equals(code)) return true;
+        return false;
+    }
+
+    /**
      * Creates a new JDLocale instance or uses a cached one
      * 
      * @param lngGeoCode
