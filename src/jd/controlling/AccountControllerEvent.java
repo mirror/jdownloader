@@ -21,10 +21,10 @@ import jd.plugins.Account;
 
 public class AccountControllerEvent extends JDEvent {
 
-    private Account account;
-    private String host;
+    private final Account account;
+    private final String host;
 
-    public AccountControllerEvent(Object source, int ID, String host, Account account) {
+    public AccountControllerEvent(final Object source, final int ID, final String host, final Account account) {
         super(source, ID);
         this.account = account;
         this.host = host;
