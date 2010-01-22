@@ -33,13 +33,15 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "teradepot.com" }, urls = { "http://[\\w\\.]*?teradepot\\.com/[0-9a-z]+/" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "teradepot.com" }, urls = { "http://[\\w\\.]*?teradepot\\.com/[0-9a-z]{12}" }, flags = { 2 })
 public class TeraDepotCom extends PluginForHost {
 
     public TeraDepotCom(PluginWrapper wrapper) {
         super(wrapper);
         enablePremium("http://www.teradepot.com/premium.html");
     }
+
+    public boolean freeAccount = false;
 
     @Override
     public String getAGBLink() {
@@ -56,9 +58,9 @@ public class TeraDepotCom extends PluginForHost {
         login.put("password", Encoding.urlEncode(account.getPass()));
         login.setAction("http://www.teradepot.com/");
         br.submitForm(login);
-        br.getPage("http://www.teradepot.com/?op=my_account");
-        if (!br.containsHTML("Premium-Account expire")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         if (br.getCookie("http://www.teradepot.com/", "login") == null || br.getCookie("http://www.teradepot.com/", "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        br.getPage("http://www.teradepot.com/?op=my_account");
+        if (!br.containsHTML("Premium-Account expire")) freeAccount = true;
     }
 
     @Override
@@ -76,64 +78,73 @@ public class TeraDepotCom extends PluginForHost {
         if (points != null) ai.setPremiumPoints(Long.parseLong(points));
         account.setValid(true);
         ai.setUnlimitedTraffic();
-        String expire = br.getRegex("Premium-Account expire:</TD><TD><b>(.*?)</b>").getMatch(0);
-        if (expire == null) {
-            ai.setExpired(true);
-            account.setValid(false);
-            return ai;
+        if (!freeAccount) {
+            ai.setStatus("Premium User");
+            String expire = br.getRegex("Premium-Account expire:</TD><TD><b>(.*?)</b>").getMatch(0);
+            if (expire == null) {
+                ai.setExpired(true);
+                account.setValid(false);
+                return ai;
+            } else {
+                ai.setValidUntil(Regex.getMilliSeconds(expire, "dd MMMM yyyy", null));
+            }
         } else {
-            ai.setValidUntil(Regex.getMilliSeconds(expire, "dd MMMM yyyy", null));
+            ai.setStatus("Registered (free) User");
         }
         return ai;
     }
 
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
-        String passCode = null;
         requestFileInformation(link);
         login(account);
         br.getPage(link.getDownloadURL());
-        br.setFollowRedirects(true);
-        // Form um auf "Datei herunterladen" zu klicken
-        Form DLForm = br.getFormbyProperty("name", "F1");
-        if (DLForm == null && br.getRedirectLocation() != null) {
-            br.setFollowRedirects(true);
-            dl = BrowserAdapter.openDownload(br, link, br.getRedirectLocation(), true, 0);
+        if (freeAccount) {
+            doFree(link);
         } else {
-            if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            if (br.containsHTML("valign=top><b>Password:</b></td>")) {
-                if (link.getStringProperty("pass", null) == null) {
-                    passCode = Plugin.getUserInput("Password?", link);
-                } else {
-                    /* gespeicherten PassCode holen */
-                    passCode = link.getStringProperty("pass", null);
-                }
-                DLForm.put("password", passCode);
-            }
+            String passCode = null;
             br.setFollowRedirects(true);
-            dl = BrowserAdapter.openDownload(br, link, DLForm, true, 0);
-        }
-        if (dl.getConnection() != null && dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            if (br.containsHTML("Wrong password")) {
-                logger.warning("Wrong password!");
-                link.setProperty("pass", null);
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            } else {
-                String url = br.getRegex("direct link.*?href=\"(http:.*?)\"").getMatch(0);
-                if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            // Form um auf "Datei herunterladen" zu klicken
+            Form DLForm = br.getFormbyProperty("name", "F1");
+            if (DLForm == null && br.getRedirectLocation() != null) {
                 br.setFollowRedirects(true);
-                dl = BrowserAdapter.openDownload(br, link, url, true, 0);
-                if (dl.getConnection() != null && dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("html")) {
-                    br.followConnection();
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                dl = BrowserAdapter.openDownload(br, link, br.getRedirectLocation(), true, 0);
+            } else {
+                if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (br.containsHTML("valign=top><b>Password:</b></td>")) {
+                    if (link.getStringProperty("pass", null) == null) {
+                        passCode = Plugin.getUserInput("Password?", link);
+                    } else {
+                        /* gespeicherten PassCode holen */
+                        passCode = link.getStringProperty("pass", null);
+                    }
+                    DLForm.put("password", passCode);
+                }
+                br.setFollowRedirects(true);
+                dl = BrowserAdapter.openDownload(br, link, DLForm, true, 0);
+            }
+            if (dl.getConnection() != null && dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("html")) {
+                br.followConnection();
+                if (br.containsHTML("Wrong password")) {
+                    logger.warning("Wrong password!");
+                    link.setProperty("pass", null);
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                } else {
+                    String url = br.getRegex("direct link.*?href=\"(http:.*?)\"").getMatch(0);
+                    if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    br.setFollowRedirects(true);
+                    dl = BrowserAdapter.openDownload(br, link, url, true, 0);
+                    if (dl.getConnection() != null && dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("html")) {
+                        br.followConnection();
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
                 }
             }
+            if (passCode != null) {
+                link.setProperty("pass", passCode);
+            }
+            dl.startDownload();
         }
-        if (passCode != null) {
-            link.setProperty("pass", passCode);
-        }
-        dl.startDownload();
     }
 
     @Override
@@ -155,10 +166,21 @@ public class TeraDepotCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
-        Form form = br.getForm(1);
-        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        form.remove("method_premium");
-        br.submitForm(form);
+        doFree(link);
+    }
+
+    public void doFree(DownloadLink link) throws Exception {
+        Form freeform = br.getFormBySubmitvalue("Kostenloser+Download");
+        if (freeform == null) {
+            freeform = br.getFormBySubmitvalue("Free+Download");
+            if (freeform == null) {
+                freeform = br.getFormbyKey("download1");
+            }
+        }
+        if (freeform != null) {
+            freeform.remove("method_premium");
+            br.submitForm(freeform);
+        }
         if (br.containsHTML("reached the download-limit")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 120 * 60 * 1001l); }
         if (br.containsHTML("You have to wait")) {
             if (br.containsHTML("minute")) {
@@ -215,7 +237,7 @@ public class TeraDepotCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return -1;
     }
 
 }
