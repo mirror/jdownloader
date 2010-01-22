@@ -109,17 +109,7 @@ public class KikinDialog extends AbstractDialog {
         group.add(radioAccept);
         group.add(radioDeny);
 
-        radioAccept.addActionListener(new ActionListener() {
-            public void actionPerformed(final ActionEvent e) {
-                if (radioAccept.isSelected()) {
-                    btnOK.setEnabled(true);
-                    btnOK.setToolTipText(null);
-                } else {
-                    btnOK.setEnabled(false);
-                    btnOK.setToolTipText(JDL.L("gui.installer.kikin.tooltip", "Please read and accept the conditions"));
-                }
-            }
-        });
+
         textField = new JTextPane();
         textField.setContentType("text/html");
 
@@ -127,7 +117,12 @@ public class KikinDialog extends AbstractDialog {
 
         textField.setOpaque(false);
         textField.putClientProperty("Synthetica.opaque", Boolean.FALSE);
+        if (JDL.getLocale().getLanguageCode().equals("de")) {
         textField.setText("<style type='text/css'> body {        font-family: Geneva, Arial, Helvetica, sans-serif; font-size:9px;}</style>" + JDL.L("gui.installer.kikin.whatis3", "<b>kikin uses your browsing history to give you personalized content from sites you like.   <a href=\"http://jdownloader.org/kikin\">more...</a></b>"));
+        }else{
+            textField.setText("<style type='text/css'> body {        font-family: Geneva, Arial, Helvetica, sans-serif; font-size:9px;}</style>" + JDL.L("gui.installer.kikin.whatis3", "<b>kikin uses your browsing history to give you personalized content from sites you like.   <a href=\"http://jdownloader.org/kikin\">more...</a></b>"));
+               
+        }
         textField.setEditable(false);
         final HyperlinkListener hyperlinkListener = new HyperlinkListener() {
             public void hyperlinkUpdate(final HyperlinkEvent e) {
