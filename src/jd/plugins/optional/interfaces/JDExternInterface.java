@@ -283,7 +283,7 @@ public class JDExternInterface extends PluginOptional {
                     }
                 } else if (request.getRequestUrl().equalsIgnoreCase("/jdcheck.js")) {
                     
-                    response.addContent("var jdownloader=1;\r\n");
+                    response.addContent("jdownloader=true;\r\n");
         
                 } else if (request.getRequestUrl().equalsIgnoreCase("/crossdomain.xml")) {
                     response.addContent("<?xml version=\"1.0\"?>\r\n");
