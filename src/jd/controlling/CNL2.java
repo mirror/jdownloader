@@ -40,7 +40,13 @@ import jd.utils.locale.JDL;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;
 
-public class CNL2 {
+public final class CNL2 {
+
+    /**
+     * Don't let anyone instantiate this class.
+     */
+    private CNL2() {
+    }
 
     /**
      * runs through all decrypter and checks if cnl2 is enabled and if text
@@ -55,7 +61,7 @@ public class CNL2 {
         if (!isExternInterfaceActive()) return false;
         if (!SubConfiguration.getConfig(LinkGrabberController.CONFIG).getBooleanProperty(LinkGrabberController.PARAM_USE_CNL2, true)) return false;
         try {
-            for (DecryptPluginWrapper plg : DecryptPluginWrapper.getDecryptWrapper()) {
+            for (final DecryptPluginWrapper plg : DecryptPluginWrapper.getDecryptWrapper()) {
                 if ((plg.getFlags() & PluginWrapper.CNL_2) > 0) {
                     if (plg.canHandle(text)) {
                         String match = new Regex(text, plg.getPattern()).getMatch(-1);
@@ -77,15 +83,15 @@ public class CNL2 {
     }
 
     private static boolean isExternInterfaceActive() {
-        OptionalPluginWrapper plg = JDUtilities.getOptionalPlugin("externinterface");
+        final OptionalPluginWrapper plg = JDUtilities.getOptionalPlugin("externinterface");
         return (plg != null && plg.isLoaded() && plg.isEnabled());
     }
 
-    public static String decrypt(byte[] b, byte[] key) {
-        Cipher cipher;
+    public static String decrypt(final byte[] b, final byte[] key) {
+        final Cipher cipher;
         try {
-            IvParameterSpec ivSpec = new IvParameterSpec(key);
-            SecretKeySpec skeySpec = new SecretKeySpec(key, "AES");
+            final IvParameterSpec ivSpec = new IvParameterSpec(key);
+            final SecretKeySpec skeySpec = new SecretKeySpec(key, "AES");
             cipher = Cipher.getInstance("AES/CBC/NoPadding");
             cipher.init(Cipher.DECRYPT_MODE, skeySpec, ivSpec);
             return new String(cipher.doFinal(b));
@@ -102,34 +108,34 @@ public class CNL2 {
      * @param passwords
      * @param source
      */
-    public static void decrypt(String crypted, String jk, String k, String password, String source) {
-        byte[] key;
+    public static void decrypt(final String crypted, final String jk, final String k, final String password, final String source) {
+        final byte[] key;
 
         if (jk != null) {
-            Context cx = Context.enter();
-            Scriptable scope = cx.initStandardObjects();
-            String fun = jk + "  f()";
-           Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
+            final Context cx = Context.enter();
+            final Scriptable scope = cx.initStandardObjects();
+            final String fun = jk + "  f()";
+            final Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
 
             key = JDHexUtils.getByteArray(Context.toString(result));
             Context.exit();
         } else {
             key = JDHexUtils.getByteArray(k);
         }
-        byte[] baseDecoded = Base64.decode(crypted);
-        String decryted = decrypt(baseDecoded, key).trim();
+        final byte[] baseDecoded = Base64.decode(crypted);
+        final String decryted = decrypt(baseDecoded, key).trim();
 
-        String passwords[] = Regex.getLines(password);
+        final String passwords[] = Regex.getLines(password);
 
-        ArrayList<DownloadLink> links = new DistributeData(Encoding.htmlDecode(decryted)).findLinks();
-        for (DownloadLink link : links)
+        final ArrayList<DownloadLink> links = new DistributeData(Encoding.htmlDecode(decryted)).findLinks();
+        for (final DownloadLink link : links) {
             link.addSourcePluginPasswords(passwords);
-        for (DownloadLink l : links) {
+        }
+        for (final DownloadLink l : links) {
             if (source != null) {
                 l.setBrowserUrl(source);
             }
         }
         LinkGrabberController.getInstance().addLinks(links, false, false);
-
     }
 }
