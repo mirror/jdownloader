@@ -27,7 +27,7 @@ import jd.utils.locale.JDL;
 
 public class BatchReconnect extends ReconnectMethod {
 
-    private SubConfiguration configuration;
+    private final SubConfiguration configuration;
 
     private static final String PROPERTY_IP_WAIT_FOR_RETURN = "WAIT_FOR_RETURN5";
 
@@ -42,7 +42,7 @@ public class BatchReconnect extends ReconnectMethod {
     }
 
     protected void initConfig() {
-        ConfigEntry cfg;
+        final ConfigEntry cfg;
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, configuration, PROPERTY_TERMINAL, JDL.L("interaction.batchreconnect.terminal", "Interpreter")));
         if (OSDetector.isWindows()) {
             cfg.setDefaultValue("cmd /c");
@@ -53,23 +53,24 @@ public class BatchReconnect extends ReconnectMethod {
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, configuration, PROPERTY_RECONNECT_EXECUTE_FOLDER, JDL.L("interaction.batchreconnect.executeIn", "Ausführen in (Ordner der Anwendung)")));
     }
 
-    protected boolean runCommands(ProgressController progress) {
-        int waitForReturn = configuration.getIntegerProperty(PROPERTY_IP_WAIT_FOR_RETURN, -1);
-        String executeIn = configuration.getStringProperty(PROPERTY_RECONNECT_EXECUTE_FOLDER);
+    protected boolean runCommands(final ProgressController progress) {
+        final int waitForReturn = configuration.getIntegerProperty(PROPERTY_IP_WAIT_FOR_RETURN, -1);
+        final String executeIn = configuration.getStringProperty(PROPERTY_RECONNECT_EXECUTE_FOLDER);
         String command = configuration.getStringProperty(PROPERTY_TERMINAL);
 
-        String[] cmds = command.split("\\ ");
+        final String[] cmds = command.split("\\ ");
+        final int cmdsLength1 = cmds.length - 1;
         command = cmds[0];
-        for (int i = 0; i < cmds.length - 1; i++) {
+        for (int i = 0; i < cmdsLength1; i++) {
             cmds[i] = cmds[i + 1];
         }
 
-        String batch = configuration.getStringProperty(PROPERTY_BATCHTEXT, "");
+        final String batch = configuration.getStringProperty(PROPERTY_BATCHTEXT, "");
 
-        String[] lines = Regex.getLines(batch);
+        final String[] lines = Regex.getLines(batch);
         logger.info("Using Batch-Mode: using " + command + " as interpreter! (default: windows(cmd.exe) linux&mac(/bin/bash) )");
-        for (String element : lines) {
-            cmds[cmds.length - 1] = element;
+        for (final String element : lines) {
+            cmds[cmdsLength1] = element;
             /*
              * if we have multiple lines, wait for each line to finish until
              * starting the next one
