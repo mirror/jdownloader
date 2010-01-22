@@ -12,9 +12,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import javax.swing.event.EventListenerList;
 
-import jd.plugins.optional.awesomebar.awesome.proposal.AwesomeAlertListener;
-import jd.plugins.optional.awesomebar.awesome.proposal.AwesomeShoutListener;
-import jd.plugins.optional.awesomebar.awesome.proposal.AwesomeStartStopListener;
+import jd.plugins.optional.awesomebar.awesome.proposal.*;
 
 public class Awesome extends Observable {
     private Map<String, EventListenerList> keywords = new HashMap<String, EventListenerList>();
@@ -41,6 +39,8 @@ public class Awesome extends Observable {
         this.registerListener(new AwesomeAlertListener());
         this.registerListener(new AwesomeShoutListener());
         this.registerListener(new AwesomeStartStopListener());
+        this.registerListener(new AwesomeReconnectListener());
+        this.registerListener(new AwesomeClipboardListener());
     }
 
     // this.command stuff

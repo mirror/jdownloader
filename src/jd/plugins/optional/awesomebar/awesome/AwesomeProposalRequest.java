@@ -33,8 +33,20 @@ public class AwesomeProposalRequest extends EventObject
 		return params;
 	}
 	
+	public boolean isParamsEmpty(){
+	    return params.isEmpty();
+	}
+	
 	public Awesome getSource(){
 		return (Awesome)super.getSource();
+	}
+	
+	/**
+     * @return a cloned AwesomeProposalRequest object, but with changed params.
+     */
+	public AwesomeProposalRequest withParams(String params2)
+	{
+	    return new AwesomeProposalRequest(this.getSource(),this.getCommand(),params2);
 	}
 
 }

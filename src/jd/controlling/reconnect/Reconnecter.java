@@ -71,6 +71,11 @@ public final class Reconnecter {
      */
     private static boolean RECONNECT_REQUESTED = false;
 
+    
+    public static boolean isReconnectAllowed() {
+        return JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true);
+    }
+    
     public static void toggleReconnect() {
         final Configuration configuration = JDUtilities.getConfiguration();
         final boolean newState = !configuration.getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true);
