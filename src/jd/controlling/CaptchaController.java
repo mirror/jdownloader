@@ -33,14 +33,14 @@ import jd.utils.JDUtilities;
 
 public class CaptchaController {
 
-    private String methodname;
-    private File captchafile;
-    private String explain;
-    private String suggest;
-    private String host;
-    private ImageIcon icon;
+    private final String methodname;
+    private final File captchafile;
+    private final String explain;
+    private final String suggest;
+    private final String host;
+    private final ImageIcon icon;
 
-    public CaptchaController(String host, ImageIcon icon, String method, File file, String suggest, String explain) {
+    public CaptchaController(final String host, final ImageIcon icon, final String method, final File file, final String suggest, final String explain) {
         this.host = host;
         this.icon = icon;
         this.methodname = method;
@@ -58,16 +58,14 @@ public class CaptchaController {
         return (JDUtilities.getConfiguration() != null && !SubConfiguration.getConfig("JAC").getBooleanProperty(Configuration.PARAM_CAPTCHA_JAC_DISABLE, false)) && JACMethod.hasMethod(methodname);
     }
 
-    public String getCode(int flag) {
-        if (!hasMethod()) {
-            if ((flag & UserIO.NO_USER_INTERACTION) > 0) return null;
-            return UserIO.getInstance().requestCaptchaDialog(flag, host, icon, captchafile, suggest, explain);
-        }
-        JAntiCaptcha jac = new JAntiCaptcha(methodname);
-        try {
-            Image captchaImage = ImageIO.read(captchafile);
+    public String getCode(final int flag) {
+        if (!hasMethod()) { return ((flag & UserIO.NO_USER_INTERACTION) > 0) ? null : UserIO.getInstance().requestCaptchaDialog(flag, host, icon, captchafile, suggest, explain); }
 
-            Captcha captcha = jac.createCaptcha(captchaImage);
+        final JAntiCaptcha jac = new JAntiCaptcha(methodname);
+        try {
+            final Image captchaImage = ImageIO.read(captchafile);
+
+            final Captcha captcha = jac.createCaptcha(captchaImage);
             String captchaCode = jac.checkCaptcha(captchafile, captcha);
             if (jac.isExtern()) {
                 if ((flag & UserIO.NO_USER_INTERACTION) == 0 && captchaCode == null || captchaCode.trim().length() == 0) {
@@ -76,13 +74,13 @@ public class CaptchaController {
                 return captchaCode;
             }
 
-            LetterComperator[] lcs = captcha.getLetterComperators();
+            final LetterComperator[] lcs = captcha.getLetterComperators();
 
             double vp = 0.0;
             if (lcs == null) {
                 vp = 100.0;
             } else {
-                for (LetterComperator element : lcs) {
+                for (final LetterComperator element : lcs) {
                     if (element == null) {
                         vp = 100.0;
                         break;
@@ -92,8 +90,7 @@ public class CaptchaController {
             }
 
             if (vp > SubConfiguration.getConfig("JAC").getIntegerProperty(Configuration.AUTOTRAIN_ERROR_LEVEL, 95)) {
-                if ((flag & UserIO.NO_USER_INTERACTION) > 0) return captchaCode;
-                return UserIO.getInstance().requestCaptchaDialog(flag, host, icon, captchafile, captchaCode, explain);
+                return ((flag & UserIO.NO_USER_INTERACTION) > 0) ? captchaCode : UserIO.getInstance().requestCaptchaDialog(flag, host, icon, captchafile, captchaCode, explain);
             } else {
                 return captchaCode;
             }
