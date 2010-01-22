@@ -370,7 +370,6 @@ gui.installer.kikin.deny3 = <span>No, gracias</span>
 gui.installer.kikin.message = Personaliza tu experiencia de búsqueda
 gui.installer.kikin.ok = Continuar
 gui.installer.kikin.title = Instalador de Kikin
-gui.installer.kikin.tooltip = Por favor lee y acepta las condiciones
 gui.installer.kikin.whatis3 = <b>kikin usa su historial de navegacion para brindale contenido personalizado de los sitios que usted frecuenta.   <a href="http://jdownloader.org/kikin">Mas info...</a></b>
 gui.javacheck.html = <link href='http://jdownloader.org/jdcss.css' rel='stylesheet' type='text/css' /><div style='width:534px;height;200px'><h2>Estas usando una versión desactualizada de Java, deberías actualizarla. ¿Iniciar JDownloader de todas formas?<table width='100%%'><tr><th colspan='2'>Tu versión de Java:</th></tr><tr><th>Nombre</th><td>%s</td></tr><tr><th>Versión</th><td>%s</td></tr></table></div>
 gui.javacheck.newerjavaavailable.msg = Aunque JDownloader corre en tu versión de java, te aconsejamos instalar la última actualizacion de java. \r\nJDownloader correra más estable, rápido, y lucira mejor. \r\n\r\nVisita http://jdownloader.org/download.
@@ -1310,7 +1309,6 @@ plugins.hoster.netloadin.errors.couldnotfollow = Servidor: no se pudo seguir el 
 plugins.hoster.netloadin.errors.damagedfile = Archivo dañado
 plugins.hoster.netloadin.errors.dlnotfound = No se encontro el enlace de descarga
 plugins.hoster.netloadin.errors.fileondmgserver = El archivo está en un servidor dañado
-plugins.hoster.netloadin.errors.mightbeoffline = Podría estar fuera de línea
 plugins.hoster.nopremiumsupport = Este Complemento no tiene el metódo de manejo de cuentas premium
 plugins.hoster.passquestion = Enlace '%s' protegido. Introduzca la contraseña:
 plugins.hoster.premium.status_ok = Cuenta aceptada
