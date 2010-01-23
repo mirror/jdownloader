@@ -17,6 +17,7 @@
 package jd.plugins.decrypter;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Vector;
 import java.util.logging.Level;
@@ -24,6 +25,7 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.controlling.reconnect.Reconnecter;
 import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -38,6 +40,8 @@ import jd.utils.EditDistance;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "serienjunkies.org" }, urls = { "http://[\\w\\.]*?serienjunkies\\.org.*(rc[_-]|rs[_-]|nl[_-]|u[tl][_-]|ff[_-]).*" }, flags = { 0 })
 public class Srnnks extends PluginForDecrypt {
     private final static String[] passwords = { "serienjunkies.dl.am", "serienjunkies.org", "dokujunkies.org" };
+    private static long LATEST_BLOCK_DETECT=0;
+    private static long LATEST_RECONNECT=0;
 
     public Srnnks(PluginWrapper wrapper) {
         super(wrapper);
@@ -50,13 +54,41 @@ public class Srnnks extends PluginForDecrypt {
         return dlink;
     }
 
-    private boolean limitsReached() {
+    private synchronized static boolean limitsReached(Browser br) throws IOException {
+        int ret = -100;
         if (br.containsHTML("Du hast zu oft das Captcha falsch")) {
-            UserIO.getInstance().requestMessageDialog(UserIO.ICON_WARNING, "Sie haben zu oft das Captcha falsch eingegeben sie müssen entweder warten oder einen Reconnect durchführen");
-            return true;
+
+            if (System.currentTimeMillis() - LATEST_BLOCK_DETECT < 60000) return true;
+            if (System.currentTimeMillis() - LATEST_RECONNECT < 15000) {
+                // redo the request
+                br.loadConnection(br.openRequestConnection(br.getRequest().cloneRequest()));
+                return false;
+            }
+            ret = UserIO.getInstance().requestConfirmDialog(0, "Captchalimit", "Sie haben zu oft das Captcha falsch eingegeben sie müssen entweder warten oder einen Reconnect durchführen", null, "Reconnect", "Decrypten abbrechen");
+
         }
         if (br.containsHTML("Download-Limit")) {
-            UserIO.getInstance().requestMessageDialog(UserIO.ICON_WARNING, "Das Downloadlimit wurde erreicht sie müssen entweder warten oder einen Reconnect durchführen");
+            if (System.currentTimeMillis() - LATEST_BLOCK_DETECT < 60000) return true;
+            if (System.currentTimeMillis() - LATEST_RECONNECT < 15000) {
+                // redo the request
+                br.loadConnection(br.openRequestConnection(br.getRequest().cloneRequest()));
+                return false;
+            }
+            ret = UserIO.getInstance().requestConfirmDialog(0, "Downloadlimit", "Das Downloadlimit wurde erreicht sie müssen entweder warten oder einen Reconnect durchführen", null, "Reconnect", "Decrypten abbrechen");
+
+        }
+        if (ret != -100) {
+            if (UserIO.isOK(ret)) {
+                if (Reconnecter.waitForNewIP(15000, false)) {
+                 
+                    // redo the request
+                    br.loadConnection(br.openRequestConnection(br.getRequest().cloneRequest()));
+                    LATEST_RECONNECT = System.currentTimeMillis();
+                    return false;
+                }
+            } else {
+                LATEST_BLOCK_DETECT = System.currentTimeMillis();
+            }
             return true;
         }
         return false;
@@ -70,13 +102,13 @@ public class Srnnks extends PluginForDecrypt {
         // progress.setStatusText("Lade Downloadseite");
 
         br.getPage(parameter.getCryptedUrl());
-        if (limitsReached()) return new ArrayList<DownloadLink>(ret);
+        if (limitsReached(br)) return new ArrayList<DownloadLink>(ret);
 
         if (br.containsHTML("<FRAME SRC")) {
             // progress.setStatusText("Lade Downloadseitenframe");
             br.getPage(br.getRegex("<FRAME SRC=\"(.*?)\"").getMatch(0));
         }
-        if (limitsReached()) return new ArrayList<DownloadLink>(ret);
+        if (limitsReached(br)) return new ArrayList<DownloadLink>(ret);
         progress.increase(30);
 
         // linkendung kommt auch im action der form vor
@@ -129,7 +161,7 @@ public class Srnnks extends PluginForDecrypt {
                 form.getInputFieldByType("text").setValue(code);
                 // System.out.println(code);
                 br.submitForm(form);
-                if (limitsReached()) return new ArrayList<DownloadLink>(ret);
+                if (limitsReached(br)) return new ArrayList<DownloadLink>(ret);
                 if (br.getRedirectLocation() != null) {
                     ret.add(createDownloadlink(br.getRedirectLocation()));
                     progress.doFinalize();
