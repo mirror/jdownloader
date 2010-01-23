@@ -56,6 +56,7 @@ public class ComboDialog extends AbstractDialog {
         messageArea.setOpaque(false);
         messageArea.setText(this.message);
         messageArea.setEditable(false);
+        messageArea.putClientProperty("Synthetica.opaque", Boolean.FALSE);
 
         contentpane.add(messageArea);
 

@@ -27,7 +27,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "Click'n'load" }, urls = { "cnl://.*?\\..*?/.*?/" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "Click n Load" }, urls = { "cnl://.*?\\..*?/.*?/" }, flags = { 0 })
 public class CNL extends PluginForDecrypt {
 
     public CNL(PluginWrapper wrapper) {

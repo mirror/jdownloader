@@ -52,6 +52,7 @@ public class SrnnksCategory extends PluginForDecrypt {
         String[] names = br.getRegex("<a href=\"http://serienjunkies.org/\\?p=(\\d+)\" .*?>(.*?)</a></h2>").getColumn(1);
 
         int res = UserIO.getInstance().requestComboDialog(0, "Bitte Kategorie auswählen", "Bitte die gewünschte Staffel auswählen", names, 0, null, null, null, null);
+        if (res < 0) return ret;
         br.getPage("http://serienjunkies.org/?p=" + ids[res]);
         ArrayList<String> mirrors = new ArrayList<String>();
         for (String m : br.getRegex("hier</a> \\| (.*?)<").getColumn(0)) {
@@ -60,6 +61,7 @@ public class SrnnksCategory extends PluginForDecrypt {
             }
         }
         res = UserIO.getInstance().requestComboDialog(0, "Bitte Mirror auswählen", "Bitte den gewünschten Anbieter aus.", mirrors.toArray(new String[] {}), 0, null, null, null, null);
+        if (res < 0) return ret;
 
         String[] urls = br.getRegex("</strong> <a href=\"([^<]*?)\" target=\"_blank\">hier</a> \\| " + mirrors.get(res) + "<br />").getColumn(0);
         StringBuilder sb = new StringBuilder();
@@ -68,7 +70,7 @@ public class SrnnksCategory extends PluginForDecrypt {
             sb.append("\r\n");
 
         }
-        String linklist = UserIO.getInstance().requestInputDialog(UserIO.STYLE_LARGE|UserIO.NO_COUNTDOWN, "Entferne ungewollte Links", sb.toString());
+        String linklist = UserIO.getInstance().requestInputDialog(UserIO.STYLE_LARGE | UserIO.NO_COUNTDOWN, "Entferne ungewollte Links", sb.toString());
 
         urls = HTMLParser.getHttpLinks(linklist, null);
         for (String url : urls) {
