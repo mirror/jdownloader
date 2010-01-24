@@ -56,6 +56,11 @@ public class Srnnks extends PluginForDecrypt {
 
     private synchronized static boolean limitsReached(Browser br) throws IOException {
         int ret = -100;
+        if(br.containsHTML("Error 503")){
+            UserIO.getInstance().requestMessageDialog("Serienjunkies ist überlastet. Bitte versuch es später nocheinmal!");
+            return true;
+        }
+        
         if (br.containsHTML("Du hast zu oft das Captcha falsch")) {
 
             if (System.currentTimeMillis() - LATEST_BLOCK_DETECT < 60000) return true;
@@ -102,6 +107,7 @@ public class Srnnks extends PluginForDecrypt {
         // progress.setStatusText("Lade Downloadseite");
 
         br.getPage(parameter.getCryptedUrl());
+        
         if (limitsReached(br)) return new ArrayList<DownloadLink>(ret);
 
         if (br.containsHTML("<FRAME SRC")) {

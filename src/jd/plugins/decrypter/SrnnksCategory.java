@@ -47,6 +47,10 @@ public class SrnnksCategory extends PluginForDecrypt {
             // progress.setStatusText("Lade Downloadseitenframe");
             br.getPage(br.getRegex("<FRAME SRC=\"(.*?)\"").getMatch(0));
         }
+        if(br.containsHTML("Error 503")){
+            UserIO.getInstance().requestMessageDialog("Serienjunkies ist überlastet. Bitte versuch es später nocheinmal!");
+            return ret;
+        }
         String[] ids = br.getRegex("<a href=\"http://serienjunkies.org/\\?p=(\\d+)\" .*?>(.*?)</a></h2>").getColumn(0);
 
         String[] names = br.getRegex("<a href=\"http://serienjunkies.org/\\?p=(\\d+)\" .*?>(.*?)</a></h2>").getColumn(1);
