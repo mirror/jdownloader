@@ -26,7 +26,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "adf.ly", "download.su" }, urls = { "http://[\\w\\.]*?adf\\.ly/[a-z0-9]+", "http://[\\w\\.]*?download\\.su/go/\\?id=.*?=/files/\\d+/.+" }, flags = { 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "adf.ly", "download.su", "wowebook.com" }, urls = { "http://[\\w\\.]*?adf\\.ly/[a-z0-9]+", "http://[\\w\\.]*?download\\.su/go/\\?id=.*?=/files/\\d+/.+", "http://[\\w\\.]*?wowebook\\.com/(e-|non-e-)book/.*?/.*?\\.html" }, flags = { 0, 0, 0 })
 public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginForDecrypt {
 
     public DecrypterForRedirectServicesWithoutDirectRedirects(PluginWrapper wrapper) {
@@ -44,6 +44,11 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
         else if (parameter.contains("download.su")) {
             String rspart = new Regex(parameter + "\"", "(/files.*?)\"").getMatch(0);
             finallink = "http://rapidshare.com" + rspart;
+        } else if (parameter.contains("wowebook.com")) {
+            String redirectLink = br.getRegex("\"(http://www\\.wowebook\\.com/download.*?)\"").getMatch(0);
+            if (redirectLink == null) return null;
+            br.getPage(redirectLink);
+            finallink = br.getRedirectLocation();
         }
         if (finallink == null) return null;
         decryptedLinks.add(createDownloadlink(finallink));

@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -48,6 +49,7 @@ public class AppSceneOrg extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         setBrowserExclusive();
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         String url = downloadLink.getDownloadURL();
         br.getPage(url);
         if (br.containsHTML("or has been deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

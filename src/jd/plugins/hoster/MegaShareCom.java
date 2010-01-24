@@ -134,7 +134,7 @@ public class MegaShareCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        Form submit = br.getForm(0);
+        Form submit = br.getForm(1);
         submit.setPreferredSubmit(2);
         br.submitForm(submit);
         if (br.containsHTML("This File has been DELETED")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
