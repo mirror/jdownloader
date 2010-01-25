@@ -28,19 +28,19 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flameupload.com" }, urls = { "http://[\\w\\.]*?flameupload\\.com/files/[0-9A-Z]{8}/" }, flags = { 0 })
-public class FlmpldCm extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadmirrors.com" }, urls = { "http://[\\w\\.]*?uploadmirrors\\.com/download/[0-9A-Z]{8}/" }, flags = { 0 })
+public class UploadMirrorsCom extends PluginForDecrypt {
 
-    public FlmpldCm(PluginWrapper wrapper) {
+    public UploadMirrorsCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    public String host = "http://flameupload.com";
+    public String host = "http://uploadmirrors.com";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        String id = new Regex(parameter, "files/([0-9A-Z]{8})").getMatch(0);
+        String id = new Regex(parameter, "download/([0-9A-Z]{8})").getMatch(0);
         parameter = host + "/status.php?uid=" + id;
         br.getPage(parameter);
         /* Error handling */
