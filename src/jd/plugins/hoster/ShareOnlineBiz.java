@@ -17,9 +17,11 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -103,13 +105,18 @@ public class ShareOnlineBiz extends PluginForHost {
         return ai;
     }
 
+    private final String getID(DownloadLink link) {
+        return new Regex(link.getDownloadURL(), "id\\=([a-zA-Z0-9]+)").getMatch(0);
+    }
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setCookie("http://www.share-online.biz", "king_mylang", "en");
         br.setAcceptLanguage("en, en-gb;q=0.8");
-        String id = new Regex(downloadLink.getDownloadURL(), "id\\=([a-zA-Z0-9]+)").getMatch(0).toUpperCase();
-        if (br.postPage("http://www.share-online.biz/linkcheck/linkcheck.php", "links=" + id).matches("\\s*")) {
+        String id = getID(downloadLink);
+        br.setDebug(true);
+        if (br.postPage("http://www.share-online.biz/linkcheck/linkcheck.php?md5=1", "links=" + id).matches("\\s*")) {
             br.getPage(downloadLink.getDownloadURL());
             String[] strings = br.getRegex("</font> \\((.*?)\\) \\.</b></div></td>.*?<b>File name:</b>.*?<b>(.*?)</b></div></td>").getRow(0);
             if (strings == null || strings.length != 2) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -117,11 +124,69 @@ public class ShareOnlineBiz extends PluginForHost {
             downloadLink.setName(strings[1].trim());
             return AvailableStatus.TRUE;
         }
-        String infos[] = br.getRegex("(.*?);(.*?);(.*?);(.+)").getRow(0);
+        String infos[] = br.getRegex("(.*?);(.*?);(.*?);(.*?);(.+)").getRow(0);
         if (infos == null || !infos[1].equalsIgnoreCase("OK")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setDownloadSize(Long.parseLong(infos[3].trim()));
         downloadLink.setName(infos[2].trim());
         return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public boolean checkLinks(DownloadLink[] urls) {
+        if (urls == null || urls.length == 0) { return false; }
+        try {
+            Browser br = new Browser();
+            br.setCookiesExclusive(true);
+            StringBuilder sb = new StringBuilder();
+            ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
+            int index = 0;
+            while (true) {
+                links.clear();
+                while (true) {
+                    /* we test 80 links at once */
+                    if (index == urls.length || links.size() > 80) break;
+                    links.add(urls[index]);
+                    index++;
+                }
+                sb.delete(0, sb.capacity());
+                sb.append("links=");
+                int c = 0;
+                for (DownloadLink dl : links) {
+                    if (c > 0) sb.append("\n");
+                    sb.append(getID(dl));
+                    c++;
+                }
+                br.postPage("http://www.share-online.biz/linkcheck/linkcheck.php?md5=1", sb.toString());
+                String infos[][] = br.getRegex(Pattern.compile("(.*?);(.*?);(.*?);(.*?);([0-9a-fA-F]+)")).getMatches();
+                for (DownloadLink dl : links) {
+                    String id = getID(dl);
+                    int hit = -1;
+                    for (int i = 0; i < infos.length; i++) {
+                        if (infos[i][0].equalsIgnoreCase(id)) {
+                            hit = i;
+                            break;
+                        }
+                    }
+                    if (hit == -1) {
+                        /* id not in response, so its offline */
+                        dl.setAvailable(false);
+                    } else {
+                        dl.setFinalFileName(infos[hit][2].trim());
+                        dl.setDownloadSize(Regex.getSize(infos[hit][3]));
+                        if (infos[hit][1].trim().equalsIgnoreCase("OK")) {
+                            dl.setAvailable(true);
+                            dl.setMD5Hash(infos[hit][4].trim());
+                        } else {
+                            dl.setAvailable(false);
+                        }
+                    }
+                }
+                if (index == urls.length) break;
+            }
+        } catch (Exception e) {
+            return false;
+        }
+        return true;
     }
 
     @Override
