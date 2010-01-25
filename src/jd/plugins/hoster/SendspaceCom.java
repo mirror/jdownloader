@@ -38,6 +38,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.mozilla.javascript.Context;
+import org.mozilla.javascript.ContextFactory;
 import org.mozilla.javascript.Scriptable;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sendspace.com" }, urls = { "http://[\\w\\.]*?sendspace\\.com/file/[0-9a-zA-Z]+" }, flags = { 2 })
@@ -181,7 +182,7 @@ public class SendspaceCom extends PluginForHost {
         String dec = br.getRegex(Pattern.compile("base64ToText\\('(.*?)'\\)", Pattern.CASE_INSENSITIVE)).getMatch(0);
         script += new Browser().getPage("http://www.sendspace.com/jsc/download.js");
         String fun = "function f(){ " + script + " return  utf8_decode(enc(base64ToText('" + dec + "')));} f()";
-        Context cx = Context.enter();
+        Context cx = ContextFactory.getGlobal().enter();
         Scriptable scope = cx.initStandardObjects();
         // Now evaluate the string we've colected.
         Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);

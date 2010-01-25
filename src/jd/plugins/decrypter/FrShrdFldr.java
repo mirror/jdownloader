@@ -16,7 +16,8 @@
 
 package jd.plugins.decrypter;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;

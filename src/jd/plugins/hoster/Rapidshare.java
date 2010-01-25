@@ -50,6 +50,7 @@ import jd.utils.Sniffy;
 import jd.utils.locale.JDL;
 
 import org.mozilla.javascript.Context;
+import org.mozilla.javascript.ContextFactory;
 import org.mozilla.javascript.Scriptable;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidshare.com" }, urls = { "http://[\\w\\.]*?rapidshare\\.com/files/\\d+/.+" }, flags = { 2 })
@@ -422,7 +423,7 @@ public class Rapidshare extends PluginForHost {
             String tt = new Regex(ticketCode, "var tt =(.*?)document\\.getElementById\\(\"dl\"\\)\\.innerHTML").getMatch(0);
 
             String fun = "function f(){ return " + tt + "} f()";
-            Context cx = Context.enter();
+            Context cx = ContextFactory.getGlobal().enter();
             Scriptable scope = cx.initStandardObjects();
 
             // Collect the arguments into a single string.

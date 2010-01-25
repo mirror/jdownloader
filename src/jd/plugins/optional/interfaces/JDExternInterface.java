@@ -58,7 +58,9 @@ import jd.utils.JDUtilities;
 import jd.utils.WebUpdate;
 import jd.utils.locale.JDL;
 
+import org.mozilla.javascript.ClassShutter;
 import org.mozilla.javascript.Context;
+import org.mozilla.javascript.ContextFactory;
 import org.mozilla.javascript.Scriptable;
 
 @OptionalPlugin(rev = "$Revision$", defaultEnabled = true, id = "externinterface", interfaceversion = 5)
@@ -70,6 +72,7 @@ public class JDExternInterface extends PluginOptional {
 
     public JDExternInterface(PluginWrapper wrapper) {
         super(wrapper);
+    
         handler = new RequestHandler();
     }
 
@@ -94,17 +97,30 @@ public class JDExternInterface extends PluginOptional {
      * @param passwords
      * @param source
      */
-    public static void decrypt(String crypted, String jk, String k, String password, String source) {
-        byte[] key;
+    public static void decrypt(String crypted, final String jk, String k, String password, String source) {
+        byte[] key = null;
 
         if (jk != null) {
-            Context cx = Context.enter();
+
+       
+            Context cx = ContextFactory.getGlobal().enter();
+            cx.setClassShutter(new ClassShutter() {
+                public boolean visibleToScripts(String className) {
+                    if (className.startsWith("adapter")) {
+                        return true;
+                    } else {
+                        throw new RuntimeException("Security Violation");
+                    }
+
+                }
+            });
             Scriptable scope = cx.initStandardObjects();
             String fun = jk + "  f()";
             Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
 
             key = JDHexUtils.getByteArray(Context.toString(result));
             Context.exit();
+
         } else {
             key = JDHexUtils.getByteArray(k);
         }
@@ -282,10 +298,10 @@ public class JDExternInterface extends PluginOptional {
                         response.addContent(JDUtilities.getJDTitle() + "\r\n");
                     }
                 } else if (request.getRequestUrl().equalsIgnoreCase("/jdcheck.js")) {
-                    
+
                     response.addContent("jdownloader=true;\r\n");
-                    response.addContent("var version='"+JDUtilities.getRevision()+"';\r\n");
-        
+                    response.addContent("var version='" + JDUtilities.getRevision() + "';\r\n");
+
                 } else if (request.getRequestUrl().equalsIgnoreCase("/crossdomain.xml")) {
                     response.addContent("<?xml version=\"1.0\"?>\r\n");
                     response.addContent("<!DOCTYPE cross-domain-policy SYSTEM \"http://www.macromedia.com/xml/dtds/cross-domain-policy.dtd\">\r\n");

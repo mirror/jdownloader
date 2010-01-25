@@ -22,6 +22,7 @@ import jd.http.Browser;
 import jd.utils.locale.JDL;
 
 import org.mozilla.javascript.Context;
+import org.mozilla.javascript.ContextFactory;
 import org.mozilla.javascript.Scriptable;
 
 /**
@@ -53,7 +54,7 @@ public class PluginUtils {
 
         String htmlcode = br.getRequest().getHtmlCode();
         for (String c : containers) {
-            final Context cx = Context.enter();
+            final Context cx = ContextFactory.getGlobal().enter();
             final Scriptable scope = cx.initStandardObjects();
             c = c.replaceAll("return p\\}\\(", " return p}  f(").replaceAll("function\\s*\\(p\\,a\\,c\\,k\\,e\\,d\\)", "function f(p,a,c,k,e,d)");
             final Object result = cx.evaluateString(scope, c, "<cmd>", 1, null);

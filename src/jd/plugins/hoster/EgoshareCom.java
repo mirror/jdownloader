@@ -34,6 +34,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.mozilla.javascript.Context;
+import org.mozilla.javascript.ContextFactory;
 import org.mozilla.javascript.Scriptable;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "egoshare.com" }, urls = { "http://[\\w\\.]*?egoshare\\.com/download\\.php\\?id=[\\w]+" }, flags = { 2 })
@@ -157,7 +158,7 @@ public class EgoshareCom extends PluginForHost {
         /* DownloadLink holen, thx @dwd */
         String all = br.getRegex("eval\\(unescape\\(.*?\"\\)\\)\\);").getMatch(-1);
         String dec = br.getRegex("loadfilelink\\.decode\\(\".*?\"\\);").getMatch(-1);
-        Context cx = Context.enter();
+        Context cx = ContextFactory.getGlobal().enter();
         Scriptable scope = cx.initStandardObjects();
         String fun = "function f(){ " + all + "\nreturn " + dec + "} f()";
         Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);

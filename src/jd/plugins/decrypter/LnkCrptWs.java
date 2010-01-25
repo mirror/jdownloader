@@ -37,6 +37,7 @@ import jd.plugins.PluginUtils;
 import jd.utils.JDUtilities;
 
 import org.mozilla.javascript.Context;
+import org.mozilla.javascript.ContextFactory;
 import org.mozilla.javascript.Scriptable;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "linkcrypt.ws" }, urls = { "http://[\\w\\.]*?linkcrypt\\.ws/dir/[\\w]+" }, flags = { 0 })
@@ -131,7 +132,7 @@ public class LnkCrptWs extends PluginForDecrypt {
         String[] containers = br.getRegex("eval\\((.*?\\,\\{\\}\\))\\)").getColumn(0);
         HashMap<String, String> map = new HashMap<String, String>();
         for (String c : containers) {
-            Context cx = Context.enter();
+            Context cx = ContextFactory.getGlobal().enter();
             Scriptable scope = cx.initStandardObjects();
             c = c.replace("return p}(", " return p}  f(").replace("function(p,a,c,k,e,d)", "function f(p,a,c,k,e,d)");
 
@@ -191,7 +192,7 @@ public class LnkCrptWs extends PluginForDecrypt {
                         String[] evals = clone.getRegex("eval\\((.*?\\,\\{\\}\\))\\)").getColumn(0);
 
                         for (String c : evals) {
-                            Context cx = Context.enter();
+                            Context cx = ContextFactory.getGlobal().enter();
                             Scriptable scope = cx.initStandardObjects();
                             c = c.replace("return p}(", " return p}  f(").replace("function(p,a,c,k,e", "function f(p,a,c,k,e");
                             Object result = cx.evaluateString(scope, c, "<cmd>", 1, null);

@@ -30,6 +30,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
 import org.mozilla.javascript.Context;
+import org.mozilla.javascript.ContextFactory;
 import org.mozilla.javascript.Scriptable;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "urlshield.net" }, urls = { "http://[\\w\\.]*?urlshield\\.net/l/[\\w]+" }, flags = { 0 })
@@ -79,7 +80,7 @@ public class RlShldnt extends PluginForDecrypt {
             String all = Encoding.htmlDecode(br.getRegex(Pattern.compile("SCRIPT>eval\\(unescape\\(\"(.*?)\"\\)", Pattern.CASE_INSENSITIVE)).getMatch(0));
             String dec = br.getRegex(Pattern.compile("<SCRIPT>dc\\('(.*?)'\\)", Pattern.CASE_INSENSITIVE)).getMatch(0);
             all = all.replaceAll("document\\.writeln\\(s\\);", "");
-            Context cx = Context.enter();
+            Context cx = ContextFactory.getGlobal().enter();
             Scriptable scope = cx.initStandardObjects();
             String fun = "function f(){" + all + " \n return unescape(unc('" + dec + "'))} f()";
             Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);

@@ -38,6 +38,7 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.mozilla.javascript.Context;
+import org.mozilla.javascript.ContextFactory;
 import org.mozilla.javascript.Scriptable;
 
 public final class CNL2 {
@@ -112,7 +113,7 @@ public final class CNL2 {
         final byte[] key;
 
         if (jk != null) {
-            final Context cx = Context.enter();
+            final Context cx = ContextFactory.getGlobal().enter();
             final Scriptable scope = cx.initStandardObjects();
             final String fun = jk + "  f()";
             final Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
