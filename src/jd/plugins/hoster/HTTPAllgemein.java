@@ -16,12 +16,12 @@
 
 package jd.plugins.hoster;
 
-import jd.HostPluginWrapper;
 import jd.PluginWrapper;
 import jd.controlling.HTACCESSController;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.BrowserAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -31,7 +31,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "http links", "JDUpdateLoader" }, urls = { "https?viajd://[\\d\\w\\.:\\-@]*/.*\\.(otrkey|ac3|3gp|7zip|7z|aiff|aif|aifc|au|avi|bin|bz2|ccf|cue|deb|divx|dlc|doc|docx|dot|exe|ff|flv|gif|gz|iwd|iso|java|jpg|jpeg|m4v|mkv|mp2|mp3|mp4|mov|movie|mpe|mpeg|mpg|msi|msu|nfo|oga|ogg|ogv|pkg|png|pdf|ppt|pptx|pps|ppz|pot|psd|qt|rmvb|rar|r\\d+|\\d+|rpm|run|rsdf|rtf|sh|srt|snd|sfv|tar|tif|tiff|viv|vivo|wav|wmv|xla|xls|zip|z\\d+|ts|load|xpi|_[_a-z]{2})", "https?viajd://[\\d\\w\\.:\\-@]*/.*\\.jdu" }, flags = { 0, HostPluginWrapper.ALWAYS_ENABLED })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "http links" }, urls = { "https?viajd://[\\d\\w\\.:\\-@]*/.*\\.(otrkey|ac3|3gp|7zip|7z|aiff|aif|aifc|au|avi|bin|bz2|ccf|cue|deb|divx|dlc|doc|docx|dot|exe|ff|flv|gif|gz|iwd|iso|java|jpg|jpeg|m4v|mkv|mp2|mp3|mp4|mov|movie|mpe|mpeg|mpg|msi|msu|nfo|oga|ogg|ogv|pkg|png|pdf|ppt|pptx|pps|ppz|pot|psd|qt|rmvb|rar|r\\d+|\\d+|rpm|run|rsdf|rtf|sh|srt|snd|sfv|tar|tif|tiff|viv|vivo|wav|wmv|xla|xls|zip|z\\d+|ts|load|xpi|_[_a-z]{2})" }, flags = { 0 })
 public class HTTPAllgemein extends PluginForHost {
 
     private String contentType;
@@ -39,7 +39,6 @@ public class HTTPAllgemein extends PluginForHost {
 
     public HTTPAllgemein(PluginWrapper wrapper) {
         super(wrapper);
-        setConfigElements();
     }
 
     public String getAGBLink() {
@@ -62,7 +61,7 @@ public class HTTPAllgemein extends PluginForHost {
         return "Basic " + Encoding.Base64Encode(username + ":" + password);
     }
 
-    private void BasicAuthfromURL(DownloadLink link) {
+    private void getBasicAuthfromURL(DownloadLink link) {
         String url = null;
         String basicauth = new Regex(link.getDownloadURL(), "http.*?/([^/]{1}.*?)@").getMatch(0);
         if (basicauth != null && basicauth.contains(":")) {
@@ -132,7 +131,7 @@ public class HTTPAllgemein extends PluginForHost {
             throw e2;
         } catch (Exception e) {
         } finally {
-            if (urlConnection != null && urlConnection.isConnected() == true) urlConnection.disconnect();
+            if (urlConnection != null && urlConnection.isConnected()) urlConnection.disconnect();
         }
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
@@ -140,7 +139,7 @@ public class HTTPAllgemein extends PluginForHost {
 
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replaceAll("httpviajd://", "http://").replaceAll("httpsviajd://", "https://"));
-        BasicAuthfromURL(link);
+        getBasicAuthfromURL(link);
     }
 
     public void handleFree(DownloadLink downloadLink) throws Exception {
@@ -151,23 +150,23 @@ public class HTTPAllgemein extends PluginForHost {
         boolean resume = true;
         int chunks = 0;
 
-        if (downloadLink.getBooleanProperty("nochunkload", false) == true) resume = false;
-        if (downloadLink.getBooleanProperty("nochunk", false) == true || resume == false) {
+        if (downloadLink.getBooleanProperty("nochunkload", false)) resume = false;
+        if (downloadLink.getBooleanProperty("nochunk", false) || resume == false) {
             chunks = 1;
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), resume, chunks);
+        dl = BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), resume, chunks);
 
         if (!dl.startDownload()) {
             if (downloadLink.getLinkStatus().getErrorMessage() != null && downloadLink.getLinkStatus().getErrorMessage().startsWith(JDL.L("download.error.message.rangeheaderparseerror", "Unexpected rangeheader format:"))) {
-                if (downloadLink.getBooleanProperty("nochunk", false) == false) {
-                    downloadLink.setProperty("nochunk", Boolean.valueOf(true));
+                if (!downloadLink.getBooleanProperty("nochunk", false)) {
+                    downloadLink.setProperty("nochunk", true);
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
             }
             if (downloadLink.getLinkStatus().getErrorMessage() != null && downloadLink.getLinkStatus().getErrorMessage().startsWith(JDL.L("download.error.message.rangeheaders", "Server does not support chunkload"))) {
-                if (downloadLink.getBooleanProperty("nochunkload", false) == false) {
+                if (!downloadLink.getBooleanProperty("nochunkload", false)) {
                     downloadLink.setChunksProgress(null);
-                    downloadLink.setProperty("nochunkload", Boolean.valueOf(true));
+                    downloadLink.setProperty("nochunkload", true);
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
             }
@@ -180,10 +179,6 @@ public class HTTPAllgemein extends PluginForHost {
     }
 
     public void reset() {
-    }
-
-    private void setConfigElements() {
-
     }
 
     public void resetDownloadlink(DownloadLink link) {

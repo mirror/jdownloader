@@ -18,7 +18,6 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -32,14 +31,14 @@ import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "collectr.net" }, urls = { "http://[\\w\\.]*?collectr\\.net/(out/(\\d+/)?\\d+|links/\\w+)" }, flags = { 0 })
 public class Cllctr extends PluginForDecrypt {
-    private static final Pattern PAT_SUPPORTED_OUT = Pattern.compile("http://[\\w\\.]*?collectr\\.net/out/(\\d+/)?\\d+", Pattern.CASE_INSENSITIVE);
-    private static final Pattern PATTERN_AB_18 = Pattern.compile("Hast du das 18 Lebensjahr bereits abgeschlossen\\?.*");
 
-    private static final Pattern PAT_SUPPORTED_FOLDER = Pattern.compile("http://[\\w\\.]*?collectr\\.net/links/(\\w+)", Pattern.CASE_INSENSITIVE);
-    private static final Pattern PATTERN_GETLINK = Pattern.compile("<a href=\"javascript:getLink\\(lnk\\[(\\d+)\\]\\)\">(.+?)  #\\d+</a>");
-    private static final Pattern PATTERN_SAPCHA = Pattern.compile("useSaptcha\\s+=\\s+(\\d+);");
-    private static final Pattern PATTERN_FOLDERNAME = Pattern.compile("<span id=\"title\">(.+?)</span>");
-    private static final Pattern PATTERN_DURL = Pattern.compile("<key>(.+?)</key>");
+    private static final String PAT_SUPPORTED_OUT = "http://[\\w\\.]*?collectr\\.net/out/(\\d+/)?\\d+";
+    private static final String PATTERN_AB_18 = "Hast du das 18 Lebensjahr bereits abgeschlossen\\?.*";
+    private static final String PAT_SUPPORTED_FOLDER = "http://[\\w\\.]*?collectr\\.net/links/(\\w+)";
+    private static final String PATTERN_GETLINK = "<a href=\"javascript:getLink\\(lnk\\[(\\d+)\\]\\)\">(.+?)  #\\d+</a>";
+    private static final String PATTERN_SAPCHA = "useSaptcha\\s+=\\s+(\\d+);";
+    private static final String PATTERN_FOLDERNAME = "<span id=\"title\">(.+?)</span>";
+    private static final String PATTERN_DURL = "<key>(.+?)</key>";
     private static final String JAMES_GETLINK = "http://collectr.net/james.php?do=getLink";
     private static final String JAMES_SAPTCHA = "http://collectr.net/james.php?do=saptcha";
 
@@ -47,17 +46,16 @@ public class Cllctr extends PluginForDecrypt {
         super(wrapper);
     }
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String url = param.toString();
-        String page = br.getPage(url);
+        br.getPage(url);
         if (new Regex(url, PAT_SUPPORTED_OUT).matches()) {
-            Form[] forms = br.getForms();
+            Form form = br.getForm(0);
 
-            if (Regex.matches(page, PATTERN_AB_18)) {
-                forms[0].put("o18", "o18=true");
-                br.submitForm(forms[0]);
+            if (br.containsHTML(PATTERN_AB_18)) {
+                form.put("o18", "o18=true");
+                br.submitForm(form);
             }
 
             String links[] = br.getRegex("<iframe id=\"displayPage\" src=\"(.*?)\" name=\"displayPage\"").getColumn(0);
@@ -68,10 +66,11 @@ public class Cllctr extends PluginForDecrypt {
                 progress.increase(1);
             }
         } else if (new Regex(url, PAT_SUPPORTED_FOLDER).matches()) {
-            String saptcha = new Regex(page, PATTERN_SAPCHA).getMatch(0);
+            String saptcha = br.getRegex(PATTERN_SAPCHA).getMatch(0);
             String ordner = new Regex(url, PAT_SUPPORTED_FOLDER).getMatch(0);
             FilePackage fp = FilePackage.getInstance();
-            fp.setName(new Regex(page, PATTERN_FOLDERNAME).getMatch(0));
+            fp.setName(br.getRegex(PATTERN_FOLDERNAME).getMatch(0));
+            String[] links = br.getRegex(PATTERN_GETLINK).getColumn(0);
             if (saptcha != null) {
                 // Captcha on
                 String captchaCode = getCaptchaCode("http://collectr.net/img/saptcha" + saptcha + ".gif", param);
@@ -81,11 +80,12 @@ public class Cllctr extends PluginForDecrypt {
                 post.put("ordner", ordner);
                 br.postPage(JAMES_SAPTCHA, post);
             }
-            for (String link : new Regex(page, PATTERN_GETLINK).getColumn(0)) {
+            for (String link : links) {
                 LinkedHashMap<String, String> post = new LinkedHashMap<String, String>();
                 post.put("id", link);
                 post.put("ordner", ordner);
-                String dUrl = new Regex(br.postPage(JAMES_GETLINK, post), PATTERN_DURL).getMatch(0);
+                br.postPage(JAMES_GETLINK, post);
+                String dUrl = br.getRegex(PATTERN_DURL).getMatch(0);
                 DownloadLink dLink = createDownloadlink(dUrl);
                 dLink.setFilePackage(fp);
                 decryptedLinks.add(dLink);
@@ -93,7 +93,5 @@ public class Cllctr extends PluginForDecrypt {
         }
         return decryptedLinks;
     }
-
-    // @Override
 
 }
