@@ -90,12 +90,22 @@ public class Vipfilecom extends PluginForHost {
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         requestFileInformation(downloadLink);
         Form form = br.getForm(1);
+        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         form.put("pass", Encoding.urlEncode(account.getPass()));
         br.submitForm(form);
+        String url = Encoding.htmlDecode(br.getRegex(Pattern.compile("<a href=(\"|')(http://r.*?vip-file\\.com.*?)(\"|')", Pattern.CASE_INSENSITIVE)).getMatch(1));
+        if (url == null) url = br.getRegex("(http://[0-9]+\\.[0-9]+\\.[0-9]+\\..*?/downloadp[0-9]+/.*?)'>").getMatch(0);
+        if (url == null && br.containsHTML("Wrong password")) {
+            logger.info("Downloadpassword seems to be wrong, disabeling account now!");
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
+        if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String trafficLeft = br.getRegex("You can download another:(.*?)with current password").getMatch(0);
+        if (trafficLeft != null) {
+            trafficLeft = trafficLeft.replace("GigaByte", "GB").trim();
+        }
         /* we have to wait little because server too buggy */
         sleep(5000, downloadLink);
-        String url = Encoding.htmlDecode(br.getRegex(Pattern.compile("<a href=(\"|')(http://r.*?vip-file\\.com.*?)(\"|')", Pattern.CASE_INSENSITIVE)).getMatch(1));
-        if (url == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 0);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
