@@ -29,9 +29,11 @@ import java.util.ArrayList;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 
 import jd.controlling.AccountController;
 import jd.gui.swing.GuiRunnable;
+import jd.gui.swing.components.table.JDRowHighlighter;
 import jd.gui.swing.components.table.JDTable;
 import jd.gui.swing.jdgui.actions.ActionController;
 import jd.plugins.Account;
@@ -48,6 +50,16 @@ public class PremiumTable extends JDTable implements MouseListener, KeyListener 
         this.panel = panel;
         addMouseListener(this);
         addKeyListener(this);
+        addHighlighter();
+    }
+
+    private void addHighlighter() {
+        this.addJDRowHighlighter(new JDRowHighlighter(UIManager.getColor("TableHeader.background")) {
+            @Override
+            public boolean doHighlight(Object obj) {
+                return !(obj instanceof Account);
+            }
+        });
     }
 
     public ArrayList<Account> getSelectedAccounts() {
@@ -146,7 +158,7 @@ public class PremiumTable extends JDTable implements MouseListener, KeyListener 
                 public void actionPerformed(ActionEvent e) {
                     new Thread(new Runnable() {
                         public void run() {
-                            for  (Account acc : accs) {
+                            for (Account acc : accs) {
                                 AccountController.getInstance().updateAccountInfo(acc.getHoster(), acc, true);
                             }
                         }

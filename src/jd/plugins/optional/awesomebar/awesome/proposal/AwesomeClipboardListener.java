@@ -8,8 +8,6 @@ import javax.swing.JLabel;
 import jd.config.Configuration;
 import jd.controlling.ClipboardHandler;
 import jd.controlling.DistributeData;
-import jd.controlling.JDController;
-import jd.controlling.reconnect.Reconnecter;
 import jd.plugins.optional.awesomebar.awesome.AwesomeAction;
 import jd.plugins.optional.awesomebar.awesome.AwesomeProposal;
 import jd.plugins.optional.awesomebar.awesome.AwesomeProposalRequest;
@@ -40,12 +38,12 @@ public class AwesomeClipboardListener implements AwesomeProposalRequestListener 
             break;
         case ADDLINKS:
             new DistributeData(ClipboardHandler.getClipboard().getCurrentClipboardLinks()).start();
-            /*if (ClipboardHandler.getClipboard().isEnabled()) {
-                ClipboardHandler.getClipboard().copyTextToClipboard(data)
-            } else {
-                ClipboardHandler.getClipboard().toggleActivation();
-                ClipboardHandler.getClipboard().toggleActivation();
-            }*/
+            /*
+             * if (ClipboardHandler.getClipboard().isEnabled()) {
+             * ClipboardHandler.getClipboard().copyTextToClipboard(data) } else
+             * { ClipboardHandler.getClipboard().toggleActivation();
+             * ClipboardHandler.getClipboard().toggleActivation(); }
+             */
             break;
         }
     }
