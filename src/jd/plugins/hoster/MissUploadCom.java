@@ -159,6 +159,7 @@ public class MissUploadCom extends PluginForHost {
     public void doFree2(DownloadLink downloadLink) throws Exception, PluginException {
         // If the filesize regex above doesn't match you can copy this part into
         // the available status (and delete it here)
+        br.setDebug(true);
         Form freeform = br.getFormBySubmitvalue("Kostenloser+Download");
         if (freeform == null) {
             freeform = br.getFormBySubmitvalue("Free+Download");
@@ -228,14 +229,14 @@ public class MissUploadCom extends PluginForHost {
         if (br.containsHTML("background:#ccc;text-align")) {
             logger.info("Detected captcha method \"plaintext captchas\" for this host");
             // Captcha method by ManiacMansion
-            String[][] letters = new Regex(Encoding.htmlDecode(br.toString()), "<span style='position:absolute;padding-left:(\\d+)px;padding-top:\\d+px;'>(\\d)</span>").getMatches();
+            String[][] letters = new Regex(br.toString(), "<span style='position:absolute;padding-left:(\\d+)px;padding-top:\\d+px;'>(&#\\d+;)").getMatches();
             if (letters == null || letters.length == 0) {
                 logger.warning("plaintext captchahandling broken!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             SortedMap<Integer, String> capMap = new TreeMap<Integer, String>();
             for (String[] letter : letters) {
-                capMap.put(Integer.parseInt(letter[0]), letter[1]);
+                capMap.put(Integer.parseInt(letter[0]), Encoding.htmlDecode(letter[1]));
             }
             StringBuilder code = new StringBuilder();
             for (String value : capMap.values()) {

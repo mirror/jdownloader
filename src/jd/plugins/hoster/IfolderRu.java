@@ -62,7 +62,12 @@ public class IfolderRu extends PluginForHost {
         String filename = br.getRegex("Название:\\s+<b>(.*?)</b>").getMatch(0);
         String filesize = br.getRegex("Размер:\\s+<b>(.*?)</b>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        downloadLink.setName(filename);
+        if (filename.contains("..")) {
+            /* because of server problems check for final filename here */
+            downloadLink.setName(filename);
+        } else {
+            downloadLink.setFinalFileName(filename);
+        }
         downloadLink.setDownloadSize(Regex.getSize(filesize.replace("Мб", "Mb").replace("кб", "Kb")));
         return AvailableStatus.TRUE;
     }
@@ -151,6 +156,7 @@ public class IfolderRu extends PluginForHost {
                 }
             }
             if (directLink != null) {
+                br.setDebug(true);
                 if (passCode != null) downloadLink.setProperty("pass", passCode);
                 dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, directLink, true, -2);
                 do_download = true;
