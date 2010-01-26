@@ -330,7 +330,12 @@ public class JDExternInterface extends PluginOptional {
                     String desc[] = Regex.getLines(Encoding.urlDecode(request.getParameters().get("descriptions"), false));
                     String dir = null;
                     FilePackage fp = FilePackage.getInstance();
-                    fp.setName("FlashGot");
+                    String packname = Encoding.urlDecode(request.getParameters().get("package"), false);
+                    if (packname != null) {
+                        fp.setName(packname);
+                    } else {
+                        fp.setName("FlashGot");
+                    }
                     fp.setProperty(LinkGrabberController.DONTFORCEPACKAGENAME, "yes");
                     if (request.getParameters().get("dir") != null) {
                         dir = Encoding.urlDecode(request.getParameters().get("dir"), false).trim();

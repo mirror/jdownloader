@@ -407,8 +407,8 @@ public class Netloadin extends PluginForHost {
             while (true) {
                 links.clear();
                 while (true) {
-                    /* we test 100 links at once */
-                    if (index == urls.length || links.size() > 100) break;
+                    /* we test 80 links at once */
+                    if (index == urls.length || links.size() > 80) break;
                     links.add(urls[index]);
                     index++;
                 }
