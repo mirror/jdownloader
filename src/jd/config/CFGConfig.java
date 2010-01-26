@@ -57,7 +57,7 @@ public class CFGConfig extends SubConfiguration implements Serializable {
         if (CONFIGS.containsKey(string)) {
             return CONFIGS.get(string);
         } else {
-            CFGConfig ret = new CFGConfig(string);
+            final CFGConfig ret = new CFGConfig(string);
             CONFIGS.put(string, ret);
             return ret;
         }
