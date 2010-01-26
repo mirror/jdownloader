@@ -31,7 +31,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hellshare.com" }, urls = { "http://[\\w\\.]*?download\\.((sk|cz|en)\\.hellshare\\.com|hellshare\\.(sk|hu|de))/.+/[0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hellshare.com" }, urls = { "http://[\\w\\.]*?(download\\.((sk|cz|en)\\.hellshare\\.com|hellshare\\.(sk|hu|de))/.+/[0-9]+|hellshare\\.com/[0-9]+/.+/.+)" }, flags = { 2 })
 public class HellShareCom extends PluginForHost {
 
     public HellShareCom(PluginWrapper wrapper) {
@@ -46,7 +46,8 @@ public class HellShareCom extends PluginForHost {
 
     @Override
     public void correctDownloadLink(DownloadLink link) throws Exception {
-        link.setUrlDownload(link.getDownloadURL().replaceAll("http.*?//.*?/", "http://download.en.hellshare.com/"));
+        String numbers = new Regex(link.getDownloadURL(), "hellshare\\.com/(\\d+)").getMatch(0);
+        if (numbers == null) link.setUrlDownload(link.getDownloadURL().replaceAll("http.*?//.*?/", "http://download.en.hellshare.com/"));
     }
 
     public void login(Account account) throws Exception {
@@ -127,14 +128,8 @@ public class HellShareCom extends PluginForHost {
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("<h1>File not found</h1>") || br.containsHTML("<h1>Soubor nenalezen</h1>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filesize = br.getRegex("FileSize_master\">(.*?)</strong>").getMatch(0);
-        if (filesize != null && filesize.contains("&nbsp")) {
-            filesize = filesize.replace("&nbsp;", "");
-        }
         if (filesize == null) {
             filesize = br.getRegex("\"The content.*?with a size of (.*?) has been uploaded").getMatch(0);
-            if (filesize != null && filesize.contains("&nbsp")) {
-                filesize = filesize.replace("&nbsp;", "");
-            }
         }
         String filename = br.getRegex("\"FileName_master\">(.*?)<").getMatch(0);
         if (filename == null) {
@@ -151,7 +146,8 @@ public class HellShareCom extends PluginForHost {
         }
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         link.setName(filename);
-        link.setDownloadSize(Regex.getSize(filesize));
+        link.setDownloadSize(Regex.getSize(filesize.replace("&nbsp;", "")));
+        link.setUrlDownload(br.getURL());
         return AvailableStatus.TRUE;
     }
 

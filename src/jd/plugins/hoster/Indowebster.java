@@ -56,6 +56,13 @@ public class Indowebster extends PluginForHost {
         requestFileInformation(link);
         String dl_url = br.getRegex("\\&file=(http.*?)\\&logo").getMatch(0);
         if (dl_url == null) {
+            String adUrl = br.getRegex("Download Link.*?onclick='select\\(this\\)'>(http.*?)</textarea").getMatch(0);
+            if (adUrl != null) {
+                br.getPage(adUrl);
+                dl_url = br.getRegex("</style>.*?<a href=\"(http.*?)\"").getMatch(0);
+            }
+        }
+        if (dl_url == null) {
             logger.warning("Final link is null!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
