@@ -42,17 +42,17 @@ public final class Utilities {
     private Utilities() {
     }
 
-    private static Logger logger = JDLogger.getLogger();
+    private static final Logger LOG = JDLogger.getLogger();
 
     public static Logger getLogger() {
-        return logger;
+        return LOG;
     }
 
     public static boolean isLoggerActive() {
         return JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL;
     }
 
-    public static boolean checkJumper(int x, int from, int to) {
+    public static boolean checkJumper(final int x, final int from, final int to) {
         return x >= from && x <= to;
     }
 
@@ -144,10 +144,10 @@ public final class Utilities {
                 ret = start - step;
             }
         } else if (x > start) {
-            int dif = x - start;
+            final int dif = x - start;
             ret = start - dif;
         } else {
-            int dif = start - x + step;
+            final int dif = start - x + step;
             ret = start + dif;
             if (ret > to) {
                 ret = start - dif;
