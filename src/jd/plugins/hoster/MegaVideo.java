@@ -153,7 +153,7 @@ public class MegaVideo extends PluginForHost {
             String size = brc.getRegex("size=\"(\\d+)\"").getMatch(0);
             if (size != null) parameter.setDownloadSize(Long.parseLong(size));
         }
-        parameter.setName(Encoding.htmlDecode(name.trim()));
+        parameter.setName(Encoding.htmlDecode(name.trim())+".flv");
         return AvailableStatus.TRUE;
     }
 
