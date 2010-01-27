@@ -91,7 +91,8 @@ public class FourSharedCom extends PluginForHost {
 
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        String url = br.getRegex("<a href=\"(http://[\\w\\.]*?(4shared|4shared-china)\\.com/get.*?)\" class=\".*?dbtn.*?\" tabindex=\"1\"").getMatch(0);
+        
+        String url = br.getRegex("<a href=\"(http://[\\w\\.]*?(4shared|4shared-china)\\.com/get[^\\;\"]*).*?\" class=\".*?dbtn.*?\" tabindex=\"1\"").getMatch(0);
         if (url == null) {
             /* maybe directdownload */
             url = br.getRegex("startDownload.*?window\\.location.*?(http://.*?)\"").getMatch(0);
@@ -101,8 +102,9 @@ public class FourSharedCom extends PluginForHost {
             }
             if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else {
-            br.getPage(url);
-            url = br.getRegex("id=\\'divDLStart\\' >.*?<a href=\\'(.*?)\'  onclick=\"return callPostDownload\\(\\);\">Click here to download this file</a>.*?</div>").getMatch(0);
+            br.getPage(url);           
+                              
+            url = br.getRegex("id=\\'divDLStart\\' >.*?<a href='(.*?)'.*?onclick=\"return callPostDownload\\(\\);\">Click here to download this file</a>.*?</div>").getMatch(0);
             if (url.contains("linkerror.jsp")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             // Ticket Time
             String ttt = br.getRegex(" var c = (\\d+?);").getMatch(0);
