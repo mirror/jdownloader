@@ -22,13 +22,14 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.gui.UserIO;
 import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 10324 $", interfaceVersion = 2, names = { "serienjunkies.org" }, urls = { "http://[\\w\\.]*?serienjunkies\\.org/\\?(cat|p)=\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 10324 $", interfaceVersion = 2, names = { "serienjunkies.org","serienjunkies.org" }, urls = { "http://[\\w\\.]*?serienjunkies\\.org/\\?(cat|p)=\\d+","http://[\\w\\.]*?serienjunkies\\.org/.*?/.+" }, flags = { 0 ,0})
 public class SrnnksCategory extends PluginForDecrypt {
 
     public SrnnksCategory(PluginWrapper wrapper) {
@@ -41,7 +42,7 @@ public class SrnnksCategory extends PluginForDecrypt {
         Browser.setRequestIntervalLimitGlobal("download.serienjunkies.org", 400);
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         if (!UserIO.isOK(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN, "Kategorie Decrypter!\r\nWillst du wirklich eine ganze Kategorie hinzufügen?"))) return ret;
-
+br.setFollowRedirects(true);
         br.getPage(parameter.getCryptedUrl());
         if (br.containsHTML("<FRAME SRC")) {
             // progress.setStatusText("Lade Downloadseitenframe");
@@ -51,23 +52,27 @@ public class SrnnksCategory extends PluginForDecrypt {
             UserIO.getInstance().requestMessageDialog("Serienjunkies ist überlastet. Bitte versuch es später nocheinmal!");
             return ret;
         }
-        String[] ids = br.getRegex("<a href=\"http://serienjunkies.org/\\?p=(\\d+)\" .*?>(.*?)</a></h2>").getColumn(0);
+        String[] ids = br.getRegex("\\&nbsp\\;<a href=\"http://serienjunkies.org/(.*?)/\">(.*?)</a><br").getColumn(0);
 
-        String[] names = br.getRegex("<a href=\"http://serienjunkies.org/\\?p=(\\d+)\" .*?>(.*?)</a></h2>").getColumn(1);
-
+        String[] names =  br.getRegex("\\&nbsp\\;<a href=\"http://serienjunkies.org/(.*?)/\">(.*?)</a><br").getColumn(1);
+        for(int i=0;i<names.length;i++){
+            names[i]=Encoding.htmlDecode(names[i]).replace("-", " ");
+        }
         int res = UserIO.getInstance().requestComboDialog(0, "Bitte Kategorie auswählen", "Bitte die gewünschte Staffel auswählen", names, 0, null, null, null, null);
         if (res < 0) return ret;
-        br.getPage("http://serienjunkies.org/?p=" + ids[res]);
+        br.forceDebug(true);
+        br.getPage("http://serienjunkies.org/" + ids[res]+"/");
         ArrayList<String> mirrors = new ArrayList<String>();
         for (String m : br.getRegex("hier</a> \\| (.*?)<").getColumn(0)) {
             if (m.trim().length() > 0 && !mirrors.contains(m)) {
                 mirrors.add(m);
             }
         }
+  
         res = UserIO.getInstance().requestComboDialog(0, "Bitte Mirror auswählen", "Bitte den gewünschten Anbieter aus.", mirrors.toArray(new String[] {}), 0, null, null, null, null);
         if (res < 0) return ret;
 
-        String[] urls = br.getRegex("</strong> <a href=\"([^<]*?)\" target=\"_blank\">hier</a> \\| " + mirrors.get(res) + "<br />").getColumn(0);
+        String[] urls = br.getRegex("</strong> <a href=\"([^<]*?)\" target=\"_blank\">hier</a> \\| " + mirrors.get(res) + "<").getColumn(0);
         StringBuilder sb = new StringBuilder();
         for (String url : urls) {
             sb.append(url);
@@ -75,7 +80,7 @@ public class SrnnksCategory extends PluginForDecrypt {
 
         }
         String linklist = UserIO.getInstance().requestInputDialog(UserIO.STYLE_LARGE | UserIO.NO_COUNTDOWN, "Entferne ungewollte Links", sb.toString());
-
+        if (linklist ==null) return ret;
         urls = HTMLParser.getHttpLinks(linklist, null);
         for (String url : urls) {
             ret.add(this.createDownloadlink(url));
