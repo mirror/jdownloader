@@ -32,8 +32,9 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharesystems.de" }, urls = { "http://[//w//.]*?sharesystems\\.de/.*?hash=(.*)" }, flags = { 2 })
-/**
- * Plugin for sharesystems. Written on adminrequest. Uses API given by sharesystems.de
+/*
+ * * Plugin for sharesystems. Written on adminrequest. Uses API given by
+ * sharesystems.de
  */
 public class ShareSystemsDe extends PluginForHost {
 
@@ -57,15 +58,15 @@ public class ShareSystemsDe extends PluginForHost {
         login.put("username", account.getUser());
         login.put("password", account.getPass());
         br.submitForm(login);
-        if (br.getRedirectLocation() == null) {
+        if (br.getRedirectLocation() == null || br.getCookie("http://sharesystems.de", "login_hash") == null) {
             account.setValid(false);
         } else {
             account.setValid(true);
             br.getPage("http://sharesystems.de/index.php?statistik");
-            String validUntil = br.getRegex("Account g.*?ltig bis</div>.*?<div style=.*?>&nbsp;</div>.*?>(.*?)Uhr</div>").getMatch(0);
-            ai.setValidUntil(Regex.getMilliSeconds("GMT+00:00, " + validUntil.trim(), "z, dd.MM.yyyy HH:mm", null));
-            String trafficLeft = br.getRegex("Traffic-Kontostand</div>.*?<div style=.*?>&nbsp;</div>.*?>(.*?)</div>").getMatch(0);
-            ai.setTrafficLeft(Regex.getSize(trafficLeft));
+            String validUntil = br.getRegex("Account g.*?ltig bis</td>.*?<td class=\"rightT\">(.*?)Uhr</td>").getMatch(0);
+            if (validUntil != null) ai.setValidUntil(Regex.getMilliSeconds("GMT+00:00, " + validUntil.trim(), "z, dd.MM.yyyy HH:mm", null));
+            String trafficLeft = br.getRegex("Traffic-Kontostand</td>.*?<td class=\"rightT\">(.*?)</td>").getMatch(0);
+            if (trafficLeft != null) ai.setTrafficLeft(Regex.getSize(trafficLeft));
         }
         return ai;
     }
