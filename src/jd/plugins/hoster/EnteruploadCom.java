@@ -90,7 +90,12 @@ public class EnteruploadCom extends PluginForHost {
         if (br.containsHTML("Wrong captcha")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         if (dllink == null) {
             dllink = br.getRegex("<br><br><br><br>.*?<a href=\"(http.*?)\"").getMatch(0);
-            if (dllink == null) dllink = br.getRegex("\"(http://serv[0-9]+\\.enterupload\\.com/.*?files/.*?)\"").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("\"(http://serv[0-9]+\\.enterupload\\.com/.*?files/.*?)\"").getMatch(0);
+                if (dllink == null) {
+                    dllink = br.getRegex("\"(http://server[0-9]+\\.enterupload\\.com.*?files/.*?)\"").getMatch(0);
+                }
+            }
         }
         br.setFollowRedirects(true);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
