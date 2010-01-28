@@ -21,26 +21,37 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "file2upload.net" }, urls = { "http://[\\w\\.]*?file2upload\\.(net|com)/folder/[A-Z|0-9]+/" }, flags = { 0 })
-public class Fl2pldNtFldr extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "plunder.com" }, urls = { "http://[\\w\\.]*?plunder\\.com/.+/.+/" }, flags = { 0 })
+public class PlunderComFolder extends PluginForDecrypt {
 
-    public Fl2pldNtFldr(PluginWrapper wrapper) {
+    public PlunderComFolder(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        br.setFollowRedirects(true);
         br.getPage(parameter);
-        String[] links = br.getRegex("<td align=\"left\" width=\"50%\">.*?<A href=\"(.*?)\" title").getColumn(0);
+        if (br.getURL().contains("/search/?f=")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        String fpName = br.getRegex("<title>.*?-(.*?)- Plunder").getMatch(0);
+        if (fpName == null) fpName = br.getRegex("<h1>.*?files -(.*?)</h1>").getMatch(0);
+        String[] links = br.getRegex("title=\".*?\" href='(.*?)'>").getColumn(0);
         if (links.length == 0) return null;
         for (String dl : links)
             decryptedLinks.add(createDownloadlink(dl));
-
+        if (fpName != null) {
+            FilePackage fp = FilePackage.getInstance();
+            fp.setName(fpName.trim());
+            fp.addLinks(decryptedLinks);
+        }
         return decryptedLinks;
     }
 

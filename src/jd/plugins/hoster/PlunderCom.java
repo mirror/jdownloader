@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
@@ -27,7 +28,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
 //plunder.com by pspzockerscene
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "plunder.com" }, urls = { "http://[\\w\\.]*?(youdownload\\.eu|binarybooty\\.com|mashupscene\\.com|plunder\\.com|files\\.youdownload\\.com)/(-download-[a-z0-9]+|.+-download-.+)\\.htm" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "plunder.com" }, urls = { "http://[\\w\\.]*?(youdownload\\.eu|binarybooty\\.com|mashupscene\\.com|plunder\\.com|files\\.youdownload\\.com)/((-download-[a-z0-9]+|.+-download-.+)\\.htm|(?!/)[0-9a-z]+)" }, flags = { 0 })
 public class PlunderCom extends PluginForHost {
 
     public PlunderCom(PluginWrapper wrapper) {
@@ -42,12 +43,29 @@ public class PlunderCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         br.getPage(downloadLink.getDownloadURL());
+        // Sometimes the links are outdated but they show the new links, the
+        // problem is they they new and newer links could also be moved so this
+        // is why we need the following part!
+        for (int i = 0; i <= 5; i++) {
+            String objectMoved = br.getRegex("<h2>Object moved to <a href=\"(.*?)\">here</a>").getMatch(0);
+            if (objectMoved == null) objectMoved = br.getRegex("This document may be found <a HREF=\"(.*?)\"").getMatch(0);
+            if (objectMoved != null) {
+                objectMoved = Encoding.htmlDecode(objectMoved);
+                if (!objectMoved.contains("http")) objectMoved = "http://www.plunder.com" + objectMoved;
+                br.getPage(objectMoved);
+                objectMoved = br.getRegex("<h2>Object moved to <a href=\"(.*?)\">here</a>").getMatch(0);
+                if (objectMoved == null) objectMoved = br.getRegex("This document may be found <a HREF=\"(.*?)\"").getMatch(0);
+                if (objectMoved != null) continue;
+                downloadLink.setUrlDownload(objectMoved);
+                break;
+            }
+        }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         if (br.getURL().contains("/search/?f=")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        Regex reg = br.getRegex("Filename: </b>(.*?) \\((.*?)\\)<BR");
-        String filename = reg.getMatch(0);
-        String filesize = reg.getMatch(1);
+        String filename = br.getRegex("<title>(.*?)download - Plunder").getMatch(0);
+        if (filename == null) filename = br.getRegex("<h2>Download</h2>(.*?)\\(").getMatch(0);
+        String filesize = br.getRegex("<h2>Download</h2>.*?\\((.*?)\\)<BR").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(Regex.getSize(filesize));
@@ -58,15 +76,15 @@ public class PlunderCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-
-        String dllink = br.getRegex("<BR /><a href=\"(.*?)\">Download").getMatch(0);
+        String dllink = br.getRegex("<h2>Download</h2>.*?a href=\"(http.*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\"(http://pearl\\.plunder\\.com/x/.*?/.*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -2);
-        if (!(dl.getConnection().isContentDisposition())) {
+        if ((dl.getConnection().getContentType().contains("html"))) {
             br.followConnection();
-            if (br.containsHTML("You must log in to download more this session")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l); }
             String checklink = br.getURL();
-            if (checklink.contains("/error")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l); }
+            if (br.containsHTML("You must log in to download more this session") || checklink.contains("/login/")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Register or perform a reconnect to download more!", 10 * 60 * 1001l);
+            if (checklink.contains("/error")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -74,7 +92,7 @@ public class PlunderCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 2;
+        return -1;
     }
 
     @Override
