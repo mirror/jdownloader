@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.Locale;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -24,6 +25,7 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -36,7 +38,7 @@ public class FourSharedCom extends PluginForHost {
 
     public FourSharedCom(PluginWrapper wrapper) {
         super(wrapper);
-        // enablePremium("http://www.4shared.com/ref/14368016/1");
+        enablePremium("http://www.4shared.com/ref/14368016/1");
     }
 
     public String getAGBLink() {
@@ -51,6 +53,26 @@ public class FourSharedCom extends PluginForHost {
         String premlogin = br.getCookie("http://www.4shared.com", "premiumLogin");
         if (premlogin == null || !premlogin.contains("true")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         if (br.getCookie("http://www.4shared.com", "Password") == null || br.getCookie("http://www.4shared.com", "Login") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    }
+
+    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+        login(account);
+        br.getPage(downloadLink.getDownloadURL());
+        // direct download or not?
+        String link = br.getRedirectLocation() != null ? br.getRedirectLocation() : br.getRegex("function startDownload\\(\\)\\{.*?window.location = \"(.*?)\";").getMatch(0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, link, true, 0);
+
+        String error = new Regex(dl.getConnection().getURL(), "\\?error(.*)").getMatch(0);
+        if (error != null) {
+            dl.getConnection().disconnect();
+            throw new PluginException(LinkStatus.ERROR_RETRY, error);
+        }
+        if (!dl.getConnection().isContentDisposition()) {
+            br.followConnection();
+            if (br.containsHTML("(Servers Upgrade|4shared servers are currently undergoing a short-time maintenance)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
@@ -89,9 +111,27 @@ public class FourSharedCom extends PluginForHost {
         }
     }
 
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        br.forceDebug(true);
+        login(account);
+        String redirect = br.getRegex("top.location = \"(.*?)\"").getMatch(0);
+        br.setFollowRedirects(true);
+        br.getPage(redirect);
+        String[] dat = br.getRegex("Bandwidth\\:.*?<div class=\"quotacount\">(.+?)\\% of (.*?)</div>").getRow(0);
+        ai.setTrafficMax(Regex.getSize(dat[1]));
+        ai.setTrafficLeft((long)(ai.getTrafficMax() * ((100.0 - Float.parseFloat(dat[0])) / 100.0)));
+        String accountDetails = br.getRegex("(/account/myAccount.jsp\\?sId=[^\"]+)").getMatch(0);
+        br.getPage(accountDetails);
+        String expire = br.getRegex("<td>Expiration Date:</td>.*?<td>(.*?)<span").getMatch(0).trim();
+        ai.setValidUntil(Regex.getMilliSeconds(expire, "yyyy-MM-dd", Locale.UK));
+        return ai;
+    }
+
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        
+
         String url = br.getRegex("<a href=\"(http://[\\w\\.]*?(4shared|4shared-china)\\.com/get[^\\;\"]*).*?\" class=\".*?dbtn.*?\" tabindex=\"1\"").getMatch(0);
         if (url == null) {
             /* maybe directdownload */
@@ -102,8 +142,8 @@ public class FourSharedCom extends PluginForHost {
             }
             if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else {
-            br.getPage(url);           
-                              
+            br.getPage(url);
+
             url = br.getRegex("id=\\'divDLStart\\' >.*?<a href='(.*?)'.*?onclick=\"return callPostDownload\\(\\);\">Click here to download this file</a>.*?</div>").getMatch(0);
             if (url.contains("linkerror.jsp")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             // Ticket Time
