@@ -60,8 +60,8 @@ public class FourSharedCom extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         // direct download or not?
         String link = br.getRedirectLocation() != null ? br.getRedirectLocation() : br.getRegex("function startDownload\\(\\)\\{.*?window.location = \"(.*?)\";").getMatch(0);
+        if (link == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, link, true, 0);
-
         String error = new Regex(dl.getConnection().getURL(), "\\?error(.*)").getMatch(0);
         if (error != null) {
             dl.getConnection().disconnect();
@@ -121,7 +121,7 @@ public class FourSharedCom extends PluginForHost {
         br.getPage(redirect);
         String[] dat = br.getRegex("Bandwidth\\:.*?<div class=\"quotacount\">(.+?)\\% of (.*?)</div>").getRow(0);
         ai.setTrafficMax(Regex.getSize(dat[1]));
-        ai.setTrafficLeft((long)(ai.getTrafficMax() * ((100.0 - Float.parseFloat(dat[0])) / 100.0)));
+        ai.setTrafficLeft((long) (ai.getTrafficMax() * ((100.0 - Float.parseFloat(dat[0])) / 100.0)));
         String accountDetails = br.getRegex("(/account/myAccount.jsp\\?sId=[^\"]+)").getMatch(0);
         br.getPage(accountDetails);
         String expire = br.getRegex("<td>Expiration Date:</td>.*?<td>(.*?)<span").getMatch(0).trim();
