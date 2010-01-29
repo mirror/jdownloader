@@ -29,7 +29,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 10324 $", interfaceVersion = 2, names = { "serienjunkies.org","serienjunkies.org" }, urls = { "http://[\\w\\.]*?serienjunkies\\.org/\\?(cat|p)=\\d+","http://[\\w\\.]*?serienjunkies\\.org/.*?/.+" }, flags = { 0 ,0})
+@DecrypterPlugin(revision = "$Revision: 10324 $", interfaceVersion = 2, names = { "serienjunkies.org", "serienjunkies.org" }, urls = { "http://[\\w\\.]*?serienjunkies\\.org/\\?(cat|p)=\\d+", "http://[\\w\\.]{0,4}serienjunkies\\.org/.*?/.+" }, flags = { 0, 0 })
 public class SrnnksCategory extends PluginForDecrypt {
 
     public SrnnksCategory(PluginWrapper wrapper) {
@@ -42,33 +42,33 @@ public class SrnnksCategory extends PluginForDecrypt {
         Browser.setRequestIntervalLimitGlobal("download.serienjunkies.org", 400);
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         if (!UserIO.isOK(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN, "Kategorie Decrypter!\r\nWillst du wirklich eine ganze Kategorie hinzufügen?"))) return ret;
-br.setFollowRedirects(true);
+        br.setFollowRedirects(true);
         br.getPage(parameter.getCryptedUrl());
         if (br.containsHTML("<FRAME SRC")) {
             // progress.setStatusText("Lade Downloadseitenframe");
             br.getPage(br.getRegex("<FRAME SRC=\"(.*?)\"").getMatch(0));
         }
-        if(br.containsHTML("Error 503")){
+        if (br.containsHTML("Error 503")) {
             UserIO.getInstance().requestMessageDialog("Serienjunkies ist überlastet. Bitte versuch es später nocheinmal!");
             return ret;
         }
         String[] ids = br.getRegex("\\&nbsp\\;<a href=\"http://serienjunkies.org/(.*?)/\">(.*?)</a><br").getColumn(0);
 
-        String[] names =  br.getRegex("\\&nbsp\\;<a href=\"http://serienjunkies.org/(.*?)/\">(.*?)</a><br").getColumn(1);
-        for(int i=0;i<names.length;i++){
-            names[i]=Encoding.htmlDecode(names[i]).replace("-", " ");
+        String[] names = br.getRegex("\\&nbsp\\;<a href=\"http://serienjunkies.org/(.*?)/\">(.*?)</a><br").getColumn(1);
+        for (int i = 0; i < names.length; i++) {
+            names[i] = Encoding.htmlDecode(names[i]).replace("-", " ");
         }
         int res = UserIO.getInstance().requestComboDialog(0, "Bitte Kategorie auswählen", "Bitte die gewünschte Staffel auswählen", names, 0, null, null, null, null);
         if (res < 0) return ret;
-        br.forceDebug(true);
-        br.getPage("http://serienjunkies.org/" + ids[res]+"/");
+
+        br.getPage("http://serienjunkies.org/" + ids[res] + "/");
         ArrayList<String> mirrors = new ArrayList<String>();
         for (String m : br.getRegex("hier</a> \\| (.*?)<").getColumn(0)) {
             if (m.trim().length() > 0 && !mirrors.contains(m)) {
                 mirrors.add(m);
             }
         }
-  
+
         res = UserIO.getInstance().requestComboDialog(0, "Bitte Mirror auswählen", "Bitte den gewünschten Anbieter aus.", mirrors.toArray(new String[] {}), 0, null, null, null, null);
         if (res < 0) return ret;
 
@@ -80,7 +80,7 @@ br.setFollowRedirects(true);
 
         }
         String linklist = UserIO.getInstance().requestInputDialog(UserIO.STYLE_LARGE | UserIO.NO_COUNTDOWN, "Entferne ungewollte Links", sb.toString());
-        if (linklist ==null) return ret;
+        if (linklist == null) return ret;
         urls = HTMLParser.getHttpLinks(linklist, null);
         for (String url : urls) {
             ret.add(this.createDownloadlink(url));
