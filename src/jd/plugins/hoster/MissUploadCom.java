@@ -328,6 +328,8 @@ public class MissUploadCom extends PluginForHost {
             br.followConnection();
             logger.info("followed connection...");
             String dllink = br.getRedirectLocation();
+            String adSite = br.getURL();
+            if (adSite != null && adSite.contains("mizzupload")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
             if (dllink == null) {
                 if (br.containsHTML("You have to wait")) {
                     int minutes = 0, seconds = 0, hours = 0;

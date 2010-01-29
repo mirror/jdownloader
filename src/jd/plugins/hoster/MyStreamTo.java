@@ -56,6 +56,12 @@ public class MyStreamTo extends PluginForHost {
         String dllink = br.getRegex("video/divx\" src=\"(.*?)\"").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("name=\"flashvars\" value=\"file=(.*?)\"").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("var url = '(http.*?)';").getMatch(0);
+                if (dllink == null) {
+                    dllink = br.getRegex("= '(http://ms[0-9]+\\.mystream\\.to/file-.*?/.*?)';").getMatch(0);
+                }
+            }
         }
         if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
