@@ -73,7 +73,7 @@ public class RsLrCm extends PluginForDecrypt {
             boolean cont = false;
             for (int i = 1; i < 6; i++) {
                 Form[] forms = br.getForms();
-                if (forms != null && forms.length != 0 && forms[0] != null) {
+                if (forms != null && forms.length != 0 && forms[0] != null && br.getRegex(linkPattern).getColumn(0).length == 0) {
                     Form captchaForm = forms[0];
                     String captchaFileName = br.getRegex(strCaptchaPattern).getMatch(0);
                     if (captchaFileName == null) { return null; }
@@ -97,6 +97,7 @@ public class RsLrCm extends PluginForDecrypt {
             }
             if (cont == false) { throw new DecrypterException(DecrypterException.CAPTCHA); }
             String layerLinks[] = br.getRegex(linkPattern).getColumn(0);
+            System.out.println(layerLinks.length);
             if (layerLinks.length == 0) {
                 if (!add_container(parameter, ".dlc", decryptedLinks)) {
                     if (!add_container(parameter, ".rsdf", decryptedLinks)) {
@@ -124,11 +125,7 @@ public class RsLrCm extends PluginForDecrypt {
                 }
             }
         }
-
+        
         return decryptedLinks;
-
     }
-
-    // @Override
-
 }
