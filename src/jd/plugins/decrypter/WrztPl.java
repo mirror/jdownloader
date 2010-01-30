@@ -69,6 +69,4 @@ public class WrztPl extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    // @Override
-
 }

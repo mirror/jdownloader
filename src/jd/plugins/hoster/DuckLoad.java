@@ -54,9 +54,12 @@ public class DuckLoad extends PluginForHost {
         if (capurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         capurl = "/design/Captcha2" + capurl;
         String code = getCaptchaCode(capurl, link);
+        // Check this part first if the plugin is defect!
         String applcode = null;
         if (form.containsHTML("a_code")) {
             applcode = "a_code";
+        } else if (form.containsHTML("b_code")) {
+            applcode = "b_code";
         } else if (form.containsHTML("appl_code")) {
             applcode = "appl_code";
         }
@@ -124,7 +127,8 @@ public class DuckLoad extends PluginForHost {
 
     @Override
     /*
-     * /* public String getVersion() { return getVersion("$Revision$"); }
+     * /* public String getVersion() { return getVersion("$Revision$");
+     * }
      */
     public int getMaxSimultanFreeDownloadNum() {
         return -1;

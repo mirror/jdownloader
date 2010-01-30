@@ -76,6 +76,7 @@ public class IfolderRu extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         boolean do_download = false;
         requestFileInformation(downloadLink);
+        if (br.containsHTML("На данный момент иностранный трафик у этого файла превышает российский")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "At the moment foreign traffic of this file is larger than Russia's");
         br.setFollowRedirects(true);
         String passCode = null;
         String watchAd = br.getRegex("http://ints\\.ifolder\\.ru/ints/\\?(.*?)\"").getMatch(0);
