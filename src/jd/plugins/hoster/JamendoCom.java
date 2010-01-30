@@ -116,15 +116,16 @@ public class JamendoCom extends PluginForHost {
 
     private String prepareDownload(String typ, String ID, DownloadLink link) throws IOException, PluginException {
         String dlurl = null;
-        br.getPage("http://www.jamendo.com/en/download/" + typ + "/" + ID + "/?output=contentonly");
+        br.getPage("http://www.jamendo.com/en/download/" + typ + "/" + ID + "/do?output=contentonly");
         String filename = br.getRegex("encodeURIComponent\\(\"(.*?)\"\\);").getMatch(0);
         String dl_unit = br.getRegex("var dl_unit = \"(.*?)\";").getMatch(0);
-        String dl_serverno = br.getRegex("var dl_serverno = '(\\d+)';").getMatch(0);
+        String dl_serverno = br.getRegex("var dl_serverno = \"(\\d+)\";").getMatch(0);
         String dl_encoding = br.getRegex("var dl_encoding = \"(.*?)\";").getMatch(0);
         for (int i = 0; i < 10; i++) {
             br.getPage("http://download" + dl_serverno + ".jamendo.com/request/" + dl_unit + "/" + ID + "/" + dl_encoding + "/" + Math.random());
             String status = br.getRegex("Jamendo_HttpDownloadCallback\\('(.*?)','.*?'\\);").getMatch(0);
             String data = br.getRegex("Jamendo_HttpDownloadCallback\\('.*?','(.*?)'\\);").getMatch(0);
+            System.out.println(br);
             if (status != null) {
                 /* HTTPDownloadCallback */
                 if (status.equalsIgnoreCase("ready")) {
