@@ -80,6 +80,6 @@ public class GoEarCom extends PluginForHost {
 
     private String getXmlUrl(String url) {
         String id = new Regex(url, "/listen/([0-9a-f]+)/").getMatch(0);
-        return "http://www.goear.com/files/xmlfiles/" + id.charAt(0) + "/secm" + id + ".xml";
+        return "http://www.goear.com/local.php?f=" + id;
     }
 }
