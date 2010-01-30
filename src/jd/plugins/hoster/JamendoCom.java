@@ -125,7 +125,7 @@ public class JamendoCom extends PluginForHost {
             br.getPage("http://download" + dl_serverno + ".jamendo.com/request/" + dl_unit + "/" + ID + "/" + dl_encoding + "/" + Math.random());
             String status = br.getRegex("Jamendo_HttpDownloadCallback\\('(.*?)','.*?'\\);").getMatch(0);
             String data = br.getRegex("Jamendo_HttpDownloadCallback\\('.*?','(.*?)'\\);").getMatch(0);
-            System.out.println(br);
+
             if (status != null) {
                 /* HTTPDownloadCallback */
                 if (status.equalsIgnoreCase("ready")) {
