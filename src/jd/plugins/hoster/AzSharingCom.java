@@ -163,15 +163,13 @@ public class AzSharingCom extends PluginForHost {
         br.setFollowRedirects(false);
         Form DLForm = br.getFormbyProperty("name", "F1");
         if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // // Ticket Time (not needed, can be skipped right now)
-        // String ttt =
-        // br.getRegex("countdown\">.*?(\\d+).*?</span>").getMatch(0);
-        // if (ttt != null) {
-        // logger.info("Waittime detected, waiting " + ttt.trim() +
-        // " seconds from now on...");
-        // int tt = Integer.parseInt(ttt);
-        // sleep(tt * 1001, downloadLink);
-        // }
+        // Ticket Time (not needed, can be skipped right now)
+        String ttt = br.getRegex("countdown\">.*?(\\d+).*?</span>").getMatch(0);
+        if (ttt != null) {
+            logger.info("Waittime detected, waiting " + ttt.trim() + " seconds from now on...");
+            int tt = Integer.parseInt(ttt);
+            sleep(tt * 1001, downloadLink);
+        }
         String passCode = null;
         boolean password = false;
         boolean recaptcha = false;

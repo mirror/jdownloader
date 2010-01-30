@@ -17,6 +17,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.Random;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -43,12 +44,15 @@ public class MvdD extends PluginForDecrypt {
 
         br.setFollowRedirects(true);
         br.getPage(parameter);
-
         String videoid = br.getRegex(Pattern.compile("p\\.addVariable\\('_videoid','(.*?)'\\)", Pattern.CASE_INSENSITIVE)).getMatch(0);
         String serverpath = br.getRegex(Pattern.compile("<link rel='image_src'.*?href='(.*?)thumbs/.*?'.*?/><link", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        if (serverpath == null) serverpath = br.getRegex("\"(http://is[0-9]+\\.myvideo\\.de/de/movie[0-9]+/.*?/)thumbs\"").getMatch(0);
         if (videoid == null || serverpath == null) return null;
         String link = serverpath + videoid + ".flv";
-        String name = Encoding.htmlDecode(br.getRegex(Pattern.compile("<h1 class='globalHd'>(.*?)</h1>", Pattern.CASE_INSENSITIVE)).getMatch(0).trim());
+        String name = br.getRegex(Pattern.compile("<h1 class='globalHd'>(.*?)</h1>", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        if (name == null) name = Encoding.htmlDecode(br.getRegex(Pattern.compile("name='title' content='(.*?)Video - MyVideo'", Pattern.CASE_INSENSITIVE)).getMatch(0));
+        if (name == null) name = "Video" + new Random().nextInt(10);
+        name = name.trim();
         possibleconverts.add(ConversionMode.AUDIOMP3);
         possibleconverts.add(ConversionMode.VIDEOFLV);
         possibleconverts.add(ConversionMode.AUDIOMP3_AND_VIDEOFLV);

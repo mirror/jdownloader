@@ -59,7 +59,6 @@ public class Dataupde extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         requestFileInformation(downloadLink);
         this.setBrowserExclusive();
@@ -75,7 +74,8 @@ public class Dataupde extends PluginForHost {
             // Stream-links handling, also when downloading streams you can
             // download the file with multiple connections (chunks)
             maxchunks = 0;
-            dllink = br.getRegex("autoPlay\"/>.*?<param value=\"(.*?)\"").getMatch(0);
+            dllink = br.getRegex("video/divx\" src=\"(.*?)\"").getMatch(0);
+            if (dllink == null) dllink = br.getRegex("\"(http://q[0-9]+\\.dataup\\.to:[0-9]+/download\\.php\\?id=[0-9]+\\&name=.*?)\"").getMatch(0);
         } else {
             // Normal-links handling
             dllink = br.getRegex("div align=\"center\">.*?<form action=\"(.*?)\"").getMatch(0);
@@ -95,7 +95,7 @@ public class Dataupde extends PluginForHost {
         /* DownloadLimit? */
         if (dl.getConnection().getContentType().contains("html")) {
             dl.getConnection().disconnect();
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 180000);
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1000l);
         }
         dl.startDownload();
     }

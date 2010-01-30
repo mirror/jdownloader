@@ -143,7 +143,21 @@ public class Freaksharenet extends PluginForHost {
         sleep(tt * 1001l, downloadLink);
         br.submitForm(form);
         form = br.getForm(0);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, false, 1);
+        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (br.containsHTML("captcha/math/captcha.php")) {
+            for (int i = 0; i <= 3; i++) {
+                String captchaurl = "http://freakshare.net/kernel/captcha/math/captcha.php";
+                String code = getCaptchaCode(captchaurl, downloadLink);
+                form.put("sum", code);
+                br.submitForm(form);
+                if (br.getRedirectLocation() == null) continue;
+                break;
+            }
+            if (br.getRedirectLocation() == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.getRedirectLocation(), false, 1);
+        } else {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, false, 1);
+        }
         URLConnectionAdapter con = dl.getConnection();
         if (!con.isContentDisposition()) {
             br.followConnection();
