@@ -68,7 +68,7 @@ public class QuickUploadDotNet extends PluginForHost {
         String filename = Encoding.htmlDecode(br.getRegex("<input type=\"hidden\" name=\"fname\" value=\"(.*?)\">").getMatch(0));
         String filesize = br.getRegex("You have requested <font color=\"red\">http://quickupload.net/.*?/.*?</font> \\((.*?)\\)</font>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        link.setName(filename);
+        link.setFinalFileName(filename.replace("-quickupload.net", ""));
         link.setDownloadSize(Regex.getSize(filesize));
         return AvailableStatus.TRUE;
     }
