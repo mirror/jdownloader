@@ -128,8 +128,14 @@ public class QuickUploadDotNet extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
             if (br.containsHTML("Wrong captcha")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            if (br.containsHTML("Download Link Generated")) {
-                dllink = br.getRegex("dotted #bbb;padding:7px;\">.*?<a href=\"(.*?)\">.*?</a>.*?</span>.*?<br><br><br>").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("dotted #bbb;padding.*?<a href=\"(.*?)\"").getMatch(0);
+                if (dllink == null) {
+                    dllink = br.getRegex("This direct link will be available for your IP.*?href=\"(http.*?)\"").getMatch(0);
+                    if (dllink == null) {
+                        dllink = br.getRegex("Download: <a href=\"(.*?)\"").getMatch(0);
+                    }
+                }
             }
         }
         if (passCode != null) {
