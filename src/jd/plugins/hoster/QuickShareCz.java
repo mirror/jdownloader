@@ -47,9 +47,11 @@ public class QuickShareCz extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
+        br.setCustomCharset("utf-8");
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("Takov. soubor neexistuje")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = Encoding.htmlDecode(br.getRegex(Pattern.compile("Název: <strong>(.*?)</strong>", Pattern.CASE_INSENSITIVE)).getMatch(0));
+        if (filename == null) filename = br.getRegex("var ID3 = '(.*?)';").getMatch(0);
         String filesize = br.getRegex("<br>Velikost: <strong>(.*?)<br>").getMatch(0).replaceAll("</strong>", "");
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
