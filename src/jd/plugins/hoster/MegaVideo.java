@@ -16,10 +16,8 @@
 
 package jd.plugins.hoster;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.HashMap;
 import java.util.LinkedList;
 
@@ -114,8 +112,8 @@ public class MegaVideo extends PluginForHost {
             return;
         } else {
             String name = downloadLink.getName();
-            String cpName = url.substring(url.lastIndexOf("/")+1);
-            downloadLink.setFinalFileName(name.endsWith("."+JDIO.getFileExtension(cpName))?name:name + "." + JDIO.getFileExtension(cpName));
+            String cpName = url.substring(url.lastIndexOf("/") + 1);
+            downloadLink.setFinalFileName(name.endsWith("." + JDIO.getFileExtension(cpName)) ? name : name + "." + JDIO.getFileExtension(cpName));
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 0);
 
             dl.startDownload();

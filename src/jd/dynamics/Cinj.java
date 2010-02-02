@@ -28,6 +28,7 @@ public class Cinj extends DynamicPluginInterface {
 
     public static class SandboxWrapFactory extends WrapFactory {
 
+        @SuppressWarnings("unchecked")
         @Override
         public Scriptable wrapAsJavaObject(Context cx, Scriptable scope, Object javaObject, Class staticType) {
             return new SandboxNativeJavaObject(scope, javaObject, staticType);
@@ -35,12 +36,10 @@ public class Cinj extends DynamicPluginInterface {
     }
 
     public static class SandboxNativeJavaObject extends NativeJavaObject {
-        /**
-         * 
-         */
+
         private static final long serialVersionUID = -2783084485265910840L;
 
-        public SandboxNativeJavaObject(Scriptable scope, Object javaObject, Class staticType) {
+        public SandboxNativeJavaObject(Scriptable scope, Object javaObject, Class<?> staticType) {
             super(scope, javaObject, staticType);
         }
 
@@ -48,9 +47,8 @@ public class Cinj extends DynamicPluginInterface {
         public Object get(String name, Scriptable start) {
             JDLogger.getLogger().severe("JS Security Exception");
             return NOT_FOUND;
-//            if (name.equals("getClass")) { return NOT_FOUND; }
-
-//            return super.get(name, start);
+            // if (name.equals("getClass")) { return NOT_FOUND; }
+            // return super.get(name, start);
         }
     }
 }
