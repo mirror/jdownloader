@@ -846,7 +846,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
             size += dlink.getDownloadSize();
         }
         
-        if(f.getUsableSpace() < size + dlLink.getDownloadSize()) {
+        if(f.getUsableSpace() < size + dlLink.getDownloadSize() - dlLink.getDownloadCurrent()) {
             return false;
         }
        
