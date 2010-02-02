@@ -843,7 +843,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
         long size = 1024 * 1024 * 1024 * 500;
         
         for(DownloadLink dlink : getRunningDownloads()) {
-            size += dlink.getDownloadSize();
+            size += dlink.getDownloadSize() - dlink.getDownloadCurrent();
         }
         
         if(f.getUsableSpace() < size + dlLink.getDownloadSize() - dlLink.getDownloadCurrent()) {
