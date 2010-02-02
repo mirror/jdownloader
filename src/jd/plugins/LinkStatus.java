@@ -166,6 +166,8 @@ public class LinkStatus implements Serializable {
      * ein Hosting Service handelt für das es noch kein Plugin gibt.
      */
     public static final int ERROR_PLUGIN_NEEDED = 1 << 30;
+    
+    public static final int NO_ENOUGH_HARDDISK_SPACE = 1 << 31;
 
     private static final long serialVersionUID = 3885661829491436448L;
 
@@ -241,6 +243,8 @@ public class LinkStatus implements Serializable {
             return JDL.L("downloadlink.status.error.fatal", "Fatal Error");
         case LinkStatus.WAITING_USERIO:
             return JDL.L("downloadlink.status.waitinguserio", "Waiting for user input");
+        case LinkStatus.NO_ENOUGH_HARDDISK_SPACE:
+            return JDL.L("downloadlink.status.error", "Not enough harddiskspace");
         }
         return null;
     }

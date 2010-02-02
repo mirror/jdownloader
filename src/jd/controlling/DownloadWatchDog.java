@@ -16,6 +16,7 @@
 
 package jd.controlling;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -809,10 +810,47 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                 break;
             }
             if (reachedStopMark()) return ret;
+            if (!checkSize(dlink)) {
+                dlink.getLinkStatus().setStatus(LinkStatus.NO_ENOUGH_HARDDISK_SPACE);
+                continue; 
+            }
             startDownloadThread(dlink);
             ret++;
         }
         return ret;
+    }
+    
+    /**
+     * Checks if the Download has enough space.
+     * 
+     * @param dlLink
+     * @return
+     */
+    private boolean checkSize(DownloadLink dlLink) {
+        if(System.getProperty("java.version").contains("1.5")) {
+            return true;
+        }
+        
+        File f = new File(dlLink.getFileOutput()).getParentFile();
+        
+        while(!f.exists()) {
+            f = f.getParentFile();
+            
+            if(f == null) return false;
+        }
+
+        //Set 500MB extra Buffer
+        long size = 1024 * 1024 * 1024 * 500;
+        
+        for(DownloadLink dlink : getRunningDownloads()) {
+            size += dlink.getDownloadSize();
+        }
+        
+        if(f.getUsableSpace() < size + dlLink.getDownloadSize()) {
+            return false;
+        }
+       
+        return true;
     }
 
     private boolean reachedStopMark() {
