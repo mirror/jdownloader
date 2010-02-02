@@ -2,6 +2,7 @@ package jd.gui.swing.jdgui.components.modules;
 
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Polygon;
@@ -17,6 +18,7 @@ public class ProgressCircle extends JPanel {
 
     private static final long serialVersionUID = -6877009081026501104L;
     private static final int ICONSIZE = 18;
+    private static final int FONTSIZE = 10;
     private static final double INDETERMINATE_MAXIMUM = 8;
 
     private double value;
@@ -24,6 +26,7 @@ public class ProgressCircle extends JPanel {
     private Color color;
     private Icon icon;
     private Icon iconGrey;
+    private String initials;
     private ProgressController controller;
     private ProgressCircleTooltip tooltip;
     private boolean backward = false;
@@ -65,6 +68,7 @@ public class ProgressCircle extends JPanel {
         color = controller.getColor();
         icon = controller.getIcon();
         iconGrey = JDImage.getDisabledIcon(icon);
+        initials = controller.getInitials();
     }
 
     public ProgressController getController() {
@@ -98,6 +102,13 @@ public class ProgressCircle extends JPanel {
 
             g2.setColor(Color.BLACK);
             g2.drawArc(0, 0, ICONSIZE, ICONSIZE, 0, 360);
+
+            if (initials != null && initials.length() <= 2) {
+                g.setFont(new Font("Arial", Font.BOLD, FONTSIZE));
+                int stringWidth = g.getFontMetrics().stringWidth(initials);
+
+                g2.drawString(initials, (ICONSIZE + 1 - stringWidth) / 2, (ICONSIZE + 1 + FONTSIZE) / 2 - 1);
+            }
         } else {
             // Custom Icon: Change between Grey and Color for indicating a
             // running Process

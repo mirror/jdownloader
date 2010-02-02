@@ -37,6 +37,11 @@ public class SrnnksCategory extends PluginForDecrypt {
     }
 
     @Override
+    protected String getInitials() {
+        return "SJ";
+    }
+
+    @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, final ProgressController progress) throws Exception {
         Browser.setRequestIntervalLimitGlobal("serienjunkies.org", 400);
         Browser.setRequestIntervalLimitGlobal("download.serienjunkies.org", 400);

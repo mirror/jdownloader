@@ -59,6 +59,7 @@ public class ProgressController implements MessageListener, Comparable<ProgressC
     private String statusText;
     private Color progresscolor = null;
     private Icon icon = null;
+    private String initials = null;
 
     private transient ProgressControllerBroadcaster broadcaster = new ProgressControllerBroadcaster();
     private boolean abort = false;
@@ -101,8 +102,18 @@ public class ProgressController implements MessageListener, Comparable<ProgressC
         fireChanges();
     }
 
+    public void setInitials(String iconInitials) {
+        if (iconInitials != null && iconInitials.length() > 2) return;
+        this.initials = iconInitials;
+        fireChanges();
+    }
+
     public Icon getIcon() {
         return icon;
+    }
+
+    public String getInitials() {
+        return initials;
     }
 
     public void addToMax(long length) {

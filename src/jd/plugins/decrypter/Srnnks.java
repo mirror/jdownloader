@@ -40,11 +40,16 @@ import jd.utils.EditDistance;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "serienjunkies.org" }, urls = { "http://[\\w\\.]{5,}serienjunkies\\.org.*(rc[_-]|rs[_-]|nl[_-]|u[tl][_-]|ff[_-]).*" }, flags = { 0 })
 public class Srnnks extends PluginForDecrypt {
     private final static String[] passwords = { "serienjunkies.dl.am", "serienjunkies.org", "dokujunkies.org" };
-    private static long LATEST_BLOCK_DETECT=0;
-    private static long LATEST_RECONNECT=0;
+    private static long LATEST_BLOCK_DETECT = 0;
+    private static long LATEST_RECONNECT = 0;
 
     public Srnnks(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    protected String getInitials() {
+        return "SJ";
     }
 
     @Override
@@ -56,11 +61,11 @@ public class Srnnks extends PluginForDecrypt {
 
     private synchronized static boolean limitsReached(Browser br) throws IOException {
         int ret = -100;
-        if(br.containsHTML("Error 503")){
+        if (br.containsHTML("Error 503")) {
             UserIO.getInstance().requestMessageDialog("Serienjunkies ist überlastet. Bitte versuch es später nocheinmal!");
             return true;
         }
-        
+
         if (br.containsHTML("Du hast zu oft das Captcha falsch")) {
 
             if (System.currentTimeMillis() - LATEST_BLOCK_DETECT < 60000) return true;
@@ -85,7 +90,7 @@ public class Srnnks extends PluginForDecrypt {
         if (ret != -100) {
             if (UserIO.isOK(ret)) {
                 if (Reconnecter.waitForNewIP(15000, false)) {
-                 
+
                     // redo the request
                     br.loadConnection(br.openRequestConnection(br.getRequest().cloneRequest()));
                     LATEST_RECONNECT = System.currentTimeMillis();
@@ -107,7 +112,7 @@ public class Srnnks extends PluginForDecrypt {
         // progress.setStatusText("Lade Downloadseite");
 
         br.getPage(parameter.getCryptedUrl());
-        
+
         if (limitsReached(br)) return new ArrayList<DownloadLink>(ret);
 
         if (br.containsHTML("<FRAME SRC")) {

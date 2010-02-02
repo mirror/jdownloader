@@ -142,8 +142,8 @@ public abstract class PluginForDecrypt extends Plugin {
      */
     public ArrayList<DownloadLink> decryptLink(CryptedLink cryptedLink) {
         curcryptedLink = cryptedLink;
-        System.out.println(getLinkName());
         ProgressController progress = new ProgressController(JDL.LF(JDL_PREFIX + "decrypting", "Decrypt %s: %s", getHost(), getLinkName()), null);
+        progress.setInitials(getInitials());
         curcryptedLink.setProgressController(progress);
         try {
             while (waitForNextStartAllowed(curcryptedLink)) {
@@ -357,6 +357,16 @@ public abstract class PluginForDecrypt extends Plugin {
         } catch (Exception e) {
             return "";
         }
+    }
+
+    /**
+     * Should be overwridden to specify special initials for the decryption
+     * process.
+     * 
+     * @return a String with a length of 2
+     */
+    protected String getInitials() {
+        return null;
     }
 
 }
