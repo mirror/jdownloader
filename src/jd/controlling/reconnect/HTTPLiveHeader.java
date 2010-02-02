@@ -53,6 +53,8 @@ import org.w3c.dom.NodeList;
  */
 public class HTTPLiveHeader extends ReconnectMethod {
 
+    private static final String JDL_PREFIX = "jd.controlling.reconnect.HTTPLiveHeader.";
+
     private final Configuration configuration;
 
     private HashMap<String, String> headerProperties;
@@ -137,7 +139,7 @@ public class HTTPLiveHeader extends ReconnectMethod {
             final NodeList steps = root.getChildNodes();
             progress.addToMax(steps.getLength());
             for (int step = 0; step < steps.getLength(); step++) {
-                progress.setStatusText(JDL.L("interaction.liveHeader.progress.3_step", "(STEP)HTTPLiveHeader :") + step);
+                progress.setStatusText(JDL.LF(JDL_PREFIX + "step", "HTTPLiveHeader: Step %s", step));
                 progress.increase(1);
                 final Node current = steps.item(step);
 
@@ -153,7 +155,7 @@ public class HTTPLiveHeader extends ReconnectMethod {
                 for (int toDoStep = 0; toDoStep < toDosLength; toDoStep++) {
                     final Node toDo = toDos.item(toDoStep);
 
-                    progress.setStatusText(JDL.LF("interaction.liveHeader.progress.4_step", "(%s)HTTPLiveHeader", toDo.getNodeName()));
+                    progress.setStatusText(JDL.LF(JDL_PREFIX + "step", "HTTPLiveHeader: Step %s", toDo.getNodeName()));
 
                     if (toDo.getNodeName().equalsIgnoreCase("DEFINE")) {
 
