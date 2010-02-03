@@ -86,7 +86,7 @@ public class FourUploadRu extends PluginForHost {
         String requestlink = "http://www.4upload.ru/link/" + fileid + "/";
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.postPage(requestlink, "");
-        String dllink = br.getRegex("href = \"(http.*?)\"").getMatch(0);
+        String dllink = br.getRegex(".value = \"(http.*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
         dl.startDownload();
