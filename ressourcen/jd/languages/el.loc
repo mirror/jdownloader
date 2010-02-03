@@ -839,8 +839,6 @@ interaction.batchreconnect.terminal = Διερμηνέας
 interaction.externreconnect.command = Εντολή (χρησιμοποιήστε απόλυτες διαδρομές δίσκου)
 interaction.externreconnect.dummybat = Χρήση ειδικού εκτελεστή για Windows
 interaction.externreconnect.parameter = Παράμετρος (1 παράμετρος ανά γραμμή)
-interaction.liveheader.progress.3_step = (Βήμα) HTTP LiveHeader :
-interaction.liveheader.progress.4_step = (%s) HTTP LiveHeader
 interaction.shutdown.dialog.msg.closejd = <h2><font color="red">Το JDownloader θα τερματιστεί!</font></h2>
 interaction.shutdown.dialog.msg.hibernate = <h2><font color="red">Το σύστημα θα μεταβεί σε κατάσταση Αδρανοποίησης!</font></h2>
 interaction.shutdown.dialog.msg.shutdown = <h2><font color="red">Το σύστημα θα τερματιστεί!</font></h2>
@@ -855,6 +853,7 @@ jd.controlling.downloadwatchdog.stopmark.downloadlink = Θα γίνει διακ
 jd.controlling.downloadwatchdog.stopmark.filepackage = Θα γίνει διακοπή μετά τη λήψη του αρχείου/πακέτου %s
 jd.controlling.downloadwatchdog.stopmark.set = Η Διακοπή μετά τη λήψη είναι ακόμη ενεργή!
 jd.controlling.downloadwatchdog.stopping = Διακοπή όλων των λήψεων %s
+jd.controlling.reconnect.httpliveheader.step = HTTPLiveHeader: Βήμα %s
 jd.controlling.reconnect.reconnector.progress.failed = Η Επανασύνδεση απέτυχε! Παρακαλούμε, ελέγξτε τις Ρυθμίσεις επανασύνδεσης και δοκιμάστε τη Χειροκίνητη Επανασύνδεση.
 jd.controlling.reconnect.reconnector.progress.failed2 = Η Επανασύνδεση αποτυγχάνει πολύ συχνά! Η Αυτόματη Επανασύνδεση έχει απενεργοποιηθεί. Παρακαλώ, ελέγξτε τις ρυθμίσεις επανασύνδεσης.
 jd.controlling.singledownloadcontroller.askexists = Το αρχείο \r\n%s\r\n υπάρχει ήδη. Τι θέλετε να γίνει;
