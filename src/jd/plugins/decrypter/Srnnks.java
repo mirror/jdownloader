@@ -143,159 +143,158 @@ public class Srnnks extends PluginForDecrypt {
             if (form == null) throw new Exception("Serienjunkies Captcha Form konnte nicht gefunden werden!");
             progress.increase(30);
 
-            String captchaLink = null;
             // das bild in der Form ist das captcha
-            {
-                captchaLink = new Regex(form.getHtmlCode(), "<IMG SRC=\"(.*?)\"").getMatch(0);
-                if (captchaLink == null) throw new Exception("Serienjunkies Captcha konnte nicht gefunden werden!");
-                if (!captchaLink.toLowerCase().startsWith("http://")) captchaLink = "http://" + br.getHost() + captchaLink;
-            }
+            String captchaLink = new Regex(form.getHtmlCode(), "<IMG SRC=\"(.*?)\"").getMatch(0);
+            if (captchaLink == null) throw new Exception("Serienjunkies Captcha konnte nicht gefunden werden!");
+            if (!captchaLink.toLowerCase().startsWith("http://")) captchaLink = "http://" + br.getHost() + captchaLink;
+
             File captcha = getLocalCaptchaFile(".png");
             // captcha laden
-            {
-                URLConnectionAdapter urlc = br.cloneBrowser().openGetConnection(captchaLink);
-                Browser.download(captcha, urlc);
-                String code;
-                // wenn es ein Einzellink ist soll die Captchaerkennung benutzt
-                // werden
-                if (captchaLink.contains(".gif"))
-                    code = getCaptchaCode("einzellinks.serienjunkies.org", captcha, parameter);
-                else
-                    code = getCaptchaCode(captcha, parameter);
-                if (code == null || code.length() != 3) {
-                    progress.setStatusText("Captcha code falsch");
+
+            URLConnectionAdapter urlc = br.cloneBrowser().openGetConnection(captchaLink);
+            Browser.download(captcha, urlc);
+            String code;
+            // wenn es ein Einzellink ist soll die Captchaerkennung benutzt
+            // werden
+            if (captchaLink.contains(".gif")) {
+                code = getCaptchaCode("einzellinks.serienjunkies.org", captcha, parameter);
+            } else {
+                code = getCaptchaCode(captcha, parameter);
+            }
+            if (code == null || code.length() != 3) {
+                progress.setStatusText("Captcha code falsch");
+                progress.setStatus(30);
+                continue;
+            }
+            progress.increase(39);
+
+            form.getInputFieldByType("text").setValue(code);
+            // System.out.println(code);
+            br.submitForm(form);
+            if (limitsReached(br)) return new ArrayList<DownloadLink>(ret);
+            if (br.getRedirectLocation() != null) {
+                ret.add(createDownloadlink(br.getRedirectLocation()));
+                progress.doFinalize();
+                return new ArrayList<DownloadLink>(ret);
+            } else {
+                progress.setStatus(0);
+                Form[] forms = br.getForms();
+                // suche die downloadlinks
+                ArrayList<String> actions = new ArrayList<String>();
+                for (Form frm : forms) {
+                    if (frm.getAction().contains("download.serienjunkies.org") && !frm.getAction().contains("firstload") && !frm.getAction().equals("http://mirror.serienjunkies.org")) {
+                        actions.add(frm.getAction());
+                    }
+                }
+                // es wurden keine Links gefunden also wurde das Captcha
+                // falsch eingegeben
+                if (actions.size() == 0) {
                     progress.setStatus(30);
+                    // progress.setStatusText("Captcha code falsch");
                     continue;
                 }
-                progress.increase(39);
+                // durch paralleles laden der Links wird schneller
+                // entschlüsselt
+                // ist noch von der alten SerienJunkies Klasse
+                final Vector<Thread> threads = new Vector<Thread>();
+                final Browser[] br2 = new Browser[] { br.cloneBrowser(), br.cloneBrowser(), br.cloneBrowser(), br.cloneBrowser() };
+                progress.setStatus(0);
 
-                form.getInputFieldByType("text").setValue(code);
-                // System.out.println(code);
-                br.submitForm(form);
-                if (limitsReached(br)) return new ArrayList<DownloadLink>(ret);
-                if (br.getRedirectLocation() != null) {
-                    ret.add(createDownloadlink(br.getRedirectLocation()));
-                    progress.doFinalize();
-                    return new ArrayList<DownloadLink>(ret);
-                } else {
-                    progress.setStatus(0);
-                    Form[] forms = br.getForms();
-                    // suche die downloadlinks
-                    ArrayList<String> actions = new ArrayList<String>();
-                    for (Form frm : forms) {
-                        if (frm.getAction().contains("download.serienjunkies.org") && !frm.getAction().contains("firstload") && !frm.getAction().equals("http://mirror.serienjunkies.org")) {
-                            actions.add(frm.getAction());
-                        }
-                    }
-                    // es wurden keine Links gefunden also wurde das Captcha
-                    // falsch eingegeben
-                    if (actions.size() == 0) {
-                        progress.setStatus(30);
-                        // progress.setStatusText("Captcha code falsch");
-                        continue;
-                    }
-                    // durch paralleles laden der Links wird schneller
-                    // entschlüsselt
-                    // ist noch von der alten SerienJunkies Klasse
-                    final Vector<Thread> threads = new Vector<Thread>();
-                    final Browser[] br2 = new Browser[] { br.cloneBrowser(), br.cloneBrowser(), br.cloneBrowser(), br.cloneBrowser() };
-                    progress.setStatus(0);
+                for (int d = 0; d < actions.size(); d++) {
+                    // fortschritt pro Link
+                    final int inc = 100 / actions.size();
+                    try {
+                        final String action = actions.get(d);
+                        final int bd = d % 4;
+                        Thread t = new Thread(new Runnable() {
+                            public void run() {
+                                int errors = 0;
+                                for (int j = 0; j < 2000; j++) {
+                                    try {
+                                        Thread.sleep(300 * j);
+                                    } catch (InterruptedException e) {
+                                        return;
+                                    }
+                                    try {
 
-                    for (int d = 0; d < actions.size(); d++) {
-                        // fortschritt pro Link
-                        final int inc = 100 / actions.size();
-                        try {
-                            final String action = actions.get(d);
-                            final int bd = d % 4;
-                            Thread t = new Thread(new Runnable() {
-                                public void run() {
-                                    int errors = 0;
-                                    for (int j = 0; j < 2000; j++) {
-                                        try {
-                                            Thread.sleep(300 * j);
-                                        } catch (InterruptedException e) {
-                                            return;
-                                        }
-                                        try {
-
-                                            String tx = null;
-                                            synchronized (br2[bd]) {
-                                                try {
-                                                    tx = br2[bd].getPage(action);
-                                                } catch (Exception e) {
-                                                    if (errors == 3) {
-                                                        ret.clear();
-                                                        for (Thread thread : threads) {
-                                                            try {
-                                                                thread.notify();
-                                                                thread.interrupt();
-                                                            } catch (Exception e2) {
-                                                            }
-                                                        }
-                                                        threads.clear();
-                                                        ret.clear();
-                                                        return;
-                                                    }
-                                                    errors++;
-                                                    continue;
-                                                }
-                                                if (tx != null) {
-                                                    String link = new Regex(tx, Pattern.compile("SRC=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
-                                                    if (link != null) {
+                                        String tx = null;
+                                        synchronized (br2[bd]) {
+                                            try {
+                                                tx = br2[bd].getPage(action);
+                                            } catch (Exception e) {
+                                                if (errors == 3) {
+                                                    ret.clear();
+                                                    for (Thread thread : threads) {
                                                         try {
-                                                            Browser brc = br2[bd].cloneBrowser();
-                                                            brc.getPage(link);
-                                                            String loc = brc.getRedirectLocation();
-                                                            if (loc != null) {
-                                                                ret.add(createDownloadlink(loc));
-                                                                synchronized (progress) {
-                                                                    progress.increase(inc);
-                                                                }
-                                                                synchronized (this) {
-                                                                    notify();
-                                                                }
-                                                                return;
-                                                            }
-                                                        } catch (Exception e) {
-
+                                                            thread.notify();
+                                                            thread.interrupt();
+                                                        } catch (Exception e2) {
                                                         }
                                                     }
-
+                                                    threads.clear();
+                                                    ret.clear();
+                                                    return;
                                                 }
+                                                errors++;
+                                                continue;
                                             }
-                                        } catch (Exception e) {
-                                            logger.log(Level.SEVERE, "Exception occurred", e);
-                                        }
+                                            if (tx != null) {
+                                                String link = new Regex(tx, Pattern.compile("SRC=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
+                                                if (link != null) {
+                                                    try {
+                                                        Browser brc = br2[bd].cloneBrowser();
+                                                        brc.getPage(link);
+                                                        String loc = brc.getRedirectLocation();
+                                                        if (loc != null) {
+                                                            ret.add(createDownloadlink(loc));
+                                                            synchronized (progress) {
+                                                                progress.increase(inc);
+                                                            }
+                                                            synchronized (this) {
+                                                                notify();
+                                                            }
+                                                            return;
+                                                        }
+                                                    } catch (Exception e) {
 
+                                                    }
+                                                }
+
+                                            }
+                                        }
+                                    } catch (Exception e) {
+                                        logger.log(Level.SEVERE, "Exception occurred", e);
                                     }
 
                                 }
-                            });
-                            t.start();
-                            threads.add(t);
-                        } catch (Exception e) {
-                        }
 
+                            }
+                        });
+                        t.start();
+                        threads.add(t);
+                    } catch (Exception e) {
                     }
-                    try {
-                        for (Thread t : threads) {
-                            while (t.isAlive()) {
-                                synchronized (t) {
-                                    try {
-                                        t.wait();
-                                    } catch (InterruptedException e) {
-                                        logger.log(Level.SEVERE, "Exception occurred", e);
-                                    }
+
+                }
+                try {
+                    for (Thread t : threads) {
+                        while (t.isAlive()) {
+                            synchronized (t) {
+                                try {
+                                    t.wait();
+                                } catch (InterruptedException e) {
+                                    logger.log(Level.SEVERE, "Exception occurred", e);
                                 }
                             }
                         }
-                    } catch (Exception e) {
-                        progress.doFinalize();
-                        return null;
                     }
+                } catch (Exception e) {
+                    progress.doFinalize();
+                    return null;
                 }
-                progress.doFinalize();
             }
+            progress.doFinalize();
+
             // wenn keine links drinnen sind ist bestimmt was mit dem captcha
             // schief gegangen einfach nochmal versuchen
             if (ret.size() != 0) break;
