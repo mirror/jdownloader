@@ -167,7 +167,7 @@ public class LinkStatus implements Serializable {
      */
     public static final int ERROR_PLUGIN_NEEDED = 1 << 30;
     
-    public static final int NO_ENOUGH_HARDDISK_SPACE = 1 << 31;
+    public static final int NOT_ENOUGH_HARDDISK_SPACE = 1 << 31;
 
     private static final long serialVersionUID = 3885661829491436448L;
 
@@ -243,7 +243,7 @@ public class LinkStatus implements Serializable {
             return JDL.L("downloadlink.status.error.fatal", "Fatal Error");
         case LinkStatus.WAITING_USERIO:
             return JDL.L("downloadlink.status.waitinguserio", "Waiting for user input");
-        case LinkStatus.NO_ENOUGH_HARDDISK_SPACE:
+        case LinkStatus.NOT_ENOUGH_HARDDISK_SPACE:
             return JDL.L("downloadlink.status.error", "Not enough harddiskspace");
         }
         return null;

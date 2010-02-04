@@ -23,6 +23,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.config.SubConfiguration;
+import jd.controlling.DownloadWatchDog;
 import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
 import jd.nutils.DynByteBuffer;
@@ -158,12 +159,54 @@ public class UnrarWrapper extends Thread implements JDRunnable {
     public ArrayList<ArchivFile> getFiles() {
         return files;
     }
+    
+    /**
+     * Checks if the extracted file(s) has enough space.
+     * 
+     * @param dlLink
+     * @return
+     */
+    private boolean checkSize() {
+        if(System.getProperty("java.version").contains("1.5")) {
+            return true;
+        }
+        
+        File f = extractTo;
+        
+        if(f == null) {
+            f = file;
+        }
+        
+        while(!f.exists()) {
+            f = f.getParentFile();
+            
+            if(f == null) return false;
+        }
+
+        //Set 500MB extra Buffer
+        long size = 1024 * 1024 * 1024 * 500;
+        
+        for(DownloadLink dlink : DownloadWatchDog.getInstance().getRunningDownloads()) {
+            size += dlink.getDownloadSize() - dlink.getDownloadCurrent();
+        }
+        
+        if(f.getUsableSpace() < size + totalSize) {
+            return false;
+        }
+       
+        return true;
+    }
 
     @Override
     public void run() {
         try {
             fireEvent(JDUnrarConstants.WRAPPER_STARTED);
             if (open()) {
+                if(!checkSize()) {
+                    fireEvent(JDUnrarConstants.NOT_ENOUGH_SPACE);
+                    return;
+                }
+                
                 if (this.isProtected && this.password == null) {
                     fireEvent(JDUnrarConstants.WRAPPER_CRACK_PASSWORD);
 

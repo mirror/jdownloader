@@ -948,6 +948,19 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
             this.onFinished(wrapper);
             break;
 
+        case JDUnrarConstants.NOT_ENOUGH_SPACE:
+            ArrayList<DownloadLink> links = this.getArchiveList(wrapper.getDownloadLink());
+
+            for (DownloadLink link : links) {
+                if (link == null) continue;
+
+                link.getLinkStatus().setStatus(LinkStatus.FINISHED);
+                link.getLinkStatus().setStatusText(JDL.L("plugins.optional.jdunrar.status.notenoughspace", "Not enough space to extract"));
+                link.requestGuiUpdate();
+            }
+            
+            this.onFinished(wrapper);
+            break;
         }
     }
 
@@ -1074,7 +1087,6 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
             this.onFinished(wrapper);
             break;
         }
-
     }
 
     /**

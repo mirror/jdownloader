@@ -811,7 +811,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
             }
             if (reachedStopMark()) return ret;
             if (!checkSize(dlink)) {
-                dlink.getLinkStatus().setStatus(LinkStatus.NO_ENOUGH_HARDDISK_SPACE);
+                dlink.getLinkStatus().setStatus(LinkStatus.NOT_ENOUGH_HARDDISK_SPACE);
                 continue; 
             }
             startDownloadThread(dlink);
