@@ -140,6 +140,7 @@ public class SuperFastFileCom extends PluginForHost {
         String dllink = br.getRedirectLocation();
         URLConnectionAdapter con2 = br.getHttpConnection();
         if (con2.getContentType().contains("html")) {
+            if (br.containsHTML("our servers are overloaded")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No free slots available!");
             String error = br.getRegex("class=\"err\">(.*?)</font>").getMatch(0);
             if (error != null) {
                 logger.warning(error);
