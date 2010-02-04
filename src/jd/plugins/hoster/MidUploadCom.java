@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
@@ -28,7 +29,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "midupload.com" }, urls = { "http://[\\w\\.]*?midupload\\.com/[0-9a-z]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "midupload.com" }, urls = { "http://[\\w\\.]*?midupload\\.com/[0-9a-z]{12}" }, flags = { 0 })
 public class MidUploadCom extends PluginForHost {
 
     public MidUploadCom(PluginWrapper wrapper) {
@@ -44,12 +45,7 @@ public class MidUploadCom extends PluginForHost {
     public void handleFree(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         requestFileInformation(link);
-        br.getPage(link.getDownloadURL());
-        Form form = br.getFormBySubmitvalue("Kostenloser+Download");
-        if (form == null) form = br.getFormBySubmitvalue("Free+Download");
-        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        form.remove("method_premium");
-        br.submitForm(form);
+        if (br.containsHTML("This server is in maintenance mode")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This server is in maintenance mode");
         if (br.containsHTML("You have to wait")) {
             if (br.containsHTML("minute")) {
                 int minute = Integer.parseInt(br.getRegex("You have to wait (\\d+) minute, (\\d+) seconds till next download").getMatch(0));
@@ -66,11 +62,15 @@ public class MidUploadCom extends PluginForHost {
             }
         }
         if (br.containsHTML("(File Not Found|The file you were looking for could not be found)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        form = br.getFormbyProperty("name", "F1");
+        Form form = br.getFormbyProperty("name", "F1");
         if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // waittime
-        int tt = Integer.parseInt(br.getRegex("countdown\">(\\d+)</span>").getMatch(0));
-        sleep(tt * 1001l, link);
+        // Ticket Time
+        String ttt = br.getRegex("countdown\">.*?(\\d+).*?</span>").getMatch(0);
+        if (ttt != null) {
+            logger.info("Waittime detected, waiting " + ttt.trim() + " seconds from now on...");
+            int tt = Integer.parseInt(ttt);
+            sleep(tt * 1001, link);
+        }
         String captcha = br.getRegex(Pattern.compile("Bitte Code eingeben:</b></td></tr>.*<tr><td align=right>.*<img src=\"(.*?)\">.*class=\"captcha_code\">", Pattern.DOTALL)).getMatch(0);
         if (captcha == null) captcha = br.getRegex(Pattern.compile("Enter code below:</b></td></tr>.*<tr><td align=right>.*<img src=\"(.*?)\">.*class=\"captcha_code\">", Pattern.DOTALL)).getMatch(0);
         if (captcha == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -105,12 +105,44 @@ public class MidUploadCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setCookie("http://www.midupload.com", "lang", "english");
         br.getPage(parameter.getDownloadURL());
-        if (br.containsHTML("No such user exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML("Datei nicht gefunden")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML("No such file with this filename")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("\"fname\" value=\"(.*?)\"").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        Form freeform = br.getFormBySubmitvalue("Kostenloser+Download");
+        if (freeform == null) {
+            freeform = br.getFormBySubmitvalue("Free+Download");
+            if (freeform == null) {
+                freeform = br.getFormbyKey("download1");
+            }
+        }
+        if (freeform != null) {
+            freeform.remove("method_premium");
+            br.submitForm(freeform);
+        }
+        if (br.containsHTML("This server is in maintenance mode")) return AvailableStatus.UNCHECKABLE;
+        if (br.containsHTML("You have reached the download-limit")) {
+            logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
+            return AvailableStatus.UNCHECKABLE;
+        }
+        if (br.containsHTML("(No such file|No such user exist|File not found)")) {
+            logger.warning("file is 99,99% offline, throwing \"file not found\" now...");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        String filename = br.getRegex("Filename:</b></td><td>(.*?)</td>").getMatch(0);
+        String filesize = br.getRegex("<small>\\((.*?)\\)</small>").getMatch(0);
+        if (filesize == null) {
+            filesize = br.getRegex("\\(([0-9]+ bytes)\\)").getMatch(0);
+            if (filesize == null) {
+                filesize = br.getRegex("</font>[ ]+\\((.*?)\\)(.*?)</font>").getMatch(0);
+            }
+        }
+        if (filename == null) {
+            logger.warning("The filename equals null, throwing \"file not found\" now...");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        filename = filename.replaceAll("(</b>|<b>|\\.html)", "");
         parameter.setName(filename.trim());
+        if (filesize != null) {
+            logger.info("Filesize found, filesize = " + filesize);
+            parameter.setDownloadSize(Regex.getSize(filesize));
+        }
         return AvailableStatus.TRUE;
     }
 

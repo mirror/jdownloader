@@ -40,9 +40,11 @@ public class LoShareCom extends PluginForHost {
     public String getAGBLink() {
         return "http://upload.loshare.com/rules.php";
     }
+
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("loshara", "loshare"));
     }
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -83,6 +85,7 @@ public class LoShareCom extends PluginForHost {
         Browser br2 = br.cloneBrowser();
         br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br2.postPage("http://loshare.com/ajax.php", "act=rticket&data=" + rticketData);
+        if (br2.containsHTML("\"error\":\"error\"")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No free slots available!", 60 * 60 * 1000l);
         String getdlData = br2.getRegex("text\":\"(.*?)\"").getMatch(0);
         if (getdlData == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // Waittime not needed right now, let's wait and see if they check it
