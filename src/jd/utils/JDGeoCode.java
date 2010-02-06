@@ -153,6 +153,7 @@ public class JDGeoCode {
         LANGUAGES.put("kg", new String[] { "Kongo", "KiKongo" });
         LANGUAGES.put("ki", new String[] { "Kikuyu", "Gĩkũyũ" });
         LANGUAGES.put("kj", new String[] { "Kwanyama", "Kuanyama" });
+        LANGUAGES.put("ku", new String[] { "Kurdish", "كوردی" });
         LANGUAGES.put("kk", new String[] { "Kazakh", "Қазақ тілі" });
         LANGUAGES.put("kl", new String[] { "Kalaallisut", "kalaallisut; kalaallit oqaasii" });
         LANGUAGES.put("km", new String[] { "Khmer", "ភាសាខ្មែរ" });
