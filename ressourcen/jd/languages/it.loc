@@ -55,6 +55,7 @@ download.error.message.rangeheaderparseerror = Formato non previsto intervallo h
 download.error.message.rangeheaders = Il server non supporta la gestione dei segmenti
 download.error.message.unavailable = Servizio temporaneamente non disponibile
 download.system.waitforconnection = Attuali %s/%s connessioni... in attesa
+downloadlink.status.error = Spazio su disco insufficiente
 downloadlink.status.error.agb_not_signed = TOC non accettati
 downloadlink.status.error.captcha_wrong = Errore captcha
 downloadlink.status.error.defect = Plugin obsoleto
@@ -839,8 +840,6 @@ interaction.batchreconnect.terminal = Interprete
 interaction.externreconnect.command = Commando (usa percorso assoluto)
 interaction.externreconnect.dummybat = Usa esecuzione speciale per windows
 interaction.externreconnect.parameter = Parametro (1 comando per riga)
-interaction.liveheader.progress.3_step = HTTP LiveHeader :
-interaction.liveheader.progress.4_step = (%s) HTTP LiveHeader
 interaction.shutdown.dialog.msg.closejd = <h2><font color="red">JDownloader verrà chiuso!</font></h2>
 interaction.shutdown.dialog.msg.hibernate = <h2><font color="red">Il sistema verra posto in ibernazione!</font></h2>
 interaction.shutdown.dialog.msg.shutdown = <h2><font color="red">Il sistema verrà spento!</font></h2>
@@ -855,6 +854,7 @@ jd.controlling.downloadwatchdog.stopmark.downloadlink = Marcatore di stop impost
 jd.controlling.downloadwatchdog.stopmark.filepackage = Marcatore di stop impostato su pacchetto file: %s
 jd.controlling.downloadwatchdog.stopmark.set = Marcatore di stop ancora impostato!
 jd.controlling.downloadwatchdog.stopping = Ferma tutti i download %s
+jd.controlling.reconnect.httpliveheader.step = HTTPLiveHeader: passo %s
 jd.controlling.reconnect.reconnector.progress.failed = Riconnessione fallita! Verifica le impostazioni di riconnessione e prova una Riconnessione manuale!
 jd.controlling.reconnect.reconnector.progress.failed2 = Riconnessione fallita troppo spesso! Autoriconnessione disabilitata! Controlla i parametri di riconnessione
 jd.controlling.singledownloadcontroller.askexists = Il file \r\n%s\r\n è già esistente. Cosa vuoi fare?
@@ -1401,6 +1401,7 @@ plugins.optional.jdunrar.status.extractfailedcrc = Estrazione fallita (errore CR
 plugins.optional.jdunrar.status.extractfailedpass = Estrazione fallita (password)
 plugins.optional.jdunrar.status.extracting = Estrazione in corso...
 plugins.optional.jdunrar.status.extractok = Estrazione OK
+plugins.optional.jdunrar.status.notenoughspace = Spazio insufficiente per l'estrazione
 plugins.optional.jdunrar.status.openingarchive = Archivio in apertura
 plugins.optional.jdunrar.status.passfound = Password trovata
 plugins.optional.langfileeditor.account.warning = SVN account mancante. Clicca qui per saperne di più.
