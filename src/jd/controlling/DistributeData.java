@@ -57,6 +57,8 @@ public class DistributeData extends Thread {
      */
     private static final Logger LOG = JDLogger.getLogger();
 
+    private static final int MAX_DECRYPTER_COUNT = 5;
+
     /**
      * Aufruf von Clipboard Überwachung
      */
@@ -238,7 +240,7 @@ public class DistributeData extends Thread {
             }
         }
 
-        final Jobber decryptJobbers = new Jobber(4);
+        final Jobber decryptJobbers = new Jobber(MAX_DECRYPTER_COUNT);
         for (int b = decryptedLinks.size() - 1; b >= 0; b--) {
             decryptJobbers.add(new DThread(decryptedLinks.get(b)));
         }
