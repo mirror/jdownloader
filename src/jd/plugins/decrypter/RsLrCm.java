@@ -18,12 +18,16 @@ package jd.plugins.decrypter;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.gui.swing.components.Balloon;
 import jd.nutils.encoding.Encoding;
+import jd.nutils.nativeintegration.LocalBrowser;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
@@ -40,6 +44,8 @@ public class RsLrCm extends PluginForDecrypt {
     private static Pattern linkPattern = Pattern.compile("onclick=\"getFile\\('([^;]*)'\\)", Pattern.CASE_INSENSITIVE);
     private static String strCaptchaPattern = "<img src=\"(captcha-[^\"]*\\.png)\" ";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?rs-layer\\.com/(.+)\\.html", Pattern.CASE_INSENSITIVE);
+    private static long LATEST_OPENED_CNL_TIME = 0;
+    private static HashMap<String, Boolean> CNL_URL_MAP = new HashMap<String, Boolean>();
 
     public RsLrCm(PluginWrapper wrapper) {
         super(wrapper);
@@ -65,6 +71,16 @@ public class RsLrCm extends PluginForDecrypt {
         String parameter = param.toString();
 
         br.getPage(parameter);
+        //CNL Dummy
+        if ((System.currentTimeMillis() - LATEST_OPENED_CNL_TIME) > 60 * 1000 && !CNL_URL_MAP.containsKey(param.toString())) {
+            if (br.getRegex("\\<\\!\\-\\- cnl \\-\\-\\>").matches()) {
+                LATEST_OPENED_CNL_TIME = System.currentTimeMillis();
+                LocalBrowser.openDefaultURL(new URL(parameter));
+                CNL_URL_MAP.put(parameter, Boolean.TRUE);
+                Balloon.show(JDL.L("jd.controlling.CNL2.checkText.title", "Click'n'Load"), null, JDL.L("jd.controlling.CNL2.checkText.message", "Click'n'Load URL opened"));
+                return decryptedLinks;
+            }
+        }
         if (parameter.indexOf("/link-") != -1) {
             String link = br.getRegex("<frame.*?src=\"(.*?)\".*?>").getMatch(0);
             if (link == null) return null;
@@ -125,7 +141,7 @@ public class RsLrCm extends PluginForDecrypt {
                 }
             }
         }
-        
+
         return decryptedLinks;
     }
 }
