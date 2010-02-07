@@ -25,7 +25,6 @@ import javax.crypto.spec.SecretKeySpec;
 import jd.PluginWrapper;
 import jd.controlling.DistributeData;
 import jd.controlling.JDLogger;
-import jd.controlling.LinkGrabberController;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Base64;
 import jd.nutils.encoding.Encoding;
@@ -62,7 +61,7 @@ public class CNL extends PluginForDecrypt {
             int i = p.indexOf("=");
             String key = p.substring(0, i);
             if (key.equalsIgnoreCase("passwords")) {
-                passwords = Encoding.Base64Decode(p.substring(i + 1));
+                // passwords = Encoding.Base64Decode(p.substring(i + 1));
                 continue;
             }
             if (key.equalsIgnoreCase("source")) {
@@ -78,10 +77,8 @@ public class CNL extends PluginForDecrypt {
                 continue;
             }
 
-            decrypt(crypted, jk, null, passwords, source);
-
         }
-
+        decryptedLinks.addAll(decrypt(crypted, jk, null, passwords, source));
         return decryptedLinks;
     }
 
@@ -106,7 +103,7 @@ public class CNL extends PluginForDecrypt {
      * @param passwords
      * @param source
      */
-    public static void decrypt(final String crypted, final String jk, final String k, final String password, final String source) {
+    public static ArrayList<DownloadLink> decrypt(final String crypted, final String jk, final String k, final String password, final String source) {
         final byte[] key;
 
         if (jk != null) {
@@ -134,6 +131,6 @@ public class CNL extends PluginForDecrypt {
                 l.setBrowserUrl(source);
             }
         }
-        LinkGrabberController.getInstance().addLinks(links, false, false);
+        return links;
     }
 }
