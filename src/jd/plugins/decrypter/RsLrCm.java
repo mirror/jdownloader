@@ -75,7 +75,7 @@ public class RsLrCm extends PluginForDecrypt {
         if ((System.currentTimeMillis() - LATEST_OPENED_CNL_TIME) > 60 * 1000 && !CNL_URL_MAP.containsKey(param.toString())) {
             if (br.getRegex("\\<\\!\\-\\- cnl \\-\\-\\>").matches()) {
                 LATEST_OPENED_CNL_TIME = System.currentTimeMillis();
-                LocalBrowser.openDefaultURL(new URL(parameter));
+                LocalBrowser.openDefaultURL(new URL(parameter+"?jd=1"));
                 CNL_URL_MAP.put(parameter, Boolean.TRUE);
                 Balloon.show(JDL.L("jd.controlling.CNL2.checkText.title", "Click'n'Load"), null, JDL.L("jd.controlling.CNL2.checkText.message", "Click'n'Load URL opened"));
                 return decryptedLinks;
