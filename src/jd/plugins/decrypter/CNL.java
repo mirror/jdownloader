@@ -18,16 +18,29 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import javax.crypto.Cipher;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
+
 import jd.PluginWrapper;
+import jd.controlling.DistributeData;
+import jd.controlling.JDLogger;
+import jd.controlling.LinkGrabberController;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Base64;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.JDHexUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "Click n Load" }, urls = { "cnl://.*?\\..*?/.*?/" }, flags = { 0 })
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.ContextFactory;
+import org.mozilla.javascript.Scriptable;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "Click n Load", "Click n Load" }, urls = { "cnl://.*?\\..*?/.*?/", "http://jdownloader\\.org/cnl/.*?/" }, flags = { 0 })
 public class CNL extends PluginForDecrypt {
 
     public CNL(PluginWrapper wrapper) {
@@ -37,6 +50,9 @@ public class CNL extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String code = new Regex(param, "cnl://jdownloader.org/(.*?)/").getMatch(0);
+        if (code == null) {
+            code = new Regex(param, "http://jdownloader.org/cnl/(.*?)/").getMatch(0);
+        }
         String[] params = Regex.getLines(Encoding.Base64Decode(code));
         String passwords = null;
         String source = null;
@@ -62,11 +78,62 @@ public class CNL extends PluginForDecrypt {
                 continue;
             }
 
-            // CNL2.decrypt(crypted, jk, null, passwords, source);
+            decrypt(crypted, jk, null, passwords, source);
 
         }
 
         return decryptedLinks;
     }
 
+    public static String decrypt(final byte[] b, final byte[] key) {
+        final Cipher cipher;
+        try {
+            final IvParameterSpec ivSpec = new IvParameterSpec(key);
+            final SecretKeySpec skeySpec = new SecretKeySpec(key, "AES");
+            cipher = Cipher.getInstance("AES/CBC/NoPadding");
+            cipher.init(Cipher.DECRYPT_MODE, skeySpec, ivSpec);
+            return new String(cipher.doFinal(b));
+        } catch (Exception e) {
+            JDLogger.exception(e);
+        }
+        return null;
+    }
+
+    /**
+     * @param crypted
+     * @param jk
+     * @param k
+     * @param passwords
+     * @param source
+     */
+    public static void decrypt(final String crypted, final String jk, final String k, final String password, final String source) {
+        final byte[] key;
+
+        if (jk != null) {
+            final Context cx = ContextFactory.getGlobal().enter();
+            final Scriptable scope = cx.initStandardObjects();
+            final String fun = jk + "  f()";
+            final Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
+
+            key = JDHexUtils.getByteArray(Context.toString(result));
+            Context.exit();
+        } else {
+            key = JDHexUtils.getByteArray(k);
+        }
+        final byte[] baseDecoded = Base64.decode(crypted);
+        final String decryted = decrypt(baseDecoded, key).trim();
+
+        final String passwords[] = Regex.getLines(password);
+
+        final ArrayList<DownloadLink> links = new DistributeData(Encoding.htmlDecode(decryted)).findLinks();
+        for (final DownloadLink link : links) {
+            link.addSourcePluginPasswords(passwords);
+        }
+        for (final DownloadLink l : links) {
+            if (source != null) {
+                l.setBrowserUrl(source);
+            }
+        }
+        LinkGrabberController.getInstance().addLinks(links, false, false);
+    }
 }
