@@ -228,13 +228,14 @@ public class UploadingCom extends PluginForHost {
         }
         br.setFollowRedirects(false);
         String fileID = br.getRegex("file_id: (\\d+)").getMatch(0);
-        if (fileID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String code = br.getRegex("code: \"(.*?)\"").getMatch(0); 
+        if (fileID == null || code == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String starttimer = br.getRegex("start_timer\\((\\d+)\\);").getMatch(0);
         String redirect = null;
         if (starttimer != null) {
             sleep((Long.parseLong(starttimer) + 2) * 1000l, downloadLink);
         }
-        br.postPage("http://uploading.com/files/get/?JsHttpRequest=" + System.currentTimeMillis() + "-xml", "file_id=" + fileID + "&action=get_link&pass=");
+        br.postPage("http://uploading.com/files/get/?JsHttpRequest=" + System.currentTimeMillis() + "-xml", "file_id=" + fileID + "&code=" + code + "&action=get_link&pass=");
         redirect = br.getRegex("link\": \"(http.*?)\"").getMatch(0);
         if (redirect != null) {
             redirect = redirect.replaceAll("\\\\/", "/");
@@ -243,7 +244,6 @@ public class UploadingCom extends PluginForHost {
             if (br.containsHTML("Your download was not found or")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Your download was not found or has expired. Please try again later", 15 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (redirect == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         return redirect;
     }
 
