@@ -68,14 +68,15 @@ public class RsLrCm extends PluginForDecrypt {
     // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        String parameter = param.toString().replace("-jd.html", ".html");
 
         br.getPage(parameter);
         //CNL Dummy
         if ((System.currentTimeMillis() - LATEST_OPENED_CNL_TIME) > 60 * 1000 && !CNL_URL_MAP.containsKey(param.toString())) {
             if (br.getRegex("\\<\\!\\-\\- cnl \\-\\-\\>").matches()) {
                 LATEST_OPENED_CNL_TIME = System.currentTimeMillis();
-                LocalBrowser.openDefaultURL(new URL(parameter+"?jd=1"));
+               
+                LocalBrowser.openDefaultURL(new URL( parameter.substring(0, parameter.lastIndexOf("."))+"-jd.html"));
                 CNL_URL_MAP.put(parameter, Boolean.TRUE);
                 Balloon.show(JDL.L("jd.controlling.CNL2.checkText.title", "Click'n'Load"), null, JDL.L("jd.controlling.CNL2.checkText.message", "Click'n'Load URL opened"));
                 return decryptedLinks;
