@@ -54,7 +54,7 @@ public class ExtaBitCom extends PluginForHost {
                 filename = br.getRegex("extabit\\.com/file/.*?'>(.*?)</a>").getMatch(0);
             }
         }
-        String filesize = br.getRegex("File size: <span class=.*?>(.*?)</").getMatch(0);
+        String filesize = br.getRegex("File size: <b class=.*?>(.*?)</").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
         if (filesize != null) downloadLink.setDownloadSize(Regex.getSize(filesize));
@@ -101,6 +101,7 @@ public class ExtaBitCom extends PluginForHost {
         jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
         if ((dl.getConnection().getContentType().contains("html"))) {
             if (dl.getConnection().getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 60 * 60 * 1000l);
+            if (dl.getConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
