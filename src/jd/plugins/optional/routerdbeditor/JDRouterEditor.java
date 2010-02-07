@@ -145,6 +145,7 @@ public class JDRouterEditor extends PluginOptional implements ControlListener {
                 if (filename == null) return;
                 if (!filename.endsWith(".xml")) filename = filename.concat(".xml").toString();
                 currentfile = JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/jd/router/" + filename;
+                if(new File(currentfile).exists()) return;
                 router.cleanRouter();
                 saveToFile();
                 getFiles();
