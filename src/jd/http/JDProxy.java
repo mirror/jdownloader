@@ -30,7 +30,7 @@ public class JDProxy extends Proxy {
         return user;
     }
 
-    public void setUser(String user) {
+    public void setUser(final String user) {
         this.user = user;
     }
 
@@ -38,7 +38,7 @@ public class JDProxy extends Proxy {
         return pass;
     }
 
-    public void setPass(String pass) {
+    public void setPass(final String pass) {
         this.pass = pass;
     }
 
@@ -52,21 +52,21 @@ public class JDProxy extends Proxy {
         return port;
     }
 
-    public JDProxy(java.net.Proxy.Type type, SocketAddress sa) {
+    public JDProxy(final java.net.Proxy.Type type, final SocketAddress sa) {
         super(type, sa);
         this.host = new Regex(sa.toString(), "(.*)\\/").getMatch(0);
     }
 
-    public JDProxy(java.net.Proxy.Type type, String host, int port) {
+    public JDProxy(final java.net.Proxy.Type type, final String host, final int port) {
         super(type, new InetSocketAddress(getInfo(host, "" + port)[0], port));
         this.port = port;
         this.host = getInfo(host, "" + port)[0];
     }
 
-    private static String[] getInfo(String host, String port) {
-        String[] info = new String[2];
+    private static String[] getInfo(final String host, final String port) {
+        final String[] info = new String[2];
         if (host == null) return info;
-        String tmphost = host.replaceFirst("http://", "").replaceFirst("https://", "");
+        final String tmphost = host.replaceFirst("http://", "").replaceFirst("https://", "");
         String tmpport = new Regex(host, ".*?:(\\d+)").getMatch(0);
         if (tmpport != null) {
             info[1] = "" + tmpport;
@@ -85,13 +85,13 @@ public class JDProxy extends Proxy {
         return info;
     }
 
-    public JDProxy(String hostAndPort) {
+    public JDProxy(final String hostAndPort) {
         super(JDProxy.Type.HTTP, new InetSocketAddress(getInfo(hostAndPort, null)[0], Integer.parseInt(getInfo(hostAndPort, null)[1])));
         port = Integer.parseInt(getInfo(hostAndPort, null)[1]);
         host = getInfo(hostAndPort, null)[0];
     }
 
-    public JDProxy(String host, int port, String user, String pass) {
+    public JDProxy(final String host, final int port, final String user, final String pass) {
         super(JDProxy.Type.HTTP, new InetSocketAddress(getInfo(host, "" + port)[0], port));
         this.port = port;
         this.user = user;
@@ -105,8 +105,7 @@ public class JDProxy extends Proxy {
     }
 
     public Type type() {
-        if (direct) return Type.DIRECT;
-        return super.type();
+        return (direct) ? Type.DIRECT : super.type();
     }
 
     public String getHost() {
