@@ -254,7 +254,6 @@ public class JDUtilities {
         final String message = e.getLocalizedMessage();
         final String rets = ret.toString().trim();
         return message != null ? rets + ": " + message : rets;
-
     }
 
     public static String createContainerString(final ArrayList<DownloadLink> downloadLinks, final String encryption) {
@@ -281,7 +280,6 @@ public class JDUtilities {
             if (pfc.get(i).getHost().equalsIgnoreCase(encryption)) { return pfc.get(i).getPlugin().encrypt(string); }
         }
         return null;
-
     }
 
     public static String getUserInput(final String message, final DownloadLink link) {
@@ -423,7 +421,6 @@ public class JDUtilities {
         // System.out.println("Ressource: " + ressource);
         if (ressource == null) {
             ressource = Thread.currentThread().getContextClassLoader().getResource("jd/update/Main.class");
-
         }
         String dir = ressource + "";
         // System.out.println(dir);
@@ -496,7 +493,7 @@ public class JDUtilities {
     public static PluginsC getPluginForContainer(final String container, final String containerPath) {
         if (containerPath != null && CONTAINER_PLUGINS.containsKey(containerPath)) { return CONTAINER_PLUGINS.get(containerPath); }
         PluginsC ret = null;
-        for (CPluginWrapper act : CPluginWrapper.getCWrapper()) {
+        for (final CPluginWrapper act : CPluginWrapper.getCWrapper()) {
             if (act.getHost().equalsIgnoreCase(container)) {
                 ret = (PluginsC) act.getNewPluginInstance();
                 if (containerPath != null) {
@@ -517,28 +514,28 @@ public class JDUtilities {
      * @return Ein passendes Plugin oder null
      */
     public static PluginForDecrypt getPluginForDecrypt(final String host) {
-        for (DecryptPluginWrapper pHost : DecryptPluginWrapper.getDecryptWrapper()) {
+        for (final DecryptPluginWrapper pHost : DecryptPluginWrapper.getDecryptWrapper()) {
             if (pHost.getHost().equals(host.toLowerCase(Locale.getDefault()))) return pHost.getPlugin();
         }
         return null;
     }
 
     public static PluginForHost getPluginForHost(final String host) {
-        for (HostPluginWrapper pHost : HostPluginWrapper.getHostWrapper()) {
+        for (final HostPluginWrapper pHost : HostPluginWrapper.getHostWrapper()) {
             if (pHost.getHost().equals(host.toLowerCase(Locale.getDefault()))) return pHost.getPlugin();
         }
         return null;
     }
 
     public static PluginForHost getNewPluginForHostInstance(final String host) {
-        for (HostPluginWrapper pHost : HostPluginWrapper.getHostWrapper()) {
+        for (final HostPluginWrapper pHost : HostPluginWrapper.getHostWrapper()) {
             if (pHost.getHost().equals(host.toLowerCase(Locale.getDefault()))) return (PluginForHost) pHost.getNewPluginInstance();
         }
         return null;
     }
 
     public static OptionalPluginWrapper getOptionalPlugin(final String id) {
-        for (OptionalPluginWrapper wrapper : OptionalPluginWrapper.getOptionalWrapper()) {
+        for (final OptionalPluginWrapper wrapper : OptionalPluginWrapper.getOptionalWrapper()) {
             if (wrapper.getID() != null && wrapper.getID().equalsIgnoreCase(id)) return wrapper;
         }
         return null;
@@ -547,7 +544,9 @@ public class JDUtilities {
     public static ArrayList<HostPluginWrapper> getPremiumPluginsForHost() {
         final ArrayList<HostPluginWrapper> plugins = new ArrayList<HostPluginWrapper>(HostPluginWrapper.getHostWrapper());
         for (int i = plugins.size() - 1; i >= 0; --i) {
-            if (!plugins.get(i).isPremiumEnabled()) plugins.remove(i);
+            if (!plugins.get(i).isPremiumEnabled()) {
+                plugins.remove(i);
+            }
         }
         return plugins;
     }
@@ -558,8 +557,7 @@ public class JDUtilities {
      * @return RevisionID
      */
     public static String getRevision() {
-        if (REVISION != null) return REVISION;
-        return (REVISION = getRevisionNumber() + "");
+        return (REVISION != null) ? REVISION : (REVISION = getRevisionNumber() + "");
     }
 
     public static int getRevisionNumber() {
@@ -576,11 +574,7 @@ public class JDUtilities {
 
     public static int getRunType() {
         final String caller = (Thread.currentThread().getContextClassLoader().getResource("jd") + "");
-        if (caller.matches("jar\\:.*\\.jar\\!.*")) {
-            return RUNTYPE_LOCAL_JARED;
-        } else {
-            return RUNTYPE_LOCAL;
-        }
+        return (caller.matches("jar\\:.*\\.jar\\!.*")) ? RUNTYPE_LOCAL_JARED : RUNTYPE_LOCAL;
     }
 
     public static void setJDargs(final String[] args) {
@@ -604,7 +598,9 @@ public class JDUtilities {
     public static void restartJD(final boolean tinybypass) {
         new Thread(new Runnable() {
             public void run() {
-                if (JDUtilities.getController() != null) JDUtilities.getController().prepareShutdown(false);
+                if (JDUtilities.getController() != null) {
+                    JDUtilities.getController().prepareShutdown(false);
+                }
 
                 final List<String> lst = ManagementFactory.getRuntimeMXBean().getInputArguments();
                 final ArrayList<String> jargs = new ArrayList<String>();
@@ -615,7 +611,7 @@ public class JDUtilities {
                 boolean minheap = false;
                 boolean maxheap = false;
                 System.out.println("RESTART NOW");
-                for (String h : lst) {
+                for (final String h : lst) {
                     if (h.contains("Xmx")) {
                         xmxset = true;
                         if (Runtime.getRuntime().maxMemory() < 533000000) {
@@ -633,7 +629,9 @@ public class JDUtilities {
                     }
                     jargs.add(h);
                 }
-                if (!xmxset) jargs.add("-Xmx512m");
+                if (!xmxset) {
+                    jargs.add("-Xmx512m");
+                }
                 if (OSDetector.isLinux()) {
                     if (!xmsset) jargs.add("-Xms64m");
                     if (!useconc) jargs.add("-XX:+UseConcMarkSweepGC");
@@ -643,25 +641,23 @@ public class JDUtilities {
                 jargs.add("-jar");
                 jargs.add("JDownloader.jar");
 
-                String[] javaArgs = jargs.toArray(new String[jargs.size()]);
-                String[] finalArgs = new String[JD_ARGUMENTS.length + javaArgs.length];
+                final String[] javaArgs = jargs.toArray(new String[jargs.size()]);
+                final String[] finalArgs = new String[JD_ARGUMENTS.length + javaArgs.length];
                 System.arraycopy(javaArgs, 0, finalArgs, 0, javaArgs.length);
                 System.arraycopy(JD_ARGUMENTS, 0, finalArgs, javaArgs.length, JD_ARGUMENTS.length);
 
                 final ArrayList<File> restartfiles = JDIO.listFiles(JDUtilities.getResourceFile("update"));
                 final String javaPath = new File(new File(System.getProperty("sun.boot.library.path")), "javaw.exe").getAbsolutePath();
-                if (restartfiles != null && restartfiles.size() > 0 || tinybypass) {
 
+                if (restartfiles != null && restartfiles.size() > 0 || tinybypass) {
                     if (OSDetector.isMac()) {
                         LOGGER.info(JDUtilities.runCommand("java", new String[] { "-jar", "tools/tinyupdate.jar", "-restart" }, getResourceFile(".").getAbsolutePath(), 0));
                     } else {
-
                         if (new File(javaPath).exists()) {
                             LOGGER.info(JDUtilities.runCommand(javaPath, new String[] { "-jar", "tools/tinyupdate.jar", "-restart" }, getResourceFile(".").getAbsolutePath(), 0));
                         } else {
                             LOGGER.info(JDUtilities.runCommand("java", new String[] { "-jar", "tools/tinyupdate.jar", "-restart" }, getResourceFile(".").getAbsolutePath(), 0));
                         }
-
                     }
                 } else {
                     if (OSDetector.isMac()) {
