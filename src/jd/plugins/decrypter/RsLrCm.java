@@ -76,7 +76,7 @@ public class RsLrCm extends PluginForDecrypt {
         if (isExternInterfaceActive()) {
 
             // CNL Dummy
-            if ((System.currentTimeMillis() - LATEST_OPENED_CNL_TIME) > 60 * 1000 && !CNL_URL_MAP.containsKey(param.toString())) {
+            if ((System.currentTimeMillis() - LATEST_OPENED_CNL_TIME) > 60 * 1000 && !CNL_URL_MAP.containsKey(parameter)) {
                 if (br.getRegex("\\<\\!\\-\\- cnl \\-\\-\\>").matches()) {
                     LATEST_OPENED_CNL_TIME = System.currentTimeMillis();
 
@@ -96,10 +96,11 @@ public class RsLrCm extends PluginForDecrypt {
             boolean cont = false;
             for (int i = 1; i < 6; i++) {
                 Form[] forms = br.getForms();
-                if (forms != null && forms.length != 0 && forms[0] != null && br.getRegex(linkPattern).getColumn(0).length == 0) {
+                if (forms != null && forms.length != 0 && forms[0] != null && br.getRegex(linkPattern).getColumn(0).length == 0&&!br.containsHTML("\\/img\\/button")) {
                     Form captchaForm = forms[0];
                     String captchaFileName = br.getRegex(strCaptchaPattern).getMatch(0);
-                    if (captchaFileName == null) { return null; }
+                    if (captchaFileName == null) { 
+                        return null; }
                     String captchaUrl = "http://rs-layer.com/" + captchaFileName;
                     String captchaCode = getCaptchaCode(captchaUrl, param);
                     captchaForm.put("captcha_input", captchaCode);
