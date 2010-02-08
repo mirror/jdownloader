@@ -65,6 +65,7 @@ public class Megauploadcom extends PluginForHost {
     private static int simultanpremium = 1;
     private boolean onlyapi = false;
     private String wait = null;
+    private boolean free = false;
 
     /*
      * every jd session starts with 1=default, because no waittime does not work
@@ -194,7 +195,7 @@ public class Megauploadcom extends PluginForHost {
 
     @Override
     public void handlePremium(DownloadLink parameter, Account account) throws Exception {
-        boolean free = false;
+        free = false;
         STATUS filestatus = null;
         synchronized (PREMLOCK) {
             filestatus = getFileStatus(parameter);
@@ -564,7 +565,11 @@ public class Megauploadcom extends PluginForHost {
             if (br.containsHTML("A temporary access restriction is place") || br.containsHTML("We have detected an elevated")) {
                 /* ip blocked by megauploaded */
                 wait = br.getRegex("Please check back in (\\+d) minutes").getMatch(0);
-                logger.info("Megaupload blocked this IP(1): " + wait + " mins");
+                if (wait != null) {
+                    logger.info("Megaupload blocked this IP(1): " + wait + " mins");
+                } else {
+                    logger.severe("Waittime not found!: " + br.toString());
+                }
                 l.setAvailableStatus(AvailableStatus.UNCHECKABLE);
                 return;
             }
@@ -714,11 +719,13 @@ public class Megauploadcom extends PluginForHost {
         if (br.containsHTML("location='http://www\\.megaupload\\.com/\\?c=msg")) {
             br.getPage("http://www.megaupload.com/?c=msg");
             wait = br.getRegex("Please check back in (\\+d) minutes").getMatch(0);
-            logger.info("Megaupload blocked this IP(3): " + wait + " mins");
             if (wait != null) {
+                logger.info("Megaupload blocked this IP(3): " + wait + " mins");
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait.trim()) * 60 * 1000l);
-            } else
+            } else {
+                logger.severe("Waittime not found!: " + br.toString());
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 25 * 60 * 1000l);
+            }
         }
         String url = br.getRegex("id=\"downloadlink\">.*?<a href=\"(.*?)\"").getMatch(0);
         doDownload(link, url, true, account);
@@ -836,8 +843,17 @@ public class Megauploadcom extends PluginForHost {
     }
 
     @Override
+    public boolean isPremiumDownload() {
+        /* free user accounts are no premium accounts */
+        boolean ret = super.isPremiumDownload();
+        if (ret && free) ret = false;
+        return ret;
+    }
+
+    @Override
     public void handleFree(DownloadLink parameter) throws Exception {
         // usepremium = false;
+
         STATUS filestatus = getFileStatus(parameter);
         switch (filestatus) {
         case API:

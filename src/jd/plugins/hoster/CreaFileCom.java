@@ -44,7 +44,7 @@ public class CreaFileCom extends PluginForHost {
 
     private static final String WAIT1 = "WAIT1";
     private static final String WAIT2 = "WAIT2";
-    private static final String CHUNKS = "CHUNKS";
+    private static final String CHUNKS = "CHUNKS2";
 
     private void setConfigElements() {
         ConfigEntry cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), WAIT1, "Activate waittime1").setDefaultValue(false);
@@ -112,7 +112,7 @@ public class CreaFileCom extends PluginForHost {
         }
         if (dllink == null && dllink0 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         int maxchunks = 1;
-        boolean chunks = getPluginConfig().getBooleanProperty(CHUNKS, true);
+        boolean chunks = getPluginConfig().getBooleanProperty(CHUNKS, false);
         if (chunks) maxchunks = 0;
         if (dllink == null && dllink0 != null) {
             // Downloading using the slow download link the server doesn't allow

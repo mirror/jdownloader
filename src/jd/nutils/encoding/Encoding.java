@@ -51,6 +51,11 @@ public class Encoding {
         } catch (Exception e) {
             JDLogger.exception(e);
         }
+        return htmlOnlyDecode(str);
+    }
+
+    public static String htmlOnlyDecode(String str) {
+        if (str == null) return null;
         str = HTMLEntities.unhtmlentities(str);
 
         str = HTMLEntities.unhtmlAmpersand(str);

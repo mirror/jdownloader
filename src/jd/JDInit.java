@@ -406,6 +406,11 @@ public class JDInit {
         } catch (Throwable e) {
             e.printStackTrace();
         }
+        try {
+            new CPluginWrapper("Amazon MP3", "AMZ", ".+\\.amz");
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
     }
 
     public static void loadPluginForDecrypt() {

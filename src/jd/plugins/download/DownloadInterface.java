@@ -316,9 +316,9 @@ abstract public class DownloadInterface {
                 connection.setReadTimeout(getReadTimeout());
                 connection.setConnectTimeout(getRequestTimeout());
                 if (connection.getHeaderField("Content-Encoding") != null && connection.getHeaderField("Content-Encoding").equalsIgnoreCase("gzip")) {
-                    inputStream = new MeteredInputStream(DownloadWatchDog.getInstance().getConnectionManager().getManagedThrottledInputStream(new GZIPInputStream(connection.getInputStream())), new AverageSpeedMeter(5));
+                    inputStream = new MeteredInputStream(DownloadWatchDog.getInstance().getConnectionManager().getManagedThrottledInputStream(new GZIPInputStream(connection.getInputStream())), new AverageSpeedMeter(15));
                 } else {
-                    inputStream = new MeteredInputStream(DownloadWatchDog.getInstance().getConnectionManager().getManagedThrottledInputStream(connection.getInputStream()), new AverageSpeedMeter(5));
+                    inputStream = new MeteredInputStream(DownloadWatchDog.getInstance().getConnectionManager().getManagedThrottledInputStream(connection.getInputStream()), new AverageSpeedMeter(15));
                 }
 
                 int miniblock = 0;
