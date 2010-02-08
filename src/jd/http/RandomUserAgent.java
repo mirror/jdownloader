@@ -23,7 +23,13 @@ import java.util.Random;
 
 import jd.nutils.Formatter;
 
-public class RandomUserAgent {
+public final class RandomUserAgent {
+
+    /**
+     * Don't let anyone instantiate this class.
+     */
+    private RandomUserAgent() {
+    }
 
     /**
      * Initial browser release date. Used for invalid randomDate() calls.
@@ -137,9 +143,7 @@ public class RandomUserAgent {
      * @return Random Firefox or Internet Explorer user-agent string
      */
     public static String generate() {
-        Random rand = new Random();
-
-        if ((rand.nextInt() % 2) == 0)
+        if ((new Random().nextInt() % 2) == 0)
             return generateFF();
         else
             return generateIE();
@@ -152,7 +156,7 @@ public class RandomUserAgent {
      */
     public static String generateFF() {
         initData();
-        Random rand = new Random();
+        final Random rand = new Random();
 
         String platform = "";
         String osAndArch = "";
@@ -161,14 +165,13 @@ public class RandomUserAgent {
         String macAddon = "";
 
         /* Get system infos */
-        int i = rand.nextInt(system.size());
+        final int i = rand.nextInt(system.size());
         do {
             platform = system.get(i).platform;
-            String osName = system.get(i).osName;
-            String[] archs = system.get(i).archs.split("\\|");
-            String arch = archs[rand.nextInt(archs.length)];
-            boolean inverseOrder = system.get(i).inverseOrder;
-            if (!inverseOrder)
+            final String osName = system.get(i).osName;
+            final String[] archs = system.get(i).archs.split("\\|");
+            final String arch = archs[rand.nextInt(archs.length)];
+            if (!system.get(i).inverseOrder)
                 osAndArch = osName + " " + arch;
             else
                 osAndArch = arch + " " + osName;
@@ -177,23 +180,29 @@ public class RandomUserAgent {
         /* Get optional strings */
         if (system.get(i).osName.equalsIgnoreCase("Windows")) {
             winAddon = dotNetString();
-            if (winAddon.trim().length() > 0) winAddon = (" (" + winAddon.trim() + ")").replace("(; ", "(");
+            if (winAddon.trim().length() > 0) {
+                winAddon = (" (" + winAddon.trim() + ")").replace("(; ", "(");
+            }
         } else if (system.get(i).osName.equalsIgnoreCase("Linux")) {
             linuxAddon = linuxAddons.get(rand.nextInt(linuxAddons.size()));
-            if (linuxAddon != " ") linuxAddon = " " + linuxAddon.trim() + " ";
+            if (linuxAddon != " ") {
+                linuxAddon = " " + linuxAddon.trim() + " ";
+            }
         } else if (system.get(i).osName.equalsIgnoreCase("Mac OS X")) {
             macAddon = macAddons.get(rand.nextInt(macAddons.size()));
-            if (macAddon != "") macAddon = " " + macAddon.trim();
+            if (macAddon != "") {
+                macAddon = " " + macAddon.trim();
+            }
         }
 
         /* Get Browser language */
-        String lang = langs.get(rand.nextInt(langs.size()));
+        final String lang = langs.get(rand.nextInt(langs.size()));
 
         /* Get Firefox branch revision, version and release date */
-        String[] tmpFFVersionInfos = ffVersionInfos.get(rand.nextInt(ffVersionInfos.size())).split("\\|");
-        String ffRev = tmpFFVersionInfos[0];
-        String ffVersion = tmpFFVersionInfos[1];
-        String[] ffReleaseDate = tmpFFVersionInfos[2].split("\\.");
+        final String[] tmpFFVersionInfos = ffVersionInfos.get(rand.nextInt(ffVersionInfos.size())).split("\\|");
+        final String ffRev = tmpFFVersionInfos[0];
+        final String ffVersion = tmpFFVersionInfos[1];
+        final String[] ffReleaseDate = tmpFFVersionInfos[2].split("\\.");
 
         return "Mozilla/5.0 (" + platform + "; U; " + osAndArch + macAddon + "; " + lang + "; rv:" + ffRev + ") Gecko/" + randomDate(ffReleaseDate) + linuxAddon + "Firefox/" + ffVersion + winAddon;
     }
@@ -205,32 +214,46 @@ public class RandomUserAgent {
      */
     public static String generateIE() {
         initData();
-        Random rand = new Random();
+        final Random rand = new Random();
 
-        String ieVersion = ieVersions.get(rand.nextInt(ieVersions.size()));
-        String winVersion = winVersions.split("\\|")[rand.nextInt(winVersions.split("\\|").length)];
+        final String ieVersion = ieVersions.get(rand.nextInt(ieVersions.size()));
+        final String winVersion = winVersions.split("\\|")[rand.nextInt(winVersions.split("\\|").length)];
         String trident = "";
-        if (ieVersion.equalsIgnoreCase("8.0")) trident = "; Trident/4.0";
+        if (ieVersion.equalsIgnoreCase("8.0")) {
+            trident = "; Trident/4.0";
+        }
 
         return "Mozilla/4.0 (compatible; MSIE " + ieVersion + "; Windows " + winVersion + trident + dotNetString() + ")";
     }
 
     private static String dotNetString() {
-        Random rand = new Random();
+        final Random rand = new Random();
 
         String dotNet10 = "; " + winAddons.get(0)[rand.nextInt(winAddons.get(0).length)];
-        if (dotNet10.equalsIgnoreCase("; ")) dotNet10 = "";
+        if (dotNet10.equalsIgnoreCase("; ")) {
+            dotNet10 = "";
+        }
 
         String dotNet20 = "; " + winAddons.get(1)[rand.nextInt(winAddons.get(1).length)];
-        if (dotNet20.equalsIgnoreCase("; ")) dotNet20 = "";
+        if (dotNet20.equalsIgnoreCase("; ")) {
+            dotNet20 = "";
+        }
 
         String dotNet30 = "";
-        if (dotNet20.length() != 0) dotNet30 = "; " + winAddons.get(2)[rand.nextInt(winAddons.get(2).length)];
-        if (dotNet30.equalsIgnoreCase("; ")) dotNet30 = "";
+        if (dotNet20.length() != 0) {
+            dotNet30 = "; " + winAddons.get(2)[rand.nextInt(winAddons.get(2).length)];
+        }
+        if (dotNet30.equalsIgnoreCase("; ")) {
+            dotNet30 = "";
+        }
 
         String dotNet35 = "";
-        if (dotNet30.length() != 0) dotNet35 = "; " + winAddons.get(3)[rand.nextInt(winAddons.get(3).length)];
-        if (dotNet35.equalsIgnoreCase("; ")) dotNet35 = "";
+        if (dotNet30.length() != 0) {
+            dotNet35 = "; " + winAddons.get(3)[rand.nextInt(winAddons.get(3).length)];
+        }
+        if (dotNet35.equalsIgnoreCase("; ")) {
+            dotNet35 = "";
+        }
 
         return dotNet10 + dotNet20 + dotNet30 + dotNet35;
     }
@@ -241,25 +264,29 @@ public class RandomUserAgent {
      * 
      * @return random date
      */
-    private static String randomDate(String[] releaseDate) {
+    private static String randomDate(final String[] releaseDate) {
         String returnDate = RandomUserAgent.releaseDate[0] + RandomUserAgent.releaseDate[1] + RandomUserAgent.releaseDate[2];
         if (releaseDate == null || releaseDate.length < 3 || releaseDate.length > 4) return returnDate;
 
-        Calendar rCal = new GregorianCalendar(Integer.parseInt(releaseDate[0]), Integer.parseInt(releaseDate[1]) - 1, Integer.parseInt(releaseDate[2]));
-        long rTime = rCal.getTimeInMillis();
-        long cTime = new GregorianCalendar().getTimeInMillis();
+        final Calendar rCal = new GregorianCalendar(Integer.parseInt(releaseDate[0]), Integer.parseInt(releaseDate[1]) - 1, Integer.parseInt(releaseDate[2]));
+        final long rTime = rCal.getTimeInMillis();
+        final long cTime = new GregorianCalendar().getTimeInMillis();
 
-        Random rand = new Random();
+        final Random rand = new Random();
         int temp = (int) ((cTime - rTime) / (60 * 1000)) + (int) (rTime / (60 * 1000));
-        if (temp < 0) temp = -temp;
-        long randTime = rand.nextInt(temp);
+        if (temp < 0) {
+            temp = -temp;
+        }
+        final long randTime = rand.nextInt(temp);
         rCal.setTimeInMillis(randTime * (60 * 1000));
 
-        int year = rCal.get(Calendar.YEAR);
-        String month = Formatter.fillString((rCal.get(Calendar.MONTH) + 1) + "", "0", "", 2);
-        String day = Formatter.fillString(rCal.get(Calendar.DAY_OF_MONTH) + "", "0", "", 2);
+        final int year = rCal.get(Calendar.YEAR);
+        final String month = Formatter.fillString((rCal.get(Calendar.MONTH) + 1) + "", "0", "", 2);
+        final String day = Formatter.fillString(rCal.get(Calendar.DAY_OF_MONTH) + "", "0", "", 2);
         String hour = "";
-        if (releaseDate.length == 4) hour = Formatter.fillString(rand.nextInt(24) + "", "0", "", 2);
+        if (releaseDate.length == 4) {
+            hour = Formatter.fillString(rand.nextInt(24) + "", "0", "", 2);
+        }
         returnDate = "" + year + month + day + hour;
         return returnDate;
     }
@@ -271,7 +298,7 @@ public class RandomUserAgent {
         public boolean inverseOrder;
         public boolean useIt;
 
-        public System(String platform, String osName, String archs, boolean inverseOrder, boolean useIt) {
+        public System(final String platform, final String osName, final String archs, final boolean inverseOrder, final boolean useIt) {
             this.platform = platform;
             this.osName = osName;
             this.archs = archs;
