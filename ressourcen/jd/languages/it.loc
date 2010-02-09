@@ -1276,7 +1276,6 @@ plugins.host.rapidshare.errors.bcfe246b0634299062224a73ae50f17e = Questo file è
 plugins.host.rapidshare.errors.d11f499020a3607ffdf987ce3968c692 = Raggiunto limite di 10 GiB.
 plugins.host.rapidshare.loadedvia = Caricato tramite %s
 plugins.host.shareswiftcom.uncheckableduewaittime = Attendere o ricollegare il dispositivo per controllare lo stato
-plugins.host.uploadlinecom.premiumonly = Uploadline.com: file oltre 1GB sono disponibili solo per utenti Premium
 plugins.hoster.2sharedcom.errors.sessionlimit = Raggiunto il limite della sessione
 plugins.hoster.2sharedcom.errors.wrongcaptcha = CAPTCHA errato
 plugins.hoster.adrivecom.errors.toomanyconnections = Troppe connessioni
