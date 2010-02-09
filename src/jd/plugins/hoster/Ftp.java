@@ -59,6 +59,7 @@ public class Ftp extends PluginForHost {
             String[] list = ftp.getFileInfo(Encoding.urlDecode(url.getPath(), false));
             if (list == null) return AvailableStatus.FALSE;
             downloadLink.setDownloadSize(Long.parseLong(list[4]));
+            downloadLink.setFinalFileName(list[6]);
         } catch (Exception e) {
             e.printStackTrace();
 
@@ -82,7 +83,7 @@ public class Ftp extends PluginForHost {
             String[] list = ftp.getFileInfo(Encoding.urlDecode(url.getPath(), false));
             if (list == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             downloadLink.setDownloadSize(Long.parseLong(list[4]));
-            String path = url.getPath().substring(0, url.getPath().lastIndexOf("/"));
+            String path = Encoding.urlDecode(url.getPath().substring(0, url.getPath().lastIndexOf("/")), false);
             if (path.length() > 0) ftp.cwd(path);
             ftp.bin();
             ftp.getBroadcaster().addListener(new FtpListener() {
@@ -122,6 +123,7 @@ public class Ftp extends PluginForHost {
                 logger.severe("could not get filename from ftpurl");
                 name = downloadLink.getName();
             }
+            name = Encoding.urlDecode(name, false);
             downloadLink.getLinkStatus().addStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
             try {
                 ftp.download(name, tmp = new File(downloadLink.getFileOutput() + ".part"));

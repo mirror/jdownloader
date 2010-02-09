@@ -297,6 +297,8 @@ public class ShareOnlineBiz extends PluginForHost {
             br.followConnection();
             if (br.containsHTML("any usable file behind the URL you")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             if (br.containsHTML("Your desired download could not be found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            /* server issue, file not online, redirects to mainpage */
+            if (br.getURL().equalsIgnoreCase("http://www.share-online.biz")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
