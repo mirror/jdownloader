@@ -27,29 +27,29 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "getthebit.com" }, urls = { "http://[\\w\\.]*?getthebit\\.com/f/[a-z]+/[a-z]+/.+" }, flags = { 0 })
-public class GetTheBitCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datenklo.net" }, urls = { "http://[\\w\\.]*?datenklo\\.net/dl-[a-zA-Z0-9]{5}" }, flags = { 0 })
+public class DatenKloNet extends PluginForHost {
 
-    public GetTheBitCom(PluginWrapper wrapper) {
+    public DatenKloNet(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
     public String getAGBLink() {
-        return "http://www.getthebit.com/index.php?s=users&ev=about";
+        return "http://www.datenklo.net/agb";
     }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
-        br.setCustomCharset("UTF-8");
-        br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
+        br.setFollowRedirects(false);
         // Wrong links show the mainpage so here we check if we got the mainpage
         // or not
-        if (br.containsHTML("Файл был удален пользователем или нарушает авторские права")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>GettheBit.Com - (.*?) \\(.*?\\)</title>").getMatch(0);
-        String filesize = br.getRegex("&nbsp;\\(<b>(.*?)</b>\\)</h2>").getMatch(0);
+        if (br.containsHTML("(Du bist keinem g&uuml;ltigen Download-Link gefolgt|Vielleicht wurde der Eintrag gel&ouml;scht oder du hast dich vertippt)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<h4>(.*?)</h4>").getMatch(0);
+        if (filename == null) filename = br.getRegex("<td>Datei: </td>.*?<td>(.*?)</td>").getMatch(0);
+        String filesize = br.getRegex("<td>Dateigr.*?: </td>.*?<td>(.*?)</td>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(Regex.getSize(filesize));
@@ -60,29 +60,34 @@ public class GetTheBitCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        String freeurl = br.getRegex("class=\"free\"><a href=\"(.*?)\"").getMatch(0);
-        if (freeurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.getPage(freeurl);
-        String redirectframe = br.getRegex("frame src=\"(.*?)\"").getMatch(0);
-        if (redirectframe == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.getPage(redirectframe);
-        int tt = Integer.parseInt(br.getRegex("var wtime = (\\d+);").getMatch(0));
-        sleep(tt * 1001l, downloadLink);
-        br.getPage(redirectframe);
         for (int i = 0; i <= 5; i++) {
-            Form captchaForm = br.getForm(1);
-            String captchaUrl = br.getRegex("\"kcapcha\">.*?nbsp;</label><img src=\"(.*?)\"").getMatch(0);
+            Form captchaForm = br.getForm(0);
+            String captchaUrl = br.getRegex(">Captcha: </td>.*?<img src=\"(/lib.*?)\"").getMatch(0);
+            if (captchaUrl == null) captchaUrl = br.getRegex("(/lib/captcha/CaptchaImage\\.php\\?uid=.*?)\"").getMatch(0);
             if (captchaForm == null || captchaUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            captchaUrl = "http://www.datenklo.net" + captchaUrl;
             String code = getCaptchaCode(captchaUrl, downloadLink);
-            captchaForm.put("kcapcha", code);
-            br.submitForm(captchaForm);
-            if (!br.containsHTML("Вы ввели неправильный код проверки")) break;
-            continue;
+            captchaForm.put("down_captcha", code);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, captchaForm, false, 1);
+            if (dl.getConnection().getContentType().contains("html")) {
+                br.followConnection();
+                if (br.containsHTML("nicht korrekt abgetippt")) {
+                    br.getPage(downloadLink.getDownloadURL());
+                    continue;
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            }
+            break;
         }
-        if (br.containsHTML("Вы ввели неправильный код проверки")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        String dllink = br.getRegex("ссылку <a href=\"(.*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            if (br.containsHTML("nicht korrekt abgetippt")) {
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        }
         dl.startDownload();
     }
 

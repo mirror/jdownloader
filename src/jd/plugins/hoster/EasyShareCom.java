@@ -17,12 +17,9 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.http.Cookie;
-import jd.http.Cookies;
 import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -60,14 +57,7 @@ public class EasyShareCom extends PluginForHost {
         br.getPage("http://www.easy-share.com/");
         br.setDebug(true);
         br.postPage("http://www.easy-share.com/accounts/login", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember=1");
-        if (br.getCookie("http://www.easy-share.com/", "PREMIUM") == null || br.getCookie("http://www.easy-share.com/", "PREMIUMSTATUS") == null || !br.getCookie("http://www.easy-share.com/", "PREMIUMSTATUS").equalsIgnoreCase("ACTIVE")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-    }
-
-    private Cookie isExpired(Account account) throws MalformedURLException, PluginException {
-        Cookies cookies = br.getCookies("easy-share.com");
-        Cookie premstatus = cookies.get("PREMIUMSTATUS");
-        if (premstatus == null || !premstatus.getValue().equalsIgnoreCase("ACTIVE")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        return premstatus;
+        if (br.getCookie("http://www.easy-share.com/", "logacc") == null || br.getCookie("http://www.easy-share.com/", "PREMIUM") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
     @Override
@@ -79,14 +69,11 @@ public class EasyShareCom extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        try {
-            ai.setValidUntil(isExpired(account).getExpireDate());
-        } catch (PluginException e) {
-            logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
-            account.setValid(false);
-            ai.setExpired(true);
-            return ai;
-        }
+        br.getPage("http://www.easy-share.com/accounts/changepassword");
+        if (br.getRegex("li>Premium: <span class=.*?>(.*?)</span>").getMatch(0) == null || !br.getRegex("li>Premium: <span class=.*?>(.*?)</span>").getMatch(0).equals("active")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        ai.setUnlimitedTraffic();
+        account.setValid(true);
+        ai.setStatus("Premium User");
         return ai;
     }
 
@@ -157,7 +144,6 @@ public class EasyShareCom extends PluginForHost {
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         requestFileInformation(downloadLink);
         login(account);
-        isExpired(account);
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, 0);
         if (!dl.getConnection().isContentDisposition()) {

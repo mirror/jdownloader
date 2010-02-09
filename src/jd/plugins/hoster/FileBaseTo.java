@@ -163,23 +163,19 @@ public class FileBaseTo extends PluginForHost {
                 }
                 break;
             }
+            // if captcha error after loop
+            if (br.containsHTML("Code wurde falsch")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        } else {
+            String uid = br.getRegex("name=\"uid\" id=\"uid\" value=\"(.*?)\"").getMatch(0);
+            if (uid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            br.postPage(br.getURL(), "uid=" + uid);
         }
-        // if captcha error after loop
-        if (br.containsHTML("Code wurde falsch")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        String dlAction = br.getRegex("<form action=\"(http.*?)\"").getMatch(0);
         try {
-            if (dlAction != null) {
-                dl = BrowserAdapter.openDownload(br, downloadLink, dlAction, "wait=" + Encoding.urlEncode("Download - " + downloadLink.getName()));
-            } else {
-                dlAction = br.getRegex("value=\"(http.*?/download/ticket.*?)\"").getMatch(0);
-
-                if (dlAction == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                dl = BrowserAdapter.openDownload(br, downloadLink, dlAction);
-
-            }
+            String finallink = br.getRegex("value=\"(http.*?/download/ticket.*?)\"").getMatch(0);
+            dl = BrowserAdapter.openDownload(br, downloadLink, finallink, false, 1);
             URLConnectionAdapter con = dl.getConnection();
             if (con.getContentType().contains("html")) {
-                br.getPage(dlAction);
+                br.getPage(finallink);
                 if (br.containsHTML("error")) {
                     con.disconnect();
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, JDL.L("plugins.hoster.filebaseto.servererror", "Server error"));
@@ -198,7 +194,7 @@ public class FileBaseTo extends PluginForHost {
     }
 
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return -1;
     }
 
     public void reset() {
