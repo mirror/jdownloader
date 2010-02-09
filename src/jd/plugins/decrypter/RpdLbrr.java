@@ -21,10 +21,13 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.html.Form;
+import jd.parser.html.HTMLParser;
 import jd.parser.html.InputField;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
@@ -51,21 +54,44 @@ public class RpdLbrr extends PluginForDecrypt {
         waitQueue();
 
         br.getPage(parameter.getCryptedUrl());
-        String directLink = br.getRegex("\"(http://rapidshare.com.*?)\"").getMatch(0);
-        if (directLink == null) {
+        String fpName = br.getRegex("<<title>File download:(.*?)from .*?</title>").getMatch(0);
+        if (fpName == null) {
+            fpName = br.getRegex("<font class=\"texta\">(.*?)</font>").getMatch(0);
+            if (fpName == null) {
+                fpName = br.getRegex("<span style=\"font-size: 16px; color:#0374f1;\">.*?<b>(.*?)</b>").getMatch(0);
+            }
+        }
+        String pagepiece = br.getRegex("<span style=\"font-size:12px;color:#000000;\">(.*?)<hr width=100% noshade size=\"0\" color=").getMatch(0);
+        if (pagepiece == null) pagepiece = br.getRegex("class=\"parts_div_one\"(.*?)</div><br>").getMatch(0);
+        if (pagepiece == null) {
             progress.setRange(2);
             progress.setStatus(1);
-            Form captchaForm = br.getForms()[1];
-            if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            captchaForm.setAction(br.getURL());
-            String captchaCode = getCaptchaCode("http://rapidlibrary.com/code2.php", parameter);
-            InputField nv = new InputField("c_code", captchaCode);
-            captchaForm.addInputField(nv);
-            br.submitForm(captchaForm);
-            directLink = br.getRegex("\"(http://rapidshare\\.com.*?)\"").getMatch(0);
-            if (directLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            for (int i = 0; i <= 7; i++) {
+                Form captchaForm = br.getForms()[1];
+                if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                captchaForm.setAction(br.getURL());
+                String captchaCode = getCaptchaCode("http://rapidlibrary.com/code2.php", parameter);
+                InputField nv = new InputField("c_code", captchaCode);
+                captchaForm.addInputField(nv);
+                br.submitForm(captchaForm);
+                if (br.containsHTML("code2.php")) continue;
+                break;
+            }
+            if (br.containsHTML("code2.php")) throw new DecrypterException(DecrypterException.CAPTCHA);
+            pagepiece = br.getRegex("<span style=\"font-size:12px;color:#000000;\">(.*?)<hr width=100% noshade size=\"0\" color=").getMatch(0);
+            if (pagepiece == null) pagepiece = br.getRegex("class=\"parts_div_one\"(.*?)</div><br>").getMatch(0);
+            if (pagepiece == null) return null;
+            String[] links = HTMLParser.getHttpLinks(pagepiece, "");
+            if (links == null || links.length == 0) return null;
+            for (String finallink : links) {
+                decryptedLinks.add(createDownloadlink(finallink));
+            }
         }
-        decryptedLinks.add(createDownloadlink(directLink));
+        if (fpName != null && decryptedLinks.size() > 1) {
+            FilePackage fp = FilePackage.getInstance();
+            fp.setName(fpName.trim());
+            fp.addLinks(decryptedLinks);
+        }
         RpdLbrr.decryptRunning = false;
         return decryptedLinks;
     }

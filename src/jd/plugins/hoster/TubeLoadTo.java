@@ -56,7 +56,10 @@ public class TubeLoadTo extends PluginForHost {
         if (dllink == null) {
             dllink = br.getRegex("src\" value=\"(http.*?)\"").getMatch(0);
             if (dllink == null) {
-                dllink = br.getRegex("\"(http://tl[0-9]+\\.tubeload\\.to/file-[0-9]+/.*?/.*?)\"").getMatch(0);
+                dllink = br.getRegex("'(http://tl[0-9]+\\.tubeload\\.to/file-[0-9]+/.*?/.*?)'").getMatch(0);
+                if (dllink == null) {
+                    dllink = br.getRegex("var url = '(http.*?)';").getMatch(0);
+                }
             }
         }
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

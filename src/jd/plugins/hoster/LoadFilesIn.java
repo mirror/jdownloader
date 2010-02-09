@@ -97,8 +97,8 @@ public class LoadFilesIn extends PluginForHost {
     }
 
     public void doFree(DownloadLink downloadLink) throws Exception, PluginException {
-        boolean resumable = true;
-        int maxchunks = 0;
+        boolean resumable = false;
+        int maxchunks = 1;
         // If the filesize regex above doesn't match you can copy this part into
         // the available status (and delete it here)
         Form freeform = br.getFormBySubmitvalue("Kostenloser+Download");

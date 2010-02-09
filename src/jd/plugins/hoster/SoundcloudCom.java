@@ -54,7 +54,7 @@ public class SoundcloudCom extends PluginForHost {
         String filename = br.getRegex("<em>(.*?)</em>").getMatch(0);
 
         if (filename == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        filename=filename.trim();
+        filename = filename.trim();
         String type = br.getRegex("title=\"Uploaded format\">(.*?)<").getMatch(0);
         if (type == null) type = "mp3";
         filename += "." + type;
@@ -77,7 +77,7 @@ public class SoundcloudCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return -1;
     }
 
 }

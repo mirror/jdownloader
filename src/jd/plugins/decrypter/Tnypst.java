@@ -21,10 +21,13 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tinypaste.com" }, urls = { "http://[\\w\\.]*?tinypaste\\.com/([0-9a-z]+|.*?id=[0-9a-z]+)" }, flags = { 0 })
@@ -39,15 +42,23 @@ public class Tnypst extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        br.setFollowRedirects(true);
         String link = parameter.toString();
-        String id = new Regex(link, "tinypaste\\.com/.*?id=([0-9a-z]+)").getMatch(0);
-        if (id == null) id = new Regex(link, "tinypaste\\.com/([0-9a-z]+)").getMatch(0);
-        if (id == null) return null;
-        /*
-         * funny fact, by useing pre.php?id, we dont have to enter sitepassword
-         * if needed ;)
-         */
-        br.getPage("http://tinypaste.com/pre.php?id=" + id);
+        br.getPage(link);
+        if (br.containsHTML("(Enter the correct password|has been password protected)")) {
+            for (int i = 0; i <= 3; i++) {
+                String id = new Regex(link, "tinypaste\\.com/.*?id=([0-9a-z]+)").getMatch(0);
+                if (id == null) id = new Regex(link, "tinypaste\\.com/([0-9a-z]+)").getMatch(0);
+                Form pwform = br.getForm(0);
+                if (pwform == null || id == null) return null;
+                String pw = Plugin.getUserInput("Password?", parameter);
+                pwform.put("password_" + id, pw);
+                br.submitForm(pwform);
+                if (br.containsHTML("(Enter the correct password|has been password protected)")) continue;
+                break;
+            }
+        }
+        if (br.containsHTML("(Enter the correct password|has been password protected)")) throw new DecrypterException(DecrypterException.PASSWORD);
         String[] links = HTMLParser.getHttpLinks(br.toString(), null);
         ArrayList<String> pws = HTMLParser.findPasswords(br.toString());
         for (String element : links) {
