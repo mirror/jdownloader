@@ -25,11 +25,15 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megashare.vn" }, urls = { "http://[\\w\\.]*?megashare\\.vn/dl\\.php/[0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megashare.vn" }, urls = { "http://[\\w\\.]*?megashare\\.vn/(dl\\.php/|download\\.php\\?id=)[0-9]+" }, flags = { 0 })
 public class MegaShareVn extends PluginForHost {
 
     public MegaShareVn(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("download.php?id=", "dl.php/"));
     }
 
     @Override
