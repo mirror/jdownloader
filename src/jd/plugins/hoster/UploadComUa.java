@@ -19,8 +19,11 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -28,12 +31,12 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-//upload.com.ua by pspzockerscene
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "upload.com.ua" }, urls = { "http://[\\w\\.]*?(beta\\.upload|upload)\\.com\\.ua/(link|get)/[0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "upload.com.ua" }, urls = { "http://[\\w\\.]*?(beta\\.upload|upload)\\.com\\.ua/(link|get)/[0-9]+" }, flags = { 2 })
 public class UploadComUa extends PluginForHost {
 
     public UploadComUa(PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium("http://upload.com.ua/premium.php");
     }
 
     @Override
@@ -57,10 +60,9 @@ public class UploadComUa extends PluginForHost {
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String md5 = br.getRegex("\\(md5\\):</b>(.*?)<br>").getMatch(0);
         if (md5 != null) {
-            md5 = md5.replace(" ", "");
             link.setMD5Hash(md5.trim());
         }
-        link.setName(filename);
+        link.setFinalFileName(filename);
         link.setDownloadSize(Regex.getSize(filesize));
         return AvailableStatus.TRUE;
     }
@@ -79,7 +81,6 @@ public class UploadComUa extends PluginForHost {
         captchaForm.put("code", code);
         br.submitForm(captchaForm);
         if (br.containsHTML("Информация о файле")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-
         // holt sich den dllink und entfernt danach (dllink) bestimmte
         // Zeichen[+Zeilenumbrüche], die reingesetzt wurden um das Downloaden
         // per Downloadmanager zu erschweren
@@ -93,6 +94,57 @@ public class UploadComUa extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private void login(Account account) throws Exception {
+        this.setBrowserExclusive();
+        br.getPage("http://upload.com.ua/");
+        br.postPage("http://upload.com.ua/#", "submit=1&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+        if (br.getCookie("http://upload.com.ua", "premium") == null || !br.getCookie("http://upload.com.ua", "premium").equals("1")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        account.setValid(true);
+        ai.setUnlimitedTraffic();
+        String expire = br.getRegex("Премиум до: <b>(.*?)</b>").getMatch(0);
+        if (expire == null) {
+            ai.setExpired(true);
+            account.setValid(false);
+            return ai;
+        } else {
+            ai.setValidUntil(Regex.getMilliSeconds(expire.trim(), "dd.MM.yyyy HH:mm:ss", null));
+        }
+        ai.setStatus("Premium User");
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(DownloadLink link, Account account) throws Exception {
+        requestFileInformation(link);
+        login(account);
+        br.setFollowRedirects(false);
+        br.getPage(link.getDownloadURL().replace("?mode=free", ""));
+        String dllink = br.getRegex("Для начала загрузки файла нажмите на кнопку:<br>.*?<a href=\"(http.*?)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("или воспользуйтесь предлагаемой ссылкой:<br>.*?<a href=\"(http.*?)\"").getMatch(0);
+            if (dllink == null) dllink = br.getRegex("\"(http://dl[0-9]+\\.upload\\.com\\.ua/fi1e/.*?/.*?)\"").getMatch(0);
+        }
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -2);
+        dl.startDownload();
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return 3;
     }
 
     @Override

@@ -41,16 +41,21 @@ public class UlozTo extends PluginForHost {
         return "http://ulozto.net/podminky/";
     }
 
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replaceAll("(uloz\\.to|ulozto\\.sk|ulozto\\.cz|ulozto\\.net)", "uloz.to"));
+    }
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
-        br.getPage(downloadLink.getDownloadURL());
         this.setBrowserExclusive();
+        br.setCustomCharset("utf-8");
         br.setFollowRedirects(false);
+        br.getPage(downloadLink.getDownloadURL());
+        System.out.print(br.toString());
         // Wrong links show the mainpage so here we check if we got the mainpage
         // or not
         if (br.containsHTML("multipart/form-data")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex(Pattern.compile("0px;color:#000\"><b>(.*?)</b>")).getMatch(0);
-
         String filesize = br.getRegex(Pattern.compile("Velikost souboru je <b>(.*?)</b> <br />")).getMatch(0);
         if (filesize == null) {
             filesize = br.getRegex(Pattern.compile("Veľkosť súboru je <b>(.*?)</b> <br />")).getMatch(0);
@@ -65,27 +70,30 @@ public class UlozTo extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-
-        String captchaUrl = br.getRegex(Pattern.compile("<img id=\"captcha\" name=\"captcha\" width=\"175\" height=\"70\" src=\"(.*?)\" alt=\"img\">")).getMatch(0);
-        String code = getCaptchaCode(captchaUrl, downloadLink);
-        Form captchaForm = br.getFormbyProperty("name", "dwn");
-        if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        captchaForm.put("captcha_user", code);
-        br.submitForm(captchaForm);
-        String dllink = br.getRedirectLocation();
-        // Usually this errorhandling is not needed but in case...
-        if (dllink == null) {
-            if (br.containsHTML("Neopsal jsi spr.vn. text z obr.zku")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String dllink = null;
+        for (int i = 0; i <= 5; i++) {
+            String captchaUrl = br.getRegex(Pattern.compile("<img id=\"captcha\" name=\"captcha\" width=\"175\" height=\"70\" src=\"(.*?)\" alt=\"img\">")).getMatch(0);
+            Form captchaForm = br.getFormbyProperty("name", "dwn");
+            if (captchaForm == null || captchaUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            String code = getCaptchaCode(captchaUrl, downloadLink);
+            captchaForm.put("captcha_user", code);
+            br.submitForm(captchaForm);
+            dllink = br.getRedirectLocation();
+            if (dllink != null && dllink.contains("no#cpt")) {
+                br.getPage(br.getRedirectLocation());
+                continue;
+            }
+            break;
         }
-        if (dllink.contains("no#cpt")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
+        if (dllink != null && dllink.contains("no#cpt")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         dl.startDownload();
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return -1;
     }
 
     @Override

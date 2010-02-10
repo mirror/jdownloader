@@ -68,8 +68,13 @@ public class HellShareCom extends PluginForHost {
          * saved in profile
          */
         String changetoeng = br.getRegex("\"(http://www\\.en\\.hellshare\\.com/profile.*?)\"").getMatch(0);
-        if (changetoeng == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.getPage(changetoeng);
+        if (changetoeng == null) {
+            // Do NOT throw an exeption here as this part isn't that important
+            // but it's bad that the plugin breaks just because of this regex
+            logger.warning("Language couldn't be changed. This will probably cause trouble...");
+        } else {
+            br.getPage(changetoeng);
+        }
         if (!br.containsHTML("credit for downloads") || br.containsHTML("Špatně zadaný login nebo heslo uživatele")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
