@@ -45,8 +45,8 @@ public class BitRoadDotNet extends PluginForHost {
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
         br.getPage(downloadLink.getDownloadURL());
-        if (!br.containsHTML("Free, in one stream, without a possibility to revive a downloading.")) throw new PluginException(LinkStatus.ERROR_PREMIUM);
         if (br.containsHTML("file is not found") || br.containsHTML("Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (!br.containsHTML("Free, in one stream, without a possibility to revive a downloading.")) throw new PluginException(LinkStatus.ERROR_PREMIUM);
         String filename = br.getRegex("name=\"name\" value=\"(.*?)\"").getMatch(0);
         String size = br.getRegex("<h1>.*\\[\\s(.*?)\\s\\]</h1>").getMatch(0);
         if (filename == null || size == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

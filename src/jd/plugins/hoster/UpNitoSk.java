@@ -32,7 +32,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "upnito.sk" }, urls = { "http://[\\w\\.]*?upnito\\.sk/download\\.php\\?dwToken=[a-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "upnito.sk" }, urls = { "http://[\\w\\.]*?upnito\\.sk/(download\\.php\\?dwToken=[a-z0-9]+|subor/[a-z0-9]+\\.html)" }, flags = { 2 })
 public class UpNitoSk extends PluginForHost {
 
     public UpNitoSk(PluginWrapper wrapper) {

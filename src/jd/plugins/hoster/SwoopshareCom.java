@@ -22,79 +22,73 @@ import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "swoopshare.com" }, urls = { "http://[\\w\\.]*?swoopshare\\.com/file/.*" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "swoopshare.com" }, urls = { "http://[\\w\\.]*?swoopshare\\.com/file/[a-z0-9]+" }, flags = { 0 })
 public class SwoopshareCom extends PluginForHost {
 
     public SwoopshareCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    // @Override
     public String getAGBLink() {
         return "http://de.swoopshare.com/info/terms";
     }
 
     public void correctDownloadLink(DownloadLink downloadLink) throws MalformedURLException {
-        int lIndex;
-        if ((lIndex = downloadLink.getDownloadURL().lastIndexOf("cshare.de/")) != -1) {
-            downloadLink.setUrlDownload("http://www.swoopshare.com/" + downloadLink.getDownloadURL().substring(lIndex + 10));
-        }
+        // fileid should never be null...
+        String fileid = new Regex(downloadLink.getDownloadURL(), "/file/([a-z0-9]+)").getMatch(0);
+        if (fileid != null) downloadLink.setUrlDownload("http://en.swoopshare.com/file/" + fileid);
+
     }
 
-    // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
-
         setBrowserExclusive();
         br.setFollowRedirects(true);
-
         br.getPage(downloadLink.getDownloadURL());
-
-        // Filesize
         String size = br.getRegex("</b> \\((.*)yte\\)").getMatch(0);
+        String name = br.getRegex("<title>(cshare\\.de|swoopshare) -(.*?)</title>").getMatch(1);
+        if (name == null) {
+            name = br.getRegex("<span style=\"font-size:26px; font-weight:bold\">(.*?)</span>").getMatch(0);
+        }
+        if (name == null || size == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        downloadLink.setName(name.trim().replace("Download ", ""));
         downloadLink.setDownloadSize(Regex.getSize(size));
-
-        // Filename
-        String name = br.getRegex("<title>cshare.de - Download (.*)</title>").getMatch(0);
-        downloadLink.setName(name);
-
         return AvailableStatus.TRUE;
     }
 
-    // @Override
-    /*
-     * public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
-
-        String redirectLocation = br.getURL();
-        String country = redirectLocation.substring(0, redirectLocation.lastIndexOf(".swoopshare.com/"));
-
-        String link = country + ".swoopshare.com" + br.getRegex("&#187;</span> <a href=\"(.*?)\"").getMatch(0);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, link);
+        requestFileInformation(downloadLink);
+        String finallink = br.getRegex("<span class=\"arrow\">\\&#187;</span> <b><a href=\"(.*?)\"").getMatch(0);
+        if (finallink == null) {
+            finallink = br.getRegex("('|\")(/get/d/.*?/.*?)('|\")").getMatch(1);
+            if (finallink == null) {
+                finallink = br.getRegex("win=window\\.open\\('(.*?)'").getMatch(0);
+            }
+        }
+        if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        finallink = "http://" + br.getHost() + finallink.replace("?queue", "");
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, false, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl.startDownload();
     }
 
-    // @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return -1;
     }
 
-    // @Override
     public void reset() {
     }
 
-    // @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 
