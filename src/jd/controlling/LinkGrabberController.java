@@ -132,6 +132,7 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
                 if (!fps.contains(link.getFilePackage())) fps.add(link.getFilePackage());
             }
         }
+        broadcaster.fireEvent(new LinkGrabberControllerEvent(this, LinkGrabberControllerEvent.FINISHED, fps));
         DownloadController.getInstance().addAllAt(fps, 0);
         if (autostart) DownloadWatchDog.getInstance().startDownloads();
     }
@@ -382,6 +383,10 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
 
     public void throwRefresh() {
         broadcaster.fireEvent(new LinkGrabberControllerEvent(this, LinkGrabberControllerEvent.REFRESH_STRUCTURE));
+    }
+
+    public void throwFinished() {
+        broadcaster.fireEvent(new LinkGrabberControllerEvent(this, LinkGrabberControllerEvent.FINISHED));
     }
 
     public void filterPackages() {

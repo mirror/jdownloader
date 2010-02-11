@@ -418,6 +418,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
                 pc.doFinalize();
                 pc.getBroadcaster().removeListener(INSTANCE);
                 LGINSTANCE.postprocessing();
+                LGINSTANCE.throwFinished();
                 gatherer_running = false;
                 ArrayList<LinkGrabberFilePackage> fps = new ArrayList<LinkGrabberFilePackage>(LGINSTANCE.getPackages());
                 int links = 0;

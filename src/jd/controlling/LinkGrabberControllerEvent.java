@@ -40,4 +40,6 @@ public class LinkGrabberControllerEvent extends JDEvent {
     public static final int EMPTY = 4;
 
     public static final int FILTER_CHANGED = 9;
+
+    public static final int FINISHED = 10;
 }
