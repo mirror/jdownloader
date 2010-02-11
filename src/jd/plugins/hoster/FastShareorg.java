@@ -34,12 +34,10 @@ public class FastShareorg extends PluginForHost {
         super(wrapper);
     }
 
-    // @Override
     public String getAGBLink() {
         return "http://www.fastshare.org/discl.php";
     }
 
-    // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException {
         try {
             br.setCookiesExclusive(true);
@@ -63,14 +61,6 @@ public class FastShareorg extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
-    // @Override
-    /*
-     * /* public String getVersion() {
-     * 
-     * return getVersion("$Revision$"); }
-     */
-
-    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
@@ -79,34 +69,33 @@ public class FastShareorg extends PluginForHost {
 
         /* Link holen */
         Form form = br.getForm(0);
+        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.submitForm(form);
-        if ((url = new Regex(br, "Link: <a href=(.*)><b>").getMatch(0)) == null) {
+        if ((url = new Regex(br, "Link: <a href=(.*?)><b>").getMatch(0)) == null) {
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
             return;
         }
-
-        /* Zwangswarten, 10seks */
-        sleep(10000, downloadLink);
-
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, url, false, 1);
+        url = "http://www.fastshare.org" + url;
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, false, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Number of maximum connections/downloads is reached!", 600 * 1000l);
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl.startDownload();
 
     }
 
-    // @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return 2;
     }
 
-    // @Override
     public void reset() {
     }
 
-    // @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 }

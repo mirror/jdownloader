@@ -71,6 +71,8 @@ public class UpNitoSk extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        boolean stillInDevelopment = true;
+        if (stillInDevelopment) throw new PluginException(LinkStatus.ERROR_FATAL, "The free version of this plugin is still in development!!");
         if (br.containsHTML("Nemozete tolkokrat za sebou stahovat ten isty subor!")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
         Form freeform = br.getFormbyProperty("name", "gdl");
         if (freeform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -79,7 +81,7 @@ public class UpNitoSk extends PluginForHost {
         br2.getPage("http://dl1.upnito.sk/getwait.php?dwToken=" + thisDamnToken);
         String gwt_validate = br2.toString().trim();
         freeform.put("gwt_validate", gwt_validate);
-        sleep(600 * 1001l, downloadLink);
+        sleep(610 * 1001l, downloadLink);
         br.submitForm(freeform);
         freeform = br.getFormbyProperty("name", "gdl");
         if (freeform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

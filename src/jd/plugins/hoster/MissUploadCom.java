@@ -87,13 +87,13 @@ public class MissUploadCom extends PluginForHost {
                 filesize = br.getRegex("</font>[ ]+\\((.*?)\\)(.*?)</font>").getMatch(0);
             }
         }
-        if (filename == null) {
+        if (filename == null || filename.equals("")) {
             logger.warning("The filename equals null, throwing \"file not found\" now...");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         filename = filename.replaceAll("(</b>|<b>|\\.html)", "");
         link.setName(filename.trim());
-        if (filesize != null) {
+        if (filesize != null && !filesize.equals("")) {
             logger.info("Filesize found, filesize = " + filesize);
             link.setDownloadSize(Regex.getSize(filesize));
         }
