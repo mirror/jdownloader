@@ -38,7 +38,7 @@ public class MegaShareVn extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://megashare.vn/contact.php";
+        return "http://megashare.vn/rule.php";
     }
 
     @Override
@@ -64,10 +64,10 @@ public class MegaShareVn extends PluginForHost {
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         if (!dllink.contains("http")) dllink = "http://megashare.vn/" + dllink;
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
+//        if (dl.getConnection().getContentType().contains("html")) {
+//            br.followConnection();
+//            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+//        }
         dl.startDownload();
     }
 
