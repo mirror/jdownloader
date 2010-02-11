@@ -25,7 +25,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megashare.vn" }, urls = { "http://[\\w\\.]*?megashare\\.vn/(dl\\.php/|download\\.php\\?id=)[0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megashare.vn" }, urls = { "http://[\\w\\.]*?megashare\\.vn/(download\\.php\\?uid=[0-9]+\\&id=[0-9]+|dl\\.php/\\d+)" }, flags = { 0 })
 public class MegaShareVn extends PluginForHost {
 
     public MegaShareVn(PluginWrapper wrapper) {
@@ -64,10 +64,11 @@ public class MegaShareVn extends PluginForHost {
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         if (!dllink.contains("http")) dllink = "http://megashare.vn/" + dllink;
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-//        if (dl.getConnection().getContentType().contains("html")) {
-//            br.followConnection();
-//            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-//        }
+        if (dl.getConnection().getContentType().contains("html") && !new Regex(dllink, ".+html?$").matches()) {
+            /* buggy server sends html content if filename ends on html */
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl.startDownload();
     }
 
