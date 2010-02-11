@@ -79,6 +79,7 @@ public class WrzucTo extends PluginForHost {
         br.postPage("http://www.wrzuc.to/ajax/server/prepair", "md5=" + Encoding.htmlDecode(md5));
         // br.getHeaders().put("Accept",
         // "application/json, text/javascript, */*");
+        br.getHeaders().put("Referer", downloadLink.getDownloadURL());
         br.postPage("http://www.wrzuc.to/ajax/server/download_link", "file=" + Encoding.htmlDecode(fid));
         System.out.print(br.toString());
         String tempid = br.getRegex(("download_link\":\"(.*?)\"")).getMatch(0);
