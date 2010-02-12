@@ -1279,7 +1279,6 @@ plugins.host.shareswiftcom.uncheckableduewaittime = Espere o haga una Reconexió
 plugins.hoster.2sharedcom.errors.sessionlimit = Límite de sesión alcanzado
 plugins.hoster.2sharedcom.errors.wrongcaptcha = Captcha incorrecto
 plugins.hoster.adrivecom.errors.toomanyconnections = Demasiadas conexiones
-plugins.hoster.bluehostto.time = BH free permitido sólo de 0 PM a 10 AM
 plugins.hoster.czsharecom.nocreditleft = No hay crédito de tráfico restante
 plugins.hoster.czsharecom.nofreeslots = No hay slots libres disponibles
 plugins.hoster.depositfilescom.accountbad = La cuenta expiró o no es válida.
