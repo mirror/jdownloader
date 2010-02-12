@@ -1276,7 +1276,6 @@ plugins.host.shareswiftcom.uncheckableduewaittime = Πρέπει να περιμ
 plugins.hoster.2sharedcom.errors.sessionlimit = Επήλθε το όριο του τομέα
 plugins.hoster.2sharedcom.errors.wrongcaptcha = Λάθος CAPTCHA
 plugins.hoster.adrivecom.errors.toomanyconnections = Πάρα πολλές συνδέσεις
-plugins.hoster.bluehostto.time = Το BH είναι ελεύθερο μόνο από 0 PM μέχρι 10 AM
 plugins.hoster.czsharecom.nocreditleft = Δεν απέμειναν μονάδες traffic 
 plugins.hoster.czsharecom.nofreeslots = Δεν υπάρχουν διαθέσιμες θέσεις
 plugins.hoster.depositfilescom.accountbad = Ο λογαριασμός έληξε ή δεν είναι έγκυρος.
