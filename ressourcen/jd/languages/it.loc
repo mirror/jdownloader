@@ -1279,7 +1279,6 @@ plugins.host.shareswiftcom.uncheckableduewaittime = Attendere o ricollegare il d
 plugins.hoster.2sharedcom.errors.sessionlimit = Raggiunto il limite della sessione
 plugins.hoster.2sharedcom.errors.wrongcaptcha = CAPTCHA errato
 plugins.hoster.adrivecom.errors.toomanyconnections = Troppe connessioni
-plugins.hoster.bluehostto.time = BH libero consentito solo da 0 PM a 10 AM 
 plugins.hoster.czsharecom.nocreditleft = Nessun credito traffico disponibile
 plugins.hoster.czsharecom.nofreeslots = Nessuno slot gratuito disponibile
 plugins.hoster.depositfilescom.accountbad = Account scaduto o non valido.
