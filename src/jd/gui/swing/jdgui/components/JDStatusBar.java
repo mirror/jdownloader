@@ -102,7 +102,7 @@ public class JDStatusBar extends JPanel implements ChangeListener, ControlListen
             if (event.getParameter().equals(Configuration.PARAM_DOWNLOAD_MAX_SPEED)) {
                 SwingUtilities.invokeLater(new Runnable() {
                     public void run() {
-                        DownloadWatchDog.getInstance().getConnectionManager().setIncommingBandwidthLimit(p.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0) * 1000);
+                        DownloadWatchDog.getInstance().getConnectionManager().setIncommingBandwidthLimit(p.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0) * 1024);
                         setSpinnerSpeed(p.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0));
                     }
                 });

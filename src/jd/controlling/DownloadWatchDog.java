@@ -165,7 +165,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
 
     private DownloadWatchDog() {
         connectionManager = new ThrottledConnectionManager();
-        connectionManager.setIncommingBandwidthLimit(SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0) * 1000);
+        connectionManager.setIncommingBandwidthLimit(SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0) * 1024);
         dlc = DownloadController.getInstance();
         dlc.addListener(this);
     }
@@ -812,14 +812,14 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
             if (reachedStopMark()) return ret;
             if (!checkSize(dlink)) {
                 dlink.getLinkStatus().setStatus(LinkStatus.NOT_ENOUGH_HARDDISK_SPACE);
-                continue; 
+                continue;
             }
             startDownloadThread(dlink);
             ret++;
         }
         return ret;
     }
-    
+
     /**
      * Checks if the Download has enough space.
      * 
@@ -827,29 +827,25 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
      * @return
      */
     private boolean checkSize(DownloadLink dlLink) {
-        if(System.getProperty("java.version").contains("1.5")) {
-            return true;
-        }
-        
+        if (System.getProperty("java.version").contains("1.5")) { return true; }
+
         File f = new File(dlLink.getFileOutput()).getParentFile();
-        
-        while(!f.exists()) {
+
+        while (!f.exists()) {
             f = f.getParentFile();
-            
-            if(f == null) return false;
+
+            if (f == null) return false;
         }
 
-        //Set 500MB extra Buffer
+        // Set 500MB extra Buffer
         long size = 1024 * 1024 * 1024 * 500;
-        
-        for(DownloadLink dlink : getRunningDownloads()) {
+
+        for (DownloadLink dlink : getRunningDownloads()) {
             size += dlink.getDownloadSize() - dlink.getDownloadCurrent();
         }
-        
-        if(f.getUsableSpace() < size + dlLink.getDownloadSize() - dlLink.getDownloadCurrent()) {
-            return false;
-        }
-       
+
+        if (f.getUsableSpace() < size + dlLink.getDownloadSize() - dlLink.getDownloadCurrent()) { return false; }
+
         return true;
     }
 

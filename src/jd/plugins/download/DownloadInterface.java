@@ -52,7 +52,7 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.net.meteredconnection.MeteredInputStream;
+import org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream;
 import org.appwork.utils.speedmeter.AverageSpeedMeter;
 
 abstract public class DownloadInterface {
@@ -86,7 +86,7 @@ abstract public class DownloadInterface {
 
         private int id = -1;
 
-        private MeteredInputStream inputStream;
+        private MeteredThrottledInputStream inputStream;
 
         private int MAX_BUFFERSIZE = 4 * 1024 * 1024;
 
@@ -316,10 +316,11 @@ abstract public class DownloadInterface {
                 connection.setReadTimeout(getReadTimeout());
                 connection.setConnectTimeout(getRequestTimeout());
                 if (connection.getHeaderField("Content-Encoding") != null && connection.getHeaderField("Content-Encoding").equalsIgnoreCase("gzip")) {
-                    inputStream = new MeteredInputStream(DownloadWatchDog.getInstance().getConnectionManager().getManagedThrottledInputStream(new GZIPInputStream(connection.getInputStream())), new AverageSpeedMeter(15));
+                    inputStream = new MeteredThrottledInputStream(new GZIPInputStream(connection.getInputStream()), new AverageSpeedMeter());
                 } else {
-                    inputStream = new MeteredInputStream(DownloadWatchDog.getInstance().getConnectionManager().getManagedThrottledInputStream(connection.getInputStream()), new AverageSpeedMeter(15));
+                    inputStream = new MeteredThrottledInputStream(connection.getInputStream(), new AverageSpeedMeter());
                 }
+                DownloadWatchDog.getInstance().getConnectionManager().addManagedThrottledInputStream(inputStream);
 
                 int miniblock = 0;
 
