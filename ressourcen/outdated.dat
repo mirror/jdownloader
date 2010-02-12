@@ -99,6 +99,7 @@ jd/languages/it-2.loc
 jd/languages/pt.loc
 jd/languages/pt-2.loc
 libs/ui.jar
+libs/AppWorkUtils.jar
 libs/mail.jar
 libs/junit-4.6.jar
 tools/mac/unrar
