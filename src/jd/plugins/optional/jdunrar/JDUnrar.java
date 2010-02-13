@@ -295,9 +295,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
     }
 
     private String getArchiveName(String link) {
-        String match = new Regex(new File(link).getName(), "(.*)\\.pa?r?t?\\.?[0]*[1].rar$").getMatch(0);
-        if (match != null) return match;
-        match = new Regex(new File(link).getName(), "(.*)\\.pa?r?t?\\.?[0-9]+.rar$").getMatch(0);
+        String match = new Regex(new File(link).getName(), "(.*)\\.pa?r?t?\\.?[0-9]+.rar$").getMatch(0);
         if (match != null) return match;
         match = new Regex(new File(link).getName(), "(.*)\\.rar$").getMatch(0);
         if (match != null) return match;
@@ -338,9 +336,11 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         String dlpw = link.getStringProperty("pass", null);
         if (dlpw != null) pwList.add(dlpw);
         pwList.addAll(PasswordListController.getInstance().getPasswordList());
-        // Fügt den Archivnamen und dan dateinamen ans ende der passwortliste
-        pwList.add(this.getArchiveName(link));
-        pwList.add(new File(link.getFileOutput()).getName());
+        // Adds the archive name at the end of the password list (example.part01.rar)
+        String archiveName = this.getArchiveName(link);
+        pwList.add(archiveName); //example
+        pwList.add(archiveName+".rar"); //example.rar
+        pwList.add(new File(link.getFileOutput()).getName()); //example.part01.rar
         wrapper.setPasswordList(pwList);
 
         queue.add(wrapper);
