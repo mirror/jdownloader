@@ -1386,6 +1386,7 @@ plugins.optional.httpliveheaderscripter.gui.save.model = Modell (z.B. Gigaset 55
 plugins.optional.httpliveheaderscripter.gui.validate.error = Skript nicht korrekt 
 plugins.optional.httpliveheaderscripter.gui.validate.ok = Skript ist gültig 
 plugins.optional.infofilewriter.content = Inhalt:
+plugins.optional.infofilewriter.contentdefault = Kommentar: %LAST_FINISHED_PACKAGE.COMMENT%\r\nPasswort: %LAST_FINISHED_PACKAGE.PASSWORD%\r\nAuto-Passwort: %LAST_FINISHED_PACKAGE.AUTO_PASSWORD%\r\n%LAST_FINISHED_PACKAGE.FILELIST%\r\nBeendet am %SYSTEM.DATE% um %SYSTEM.TIME% Uhr
 plugins.optional.infofilewriter.filename = Dateiname:
 plugins.optional.infofilewriter.insertkey = Füge ausgewählten Schlüssel ein
 plugins.optional.infofilewriter.insertkey.short = Einfügen
