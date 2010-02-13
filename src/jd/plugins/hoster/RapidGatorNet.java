@@ -55,6 +55,17 @@ public class RapidGatorNet extends PluginForHost {
     }
 
     @Override
+    public void correctDownloadLink(DownloadLink dl) {
+        Regex rg = new Regex(dl.getDownloadURL(), "http://[\\w\\.]*?rapidgator.net/([0-9]+)/");
+
+        if (rg.matches()) {
+            String fileid = rg.getMatch(0);
+            String newDownloadLinkURL = dl.getDownloadURL().replaceAll("/[0-9]+/", "/?file=" + fileid);
+            dl.setUrlDownload(newDownloadLinkURL);
+        }
+    }
+
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
