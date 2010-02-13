@@ -61,6 +61,6 @@
 			<attribute name="javadoc_location" value="jar:platform:/resource/jd/ressourcen/code-ressourcen/Substance_docs.zip!/docs"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="ressourcen/libs/AppWorkUtils.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/apwutils.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
