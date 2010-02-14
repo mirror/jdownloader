@@ -170,7 +170,7 @@ public class IFileIt extends PluginForHost {
     }
 
     private void simulateBrowser() throws IOException {
-        br.cloneBrowser().getPage("http://static.ifile.it/themes/default/js/common.js?v=1");
+        br.cloneBrowser().getPage("http://ifile.it/ads/adframe.js");
     }
 
     private void xmlrequest(Browser br, String url) throws IOException {
