@@ -101,8 +101,25 @@ public class LinkGrabberInfoPanel extends InfoPanel {
         startAfterAdding.setToolTipText(JDL.L("gui.tooltips.linkgrabber.startlinksafteradd", "Is selected, download starts after adding new links"));
         startAfterAdding.setIconTextGap(3);
 
+        final JCheckBox autoStart = new JCheckBox(JDL.L("gui.taskpanes.download.linkgrabber.config.autostart", "Start Automatically"));
+        autoStart.setOpaque(false);
+        autoStart.addActionListener(new ActionListener() {
+
+            public void actionPerformed(ActionEvent e) {
+                GUIUtils.getConfig().setProperty(JDGuiConstants.PARAM_START_AFTER_ADDING_LINKS_AUTO, autoStart.isSelected());
+                GUIUtils.getConfig().save();
+            }
+
+        });
+        if (GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_START_AFTER_ADDING_LINKS_AUTO, false)) {
+            autoStart.setSelected(true);
+        }
+        autoStart.setToolTipText(JDL.L("gui.tooltips.linkgrabber.autostart", "if selected, links will get added and started automatically"));
+        autoStart.setIconTextGap(3);
+
         addComponent(topOrBottom, 2, 0);
         addComponent(startAfterAdding, 2, 1);
+        addComponent(autoStart, 3, 0);
     }
 
     private void update() {

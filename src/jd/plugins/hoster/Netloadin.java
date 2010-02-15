@@ -102,6 +102,7 @@ public class Netloadin extends PluginForHost {
                 linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
                 return;
             }
+            if (br.containsHTML("Im Link ist ein Schreibfehler")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             if (br.containsHTML(FILE_DAMAGED)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.netloadin.errors.fileondmgserver", "File on damaged server"), 20 * 60 * 1000l);
             if ((!br.containsHTML(DOWNLOAD_START) && !br.containsHTML(DOWNLOAD_STARTXMAS) && !br.containsHTML(DOWNLOAD_STARTXMAS2)) || url == null) {
                 linkStatus.setErrorMessage(JDL.L("plugins.hoster.netloadin.errors.dlnotfound", "Download link not found"));
@@ -146,9 +147,8 @@ public class Netloadin extends PluginForHost {
     }
 
     private void handleErrors(DownloadLink downloadLink) throws PluginException {
-        if (br.containsHTML(FILE_NOT_FOUND)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-
-        }
+        if (br.containsHTML(FILE_NOT_FOUND)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("Im Link ist ein Schreibfehler")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML(FILE_DAMAGED)) {
             logger.warning("File is on a damaged server");
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.netloadin.errors.fileondmgserver", "File on damaged server"), 20 * 60 * 1000l);

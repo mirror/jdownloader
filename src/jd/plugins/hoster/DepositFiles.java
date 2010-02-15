@@ -159,6 +159,7 @@ public class DepositFiles extends PluginForHost {
     }
 
     public void login(Account account) throws Exception {
+        br.setDebug(true);
         br.setFollowRedirects(true);
         setLangtoGer();
         br.getPage("http://depositfiles.com/de/gold/payment.php");

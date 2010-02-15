@@ -142,6 +142,8 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
         INSTANCE = this;
         LGINSTANCE = LinkGrabberController.getInstance();
         LGINSTANCE.addListener(this);
+        /* to init the DownloadAutostart Listener */
+        DownloadAutostart.getInstance();
 
         if (SubConfiguration.getConfig(LinkGrabberController.CONFIG).getBooleanProperty(LinkGrabberController.PARAM_CONTROLPOSITION, false)) {
             this.setLayout(new MigLayout("ins 0, wrap 1", "[fill,grow]", "[][fill,grow]"));

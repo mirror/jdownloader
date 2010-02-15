@@ -67,7 +67,7 @@ public class HellShareCom extends PluginForHost {
          * this will change account language to eng,needed because language is
          * saved in profile
          */
-        String changetoeng = br.getRegex("\"(http://www\\.en\\.hellshare\\.com/profile.*?)\"").getMatch(0);
+        String changetoeng = br.getRegex("\"(http://www\\.en\\.hellshare\\.com/--.*?profile.*?)\"").getMatch(0);
         if (changetoeng == null) {
             // Do NOT throw an exeption here as this part isn't that important
             // but it's bad that the plugin breaks just because of this regex
@@ -102,11 +102,12 @@ public class HellShareCom extends PluginForHost {
         requestFileInformation(downloadLink);
         login(account);
         br.getPage(downloadLink.getDownloadURL());
-        String dllink = br.getRegex("launchFullDownload\\('(.*?)\"").getMatch(0);
+        String dllink = br.getRegex("launchFullDownload\\('.*?(http:.*?)(&|\"|')").getMatch(0);
         if (dllink == null) {
-            dllink = br.getRegex("\"(http://data.*?\\.helldata\\.com.*?)\"").getMatch(0);
+            dllink = br.getRegex("\"(http://data.*?\\.helldata\\.com.*?)(&|\"|')").getMatch(0);
         }
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dllink = dllink.replaceAll("\\\\", "");
         /*
          * set max chunks to 1 because each range request counts as download,
          * reduces traffic very fast ;)
@@ -114,6 +115,10 @@ public class HellShareCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (!(dl.getConnection().isContentDisposition())) {
             br.followConnection();
+            if (br.containsHTML("<h1>File not found</h1>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML("The server is under the maximum load")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server is under maximum load", 10 * 60 * 1000l);
+            if (br.containsHTML("Incorrectly copied code from the image")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            if (br.containsHTML("You are exceeding the limitations on this download")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -159,16 +164,26 @@ public class HellShareCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        String changetoeng = br.getRegex("(http://download.en\\.hellshare\\.com/--.*?-/.*?)\"").getMatch(0);
+        if (changetoeng == null) {
+            // Do NOT throw an exeption here as this part isn't that important
+            // but it's bad that the plugin breaks just because of this regex
+            logger.warning("Language couldn't be changed. This will probably cause trouble...");
+        } else {
+            br.getPage(changetoeng);
+        }
         br.setDebug(true);
         if (br.containsHTML("Current load 100%")) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, 15 * 60 * 1000l);
         } else {
             String url = br.getRegex("FreeDownProgress'.*?'(http://download.en.hellshare.com/.*?)'").getMatch(0);
+            if (url == null) url = br.getRegex("action=\"(http://download.en.hellshare.com/.*?/\\d+)").getMatch(0);
             if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             br.getPage(url);
             if (br.containsHTML("The server is under the maximum load")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server is under maximum load", 10 * 60 * 1000l);
             if (br.containsHTML("You are exceeding the limitations on this download")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
             String captcha = br.getRegex("(http://www.en.hellshare.com/antispam.php\\?sv=FreeDown:\\d+)\"").getMatch(0);
+            if (br.containsHTML("<h1>File not found</h1>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             Form form = br.getForm(0);
             if (form == null || captcha == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             String code = getCaptchaCode(captcha, downloadLink);
@@ -176,6 +191,7 @@ public class HellShareCom extends PluginForHost {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, false, 1);
             if (!(dl.getConnection().isContentDisposition())) {
                 br.followConnection();
+                if (br.containsHTML("<h1>File not found</h1>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 if (br.containsHTML("The server is under the maximum load")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server is under maximum load", 10 * 60 * 1000l);
                 if (br.containsHTML("Incorrectly copied code from the image")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 if (br.containsHTML("You are exceeding the limitations on this download")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);

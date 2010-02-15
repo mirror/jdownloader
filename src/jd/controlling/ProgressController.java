@@ -145,6 +145,7 @@ public class ProgressController implements MessageListener, Comparable<ProgressC
         finished = true;
         currentValue = max;
         JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ON_PROGRESS, source));
+        getBroadcaster().fireEvent(new ProgressControllerEvent(this, ProgressControllerEvent.FINISHED));
     }
 
     public void fireChanges() {
@@ -233,6 +234,7 @@ public class ProgressController implements MessageListener, Comparable<ProgressC
     }
 
     public void fireCancelAction() {
+        if (abort) return;
         abort = true;
         getBroadcaster().fireEvent(new ProgressControllerEvent(this, ProgressControllerEvent.CANCEL));
     }

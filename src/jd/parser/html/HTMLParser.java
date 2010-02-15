@@ -59,7 +59,7 @@ public class HTMLParser {
                 ret.add(pass);
             }
         }
-        pattern = Pattern.compile("(пароль|пасс|ps?w|passwort|password|passw?)[\\s]?\\:[\\s]*?[\"']([^\"']+)[\"']?", Pattern.CASE_INSENSITIVE);
+        pattern = Pattern.compile("(пароль|пасс|ps?w|passwort|password|passw?)[\\s]?\\:|=[\\s]*?[\"']([^\"']+)[\"']?", Pattern.CASE_INSENSITIVE);
         matcher = pattern.matcher(data);
         while (matcher.find()) {
             String pass = matcher.group(2);
@@ -67,7 +67,7 @@ public class HTMLParser {
                 ret.add(pass);
             }
         }
-        pattern = Pattern.compile("(пароль|пасс|ps?w|passwort|password|passw?)[\\s]?\\:[\\s]*?([^\"'\\s]+)[\\s]?", Pattern.CASE_INSENSITIVE);
+        pattern = Pattern.compile("(пароль|пасс|ps?w|passwort|password|passw?)[\\s]?\\:|=[\\s]*?([^\"'\\s]+)[\\s]?", Pattern.CASE_INSENSITIVE);
         matcher = pattern.matcher(data);
         while (matcher.find()) {
             String pass = matcher.group(2);
