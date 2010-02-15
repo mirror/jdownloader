@@ -22,6 +22,7 @@ import java.util.TreeMap;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
@@ -44,16 +45,47 @@ public class SuperFastFileCom extends PluginForHost {
         return "http://www.superfastfile.com/tos.html";
     }
 
+    private static final String COOKIE_HOST = "http://www.superfastfile.com";
+
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.setCookie("http://www.superfastfile.com", "lang", "english");
+        br.setCookie(COOKIE_HOST, "lang", "english");
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("No such file") || br.containsHTML("No such user exist") || br.containsHTML("File not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<h3>(.*?)</h3>").getMatch(0);
-        String filesize = br.getRegex("<h2>(.*?)</h2>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        link.setName(filename);
-        link.setDownloadSize(Regex.getSize(filesize));
+        if (br.containsHTML("You have reached the download-limit")) {
+            logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
+            return AvailableStatus.UNCHECKABLE;
+        }
+        if (br.containsHTML("(No such file|No such user exist|File not found)")) {
+            logger.warning("file is 99,99% offline, throwing \"file not found\" now...");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        String filename = br.getRegex("You have requested.*?http://.*?[a-z0-9]{12}/(.*?)</font>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("fname\" value=\"(.*?)\"").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("<h2>Download File(.*?)</h2>").getMatch(0);
+                if (filename == null) {
+                    filename = br.getRegex("Filename:</b></td><td >(.*?)</td>").getMatch(0);
+                    if (filename == null) {
+                        filename = br.getRegex("Filename.*?nowrap.*?>(.*?)</td").getMatch(0);
+                        if (filename == null) {
+                            filename = br.getRegex("File Name.*?nowrap>(.*?)</td").getMatch(0);
+                        }
+                    }
+                }
+            }
+        }
+        String filesize = br.getRegex("</td><td><font face=\"calibri, verdana\" size=\"3\" color=\"#000000\">(.*?)</td></tr></table>").getMatch(0);
+        if (filename == null || filename.equals("")) {
+            logger.warning("The filename equals null, throwing \"file not found\" now...");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        filename = filename.replaceAll("(</b>|<b>|\\.html)", "");
+        link.setName(filename.trim());
+        if (filesize != null && !filesize.equals("")) {
+            logger.info("Filesize found, filesize = " + filesize);
+            link.setDownloadSize(Regex.getSize(filesize));
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -119,7 +151,7 @@ public class SuperFastFileCom extends PluginForHost {
             }
             DLForm.put("password", passCode);
         }
-        String[][] letters = br.getRegex("<span style='position:absolute;padding-left:(\\d+)px;padding-top:\\d+px;'>(\\d)</span>").getMatches();
+        String[][] letters = new Regex(Encoding.htmlDecode(br.toString()), "<span style='position:absolute;padding-left:(\\d+)px;padding-top:\\d+px;'>(\\d)</span>").getMatches();
         if (letters.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         SortedMap<Integer, String> capMap = new TreeMap<Integer, String>();
         for (String[] letter : letters) {
@@ -166,6 +198,10 @@ public class SuperFastFileCom extends PluginForHost {
         }
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl.startDownload();
     }
 

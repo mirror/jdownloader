@@ -85,40 +85,46 @@ public class MhfScriptBasic extends PluginForHost {
         requestFileInformation(link);
         // br.postPage(link.getDownloadURL(), "Free=Free+Users");
         String passCode = null;
-        for (int i = 0; i <= 3; i++) {
-            Form captchaform = br.getFormbyProperty("name", "myform");
+        Form captchaform = br.getFormbyProperty("name", "myform");
+        if (captchaform == null) {
+            captchaform = br.getFormbyProperty("name", "validateform");
             if (captchaform == null) {
-                captchaform = br.getFormbyProperty("name", "validateform");
-                if (captchaform == null) {
-                    captchaform = br.getFormbyProperty("name", "valideform");
-                }
+                captchaform = br.getFormbyProperty("name", "valideform");
             }
-            String captchaurl = COOKIE_HOST + "/captcha.php";
-            if (captchaform == null || !br.containsHTML("captcha.php")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            if (br.containsHTML("downloadpw")) {
-                if (link.getStringProperty("pass", null) == null) {
-                    passCode = Plugin.getUserInput("Password?", link);
+        }
+        if (br.containsHTML("(captcha.php|downloadpw)")) {
+            if (captchaform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            for (int i = 0; i <= 3; i++) {
+                if (br.containsHTML("captcha.php")) {
+                    String captchaurl = COOKIE_HOST + "/captcha.php";
+                    String code = getCaptchaCode(captchaurl, link);
+                    captchaform.put("captchacode", code);
+                }
+                if (br.containsHTML("downloadpw")) {
+                    if (br.containsHTML("downloadpw")) {
+                        if (link.getStringProperty("pass", null) == null) {
+                            passCode = Plugin.getUserInput("Password?", link);
 
-                } else {
-                    /* gespeicherten PassCode holen */
-                    passCode = link.getStringProperty("pass", null);
+                        } else {
+                            /* gespeicherten PassCode holen */
+                            passCode = link.getStringProperty("pass", null);
+                        }
+                        captchaform.put("downloadpw", passCode);
+                    }
                 }
-                captchaform.put("downloadpw", passCode);
+                br.submitForm(captchaform);
+                if (br.containsHTML("Password Error")) {
+                    logger.warning("Wrong password!");
+                    link.setProperty("pass", null);
+                    continue;
+                }
+                if (br.containsHTML("Captcha number error") || br.containsHTML("captcha.php") && !br.containsHTML("You have got max allowed bandwidth size per hour")) {
+                    logger.warning("Wrong captcha or wrong password!");
+                    link.setProperty("pass", null);
+                    continue;
+                }
+                break;
             }
-            String code = getCaptchaCode(captchaurl, link);
-            captchaform.put("captchacode", code);
-            br.submitForm(captchaform);
-            if (br.containsHTML("Password Error")) {
-                logger.warning("Wrong password!");
-                link.setProperty("pass", null);
-                continue;
-            }
-            if (br.containsHTML("Captcha number error") || br.containsHTML("captcha.php") && !br.containsHTML("You have got max allowed bandwidth size per hour")) {
-                logger.warning("Wrong captcha or wrong password!");
-                link.setProperty("pass", null);
-                continue;
-            }
-            break;
         }
         if (br.containsHTML("Password Error")) {
             logger.warning("Wrong password!");
@@ -238,9 +244,8 @@ public class MhfScriptBasic extends PluginForHost {
         br.setFollowRedirects(false);
         br.setCookie("http://filecruz.com", "mfh_mylang", "en");
         br.getPage(parameter.getDownloadURL());
-        String dllink = null;
         if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("access_key=") || br.getRedirectLocation().contains("getfile.php")) {
-            dllink = br.getRedirectLocation();
+            finalLink = br.getRedirectLocation();
         } else {
             if (br.containsHTML("You have got max allowed download sessions from the same IP")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
             String passCode = null;
@@ -267,18 +272,10 @@ public class MhfScriptBasic extends PluginForHost {
             if (passCode != null) {
                 parameter.setProperty("pass", passCode);
             }
-            String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
-            if (sitelinks == null || sitelinks.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            for (String alink : sitelinks) {
-                alink = Encoding.htmlDecode(alink);
-                if (alink.contains("access_key=") || alink.contains("getfile.php?")) {
-                    dllink = alink;
-                    break;
-                }
-            }
+            findLink(parameter);
         }
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, dllink, true, 0);
+        if (finalLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, finalLink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
