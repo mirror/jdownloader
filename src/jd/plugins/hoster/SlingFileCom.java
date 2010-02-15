@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
@@ -73,10 +74,13 @@ public class SlingFileCom extends PluginForHost {
         }
 
         String downloadUrl = br.getRegex(Pattern.compile("<a class=\"link_v3\" href=\"(.*?)\">here</a>")).getMatch(0);
+        if (downloadUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        downloadUrl = Encoding.htmlDecode(downloadUrl);
+        this.sleep(waittime, downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadUrl, true, 0);
         if (dl.getConnection().getResponseCode() == 410) {
             dl.getConnection().disconnect();
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60000l);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
         }
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

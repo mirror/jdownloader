@@ -27,40 +27,42 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "feboshare.com" }, urls = { "http://[\\w\\.]*?feboshare\\.com/files/[0-9]+/.+" }, flags = { 0 })
-public class FeboShareCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "onionshare.com" }, urls = { "http://[\\w\\.]*?onionshare\\.com/en/view/[a-z0-9]+" }, flags = { 0 })
+public class OnionShareCom extends PluginForHost {
 
-    public FeboShareCom(PluginWrapper wrapper) {
+    public OnionShareCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
     public String getAGBLink() {
-        return "http://www.feboshare.com/terms.php";
+        return "http://www.onionshare.com/tos.php";
     }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
-        String filename = br.getRegex("Filename:(.*?)<br").getMatch(0);
-        if (filename == null) filename = br.getRegex("Link: <a href=\".*?/files/[0-9]+/(.*?)\"").getMatch(0);
-        String filesize = br.getRegex("Filesize:(.*?)<p>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("FILE_NOT_EXITS")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<title>Download -(.*?)- Onionshare.com</title>").getMatch(0);
+        if (filename == null) filename = br.getRegex("<div class=\"filenametext\">(.*?)</div>").getMatch(0);
+        String filesize = br.getRegex("\">File Size:</font></div><div style=\"height: 4px; line-height.*?style=\"text-align: center;\"><font style=\".*?\">(.*?)</font>").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         link.setName(filename.trim());
-        link.setDownloadSize(Regex.getSize(filesize));
+        if (filesize != null) link.setDownloadSize(Regex.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        String dllink = br.getRegex("window\\.open\\('(.*?)'\\)").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("('|\")(http://cdn\\.feboshare\\.com/files/[0-9]+/.*?)('|\")").getMatch(1);
+        String dllink = br.getRegex("<td><div style=\"text-align: center;\"><a href=\"(/.*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("(\"|')(/download/.*?)('|\")").getMatch(1);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -2);
+        dllink = "http://onionshare.com" + dllink;
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

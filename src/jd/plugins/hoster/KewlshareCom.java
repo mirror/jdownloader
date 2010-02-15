@@ -31,12 +31,19 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kewlshare.com" }, urls = { "http://[\\w\\.]*?kewlshare\\.com/dl/[\\w]+/" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kewlshare.com" }, urls = { "http://[\\w\\.]*?kewlshare\\.com/(dl/[\\w]+/|share/[a-z0-9]+)" }, flags = { 2 })
 public class KewlshareCom extends PluginForHost {
 
     public KewlshareCom(PluginWrapper wrapper) {
         super(wrapper);
         enablePremium("http://kewlshare.com/loginpremium.php");
+    }
+
+    public void correctDownloadLink(DownloadLink link) {
+        String fileid = new Regex(link.getDownloadURL(), "/share/([a-z0-9]+)").getMatch(0);
+        if (fileid != null) {
+            link.setUrlDownload("http://kewlshare.com/dl/" + fileid + "/");
+        }
     }
 
     @Override

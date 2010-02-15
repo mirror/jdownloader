@@ -47,7 +47,7 @@ public class ImageVenueCom extends PluginForHost {
         /* Error handling */
         if (br.containsHTML("This image does not exist on this server")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = null;
-        String finallink = br.getRegex("scaleImg\\(\\)\"  SRC=\"(.*?)\"").getMatch(0);
+        String finallink = br.getRegex("id=\"thepic\".*?SRC=\"(.*?)\"").getMatch(0);
         if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String server = new Regex(link.getDownloadURL(), "(img[0-9]+\\.imagevenue\\.com/)").getMatch(0);
         finallink = "http://" + server + finallink;
@@ -66,8 +66,10 @@ public class ImageVenueCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.getPage(downloadLink.getDownloadURL());
-        String finallink = br.getRegex("scaleImg\\(\\)\"  SRC=\"(.*?)\"").getMatch(0);
+        String finallink = br.getRegex("id=\"thepic\".*?SRC=\"(.*?)\"").getMatch(0);
         if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String server = new Regex(downloadLink.getDownloadURL(), "(img[0-9]+\\.imagevenue\\.com/)").getMatch(0);
+        finallink = "http://" + server + finallink;
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, 0);
         dl.startDownload();
     }

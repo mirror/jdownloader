@@ -24,10 +24,9 @@ import jd.controlling.ProgressController;
 import jd.http.RandomUserAgent;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.pluginUtils.Recaptcha;
 
@@ -58,8 +57,7 @@ public class LdTTemp extends PluginForDecrypt {
             }
             break;
         }
-        System.out.print(br.toString());
-        if (br.containsHTML("(api.recaptcha.net|Das war leider Falsch|das Falsche Captcha eingegeben)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        if (br.containsHTML("(api.recaptcha.net|Das war leider Falsch|das Falsche Captcha eingegeben)")) throw new DecrypterException(DecrypterException.CAPTCHA);
         String[] links = HTMLParser.getHttpLinks(br.toString(), "");
         if (links.length == 0) return null;
         for (String finallink : links) {
