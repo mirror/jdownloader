@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry kind="src" path="src"/>
-	<classpathentry kind="src" path="ressourcen"/>
-	<classpathentry excluding="themekeys/" kind="src" path="tools"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="ressourcen/libs/BrowserLauncher2.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/hsqldb.jar" sourcepath="ressourcen/code-ressourcen/hsqsql_src.zip"/>
