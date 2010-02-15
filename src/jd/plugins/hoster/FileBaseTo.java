@@ -137,10 +137,20 @@ public class FileBaseTo extends PluginForHost {
         br.setCookie("http://filebase.to", "fb_language", "de");
         String url = downloadLink.getDownloadURL();
         br.getPage(url);
+
         downloadLink.setName(Plugin.extractFileNameFromURL(url).replaceAll("&dl=1", ""));
         if (br.containsHTML("eider\\s+nicht\\s+gefunden")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String size = br.getRegex("Dateigr[^:]*:</td>\\s+<td[^>]*>(.*?)</td>").getMatch(0);
-        downloadLink.setDownloadSize(Regex.getSize(size));
+        Form[] forms = br.getForms();
+        try {
+            br.submitForm(forms[1]);
+            String size = br.getRegex("<b>Datei-Groesse:</b>.*?</td>.*?<td width=.*?>(.*?)</td>").getMatch(0);
+            String name = br.getRegex("\"submit\" value=\"Download \\- (.*?)\"").getMatch(0);
+            downloadLink.setName(name);
+            downloadLink.setDownloadSize(Regex.getSize(size));
+        } catch (Exception e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
         return AvailableStatus.TRUE;
 
     }
@@ -148,6 +158,7 @@ public class FileBaseTo extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         String formact = downloadLink.getDownloadURL();
+        //I'm not sure if we have captchas in new version
         if (br.containsHTML("/captcha/CaptchaImage")) {
             for (int i = 0; i <= 5; i++) {
                 File captchaFile = getLocalCaptchaFile(".png");
@@ -165,17 +176,15 @@ public class FileBaseTo extends PluginForHost {
             }
             // if captcha error after loop
             if (br.containsHTML("Code wurde falsch")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        } else {
-            String uid = br.getRegex("name=\"uid\" id=\"uid\" value=\"(.*?)\"").getMatch(0);
-            if (uid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            br.postPage(br.getURL(), "uid=" + uid);
         }
+
         try {
-            String finallink = br.getRegex("value=\"(http.*?/download/ticket.*?)\"").getMatch(0);
-            dl = BrowserAdapter.openDownload(br, downloadLink, finallink, false, 1);
+            Form forms = br.getForm(0);
+       
+            dl = BrowserAdapter.openDownload(br, downloadLink, forms);
             URLConnectionAdapter con = dl.getConnection();
-            if (con.getContentType().contains("html")) {
-                br.getPage(finallink);
+            if (!con.isContentDisposition()) {
+                br.getPage(forms.getAction());
                 if (br.containsHTML("error")) {
                     con.disconnect();
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, JDL.L("plugins.hoster.filebaseto.servererror", "Server error"));
