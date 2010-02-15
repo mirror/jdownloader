@@ -166,6 +166,7 @@ public abstract class PluginForDecrypt extends Plugin {
             progress.doFinalize(15000l);
             return new ArrayList<DownloadLink>();
         } catch (DecrypterException e) {
+            e.printStackTrace();
             tmpLinks = new ArrayList<DownloadLink>();
             progress.setStatusText(this.getHost() + ": " + e.getErrorMessage());
             progress.setColor(Color.RED);
