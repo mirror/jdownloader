@@ -48,6 +48,7 @@ download.error.message.iopermissions = 하드 디스크에 대한 쓰기 권한�
 download.error.message.localio = 파일 쓰기 실패: %s
 download.error.message.networkreset = 네크워크 문제
 download.error.message.outofmemory = 메모리가 부족합니다.
+download.error.message.rangeheaderparseerror = 예상치 못한 레인지해더 포맷:
 download.error.message.unavailable = 서비스 일시적으로 사용불가
 downloadlink.status.error.captcha_wrong = 자동다운로드방지코드가 잘못되었습니다.
 downloadlink.status.error.defect = 플러그인 만료됨
