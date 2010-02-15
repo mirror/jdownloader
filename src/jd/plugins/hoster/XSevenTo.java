@@ -150,7 +150,7 @@ public class XSevenTo extends PluginForHost {
                 String waittime = brc.getRegex("wait:(\\d+)").getMatch(0);
                 if (waittime != null) waitsecs = Integer.parseInt(waittime);
                 if (waitsecs > 0) sleep(waitsecs * 1000l, downloadLink);
-                dllink = brc.getRegex("url:'(http:.*?)'").getMatch(0);
+                dllink = brc.getRegex("url:'(.*?)'").getMatch(0);
             }
         } else {
             /* free users can only download the 10mins sample */
@@ -158,11 +158,13 @@ public class XSevenTo extends PluginForHost {
             dllink = br.getRedirectLocation();
         }
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (!dllink.contains("http://x7.to/")) dllink = "http://x7.to/" + dllink;
         br.setDebug(true);
         /* streams are not resumable */
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, !isStream, 1);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
+            if (br.containsHTML("wird ein erneuter Versuch gestartet")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverproblems");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
