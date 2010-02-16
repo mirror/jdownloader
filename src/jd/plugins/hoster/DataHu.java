@@ -60,6 +60,7 @@ public class DataHu extends PluginForHost {
 
     public void login(Account account) throws Exception {
         this.setBrowserExclusive();
+        br.forceDebug(true);
         br.getPage("http://data.hu/");
         Form form = br.getForm(0);
         form.put("username", Encoding.urlEncode(account.getUser()));
@@ -67,8 +68,14 @@ public class DataHu extends PluginForHost {
         form.put("remember", "on");
         br.submitForm(form);
         br.getPage("http://data.hu/index.php");
-        if (br.getCookie("http://data.hu/", "datapremiumseccode") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        if (!isPremium()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (br.getCookie("http://data.hu/", "datapremiumseccode") == null) {
+            logger.warning("Cookie error!");
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
+        if (!isPremium()) {
+            logger.warning("This account is no a premium account!");
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
     }
 
     public boolean isPremium() throws IOException {
@@ -92,6 +99,7 @@ public class DataHu extends PluginForHost {
         if (days != null && !days.equals("0")) {
             ai.setValidUntil(Regex.getMilliSeconds(days, "yyyy-MM-dd hh:mm:ss", Locale.ENGLISH));
         } else {
+            logger.warning("Couldn't get the expire date, stopping premium!");
             ai.setExpired(true);
             account.setValid(false);
             return ai;
@@ -106,6 +114,7 @@ public class DataHu extends PluginForHost {
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         requestFileInformation(downloadLink);
         login(account);
+        br.forceDebug(true);
         br.getPage(downloadLink.getDownloadURL());
         String link = br.getRegex("window.location.href='(.*?)';").getMatch(0);
         if (link == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

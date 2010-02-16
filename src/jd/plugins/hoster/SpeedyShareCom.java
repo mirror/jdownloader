@@ -30,7 +30,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "speedyshare.com" }, urls = { "http://[\\w\\.]*?speedyshare\\.com/[0-9]+.*" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "speedyshare.com" }, urls = { "http://[\\w\\.]*?speedyshare\\.com/files/[0-9]+/.+" }, flags = { 0 })
 public class SpeedyShareCom extends PluginForHost {
 
     public SpeedyShareCom(PluginWrapper wrapper) {
@@ -47,49 +47,50 @@ public class SpeedyShareCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         String url = downloadLink.getDownloadURL();
-        String downloadName = null;
-        String downloadSize = null;
-
         br.getPage(url);
-        if (br.containsHTML("This file has been deleted for the following reason")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        if (!br.containsHTML("File not found")) {
-            downloadName = Encoding.htmlDecode(br.getRegex(Pattern.compile("<title>(.*?)</title>", Pattern.CASE_INSENSITIVE)).getMatch(0));
-            downloadSize = (br.getRegex(Pattern.compile("<BR>File size (.*?),", Pattern.CASE_INSENSITIVE)).getMatch(0));
-            if (!(downloadName == null || downloadSize == null)) {
-                downloadLink.setName(downloadName);
-                downloadLink.setDownloadSize(Regex.getSize(downloadSize.replaceAll(",", "\\.")));
-                return AvailableStatus.TRUE;
-            }
-        }
-        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String downloadName = Encoding.htmlDecode(br.getRegex(Pattern.compile("<title>(.*?)</title>", Pattern.CASE_INSENSITIVE)).getMatch(0));
+        String downloadSize = (br.getRegex(Pattern.compile("class=result>File size(.*?),", Pattern.CASE_INSENSITIVE)).getMatch(0));
+        if (br.containsHTML("(This file has been deleted for the following reason|File not found)") || downloadName == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        downloadLink.setName(downloadName);
+        if (downloadSize != null)
+            downloadLink.setDownloadSize(Regex.getSize(downloadSize.replaceAll(",", "\\.")));
+        else
+            logger.warning("Filesizeregex for speedyshare.com is broken!");
+        return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
         requestFileInformation(downloadLink);
-        /* Link holen */
-        String linkurl = Encoding.htmlDecode(new Regex(br, Pattern.compile("href=\"(http://www.speedyshare.com/data/.*?)\">", Pattern.CASE_INSENSITIVE)).getMatch(0));
-        if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         if (br.containsHTML("The one-hour limit has been reached. Wait")) {
             String wait[] = br.getRegex("id=minwait1>(\\d+):(\\d+)</span> minutes").getRow(0);
             long waittime = 1000l * 60 * Long.parseLong(wait[0]) + 1000 * Long.parseLong(wait[1]);
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waittime);
         }
+        /* Link holen */
+        String linkpart0 = new Regex(downloadLink.getDownloadURL(), "(speedyshare\\.com/files/[0-9]+/)").getMatch(0);
+        String linkpart1 = new Regex(downloadLink.getDownloadURL(), "speedyshare\\.com/files/[0-9]+/(.+)").getMatch(0);
+        if (linkpart0 == null || linkpart1 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String linkurl = "http://www." + linkpart0 + "download/" + linkpart1;
         /* Datei herunterladen */
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, true, -5);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, true, 0);
         URLConnectionAdapter con = dl.getConnection();
         if (con.getResponseCode() != 200 && con.getResponseCode() != 206) {
             con.disconnect();
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 5 * 60 * 1000l);
+        }
+        if (con.getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 10;
+        return -1;
     }
 
     @Override
