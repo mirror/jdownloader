@@ -22,10 +22,12 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "extrashare.us folder" }, urls = { "http://[\\w\\.]*?extrashare\\.us/(\\w\\w/)?folder/[0-9]+/" }, flags = { 0 })
 public class ExtrashareUsFolder extends PluginForDecrypt {
@@ -37,6 +39,7 @@ public class ExtrashareUsFolder extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.getPage(param.getCryptedUrl());
+        if (br.containsHTML("Ez a k&ouml;nyvt&aacute;r jelsz&oacute;val v&eacute;dett")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         String fpName = br.getRegex("class=\"konyvtarnev\">(.*?)</span>").getMatch(0);
         if (fpName == null) fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
         boolean fail = false;

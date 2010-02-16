@@ -19,8 +19,11 @@ import java.io.IOException;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -28,12 +31,13 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uloz.to" }, urls = { "http://[\\w\\.]*?(uloz\\.to|ulozto\\.sk|ulozto\\.cz|ulozto\\.net)/[0-9]+/" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uloz.to" }, urls = { "http://[\\w\\.]*?(uloz\\.to|ulozto\\.sk|ulozto\\.cz|ulozto\\.net)/[0-9]+/" }, flags = { 2 })
 public class UlozTo extends PluginForHost {
 
     public UlozTo(PluginWrapper wrapper) {
         super(wrapper);
         br.setFollowRedirects(true);
+        this.enablePremium("http://uloz.to/kredit/");
     }
 
     @Override
@@ -93,6 +97,52 @@ public class UlozTo extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    public void login(Account account) throws Exception {
+        setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.setCustomCharset("utf-8");
+        br.getPage("http://uloz.to/");
+        br.postPage("http://uloz.to/login/", "login=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&pamatovat=1&prihlasit=P%C5%99ihl%C3%A1sit");
+        if (br.getCookie("http://uloz.to/", "uloz-to-prihlasen") == null || br.getCookie("http://uloz.to/", "login_hash") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        String trafficleft = br.getRegex("Váš kredit : <b><span title=\"Pozor, zmena jednotek:([0-9 ]+KB)").getMatch(0);
+        if (trafficleft != null) {
+            ai.setTrafficLeft(Regex.getSize(trafficleft.replace(" ", "")));
+        }
+        ai.setStatus("Premium User");
+        account.setValid(true);
+        return ai;
+    }
+
+    public void handlePremium(DownloadLink parameter, Account account) throws Exception {
+        requestFileInformation(parameter);
+        login(account);
+        br.getPage(parameter.getDownloadURL());
+        String dllink = br.getRegex("<a name=\"VIP\"></a>.*?<table width=\"90%\" cellspacing=\"5\" cellpadding=\"5\" border=\"0\" style=\"border:1px solid black;margin-left:-10px\">.*?<td><a href=\"(http.*?)\"").getMatch(0);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, dllink, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
         return -1;
     }
 
