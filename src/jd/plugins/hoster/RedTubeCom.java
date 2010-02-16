@@ -25,9 +25,9 @@ public class RedTubeCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
-        
+        requestFileInformation(link);
         if (dlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -42,11 +42,10 @@ public class RedTubeCom extends PluginForHost {
         br.setCookie("http://www.redtube.com", "language", "en");
         br.getPage(link.getDownloadURL());
         String fileName = br.getRegex("<h1 class=\"videoTitle\">(.*?)</h1>").getMatch(0);
-        if (fileName != null)
-            link.setName(fileName + ".flv");
+        if (fileName == null) fileName = br.getRegex("<title>(.*?)- RedTube - Free Porn Videos</title>").getMatch(0);
+        if (fileName != null) link.setName(fileName.trim() + ".flv");
         br.setFollowRedirects(true);
         dlink = getDownloadUrl(link);
-        System.out.println(dlink);
         try {
             if (!br.openGetConnection(dlink).getContentType().contains("html")) {
                 link.setDownloadSize(br.getHttpConnection().getLongContentLength());
@@ -62,7 +61,7 @@ public class RedTubeCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return -1;
     }
 
     @Override
