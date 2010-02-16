@@ -23,6 +23,8 @@ import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
@@ -33,65 +35,68 @@ public class ExtraShareUs extends PluginForHost {
         super(wrapper);
     }
 
-    // @Override
     public String getAGBLink() {
         return "http://www.extrashare.us/rules.php";
     }
 
-    // @Override
     public String getCoder() {
         return "TnS";
     }
 
-    // @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException {
-        br.setCookiesExclusive(true);
-        br.clearCookies(getHost());
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        String[] dat = br.getRegex("<td><strong>(.*)<span class=\"style1\">\\|(.*)</span></strong></td>").getRow(0);
-        long length = Regex.getSize(dat[1].trim());
-        downloadLink.setDownloadSize(length);
-        downloadLink.setName(dat[0].trim());
+        if (br.containsHTML("Your requested file is not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<b>File name:</b></td>.*?<td align=.*?width=.*?>(.*?)</td>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("\"Click this to report for(.*?)\"").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
+                if (filename == null) {
+                    filename = br.getRegex("content=\"(.*?), The best file hosting service").getMatch(0);
+                }
+            }
+        }
+        String filesize = br.getRegex("<span class=\"style1\">\\|(.*?)</span").getMatch(0);
+        if (filename == null || filename.matches("")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        downloadLink.setFinalFileName(filename.trim());
+        if (filesize != null) downloadLink.setDownloadSize(Regex.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
-    // @Override
-    /*
-     * /* public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         br.setFollowRedirects(true);
         requestFileInformation(downloadLink);
         String link = br.getRegex(Pattern.compile("document.location=\"(.*)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
-        jd.plugins.BrowserAdapter.openDownload(br,downloadLink, link, true, 1).startDownload();
+        if (link == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, link, false, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            if (br.containsHTML("(Connection to database server failed|Error:Lost connection to MySQL server)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Servererror!");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
-    // @Override
     public int getTimegapBetweenConnections() {
         return 500;
     }
 
-    // @Override
     public int getMaxConnections() {
         return 1;
     }
 
-    // @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return -1;
     }
 
-    // @Override
     public void reset() {
     }
 
-    // @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 }

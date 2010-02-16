@@ -28,26 +28,24 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dl.qj.net" }, urls = { "http://[\\w\\.]*?dl\\.qj\\.net/.+/\\w+/\\d+/fid/\\d+/catid/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dl.qj.net" }, urls = { "http://[\\w\\.]*?dl\\.qj\\.net/.*?/.*?\\.html" }, flags = { 0 })
 public class QJNet extends PluginForHost {
 
     public QJNet(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    // @Override
     public String getAGBLink() {
         return "http://www.qj.net/terms";
     }
 
-    // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (!(br.containsHTML("<title>QuickJump Downloads- - </title>") || br.containsHTML("This file has been temporarily removed"))) {
             String filename = br.getRegex("File Name</b>.*?<b>(.*?)</b>").getMatch(0);
-            String filesize = br.getRegex("File Size</td>.*?<td class=\"odd\">(.*?)</td>").getMatch(0);
+            String filesize = br.getRegex("File Size.*?<td class=\"odd\">(.*?)</td>").getMatch(0);
             if (!(filename == null || filesize == null)) {
                 downloadLink.setName(filename);
                 downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
@@ -57,11 +55,20 @@ public class QJNet extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
-    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        String id = new Regex(downloadLink.getBrowserUrl(), "/(\\d+)/catid/").getMatch(0);
-        String linkurl = "http://dl.qj.net/dl.php?fid=" + id;
+        // String fid =
+        // br.getRegex("onchange=\"VoteFile\\(this\\.value,(.*?)\\)\"").getMatch(0);
+        String continu = br.getRegex("<td width=\"16\">.*?<a href=.*?\"(/.*?)\"").getMatch(0);
+        if (continu == null) continu = br.getRegex("\"(/download/.*?\\.html)\"").getMatch(0);
+        if (continu == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        continu = "http://dl.qj.net" + continu;
+        br.getPage(continu);
+        String linkurl = br.getRegex("window\\.location=\"(/.*?)\"").getMatch(0);
+        if (linkurl == null) linkurl = br.getRegex("\"(/dl\\.php\\?fid=\\d+)").getMatch(0);
+        if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (!linkurl.contains("http://dl.qj.net")) linkurl = "http://dl.qj.net" + linkurl;
+        if (!linkurl.contains("&new=1")) linkurl = linkurl + "&new=1";
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, true, 0);
         String requestUrl = dl.getConnection().getURL().toString();
         if (!requestUrl.matches("http://\\w+.amazonaws.com/dlqjnet/.+\\?.+")) {
@@ -76,20 +83,16 @@ public class QJNet extends PluginForHost {
         dl.startDownload();
     }
 
-    // @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return -1;
     }
 
-    // @Override
     public void reset() {
     }
 
-    // @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 }

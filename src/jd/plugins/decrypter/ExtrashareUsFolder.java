@@ -20,12 +20,14 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "eXtraShare.us folder" }, urls = { "http://[\\w\\.]*?extrashare.us/(\\w\\w/)?folder/.+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "extrashare.us folder" }, urls = { "http://[\\w\\.]*?extrashare\\.us/(\\w\\w/)?folder/[0-9]+/" }, flags = { 0 })
 public class ExtrashareUsFolder extends PluginForDecrypt {
 
     public ExtrashareUsFolder(PluginWrapper wrapper) {
@@ -33,11 +35,35 @@ public class ExtrashareUsFolder extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        br.getPage(param.getCryptedUrl());
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String[] files = br.getRegex("<td class=tdrow2><a href='(.*?)'>").getColumn(0);
-        for (String file : files) {
-            decryptedLinks.add(createDownloadlink(file));
+        br.getPage(param.getCryptedUrl());
+        String fpName = br.getRegex("class=\"konyvtarnev\">(.*?)</span>").getMatch(0);
+        if (fpName == null) fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
+        boolean fail = false;
+        String[] files = br.getRegex("<tr>(.*?<td class=tdrow1.*?)</tr>").getColumn(0);
+        if (files == null || files.length == 0) {
+            fail = true;
+            files = br.getRegex("<td class=tdrow2><a href='(.*?)'>").getColumn(0);
+        }
+        if (files == null || files.length == 0) return null;
+        for (String fileinfo : files) {
+            String filename = new Regex(fileinfo, "<td class=tdrow1><div align=\"left\">(.*?)</div>").getMatch(0);
+            String filesize = new Regex(fileinfo, "<td class=tdrow2></td>.*?<td class=tdrow1>(.*?)</td>").getMatch(0);
+            String filelink = new Regex(fileinfo, "href='(.*?)'>Letöltés</a>").getMatch(0);
+            if (fail) filelink = fileinfo;
+            if (filelink != null) {
+                DownloadLink dl = createDownloadlink(filelink);
+                if (filename != null) dl.setName(filename);
+                if (filesize != null) dl.setDownloadSize(Regex.getSize(filesize));
+                if (filename != null && filesize != null) dl.setAvailable(true);
+                decryptedLinks.add(dl);
+            } else
+                logger.warning("Failed to get filelink for " + fileinfo + " from link: " + param.getCryptedUrl());
+        }
+        if (fpName != null) {
+            FilePackage fp = FilePackage.getInstance();
+            fp.setName(fpName.trim());
+            fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
     }

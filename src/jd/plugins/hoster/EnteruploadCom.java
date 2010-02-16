@@ -30,7 +30,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "enterupload.com" }, urls = { "http://[\\w\\.]*?enterupload\\.com/[\\w]+/?" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "enterupload.com" }, urls = { "http://[\\w\\.]*?enterupload\\.com/[a-z0-9]+" }, flags = { 0 })
 public class EnteruploadCom extends PluginForHost {
 
     public EnteruploadCom(PluginWrapper wrapper) {

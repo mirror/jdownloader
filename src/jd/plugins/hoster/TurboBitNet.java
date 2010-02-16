@@ -47,16 +47,28 @@ public class TurboBitNet extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.getPage(downloadLink.getDownloadURL());
+        br.setFollowRedirects(true);
+        br.getHeaders().put("Referer", downloadLink.getDownloadURL());
+        // To get the english version of the page which then usually redirects
+        // us to our link again!
+        br.getPage("http://turbobit.net/en");
+        // Little errorhandling in case there we're on the wrong page!
+        if (!br.getURL().matches(downloadLink.getDownloadURL())) br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("<div class=\"code-404\">404</div>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String fileName = br.getRegex("<span class='file-icon .*?'>&nbsp;</span><b>(.*?)</b></h1>").getMatch(0);
-        String fileSize = br.getRegex("<div><b>Размер файла:</b> (.*?).</div></div>").getMatch(0);
-        if (fileName == null || fileSize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String fileName = br.getRegex("Download it!(.*?)\\. Free download without registration from").getMatch(0);
+        if (fileName == null) {
+            fileName = br.getRegex("<span class='file-icon.*?'></span><b><br>(.*?)</b>").getMatch(0);
+            if (fileName == null) {
+                fileName = br.getRegex("name=\"keywords\" content=\"(.*?),  , download file").getMatch(0);
+            }
+        }
+        String fileSize = br.getRegex("<b>File size:</b>(.*?)</div>").getMatch(0);
+        if (fileName == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         fileSize = fileSize.replaceAll("М", "M");
         fileSize = fileSize.replaceAll("к", "k");
-        fileSize = fileSize + "b";
+        if (!fileSize.endsWith("b")) fileSize = fileSize + "b";
         downloadLink.setName(fileName.trim());
-        downloadLink.setDownloadSize(Regex.getSize(fileSize.replaceAll(",", "\\.")));
+        if (fileSize != null) downloadLink.setDownloadSize(Regex.getSize(fileSize.replace(",", ".")));
         return AvailableStatus.TRUE;
     }
 
@@ -66,12 +78,14 @@ public class TurboBitNet extends PluginForHost {
 
         String id = new Regex(downloadLink.getDownloadURL(), Pattern.compile(".*/(.*?)\\.html")).getMatch(0);
         br.getPage("http://turbobit.net/download/free/" + id);
-        if (br.containsHTML("Попробуйте повторить через")) {
-            int wait = Integer.parseInt(br.getRegex("<span id='timeout'>(\\d+)</span></h1>").getMatch(0));
+        if (br.containsHTML("(Попробуйте повторить через|The limit of connection was succeeded for your|Try to repeat after)")) {
+            String waittime = br.getRegex("<span id='timeout'>(\\d+)</span></h1>").getMatch(0);
+            int wait = 0;
+            if (waittime != null) wait = Integer.parseInt(waittime);
             if (wait < 31) {
                 sleep(wait * 1000l, downloadLink);
-            }
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait * 1001);
+            } else if (wait == 0) {
+            } else if (wait > 31) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait * 1001l);
         }
         String captchaUrl = br.getRegex("\"(http://turbobit\\.net/captcha/.*?)\"").getMatch(0);
         if (captchaUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -79,7 +93,6 @@ public class TurboBitNet extends PluginForHost {
         if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         for (int i = 1; i <= 3; i++) {
             String captchaCode = getCaptchaCode(captchaUrl, downloadLink);
-
             form.put("captcha_response", captchaCode);
             br.submitForm(form);
             if (br.containsHTML("updateTime: function()")) break;
@@ -112,8 +125,8 @@ public class TurboBitNet extends PluginForHost {
             }
         }
         if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        loginform.put("user[login]", Encoding.htmlDecode(account.getUser()));
-        loginform.put("user[pass]", Encoding.htmlDecode(account.getPass()));
+        loginform.put(Encoding.htmlDecode("user[login]"), Encoding.htmlDecode(account.getUser()));
+        loginform.put(Encoding.htmlDecode("user[pass]"), Encoding.htmlDecode(account.getPass()));
         br.submitForm(loginform);
         if (!br.containsHTML("yesturbo")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         if (br.getCookie("http://turbobit.net/", "sid") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
