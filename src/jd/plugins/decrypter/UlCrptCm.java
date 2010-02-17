@@ -36,7 +36,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "urlcrypt.com" }, urls = { "http://[\\w\\.]*?urlcrypt\\.com/open-.*?\\.htm" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "urlcrypt.com" }, urls = { "http://[\\w\\.]*?(urlcrypt\\.com|xeem\\.in)/open-.*?\\.htm" }, flags = { 0 })
 public class UlCrptCm extends PluginForDecrypt {
 
     public UlCrptCm(PluginWrapper wrapper) {
@@ -64,7 +64,11 @@ public class UlCrptCm extends PluginForDecrypt {
             String passCode = null;
             // Captcha handling
             if (br.containsHTML("Sicherheitsabfrage")) {
-                String captchalink = "http://www.urlcrypt.com/captcha.php?ImageWidth=120&ImageHeight=37&FontSize=19&CordX=10&CordY=24";
+                String captchalink = null;
+                if (parameter.contains("urlcrypt.com"))
+                    captchalink = "http://www.urlcrypt.com/captcha.php?ImageWidth=120&ImageHeight=37&FontSize=19&CordX=10&CordY=24";
+                else
+                    captchalink = "http://www.xeem.in/captcha.php?ImageWidth=120&ImageHeight=37&FontSize=19&CordX=10&CordY=24";
                 String code = getCaptchaCode(captchalink, param);
                 captchaForm.put("strCaptcha", code);
             }
@@ -85,17 +89,17 @@ public class UlCrptCm extends PluginForDecrypt {
         if (pass != null && pass.equals("kein Passwort")) pass = null;
         // container handling (if no containers found, use webprotection
         if (br.containsHTML("DLC-Container")) {
-            decryptedLinks = loadcontainer(br, "dlc");
+            decryptedLinks = loadcontainer(br, "dlc", param);
             if (decryptedLinks != null && decryptedLinks.size() > 0) return decryptedLinks;
         }
 
         if (br.containsHTML("RSDF-Container")) {
-            decryptedLinks = loadcontainer(br, "rsdf");
+            decryptedLinks = loadcontainer(br, "rsdf", param);
             if (decryptedLinks != null && decryptedLinks.size() > 0) return decryptedLinks;
         }
 
         if (br.containsHTML("CCF-Container")) {
-            decryptedLinks = loadcontainer(br, "ccf");
+            decryptedLinks = loadcontainer(br, "ccf", param);
             if (decryptedLinks != null && decryptedLinks.size() > 0) return decryptedLinks;
         }
 
@@ -124,26 +128,34 @@ public class UlCrptCm extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private ArrayList<DownloadLink> loadcontainer(Browser br, String format) throws IOException, PluginException {
+    private ArrayList<DownloadLink> loadcontainer(Browser br, String format, CryptedLink param) throws IOException, PluginException {
+        ArrayList<DownloadLink> decryptedLinks = null;
         Browser brc = br.cloneBrowser();
-        String[] dlclinks = br.getRegex("(http://www\\.urlcrypt\\.com/download-" + format + "-.*?)\"").getColumn(0);
+        String[] dlclinks = null;
+        if (param.toString().contains("urlcrypt.com"))
+            dlclinks = br.getRegex("(http://www\\.urlcrypt\\.com/download-" + format + "-.*?)\"").getColumn(0);
+        else
+            dlclinks = br.getRegex("(http://www\\.xeem\\.in/download-" + format + "-.*?)\"").getColumn(0);
         if (dlclinks == null || dlclinks.length == 0) return null;
         for (String link : dlclinks) {
             String test = Encoding.htmlDecode(link);
             File file = null;
             URLConnectionAdapter con = brc.openGetConnection(link);
             if (con.getResponseCode() == 200) {
-                file = JDUtilities.getResourceFile("tmp/urlcrypt/" + test.replace("http://www.urlcrypt.com/", "") + "." + format);
+                file = JDUtilities.getResourceFile("tmp/urlcrypt/" + test.replaceAll("(:|/)", "") + "." + format);
                 if (file == null) return null;
                 file.deleteOnExit();
                 brc.downloadConnection(file, con);
+                if (file != null && file.exists() && file.length() > 100) {
+                    decryptedLinks = JDUtilities.getController().getContainerLinks(file);
+                }
             } else {
                 con.disconnect();
                 return null;
             }
 
             if (file != null && file.exists() && file.length() > 100) {
-                ArrayList<DownloadLink> decryptedLinks = JDUtilities.getController().getContainerLinks(file);
+//                decryptedLinks = JDUtilities.getController().getContainerLinks(file);
                 if (decryptedLinks.size() > 0) return decryptedLinks;
             } else {
                 return null;
