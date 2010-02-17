@@ -1,4 +1,4 @@
 <jDownloader>
-  <method name="letitbit.net" author="ManiacMansion" services="letitbit.net"/>
+  <method name="letitbit.net" author="ManiacMansion" services="letitbit.net;shareflare.net"/>
   <format type="jpg" letterNum="6"/>
 </jDownloader>
