@@ -75,17 +75,22 @@ public class UpNitoSk extends PluginForHost {
         if (stillInDevelopment) throw new PluginException(LinkStatus.ERROR_FATAL, "The free version of this plugin is still in development!!");
         if (br.containsHTML("Nemozete tolkokrat za sebou stahovat ten isty subor!")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
         Form freeform = br.getFormbyProperty("name", "gdl");
-        if (freeform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String verifytext = br.getRegex("id=\"verifytext\" value=\"(.*?)\"").getMatch(0);
+        if (freeform == null || verifytext == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String thisDamnToken = new Regex(downloadLink.getDownloadURL(), "dwToken=([a-z0-9]+)").getMatch(0);
         Browser br2 = br.cloneBrowser();
         br2.getPage("http://dl1.upnito.sk/getwait.php?dwToken=" + thisDamnToken);
         String gwt_validate = br2.toString().trim();
-        freeform.put("gwt_validate", gwt_validate);
-        sleep(610 * 1001l, downloadLink);
+        freeform.put("gwt_validate", Encoding.htmlDecode(gwt_validate));
+        sleep(605 * 1001l, downloadLink);
+        freeform.put("verifytext", Encoding.htmlDecode(verifytext));
         br.submitForm(freeform);
-        freeform = br.getFormbyProperty("name", "gdl");
+        freeform = br.getFormbyProperty("name", "gdl_form");
         if (freeform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         freeform.put("gwt_validate", gwt_validate);
+        verifytext = br.getRegex("id=\"verifytext\" value=\"(.*?)\"").getMatch(0);
+        if (verifytext == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        freeform.put("verifytext", Encoding.htmlDecode(verifytext));
         sleep(5 * 1001l, downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, freeform, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {

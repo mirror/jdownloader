@@ -89,7 +89,7 @@ public class UloziskoSk extends PluginForHost {
         }
         if ((br.getRedirectLocation() != null && br.getRedirectLocation().contains("error")) || br.containsHTML("Neopísali ste správny overovací reťazec")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         if (br.getRedirectLocation() == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.getRedirectLocation(), true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.getRedirectLocation(), false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

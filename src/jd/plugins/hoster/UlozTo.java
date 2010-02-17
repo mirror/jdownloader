@@ -31,7 +31,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uloz.to" }, urls = { "http://[\\w\\.]*?(uloz\\.to|ulozto\\.sk|ulozto\\.cz|ulozto\\.net)/[0-9]+/" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uloz.to" }, urls = { "http://[\\w\\.]*?((uloz\\.to|ulozto\\.sk|ulozto\\.cz|ulozto\\.net)/[0-9]+/|bagruj\\.cz/[a-z0-9]{12}/.*?\\.html)" }, flags = { 2 })
 public class UlozTo extends PluginForHost {
 
     public UlozTo(PluginWrapper wrapper) {
@@ -55,15 +55,16 @@ public class UlozTo extends PluginForHost {
         br.setCustomCharset("utf-8");
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
-        System.out.print(br.toString());
+        if (downloadLink.getDownloadURL().matches(".*?bagruj\\.cz/[a-z0-9]{12}.*?") && br.getRedirectLocation() != null) {
+            downloadLink.setUrlDownload(br.getRedirectLocation());
+            br.getPage(br.getRedirectLocation());
+        }
         // Wrong links show the mainpage so here we check if we got the mainpage
         // or not
         if (br.containsHTML("multipart/form-data")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex(Pattern.compile("0px;color:#000\"><b>(.*?)</b>")).getMatch(0);
         String filesize = br.getRegex(Pattern.compile("Velikost souboru je <b>(.*?)</b> <br />")).getMatch(0);
-        if (filesize == null) {
-            filesize = br.getRegex(Pattern.compile("Veľkosť súboru je <b>(.*?)</b> <br />")).getMatch(0);
-        }
+        if (filesize == null) filesize = br.getRegex(Pattern.compile("Veľkosť súboru je <b>(.*?)</b> <br />")).getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(Regex.getSize(filesize));
