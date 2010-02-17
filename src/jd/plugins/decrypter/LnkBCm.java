@@ -32,25 +32,26 @@ public class LnkBCm extends PluginForDecrypt {
         super(wrapper);
     }
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-
+        br.setFollowRedirects(false);
+        String found = null;
         br.getPage(parameter);
+        if (br.getRedirectLocation() != null) {
+            found = br.getRedirectLocation();
+        } else {
+            found = br.getRegex("seconds or <a href=\"(.*?)\"").getMatch(0);
+            if (found == null) {
+                found = br.getRegex("<iframe src=\"(.*?)\"").getMatch(0);
+            }
+        }
         // I don't know if this pattern still is valid. May be that there is a
         // version for iframes, and one without iframes.
         // Thats why I left it
-        String found = br.getRegex("seconds or <a href=\"(.*?)\"").getMatch(0);
-        if (found == null) {
-            found = br.getRegex("<iframe src=\"(.*?)\"").getMatch(0);
-        }
         if (found == null) return null;
-
         decryptedLinks.add(createDownloadlink(found));
         return decryptedLinks;
     }
-
-    // @Override
 
 }
