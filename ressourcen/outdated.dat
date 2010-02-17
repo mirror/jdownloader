@@ -172,3 +172,10 @@ jd/plugins/hoster/UsaUploadNet.class
 jd/plugins/decrypter/PrnCm.class
 jd/plugins/hoster/BluehostTo.class
 jd/plugins/hoster/MeinUpload.class
+jd/plugins/decrypter/Mp3ZrCm.class
+jd/plugins/hoster/SharovarCom.class
+jd/plugins/hoster/NetGullCom.class
+jd/plugins/hoster/FryShareCom.class
+jd/plugins/hoster/MegaLoadedCom.class
+jd/plugins/hoster/OnlyFourFilesCom.class
+jd/plugins/hoster/TurkDepoNet.class
