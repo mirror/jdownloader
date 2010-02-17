@@ -171,19 +171,18 @@ public class HellShareCom extends PluginForHost {
             logger.warning("Language couldn't be changed. This will probably cause trouble...");
         } else {
             br.getPage(changetoeng);
+            if (br.containsHTML("No htmlCode read")) br.getPage(downloadLink.getDownloadURL());
         }
         br.setDebug(true);
         if (br.containsHTML("Current load 100%")) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, 15 * 60 * 1000l);
         } else {
-            String url = br.getRegex("FreeDownProgress'.*?'(http://download.en.hellshare.com/.*?)'").getMatch(0);
-            if (url == null) url = br.getRegex("action=\"(http://download.en.hellshare.com/.*?/\\d+)").getMatch(0);
-            if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            br.getPage(url);
+            br.setCustomCharset("utf-8");
+            br.getPage(br.getURL() + "/free");
             if (br.containsHTML("The server is under the maximum load")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server is under maximum load", 10 * 60 * 1000l);
             if (br.containsHTML("You are exceeding the limitations on this download")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
-            String captcha = br.getRegex("(http://www.en.hellshare.com/antispam.php\\?sv=FreeDown:\\d+)\"").getMatch(0);
             if (br.containsHTML("<h1>File not found</h1>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            String captcha = br.getRegex("(http://www\\.(en|cz)\\.hellshare\\.com/antispam\\.php\\?sv=FreeDown:\\d+)\"").getMatch(0);
             Form form = br.getForm(0);
             if (form == null || captcha == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             String code = getCaptchaCode(captcha, downloadLink);
@@ -193,7 +192,7 @@ public class HellShareCom extends PluginForHost {
                 br.followConnection();
                 if (br.containsHTML("<h1>File not found</h1>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 if (br.containsHTML("The server is under the maximum load")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server is under maximum load", 10 * 60 * 1000l);
-                if (br.containsHTML("Incorrectly copied code from the image")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                if (br.containsHTML("(Incorrectly copied code from the image|Opište barevný kód z obrázku)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 if (br.containsHTML("You are exceeding the limitations on this download")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
