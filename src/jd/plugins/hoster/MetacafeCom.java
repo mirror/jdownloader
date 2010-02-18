@@ -51,7 +51,7 @@ public class MetacafeCom extends PluginForHost {
         
         dlink = br.getRegex("mediaURL=(.*?\\.flv)&").getMatch(0);
         dlink = URLDecoder.decode(dlink, "utf-8");
-        System.out.println(dlink);
+
         try {
             if (!br.openGetConnection(dlink).getContentType().contains("html")) {
                 link.setDownloadSize(br.getHttpConnection().getLongContentLength());
