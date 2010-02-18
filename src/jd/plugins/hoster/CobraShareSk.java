@@ -28,8 +28,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-//cobrashare.sk by pspzockerscene
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cobrashare.sk" }, urls = { "http://[\\w\\.]*?cobrashare\\.sk(/downloadFile\\.php\\?id=[a-z|A-Z|0-9| |%]+|:[0-9]+/CobraShare-v.0.9/download/.+id=.+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cobrashare.sk" }, urls = { "http://[\\w\\.]*?cobrashare\\.sk(/downloadFile\\.php\\?id=.+|:[0-9]+/CobraShare-v.0.9/download/.+id=.+)" }, flags = { 0 })
 public class CobraShareSk extends PluginForHost {
 
     public CobraShareSk(PluginWrapper wrapper) {
@@ -53,12 +52,10 @@ public class CobraShareSk extends PluginForHost {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("Poadovaný súbor sa na serveri nenachádza")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-
         String filename = Encoding.htmlDecode(br.getRegex("File name :&nbsp;</td>.*?<td class=\"data\">(.*?)</td>").getMatch(0));
         Regex reg = br.getRegex("Size :&nbsp;</td>.*?<td class=\"data\">(.*?)&nbsp;(.*?)</td>");
         String filesize = reg.getMatch(0) + " " + reg.getMatch(1);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-
+        if (filename == null || (filesize == null || filesize.contains("null"))) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         link.setName(filename);
         link.setDownloadSize(Regex.getSize(filesize));
         return AvailableStatus.TRUE;
@@ -67,18 +64,30 @@ public class CobraShareSk extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        String captchaurl = Encoding.htmlDecode(br.getRegex("id=\"overImg\" src=\"(.*?)\" width=\"100\" hei").getMatch(0));
-        String code = getCaptchaCode(captchaurl, downloadLink);
-        Form captchaForm = br.getForm(0);
-        if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        captchaForm.put("over", code);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, captchaForm, false, 1);
-        if (!(dl.getConnection().isContentDisposition())) {
-            br.followConnection();
-            if (br.containsHTML("window.open")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l); }
-            if (br.containsHTML("content=\"0;url=http://www.cobrashare.sk/down")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-
+        for (int i = 0; i <= 5; i++) {
+            String captchaurl = Encoding.htmlDecode(br.getRegex("id=\"overImg\" src=\"(.*?)\" width=\"100\" hei").getMatch(0));
+            Form captchaForm = br.getForm(0);
+            if (captchaForm == null || captchaurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            String code = getCaptchaCode(captchaurl, downloadLink);
+            captchaForm.put("over", code);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, captchaForm, false, 1);
+            if (dl.getConnection().getContentType().contains("html")) {
+                br.followConnection();
+                if (br.containsHTML("content=\"0;url=http://www.cobrashare.sk/down")) {
+                    br.getPage(downloadLink.getDownloadURL());
+                    continue;
+                }
+                if (br.containsHTML("window.open")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            break;
+        }
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            if (br.containsHTML("content=\"0;url=http://www.cobrashare.sk/down")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            if (br.containsHTML("window.open")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+
         }
         dl.startDownload();
     }
