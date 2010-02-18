@@ -19,6 +19,8 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -39,6 +41,14 @@ public class Freaksharenet extends PluginForHost {
         super(wrapper);
         this.setStartIntervall(100l);
         this.enablePremium("http://freakshare.net/shop.html");
+        setConfigElements();
+    }
+
+    private static final String WAIT1 = "WAIT1";
+
+    private void setConfigElements() {
+        ConfigEntry cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), WAIT1, "Wait 10 minutes instead of reconnecting").setDefaultValue(false);
+        config.addEntry(cond);
     }
 
     @Override
@@ -128,6 +138,7 @@ public class Freaksharenet extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
+        boolean waitReconnecttime = getPluginConfig().getBooleanProperty(WAIT1, false);
         requestFileInformation(downloadLink);
         if (br.containsHTML("your Traffic is used up for today")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1001);
         if (br.containsHTML("You can Download only 1 File in")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1001);
@@ -138,8 +149,13 @@ public class Freaksharenet extends PluginForHost {
         String ttt = br.getRegex("var time = (\\d+).[0-9];").getMatch(0);
         int tt = 0;
         if (ttt != null) tt = Integer.parseInt(ttt);
-        if (tt > 180) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, tt * 1001l);
-        sleep(tt * 1001l, downloadLink);
+        if (tt > 180) {
+            if (waitReconnecttime && tt < 701)
+                sleep(tt * 1001l, downloadLink);
+            else
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, tt * 1001l);
+        }
+        if (!waitReconnecttime) sleep(tt * 1001l, downloadLink);
         br.submitForm(form);
         form = br.getForm(0);
         if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
