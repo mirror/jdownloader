@@ -259,10 +259,18 @@ public class FoFlyCom extends PluginForHost {
                     }
                 }
             }
+            
+            if (dllink == null) {
+                requestFileInformation(downloadLink);
+                String crypted = br.getRegex("p}\\((.*?)\\.split\\('\\|'\\)").getMatch(0);
+                dllink = decodeDownloadLink(crypted);
+            }
+            
             if (dllink == null) {
                 logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            
             logger.info("Final downloadlink = " + dllink + " starting the download...");
             jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
         }
@@ -354,4 +362,34 @@ public class FoFlyCom extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
+    public String decodeDownloadLink(String s) {
+        String decoded = null;
+        
+        try {
+            Regex params = new Regex(s, "'(.*?[^\\\\])',(\\d+),(\\d+),'(.*?)'");
+    
+            String p = params.getMatch(0).replaceAll("\\\\", "");
+            int a = Integer.parseInt(params.getMatch(1));
+            int c = Integer.parseInt(params.getMatch(2));
+            String[] k = params.getMatch(3).split("\\|");
+            
+            
+            while (c != 0) {
+                c--;
+                if (!k[c].isEmpty())
+                    p = p.replaceAll("\\b" + Integer.toString(c, a) + "\\b", k[c]);
+            }
+            
+            decoded = p;
+        } catch (Exception e) {
+        }
+        
+        if (decoded != null) {
+            Regex link = new Regex(decoded, "'file','(.*?)'");
+            if (link.matches())
+                decoded = link.getMatch(0);
+        }
+        
+        return decoded;
+    }
 }
