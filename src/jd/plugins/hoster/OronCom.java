@@ -262,7 +262,7 @@ public class OronCom extends PluginForHost {
             }
             String dllink = br.getRegex("height=\"[0-9]+\"><a href=\"(.*?)\"").getMatch(0);
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+            jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
             dl.startDownload();
         }
     }

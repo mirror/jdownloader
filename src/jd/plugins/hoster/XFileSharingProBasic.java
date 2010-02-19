@@ -341,6 +341,12 @@ public class XFileSharingProBasic extends PluginForHost {
             }
             ai.setPremiumPoints(Long.parseLong(points.trim()));
         }
+        // Most hosters don't have a limited amount of traffic for their
+        // premiumusers but in case they have, this helps^^
+        String trafficleft = br.getRegex("").getMatch(0);
+        if (trafficleft != null) {
+            ai.setTrafficLeft(Regex.getSize(trafficleft));
+        }
         account.setValid(true);
         ai.setUnlimitedTraffic();
         if (!nopremium) {
