@@ -91,7 +91,7 @@ public abstract class TestUtils {
         SubConfiguration cfg = SubConfiguration.getConfig("UNITTEST");
         String ret = cfg.getStringProperty(string);
         if (ret != null) {
-            UserIO.setCountdownTime(1);
+            UserIO.setCountdownTime(5);
         }
         ret = UserIOGui.getInstance().requestInputDialog(0, "Please enter String", string, ret, null, null, null);
         UserIO.setCountdownTime(20);
