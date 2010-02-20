@@ -1324,6 +1324,7 @@ plugins.hoster.rapidshare.com.telekom = Usa server Telecom se disponibile
 plugins.hoster.rapidshare.com.waithosterfull = Attendere se tutti gli slot gratuiti sono occupati
 plugins.hoster.sendspacecom.errors.servererror = Errore sconosciuto del server
 plugins.hoster.sendspacecom.errors.serverfull = Capacità di servizio gratuito completo
+plugins.hoster.setting.orefervideosformobilephones = Preferire video per cellulari (formato 3gp)
 plugins.hoster.sharebaseto.errors.maintenance = Lavori di manutenzione in corso
 plugins.hoster.sharebaseto.errors.toomanyusers = Troppi utenti
 plugins.hoster.sharenownet.errors.servererror = Errore del server
