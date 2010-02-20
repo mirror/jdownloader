@@ -16,6 +16,7 @@
 
 package jd.plugins.hoster;
 
+import java.io.File;
 import java.io.IOException;
 
 import jd.PluginWrapper;
@@ -33,6 +34,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.pluginUtils.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freakshare.net" }, urls = { "http://[\\w\\.]*?freakshare\\.net/file(s/|/)[\\w]+/(.*)" }, flags = { 2 })
 public class Freaksharenet extends PluginForHost {
@@ -159,12 +161,14 @@ public class Freaksharenet extends PluginForHost {
         br.submitForm(form);
         form = br.getForm(0);
         if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        if (br.containsHTML("captcha/math/captcha.php")) {
-            for (int i = 0; i <= 3; i++) {
-                String captchaurl = "http://freakshare.net/kernel/captcha/math/captcha.php";
-                String code = getCaptchaCode(captchaurl, downloadLink);
-                form.put("sum", code);
-                br.submitForm(form);
+        if (br.containsHTML("api.recaptcha.net")) {
+            for (int i = 0; i <= 5; i++) {
+                Recaptcha rc = new Recaptcha(br);
+                rc.parse();
+                rc.load();
+                File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                String c = getCaptchaCode(cf, downloadLink);
+                rc.setCode(c);
                 if (br.getRedirectLocation() == null) continue;
                 break;
             }
