@@ -180,3 +180,6 @@ jd/plugins/hoster/MegaLoadedCom.class
 jd/plugins/hoster/OnlyFourFilesCom.class
 jd/plugins/hoster/TurkDepoNet.class
 jd/plugins/hoster/BagrujCz.class
+jd/plugins/hoster/FileuploadsharkCom.class
+jd/plugins/hoster/R1OneCom.class
+jd/plugins/hoster/FileFactoryPl.class

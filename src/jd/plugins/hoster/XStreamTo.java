@@ -26,7 +26,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xstream.to" }, urls = { "http://[\\w\\.]*?xtream\\.to/file-[0-9]+-[0-9a-z]+-[0-9a-zA-Z._]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xtream.to" }, urls = { "http://[\\w\\.]*?xtream\\.to/file-[0-9]+-[0-9a-z]+-[0-9a-zA-Z._]+" }, flags = { 2 })
 public class XStreamTo extends PluginForHost {
 
     public XStreamTo(PluginWrapper wrapper) {

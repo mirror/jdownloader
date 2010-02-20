@@ -33,22 +33,22 @@ public class HprLnkCshCm extends PluginForDecrypt {
         super(wrapper);
     }
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
-        String dlink = br.getRegex("<td>\\s+<center>\\s+<a href=\"(.*?)\"").getMatch(0);
-        if (dlink == null) {
+        String dlink = br.getRegex("<center>.*?<br>.*?<a href=\"(.*?)\"").getMatch(0);
+        if (dlink == null) dlink = br.getRegex("<a href=\"(.*?)\"").getMatch(0);
+        if (dlink == null || dlink.equals("http://www.hyperlinkcash.com") || dlink.equals("http://www.ropa.pl/")) {
             Form form = br.getForm(0);
+            if (form == null) return null;
             br.submitForm(form);
-            dlink = br.getRegex("<td>\\s+<center>\\s+<a href=\"(.*?)\"").getMatch(0);
+            dlink = br.getRegex("<center>.*?<br>.*?<a href=\"(.*?)\"").getMatch(0);
+            if (dlink == null) dlink = br.getRegex("<a href=\"(.*?)\"").getMatch(0);
             if (dlink == null) return null;
         }
         decryptedLinks.add(createDownloadlink(dlink));
         return decryptedLinks;
     }
-
-    // @Override
 
 }

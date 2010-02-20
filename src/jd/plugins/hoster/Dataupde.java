@@ -36,7 +36,7 @@ public class Dataupde extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.dataup.de/agb";
+        return "http://dataup.to/agb";
     }
 
     @Override

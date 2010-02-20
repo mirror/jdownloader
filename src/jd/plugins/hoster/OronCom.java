@@ -48,6 +48,9 @@ public class OronCom extends PluginForHost {
         return "http://oron.com/tos.html";
     }
 
+    public boolean nopremium = false;
+    private static final String COOKIE_HOST = "http://oron.com";
+
     private void login(Account account) throws Exception {
         this.setBrowserExclusive();
         br.setCookie("http://oron.com", "lang", "english");
@@ -59,8 +62,9 @@ public class OronCom extends PluginForHost {
         loginform.put("password", Encoding.urlEncode(account.getPass()));
         br.submitForm(loginform);
         br.getPage("http://oron.com/?op=my_account");
-        if (!br.containsHTML("Premium-Account expire")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        if (br.getCookie("http://oron.com", "login") == null || br.getCookie("http://oron.com", "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (!br.containsHTML("Premium-Account expire") && !br.containsHTML("Upgrade to premium")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (!br.containsHTML("Premium-Account expire")) nopremium = true;
     }
 
     @Override
@@ -78,15 +82,19 @@ public class OronCom extends PluginForHost {
         if (points != null) ai.setPremiumPoints(Long.parseLong(points));
         account.setValid(true);
         ai.setUnlimitedTraffic();
-        String expire = br.getRegex("<td>Premium-Account expire:</td>.*?<td>(.*?)</td>").getMatch(0);
-        if (expire == null) {
-            ai.setExpired(true);
-            account.setValid(false);
-            return ai;
+        if (!nopremium) {
+            String expire = br.getRegex("<td>Premium-Account expire:</td>.*?<td>(.*?)</td>").getMatch(0);
+            if (expire == null) {
+                ai.setExpired(true);
+                account.setValid(false);
+                return ai;
+            } else {
+                ai.setValidUntil(Regex.getMilliSeconds(expire, "dd MMMM yyyy", null));
+            }
+            ai.setStatus("Premium User");
         } else {
-            ai.setValidUntil(Regex.getMilliSeconds(expire, "dd MMMM yyyy", null));
+            ai.setStatus("Registered (free) User");
         }
-        ai.setStatus("Premium User");
         return ai;
     }
 
@@ -97,76 +105,80 @@ public class OronCom extends PluginForHost {
         login(account);
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
-        String dllink = br.getRedirectLocation();
-        if (dllink == null) {
-            Form DLForm = br.getFormbyProperty("name", "F1");
-            if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            if (br.containsHTML("name=\"password\"")) {
-                if (link.getStringProperty("pass", null) == null) {
-                    passCode = Plugin.getUserInput("Password?", link);
-                } else {
-                    /* gespeicherten PassCode holen */
-                    passCode = link.getStringProperty("pass", null);
-                }
-                DLForm.put("password", passCode);
-                logger.info("Put password \"" + passCode + "\" entered by user in the DLForm.");
-            }
-            br.submitForm(DLForm);
-            // Premium also got limits...
-            if (br.containsHTML("You have reached the download-limit")) {
-                String tmphrs = br.getRegex("\\s+(\\d+)\\s+hours?").getMatch(0);
-                String tmpmin = br.getRegex("\\s+(\\d+)\\s+minutes?").getMatch(0);
-                String tmpsec = br.getRegex("\\s+(\\d+)\\s+seconds?").getMatch(0);
-                String tmpdays = br.getRegex("\\s+(\\d+)\\s+days?").getMatch(0);
-                if (tmphrs == null && tmpmin == null && tmpsec == null && tmpdays == null) {
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 60 * 60 * 1000l);
-                } else {
-                    int minutes = 0, seconds = 0, hours = 0, days = 0;
-                    if (tmphrs != null) hours = Integer.parseInt(tmphrs);
-                    if (tmpmin != null) minutes = Integer.parseInt(tmpmin);
-                    if (tmpsec != null) seconds = Integer.parseInt(tmpsec);
-                    if (tmpdays != null) days = Integer.parseInt(tmpdays);
-                    int waittime = ((days * 24 * 3600) + (3600 * hours) + (60 * minutes) + seconds + 1) * 1000;
-                    logger.info("Detected waittime #2, waiting " + waittime + "milliseconds");
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
-                }
-            }
-            dllink = br.getRedirectLocation();
+        if (nopremium) {
+            doFree(link);
+        } else {
+            String dllink = br.getRedirectLocation();
             if (dllink == null) {
-                if (br.containsHTML("(name=\"password\"|Wrong password)")) {
-                    logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
-                    link.setProperty("pass", null);
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                Form DLForm = br.getFormbyProperty("name", "F1");
+                if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (br.containsHTML("name=\"password\"")) {
+                    if (link.getStringProperty("pass", null) == null) {
+                        passCode = Plugin.getUserInput("Password?", link);
+                    } else {
+                        /* gespeicherten PassCode holen */
+                        passCode = link.getStringProperty("pass", null);
+                    }
+                    DLForm.put("password", passCode);
+                    logger.info("Put password \"" + passCode + "\" entered by user in the DLForm.");
                 }
+                br.submitForm(DLForm);
+                // Premium also got limits...
+                if (br.containsHTML("You have reached the download-limit")) {
+                    String tmphrs = br.getRegex("\\s+(\\d+)\\s+hours?").getMatch(0);
+                    String tmpmin = br.getRegex("\\s+(\\d+)\\s+minutes?").getMatch(0);
+                    String tmpsec = br.getRegex("\\s+(\\d+)\\s+seconds?").getMatch(0);
+                    String tmpdays = br.getRegex("\\s+(\\d+)\\s+days?").getMatch(0);
+                    if (tmphrs == null && tmpmin == null && tmpsec == null && tmpdays == null) {
+                        throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 60 * 60 * 1000l);
+                    } else {
+                        int minutes = 0, seconds = 0, hours = 0, days = 0;
+                        if (tmphrs != null) hours = Integer.parseInt(tmphrs);
+                        if (tmpmin != null) minutes = Integer.parseInt(tmpmin);
+                        if (tmpsec != null) seconds = Integer.parseInt(tmpsec);
+                        if (tmpdays != null) days = Integer.parseInt(tmpdays);
+                        int waittime = ((days * 24 * 3600) + (3600 * hours) + (60 * minutes) + seconds + 1) * 1000;
+                        logger.info("Detected waittime #2, waiting " + waittime + "milliseconds");
+                        throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
+                    }
+                }
+                dllink = br.getRedirectLocation();
                 if (dllink == null) {
-                    dllink = br.getRegex("<td align=\"center\" height=\"100\"><a href=\"(http.*?)\"").getMatch(0);
+                    if (br.containsHTML("(name=\"password\"|Wrong password)")) {
+                        logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
+                        link.setProperty("pass", null);
+                        throw new PluginException(LinkStatus.ERROR_RETRY);
+                    }
                     if (dllink == null) {
-                        dllink = br.getRegex("\"(http://[a-zA-Z0-9]+\\.oron\\.com/.*?/.*?)\"").getMatch(0);
+                        dllink = br.getRegex("<td align=\"center\" height=\"100\"><a href=\"(http.*?)\"").getMatch(0);
+                        if (dllink == null) {
+                            dllink = br.getRegex("\"(http://[a-zA-Z0-9]+\\.oron\\.com/.*?/.*?)\"").getMatch(0);
+                        }
                     }
                 }
             }
-        }
-        if (dllink == null) {
-            logger.warning("Final downloadlink (String is \"dllink\" regex didn't match!");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        logger.info("Final downloadlink = " + dllink + " starting the download...");
-        // Hoster allows up to 10 Chunks but then you can only start one
-        // download...
-        jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
-        if (passCode != null) {
-            link.setProperty("pass", passCode);
-        }
-        if (!(dl.getConnection().isContentDisposition())) {
-            logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
-            if (br.containsHTML("File Not Found")) {
-                logger.warning("Server says link offline, please recheck that!");
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (dllink == null) {
+                logger.warning("Final downloadlink (String is \"dllink\" regex didn't match!");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            logger.info("Final downloadlink = " + dllink + " starting the download...");
+            // Hoster allows up to 10 Chunks but then you can only start one
+            // download...
+            jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
+            if (passCode != null) {
+                link.setProperty("pass", passCode);
+            }
+            if (!(dl.getConnection().isContentDisposition())) {
+                logger.warning("The final dllink seems not to be a file!");
+                br.followConnection();
+                if (br.containsHTML("File Not Found")) {
+                    logger.warning("Server says link offline, please recheck that!");
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl.startDownload();
         }
-        dl.startDownload();
     }
 
     @Override
@@ -192,9 +204,7 @@ public class OronCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
+    public void doFree(DownloadLink downloadLink) throws Exception, PluginException {
         if (br.containsHTML("The file status can only be queried by Premium Users")) throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium account");
         br.setFollowRedirects(true);
         // Form um auf free zu "klicken"
@@ -265,6 +275,12 @@ public class OronCom extends PluginForHost {
             jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
             dl.startDownload();
         }
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        requestFileInformation(downloadLink);
+        doFree(downloadLink);
     }
 
     @Override
