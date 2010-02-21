@@ -178,6 +178,7 @@ public class SharingMatrixCom extends PluginForHost {
         // br.setCookie("http://sharingmatrix.com", "lang", "en");
         br.getPage("http://sharingmatrix.com/en/");
         br.getPage(parameter.getDownloadURL());
+        if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
         if (br.containsHTML("File not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("Filename:.*?<td>(.*?)</td>").getMatch(0);
         if (filename == null) {
