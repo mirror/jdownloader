@@ -162,7 +162,6 @@ public class FileBaseTo extends PluginForHost {
         if (directLink != null) {
             dl = BrowserAdapter.openDownload(br, downloadLink, directLink);
         } else {
-            System.out.print(br.toString());
             String formact = downloadLink.getDownloadURL();
             // I'm not sure if we have captchas in new version
             if (br.containsHTML("/captcha/CaptchaImage")) {

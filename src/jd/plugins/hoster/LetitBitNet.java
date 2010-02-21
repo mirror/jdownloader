@@ -102,7 +102,7 @@ public class LetitBitNet extends PluginForHost {
             br.postPage("http://www.gur" + randomain + ".info/index.php", "q=" + downloadLink.getDownloadURL() + "&hl[include_form]=0&hl[remove_scripts]=0&hl[accept_cookies]=1&hl[show_images]=1&hl[show_referer]=0&hl[strip_meta]=0&hl[strip_title]=0&hl[session_cookies]=0");
             captchaurl = br.getRegex(Pattern.compile("<div\\sclass=\"cont\\sc2[^>]*>\\s+<br /><br />\\s+<img src=\"(.*?)\"", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
             // formaction = forms[3].action;
-            if (captchaurl == null) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.letitbitnet.errors.countryblock", "Letitbit forbidden downloading this file in your country"));
+            if (captchaurl == null) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.letitbitnet.errors.countryblock", "Letitbit forbidden downloading this file in your country"), 60 * 60 * 1000l);
         } else {
             String id = dl1.getVarsMap().get("uid");
             captchaurl = "http://letitbit.net/cap.php?jpg=" + id + ".jpg";
