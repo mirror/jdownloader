@@ -1288,13 +1288,14 @@ public class Browser {
      * @return
      */
     public PasswordAuthentication getPasswordAuthentication(final String host, int port) {
-        if (port <= 0) {
-            port = 80;
-        }
+        if (port <= 0) port = 80;
         final String[] auth = this.getAuth(host + ":" + port);
-        if (auth == null) { return null; }
+        if (auth == null) return null;
         if (LOGGER != null) {
-            LOGGER.finest("Use Authentication for: " + host + ":" + port + ": " + auth[0] + " - " + auth[1]);
+            /*
+             * Removed logging of plain authentication password!
+             */
+            LOGGER.finest("Use Authentication for: " + host + ":" + port + ": " + auth[0] + " - " + "****");
         }
         return new PasswordAuthentication(auth[0], auth[1].toCharArray());
     }

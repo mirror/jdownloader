@@ -1,13 +1,6 @@
 package jd.dynamics;
 
-import java.net.MalformedURLException;
-import java.net.URL;
-
-import jd.config.SubConfiguration;
 import jd.controlling.DynamicPluginInterface;
-import jd.gui.UserIO;
-import jd.nutils.nativeintegration.LocalBrowser;
-import jd.utils.locale.JDL;
 
 public class Survey extends DynamicPluginInterface {
 
@@ -32,10 +25,8 @@ public class Survey extends DynamicPluginInterface {
 //                    try {
 //                        LocalBrowser.openDefaultURL(new URL("http://jdownloader.org/survey"));
 //                    } catch (MalformedURLException e) {
-//                        // TODO Auto-generated catch block
 //                        e.printStackTrace();
 //                    } catch (Exception e) {
-//                        // TODO Auto-generated catch block
 //                        e.printStackTrace();
 //                    }
 //                    SubConfiguration.getConfig("survey").save();
