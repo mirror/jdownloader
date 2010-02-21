@@ -18,12 +18,15 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
@@ -170,6 +173,63 @@ public class DepositFiles extends PluginForHost {
         br.setFollowRedirects(false);
         String cookie = br.getCookie("http://depositfiles.com", "autologin");
         if (cookie == null || br.containsHTML("Benutzername-Passwort-Kombination")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    }
+
+    @Override
+    public boolean checkLinks(DownloadLink[] urls) {
+        if (urls == null || urls.length == 0) { return false; }
+        try {
+            Browser br = new Browser();
+            br.setCookiesExclusive(true);
+            br.setCookie("http://depositfiles.com", "lang_current", "de");
+            br.getPage("http://bonus.depositfiles.com/de/links_checker.php");
+            StringBuilder sb = new StringBuilder();
+            ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
+            int index = 0;
+            while (true) {
+                links.clear();
+                while (true) {
+                    /* we test 80 links at once */
+                    if (index == urls.length || links.size() > 80) break;
+                    links.add(urls[index]);
+                    index++;
+                }
+                sb.delete(0, sb.capacity());
+                sb.append("links=");
+                int c = 0;
+                for (DownloadLink dl : links) {
+                    if (c > 0) sb.append("%0D%0A");
+                    sb.append(Encoding.urlEncode(dl.getDownloadURL()));
+                    c++;
+                }
+                br.postPage("http://bonus.depositfiles.com/de/links_checker.php", sb.toString());
+                String existed = br.getRegex("links_existed(.*?)links_deleted").getMatch(0);
+                if (existed == null) return false;
+                String infos[][] = new Regex(existed, Pattern.compile("id_str\":\"(.*?)\".*?filename\":\"(.*?)\".*?size\":\"(\\d+)", Pattern.DOTALL)).getMatches();
+                for (DownloadLink dl : links) {
+                    String id = new Regex(dl.getDownloadURL(), "/.*?files/(.*?)(/|$)").getMatch(0);
+                    int hit = -1;
+                    for (int i = 0; i < infos.length; i++) {
+                        if (infos[i][0].equalsIgnoreCase(id)) {
+                            hit = i;
+                            break;
+                        }
+                    }
+                    if (hit == -1) {
+                        /* id not in response, so its offline */
+                        dl.setAvailable(false);
+                    } else {
+                        dl.setAvailable(true);
+                        dl.setFinalFileName(infos[hit][1].trim());
+                        dl.setDownloadSize(Regex.getSize(infos[hit][2]));
+                    }
+                }
+                if (index == urls.length) break;
+            }
+        } catch (Exception e) {
+            return false;
+        }
+        return true;
     }
 
     public void setLangtoGer() throws IOException {

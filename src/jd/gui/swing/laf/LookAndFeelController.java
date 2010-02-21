@@ -182,7 +182,6 @@ public class LookAndFeelController {
                     Class<?> slaf = Class.forName("de.javasoft.plaf.synthetica.SyntheticaLookAndFeel");
 
                     Method method = slaf.getMethod("setLookAndFeel", new Class[] { String.class, boolean.class, boolean.class });
-                    
 
                     method.invoke(null, new Object[] { laf, false, false });
 

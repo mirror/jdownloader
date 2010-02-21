@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sourceforge.net" }, urls = { "http://[\\w\\.]*?(sourceforge\\.net/projects/(.*?/files/extras/.*?/download|[a-zA-Z0-9]+)|prdownloads\\.sourceforge\\.net/.*?/.*?download)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sourceforge.net" }, urls = { "http://[\\w\\.]*?(sourceforge\\.net/projects/(.*?/files/extras/.*?/download|[a-zA-Z0-9]+)|downloads\\.sourceforge\\.net/.+)" }, flags = { 0 })
 public class SourceForgeNet extends PluginForDecrypt {
 
     public SourceForgeNet(PluginWrapper wrapper) {
@@ -37,24 +37,26 @@ public class SourceForgeNet extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        br.setFollowRedirects(true);
-        br.getPage(parameter);
-        if (br.containsHTML("(Error 404|The page you were looking for cannot be found|could not be found or is not available)")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-        String link = null;
-        if (parameter.contains("/files/extras/") || parameter.contains("prdownloads.sourceforge.net")) {
-            link = br.getRegex("Please use this <a href=\"(.*?)\"").getMatch(0);
-            if (link == null) link = br.getRegex("\"(http://downloads\\.sourceforge\\.net/project/.*?/extras/.*?/.*?use_mirror=.*?)\"").getMatch(0);
-        } else {
-            link = br.getRegex("pd-dload editable\">.*?button button-dload dload \\{ url: '(.*?)'").getMatch(0);
-        }
-        if (link == null) return null;
         br.setFollowRedirects(false);
-        br.getPage(link);
-        String finallink = br.getRedirectLocation();
-        if (finallink == null) return null;
-        decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
-
+        br.getPage(parameter);
+        if (br.getRedirectLocation() == null) {
+            if (br.containsHTML("(Error 404|The page you were looking for cannot be found|could not be found or is not available)")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+            String link = null;
+            if (parameter.contains("/files/extras/") || parameter.contains("prdownloads.sourceforge.net")) {
+                link = br.getRegex("Please use this <a href=\"(.*?)\"").getMatch(0);
+                if (link == null) link = br.getRegex("\"(http://downloads\\.sourceforge\\.net/project/.*?/extras/.*?/.*?use_mirror=.*?)\"").getMatch(0);
+            } else {
+                link = br.getRegex("pd-dload editable\">.*?button button-dload dload \\{ url: '(.*?)'").getMatch(0);
+            }
+            if (link == null) return null;
+            br.setFollowRedirects(false);
+            br.getPage(link);
+            String finallink = br.getRedirectLocation();
+            if (finallink == null) return null;
+            decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
+        } else {
+            decryptedLinks.add(createDownloadlink("directhttp://" + parameter));
+        }
         return decryptedLinks;
     }
-
 }
