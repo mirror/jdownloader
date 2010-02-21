@@ -82,9 +82,12 @@ public class YourFileHostCom extends PluginForHost {
             String sourcelink = br.getRegex("movie\" value=\"(.*?)\"").getMatch(0);
             if (sourcelink == null) sourcelink = br.getRegex("<embed src=\"(.*?)\"").getMatch(0);
             if (sourcelink == null && dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            sourcelink = new Regex(Encoding.htmlDecode(sourcelink), "(http://www\\.yourfilehost\\.com/video-embed-code\\.php\\?.*?cid=.*?)\\&").getMatch(0);
+            // Regex the internal id of the video
+            sourcelink = new Regex(Encoding.htmlDecode(sourcelink), "\\&cid=(.*?)\\&").getMatch(0);
             if (sourcelink == null && dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            sourcelink = "http://www.yourfilehost.com/video-embed-code-new.php?vidlink=&cid=" + sourcelink;
             if (sourcelink != null && dllink == null) {
+                // Find the final link to download
                 br.getPage(sourcelink);
                 dllink = br.getRegex("(http.*?)\\&homeurl").getMatch(0);
             }

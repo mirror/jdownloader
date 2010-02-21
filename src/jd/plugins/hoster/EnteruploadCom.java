@@ -16,8 +16,8 @@
 
 package jd.plugins.hoster;
 
+import java.io.File;
 import java.io.IOException;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
@@ -29,6 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.pluginUtils.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "enterupload.com" }, urls = { "http://[\\w\\.]*?enterupload\\.com/[a-z0-9]+" }, flags = { 0 })
 public class EnteruploadCom extends PluginForHost {
@@ -71,12 +72,15 @@ public class EnteruploadCom extends PluginForHost {
             logger.info("Detected waittime #1, waiting " + waittime + "milliseconds");
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
         }
-        form = br.getFormbyProperty("name", "F1");
-        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String captchaurl = br.getRegex(Pattern.compile("<img src=\"(http://www.enterupload.com/captchas/.*?\\.jpg)\">", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
-        String code = getCaptchaCode(captchaurl, downloadLink);
-        form.put("code", code);
-        form.setAction(downloadLink.getDownloadURL());
+        // form = br.getFormbyProperty("name", "F1");
+        // if (form == null) throw new
+        // PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // form.setAction(downloadLink.getDownloadURL());
+        Recaptcha rc = new Recaptcha(br);
+        rc.parse();
+        rc.load();
+        File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+        String c = getCaptchaCode(cf, downloadLink);
         // Ticket Time
         String ttt = br.getRegex("countdown\">.*?(\\d+).*?</span>").getMatch(0);
         if (ttt != null) {
@@ -84,7 +88,7 @@ public class EnteruploadCom extends PluginForHost {
             int tt = Integer.parseInt(ttt);
             sleep(tt * 1001, downloadLink);
         }
-        br.submitForm(form);
+        if (br.containsHTML("api.recaptcha.net")) rc.setCode(c);
         String dllink = br.getRedirectLocation();
         if (br.containsHTML("Error happened when generating Download Link")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
         if (br.containsHTML("Wrong captcha")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);

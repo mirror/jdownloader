@@ -29,6 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mega.1280.com" }, urls = { "http://[\\w\\.]*?mega\\.1280\\.com/file/[0-9|A-Z]+" }, flags = { 0 })
 public class Mega1280Com extends PluginForHost {
@@ -88,6 +89,7 @@ public class Mega1280Com extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadURL, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            if (br.containsHTML("Tài nguyên bạn yêu cầu không tìm thấy")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.Mega1280Com.Servererror", "Servererror!"), 60 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

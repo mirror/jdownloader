@@ -35,6 +35,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.pluginUtils.Recaptcha;
+import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freakshare.net" }, urls = { "http://[\\w\\.]*?freakshare\\.net/file(s/|/)[\\w]+/(.*)" }, flags = { 2 })
 public class Freaksharenet extends PluginForHost {
@@ -49,7 +50,7 @@ public class Freaksharenet extends PluginForHost {
     private static final String WAIT1 = "WAIT1";
 
     private void setConfigElements() {
-        ConfigEntry cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), WAIT1, "Wait 10 minutes instead of reconnecting").setDefaultValue(false);
+        ConfigEntry cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), WAIT1, JDL.L("plugins.hoster.Freaksharenet.waitInsteadOfReconnect", "Wait 10 minutes instead of reconnecting")).setDefaultValue(false);
         config.addEntry(cond);
     }
 

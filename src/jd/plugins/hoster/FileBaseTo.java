@@ -157,31 +157,37 @@ public class FileBaseTo extends PluginForHost {
 
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        String formact = downloadLink.getDownloadURL();
-        //I'm not sure if we have captchas in new version
-        if (br.containsHTML("/captcha/CaptchaImage")) {
-            for (int i = 0; i <= 5; i++) {
-                File captchaFile = getLocalCaptchaFile(".png");
-                String captchaFileURL = br.getRegex("src=\"(/captcha/CaptchaImage\\.php.*?)\"").getMatch(0);
-                String filecid = br.getRegex("cid\"\\s+value=\"(.*?)\"").getMatch(0);
-                Browser.download(captchaFile, br.openGetConnection("http://filebase.to" + captchaFileURL));
-                String capTxt = getCaptchaCode(captchaFile, downloadLink);
-                br.postPage(formact, "uid=" + capTxt + "&cid=" + Encoding.urlEncode(filecid) + "&submit=+++Best%E4tigung+++&session_code=");
-                // if captcha error
-                if (br.containsHTML("Code wurde falsch")) {
-                    br.getPage(downloadLink.getDownloadURL());
-                    continue;
+        Form forms = null;
+        String directLink = br.getRegex("<param value=\"(http://[0-9]+\\..*?/download/ticket.*?)\"").getMatch(0);
+        if (directLink != null) {
+            dl = BrowserAdapter.openDownload(br, downloadLink, directLink);
+        } else {
+            System.out.print(br.toString());
+            String formact = downloadLink.getDownloadURL();
+            // I'm not sure if we have captchas in new version
+            if (br.containsHTML("/captcha/CaptchaImage")) {
+                for (int i = 0; i <= 5; i++) {
+                    File captchaFile = getLocalCaptchaFile(".png");
+                    String captchaFileURL = br.getRegex("src=\"(/captcha/CaptchaImage\\.php.*?)\"").getMatch(0);
+                    String filecid = br.getRegex("cid\"\\s+value=\"(.*?)\"").getMatch(0);
+                    Browser.download(captchaFile, br.openGetConnection("http://filebase.to" + captchaFileURL));
+                    String capTxt = getCaptchaCode(captchaFile, downloadLink);
+                    br.postPage(formact, "uid=" + capTxt + "&cid=" + Encoding.urlEncode(filecid) + "&submit=+++Best%E4tigung+++&session_code=");
+                    // if captcha error
+                    if (br.containsHTML("Code wurde falsch")) {
+                        br.getPage(downloadLink.getDownloadURL());
+                        continue;
+                    }
+                    break;
                 }
-                break;
+                // if captcha error after loop
+                if (br.containsHTML("Code wurde falsch")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
-            // if captcha error after loop
-            if (br.containsHTML("Code wurde falsch")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        }
-
-        try {
-            Form forms = br.getForm(0);
-       
+            forms = br.getForm(0);
+            if (forms == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             dl = BrowserAdapter.openDownload(br, downloadLink, forms);
+        }
+        try {
             URLConnectionAdapter con = dl.getConnection();
             if (!con.isContentDisposition()) {
                 br.getPage(forms.getAction());

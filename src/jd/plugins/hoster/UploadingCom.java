@@ -167,7 +167,7 @@ public class UploadingCom extends PluginForHost {
         String redirect = getDownloadUrl(br, link);
         br.setFollowRedirects(false);
         br.setDebug(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, redirect, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, redirect, true, 1);
         handleDownloadErrors();
         dl.setFilenameFix(true);
         dl.startDownload();

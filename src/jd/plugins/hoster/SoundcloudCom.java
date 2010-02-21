@@ -51,17 +51,21 @@ public class SoundcloudCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
         br.getPage(parameter.getDownloadURL());
+        if (br.containsHTML("Oops, looks like we can't find that page")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<em>(.*?)</em>").getMatch(0);
 
-        if (filename == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        filename = filename.trim();
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        filename = filename.trim().replace("&amp; ", "");
         String type = br.getRegex("title=\"Uploaded format\">(.*?)<").getMatch(0);
         if (type == null) type = "mp3";
         filename += "." + type;
-        String[] data = br.getRegex("<div class='player haudio mode large.*?\"uid\"\\:\"(.*?)\".*?\"token\"\\:\"(.*?)\"").getRow(0);
+        String[] data = br.getRegex("\"uid\":\"(.*?)\".*?\"token\":\"(.*?)\"").getRow(0);
         url = "http://media.soundcloud.com/stream/" + data[0] + "?stream_token=" + data[1];
         URLConnectionAdapter con = br.openGetConnection(url);
-        parameter.setDownloadSize(con.getContentLength());
+        if (!con.getContentType().contains("html"))
+            parameter.setDownloadSize(con.getContentLength());
+        else
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         parameter.setFinalFileName(filename);
         con.disconnect();
         return AvailableStatus.TRUE;

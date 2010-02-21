@@ -41,7 +41,7 @@ public class Tube8Com extends PluginForHost {
     private static final String mobile = "mobile";
 
     private void setConfigElements() {
-        ConfigEntry cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), mobile, JDL.L("plugins.hoster.setting.oreferVideosForMobilePhones", "Prefer videos for mobile phones (3gp format)")).setDefaultValue(false);
+        ConfigEntry cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), mobile, JDL.L("plugins.hoster.Tube8Com.setting.preferVideosForMobilePhones", "Prefer videos for mobile phones (3gp format)")).setDefaultValue(false);
         config.addEntry(cond);
     }
 
