@@ -27,7 +27,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ashemaletube.com" }, urls = { "http://[\\w\\.]*?ashemaletube\\.com/.*?clipflv-[0-9]+.*?\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "smtbe.com" }, urls = { "http://[\\w\\.]*?ashemaletube\\.com/.*?clipflv-[0-9]+.*?\\.html" }, flags = { 0 })
 public class ASheMaleTubeCom extends PluginForHost {
 
     public ASheMaleTubeCom(PluginWrapper wrapper) {
@@ -38,7 +38,7 @@ public class ASheMaleTubeCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://88.208.32.26/ashemaletube/dmca.txt";
+        return "http://www.ashemaletube.com/dmca.txt";
     }
 
     @Override
