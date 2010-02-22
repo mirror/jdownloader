@@ -60,7 +60,7 @@ public class TurboShareCom extends PluginForHost {
             logger.warning("file is 99,99% offline, throwing \"file not found\" now...");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("You have requested.*?http://turboshare.com/files/[0-9]+/(.*?)</font>").getMatch(0);
+        String filename = br.getRegex("You have requested.*?http://turboshare\\.com/files/[0-9]+/(.*?)</font>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("fname\" value=\"(.*?)\"").getMatch(0);
             if (filename == null) {

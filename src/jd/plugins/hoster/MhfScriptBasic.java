@@ -171,7 +171,7 @@ public class MhfScriptBasic extends PluginForHost {
         br.setFollowRedirects(true);
         br.setCookie(COOKIE_HOST, "mfh_mylang", "en");
         br.setCookie(COOKIE_HOST, "yab_mylang", "en");
-        br.getPage("http://filecruz.com/login.php");
+        br.getPage(COOKIE_HOST + "/login.php");
         Form form = br.getFormbyProperty("name", "lOGIN");
         if (form == null) form = br.getForm(0);
         if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -184,7 +184,7 @@ public class MhfScriptBasic extends PluginForHost {
         form.put("autologin", "0");
         br.submitForm(form);
         String premium = br.getRegex("<b>Your Package</b></td>.*?<b>(.*?)</b></A>").getMatch(0);
-        if (br.getCookie("http://filecruz.com", "mfh_passhash") == null || br.getCookie("http://filecruz.com", "mfh_uid").equals("0") || premium == null || !premium.equals("Premium")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (br.getCookie(COOKIE_HOST, "mfh_passhash") == null || (br.getCookie(COOKIE_HOST, "mfh_uid") == null || br.getCookie(COOKIE_HOST, "mfh_uid").equals("0")) || premium == null || !premium.equals("Premium")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
     @Override
@@ -197,7 +197,7 @@ public class MhfScriptBasic extends PluginForHost {
             return ai;
         }
 
-        br.getPage("http://filecruz.com/members.php");
+        br.getPage(COOKIE_HOST + "/members.php");
         String premium = br.getRegex("<b>Your Package</b></td>.*?<b>(.*?)</b></A>").getMatch(0);
         if (!premium.equals("Premium")) {
             account.setValid(true);
@@ -210,14 +210,14 @@ public class MhfScriptBasic extends PluginForHost {
             else if (expired.equalsIgnoreCase("Yes")) ai.setExpired(true);
         }
 
-        String expires = br.getRegex("Package Expire Date</b></td>.*?<td align=.*?>(.*?)</td>").getMatch(0).trim();
+        String expires = br.getRegex("Package Expire Date</b></td>.*?<td align=.*?>(.*?)</td>").getMatch(0);
         if (expires != null) {
             String[] e = expires.split("/");
             Calendar cal = new GregorianCalendar(Integer.parseInt("20" + e[2]), Integer.parseInt(e[0]) - 1, Integer.parseInt(e[1]));
             ai.setValidUntil(cal.getTimeInMillis());
         }
 
-        String create = br.getRegex("Register Date</b></td>.*?<td align=.*?>(.*?)<").getMatch(0).trim();
+        String create = br.getRegex("Register Date</b></td>.*?<td align=.*?>(.*?)<").getMatch(0);
         if (create != null) {
             String[] c = create.split("/");
             Calendar cal = new GregorianCalendar(Integer.parseInt("20" + c[2]), Integer.parseInt(c[0]) - 1, Integer.parseInt(c[1]));
@@ -225,13 +225,13 @@ public class MhfScriptBasic extends PluginForHost {
         }
 
         ai.setFilesNum(0);
-        String files = br.getRegex("<b>Hosted Files</b></td>.*?<td align=.*?>(.*?)<").getMatch(0).trim();
+        String files = br.getRegex("<b>Hosted Files</b></td>.*?<td align=.*?>(.*?)<").getMatch(0);
         if (files != null) {
             ai.setFilesNum(Integer.parseInt(files.trim()));
         }
 
         ai.setPremiumPoints(0);
-        String points = br.getRegex("<b>Total Points</b></td>.*?<td align=.*?>(.*?)</td>").getMatch(0).trim();
+        String points = br.getRegex("<b>Total Points</b></td>.*?<td align=.*?>(.*?)</td>").getMatch(0);
         if (points != null) {
             ai.setPremiumPoints(Integer.parseInt(points.trim()));
         }
@@ -246,9 +246,9 @@ public class MhfScriptBasic extends PluginForHost {
         requestFileInformation(parameter);
         login(account);
         br.setFollowRedirects(false);
-        br.setCookie("http://filecruz.com", "mfh_mylang", "en");
+        br.setCookie(COOKIE_HOST, "mfh_mylang", "en");
         br.getPage(parameter.getDownloadURL());
-        if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("access_key=") || br.getRedirectLocation().contains("getfile.php")) {
+        if (br.getRedirectLocation() != null && (br.getRedirectLocation().contains("access_key=") || br.getRedirectLocation().contains("getfile.php"))) {
             finalLink = br.getRedirectLocation();
         } else {
             if (br.containsHTML("You have got max allowed download sessions from the same IP")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
