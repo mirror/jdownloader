@@ -16,6 +16,7 @@
 
 package jd.plugins.hoster;
 
+import java.io.File;
 import java.io.IOException;
 
 import jd.PluginWrapper;
@@ -26,6 +27,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.pluginUtils.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4upload.ru" }, urls = { "http://[\\w\\.]*?(4upload\\.ru|box4upload\\.com)/(file|wait)/[0-9a-z]+/.*?\\.html" }, flags = { 0 })
 public class FourUploadRu extends PluginForHost {
@@ -77,16 +79,23 @@ public class FourUploadRu extends PluginForHost {
         // one download is already running in the browser and he starts a 2nd
         // download in jd
         if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("/file/")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
-        // Ticket Time
-        String ttt = br.getRegex("counter\">(\\d+)</p>").getMatch(0);
-        int tt = 90;
-        if (ttt != null) tt = Integer.parseInt(ttt);
-        sleep(tt * 1001, link);
-        String fileid = new Regex(link.getDownloadURL(), "4upload\\.ru/.*?/(.*?)/").getMatch(0);
-        String requestlink = "http://www.4upload.ru/link/" + fileid + "/";
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.postPage(requestlink, "");
-        String dllink = br.getRegex(".value = \"(http.*?)\"").getMatch(0);
+        Recaptcha rc = new Recaptcha(br);
+        for (int i = 0; i <= 5; i++) {
+            rc.parse();
+            rc.load();
+            File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+            String c = getCaptchaCode(cf, link);
+            rc.setCode(c);
+            if (br.containsHTML("api.recaptcha.net")) continue;
+            break;
+        }
+        if (br.containsHTML("api.recaptcha.net")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        // Ticket Time not needed till they check it serverside ;)
+        // String ttt = br.getRegex("counter\">(\\d+)</p>").getMatch(0);
+        // int tt = 90;
+        // if (ttt != null) tt = Integer.parseInt(ttt);
+        // sleep(tt * 1001, link);
+        String dllink = br.getRedirectLocation();
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
         dl.startDownload();

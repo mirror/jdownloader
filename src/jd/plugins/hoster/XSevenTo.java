@@ -158,7 +158,7 @@ public class XSevenTo extends PluginForHost {
             dllink = br.getRedirectLocation();
         }
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        if (!dllink.contains("http://x7.to/")) dllink = "http://x7.to/" + dllink;
+        if (!dllink.contains("x7.to/")) dllink = "http://x7.to/" + dllink;
         br.setDebug(true);
         /* streams are not resumable */
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, !isStream, 1);
