@@ -91,8 +91,9 @@ public class ShareSystemsDe extends PluginForHost {
         String size = br.getPage("http://api.sharesystems.de/?action=jd_free&hash=" + hash + "&get_filesize").trim();
         downloadLink.setFinalFileName(name);
         downloadLink.setDownloadSize(Long.parseLong(size));
-        String md5hash = br.getPage("http://api.sharesystems.de/?action=jd_free&hash=" + hash + "&get_md5").trim();
-        downloadLink.setMD5Hash(md5hash);
+        //md5 check is not possible to date
+//        String md5hash = br.getPage("http://api.sharesystems.de/?action=jd_free&hash=" + hash + "&get_md5").trim();
+//        downloadLink.setMD5Hash(md5hash);
 
         return AvailableStatus.TRUE;
     }
