@@ -34,7 +34,6 @@ public class Pldckcm extends PluginForDecrypt {
         super(wrapper);
     }
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -48,13 +47,13 @@ public class Pldckcm extends PluginForDecrypt {
             progress.setRange(links.length);
             for (String element : links) {
                 String link = Encoding.Base64Decode(element);
+                String damnedStuff = new Regex(link, "(\\&key=[0-9]+\\&ref=.+)").getMatch(0);
+                if (damnedStuff != null) link = link.replace(damnedStuff, "");
                 decryptedLinks.add(createDownloadlink(link));
                 progress.increase(1);
             }
         }
         return decryptedLinks;
     }
-
-    // @Override
 
 }
