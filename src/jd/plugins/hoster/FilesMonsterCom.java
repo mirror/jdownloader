@@ -28,6 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesmonster.com" }, urls = { "http://[\\w\\.\\d]*?filesmonster\\.com/download.php\\?id=.+" }, flags = { 2 })
 public class FilesMonsterCom extends PluginForHost {
@@ -173,13 +174,14 @@ public class FilesMonsterCom extends PluginForHost {
 
         br.postPage(fmurl + "ajax.php", "act=rticket&data=" + data);
         data = br.getRegex("\\{\"text\":\"(.*?)\"").getMatch(0);
+        if (br.containsHTML("\"error\":\"error\"")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.FilesMonsterCom.NoFreeSlots", "There are no free download slots available"), 60 * 60 * 1000l);
         /* wait */
         sleep(1000l * (Long.parseLong(wait) + 4), downloadLink);
         /* request download information */
         br.postPage(fmurl + "ajax.php", "act=getdl&data=" + data);
         String url = br.getRegex("\\{\"url\":\"(.*?)\"").getMatch(0);
         data = br.getRegex("\"file_request\":\"(.*?)\"").getMatch(0);
-        if (data == null || url == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (data == null || url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
         url = url.replaceAll("\\\\/", "/");
         /* start download */

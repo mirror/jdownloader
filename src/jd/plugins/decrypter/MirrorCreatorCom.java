@@ -45,9 +45,16 @@ public class MirrorCreatorCom extends PluginForDecrypt {
         /* Error handling */
         if (br.containsHTML("the link you have clicked is not available") || br.containsHTML("has been removed")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         String[] redirectLinks = br.getRegex("<td><a href=\"(.*?)\"").getColumn(0);
-        if (redirectLinks.length == 0) return null;
+        if (redirectLinks == null || redirectLinks.length == 0) return null;
+        progress.setRange(redirectLinks.length);
         for (String link : redirectLinks) {
-            decryptedLinks.add(createDownloadlink(link));
+            if (!link.contains("mirrorcreator.com")) link = "http://www.mirrorcreator.com" + link;
+            br.getPage(link);
+            String finallink = br.getRegex("<frame name=\"main\" src=\"(.*?)\"").getMatch(0);
+            if (finallink == null) finallink = br.getRegex("src=\"(http://.*?)\"").getMatch(0);
+            if (finallink == null) return null;
+            decryptedLinks.add(createDownloadlink(finallink));
+            progress.increase(1);
         }
         return decryptedLinks;
     }
