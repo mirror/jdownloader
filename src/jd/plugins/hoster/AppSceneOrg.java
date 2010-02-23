@@ -59,11 +59,16 @@ public class AppSceneOrg extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        for (int i = 0; i <= 3; i++) {
+        for (int i = 0; i <= 4; i++) {
             Form captchaForm = br.getForm(0);
             String captchaurl = br.getRegex("\"(http://www.appscene.org/captcha/.*?)\"").getMatch(0);
             if (captchaForm == null || captchaurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            String code = getCaptchaCode(captchaurl, downloadLink);
+            String code;
+            if (i > 2) {
+                code = getCaptchaCode(null, captchaurl, downloadLink);
+            } else {
+                code = getCaptchaCode(captchaurl, downloadLink);
+            }
             captchaForm.put("captcha", code);
             br.submitForm(captchaForm);
             if (br.getRedirectLocation().contains("appscene.org/download")) {
@@ -72,6 +77,8 @@ public class AppSceneOrg extends PluginForHost {
             }
             break;
         }
+        String captchaurl = br.getRegex("\"(http://www.appscene.org/captcha/.*?)\"").getMatch(0);
+        if (captchaurl != null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         if (br.getRedirectLocation().contains("appscene.org/download")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         dl = BrowserAdapter.openDownload(br, downloadLink, br.getRedirectLocation(), false, 1);
         dl.startDownload();

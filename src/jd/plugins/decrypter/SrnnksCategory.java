@@ -23,13 +23,14 @@ import jd.controlling.ProgressController;
 import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 10324 $", interfaceVersion = 2, names = { "serienjunkies.org", "serienjunkies.org" }, urls = { "http://[\\w\\.]*?serienjunkies\\.org/\\?(cat|p)=\\d+", "http://[\\w\\.]{0,4}serienjunkies\\.org/.*?/.+" }, flags = { 0, 0 })
+@DecrypterPlugin(revision = "$Revision: 10324 $", interfaceVersion = 2, names = { "serienjunkies.org", "serienjunkies.org" }, urls = { "http://[\\w\\.]*?serienjunkies\\.org/\\?(cat|p)=\\d+", "http://[\\w\\.]{0,4}serienjunkies\\.org/(?!safe).*?/.+" }, flags = { 0, 0 })
 public class SrnnksCategory extends PluginForDecrypt {
 
     public SrnnksCategory(PluginWrapper wrapper) {
@@ -68,7 +69,7 @@ public class SrnnksCategory extends PluginForDecrypt {
 
         br.getPage("http://serienjunkies.org/" + ids[res] + "/");
         ArrayList<String> mirrors = new ArrayList<String>();
-        for (String m : br.getRegex("hier</a> \\| (.*?)<").getColumn(0)) {
+        for (String m : br.getRegex("blank\">(part.*?|hier)</a> \\| ([^ ]*?)<").getColumn(1)) {
             if (m.trim().length() > 0 && !mirrors.contains(m)) {
                 mirrors.add(m);
             }
@@ -77,12 +78,21 @@ public class SrnnksCategory extends PluginForDecrypt {
         res = UserIO.getInstance().requestComboDialog(0, "Bitte Mirror auswählen", "Bitte den gewünschten Anbieter aus.", mirrors.toArray(new String[] {}), 0, null, null, null, null);
         if (res < 0) return ret;
 
+        /* new format */
         String[] urls = br.getRegex("</strong> <a href=\"([^<]*?)\" target=\"_blank\">hier</a> \\| " + mirrors.get(res) + "<").getColumn(0);
         StringBuilder sb = new StringBuilder();
         for (String url : urls) {
             sb.append(url);
             sb.append("\r\n");
-
+        }
+        /* old format */
+        urls = br.getRegex("Download:</strong>(.*?)\\| " + mirrors.get(res)).getColumn(0);
+        for (String url : urls) {
+            String matches[] = new Regex(url, "<a href=\"([^<]*?)\"").getColumn(0);
+            for (String match : matches) {
+                sb.append(match);
+                sb.append("\r\n");
+            }
         }
         String linklist = UserIO.getInstance().requestInputDialog(UserIO.STYLE_LARGE | UserIO.NO_COUNTDOWN, "Entferne ungewollte Links", sb.toString());
         if (linklist == null) return ret;
