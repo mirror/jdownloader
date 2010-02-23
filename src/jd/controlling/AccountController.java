@@ -216,7 +216,8 @@ public class AccountController extends SubConfiguration implements ActionListene
     }
 
     public ArrayList<Account> getAllAccounts(final String host) {
-        if (host == null) { return new ArrayList<Account>(); }
+        ArrayList<Account> ret = new ArrayList<Account>();
+        if (host == null) return ret;
         synchronized (hosteraccounts) {
             if (hosteraccounts.containsKey(host)) {
                 return hosteraccounts.get(host);

@@ -52,6 +52,7 @@ public class HotFileCom extends PluginForHost {
 
     public void login(Account account) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.setDebug(true);
         br.setCookie("http://hotfile.com", "lang", "en");
         br.setFollowRedirects(true);
         br.getPage("http://hotfile.com/");
@@ -59,7 +60,8 @@ public class HotFileCom extends PluginForHost {
         Form form = br.getForm(0);
         if (form != null && form.containsHTML("<td>Username:")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         if (br.getCookie("http://hotfile.com/", "auth") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        if (!br.containsHTML("<b>Premium Membership</b>")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        br.getPage("http://new.hotfile.com/myaccount.html");
+        if (!br.containsHTML(">Premium Options<")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         br.setFollowRedirects(false);
     }
 
@@ -73,13 +75,7 @@ public class HotFileCom extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        String validUntil = br.getRegex("<td>Until.*?</td><td>(.*?)</td>").getMatch(0);
-        if (validUntil == null) {
-            account.setValid(false);
-        } else {
-            ai.setValidUntil(Regex.getMilliSeconds(validUntil, "yyyy-MM-dd HH:mm:ss", null));
-            account.setValid(true);
-        }
+        account.setValid(true);
         return ai;
     }
 
@@ -98,6 +94,17 @@ public class HotFileCom extends PluginForHost {
         br.setFollowRedirects(true);
         if (finalUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalUrl, true, 0);
+        if (!dl.getConnection().isContentDisposition()) {
+            br.followConnection();
+            finalUrl = br.getRegex("<h3 style='margin-top: 20px'><a href=\"(.*?hotfile.*?)\">Click here to download</a></h3>").getMatch(0);
+            if (finalUrl == null) finalUrl = br.getRegex("table id=\"download_file\".*?<a href=\"(.*?)\"").getMatch(0);/* polish */
+            if (finalUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalUrl, true, 0);
+        }
+        if (!dl.getConnection().isContentDisposition()) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl.setFilenameFix(true);
         dl.startDownload();
     }

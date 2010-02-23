@@ -157,14 +157,11 @@ public class Account extends Property {
     }
 
     public void setUser(final String user) {
-        // if (this.user == user) return;
-        // if (user != null) user = user.trim();
-        // if (this.user != null && this.user.equals(user)) return;
-        // this.user = user;
         final String newUser = trim(user);
         if (this.user != newUser && (this.user == null || !this.user.equals(newUser))) {
             accinfo = null;
             setUpdateTime(0);
+            this.user = newUser;
             AccountController.getInstance().throwUpdateEvent(null, this);
         }
     }

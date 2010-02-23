@@ -136,7 +136,7 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
         for (HostPluginWrapper wrapper : HostPluginWrapper.getHostWrapper()) {
             String host = wrapper.getHost();
             if (wrapper.isLoaded() && wrapper.isEnabled()) {
-                ArrayList<Account> accs = AccountController.getInstance().getAllAccounts(host);
+                ArrayList<Account> accs = new ArrayList<Account>(AccountController.getInstance().getAllAccounts(host));
                 for (Account a : accs) {
                     AccountController.getInstance().updateAccountInfo(host, a, false);
                 }

@@ -22,6 +22,7 @@ import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -39,16 +40,27 @@ public class GigaSizeCom extends PluginForHost {
     private static int simultanpremium = 1;
     private static final Object PREMLOCK = new Object();
 
+    public String agent = "Mozilla/5.0 (Windows; U; Windows NT 6.0; chrome://global/locale/intl.properties; rv:1.8.1.12) Gecko/2008102920  Firefox/3.0.0";
+
     public GigaSizeCom(PluginWrapper wrapper) {
         super(wrapper);
         enablePremium("http://www.gigasize.com/register.php");
         setStartIntervall(5000l);
     }
 
-    public void login(Account account) throws IOException, PluginException {
+    public void login(Account account) throws Exception {
         this.setBrowserExclusive();
+        br.setDebug(true);
+        br.getHeaders().put("User-Agent", agent);
         br.getPage("http://www.gigasize.com/index.php?lang=de");
-        br.postPage("http://www.gigasize.com/login.php", "uname=" + Encoding.urlEncode(account.getUser()) + "&passwd=" + Encoding.urlEncode(account.getPass()) + "&=Login&login=1");
+        Form ff = new Form();
+        ff.setAction("http://www.gigasize.com/login.php");
+        ff.setMethod(MethodType.POST);
+        ff.put("uname", Encoding.urlEncode(account.getUser()));
+        ff.put("passwd", Encoding.urlEncode(account.getPass()));
+        ff.put("d", "Login");
+        ff.put("login", "1");
+        br.submitForm(ff);
         String cookie = br.getCookie("http://www.gigasize.com", "Cookieuser[pass]");
         if (cookie == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         cookie = br.getCookie("http://www.gigasize.com", "Cookieuser[user]");
@@ -183,6 +195,7 @@ public class GigaSizeCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         setBrowserExclusive();
+        br.getHeaders().put("User-Agent", agent);
         br.getPage("http://www.gigasize.com/index.php?lang=de");
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("has been removed because we")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
