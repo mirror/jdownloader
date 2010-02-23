@@ -37,25 +37,31 @@ public class Mg1280CmFldr extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        boolean failed = false;
         br.getPage(parameter);
         String fpName = br.getRegex("<title>-- mega\\.1280\\.com -(.*?)-- </title>").getMatch(0);
         if (fpName == null) fpName = br.getRegex("<strong class=\"clr04\">(.*?)</strong").getMatch(0);
         br.getPage("http://mega.1280.com/getlinks.php?onLoad=[type Function]");
         String[] linkinformation = br.getRegex("(\\&file_name[0-9]+=.*?\\&file_size[0-9]+=.*?\\&file_linkcode[0-9]+=http://mega\\.1280\\.com/file/.*?\\&)").getColumn(0);
-        if (linkinformation.length == 0) linkinformation = br.getRegex("(http://mega\\.1280\\.com/file/[A-Z0-9]+)").getColumn(0);
+        if (linkinformation.length == 0) {
+            failed = true;
+            linkinformation = br.getRegex("(http://mega\\.1280\\.com/file/[A-Z0-9]+)").getColumn(0);
+        }
         if (linkinformation.length == 0) return null;
         for (String data : linkinformation) {
-            String filename = new Regex(data, "file_name[0-9]+=(.*?)\\&").getMatch(0);
-            String filesize = new Regex(data, "file_size[0-9]+=(.*?)\\&").getMatch(0);
-            String dlink = new Regex(data, "(http://mega\\.1280\\.com/file/[A-Z0-9]+)").getMatch(0);
-            if (dlink == null) return null;
-            DownloadLink aLink = createDownloadlink(dlink);
-            if (filename != null && filesize != null) {
-                aLink.setName(filename.trim());
-                aLink.setDownloadSize(Regex.getSize(filesize));
-                aLink.setAvailable(true);
+            if (failed) {
+                decryptedLinks.add(createDownloadlink(data));
+            } else {
+                String filename = new Regex(data, "file_name[0-9]+=(.*?)\\&").getMatch(0);
+                String filesize = new Regex(data, "file_size[0-9]+=(.*?)\\&").getMatch(0);
+                String dlink = new Regex(data, "(http://mega\\.1280\\.com/file/[A-Z0-9]+)").getMatch(0);
+                if (dlink == null) return null;
+                DownloadLink aLink = createDownloadlink(dlink);
+                if (filename != null) aLink.setName(filename.trim());
+                if (filesize != null) aLink.setDownloadSize(Regex.getSize(filesize));
+                if (filename != null && filesize != null) aLink.setAvailable(true);
+                decryptedLinks.add(aLink);
             }
-            decryptedLinks.add(aLink);
         }
         if (fpName != null) {
             FilePackage fp = FilePackage.getInstance();

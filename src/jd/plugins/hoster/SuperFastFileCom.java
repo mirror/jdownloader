@@ -163,7 +163,6 @@ public class SuperFastFileCom extends PluginForHost {
                 }
             }
         }
-        System.out.print(br.toString());
         if (passCode != null) {
             downloadLink.setProperty("pass", passCode);
         }

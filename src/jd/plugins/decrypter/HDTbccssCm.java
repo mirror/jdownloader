@@ -33,23 +33,22 @@ public class HDTbccssCm extends PluginForDecrypt {
         super(wrapper);
     }
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
 
-        //Get Page - site requires .html at the end (SEO)
-        br.getPage(param.toString()+".html");
-        
-        //Get Filename
-        String file = br.getRegex("file=(.+?)\\&streamer").getMatch(0).replaceFirst("http","directhttp");
-        
+        // Get Page - site requires .html at the end (SEO)
+        br.getPage(param.toString() + ".html");
+
+        // Get Filename
+        String file = br.getRegex("file=(.+?)\\&streamer").getMatch(0).replaceFirst("http", "directhttp");
+        if (file == null) return null;
+
+        // Set filename and add links
         DownloadLink link = createDownloadlink(file);
-        link.setFinalFileName(br.getRegex("<h2>(.+?)</h2>").getMatch(0).concat(new Regex(file,"(\\.[^\\.]+)$").getMatch(0)));
+        link.setFinalFileName(br.getRegex("<h2>(.+?)</h2>").getMatch(0).concat(new Regex(file, "(\\.[^\\.]+)$").getMatch(0)));
         decryptedLinks.add(link);
-        
+
         return decryptedLinks;
     }
-
-    // @Override
 
 }
