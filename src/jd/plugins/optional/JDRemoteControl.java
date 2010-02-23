@@ -163,6 +163,9 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                 commandvec.add("/get/downloads/finishedlist");
                 infovector.add("Get list of finished downloads (XML)");
 
+                commandvec.add("/get/grabber/isrunning");
+                infovector.add("Get if linkgrabber is busy or not");
+
                 /* Actions table */
                 commandvec.add(" ");
                 infovector.add("Actions");
@@ -360,6 +363,13 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                     }
                 }
                 response.addContent(JDUtilities.createXmlString(xml));
+            } else if (request.getRequestUrl().equals("/get/grabber/isbusy")) {
+                // Get if grabber is busy
+                if (LinkGrabberPanel.getLinkGrabber().isRunning()) {
+                    response.addContent(true);
+                } else {
+                    response.addContent(false);
+                }
             } else if (request.getRequestUrl().equals("/action/start")) {
                 // Do Start downloads
                 DownloadWatchDog.getInstance().startDownloads();
