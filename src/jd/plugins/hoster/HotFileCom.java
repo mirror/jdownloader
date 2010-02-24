@@ -227,8 +227,9 @@ public class HotFileCom extends PluginForHost {
                 sb.append("&but=+Check+Urls+");
                 br.postPage("http://hotfile.com/checkfiles.html", sb.toString());
                 for (DownloadLink dl : links) {
-                    String size = br.getRegex("<b>Results</b>.*?<a href=.*?\"" + dl.getDownloadURL() + ".*?\".*?/td.*?<td>(.*?)<").getMatch(0);
-                    String name = br.getRegex("<b>Results</b>.*?<a href=.*?\"" + dl.getDownloadURL() + "(.*?)\"").getMatch(0);
+                    String id = new Regex(dl.getDownloadURL(), "hotfile\\.com(/dl/\\d+/[0-9a-zA-Z]+/)").getMatch(0);
+                    String size = br.getRegex("<b>Results</b>.*?<a href=.*?\".*?" + id + ".*?\".*?/td.*?<td>(.*?)<").getMatch(0);
+                    String name = br.getRegex("<b>Results</b>.*?<a href=.*?\".*?" + id + "(.*?)\"").getMatch(0);
                     if (name != null && size != null) {
                         name = name.replaceAll("\\.html", "").trim();
                         dl.setName(name);
