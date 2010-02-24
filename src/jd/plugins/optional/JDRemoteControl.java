@@ -163,7 +163,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                 commandvec.add("/get/downloads/finishedlist");
                 infovector.add("Get list of finished downloads (XML)");
 
-                commandvec.add("/get/grabber/isrunning");
+                commandvec.add("/get/grabber/isbusy");
                 infovector.add("Get if linkgrabber is busy or not");
 
                 /* Actions table */
