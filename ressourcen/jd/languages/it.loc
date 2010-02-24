@@ -1292,6 +1292,7 @@ plugins.hoster.filebaseto.servererror = Errore del server
 plugins.hoster.filebaseto.unsupportederror = Errore sconosciuto
 plugins.hoster.filefactorycom.errors.nofreeslots = Nessuno slot gratuito disponibile
 plugins.hoster.filernet.errors.nofreeslots = Tutti gli slot gratuiti sono occupati
+plugins.hoster.filesmonstercom.nofreeslots = Non ci sono slot download free disponibili
 plugins.hoster.freaksharenet.waitinsteadofreconnect = Attendere 10 minuti invece di riconnettersi
 plugins.hoster.fsxhu.waiting = %s utenti in coda, 
 plugins.hoster.general.enterpassword = Inserire password:
