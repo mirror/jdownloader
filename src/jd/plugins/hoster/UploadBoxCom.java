@@ -134,7 +134,7 @@ public class UploadBoxCom extends PluginForHost {
         form = br.getFormbyProperty("id", "free");
         String captchaUrl = br.getRegex("id=\"captcha\" src=\"(.*?)\"").getMatch(0);
         if (form == null || captchaUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String code = getCaptchaCode("http://www.uploadbox.com" + captchaUrl.replace("amp;", ""), link);
+        String code = getCaptchaCode(captchaUrl.replace("amp;", ""), link);
         form.put("enter", code);
         br.submitForm(form);
         if (br.containsHTML("read the code")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
