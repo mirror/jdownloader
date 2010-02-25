@@ -567,9 +567,12 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                         response.addContent(ERROR_LINK_GRABBER_RUNNING);
                     } else {
                         ArrayList<LinkGrabberFilePackage> fps = LinkGrabberController.getInstance().getPackages();
-
+                       
                         for (int i = 0; i < fps.size(); i++) {
-                            dllinks.addAll(fps.get(i).getDownloadLinks());
+                            ArrayList<DownloadLink> fplinks = fps.get(i).getDownloadLinks();
+                            for (int j = 0; j < fplinks.size(); j++) {
+                                dllinks.add(fplinks.get(i));
+                            }
                         }
                     }
                 } else {
