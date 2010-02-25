@@ -223,7 +223,7 @@ public class ShareOnlineBiz extends PluginForHost {
         if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setFollowRedirects(true);
         /* Datei herunterladen */
-        dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, url, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, url, false, 1);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
 

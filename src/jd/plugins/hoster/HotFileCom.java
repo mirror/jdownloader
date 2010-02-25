@@ -60,8 +60,8 @@ public class HotFileCom extends PluginForHost {
         Form form = br.getForm(0);
         if (form != null && form.containsHTML("<td>Username:")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         if (br.getCookie("http://hotfile.com/", "auth") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        br.getPage("http://new.hotfile.com/myaccount.html");
-        if (!br.containsHTML(">Premium Options<")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        br.getPage("http://hotfile.com/premiuminfo.html");
+        if (!br.containsHTML(">Premium Membership<")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         br.setFollowRedirects(false);
     }
 
@@ -75,7 +75,13 @@ public class HotFileCom extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        account.setValid(true);
+        String validUntil = br.getRegex("<td>Until.*?</td><td>(.*?)</td>").getMatch(0);
+        if (validUntil == null) {
+            account.setValid(false);
+        } else {
+            ai.setValidUntil(Regex.getMilliSeconds(validUntil, "yyyy-MM-dd HH:mm:ss", null));
+            account.setValid(true);
+        }
         return ai;
     }
 

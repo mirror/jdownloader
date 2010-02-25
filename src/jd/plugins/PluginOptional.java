@@ -106,7 +106,7 @@ public abstract class PluginOptional extends Plugin implements ControlListener {
     }
 
     /**
-     * Shoudl ALWAYS return a lifetime id String.
+     * Should ALWAYS return a lifetime id String.
      * 
      * @return
      */
