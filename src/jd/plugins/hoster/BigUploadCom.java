@@ -33,8 +33,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 
-//bigupload.com by pspzockerscene
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bigupload.com" }, urls = { "http://[\\w\\.]*?bigupload\\.com/d=[A-Z|0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bigupload.com" }, urls = { "http://[\\w\\.]*?bigupload\\.com/(d=|files/)[A-Z0-9]+" }, flags = { 0 })
 public class BigUploadCom extends PluginForHost {
 
     public BigUploadCom(PluginWrapper wrapper) {
@@ -46,9 +45,15 @@ public class BigUploadCom extends PluginForHost {
         return "http://www3.bigupload.com/terms.php";
     }
 
+    public void correctDownloadLink(DownloadLink link) {
+        String fileid = new Regex(link.getDownloadURL(), "bigupload\\.com/files/([A-Z0-9]+)").getMatch(0);
+        if (fileid != null) link.setUrlDownload("http://www.bigupload.com/d=" + fileid);
+    }
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.setFollowRedirects(true);
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("search.php")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -68,10 +73,12 @@ public class BigUploadCom extends PluginForHost {
         br.setFollowRedirects(true);
         Form form = br.getForm(2);
         if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        form.setAction("/download_frame.php");
-        this.sleep(5 * 1001l, downloadLink);
         br.submitForm(form);
-        this.sleep(10 * 1001l, downloadLink);
+        String damnSeconds = br.getRegex("count=(\\d+);").getMatch(0);
+        if (damnSeconds != null) {
+            logger.info("Waittime detected, waiting " + damnSeconds + " seconds from now on...");
+            sleep(Integer.parseInt(damnSeconds) * 1001, downloadLink);
+        }
         URLConnectionAdapter con = br.cloneBrowser().openGetConnection("http://www3.bigupload.com/images/test.bmp?" + System.currentTimeMillis());
         con.disconnect();
         // Link zum Captcha (kann bei anderen Hostern auch mit ID sein)
@@ -79,7 +86,6 @@ public class BigUploadCom extends PluginForHost {
         if (captchaid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String captchaurl = "http://www3.bigupload.com/load_security_code.php?app=download_frame&parent=&obj=sec_img&sid=" + captchaid;
         String code = getCaptchaCode(captchaurl, downloadLink);
-        this.sleep(10 * 1001l, downloadLink);
         Form captchaForm = br.getForm(1);
         if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // Captcha Usereingabe in die Form einfügen
