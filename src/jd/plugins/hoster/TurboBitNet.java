@@ -161,10 +161,15 @@ public class TurboBitNet extends PluginForHost {
         requestFileInformation(link);
         login(account);
         br.getPage(link.getDownloadURL());
-        String dllink = br.getRegex("<h1><a href=\"(.*?)\"").getMatch(0);
+        String dllink = br.getRegex("<h1><a href='(.*?)'><b>Download it!</b>").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("('|\")(http://turbobit\\.net//download/redirect/.*?/.*?)('|\")").getMatch(1);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dllink = "http://turbobit.net" + dllink;
+        if (!dllink.contains("turbobit.net")) dllink = "http://turbobit.net" + dllink;
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl.startDownload();
     }
 

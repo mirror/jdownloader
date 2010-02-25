@@ -56,16 +56,21 @@ public class DuckLoad extends PluginForHost {
         String code = getCaptchaCode(capurl, link);
         // Check this part first if the plugin is defect!
         String applcode = null;
-        if (form.containsHTML("a_code")) {
-            applcode = "a_code";
-        } else if (form.containsHTML("b_code")) {
-            applcode = "b_code";
-        } else if (form.containsHTML("appl_code")) {
-            applcode = "appl_code";
+        applcode = br.getRegex("<input type=\"text\" name=\"(.*?)\"").getMatch(0);
+        if (applcode == null) {
+            if (form.containsHTML("a_code")) {
+                applcode = "a_code";
+            } else if (form.containsHTML("b_code")) {
+                applcode = "b_code";
+            } else if (form.containsHTML("appl_code")) {
+                applcode = "appl_code";
+            }
+        } else {
+            logger.warning("regex for applcode is defect!");
         }
         if (applcode != null) {
             form = new Form();
-            form.setAction(br.getForm(0).getAction());
+            form.setAction(br.getURL());
             form.setMethod(MethodType.POST);
             form.put("server", "1");
             form.put(applcode, code);
@@ -80,7 +85,8 @@ public class DuckLoad extends PluginForHost {
             br.setDebug(true);
             if (url != null && url.contains("error=wrongCaptcha")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         } else {
-            url = br.getRegex("src\" value=\"(http://.*?)\"").getMatch(0);
+            url = br.getRegex("type=\"video/divx\" src=\"(.*?)\"").getMatch(0);
+            if (url == null) url = br.getRegex("\"(http://dl[0-9]+\\.duckload\\.com:[0-9]+/Get/.*?/.*?)\"").getMatch(0);
             String filename = br.getRegex("Original Filename:</strong></td><td width=.*?>(.*?)</td>").getMatch(0);
             if (filename != null) link.setFinalFileName(filename);
             if (url == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
@@ -100,15 +106,17 @@ public class DuckLoad extends PluginForHost {
             br.getPage("http://youload.to/english.html");
         }
         br.getPage(parameter.getDownloadURL());
+        if (br.containsHTML("(File was not found!|Die angeforderte Datei konnte nicht gefunden werden)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("stream_protection_h\">Bitte Server")) {
             /* streaming file */
             parameter.setName("VideoStream.avi");
-            String filesize = br.getRegex("s_1.*?\">Server.*?\\[(.*?)\\]").getMatch(0);
-            if (filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            parameter.setDownloadSize(Regex.getSize(filesize.trim()));
+            String filesize = br.getRegex(" \\[(.*?)\\] </label></div><di").getMatch(0);
+            if (filesize != null)
+                parameter.setDownloadSize(Regex.getSize(filesize.trim()));
+            else
+                logger.warning("Filesize regex is broken!");
             return AvailableStatus.TRUE;
         }
-        if (br.containsHTML("File was not found!")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("You want to download the file \"(.*?)\".*?!<br>").getMatch(0);
         String filesize = br.getRegex("You want to download the file \".*?\" \\((.*?)\\) !<br>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
