@@ -575,22 +575,19 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                          * TODO: central function for LinkGrabberFilePackage ->
                          * FilePackage without sending to dl queue
                          */
+                        ArrayList<FilePackage> fps = new ArrayList<FilePackage>();
                         for (int i = 0; i < lgfps.size(); i++) {
+                            DownloadLink dl = null;
+                            for (DownloadLink link : lgfps.get(i).getDownloadLinks()) {
+                                link.setEnabled(false);
+                                if (dl == null) dl = link;
+                            }
                             LinkGrabberPanel.getLinkGrabber().confirmPackage(lgfps.get(i), null, i);
+                            fps.add(dl.getFilePackage());
                         }
-
-                        dllinks = JDUtilities.getDownloadController().getAllDownloadLinks();
-
-                        for (int i = 0; i < dllinks.size(); i++) {
-                            dllinks.get(i).setEnabled(false);
-                        }
-
                         JDUtilities.getController().saveDLC(new File(dlcfilestr), dllinks);
-
-                        ArrayList<FilePackage> fps = JDUtilities.getDownloadController().getPackages();
-
-                        for (int i = 0; i < fps.size(); i++) {
-                            JDUtilities.getDownloadController().removePackage(fps.get(i));
+                        for (FilePackage fp : fps) {
+                            JDUtilities.getDownloadController().removePackage(fp);
                         }
                     }
                 } else {
