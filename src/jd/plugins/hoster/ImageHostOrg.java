@@ -56,7 +56,7 @@ public class ImageHostOrg extends PluginForHost {
                 }
             }
             String filesize = br.getRegex("\"Download <a href=.*?</a> \\((.*?)\\)\"").getMatch(0);
-            if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             link.setDownloadSize(Regex.getSize(filesize));
             link.setName(filename.trim());
         } else {

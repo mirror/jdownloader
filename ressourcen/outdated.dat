@@ -185,3 +185,5 @@ jd/plugins/hoster/R1OneCom.class
 jd/plugins/hoster/FileFactoryPl.class
 jd/plugins/hoster/SendFileTo.class
 jd/plugins/decrypter/Mg4Chnrg.java
+jd/plugins/hoster/FileTubeTo.class
+jd/plugins/hoster/UpMusicIn.class
