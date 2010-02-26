@@ -43,3 +43,4 @@ ISO:::000000000000000000000000.*?[^0]{1,}:::ISO:::.+\.iso
 FLV:::464c56.*:::Flv Video:::.+\.flv
 CSO:::4349534f.*:::Compressed ISO Image:::.+\.cso
 RMF:::2E524D46.*:::RealMediaFile:::.+\.rmvb
+FLAC:::664c6143.*:::FLAC:::.+\.flac
