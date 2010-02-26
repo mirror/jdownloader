@@ -26,7 +26,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "adf.ly", "download.su", "wowebook.com", "link.songs.pk + songspk.info" }, urls = { "http://[\\w\\.]*?adf\\.ly/[A-Za-z0-9]+", "http://[\\w\\.]*?download\\.su/go/\\?id=.*?=/files/\\d+/.+", "http://[\\w\\.]*?wowebook\\.com/(e-|non-e-)book/.*?/.*?\\.html", "http://[\\w\\.]*?(link\\.songs\\.pk/(popsong|song1|bhangra)\\.php\\?songid=|songspk\\.info/ghazals/download/ghazals\\.php\\?id=)[0-9]+" }, flags = { 0, 0, 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "adf.ly", "download.su", "wowebook.com", "link.songs.pk + songspk.info", "imageto.net" }, urls = { "http://[\\w\\.]*?adf\\.ly/[A-Za-z0-9]+", "http://[\\w\\.]*?download\\.su/go/\\?id=.*?=/files/\\d+/.+", "http://[\\w\\.]*?wowebook\\.com/(e-|non-e-)book/.*?/.*?\\.html", "http://[\\w\\.]*?(link\\.songs\\.pk/(popsong|song1|bhangra)\\.php\\?songid=|songspk\\.info/ghazals/download/ghazals\\.php\\?id=)[0-9]+", "http://[\\w\\.]*?imageto\\.net/(\\?v=|images/)[0-9a-z]+\\..{2,4}" }, flags = { 0, 0, 0, 0, 0 })
 public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginForDecrypt {
 
     public DecrypterForRedirectServicesWithoutDirectRedirects(PluginWrapper wrapper) {
@@ -38,7 +38,7 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
         String parameter = param.toString();
         br.setFollowRedirects(false);
         String finallink = null;
-        br.getPage(parameter);
+        if (!parameter.contains("imageto.net/")) br.getPage(parameter);
         if (parameter.contains("adf.ly"))
             finallink = br.getRegex("var target_url = '(http.*?)'").getMatch(0);
         else if (parameter.contains("download.su")) {
@@ -47,7 +47,13 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
         } else if (parameter.contains("link.songs.pk/") || parameter.contains("songspk.info/ghazals/download/ghazals.php?id=")) {
             finallink = br.getRedirectLocation();
             if (finallink != null) finallink = "directhttp://" + finallink;
-
+        } else if (parameter.contains("imageto")) {
+            if (parameter.contains("imageto.net/images/")) {
+                finallink = "directhttp://" + parameter;
+            } else {
+                String fileid = new Regex(parameter, "imageto\\.net/\\?v=(.+)").getMatch(0);
+                finallink = "directhttp://http://imageto.net/images/" + fileid;
+            }
         } else if (parameter.contains("wowebook.com")) {
             String redirectLink = br.getRegex("\"(http://www\\.wowebook\\.com/download.*?)\"").getMatch(0);
             if (redirectLink == null) return null;
