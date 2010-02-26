@@ -53,7 +53,7 @@ public class SoundcloudCom extends PluginForHost {
         br.getPage(parameter.getDownloadURL());
         if (br.containsHTML("Oops, looks like we can't find that page")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<em>(.*?)</em>").getMatch(0);
-
+        br.setFollowRedirects(true);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         filename = filename.trim().replace("&amp; ", "");
         String type = br.getRegex("title=\"Uploaded format\">(.*?)<").getMatch(0);
