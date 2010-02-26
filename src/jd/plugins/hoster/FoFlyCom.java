@@ -362,7 +362,7 @@ public class FoFlyCom extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
-    public String decodeDownloadLink(String s) {
+    private String decodeDownloadLink(String s) {
         String decoded = null;
         
         try {
