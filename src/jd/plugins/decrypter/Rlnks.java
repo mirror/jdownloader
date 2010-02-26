@@ -82,7 +82,7 @@ public class Rlnks extends PluginForDecrypt {
                             brc.getPage("http://www.relink.us/frame.php?" + match);
                         }
                         captcharetry = false;
-                        if (brc.getRedirectLocation() != null && brc.getRedirectLocation().contains("relink.us/getfile")) {
+                        if (brc != null && brc.getRedirectLocation() != null && brc.getRedirectLocation().contains("relink.us/getfile")) {
                             try {
                                 Thread.sleep((i + 1) * 500);
                             } catch (Exception e) {
