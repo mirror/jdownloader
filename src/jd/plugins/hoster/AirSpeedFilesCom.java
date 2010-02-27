@@ -38,7 +38,7 @@ public class AirSpeedFilesCom extends PluginForHost {
 
     public AirSpeedFilesCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://airspeedfiles.com/login.php");
+        this.enablePremium("http://airspeedfiles.com/register.php");
     }
 
     // MhfScriptBasic 1.0
