@@ -23,6 +23,7 @@ import jd.PluginWrapper;
 import jd.captcha.easy.load.LoadImage;
 import jd.controlling.ProgressController;
 import jd.controlling.ProgressControllerEvent;
+import jd.controlling.ProgressControllerListener;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -34,7 +35,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "deviantclip.com" }, urls = { "http://[\\w\\.]*?deviantclip\\.com/Media-([0-9]+-[0-9]+_|[0-9]+_).*?\\.html" }, flags = { 0 })
-public class DeviantClipComGallery extends PluginForDecrypt {
+public class DeviantClipComGallery extends PluginForDecrypt implements ProgressControllerListener {
 
     public DeviantClipComGallery(PluginWrapper wrapper) {
         super(wrapper);
@@ -44,6 +45,7 @@ public class DeviantClipComGallery extends PluginForDecrypt {
     public String fpName = null;
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+        progress.getBroadcaster().addListener(this);
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
