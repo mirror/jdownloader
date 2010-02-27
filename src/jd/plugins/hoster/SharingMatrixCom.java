@@ -198,6 +198,7 @@ public class SharingMatrixCom extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
+        br.forceDebug(true);
         requestFileInformation(downloadLink);
         String passCode = null;
         if (br.containsHTML("You are already downloading file. Only premium")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
@@ -207,10 +208,12 @@ public class SharingMatrixCom extends PluginForHost {
         if (linkid == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         String freepage = "http://sharingmatrix.com/ajax_scripts/download.php?type_membership=free&link_id=" + linkid;
         br.getPage(freepage);
-        String link_name = br.getRegex("link_name = '([^']+')").getMatch(0);
+        String link_name = br.getRegex("link_name = '([^']+)'").getMatch(0);
+        String ctjv = br.getRegex("ctjv = '([^']+)'").getMatch(0);
 
         String linkurl = br.getRegex("<input\\.*document\\.location=\"(.*?)\";").getMatch(0);
 
+        //
         String captchalink = "http://sharingmatrix.com/include/crypt/cryptographp.inc.php?cfg=0&sn=PHPSESSID&";
 
         File captcha = getLocalCaptchaFile();
@@ -219,22 +222,29 @@ public class SharingMatrixCom extends PluginForHost {
         brc.setCookiesExclusive(true);
         brc.setCookie("sharingmatrix.com", "cryptcookietest", "1");
         brc.getDownload(captcha, captchalink);
-
-        String code = getCaptchaCode(captcha, downloadLink);
         Browser br2 = br.cloneBrowser();
-        if (br.containsHTML("Enter password:<") && !br.containsHTML("enter_password\" style=\"display:none\"")) {
-            if (downloadLink.getStringProperty("pass", null) == null) {
-                passCode = Plugin.getUserInput("Password?", downloadLink);
-            } else {
-                /* gespeicherten PassCode holen */
-                passCode = downloadLink.getStringProperty("pass", null);
-            }
-        }
-        br2.postPage("http://sharingmatrix.com/ajax_scripts/verifier.php", "?&code=" + code);
-        if (Integer.parseInt(br2.toString().trim()) != 1) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        String dl_id = br2.getPage("http://sharingmatrix.com/ajax_scripts/dl.php").trim();
+        if (captcha.length() > 200) {
+            // I'm not sure if there are still captchas
 
-        br2.getPage("http://sharingmatrix.com/ajax_scripts/_get.php?link_id=" + linkid + "&link_name=" + link_name + "&dl_id=" + dl_id + (passCode == null ? "" : "&password=" + Encoding.urlEncode(passCode)));
+            String code = getCaptchaCode(captcha, downloadLink);
+
+            if (br.containsHTML("Enter password:<") && !br.containsHTML("enter_password\" style=\"display:none\"")) {
+                if (downloadLink.getStringProperty("pass", null) == null) {
+                    passCode = Plugin.getUserInput("Password?", downloadLink);
+                } else {
+                    /* gespeicherten PassCode holen */
+                    passCode = downloadLink.getStringProperty("pass", null);
+                }
+            }
+            br2.postPage("http://sharingmatrix.com/ajax_scripts/verifier.php", "?&code=" + code);
+            if (Integer.parseInt(br2.toString().trim()) != 1) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+
+        }
+
+        this.sleep(Integer.parseInt(ctjv) * 1000, downloadLink);
+        String dl_id = br2.getPage("/ajax_scripts/dl.php").trim();
+
+        br2.getPage("/ajax_scripts/_get2.php?link_id=" + linkid + "&link_name=" + link_name + "&dl_id=" + dl_id + (passCode == null ? "" : "&password=" + Encoding.urlEncode(passCode)));
         if (br2.containsHTML("server_down")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverfailure, Please try again later!", 30 * 60 * 1000l);
         linkurl = br2.getRegex("serv:\"([^\"]+)\"").getMatch(0) + "/download/" + br2.getRegex("hash:\"([^\"]+)\"").getMatch(0) + "/" + dl_id.trim() + "/" + (passCode == null ? "" : "&password=" + Encoding.urlEncode(passCode));
         if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
