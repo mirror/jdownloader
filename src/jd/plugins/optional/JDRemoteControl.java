@@ -193,7 +193,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
                 infovector.add("Reconnect");
 
                 commandvec.add("/action/(force)update");
-                infovector.add("Do a webupdate - forceupdate will activate auto-restart if update is possible");
+                infovector.add("Do a webupdate - /action/forceupdate will activate auto-restart if update is possible");
 
                 commandvec.add("/action/restart");
                 infovector.add("Restart JDownloader");
@@ -213,14 +213,14 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
                 commandvec.add("/action/set/premium/(true|false)");
                 infovector.add("Set premium usage enabled or not");
 
-                commandvec.add("/action/add(confirm)/links/%X%");
+                commandvec.add("/action/add(/confirm)(/start)/links/%X%");
                 infovector.add("Add links %X% to grabber<br/>" + "e.g. /action/add/links/http://tinyurl.com/6o73eq" + "<p>Note: Links must be URLEncoded. Use NEWLINE between Links!!</p>");
 
-                commandvec.add("/action/add(confirm)/container/%X%");
+                commandvec.add("/action/add(/confirm)(/start)/container/%X%");
                 infovector.add("Add (remote or local) container %X%<br/>" + "e.g. /action/add/container/C:\\container.dlc" + "<p>Note: Address (remote or local) must be URLEncoded.</p>");
 
-                commandvec.add("/action/save/container/(grabber)/%X%");
-                infovector.add("Save DLC-container with all links to %X%<br/>" + "e.g. /action/add/container/%X%" + "<p>Optional: grabber => save DLC-container from grabber list instead from download list</p>");
+                commandvec.add("/action/save/container(/fromgrabber)/%X%");
+                infovector.add("Save DLC-container with all links to %X%<br/>" + "e.g. /action/add/container/%X%" + "<p>fromgrabber: save DLC-container from grabber list instead from download list</p>");
 
                 commandvec.add("/action/grabber/join/%X% %Y%");
                 infovector.add("Join all denoted linkgrabber packages %Y% to the package %X%");
@@ -481,11 +481,11 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
                 SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, newsimdl.toString());
                 SubConfiguration.getConfig("DOWNLOAD").save();
                 response.addContent("newmax=" + newsimdl);
-            } else if (request.getRequestUrl().matches("(?is).*/action/add(confirm)?/links/.+")) {
+            } else if (request.getRequestUrl().matches("(?is).*/action/add(/confirm)?(/start)?/links/.+")) {
                 // Add link(s)
                 ArrayList<String> links = new ArrayList<String>();
 
-                String link = new Regex(request.getRequestUrl(), ".*/action/add(confirm)?/links/(.+)").getMatch(1);
+                String link = new Regex(request.getRequestUrl(), ".*/action/add(/confirm)?(/start)?/links/(.+)").getMatch(2);
 
                 for (String tlink : HTMLParser.getHttpLinks(Encoding.urlDecode(link, false), null)) {
                     links.add(tlink);
@@ -518,7 +518,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
                 // confirm parameter - passes just added links to the download
                 // queue
 
-                if (request.getRequestUrl().matches(".+/addconfirm/.+")) {
+                if (request.getRequestUrl().matches(".+/confirm/.+")) {
                     grabberIsBusy = true;
 
                     while (grabberIsBusy) {
@@ -546,10 +546,14 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
                     }
                 }
 
+                if (request.getRequestUrl().matches(".+/start/.+")) {
+                    DownloadWatchDog.getInstance().startDownloads();
+                }
+
                 response.addContent("Link(s) added. (" + link + ")");
-            } else if (request.getRequestUrl().matches("(?is).*/action/add(confirm)?/container/.+")) {
+            } else if (request.getRequestUrl().matches("(?is).*/action/add(/confirm)?(/start)?/container/.+")) {
                 // Open a local or remote DLC-container
-                String dlcfilestr = new Regex(request.getRequestUrl(), ".*/action/add(confirm)?/container/(.+)").getMatch(1);
+                String dlcfilestr = new Regex(request.getRequestUrl(), ".*/action/add(/confirm)?(/start)/container/(.+)").getMatch(2);
                 dlcfilestr = Encoding.htmlDecode(dlcfilestr);
 
                 if (dlcfilestr.matches("http://.*?\\.(dlc|ccf|rsdf)")) {
@@ -579,7 +583,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
                 // TODO: compare links in grabber before and after adding dlc ->
                 // then confirm only new links
 
-                // if (request.getRequestUrl().matches(".+/addconfirm/.+")) {
+                // if (request.getRequestUrl().matches(".+/confirm/.+")) {
                 // grabberIsBusy = true;
                 // while (grabberIsBusy) {
                 // try {
@@ -609,15 +613,19 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
                 // }
                 // }
 
+                if (request.getRequestUrl().matches(".+/start/.+")) {
+                    DownloadWatchDog.getInstance().startDownloads();
+                }
+
                 response.addContent("Container opened. (" + dlcfilestr + ")");
-            } else if (request.getRequestUrl().matches("(?is).*/action/save/container/(grabber/)?.+")) {
+            } else if (request.getRequestUrl().matches("(?is).*/action/save/container(/fromgrabber)?/.+")) {
                 // Save linklist as DLC-container
                 ArrayList<DownloadLink> dllinks = new ArrayList<DownloadLink>();
 
-                String dlcfilestr = new Regex(request.getRequestUrl(), ".*/action/save/container/(grabber/)?(.+)").getMatch(1);
+                String dlcfilestr = new Regex(request.getRequestUrl(), ".*/action/save/container(/fromgrabber)/?(.+)").getMatch(1);
                 dlcfilestr = Encoding.htmlDecode(dlcfilestr);
 
-                boolean savefromGrabber = new Regex(request.getRequestUrl(), ".+/grabber/.+").matches();
+                boolean savefromGrabber = new Regex(request.getRequestUrl(), ".+/fromgrabber/.+").matches();
 
                 if (savefromGrabber) {
                     if (LinkGrabberPanel.getLinkGrabber().isRunning()) {
