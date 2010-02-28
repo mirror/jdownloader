@@ -69,10 +69,15 @@ public class LetitBitNet extends PluginForHost {
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         requestFileInformation(downloadLink);
-        Form form = br.getForm(4);
-        if (form == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        form.put("pass", Encoding.urlEncode(account.getPass()));
-        br.submitForm(form);
+        Form premiumform = null;
+        Form[] allforms = br.getForms();
+        if (allforms == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        for (Form singleform : allforms) {
+            if (singleform.containsHTML("pass") && singleform.containsHTML("uid5") && singleform.containsHTML("uid") && singleform.containsHTML("name") && singleform.containsHTML("pin") && singleform.containsHTML("realuid") && singleform.containsHTML("realname") && singleform.containsHTML("host") && singleform.containsHTML("ssserver") && singleform.containsHTML("sssize") && singleform.containsHTML("optiondir")) premiumform = singleform;
+        }
+        if (premiumform == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        premiumform.put("pass", Encoding.urlEncode(account.getPass()));
+        br.submitForm(premiumform);
         String url = br.getRegex("(http://[^/]*?/download.*?/.*?)(\"|')").getMatch(0);
         if (url == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         /* we have to wait little because server too buggy */
@@ -159,7 +164,7 @@ public class LetitBitNet extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return -1;
     }
 
     @Override

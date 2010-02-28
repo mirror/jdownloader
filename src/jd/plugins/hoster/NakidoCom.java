@@ -76,6 +76,7 @@ public class NakidoCom extends PluginForHost {
         String dllink = br.getRegex("else.*?x\\.href='(.*?)'").getMatch(0);
         if (dllink == null) dllink = br.getRegex("'(/[A-Z0-9]+/[A-Z0-9]+\\?attach.*?)'").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink.matches("javascript:void(0)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No free slots available!");
         dllink = "http://www.nakido.com" + dllink;
         jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (!(dl.getConnection().isContentDisposition())) {
