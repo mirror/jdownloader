@@ -57,7 +57,7 @@ public class InternetAndNetwork extends ConfigPanel {
         ConfigEntry conditionEntry;
         // Network Tab
 
-        ConfigContainer network = new ConfigContainer(JDL.L("gui.config.download.network.tab", "Internet & Netzwerkverbindung"));
+        ConfigContainer network = new ConfigContainer();
 
         network.setGroup(new ConfigGroup(JDL.L("gui.config.download.timeout", "Timeout & Connection loss"), JDTheme.II("gui.images.networkerror", 32, 32)));
 

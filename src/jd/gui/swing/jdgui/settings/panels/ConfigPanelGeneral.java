@@ -16,6 +16,8 @@
 
 package jd.gui.swing.jdgui.settings.panels;
 
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.logging.Level;
 
 import javax.swing.JTabbedPane;
@@ -25,8 +27,10 @@ import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
+import jd.gui.UserIO;
 import jd.gui.swing.jdgui.settings.ConfigPanel;
 import jd.gui.swing.jdgui.settings.GUIConfigEntry;
+import jd.update.WebUpdater;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 
@@ -52,17 +56,46 @@ public class ConfigPanelGeneral extends ConfigPanel {
         load();
     }
 
+    private ConfigContainer setupContainer() {
+        ConfigEntry ce, conditionEntry;
+
+        ConfigContainer look = new ConfigContainer();
+
+        look.setGroup(new ConfigGroup(JDL.L("gui.config.general.logging", "Logging"), JDTheme.II("gui.images.terminal", 32, 32)));
+        look.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, configuration, Configuration.PARAM_LOGGER_LEVEL, new Level[] { Level.ALL, Level.INFO, Level.OFF }, JDL.L("gui.config.general.loggerLevel", "Level für's Logging")).setDefaultValue(Level.INFO));
+
+        look.setGroup(new ConfigGroup(JDL.L("gui.config.general.update", "Update"), JDTheme.II("gui.splash.update", 32, 32)));
+        look.addEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, SubConfiguration.getConfig("WEBUPDATE"), Configuration.PARAM_WEBUPDATE_DISABLE, JDL.L("gui.config.general.webupdate.disable2", "Do not inform me about important updates")).setDefaultValue(false));
+        look.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_WEBUPDATE_AUTO_RESTART, JDL.L("gui.config.general.webupdate.auto", "automatisch, ohne Nachfrage ausführen")).setDefaultValue(false).setEnabledCondidtion(conditionEntry, false));
+        look.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_WEBUPDATE_AUTO_SHOW_CHANGELOG, JDL.L("gui.config.general.changelog.auto", "Open Changelog after update")).setDefaultValue(true));
+
+        look.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+
+        /* Branch Resetting */
+        final SubConfiguration config = SubConfiguration.getConfig("WEBUPDATE");
+        String branch = config.getStringProperty(WebUpdater.BRANCHINUSE, null);
+        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_BUTTON, new ActionListener() {
+
+            public void actionPerformed(ActionEvent e) {
+                config.setProperty(WebUpdater.BRANCHINUSE, null);
+                config.save();
+                UserIO.getInstance().requestMessageDialog(JDL.L("gui.config.general.resetbranch.message", "The selected branch was resetted. The Updater may find new updates after the next restart."));
+            }
+
+        }, JDL.L("gui.config.general.resetbranch.short", "Reset"), JDL.LF("gui.config.general.resetbranch", "Reset selected Branch (Current Branch: %s)", branch == null ? "-" : branch), JDTheme.II("gui.images.restart", 16, 16)));
+        ce.setEnabled(branch != null);
+
+        return look;
+    }
+
     @Override
     public void initPanel() {
-        ConfigEntry conditionEntry;
+        ConfigContainer container = setupContainer();
 
-        ConfigGroup logging = new ConfigGroup(JDL.L("gui.config.general.logging", "Logging"), JDTheme.II("gui.images.terminal", 32, 32));
-        addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, configuration, Configuration.PARAM_LOGGER_LEVEL, new Level[] { Level.ALL, Level.INFO, Level.OFF }, JDL.L("gui.config.general.loggerLevel", "Level für's Logging")).setDefaultValue(Level.INFO).setGroup(logging)));
-
-        ConfigGroup update = new ConfigGroup(JDL.L("gui.config.general.update", "Update"), JDTheme.II("gui.splash.update", 32, 32));
-        addGUIConfigEntry(new GUIConfigEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, SubConfiguration.getConfig("WEBUPDATE"), Configuration.PARAM_WEBUPDATE_DISABLE, JDL.L("gui.config.general.webupdate.disable2", "Do not inform me about important updates")).setDefaultValue(false).setGroup(update)));
-        addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_WEBUPDATE_AUTO_RESTART, JDL.L("gui.config.general.webupdate.auto", "automatisch, ohne Nachfrage ausführen")).setDefaultValue(false).setEnabledCondidtion(conditionEntry, false).setGroup(update)));
-        addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_WEBUPDATE_AUTO_SHOW_CHANGELOG, JDL.L("gui.config.general.changelog.auto", "Open Changelog after update")).setDefaultValue(true).setGroup(update)));
+        for (ConfigEntry cfgEntry : container.getEntries()) {
+            GUIConfigEntry ce = new GUIConfigEntry(cfgEntry);
+            if (ce != null) addGUIConfigEntry(ce);
+        }
 
         JTabbedPane tabbed = new JTabbedPane();
         tabbed.setOpaque(false);

@@ -230,7 +230,7 @@ public class WebUpdater implements Serializable {
                     String[] bs = Regex.getLines(br.toString());
 
                     ArrayList<String> ret = new ArrayList<String>();
-                    this.branches = new String[bs.length];
+                    branches = new String[bs.length];
                     for (int ii = 0; ii < bs.length; ii++) {
 
                         if (isBetaBranch(bs[ii]) && betaBranch == null) {
@@ -263,8 +263,7 @@ public class WebUpdater implements Serializable {
             }
             System.err.println("No branches found on " + serv);
         }
-        branches = new String[] {};
-        return branches;
+        return branches = new String[] {};
     }
 
     public static boolean isBetaBranch(String string) {

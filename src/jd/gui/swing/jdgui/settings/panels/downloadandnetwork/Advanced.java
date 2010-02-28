@@ -60,7 +60,7 @@ public class Advanced extends ConfigPanel {
 
         // Extended Tab
 
-        ConfigContainer extended = new ConfigContainer(JDL.L("gui.config.download.network.extended", "Erweiterte Einstellungen"));
+        ConfigContainer extended = new ConfigContainer();
 
         extended.setGroup(new ConfigGroup(JDL.L("gui.config.download.ipcheck", "Reconnect IP-Check"), JDTheme.II("gui.images.network", 32, 32)));
 

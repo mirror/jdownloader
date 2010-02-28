@@ -65,7 +65,7 @@ public class General extends ConfigPanel {
     private ConfigContainer setupContainer() {
         ConfigEntry ce;
 
-        ConfigContainer look = new ConfigContainer(JDL.L("gui.config.gui.look.tab", "Anzeige & Bedienung"));
+        ConfigContainer look = new ConfigContainer();
 
         look.setGroup(new ConfigGroup(JDL.L("gui.config.gui.view", "Look"), JDTheme.II("gui.images.config.gui", 32, 32)));
         look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, SubConfiguration.getConfig(JDL.CONFIG), JDL.LOCALE_PARAM_ID, JDL.getLocaleIDs().toArray(new JDLocale[] {}), JDL.L("gui.config.gui.language", "Language")));
