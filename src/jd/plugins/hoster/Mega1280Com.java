@@ -46,6 +46,8 @@ public class Mega1280Com extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        // Sometime the page is extremely slow!
+        br.setReadTimeout(120 * 1000);
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.setCustomCharset("UTF-8");
         br.getPage(link.getDownloadURL());

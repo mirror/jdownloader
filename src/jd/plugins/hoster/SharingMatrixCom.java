@@ -210,7 +210,8 @@ public class SharingMatrixCom extends PluginForHost {
         br.getPage(freepage);
         String link_name = br.getRegex("link_name = '([^']+)'").getMatch(0);
         String ctjv = br.getRegex("ctjv = '([^']+)'").getMatch(0);
-
+        int ctjvv = Integer.parseInt(ctjv);
+        if (ctjvv > 80) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
         String linkurl = br.getRegex("<input\\.*document\\.location=\"(.*?)\";").getMatch(0);
 
         //
@@ -241,7 +242,7 @@ public class SharingMatrixCom extends PluginForHost {
 
         }
 
-        this.sleep(Integer.parseInt(ctjv) * 1000, downloadLink);
+        this.sleep(ctjvv * 1000, downloadLink);
         String dl_id = br2.getPage("/ajax_scripts/dl.php").trim();
 
         br2.getPage("/ajax_scripts/_get2.php?link_id=" + linkid + "&link_name=" + link_name + "&dl_id=" + dl_id + (passCode == null ? "" : "&password=" + Encoding.urlEncode(passCode)));
