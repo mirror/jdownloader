@@ -16,10 +16,12 @@
 
 package jd.plugins.hoster;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InterruptedIOException;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -78,18 +80,26 @@ public class BigUploadCom extends PluginForHost {
         if (damnSeconds != null) {
             logger.info("Waittime detected, waiting " + damnSeconds + " seconds from now on...");
             sleep(Integer.parseInt(damnSeconds) * 1001, downloadLink);
+            br.submitForm(form);
         }
-        URLConnectionAdapter con = br.cloneBrowser().openGetConnection("http://www3.bigupload.com/images/test.bmp?" + System.currentTimeMillis());
-        con.disconnect();
+
         // Link zum Captcha (kann bei anderen Hostern auch mit ID sein)
         String captchaid = br.getRegex("/faq\\.php\\?sid=(.*?)\">Full FAQ").getMatch(0);
         if (captchaid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String captchaurl = "http://www3.bigupload.com/load_security_code.php?app=download_frame&parent=&obj=sec_img&sid=" + captchaid;
-        String code = getCaptchaCode(captchaurl, downloadLink);
+        File cf = getLocalCaptchaFile();
+        Browser cbr = br.cloneBrowser();
+        cbr.getHeaders().put("Accept", "image/png,image/*;q=0.8,*/*;q=0.5");
+        URLConnectionAdapter connection = cbr.openGetConnection(captchaurl);
+        cbr.downloadConnection(cf, connection);
+        String code = getCaptchaCode(cf, downloadLink);
+        
         Form captchaForm = br.getForm(1);
         if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // Captcha Usereingabe in die Form einfügen
         captchaForm.put("sec_img", code);
+        captchaForm.getInputField("__ev_dispatcher").setValue("button=Clicked;");
+
         br.setFollowRedirects(false);
         br.submitForm(captchaForm);
         String dllink = br.getRedirectLocation();
