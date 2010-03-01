@@ -36,6 +36,7 @@ import jd.gui.swing.components.ConvertDialog;
 import jd.gui.swing.components.ConvertDialog.ConversionMode;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.http.Browser;
+import jd.http.JDProxy;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.Formatter;
 import jd.nutils.encoding.Encoding;
@@ -150,7 +151,13 @@ public abstract class Plugin implements ActionListener {
     }
 
     public void clean() {
+        JDProxy pr=null;
+        if (br != null) {
+            pr = br.getProxy();
+
+        }
         br = new Browser();
+        if(pr!=null)br.setProxy(pr);
     }
 
     /**
