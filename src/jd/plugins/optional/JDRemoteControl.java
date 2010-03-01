@@ -1053,7 +1053,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
     public void onExit() {
     }
 
-    @Override
+
     public void onLinkGrabberControllerEvent(LinkGrabberControllerEvent event) {
         if (event.getID() == LinkGrabberControllerEvent.FINISHED) {
             grabberIsBusy = false;

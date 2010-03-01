@@ -21,6 +21,8 @@ import java.lang.reflect.Field;
 
 import javax.swing.ImageIcon;
 
+
+
 import jd.controlling.DownloadWatchDog;
 import jd.controlling.JDLogger;
 import jd.nutils.Formatter;
@@ -170,6 +172,10 @@ public class LinkStatus implements Serializable {
     public static final int NOT_ENOUGH_HARDDISK_SPACE = 1 << 31;
 
     private static final long serialVersionUID = 3885661829491436448L;
+
+
+
+
 
     private final DownloadLink downloadLink;
     private String errorMessage;

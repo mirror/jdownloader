@@ -101,7 +101,7 @@ public class Rapidshare extends PluginForHost {
 
     final static private Boolean HTMLWORKAROUND = new Boolean(false);
 
-    private static long rsapiwait = 0;
+    private static long RS_API_WAIT = 0;
 
     private static HashMap<String, String> serverMap = new HashMap<String, String>();
     static {
@@ -171,7 +171,7 @@ public class Rapidshare extends PluginForHost {
     public boolean checkLinks(DownloadLink[] urls) {
         if (urls == null || urls.length == 0) { return false; }
         try {
-            if (rsapiwait > System.currentTimeMillis()) {
+            if (RS_API_WAIT > System.currentTimeMillis()) {
                 for (DownloadLink u : urls) {
                     u.setAvailable(true);
                     u.getLinkStatus().setStatusText(JDL.L("plugin.host.rapidshare.status.apiflood", "unchecked (API Flood)"));
@@ -248,7 +248,7 @@ public class Rapidshare extends PluginForHost {
 
                 if (br.containsHTML("access flood")) {
                     logger.warning("RS API flooded! will not check again the next 5 minutes!");
-                    rsapiwait = System.currentTimeMillis() + 5 * 60 * 1000l;
+                    RS_API_WAIT = System.currentTimeMillis() + 5 * 60 * 1000l;
                     return false;
                 }
 
@@ -308,12 +308,12 @@ public class Rapidshare extends PluginForHost {
         } catch (Exception e) {
             if (br.containsHTML("access flood")) {
                 logger.warning("RS API flooded! will not check again the next 5 minutes!");
-                rsapiwait = System.currentTimeMillis() + 5 * 60 * 1000l;
+                RS_API_WAIT = System.currentTimeMillis() + 5 * 60 * 1000l;
             }
             return false;
         }
     }
-
+ 
     /**
      * requests the API url req. if the http ip is blocked (UK-BT isp returns
      * 500 or 502 error) https is used.
@@ -873,7 +873,7 @@ public class Rapidshare extends PluginForHost {
 
     @Override
     public void reset() {
-        rsapiwait = 0;
+        RS_API_WAIT = 0;
     }
 
     /**
