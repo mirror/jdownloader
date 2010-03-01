@@ -49,7 +49,8 @@ public class BxNt extends PluginForDecrypt {
         logger.finer("Decrypting: " + parameter.getCryptedUrl());
         // check if page is a rss feed
         if (parameter.toString().endsWith("rss.xml")) { return feedExists(parameter.toString()) ? decryptFeed(parameter.toString()) : null; }
-
+        // String alllinks[] =
+        // br.getRegex(",\"shared_link\":\"(.*?)\"").getColumn(0);
         // if it's not a rss feed, check if an rss feed exists
         String baseUrl = new Regex(parameter, BASE_URL_PATTERN).getMatch(0);
         String feedUrl = baseUrl + "/rss.xml";
@@ -92,27 +93,26 @@ public class BxNt extends PluginForDecrypt {
      */
     private ArrayList<DownloadLink> decryptFeed(String feedUrl) throws IOException {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        FilePackage filePackage = FilePackage.getInstance();
-
         br.getPage(feedUrl);
-
+        String title = br.getRegex(FEED_FILETITLE_PATTERN).getMatch(0);
         String[] folder = br.getRegex(FEED_FILEINFO_PATTERN).getColumn(0);
         if (folder == null) return null;
-
-        String title = br.getRegex(FEED_FILETITLE_PATTERN).getMatch(0);
-        if (title != null) filePackage.setName(title);
-
         for (String fileInfo : folder) {
             String dlUrl = new Regex(fileInfo, FEED_DL_LINK_PATTERN).getMatch(0);
             if (dlUrl == null) {
                 logger.info("Couldn't find download link. Skipping file.");
                 continue;
             }
-
+            // These ones are direct links so let's handle them as directlinks^^
+            dlUrl = "directhttp://" + dlUrl.replace("amp;", "");
             logger.finer("Found link in rss feed: " + dlUrl);
             DownloadLink dl = createDownloadlink(dlUrl);
-            filePackage.add(dl);
             decryptedLinks.add(dl);
+            if (title != null) {
+                FilePackage filePackage = FilePackage.getInstance();
+                filePackage.setName(title);
+                filePackage.add(dl);
+            }
         }
         logger.info("Found " + decryptedLinks.size() + " links in feed: " + feedUrl);
         return decryptedLinks;

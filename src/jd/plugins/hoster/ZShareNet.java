@@ -44,21 +44,17 @@ public class ZShareNet extends PluginForHost {
         return "http://www.zshare.net/TOS.html";
     }
 
+    public boolean nopremium = false;
+
     public void login(Account account) throws Exception {
         this.setBrowserExclusive();
         br.getPage("http://www.zshare.net/myzshare/login.php");
         br.postPage("http://zshare.net/myzshare/process.php?loc=http://zshare.net/myzshare/login.php", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&submit=Login");
         if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("unverified")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         br.getPage("http://zshare.net/myzshare/my-uploads.php");
-        String cookiecheck = br.getCookie("http://www.zshare.net", "sid");
-        if ((!br.containsHTML("Your premium account will expire in") && !br.containsHTML("Upgrade your account to Premium")) || cookiecheck == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        if (br.containsHTML("Your premium account will expire in")) {
-            this.getPluginConfig().setProperty("premium", "1");
-            this.getPluginConfig().save();
-        } else if (br.containsHTML("Upgrade your account to Premium")) {
-            this.getPluginConfig().setProperty("premium", "0");
-            this.getPluginConfig().save();
-        }
+        String mysession = br.getCookie("http://www.zshare.net", "mysession");
+        if ((!br.containsHTML("Your premium account will expire in") && !br.containsHTML("Upgrade your account to Premium")) || mysession == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (!br.containsHTML("Your premium account will expire in")) nopremium = true;
     }
 
     @Override
@@ -72,8 +68,7 @@ public class ZShareNet extends PluginForHost {
         }
         String hostedFiles = br.getRegex("<strong>Uploads found:</strong>.*?(\\d+).*?</p>").getMatch(0);
         if (hostedFiles != null) ai.setFilesNum(Long.parseLong(hostedFiles));
-        String acctype = this.getPluginConfig().getStringProperty("premium", null);
-        if (acctype.equals("1")) {
+        if (!nopremium) {
             String daysleft = br.getRegex("Your premium account will expire in.*?(\\d+).*?days").getMatch(0);
             if (daysleft != null) {
                 ai.setValidUntil(System.currentTimeMillis() + (Long.parseLong(daysleft) * 24 * 60 * 60 * 1000));
@@ -91,10 +86,9 @@ public class ZShareNet extends PluginForHost {
         requestFileInformation(downloadLink);
         login(account);
         br.getPage(downloadLink.getDownloadURL());
-        String acctype = this.getPluginConfig().getStringProperty("premium", null);
         String dllink = null;
         int maxchunks = 0;
-        if (acctype.equals("1")) {
+        if (!nopremium) {
             dllink = br.getRegex("var link_enc\\=new Array\\(\\'(.*?)\\'\\)").getMatch(0);
         } else {
             // Handling for registered free accounts!
@@ -119,7 +113,7 @@ public class ZShareNet extends PluginForHost {
             }
         }
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        if (acctype.equals("0")) sleep(20 * 1001l, downloadLink);
+        if (nopremium) sleep(20 * 1001l, downloadLink);
         dllink = dllink.replaceAll("\\'\\,\\'", "");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, maxchunks);
         // Möglicherweise serverfehler...
