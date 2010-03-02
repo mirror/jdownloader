@@ -40,10 +40,10 @@ public class Scmn extends PluginForDecrypt {
         String id = new Regex(parameter, "scum\\.in/index\\.php\\?id=(\\d+)").getMatch(0);
         if (id == null) id = new Regex(parameter, "scum\\.in/(\\d+)-").getMatch(0);
         br.getPage(parameter);
-        String captchaCode = getCaptchaCode("http://scum.in/files/includes/captcha.php?t=", param);
-        br.postPage("http://scum.in/assets/links.callback.php", "id=" + Encoding.htmlDecode(id) + "&captcha=" + captchaCode);
-
+        String captchaCode = getCaptchaCode("http://scum.in/assets/captcha.php?t=", param);
+        br.postPage("http://scum.in/sites/links.callback.php", "id=" + Encoding.htmlDecode(id) + "&captcha=" + captchaCode);
         String links[] = br.getRegex("href=\"(.*?)\"").getColumn(0);
+        if (links == null || links.length == 0) return null;
         progress.setRange(links.length);
         for (String element : links) {
             DownloadLink dLink = createDownloadlink(element);
