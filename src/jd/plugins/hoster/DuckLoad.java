@@ -56,28 +56,35 @@ public class DuckLoad extends PluginForHost {
         String code = getCaptchaCode(capurl, link);
         // Check this part first if the plugin is defect!
         String applcode = null;
-        applcode = br.getRegex("<input type=\"text\" name=\"(.*?)\"").getMatch(0);
+        applcode = br.getRegex("<input type=\"text\".*?name=\"(.*?)\"").getMatch(0);
         if (applcode == null) {
+            logger.warning("regex for applcode is defect!");
             if (form.containsHTML("a_code")) {
                 applcode = "a_code";
             } else if (form.containsHTML("b_code")) {
                 applcode = "b_code";
             } else if (form.containsHTML("appl_code")) {
                 applcode = "appl_code";
+            } else if (applcode == null) {
+                logger.warning("No standard captcha inputname found, using humpf!");
+                applcode = "humpf";
             }
-        } else {
-            logger.warning("regex for applcode is defect!");
         }
-        if (applcode != null) {
+        if (br.containsHTML("Your downloadticket was booked")) {
+            String fileid = new Regex(link.getDownloadURL(), "duckload\\.com/download/(\\d+)/").getMatch(0);
+            String filenamefromlink = new Regex(link.getDownloadURL(), "duckload\\.com/download/.*?/(.+)").getMatch(0);
+            String postlink = "http://duckload.com/index.php?Modul=download&id=" + fileid + "&name=" + filenamefromlink + "&Ajax=true";
+            form = new Form();
+            form.setAction(postlink);
+            form.setMethod(MethodType.POST);
+        } else {
             form = new Form();
             form.setAction(br.getURL());
             form.setMethod(MethodType.POST);
             form.put("server", "1");
-            form.put(applcode, code);
             stream = true;
-        } else {
-            form.put("humpf", code);
         }
+        form.put(applcode, code);
         br.submitForm(form);
         String url = null;
         if (!stream) {
@@ -93,7 +100,12 @@ public class DuckLoad extends PluginForHost {
         }
         if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, true, -8);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            if (br.toString().trim().equals("no")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Servererror", 30 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl.startDownload();
     }
 
@@ -107,10 +119,10 @@ public class DuckLoad extends PluginForHost {
         }
         br.getPage(parameter.getDownloadURL());
         if (br.containsHTML("(File was not found!|Die angeforderte Datei konnte nicht gefunden werden)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML("stream_protection_h\">Bitte Server")) {
+        if (br.containsHTML("Stream Protection")) {
             /* streaming file */
             parameter.setName("VideoStream.avi");
-            String filesize = br.getRegex(" \\[(.*?)\\] </label></div><di").getMatch(0);
+            String filesize = br.getRegex(">Server \\(#\\d+\\) <i.*?\">\\[(.*?)\\]").getMatch(0);
             if (filesize != null)
                 parameter.setDownloadSize(Regex.getSize(filesize.trim()));
             else

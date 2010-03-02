@@ -23,7 +23,6 @@ import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
-import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -53,23 +52,35 @@ public class AirSpeedFilesCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.setCookie(COOKIE_HOST, "mfh_mylang", "en");
-        br.setCookie(COOKIE_HOST, "yab_mylang", "en");
-        br.getPage(parameter.getDownloadURL());
-        if (br.containsHTML("Your requested file is not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<b>File name:</b></td>.*?<td align=.*?width=.*?>(.*?)</td>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("\"Click this to report for(.*?)\"").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
-                if (filename == null) {
-                    filename = br.getRegex("content=\"(.*?), The best file hosting service").getMatch(0);
-                }
-            }
-        }
-        String filesize = br.getRegex("<font color=\"#0000FF\">.*?\\((.*?)\\)</font>").getMatch(0);
-        if (filename == null || filename.matches("")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // Handling without API
+        // br.setFollowRedirects(true);
+        // br.setCookie(COOKIE_HOST, "mfh_mylang", "en");
+        // br.setCookie(COOKIE_HOST, "yab_mylang", "en");
+        // br.getPage(parameter.getDownloadURL());
+        // if (br.containsHTML("Your requested file is not found")) throw new
+        // PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // String filename =
+        // br.getRegex("<b>File name:</b></td>.*?<td align=.*?width=.*?>(.*?)</td>").getMatch(0);
+        // if (filename == null) {
+        // filename =
+        // br.getRegex("\"Click this to report for(.*?)\"").getMatch(0);
+        // if (filename == null) {
+        // filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
+        // if (filename == null) {
+        // filename =
+        // br.getRegex("content=\"(.*?), The best file hosting service").getMatch(0);
+        // }
+        // }
+        // }
+        // String filesize =
+        // br.getRegex("<font color=\"#0000FF\">.*?\\((.*?)\\)</font>").getMatch(0);
+        String fileid = new Regex(parameter.getDownloadURL(), "com/file/(\\d+)/").getMatch(0);
+        br.getPage("http://www.airspeedfiles.com/api/index.php?number=" + fileid);
+        String status = br.getRegex("STATUS:'(.*?)'").getMatch(0);
+        if (status == null || !status.equals("1")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("FILENAME:'(.*?)'").getMatch(0);
+        String filesize = br.getRegex("SIZE:'(.*?)'").getMatch(0);
+        if (filename == null || filename.matches("") || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         parameter.setFinalFileName(filename.trim());
         if (filesize != null) parameter.setDownloadSize(Regex.getSize(filesize));
         return AvailableStatus.TRUE;
@@ -79,11 +90,17 @@ public class AirSpeedFilesCom extends PluginForHost {
     public void handleFree(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         requestFileInformation(link);
-        br.postPage(link.getDownloadURL(), "sent=1&B7=Guest+User");
-        if (br.containsHTML("You have got max allowed bandwidth size per hour")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
         findLink(link);
-        if (finalLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, finalLink, true, 1);
+        // we have an API so we don't need that but just in case...
+        // br.postPage(link.getDownloadURL(), "sent=1&B7=Guest+User");
+        // if
+        // (br.containsHTML("You have got max allowed bandwidth size per hour"))
+        // throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60
+        // * 1001l);
+        // findLink(link);
+        // if (finalLink == null) throw new
+        // PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, finalLink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -92,15 +109,18 @@ public class AirSpeedFilesCom extends PluginForHost {
     }
 
     public void findLink(DownloadLink link) throws Exception {
-        String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
-        if (sitelinks == null || sitelinks.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        for (String alink : sitelinks) {
-            alink = Encoding.htmlDecode(alink);
-            if (alink.contains("access_key=") || alink.contains("getfile.php?")) {
-                finalLink = alink;
-                break;
-            }
-        }
+        // String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
+        // if (sitelinks == null || sitelinks.length == 0) throw new
+        // PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // for (String alink : sitelinks) {
+        // alink = Encoding.htmlDecode(alink);
+        // if (alink.contains("access_key=") || alink.contains("getfile.php?"))
+        // {
+        // finalLink = alink;
+        // break;
+        // }
+        // }
+        finalLink = br.getRegex("DOWNLOADURL:'(.*?)'").getMatch(0);
     }
 
     public void login(Account account) throws Exception {
@@ -184,12 +204,15 @@ public class AirSpeedFilesCom extends PluginForHost {
         login(account);
         br.setFollowRedirects(false);
         br.setCookie(COOKIE_HOST, "mfh_mylang", "en");
-        br.getPage(parameter.getDownloadURL());
+        String fileid = new Regex(parameter.getDownloadURL(), "com/file/(\\d+)/").getMatch(0);
+        br.getPage("http://www.airspeedfiles.com/api/index.php?number=" + fileid);
+        // br.getPage(parameter.getDownloadURL());
         if (br.getRedirectLocation() != null && (br.getRedirectLocation().contains("access_key=") || br.getRedirectLocation().contains("getfile.php"))) {
             finalLink = br.getRedirectLocation();
         } else {
             if (br.containsHTML("You have got max allowed download sessions from the same IP")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
-            br.postPage(parameter.getDownloadURL(), "sent=1&B6=Premium+User");
+            // br.postPage(parameter.getDownloadURL(),
+            // "sent=1&B6=Premium+User");
             findLink(parameter);
         }
         if (finalLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

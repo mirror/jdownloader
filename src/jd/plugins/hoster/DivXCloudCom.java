@@ -60,13 +60,17 @@ public class DivXCloudCom extends PluginForHost {
         this.requestFileInformation(link);
         Form DLForm = br.getFormbyProperty("name", "F1");
         if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // waittime
-        int tt = Integer.parseInt(br.getRegex("countdown\">(\\d+)</span>").getMatch(0));
-        sleep(tt * 1001l, link);
+        // Ticket Time
+        String ttt = br.getRegex("countdown\">.*?(\\d+).*?</span>").getMatch(0);
+        if (ttt != null) {
+            logger.info("Waittime detected, waiting " + ttt.trim() + " seconds from now on...");
+            int tt = Integer.parseInt(ttt);
+            sleep(tt * 1001, link);
+        }
         br.submitForm(DLForm);
         String dllink = br.getRegex("src\" value=\"(.*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = BrowserAdapter.openDownload(br, link, dllink, true, -20);
+        dl = BrowserAdapter.openDownload(br, link, dllink, true, 0);
         dl.startDownload();
     }
 
@@ -80,7 +84,7 @@ public class DivXCloudCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return -1;
     }
 
 }
