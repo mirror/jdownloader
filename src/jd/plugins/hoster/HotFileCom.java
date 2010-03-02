@@ -234,13 +234,27 @@ public class HotFileCom extends PluginForHost {
                 br.postPage("http://hotfile.com/checkfiles.html", sb.toString());
                 for (DownloadLink dl : links) {
                     String id = new Regex(dl.getDownloadURL(), "hotfile\\.com(/dl/\\d+/[0-9a-zA-Z]+/)").getMatch(0);
-                    String size = br.getRegex("<b>Results</b>.*?<a href=.*?\".*?" + id + ".*?\".*?/td.*?<td>(.*?)<").getMatch(0);
-                    String name = br.getRegex("<b>Results</b>.*?<a href=.*?\".*?" + id + "(.*?)\"").getMatch(0);
-                    if (name != null && size != null) {
-                        name = name.replaceAll("\\.html", "").trim();
-                        dl.setName(name);
-                        dl.setDownloadSize(Regex.getSize(size.trim()));
-                        dl.setAvailable(true);
+
+                    String[] dat = br.getRegex("<b>Results</b>.*<tr>.*?<td>(.*?" + id + ".*?)</td>.*?<td>(.*?)</td>.*?<td.*?>.*?<span.*?>(.*?)</span>.*?</td>.*?</tr>").getRow(0);
+                    if (dat != null) {
+                        String name = dat[0].trim();
+                        String size = dat[1].trim();
+                        String status = dat[2].trim();
+
+                        if (name.startsWith("<a href")) {
+                            name = new Regex(name, "hotfile.com.*\\/(.*?)\\<").getMatch(0);
+                        } else {
+                            name = name.substring(name.lastIndexOf("/") + 1);
+                        }
+
+                        if (name != null && size != null && status.equalsIgnoreCase("Existent")) {
+                            name = name.replaceAll("\\.html", "").trim();
+                            dl.setName(name);
+                            dl.setDownloadSize(Regex.getSize(size.trim()));
+                            dl.setAvailable(true);
+                        } else {
+                            dl.setAvailable(false);
+                        }
                     } else {
                         dl.setAvailable(false);
                     }
