@@ -144,7 +144,8 @@ public class FourSharedCom extends PluginForHost {
         } else {
             br.getPage(url);
 
-            url = br.getRegex("id=\\'divDLStart\\' >.*?<a href='(.*?)'.*?onclick=\"return callPostDownload\\(\\);\">Click here to download this file</a>.*?</div>").getMatch(0);
+            url = br.getRegex("id='divDLStart' >.*?<a href='(.*?)'").getMatch(0);
+            if (url == null) url = br.getRegex("('|\")(http://dc[0-9]+\\.(4shared|4shared-china)\\.com/download/\\d+/.*?/.*?)('|\")").getMatch(1);
             if (url.contains("linkerror.jsp")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             // Ticket Time
             String ttt = br.getRegex(" var c = (\\d+?);").getMatch(0);
