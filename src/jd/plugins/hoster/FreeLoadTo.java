@@ -16,6 +16,7 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -23,7 +24,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freeload.to" }, urls = { "http://[\\w\\.]*?freeload\\.to/divx\\.php\\?file_id=[a-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freeload.to" }, urls = { "http://[\\w\\.]*?(freeload|mcload)\\.to/(divx\\.php\\?file_id=|\\?Mod=Divx\\&Hash=)[a-z0-9]+" }, flags = { 0 })
 public class FreeLoadTo extends PluginForHost {
 
     public FreeLoadTo(PluginWrapper wrapper) {
@@ -37,22 +38,28 @@ public class FreeLoadTo extends PluginForHost {
         return "http://freeload.to/disclaimer.php";
     }
 
+    public void correctDownloadLink(DownloadLink link) {
+        String fileid = new Regex(link.getDownloadURL(), "divx\\.php\\?file_id=([a-z0-9]+)").getMatch(0);
+        if (fileid != null) link.setUrlDownload("http://freeload.to/?Mod=Divx&Hash=" + fileid);
+    }
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         br.setDebug(true);
         br.getPage(downloadLink.getDownloadURL());
-//        String jscookiepage = br.getRegex("javascript\" src=\"(.*?)\"").getMatch(0);
-//        String cookie = br.getRegex("onload=.*?'(.*?)'").getMatch(0);
-//        String onload = br.getRegex("onload=.*?'(/.*?)'").getMatch(0);
-//        if (jscookiepage != null) {
-//            /* this cookie is needed to reach the site */
-//            Browser brc = br.cloneBrowser();
-//            brc.getPage("http://freeload.to" + jscookiepage);
-//            String cookie2 = brc.getRegex("escape.*?\"(.*?)\"").getMatch(0);
-//            br.setCookie("http://freeload.to", "sitechrx", cookie + cookie2);
-//        }
-//        br.getPage(onload);
+        // String jscookiepage =
+        // br.getRegex("javascript\" src=\"(.*?)\"").getMatch(0);
+        // String cookie = br.getRegex("onload=.*?'(.*?)'").getMatch(0);
+        // String onload = br.getRegex("onload=.*?'(/.*?)'").getMatch(0);
+        // if (jscookiepage != null) {
+        // /* this cookie is needed to reach the site */
+        // Browser brc = br.cloneBrowser();
+        // brc.getPage("http://freeload.to" + jscookiepage);
+        // String cookie2 = brc.getRegex("escape.*?\"(.*?)\"").getMatch(0);
+        // br.setCookie("http://freeload.to", "sitechrx", cookie + cookie2);
+        // }
+        // br.getPage(onload);
         if (br.containsHTML("player_not_found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("\".*?/uploads/.*?/.*?/.*?/(.*?)\"").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
