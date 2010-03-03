@@ -93,7 +93,7 @@ public class LoadFilesIn extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         filename = filename.replaceAll("(</b>|<b>|\\.html)", "");
-        link.setName(filename.trim());
+        link.setFinalFileName((filename.trim()));
         if (filesize != null) {
             logger.info("Filesize found, filesize = " + filesize);
             link.setDownloadSize(Regex.getSize(filesize));
