@@ -16,6 +16,8 @@
 
 package jd.plugins.hoster;
 
+import java.util.ArrayList;
+
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -57,6 +59,12 @@ public class DuckLoad extends PluginForHost {
         // Check this part first if the plugin is defect!
         String applcode = null;
         applcode = br.getRegex("src=\"/design/Captcha.*?php\\?.*?\".*?<input name=\"(.*?)\"").getMatch(0);
+        String[] comeonDamnedDuckloadGuys = br.getRegex("<input( id=\".*?\" |.*?)name=\"(.*?)\"").getColumn(1);
+        if (comeonDamnedDuckloadGuys == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        ArrayList<String> all4U = new ArrayList<String>();
+        for (String youLoseIWin : comeonDamnedDuckloadGuys) {
+            if (!all4U.contains(youLoseIWin)) all4U.add(youLoseIWin);
+        }
         if (applcode == null) {
             logger.warning("regex for applcode is defect!");
             if (form.containsHTML("a_code")) {
@@ -84,7 +92,10 @@ public class DuckLoad extends PluginForHost {
             form.put("server", "1");
             stream = true;
         }
-        form.put(applcode, code);
+        // form.put(applcode, code);
+        for (String omg : all4U) {
+            form.put(omg, code);
+        }
         br.submitForm(form);
         String url = null;
         if (!stream) {
