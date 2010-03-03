@@ -35,31 +35,28 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.pluginUtils.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadkeep.com" }, urls = { "http://[\\w\\.]*?dweg6532401238ohXfrthCSWEwerhtetUE/[a-z0-9]{12}" }, flags = { 0 })
-public class UploadKeepCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "linkzhost.com" }, urls = { "http://[\\w\\.]*?linkzhost\\.com/[a-z0-9]{12}" }, flags = { 0 })
+public class LinkzHostCom extends PluginForHost {
 
-    public UploadKeepCom(PluginWrapper wrapper) {
+    public LinkzHostCom(PluginWrapper wrapper) {
         super(wrapper);
-        // TODO Auto-generated constructor stub
+        // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
+    // XfileSharingProBasic Version 1.6
+    // redirect-links
     @Override
     public String getAGBLink() {
-        return "http://www.uploadkeep.com/tos.html";
+        return COOKIE_HOST + "/tos.html";
     }
 
-    // Links are coming from a decrypter!
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("dweg6532401238ohXfrthCSWEwerhtetUE", "uploadkeep.com"));
-    }
-
-    // using XfileSharingProBasic Version 1.3, availablecheck 1.6, password
-    // handling deactivated due problems, modified waittime handling
-    private static final String COOKIE_HOST = "http://uploadkeep.com";
+    private static final String COOKIE_HOST = "http://ForDevsToPlayWith.com";
+    public boolean nopremium = false;
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.setFollowRedirects(false);
         br.setCookie(COOKIE_HOST, "lang", "english");
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("You have reached the download-limit")) {
@@ -91,9 +88,6 @@ public class UploadKeepCom extends PluginForHost {
             filesize = br.getRegex("\\(([0-9]+ bytes)\\)").getMatch(0);
             if (filesize == null) {
                 filesize = br.getRegex("</font>[ ]+\\((.*?)\\)(.*?)</font>").getMatch(0);
-                if (filesize == null) {
-                    filesize = br.getRegex("Download File :.*?\\((.*?)\\)").getMatch(0);
-                }
             }
         }
         if (filename == null || filename.equals("")) {
@@ -109,9 +103,9 @@ public class UploadKeepCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
+    public void doFree(DownloadLink downloadLink) throws Exception, PluginException {
+        boolean resumable = true;
+        int maxchunks = 0;
         // If the filesize regex above doesn't match you can copy this part into
         // the available status (and delete it here)
         Form freeform = br.getFormBySubmitvalue("Kostenloser+Download");
@@ -121,48 +115,11 @@ public class UploadKeepCom extends PluginForHost {
                 freeform = br.getFormbyKey("download1");
             }
         }
-        if (freeform != null) br.submitForm(freeform);
-        // Handling for only-premium links
-        if (br.containsHTML("(You can download files up to.*?only|Upgrade your account to download bigger files)")) {
-            String filesizelimit = br.getRegex("You can download files up to(.*?)only").getMatch(0);
-            if (filesizelimit != null) {
-                filesizelimit = filesizelimit.trim();
-                logger.warning("As free user you can download files up to " + filesizelimit + " only");
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Free users can only download files up to " + filesizelimit);
-            } else {
-                logger.warning("Only downloadable via premium");
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium");
-            }
+        if (freeform != null) {
+            freeform.remove("method_premium");
+            br.submitForm(freeform);
         }
-        if (br.containsHTML("This file reached max downloads")) { throw new PluginException(LinkStatus.ERROR_FATAL, "This file reached max downloads"); }
-        if (br.containsHTML("You have to wait")) {
-            int minutes = 0, seconds = 0, hours = 0;
-            String tmphrs = br.getRegex("\\s+(\\d+)\\s+hours?").getMatch(0);
-            if (tmphrs != null) hours = Integer.parseInt(tmphrs);
-            String tmpmin = br.getRegex("\\s+(\\d+)\\s+minutes?").getMatch(0);
-            if (tmpmin != null) minutes = Integer.parseInt(tmpmin);
-            String tmpsec = br.getRegex("\\s+(\\d+)\\s+seconds?").getMatch(0);
-            if (tmpsec != null) seconds = Integer.parseInt(tmpsec);
-            int waittime = ((3600 * hours) + (60 * minutes) + seconds + 1) * 1000;
-            logger.info("Detected waittime #1, waiting " + waittime + "milliseconds");
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
-        }
-        if (br.containsHTML("You have reached the download-limit")) {
-            String tmphrs = br.getRegex("\\s+(\\d+)\\s+hours?").getMatch(0);
-            String tmpmin = br.getRegex("\\s+(\\d+)\\s+minutes?").getMatch(0);
-            String tmpsec = br.getRegex("\\s+(\\d+)\\s+seconds?").getMatch(0);
-            if (tmphrs == null && tmpmin == null && tmpsec == null) {
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 60 * 60 * 1000l);
-            } else {
-                int minutes = 0, seconds = 0, hours = 0;
-                if (tmphrs != null) hours = Integer.parseInt(tmphrs);
-                if (tmpmin != null) minutes = Integer.parseInt(tmpmin);
-                if (tmpsec != null) seconds = Integer.parseInt(tmpsec);
-                int waittime = ((3600 * hours) + (60 * minutes) + seconds + 1) * 1000;
-                logger.info("Detected waittime #2, waiting " + waittime + "milliseconds");
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
-            }
-        }
+        checkErrors(downloadLink);
         String md5hash = br.getRegex("<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
         if (md5hash != null) {
             md5hash = md5hash.trim();
@@ -183,13 +140,12 @@ public class UploadKeepCom extends PluginForHost {
         String passCode = null;
         boolean password = false;
         boolean recaptcha = false;
-        if (br.containsHTML("(<b>Passwort:</b>|<b>Password:</b>)")) {
+        if (br.containsHTML("(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)")) {
             password = true;
             logger.info("The downloadlink seems to be password protected.");
         }
-        password = false;
 
-        // Get the captcha
+        /* Captcha START */
         if (br.containsHTML("background:#ccc;text-align")) {
             logger.info("Detected captcha method \"plaintext captchas\" for this host");
             // Captcha method by ManiacMansion
@@ -207,7 +163,7 @@ public class UploadKeepCom extends PluginForHost {
                 code.append(value);
             }
             DLForm.put("code", code.toString());
-            logger.info("Put captchacode " + code.toString() + " obtained by captcha metod\"plaintext captchas\" in the form.");
+            logger.info("Put captchacode " + code.toString() + " obtained by captcha metod \"plaintext captchas\" in the form.");
         } else if (br.containsHTML("/captchas/")) {
             logger.info("Detected captcha method \"Standard captcha\" for this host");
             String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
@@ -229,7 +185,7 @@ public class UploadKeepCom extends PluginForHost {
             String code = getCaptchaCode(captchaurl, downloadLink);
             DLForm.put("code", code);
             logger.info("Put captchacode " + code + " obtained by captcha metod \"Standard captcha\" in the form.");
-        } else if (br.containsHTML("api.recaptcha.net") && !br.containsHTML("api\\.recaptcha\\.net.*?<Textarea.*?<input type=\"submit\" value.*?</Form>")) {
+        } else if (br.containsHTML("api.recaptcha.net")) {
             // Some hosters also got commentfields with captchas, therefore is
             // the !br.contains...check Exampleplugin:
             // FileGigaCom
@@ -252,9 +208,9 @@ public class UploadKeepCom extends PluginForHost {
             }
             recaptcha = true;
             rc.setCode(c);
-            logger.info("Put captchacode " + c + " obtained by captcha metod\"Re Captcha\" in the form and submitted it.");
+            logger.info("Put captchacode " + c + " obtained by captcha metod \"Re Captcha\" in the form and submitted it.");
         }
-        // Captcha end
+        /* Captcha END */
 
         // If the hoster uses Re Captcha the form has already been sent before
         // here so here it's checked. Most hosters don't use Re Captcha so
@@ -270,7 +226,7 @@ public class UploadKeepCom extends PluginForHost {
                 DLForm.put("password", passCode);
                 logger.info("Put password \"" + passCode + "\" entered by user in the DLForm.");
             }
-            jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLForm, false, 1);
+            jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLForm, resumable, maxchunks);
             logger.info("Submitted DLForm");
         }
         boolean error = false;
@@ -286,36 +242,9 @@ public class UploadKeepCom extends PluginForHost {
             logger.info("followed connection...");
             String dllink = br.getRedirectLocation();
             if (dllink == null) {
-                if (br.containsHTML("You have to wait")) {
-                    int minutes = 0, seconds = 0, hours = 0;
-                    String tmphrs = br.getRegex("\\s+(\\d+)\\s+hours?").getMatch(0);
-                    if (tmphrs != null) hours = Integer.parseInt(tmphrs);
-                    String tmpmin = br.getRegex("\\s+(\\d+)\\s+minutes?").getMatch(0);
-                    if (tmpmin != null) minutes = Integer.parseInt(tmpmin);
-                    String tmpsec = br.getRegex("\\s+(\\d+)\\s+seconds?").getMatch(0);
-                    if (tmpsec != null) seconds = Integer.parseInt(tmpsec);
-                    int waittime = ((3600 * hours) + (60 * minutes) + seconds + 1) * 1000;
-                    logger.info("Detected waittime #1, waiting " + waittime + "milliseconds");
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
-                }
-                if (br.containsHTML("You have reached the download-limit")) {
-                    String tmphrs = br.getRegex("\\s+(\\d+)\\s+hours?").getMatch(0);
-                    String tmpmin = br.getRegex("\\s+(\\d+)\\s+minutes?").getMatch(0);
-                    String tmpsec = br.getRegex("\\s+(\\d+)\\s+seconds?").getMatch(0);
-                    if (tmphrs == null && tmpmin == null && tmpsec == null) {
-                        throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 60 * 60 * 1000l);
-                    } else {
-                        int minutes = 0, seconds = 0, hours = 0;
-                        if (tmphrs != null) hours = Integer.parseInt(tmphrs);
-                        if (tmpmin != null) minutes = Integer.parseInt(tmpmin);
-                        if (tmpsec != null) seconds = Integer.parseInt(tmpsec);
-                        int waittime = ((3600 * hours) + (60 * minutes) + seconds + 1) * 1000;
-                        logger.info("Detected waittime #2, waiting " + waittime + "milliseconds");
-                        throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
-                    }
-                }
+                checkErrors(downloadLink);
                 if (br.containsHTML("You're using all download slots for IP")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
-                if (br.containsHTML("(<b>Passwort:</b>|<b>Password:</b>|Wrong password)")) {
+                if (br.containsHTML("(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input|Wrong password)")) {
                     logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
                     downloadLink.setProperty("pass", null);
                     throw new PluginException(LinkStatus.ERROR_RETRY);
@@ -340,8 +269,8 @@ public class UploadKeepCom extends PluginForHost {
                 logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            logger.info("Final downloadlink found, starting the download...");
-            jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+            logger.info("Final downloadlink = " + dllink + " starting the download...");
+            jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
         }
         if (passCode != null) {
             downloadLink.setProperty("pass", passCode);
@@ -367,16 +296,68 @@ public class UploadKeepCom extends PluginForHost {
     }
 
     @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        requestFileInformation(downloadLink);
+        doFree(downloadLink);
+    }
+
+    @Override
     public void reset() {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    public void checkErrors(DownloadLink theLink) throws NumberFormatException, PluginException {
+        // Some waittimes...
+        if (br.containsHTML("You have to wait")) {
+            int minutes = 0, seconds = 0, hours = 0;
+            String tmphrs = br.getRegex("You have to wait.*?\\s+(\\d+)\\s+hours?").getMatch(0);
+            if (tmphrs != null) hours = Integer.parseInt(tmphrs);
+            String tmpmin = br.getRegex("You have to wait.*?\\s+(\\d+)\\s+minutes?").getMatch(0);
+            if (tmpmin != null) minutes = Integer.parseInt(tmpmin);
+            String tmpsec = br.getRegex("You have to wait.*?\\s+(\\d+)\\s+seconds?").getMatch(0);
+            if (tmpsec != null) seconds = Integer.parseInt(tmpsec);
+            int waittime = ((3600 * hours) + (60 * minutes) + seconds + 1) * 1000;
+            logger.info("Detected waittime #1, waiting " + waittime + "milliseconds");
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
+        }
+        if (br.containsHTML("You have reached the download-limit")) {
+            String tmphrs = br.getRegex("\\s+(\\d+)\\s+hours?").getMatch(0);
+            String tmpmin = br.getRegex("\\s+(\\d+)\\s+minutes?").getMatch(0);
+            String tmpsec = br.getRegex("\\s+(\\d+)\\s+seconds?").getMatch(0);
+            String tmpdays = br.getRegex("\\s+(\\d+)\\s+days?").getMatch(0);
+            if (tmphrs == null && tmpmin == null && tmpsec == null && tmpdays == null) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 60 * 60 * 1000l);
+            } else {
+                int minutes = 0, seconds = 0, hours = 0, days = 0;
+                if (tmphrs != null) hours = Integer.parseInt(tmphrs);
+                if (tmpmin != null) minutes = Integer.parseInt(tmpmin);
+                if (tmpsec != null) seconds = Integer.parseInt(tmpsec);
+                if (tmpdays != null) days = Integer.parseInt(tmpdays);
+                int waittime = ((days * 24 * 3600) + (3600 * hours) + (60 * minutes) + seconds + 1) * 1000;
+                logger.info("Detected waittime #2, waiting " + waittime + "milliseconds");
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
+            }
+        }
+        // Errorhandling for only-premium links
+        if (br.containsHTML("(You can download files up to.*?only|Upgrade your account to download bigger files|This file reached max downloads)")) {
+            String filesizelimit = br.getRegex("You can download files up to(.*?)only").getMatch(0);
+            if (filesizelimit != null) {
+                filesizelimit = filesizelimit.trim();
+                logger.warning("As free user you can download files up to " + filesizelimit + " only");
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Free users can only download files up to " + filesizelimit);
+            } else {
+                logger.warning("Only downloadable via premium");
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium");
+            }
+        }
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+    public void resetDownloadlink(DownloadLink link) {
     }
 
 }

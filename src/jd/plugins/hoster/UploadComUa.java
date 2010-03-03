@@ -84,9 +84,12 @@ public class UploadComUa extends PluginForHost {
         // holt sich den dllink und entfernt danach (dllink) bestimmte
         // Zeichen[+Zeilenumbrüche], die reingesetzt wurden um das Downloaden
         // per Downloadmanager zu erschweren
-        String dllink0 = br.getRegex("new Array\\((.*?)\\);").getMatch(0);
-        if (dllink0 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String dllink = dllink0.replaceAll("(,|\"| |\r|\n)", "");
+        String dllink = br.getRegex("new Array\\((.*?)\\);").getMatch(0);
+        String osfilename = br.getRegex("id=\"os_filename\" value=\"(.*?)\"").getMatch(0);
+        if (dllink == null || osfilename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dllink = dllink.replaceAll("(,|\"| |\r|\n)", "");
+        dllink = "http://dl" + dllink.replace("|", ".upload.com.ua/");
+        dllink = dllink + "/" + Encoding.htmlDecode(osfilename);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (!(dl.getConnection().isContentDisposition())) {
             br.followConnection();

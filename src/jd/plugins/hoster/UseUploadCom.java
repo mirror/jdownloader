@@ -43,10 +43,8 @@ public class UseUploadCom extends PluginForHost {
         // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
-    // XfileSharingProBasic Version 1.4
-    // This is only for developers to easily implement hosters using the
-    // "xfileshare(pro)" script (more informations can be found on
-    // xfilesharing.net)!
+    // XfileSharingProBasic Version 1.4, modified "file not found" check, added
+    // waittimcheck
     @Override
     public String getAGBLink() {
         return COOKIE_HOST + "/tos.html";
@@ -63,7 +61,7 @@ public class UseUploadCom extends PluginForHost {
             logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
             return AvailableStatus.UNCHECKABLE;
         }
-        if (br.containsHTML("(No such file|No such user exist|File not found)")) {
+        if (br.containsHTML("<b>File Not Found</b>")) {
             logger.warning("file is 99,99% offline, throwing \"file not found\" now...");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -88,8 +86,8 @@ public class UseUploadCom extends PluginForHost {
             }
         }
         if (filename == null) {
-            logger.warning("The filename equals null, throwing \"file not found\" now...");
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            logger.warning("The filename equals null, throwing \"plugin defect\" now...");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         filename = filename.replaceAll("(</b>|<b>|\\.html)", "");
         link.setName(filename.trim());
@@ -173,6 +171,7 @@ public class UseUploadCom extends PluginForHost {
         if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // Ticket Time
         String ttt = br.getRegex("countdown\">.*?(\\d+).*?</span>").getMatch(0);
+        if (ttt == null) ttt = br.getRegex("id=\"countdown_str\".*?<span id=\".*?\">.*?(\\d+).*?</span").getMatch(0);
         if (ttt != null) {
             logger.info("Waittime detected, waiting " + ttt.trim() + " seconds from now on...");
             int tt = Integer.parseInt(ttt);
@@ -181,13 +180,13 @@ public class UseUploadCom extends PluginForHost {
         String passCode = null;
         boolean password = false;
         boolean recaptcha = false;
-        if (br.containsHTML("(<b>Passwort:</b>|<b>Password:</b>)")) {
+        if (br.containsHTML("(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)")) {
             password = true;
             logger.info("The downloadlink seems to be password protected.");
         }
 
         /* Captcha START */
-        if (br.containsHTML("background:#ccc;text-align")) {
+        if (br.containsHTML("background:#ccc;text-align") && !br.containsHTML("display:none;\">background:#ccc;text-align")) {
             logger.info("Detected captcha method \"plaintext captchas\" for this host");
             // Captcha method by ManiacMansion
             String[][] letters = new Regex(Encoding.htmlDecode(br.toString()), "<span style='position:absolute;padding-left:(\\d+)px;padding-top:\\d+px;'>(\\d)</span>").getMatches();
@@ -312,7 +311,7 @@ public class UseUploadCom extends PluginForHost {
                     }
                 }
                 if (br.containsHTML("You're using all download slots for IP")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
-                if (br.containsHTML("(<b>Passwort:</b>|<b>Password:</b>|Wrong password)")) {
+                if (br.containsHTML("(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input|Wrong password)")) {
                     logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
                     downloadLink.setProperty("pass", null);
                     throw new PluginException(LinkStatus.ERROR_RETRY);

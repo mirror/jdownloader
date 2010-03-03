@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -45,19 +46,29 @@ public class GglBks extends PluginForDecrypt {
         br.getPage(url2);
         if (br.containsHTML("http://sorry.google.com/sorry/\\?continue=.*")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000); }
         String[] links = br.getRegex("\\{\\\"pid\\\":\\\"(.*?)\\\"").getColumn(0);
-        if (links.length == 0) return null;
+        if (links == null || links.length == 0) return null;
         progress.setRange(links.length);
-        FilePackage fp = FilePackage.getInstance();
         for (String dl : links) {
             DownloadLink link = createDownloadlink(url.replace("books.google", "googlebooksdecrypter") + "&pg=" + dl);
-            link.setName(dl + ".jpg");
+            int counter = 120000;
+            String filenumber = new Regex(dl, ".*?(\\d+)").getMatch(0);
+            if (filenumber != null && !dl.contains("-")) {
+                counter = counter + Integer.parseInt(filenumber);
+                String regexedCounter = new Regex(Integer.toString(counter), "12(\\d+)").getMatch(0);
+                link.setName(dl.replace(filenumber, "") + regexedCounter);
+            } else {
+                link.setName(dl + ".jpg");
+            }
             decryptedLinks.add(link);
             progress.increase(1);
         }
         br.getPage(param);
-        fp.setName(br.getRegex("<div id=\"titlebar\"><h1 class=title dir=ltr>(.*?)</h1>").getMatch(0));
-        fp.addLinks(decryptedLinks);
+        String fpName = br.getRegex("<div id=\"titlebar\"><h1 class=title dir=ltr>(.*?)</h1>").getMatch(0);
+        if (fpName != null) {
+            FilePackage fp = FilePackage.getInstance();
+            fp.setName(fpName);
+            fp.addLinks(decryptedLinks);
+        }
         return decryptedLinks;
     }
-
 }
