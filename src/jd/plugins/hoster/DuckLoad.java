@@ -56,7 +56,7 @@ public class DuckLoad extends PluginForHost {
         String code = getCaptchaCode(capurl, link);
         // Check this part first if the plugin is defect!
         String applcode = null;
-        applcode = br.getRegex("<input type=\"text\".*?name=\"(.*?)\"").getMatch(0);
+        applcode = br.getRegex("src=\"/design/Captcha.*?php\\?.*?\".*?<input name=\"(.*?)\"").getMatch(0);
         if (applcode == null) {
             logger.warning("regex for applcode is defect!");
             if (form.containsHTML("a_code")) {

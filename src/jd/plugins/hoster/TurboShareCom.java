@@ -120,6 +120,7 @@ public class TurboShareCom extends PluginForHost {
             if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             // Ticket Time
             String ttt = br.getRegex("id=\"cdn\">(\\d+)</span> seconds</span>").getMatch(0);
+            if (ttt == null) ttt = br.getRegex("id=\"countdown_str\".*?<span id=\".*?\">.*?(\\d+).*?</span").getMatch(0);
             int tt = 30;
             if (ttt != null) {
                 logger.info("Waittime detected, waiting " + ttt.trim() + " seconds from now on...");
