@@ -236,7 +236,7 @@ public class MediafireCom extends PluginForHost {
             logger.info("Error (1)");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        String[][] tmpvars = new Regex(vars.trim(), "var.*?([a-zA-Z0-9]*?)='(.*?)'").getMatches();
+        String[][] tmpvars = new Regex(vars.trim(), "var.*?([a-zA-Z0-9]*?)\\s*?=\\s*?'(.*?)';").getMatches();
         HashMap<String, String> varmap = new HashMap<String, String>();
         for (String[] tmp : tmpvars) {
             varmap.put(tmp[0], tmp[1]);
@@ -250,7 +250,7 @@ public class MediafireCom extends PluginForHost {
                 while (true) {
                     String nextreplace = new Regex(idmatch, "\\+(.*?)(\\+|$)").getMatch(0);
                     if (nextreplace == null) break;
-                    String match = varmap.get(nextreplace);
+                    String match = varmap.get(nextreplace.trim());
                     if (match != null) {
                         idmatch = idmatch.replaceFirst("\\+" + nextreplace, match);
                     } else {
