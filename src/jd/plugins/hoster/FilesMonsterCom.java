@@ -17,6 +17,8 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -32,9 +34,11 @@ import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesmonster.com" }, urls = { "http://[\\w\\.\\d]*?filesmonster\\.com/download.php\\?id=.+" }, flags = { 2 })
 public class FilesMonsterCom extends PluginForHost {
+    private static final String PROPERTY_NO_SLOT_WAIT_TIME = "NO_SLOT_WAIT_TIME";
 
     public FilesMonsterCom(PluginWrapper wrapper) {
         super(wrapper);
+        setConfigElements();
         this.enablePremium("http://filesmonster.com/service.php");
     }
 
@@ -43,6 +47,10 @@ public class FilesMonsterCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.postPage("http://filesmonster.com/login.php", "act=login&user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
         if (!br.containsHTML("Your membership type: <span class=.*?>Premium") || br.containsHTML("Username/Password can not be found in our database") || br.containsHTML("Try to recover your password by 'Password reminder'")) { throw new PluginException(LinkStatus.ERROR_PREMIUM); }
+    }
+
+    private void setConfigElements() {
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), PROPERTY_NO_SLOT_WAIT_TIME, JDL.L("plugins.hoster.filesmonster.com.noSlotWaitTime", "No slot wait time (s)"), 30, 86400).setDefaultValue(60).setStep(30));
     }
 
     @Override
@@ -174,7 +182,7 @@ public class FilesMonsterCom extends PluginForHost {
 
         br.postPage(fmurl + "ajax.php", "act=rticket&data=" + data);
         data = br.getRegex("\\{\"text\":\"(.*?)\"").getMatch(0);
-        if (br.containsHTML("\"error\":\"error\"")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.FilesMonsterCom.NoFreeSlots", "There are no free download slots available"), 60 * 60 * 1000l);
+        if (br.containsHTML("\"error\":\"error\"")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.FilesMonsterCom.NoFreeSlots", "There are no free download slots available"), getPluginConfig().getIntegerProperty(PROPERTY_NO_SLOT_WAIT_TIME, 60) * 1000l);
         /* wait */
         sleep(1000l * (Long.parseLong(wait) + 4), downloadLink);
         /* request download information */

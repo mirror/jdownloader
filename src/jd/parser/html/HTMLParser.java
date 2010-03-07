@@ -47,7 +47,7 @@ public class HTMLParser {
         Matcher matcher = pattern.matcher(data);
         while (matcher.find()) {
             String pass = matcher.group(2);
-            if (pass.length() > 2 && !pass.matches(".*(rar|zip|jpg|gif|png|html|php|avi|mpg)$") && !ret.contains(pass)) {
+            if (pass != null && pass.length() > 2 && !pass.matches(".*(rar|zip|jpg|gif|png|html|php|avi|mpg)$") && !ret.contains(pass)) {
                 ret.add(pass);
             }
         }
@@ -55,7 +55,7 @@ public class HTMLParser {
         matcher = pattern.matcher(data);
         while (matcher.find()) {
             String pass = matcher.group(2);
-            if (pass.length() > 4 && !pass.matches(".*(rar|zip|jpg|gif|png|html|php|avi|mpg)$") && !ret.contains(pass)) {
+            if (pass != null && pass.length() > 4 && !pass.matches(".*(rar|zip|jpg|gif|png|html|php|avi|mpg)$") && !ret.contains(pass)) {
                 ret.add(pass);
             }
         }
@@ -63,7 +63,7 @@ public class HTMLParser {
         matcher = pattern.matcher(data);
         while (matcher.find()) {
             String pass = matcher.group(2);
-            if (pass.length() > 2 && !pass.matches(".*(rar|zip|jpg|gif|png|html|php|avi|mpg)$") && !ret.contains(pass)) {
+            if (pass != null && pass.length() > 2 && !pass.matches(".*(rar|zip|jpg|gif|png|html|php|avi|mpg)$") && !ret.contains(pass)) {
                 ret.add(pass);
             }
         }
@@ -71,7 +71,7 @@ public class HTMLParser {
         matcher = pattern.matcher(data);
         while (matcher.find()) {
             String pass = matcher.group(2);
-            if (pass.length() > 2 && !pass.matches(".*(rar|zip|jpg|gif|png|html|php|avi|mpg)$") && !ret.contains(pass)) {
+            if (pass != null && pass.length() > 2 && !pass.matches(".*(rar|zip|jpg|gif|png|html|php|avi|mpg)$") && !ret.contains(pass)) {
                 ret.add(pass);
             }
         }

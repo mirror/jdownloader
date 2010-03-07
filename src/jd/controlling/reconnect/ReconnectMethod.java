@@ -67,29 +67,19 @@ public abstract class ReconnectMethod {
         int maxretries = JDUtilities.getConfiguration().getIntegerProperty(PARAM_RETRIES, 5);
         boolean ret = false;
         int retry = 0;
-        if (maxretries <= -1) {
-            while (true) {
-                if ((ret = doReconnectInternal(++retry)) == true) {
-                    break;
-                }
-            }
-        } else {
-            if (maxretries == 0) {
-                maxretries = 1;
-            }
-            for (retry = 0; retry < maxretries; retry++) {
-                if ((ret = doReconnectInternal(retry + 1)) == true) {
-                    break;
-                }
-            }
+        if (maxretries < 0) {
+            maxretries = Integer.MAX_VALUE;
+        } else if (maxretries == 0) {
+            maxretries = 1;
+        }
+        for (retry = 0; retry < maxretries; retry++) {
+            if ((ret = doReconnectInternal(retry + 1)) == true) break;
         }
         return ret;
     }
 
     private String getIP() {
-        if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
-            return NA;
-        }
+        if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) { return NA; }
         return IPCheck.getIPAddress();
     }
 
