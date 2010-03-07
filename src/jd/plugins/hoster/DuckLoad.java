@@ -46,8 +46,16 @@ public class DuckLoad extends PluginForHost {
         boolean stream = false;
         requestFileInformation(link);
         br.setDebug(true);
+        String aBrowser = br.toString();
+        String replaces[] = br.getRegex("<!--(.*?)-->").getColumn(0);
+        if (replaces != null) {
+            for (String dingdang : replaces) {
+                dingdang = dingdang.trim();
+                aBrowser = aBrowser.replace(dingdang, "");
+            }
+        }
         // waittime check
-        if (br.containsHTML("Your downloadticket was booked")) {
+        if (aBrowser.contains("Your downloadticket was booked")) {
             sleep(10 * 1000l, link);
         }
         Form form = br.getForm(0);
@@ -78,7 +86,7 @@ public class DuckLoad extends PluginForHost {
                 applcode = "humpf";
             }
         }
-        if (br.containsHTML("Your downloadticket was booked")) {
+        if (aBrowser.contains("Your downloadticket was booked")) {
             String fileid = new Regex(link.getDownloadURL(), "duckload\\.com/download/(\\d+)/").getMatch(0);
             String filenamefromlink = new Regex(link.getDownloadURL(), "duckload\\.com/download/.*?/(.+)").getMatch(0);
             String postlink = "http://duckload.com/index.php?Modul=download&id=" + fileid + "&name=" + filenamefromlink + "&Ajax=true";

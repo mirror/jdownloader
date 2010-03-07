@@ -67,10 +67,10 @@ public class FileKeeperOrg extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, 1);
         if (!dl.getConnection().getContentType().contains("application")) {
             br.followConnection();
-            jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, 0);
+            jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, 1);
             if (!dl.getConnection().getContentType().contains("application")) {
                 br.followConnection();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -85,7 +85,7 @@ public class FileKeeperOrg extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return -1;
     }
 
     @Override

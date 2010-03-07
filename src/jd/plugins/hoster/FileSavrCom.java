@@ -66,10 +66,9 @@ public class FileSavrCom extends PluginForHost {
 
         for (int i = 0; i <= 5; i++) {
             captchaForm = br.getForm(0);
-
-            if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-
             String captchaUrl = br.getRegex("src=\"(securimage/securimage_show\\.php\\?sid=[0-9a-z]{32})\"").getMatch(0);
+            if (captchaForm == null || captchaUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            captchaUrl = "http://www.filesavr.com/" + captchaUrl;
             String code = getCaptchaCode(captchaUrl, downloadLink);
             captchaForm.put("code", code);
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, captchaForm, false, 1);
@@ -80,6 +79,7 @@ public class FileSavrCom extends PluginForHost {
                 break;
             } else {
                 con.disconnect();
+                br.getPage(downloadLink.getDownloadURL());
             }
 
         }

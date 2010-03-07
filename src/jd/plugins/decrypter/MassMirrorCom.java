@@ -40,9 +40,9 @@ public class MassMirrorCom extends PluginForDecrypt {
         String parameter = param.toString();
         br.getPage(parameter);
         /* Error handling */
-        if (br.containsHTML("(File Not Found|The file you requested was not found|This file never existed on|Removed due to copyright violations)")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        if (br.containsHTML("(File Not Found|The file you requested was not found|This file never existed on|Removed due to copyright violations)") || !br.containsHTML("download.php")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         String[] redirectLinks = br.getRegex("\"(download\\.php\\?id=.*?fileid=[a-z0-9A-Z]+)\"").getColumn(0);
-        if (redirectLinks.length == 0) return null;
+        if (redirectLinks == null || redirectLinks.length == 0) return null;
         progress.setRange(redirectLinks.length);
         for (String link : redirectLinks) {
             link = link.replace("amp;", "");

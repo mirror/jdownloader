@@ -35,41 +35,76 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.pluginUtils.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "crazyupload.com" }, urls = { "http://[\\w\\.]*?crazyupload\\.com/[a-z0-9]{12}" }, flags = { 0 })
-public class CrazyUploadCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "solidfile.com" }, urls = { "http://[\\w\\.]*?solidfile\\.com/[a-z0-9]{12}" }, flags = { 0 })
+public class SolidFileCom extends PluginForHost {
 
-    public CrazyUploadCom(PluginWrapper wrapper) {
+    public SolidFileCom(PluginWrapper wrapper) {
         super(wrapper);
+        // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
-    // XfileSharingProBasic Version 1.6 (only HandleFree, costum dllink regex)
+    // XfileSharingProBasic Version 1.6
     @Override
     public String getAGBLink() {
-        return "http://www.crazyupload.com/tos.html";
+        return COOKIE_HOST + "/tos.html";
     }
 
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setCookie("http://www.crazyupload.com", "lang", "english");
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("No such file") || br.containsHTML("No such user exist") || br.containsHTML("File not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<input type=\"hidden\" name=\"fname\" value=\"(.*?)\">").getMatch(0);
-        String filesize = br.getRegex("You have requested <font.*?>http.*?</font>.*?\\((.*?)\\)</font>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        link.setName(filename);
-        link.setDownloadSize(Regex.getSize(filesize));
-        return AvailableStatus.TRUE;
-    }
+    private static final String COOKIE_HOST = "http://solidfile.com";
+    public boolean nopremium = false;
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        doFree(downloadLink);
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(false);
+        br.setCookie(COOKIE_HOST, "lang", "english");
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("You have reached the download-limit")) {
+            logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
+            return AvailableStatus.UNCHECKABLE;
+        }
+        if (br.containsHTML("(No such file|No such user exist|File not found)")) {
+            logger.warning("file is 99,99% offline, throwing \"file not found\" now...");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        String filename = br.getRegex("You have requested.*?http://.*?[a-z0-9]{12}/(.*?)</font>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("fname\" value=\"(.*?)\"").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("<h2>Download File(.*?)</h2>").getMatch(0);
+                if (filename == null) {
+                    filename = br.getRegex("Filename:</b></td><td >(.*?)</td>").getMatch(0);
+                    if (filename == null) {
+                        filename = br.getRegex("Filename.*?nowrap.*?>(.*?)</td").getMatch(0);
+                        if (filename == null) {
+                            filename = br.getRegex("File Name.*?nowrap>(.*?)</td").getMatch(0);
+                        }
+                    }
+                }
+            }
+        }
+        String filesize = br.getRegex("<small>\\((.*?)\\)</small>").getMatch(0);
+        if (filesize == null) {
+            filesize = br.getRegex("\\(([0-9]+ bytes)\\)").getMatch(0);
+            if (filesize == null) {
+                filesize = br.getRegex("</font>[ ]+\\((.*?)\\)(.*?)</font>").getMatch(0);
+            }
+        }
+        if (filename == null || filename.equals("")) {
+            logger.warning("The filename equals null, throwing \"plugin defect\" now...");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        filename = filename.replaceAll("(</b>|<b>|\\.html)", "");
+        link.setName(filename.trim());
+        if (filesize != null && !filesize.equals("")) {
+            logger.info("Filesize found, filesize = " + filesize);
+            link.setDownloadSize(Regex.getSize(filesize));
+        }
+        return AvailableStatus.TRUE;
     }
 
     public void doFree(DownloadLink downloadLink) throws Exception, PluginException {
         boolean resumable = true;
-        int maxchunks = 1;
+        int maxchunks = 0;
         // If the filesize regex above doesn't match you can copy this part into
         // the available status (and delete it here)
         Form freeform = br.getFormBySubmitvalue("Kostenloser+Download");
@@ -222,7 +257,9 @@ public class CrazyUploadCom extends PluginForHost {
                     if (dllink == null) {
                         dllink = br.getRegex("This direct link will be available for your IP.*?href=\"(http.*?)\"").getMatch(0);
                         if (dllink == null) {
-                            dllink = br.getRegex("<br><a href=\"(.*?)\"").getMatch(0);
+                            // This was for fileop.com, maybe also works for
+                            // others!
+                            dllink = br.getRegex("Download: <a href=\"(.*?)\"").getMatch(0);
                         }
                     }
                 }
@@ -255,6 +292,21 @@ public class CrazyUploadCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        requestFileInformation(downloadLink);
+        doFree(downloadLink);
+    }
+
+    @Override
+    public void reset() {
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     public void checkErrors(DownloadLink theLink) throws NumberFormatException, PluginException {
@@ -301,14 +353,6 @@ public class CrazyUploadCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium");
             }
         }
-    }
-
-    @Override
-    public void reset() {
-    }
-
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
     }
 
     @Override

@@ -65,7 +65,7 @@ public class BigAndFreeCom extends PluginForHost {
         br.setCookie("http://www.bigandfree.com", "geoCode", "EN");
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("The file you requested has been removed")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(The file you requested has been removed|The file you requested is unavailable)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("File Name: </font><font class=.*?>(.*?)</font>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("addthis_open\\(this, '', 'http://.*?', '(.*?)'\\)").getMatch(0);

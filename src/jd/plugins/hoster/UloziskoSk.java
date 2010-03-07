@@ -28,7 +28,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ulozisko.sk" }, urls = { "http://[\\w\\.]*?ulozisko\\.sk/[0-9]+-.*?\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ulozisko.sk" }, urls = { "http://[\\w\\.]*?ulozisko\\.sk/[0-9]+(-.*?\\.html|/.+)" }, flags = { 0 })
 public class UloziskoSk extends PluginForHost {
 
     public UloziskoSk(PluginWrapper wrapper) {
