@@ -67,11 +67,11 @@ public class DuckLoad extends PluginForHost {
         // Check this part first if the plugin is defect!
         String applcode = null;
         applcode = br.getRegex("src=\"/design/Captcha.*?php\\?.*?\".*?<input name=\"(.*?)\"").getMatch(0);
-        String[] comeonDamnedDuckloadGuys = br.getRegex("<input( id=\".*?\" |.*?)name=\"(.*?)\"").getColumn(1);
-        if (comeonDamnedDuckloadGuys == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        ArrayList<String> all4U = new ArrayList<String>();
-        for (String youLoseIWin : comeonDamnedDuckloadGuys) {
-            if (!all4U.contains(youLoseIWin)) all4U.add(youLoseIWin);
+        String[] matches = br.getRegex("<input( id=\".*?\" |.*?)name=\"(.*?)\"").getColumn(1);
+        if (matches == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        ArrayList<String> matchList = new ArrayList<String>();
+        for (String match : matches) {
+            if (!matchList.contains(match)) matchList.add(match);
         }
         if (applcode == null) {
             logger.warning("regex for applcode is defect!");
@@ -101,7 +101,7 @@ public class DuckLoad extends PluginForHost {
             stream = true;
         }
         // form.put(applcode, code);
-        for (String omg : all4U) {
+        for (String omg : matchList) {
             form.put(omg, code);
         }
         br.submitForm(form);
