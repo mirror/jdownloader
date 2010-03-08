@@ -60,10 +60,6 @@ public class LoadFilesIn extends PluginForHost {
         this.setBrowserExclusive();
         br.setCookie(COOKIE_HOST, "lang", "english");
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("You have reached the download-limit")) {
-            logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
-            return AvailableStatus.UNCHECKABLE;
-        }
         if (br.containsHTML("(No such file|No such user exist|File not found)")) {
             logger.warning("file is 99,99% offline, throwing \"file not found\" now...");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -88,7 +84,11 @@ public class LoadFilesIn extends PluginForHost {
                 filesize = br.getRegex("</font>[ ]+\\((.*?)\\)(.*?)</font>").getMatch(0);
             }
         }
-        if (filename == null) {
+        if (filename == null || filename.equals("")) {
+            if (br.containsHTML("You have reached the download-limit")) {
+                logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
+                return AvailableStatus.UNCHECKABLE;
+            }
             logger.warning("The filename equals null, throwing \"file not found\" now...");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }

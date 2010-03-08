@@ -84,7 +84,7 @@ public class SaveAm extends PluginForHost {
 
     public void checkErrors(DownloadLink theLink) throws NumberFormatException, PluginException {
         // Add more errors here!
-        if (br.containsHTML("(Sorry, you cant  download more then 1 at time|Upgrade to Premium)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultanious downloads", 10 * 60 * 1000l);
+        if (br.containsHTML("(Sorry, you cant  download more then 1 at time|Upgrade to Premium)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many simultanious downloads", 10 * 60 * 1000l);
 
     }
 
