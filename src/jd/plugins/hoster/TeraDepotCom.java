@@ -16,6 +16,7 @@
 
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -41,6 +42,8 @@ public class TeraDepotCom extends PluginForHost {
         enablePremium("http://www.teradepot.com/premium.html");
     }
 
+    // XfileSharingProBasic Version 1.6 (availableCheck only)
+    private static final String COOKIE_HOST = "http://teradepot.com";
     public boolean freeAccount = false;
 
     @Override
@@ -147,19 +150,52 @@ public class TeraDepotCom extends PluginForHost {
         }
     }
 
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.setCookie("http://www.teradepot.com", "lang", "english");
-        br.getPage(parameter.getDownloadURL());
-        if (br.containsHTML("No such file with this filename")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML("No such user exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML("File not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<Center><h2>Download File(.*?)</").getMatch(0);
-        String filesize = br.getRegex("You have requested.*?</font></b> \\((.*?)\\)").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        parameter.setName(filename.trim());
-        parameter.setDownloadSize(Regex.getSize(filesize));
+        br.setFollowRedirects(false);
+        br.setCookie(COOKIE_HOST, "lang", "english");
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("You have reached the download-limit")) {
+            logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
+            return AvailableStatus.UNCHECKABLE;
+        }
+        if (br.containsHTML("(No such file|No such user exist|File not found)")) {
+            logger.warning("file is 99,99% offline, throwing \"file not found\" now...");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        String filename = br.getRegex("You have requested.*?http://.*?[a-z0-9]{12}/(.*?)</font>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("fname\" value=\"(.*?)\"").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("<h2>Download File(.*?)</h2>").getMatch(0);
+                if (filename == null) {
+                    filename = br.getRegex("Filename:</b></td><td >(.*?)</td>").getMatch(0);
+                    if (filename == null) {
+                        filename = br.getRegex("Filename.*?nowrap.*?>(.*?)</td").getMatch(0);
+                        if (filename == null) {
+                            filename = br.getRegex("File Name.*?nowrap>(.*?)</td").getMatch(0);
+                        }
+                    }
+                }
+            }
+        }
+        String filesize = br.getRegex("<small>\\((.*?)\\)</small>").getMatch(0);
+        if (filesize == null) {
+            filesize = br.getRegex("\\(([0-9]+ bytes)\\)").getMatch(0);
+            if (filesize == null) {
+                filesize = br.getRegex("</font>[ ]+\\((.*?)\\)(.*?)</font>").getMatch(0);
+            }
+        }
+        if (filename == null || filename.equals("")) {
+            logger.warning("The filename equals null, throwing \"plugin defect\" now...");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        filename = filename.replaceAll("(</b>|<b>|\\.html)", "");
+        link.setName(filename.trim());
+        if (filesize != null && !filesize.equals("")) {
+            logger.info("Filesize found, filesize = " + filesize);
+            link.setDownloadSize(Regex.getSize(filesize));
+        }
         return AvailableStatus.TRUE;
     }
 

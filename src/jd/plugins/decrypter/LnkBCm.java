@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -41,10 +42,13 @@ public class LnkBCm extends PluginForDecrypt {
         if (br.getRedirectLocation() != null) {
             found = br.getRedirectLocation();
         } else {
-            found = br.getRegex("seconds or <a href=\"(.*?)\"").getMatch(0);
-            if (found == null) {
-                found = br.getRegex("<iframe src=\"(.*?)\"").getMatch(0);
+            // if (found == null) found =
+            // br.getRegex("<div id=\"skipBtn\">.*?<a href=\"(.*?)\"").getMatch(0);
+            String[] lol = HTMLParser.getHttpLinks(br.toString(), "");
+            for (String pwned : lol) {
+                if (!pwned.equals(parameter)) decryptedLinks.add(createDownloadlink(pwned));
             }
+            return decryptedLinks;
         }
         // I don't know if this pattern still is valid. May be that there is a
         // version for iframes, and one without iframes.
