@@ -45,6 +45,8 @@ import jd.controlling.LinkGrabberControllerListener;
 import jd.controlling.reconnect.Reconnecter;
 import jd.event.ControlListener;
 import jd.gui.UserIO;
+import jd.gui.swing.jdgui.GUIUtils;
+import jd.gui.swing.jdgui.JDGuiConstants;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.gui.swing.jdgui.views.linkgrabberview.LinkGrabberPanel;
 import jd.http.Browser;
@@ -155,6 +157,9 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
                 commandvec.add("/get/grabber/isbusy");
                 infovector.add("Get whether linkgrabber is busy or not");
 
+                commandvec.add("/get/grabber/isset/startafteradding");
+                infovector.add("Get whether downloads should start or not start after adding the links to the download queue");
+
                 commandvec.add("/get/downloads/all/count");
                 infovector.add("Get amount of all downloads");
 
@@ -213,11 +218,14 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
                 commandvec.add("/action/set/premium/(true|false)");
                 infovector.add("Set premium usage enabled or not");
 
-                commandvec.add("/action/add(/confirm)(/start)/links/%X%");
-                infovector.add("Add links %X% to grabber<br/>" + "e.g. /action/add/links/http://tinyurl.com/6o73eq" + "<p>Note: Links must be URLEncoded. Use NEWLINE between Links!!</p>");
+                commandvec.add("/action/set/grabber/startafteradding/(true|false)");
+                infovector.add("Set whether downloads should start or not start after adding the links to the download queue");
 
-                commandvec.add("/action/add(/confirm)(/start)/container/%X%");
-                infovector.add("Add (remote or local) container %X%<br/>" + "e.g. /action/add/container/C:\\container.dlc" + "<p>Note: Address (remote or local) must be URLEncoded.</p>");
+                commandvec.add("/action/add(/confirm)/links/%X%");
+                infovector.add("Add links %X% to grabber<br/>" + "e.g. /action/add/links/http://tinyurl.com/6o73eq" + "<p>the confirm parameter will send the links to download queue afterwards</p>" + "Note: Links must be URLEncoded. Use NEWLINE between Links!");
+
+                commandvec.add("/action/add(/confirm)/container/%X%");
+                infovector.add("Add (remote or local) container %X%<br/>" + "e.g. /action/add/container/C:\\container.dlc" + "<p>the confirm parameter will send the links to download queue afterwards</p>" + "Note: Address (remote or local) must be URLEncoded!");
 
                 commandvec.add("/action/save/container(/fromgrabber)/%X%");
                 infovector.add("Save DLC-container with all links to %X%<br/>" + "e.g. /action/add/container/%X%" + "<p>fromgrabber: save DLC-container from grabber list instead from download list</p>");
@@ -410,6 +418,9 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
                     isbusy = false;
 
                 response.addContent(isbusy);
+            } else if (request.getRequestUrl().equals("/get/grabber/isset/startafteradding")) {
+                boolean value = GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_START_AFTER_ADDING_LINKS, true);
+                response.addContent(value);
             } else if (request.getRequestUrl().equals("/action/start")) {
                 // Do Start downloads
                 DownloadWatchDog.getInstance().startDownloads();
@@ -481,11 +492,23 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
                 SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, newsimdl.toString());
                 SubConfiguration.getConfig("DOWNLOAD").save();
                 response.addContent("newmax=" + newsimdl);
-            } else if (request.getRequestUrl().matches("(?is).*/action/add(/confirm)?(/start)?/links/.+")) {
+            } else if (request.getRequestUrl().matches("(?is).*/action/set/grabber/startafteradding/(true|false)")) {
+                boolean value = Boolean.parseBoolean(new Regex(request.getRequestUrl(), ".*/action/set/grabber/startafteradding/(true|false)").getMatch(0));
+                logger.fine("RemoteControl - Set property 'Start after adding links': " + value);
+
+                if (value != GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_START_AFTER_ADDING_LINKS, true)) {
+                    GUIUtils.getConfig().setProperty(JDGuiConstants.PARAM_START_AFTER_ADDING_LINKS, value);
+                    JDUtilities.getConfiguration().save();
+                    response.addContent("start_after_adding_links=" + value + " (CHANGED=true)");
+                } else {
+                    response.addContent("start_after_adding_links=" + value + " (CHANGED=false)");
+                }
+
+            } else if (request.getRequestUrl().matches("(?is).*/action/add(/confirm)?/links/.+")) {
                 // Add link(s)
                 ArrayList<String> links = new ArrayList<String>();
 
-                String link = new Regex(request.getRequestUrl(), ".*/action/add(/confirm)?(/start)?/links/(.+)").getMatch(2);
+                String link = new Regex(request.getRequestUrl(), ".*/action/add(/confirm)?/links/(.+)").getMatch(1);
 
                 for (String tlink : HTMLParser.getHttpLinks(Encoding.urlDecode(link, false), null)) {
                     links.add(tlink);
@@ -546,14 +569,10 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
                     }
                 }
 
-                if (request.getRequestUrl().matches(".+/start/.+")) {
-                    DownloadWatchDog.getInstance().startDownloads();
-                }
-
                 response.addContent("Link(s) added. (" + link + ")");
-            } else if (request.getRequestUrl().matches("(?is).*/action/add(/confirm)?(/start)?/container/.+")) {
+            } else if (request.getRequestUrl().matches("(?is).*/action/add(/confirm)?/container/.+")) {
                 // Open a local or remote DLC-container
-                String dlcfilestr = new Regex(request.getRequestUrl(), ".*/action/add(/confirm)?(/start)/container/(.+)").getMatch(2);
+                String dlcfilestr = new Regex(request.getRequestUrl(), ".*/action/add(/confirm)?/container/(.+)").getMatch(1);
                 dlcfilestr = Encoding.htmlDecode(dlcfilestr);
 
                 if (dlcfilestr.matches("http://.*?\\.(dlc|ccf|rsdf)")) {
@@ -612,10 +631,6 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
                 // }
                 // }
                 // }
-
-                if (request.getRequestUrl().matches(".+/start/.+")) {
-                    DownloadWatchDog.getInstance().startDownloads();
-                }
 
                 response.addContent("Container opened. (" + dlcfilestr + ")");
             } else if (request.getRequestUrl().matches("(?is).*/action/save/container(/fromgrabber)?/.+")) {
@@ -1052,7 +1067,6 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
     @Override
     public void onExit() {
     }
-
 
     public void onLinkGrabberControllerEvent(LinkGrabberControllerEvent event) {
         if (event.getID() == LinkGrabberControllerEvent.FINISHED) {
