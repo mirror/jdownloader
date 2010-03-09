@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shorttext.com" }, urls = { "http://[\\w\\.]*?shorttext\\.com/[a-z0-9]+" }, flags = { 2 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shorttext.com" }, urls = { "http://[\\w\\.]*?shorttext\\.com/[a-z0-9]+" }, flags = { 0 })
 public class ShortTextCom extends PluginForDecrypt {
 
     public ShortTextCom(PluginWrapper wrapper) {

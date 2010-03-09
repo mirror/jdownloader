@@ -34,13 +34,17 @@ public class CnnT extends PluginForDecrypt {
         super(wrapper);
     }
 
-    // @Override
+    public static final Object LOCK = new Object();
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         boolean valid = false;
         br.setFollowRedirects(true);
         br.getPage(parameter);
+        synchronized (LOCK) {
+            Thread.sleep(3000);
+        }
         for (int retrycounter = 1; retrycounter <= 5; retrycounter++) {
             Form captchaForm = br.getFormbyProperty("name", "download_form");
             String captchaUrl = br.getRegex("<img\\s+src=\"(captcha/captcha\\.php\\?id=[\\d]+)\"").getMatch(0);
@@ -55,16 +59,18 @@ public class CnnT extends PluginForDecrypt {
                 valid = true;
                 decryptedLinks.add(createDownloadlink(br.getRegex("URL=(.*?)\"").getMatch(0)));
                 String links[] = br.getRegex("<a target=\"_blank\" href=\"(.*?)\">").getColumn(0);
+                if (links == null || links.length == 0) return null;
                 for (String link : links) {
                     decryptedLinks.add(createDownloadlink(link));
                 }
                 break;
             }
         }
-        if (valid == false) throw new DecrypterException("Wrong Captcha Code");
+        if (valid == false) {
+            logger.warning("Captcha for the following link was entered wrong for more than 5 times: " + parameter);
+            throw new DecrypterException("Wrong Captcha Code");
+        }
         return decryptedLinks;
     }
-
-    // @Override
 
 }

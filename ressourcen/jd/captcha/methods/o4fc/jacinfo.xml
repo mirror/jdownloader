@@ -1,4 +1,4 @@
 <jDownloader>
-  <method name="Base-Method for many hosters" author="ManiacMansion" services="teradepot.com;pixelhit.com;savefile.ro;xshareware.com;midupload.com;rapidshark.pl;evilshare.com;dualshare.com;turboshare.com;azsharing.com;bebasupload.com;loadfiles.in;imzupload.com;uploadkeep.com;pinghoster.com;2backup.net"/>
+  <method name="Base-Method for many hosters" author="ManiacMansion" services="teradepot.com;pixelhit.com;savefile.ro;xshareware.com;midupload.com;rapidshark.pl;evilshare.com;dualshare.com;turboshare.com;azsharing.com;bebasupload.com;loadfiles.in;imzupload.com;uploadkeep.com;pinghoster.com;2backup.net;sharedzip.com"/>
   <format type="jpg" letterNum="4"></format>
 </jDownloader>
