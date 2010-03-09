@@ -35,7 +35,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharedzip.com" }, urls = { "http://[\\w\\.]*?(sharedzip)\\.com/.*?/.*" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharedzip.com" }, urls = { "http://[\\w\\.]*?(sharedzip)\\.com/[a-z0-9]{12}" }, flags = { 2 })
 public class SharedZipCom extends PluginForHost {
 
     public SharedZipCom(PluginWrapper wrapper) {
