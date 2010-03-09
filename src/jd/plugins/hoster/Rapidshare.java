@@ -79,11 +79,11 @@ public class Rapidshare extends PluginForHost {
 
     private static final String PROPERTY_INCREASE_TICKET = "INCREASE_TICKET";
 
-    private static final String PROPERTY_SELECTED_SERVER = "SELECTED_SERVER";
+    private static final String PROPERTY_SELECTED_SERVER = "SELECTED_SERVER#_1";
 
-    private static final String PROPERTY_SELECTED_SERVER2 = "SELECTED_SERVER#2";
+    private static final String PROPERTY_SELECTED_SERVER2 = "SELECTED_SERVER#_2";
 
-    private static final String PROPERTY_SELECTED_SERVER3 = "SELECTED_SERVER#3";
+    private static final String PROPERTY_SELECTED_SERVER3 = "SELECTED_SERVER#_3";
 
     private static final String PROPERTY_USE_PRESELECTED = "USE_PRESELECTED";
 
@@ -181,9 +181,9 @@ public class Rapidshare extends PluginForHost {
 
     private static final Account dummyAccount = new Account("TRAFSHARE", "TRAFSHARE");
 
-    private static final String PROPERTY_SELECTED_SERVER4 = "SELECTED_SERVER#4";
+    private static final String PROPERTY_SELECTED_SERVER4 = "SELECTED_SERVER#_4";
 
-    private static final String PROPERTY_SELECTED_SERVER5 = "SELECTED_SERVER#5";;;
+    private static final String PROPERTY_SELECTED_SERVER5 = "SELECTED_SERVER#_5";
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
