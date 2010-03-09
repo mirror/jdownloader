@@ -43,12 +43,25 @@ public class UloziskoSk extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.setCustomCharset("windows-1250");
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("Prepáčte, Vaša krajina nie je podporovaná z dôvodu drahého medzinárodnému prenosu dát. Môžete skúsiť")) return AvailableStatus.UNCHECKABLE;
         if (br.containsHTML("(or was removed|is not existed)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("class=\"down3\">(.*?)</div>").getMatch(0);
+        String filename = br.getRegex("class=\"down1\">(.*?)<").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("class=\"down2\">(.*?)</div").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("type = \"hidden\" name = \"name\" value = \"(.*?)\"").getMatch(0);
+                if (filename == null) {
+                    filename = br.getRegex("type = \"hidden\" name = \"delete\" value = \"http://www\\.ulozisko\\.sk/\\d+/(.*?)/\"").getMatch(0);
+                    if (filename == null) {
+                        filename = br.getRegex("type = \"hidden\" name = \"link\" value = \"http://www\\.ulozisko\\.sk/\\d+/(.*?)\"").getMatch(0);
+                    }
+                }
+            }
+        }
         String filesize = br.getRegex("Veľkosť súboru: <strong>(.*?)</strong").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(filename.trim());
         link.setDownloadSize(Regex.getSize(filesize));
         return AvailableStatus.TRUE;
