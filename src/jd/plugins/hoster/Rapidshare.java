@@ -91,12 +91,23 @@ public class Rapidshare extends PluginForHost {
 
     private static final String PROPERTY_USE_TELEKOMSERVER = "USE_TELEKOMSERVER";
 
-    private static String[] serverList1 = new String[] { "cg", "cg2", "dt", "gc", "gc2", "l3", "l32", "l33", "l34", "tg", "tl", "tl2" };
+    private static String[] serverList1 = new String[] { "cg","cg2","dt","l3","l32","l33","l34","l35","tg","tl","tl2","tl3" };
 
-    private static String[] serverList2 = new String[] { "cg", "dt", "gc", "gc2", "l3", "l32", "tg", "tg2", "tl", "tl2", "tl3" };
+    private static String[] serverList2 = new String[] {  "cg","dt","l3","l32","l33","l34","l35","tg","tg2","tl","tl2","tl3"};
 
-    private static String[] serverList3 = new String[] { "cg", "dt", "gc", "gc2", "l3", "l32", "l33", "l34", "tg", "tg2", "tl", "tl2" };
+    private static String[] serverList3 = new String[] { "cg","dt","l3","l32","l33","l34","tg","tg2","tl","tl2","tl3","eu" };
 
+    private static String[] serverList4 = new String[] {  "dt","l3","l32","l33","l34","l35","tg","tg2","tl","tl2","tl3","tl4" };
+
+    private static String[] serverList5 = new String[] { "dt","l3","l32","l33","l34","l35","tg","tl","tl2","tl3","tl4","eu" };
+
+    
+    
+   
+    
+   
+    
+    
     final static private Object LOCK = new Object();
 
     final static private Boolean HTMLWORKAROUND = new Boolean(false);
@@ -105,25 +116,74 @@ public class Rapidshare extends PluginForHost {
 
     private static HashMap<String, String> serverMap = new HashMap<String, String>();
     static {
-        serverMap.put("Cogent", "cg");
+        //todo:remove doubles
+        serverMap.put("Cogent #1", "cg");
         serverMap.put("Cogent #2", "cg2");
         serverMap.put("Deutsche Telekom", "dt");
-        serverMap.put("GlobalCrossing", "gc");
-        serverMap.put("GlobalCrossing #2", "gc2");
-        serverMap.put("Level(3)", "l3");
+        serverMap.put("Level(3) #1", "l3");
         serverMap.put("Level(3) #2", "l32");
         serverMap.put("Level(3) #3", "l33");
         serverMap.put("Level(3) #4", "l34");
+        serverMap.put("Level(3) #5", "l35");
         serverMap.put("Tata Com.", "tg");
-        serverMap.put("Tata Com. #2", "tg2");
-        serverMap.put("Teleglobe", "tg");
-        serverMap.put("Teleglobe #2", "tg2");
-        serverMap.put("TeliaSonera", "tl");
+        serverMap.put("TeliaSonera #1", "tl");
         serverMap.put("TeliaSonera #2", "tl2");
         serverMap.put("TeliaSonera #3", "tl3");
+        serverMap.put("Cogent", "cg");
+        serverMap.put("Deutsche Telekom", "dt");
+        serverMap.put("Level(3) #1", "l3");
+        serverMap.put("Level(3) #2", "l32");
+        serverMap.put("Level(3) #3", "l33");
+        serverMap.put("Level(3) #4", "l34");
+        serverMap.put("Level(3) #5", "l35");
+        serverMap.put("Tata Com. #1", "tg");
+        serverMap.put("Tata Com. #2", "tg2");
+        serverMap.put("TeliaSonera #1", "tl");
+        serverMap.put("TeliaSonera #2", "tl2");
+        serverMap.put("TeliaSonera #3", "tl3");
+        serverMap.put("Cogent", "cg");
+        serverMap.put("Deutsche Telekom", "dt");
+        serverMap.put("Level(3) #1", "l3");
+        serverMap.put("Level(3) #2", "l32");
+        serverMap.put("Level(3) #3", "l33");
+        serverMap.put("Level(3) #4", "l34");
+        serverMap.put("Tata Com. #1", "tg");
+        serverMap.put("Tata Com. #2", "tg2");
+        serverMap.put("TeliaSonera #1", "tl");
+        serverMap.put("TeliaSonera #2", "tl2");
+        serverMap.put("TeliaSonera #3", "tl3");
+        serverMap.put("euNetworks", "eu");
+        serverMap.put("Deutsche Telekom", "dt");
+        serverMap.put("Level(3) #1", "l3");
+        serverMap.put("Level(3) #2", "l32");
+        serverMap.put("Level(3) #3", "l33");
+        serverMap.put("Level(3) #4", "l34");
+        serverMap.put("Level(3) #5", "l35");
+        serverMap.put("Tata Com. #1", "tg");
+        serverMap.put("Tata Com. #2", "tg2");
+        serverMap.put("TeliaSonera #1", "tl");
+        serverMap.put("TeliaSonera #2", "tl2");
+        serverMap.put("TeliaSonera #3", "tl3");
+        serverMap.put("TeliaSonera #4", "tl4");
+        serverMap.put("Deutsche Telekom", "dt");
+        serverMap.put("Level(3) #1", "l3");
+        serverMap.put("Level(3) #2", "l32");
+        serverMap.put("Level(3) #3", "l33");
+        serverMap.put("Level(3) #4", "l34");
+        serverMap.put("Level(3) #5", "l35");
+        serverMap.put("Tata Com.", "tg");
+        serverMap.put("TeliaSonera #1", "tl");
+        serverMap.put("TeliaSonera #2", "tl2");
+        serverMap.put("TeliaSonera #3", "tl3");
+        serverMap.put("TeliaSonera #4", "tl4");
+        serverMap.put("euNetworks", "eu");
     }
 
     private static final Account dummyAccount = new Account("TRAFSHARE", "TRAFSHARE");
+
+    private static final String PROPERTY_SELECTED_SERVER4 = "SELECTED_SERVER#4";
+
+    private static final String PROPERTY_SELECTED_SERVER5 = "SELECTED_SERVER#5";;;
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
@@ -757,13 +817,17 @@ public class Rapidshare extends PluginForHost {
 
         String postTarget = new Regex(ticketCode, PATTERN_FIND_DOWNLOAD_POST_URL).getMatch(0);
 
-        String server1 = getPluginConfig().getStringProperty(PROPERTY_SELECTED_SERVER, "Level(3)");
-        String server2 = getPluginConfig().getStringProperty(PROPERTY_SELECTED_SERVER2, "TeliaSonera");
-        String server3 = getPluginConfig().getStringProperty(PROPERTY_SELECTED_SERVER3, "TeliaSonera");
+        String server1 = getPluginConfig().getStringProperty(PROPERTY_SELECTED_SERVER, "Cogent #1");
+        String server2 = getPluginConfig().getStringProperty(PROPERTY_SELECTED_SERVER2, "Cogent #1");
+        String server3 = getPluginConfig().getStringProperty(PROPERTY_SELECTED_SERVER3, "Cogent #1");
+        String server4 = getPluginConfig().getStringProperty(PROPERTY_SELECTED_SERVER4, "TeliaSonera #4");
+        String server5 = getPluginConfig().getStringProperty(PROPERTY_SELECTED_SERVER5, "euNetworks");
 
         String serverAbb = serverMap.get(server1);
         String server2Abb = serverMap.get(server2);
         String server3Abb = serverMap.get(server3);
+        String server4Abb = serverMap.get(server4);
+        String server5Abb = serverMap.get(server5);
         if (serverAbb == null) {
             serverAbb = serverList1[(int) (Math.random() * (serverList1.length - 1))];
             logger.finer("Use Random #1 server " + serverAbb);
@@ -776,7 +840,14 @@ public class Rapidshare extends PluginForHost {
             server3Abb = serverList3[(int) (Math.random() * (serverList3.length - 1))];
             logger.finer("Use Random #3 server " + server3Abb);
         }
-
+        if (server4Abb == null) {
+            server4Abb = serverList4[(int) (Math.random() * (serverList4.length - 1))];
+            logger.finer("Use Random #4 server " + server4Abb);
+        }
+        if (server5Abb == null) {
+            server5Abb = serverList5[(int) (Math.random() * (serverList5.length - 1))];
+            logger.finer("Use Random #5 server " + server5Abb);
+        }
         boolean telekom = getPluginConfig().getBooleanProperty(PROPERTY_USE_TELEKOMSERVER, false);
         boolean preselected = getPluginConfig().getBooleanProperty(PROPERTY_USE_PRESELECTED, true);
 
@@ -790,6 +861,8 @@ public class Rapidshare extends PluginForHost {
         logger.info("wished Mirror #1 Server " + serverAbb);
         logger.info("wished Mirror #2 Server " + server2Abb);
         logger.info("wished Mirror #3 Server " + server3Abb);
+        logger.info("wished Mirror #4 Server " + server4Abb);
+        logger.info("wished Mirror #5 Server " + server5Abb);
         String selected = new Regex(ticketCode, PATTERN_FIND_PRESELECTED_SERVER).getMatch(0);
         logger.info("Preselected Server: " + selected.substring(0, 30));
         String selectedID = new Regex(selected, "\\d*\\d+(\\D+?\\d*?)\\.").getMatch(0);
@@ -815,6 +888,14 @@ public class Rapidshare extends PluginForHost {
             logger.info("RS.com Use Mirror #3 Server: " + getServerName(server3Abb));
             this.selectedServer = getServerName(server3Abb);
             postTarget = getURL(serverstrings, getServerName(server3Abb), postTarget);
+        } else if (ticketCode.indexOf(server4Abb + ".rapidshare.com") >= 0) {
+            logger.info("RS.com Use Mirror #4 Server: " + getServerName(server4Abb));
+            this.selectedServer = getServerName(server4Abb);
+            postTarget = getURL(serverstrings, getServerName(server4Abb), postTarget);
+        } else if (ticketCode.indexOf(server5Abb + ".rapidshare.com") >= 0) {
+            logger.info("RS.com Use Mirror #5 Server: " + getServerName(server5Abb));
+            this.selectedServer = getServerName(server5Abb);
+            postTarget = getURL(serverstrings, getServerName(server5Abb), postTarget);
         } else if (serverstrings.length > 0) {
             logger.severe("Kein Server gefunden 1");
             for (String s : serverstrings) {
@@ -883,6 +964,8 @@ public class Rapidshare extends PluginForHost {
         ArrayList<String> m1 = new ArrayList<String>();
         ArrayList<String> m2 = new ArrayList<String>();
         ArrayList<String> m3 = new ArrayList<String>();
+        ArrayList<String> m4 = new ArrayList<String>();
+        ArrayList<String> m5 = new ArrayList<String>();
         for (String element : serverList1) {
             m1.add(getServerName(element));
         }
@@ -892,20 +975,32 @@ public class Rapidshare extends PluginForHost {
         for (String element : serverList3) {
             m3.add(getServerName(element));
         }
+        for (String element : serverList4) {
+            m4.add(getServerName(element));
+        }
+        for (String element : serverList5) {
+            m5.add(getServerName(element));
+        }
         m1.add(JDL.L("plugins.hoster.rapidshare.com.prefferedServer.random", "Random"));
         m2.add(JDL.L("plugins.hoster.rapidshare.com.prefferedServer.random", "Random"));
         m3.add(JDL.L("plugins.hoster.rapidshare.com.prefferedServer.random", "Random"));
+        m4.add(JDL.L("plugins.hoster.rapidshare.com.prefferedServer.random", "Random"));
+        m5.add(JDL.L("plugins.hoster.rapidshare.com.prefferedServer.random", "Random"));
 
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, JDL.L("plugins.hoster.rapidshare.com.prefferedServer", "Bevorzugte Server")));
         ConfigEntry cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PROPERTY_USE_PRESELECTED, JDL.L("plugins.hoster.rapidshare.com.preSelection", "Vorauswahl übernehmen")).setDefaultValue(true);
         config.addEntry(cond);
 
         ConfigEntry ce;
-        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getPluginConfig(), PROPERTY_SELECTED_SERVER, m1.toArray(new String[] {}), "#1").setDefaultValue("Level(3)"));
+        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getPluginConfig(), PROPERTY_SELECTED_SERVER, m1.toArray(new String[] {}), "#1").setDefaultValue("Cognet #1"));
         ce.setEnabledCondidtion(cond, false);
-        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getPluginConfig(), PROPERTY_SELECTED_SERVER2, m2.toArray(new String[] {}), "#2").setDefaultValue("TeliaSonera"));
+        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getPluginConfig(), PROPERTY_SELECTED_SERVER2, m2.toArray(new String[] {}), "#2").setDefaultValue("Cognet #1"));
         ce.setEnabledCondidtion(cond, false);
-        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getPluginConfig(), PROPERTY_SELECTED_SERVER3, m3.toArray(new String[] {}), "#3").setDefaultValue("TeliaSonera"));
+        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getPluginConfig(), PROPERTY_SELECTED_SERVER3, m3.toArray(new String[] {}), "#3").setDefaultValue("Cognet #1"));
+        ce.setEnabledCondidtion(cond, false);
+        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getPluginConfig(), PROPERTY_SELECTED_SERVER4, m4.toArray(new String[] {}), "#4").setDefaultValue("TeliaSonera #4"));
+        ce.setEnabledCondidtion(cond, false);
+        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getPluginConfig(), PROPERTY_SELECTED_SERVER3, m5.toArray(new String[] {}), "#5").setDefaultValue("euNetworks"));
         ce.setEnabledCondidtion(cond, false);
         config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PROPERTY_USE_TELEKOMSERVER, JDL.L("plugins.hoster.rapidshare.com.telekom", "Telekom Server verwenden falls verfügbar")).setDefaultValue(false));
         ce.setEnabledCondidtion(cond, false);
