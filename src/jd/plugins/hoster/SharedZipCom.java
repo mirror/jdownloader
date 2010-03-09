@@ -32,7 +32,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision: 10707 $", interfaceVersion = 2, names = { "sharedzip.com" }, urls = { "http://[\\w\\.]*?(sharedzip)\\.com/.*?/.*" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharedzip.com" }, urls = { "http://[\\w\\.]*?(sharedzip)\\.com/.*?/.*" }, flags = { 2 })
 public class SharedZipCom extends PluginForHost {
 
     public SharedZipCom(PluginWrapper wrapper) {
@@ -46,10 +46,9 @@ public class SharedZipCom extends PluginForHost {
 
     public void login(Account account) throws IOException, PluginException {
         setBrowserExclusive();
-
         br.setFollowRedirects(true);
+        br.setCookie("http://www.sharedzip.com", "lang", "english");
         br.postPage("http://www.sharedzip.com/", "op=login&redirect=&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&x=15&y=13");
-
     }
 
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
@@ -58,13 +57,12 @@ public class SharedZipCom extends PluginForHost {
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
         // direct download or not?
-
         if (br.getRedirectLocation() != null) {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.getRedirectLocation(), true, 1);
         } else {
             br.loadConnection(null);
             br.forceDebug(true);
-            Form download = br.getFormBySubmitvalue("Datei+herunterladen");
+            Form download = br.getFormBySubmitvalue("Download+File");
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, download, true, 1);
         }
         if (!dl.getConnection().isContentDisposition()) {
@@ -75,25 +73,17 @@ public class SharedZipCom extends PluginForHost {
     }
 
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-     
-            this.setBrowserExclusive();
-br.setCookie("http://www.sharedzip.com", "lang", "english");
-            br.setFollowRedirects(true);
-            br.getPage(downloadLink.getDownloadURL());
-          
-            if (br.containsHTML("<Title>File Not Found</Title>")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-
-            }
-            String fileName = br.getRegex("You have requested <font color=\"red\">http://www.sharedzip.com/(.*?)/(.*?)</font> \\((.*?)\\)</font>").getMatch(1);
-            long fileSize = Regex.getSize(br.getRegex("You have requested <font color=\"red\">http://www.sharedzip.com/(.*?)/(.*?)</font> \\((.*?)\\)</font>").getMatch(2));
-            if (fileName == null || fileSize <= 0) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-
-            }
-            downloadLink.setName(fileName);
-            downloadLink.setDownloadSize(fileSize);
-
-            return AvailableStatus.TRUE;
-      
+        this.setBrowserExclusive();
+        br.setCookie("http://www.sharedzip.com", "lang", "english");
+        br.setFollowRedirects(true);
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML("<Title>File Not Found</Title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String fileName = br.getRegex("You have requested <font color=\"red\">http://www.sharedzip.com/(.*?)/(.*?)</font> \\((.*?)\\)</font>").getMatch(1);
+        long fileSize = Regex.getSize(br.getRegex("You have requested <font color=\"red\">http://www.sharedzip.com/(.*?)/(.*?)</font> \\((.*?)\\)</font>").getMatch(2));
+        if (fileName == null || fileSize <= 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        downloadLink.setName(fileName.trim());
+        downloadLink.setDownloadSize(fileSize);
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -102,21 +92,19 @@ br.setCookie("http://www.sharedzip.com", "lang", "english");
         br.forceDebug(true);
         login(account);
         br.getPage("http://www.sharedzip.com/?op=my_account");
-
-        String validUntil = br.getRegex("Ihr Premiumkonto ist g.ltig bis:</TD><TD><b>(.*?)</b><").getMatch(0);
-        ai.setValidUntil(Regex.getMilliSeconds(validUntil, "dd MMMM yyyy", Locale.GERMANY));
+        String validUntil = br.getRegex("Premium-Account expire:</TD><TD><b>(.*?)</b><").getMatch(0);
         if (validUntil == null) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
+        ai.setValidUntil(Regex.getMilliSeconds(validUntil, "dd MMMM yyyy", Locale.GERMANY));
+        String trafficAvail = br.getRegex("Traffic available today:</TD><TD><b>(.*?)<").getMatch(0);
+        if (trafficAvail != null) {
+            /* only unlimited accounts dont have a limit */
+            ai.setTrafficLeft(trafficAvail);
+        }
         return ai;
-
-        // ai.setTrafficMax(Regex.getSize(dat[1]));
-        // ai.setTrafficLeft((long) (ai.getTrafficMax() * ((100.0 -
-        // Float.parseFloat(dat[0])) / 100.0)));
-
     }
 
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-
         Form form = br.getFormBySubmitvalue("Free+Download");
         br.forceDebug(true);
         br.submitForm(form);
@@ -130,7 +118,6 @@ br.setCookie("http://www.sharedzip.com", "lang", "english");
         this.sleep(wait, downloadLink);
 
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, download, false, 1);
-
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

@@ -870,7 +870,7 @@ abstract public class DownloadInterface {
     private Browser browser;
 
     /** normal stop of download (eg manually or reconnect request) */
-    private boolean externalStop = false;
+    private volatile boolean externalStop = false;
 
     public void setFilenameFix(boolean b) {
         this.fixWrongContentDispositionHeader = b;
@@ -1646,13 +1646,13 @@ abstract public class DownloadInterface {
     }
 
     /** signal that we stopped download external */
-    public void stopDownload() {
+    public synchronized void stopDownload() {
         if (externalStop) return;
         logger.severe("externalStop recieved");
         externalStop = true;
     }
 
-    public boolean externalDownloadStop() {
+    public synchronized boolean externalDownloadStop() {
         return externalStop;
     }
 

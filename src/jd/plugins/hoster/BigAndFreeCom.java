@@ -66,9 +66,9 @@ public class BigAndFreeCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("(The file you requested has been removed|The file you requested is unavailable)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("File Name: </font><font class=.*?>(.*?)</font>").getMatch(0);
+        String filename = br.getRegex("addthis_open\\(this, '', 'http://.*?', '(.*?)'\\)").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("addthis_open\\(this, '', 'http://.*?', '(.*?)'\\)").getMatch(0);
+            filename = br.getRegex("File Name: </font><font class=.*?>(.*?)</font>").getMatch(0);
         }
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());

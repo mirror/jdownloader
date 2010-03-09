@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 import jd.PluginWrapper;
@@ -227,13 +228,14 @@ public class MediafireCom extends PluginForHost {
      * @throws PluginException
      */
     private String[] getParameters() throws Exception {
-        String eval = br.getRegex("(var [a-zA-Z0-9]+='';var [a-zA-Z0-9]+=unes.*?)eval\\(").getMatch(0);
-        String evalWhat = br.getRegex("var [a-zA-Z0-9]+='';var [a-zA-Z0-9]+=unes.*?eval\\((.*?)\\)").getMatch(0);
+        String evalWhat = br.getRegex("var [a-zA-Z0-9]+=unes.*?eval\\((.*?)\\)").getMatch(0);
+        String eval = br.getRegex("(var " + evalWhat + "=.*?var [a-zA-Z0-9]+=unes.*?)eval\\(").getMatch(0);
+        eval = eval.replaceAll("\\\\'", "'");
         String params = null;
         try {
             while (true) {
                 if (eval == null || evalWhat == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                String fun = "function f(){ " + eval + " return " + evalWhat + "} f()";
+                String fun = "function f(){ var " + evalWhat + "=''; " + eval + " return " + evalWhat + "} f()";
                 Context cx = ContextFactory.getGlobal().enter();
                 Scriptable scope = cx.initStandardObjects();
                 Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
@@ -241,6 +243,7 @@ public class MediafireCom extends PluginForHost {
                 if (!params.startsWith("var") && !params.startsWith("eval")) break;
                 eval = new Regex(params, "(var.*?)eval\\(").getMatch(0);
                 evalWhat = new Regex(params, "var.*?eval\\((.*?)\\)").getMatch(0);
+                eval = eval.replaceAll("\\\\'", "'");
             }
         } catch (PluginException e2) {
             throw e2;
@@ -265,6 +268,7 @@ public class MediafireCom extends PluginForHost {
     private String evalLoop(String input) throws Exception {
         String eval = new Regex(input, "(var.*?)(eval\\(|$)").getMatch(0).trim();
         String evalWhat = new Regex(input, "var(.*?)=").getMatch(0).trim();
+        eval = eval.replaceAll("\\\\'", "'");
         String params = null;
         try {
             while (true) {
@@ -277,6 +281,7 @@ public class MediafireCom extends PluginForHost {
                 if (!params.startsWith("var") && !params.startsWith("eval")) break;
                 eval = new Regex(params, "(var.*?)(eval\\(|$)").getMatch(0).trim();
                 evalWhat = new Regex(params, "var(.*?)=").getMatch(0).trim();
+                eval = eval.replaceAll("\\\\'", "'");
             }
         } catch (PluginException e2) {
             throw e2;
@@ -305,8 +310,14 @@ public class MediafireCom extends PluginForHost {
         // br.getRegex("<div class=\".*?\" style=\".*?\" id=\"(.*?)\"").getColumn(0);
         br.getPage("http://www.mediafire.com/dynamic/download.php?qk=" + qk + "&pk=" + pk + "&r=" + r);
         String error = br.getRegex("var et=(.*?);").getMatch(0);
-        /* now we have to js the functions */
-        String evals[] = br.getRegex("(var [a-zA-Z0-9]+='';var [a-zA-Z0-9]+=unescape.*?)eval\\(").getColumn(0);
+        /* now we have to js the functions and find the right js parts */
+        String evalsWhat[] = br.getRegex("eval\\((?!\")(.*?)\\)").getColumn(0);
+        ArrayList<String> evals = new ArrayList<String>();
+        for (String evalWhat : evalsWhat) {
+            String evalThis = br.getRegex("(var " + evalWhat + "=.*?var [a-zA-Z0-9]+=unes.*?)eval\\(").getMatch(0);
+            if (evalThis != null) evals.add(evalThis);
+        }
+        if (evals.size() == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         if (error != null && !error.trim().equalsIgnoreCase("15")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
         /* all var parts to build a downloadurl */
         vars = br.getRegex("<!--(.*?)function").getMatch(0);

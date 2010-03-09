@@ -39,7 +39,7 @@ import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;
 import org.mozilla.javascript.Scriptable;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "Click n Load", "Click n Load" }, urls = { "cnl://.*?\\..*?/.*?/", "http://jdownloader\\.org/cnl/.*?/" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "Click n Load", "Click n Load" }, urls = { "cnl://.*?\\..*?/.*?/", "http://jdownloader\\.org/cnl/.*?/" }, flags = { 0, 0 })
 public class CNL extends PluginForDecrypt {
 
     public CNL(PluginWrapper wrapper) {

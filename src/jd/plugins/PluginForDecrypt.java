@@ -174,7 +174,7 @@ public abstract class PluginForDecrypt extends Plugin {
             progress.doFinalize(15000l);
         } catch (InterruptedException e2) {
             tmpLinks = new ArrayList<DownloadLink>();
-        } catch (Exception e) {
+        } catch (Throwable e) {
             progress.doFinalize();
             JDLogger.exception(e);
         }

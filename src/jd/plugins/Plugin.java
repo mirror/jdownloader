@@ -151,13 +151,13 @@ public abstract class Plugin implements ActionListener {
     }
 
     public void clean() {
-        JDProxy pr=null;
+        JDProxy pr = null;
         if (br != null) {
             pr = br.getProxy();
 
         }
         br = new Browser();
-        if(pr!=null)br.setProxy(pr);
+        if (pr != null) br.setProxy(pr);
     }
 
     /**
@@ -177,7 +177,8 @@ public abstract class Plugin implements ActionListener {
      * @return Der resultierende String
      */
     public String cutMatches(String data) {
-        return data.replaceAll(getSupportedLinks().pattern(), "--CUT--");
+        /* case insensitive pattern */
+        return data.replaceAll("(?i)" + getSupportedLinks().pattern(), "--CUT--");
     }
 
     /**
