@@ -81,7 +81,6 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
     private transient Thread updater;
 
     public FilePackageInfo() {
-        super();
         buildGui();
         fp = null;
         menutitle.setText(JDL.L("gui.linkgrabber.packagetab.title", "FilePackage"));
@@ -123,8 +122,8 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
 
     private void buildGui() {
         tabbedPane = new JTabbedPane();
-        tabbedPane.add(createFilePackageInfo(), JDL.L("gui.fileinfopanel.packagetab", "Package"));
-        tabbedPane.add(createLinkInfo(), JDL.L("gui.fileinfopanel.link", "Downloadlink"));
+        tabbedPane.addTab(JDL.L("gui.fileinfopanel.packagetab", "Package"), JDTheme.II("gui.images.package_opened", 16, 16), createFilePackageInfo());
+        tabbedPane.addTab(JDL.L("gui.fileinfopanel.link", "Downloadlink"), JDTheme.II("gui.images.taskpanes.download", 16, 16), createLinkInfo());
         content.setLayout(new MigLayout("ins 0", "[grow]", "[]"));
         content.add(tabbedPane, "grow");
     }
@@ -378,7 +377,6 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
         if (this.fp != null) {
             update();
         }
-
     }
 
     @Override

@@ -122,14 +122,13 @@ public class ShrLnksBz extends PluginForDecrypt {
             }
             if (br.containsHTML("Die getroffene Auswahl war falsch")) throw new DecrypterException(DecrypterException.CAPTCHA);
         }
-        
+
         // simulate browser
         Browser brc = br.cloneBrowser();
         brc.getPage("http://share-links.biz/scripts/download.js");
         brc.getPage("http://share-links.biz/template/images/flags/en.gif");
         brc.getPage("http://share-links.biz/template/images/flags/de.gif");
-        
-        
+
         // container handling
         if (br.containsHTML("'dlc'")) {
             decryptedLinks = loadcontainer(br, "dlc");
@@ -215,11 +214,9 @@ public class ShrLnksBz extends PluginForDecrypt {
             dlclinks = br.getRegex("ccf container.*?onclick=\"javascript:_get\\('(.*?)'.*?'ccf'\\)").getMatch(0);
         } else if (format.matches("rsdf")) {
             dlclinks = br.getRegex("rsdf container.*?onclick=\"javascript:_get\\('(.*?)'.*?'rsdf'\\)").getMatch(0);
-        } else
-            ;
-        
-        if (dlclinks == null) 
-            return new ArrayList<DownloadLink>();
+        }
+
+        if (dlclinks == null) return new ArrayList<DownloadLink>();
         dlclinks = "http://share-links.biz/get/" + format + "/" + dlclinks;
         String test = Encoding.htmlDecode(dlclinks);
         File file = null;
