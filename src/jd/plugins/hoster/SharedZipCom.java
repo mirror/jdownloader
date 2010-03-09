@@ -53,6 +53,7 @@ public class SharedZipCom extends PluginForHost {
     }
 
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+        requestFileInformation(downloadLink);
         login(account);
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
@@ -74,16 +75,17 @@ public class SharedZipCom extends PluginForHost {
     }
 
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        try {
+     
             this.setBrowserExclusive();
-
+br.setCookie("http://www.sharedzip.com", "lang", "english");
             br.setFollowRedirects(true);
             br.getPage(downloadLink.getDownloadURL());
-            if (br.containsHTML("Die von Ihnen angeforderte Datei konnte nicht gefunden werden")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+          
+            if (br.containsHTML("<Title>File Not Found</Title>")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
             }
-            String fileName = br.getRegex("Sie haben angefordert <font color=\"red\">http://www.sharedzip.com/(.*?)/(.*?)</font> \\((.*?)\\)</font>").getMatch(1);
-            long fileSize = Regex.getSize(br.getRegex("Sie haben angefordert <font color=\"red\">http://www.sharedzip.com/(.*?)/(.*?)</font> \\((.*?)\\)</font>").getMatch(2));
+            String fileName = br.getRegex("You have requested <font color=\"red\">http://www.sharedzip.com/(.*?)/(.*?)</font> \\((.*?)\\)</font>").getMatch(1);
+            long fileSize = Regex.getSize(br.getRegex("You have requested <font color=\"red\">http://www.sharedzip.com/(.*?)/(.*?)</font> \\((.*?)\\)</font>").getMatch(2));
             if (fileName == null || fileSize <= 0) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
             }
@@ -91,9 +93,7 @@ public class SharedZipCom extends PluginForHost {
             downloadLink.setDownloadSize(fileSize);
 
             return AvailableStatus.TRUE;
-        } catch (Exception e) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
+      
     }
 
     @Override
@@ -117,7 +117,7 @@ public class SharedZipCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
 
-        Form form = br.getFormBySubmitvalue("Kostenloser+Download");
+        Form form = br.getFormBySubmitvalue("Free+Download");
         br.forceDebug(true);
         br.submitForm(form);
         String ipblocktime = br.getRegex("You have to wait (.*?) till next download").getMatch(0);
@@ -125,8 +125,8 @@ public class SharedZipCom extends PluginForHost {
             long waittime = Regex.getMilliSeconds(ipblocktime);
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waittime);
         }
-        Form download = br.getFormBySubmitvalue("Datei+herunterladen");
-        int wait = 1000 * Integer.parseInt(br.getRegex("<span id=\"countdown_str\">Warten <span id=\".*\">(\\d+?)</span> </span>").getMatch(0));
+        Form download = br.getFormBySubmitvalue("Download+File");
+        int wait = 1000 * Integer.parseInt(br.getRegex("<span id=\"countdown_str\">Wait <span id=\".*\">(\\d+?)</span>").getMatch(0));
         this.sleep(wait, downloadLink);
 
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, download, false, 1);
