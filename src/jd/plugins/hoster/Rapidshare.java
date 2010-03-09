@@ -79,11 +79,15 @@ public class Rapidshare extends PluginForHost {
 
     private static final String PROPERTY_INCREASE_TICKET = "INCREASE_TICKET";
 
-    private static final String PROPERTY_SELECTED_SERVER = "SELECTED_SERVER#_1";
+    private static final String PROPERTY_SELECTED_SERVER1 = "SELECTED_SERVER_51";
 
-    private static final String PROPERTY_SELECTED_SERVER2 = "SELECTED_SERVER#_2";
+    private static final String PROPERTY_SELECTED_SERVER2 = "SELECTED_SERVER_52";
 
-    private static final String PROPERTY_SELECTED_SERVER3 = "SELECTED_SERVER#_3";
+    private static final String PROPERTY_SELECTED_SERVER3 = "SELECTED_SERVER_53";
+
+    private static final String PROPERTY_SELECTED_SERVER4 = "SELECTED_SERVER_54";
+
+    private static final String PROPERTY_SELECTED_SERVER5 = "SELECTED_SERVER_55";
 
     private static final String PROPERTY_USE_PRESELECTED = "USE_PRESELECTED";
 
@@ -91,23 +95,16 @@ public class Rapidshare extends PluginForHost {
 
     private static final String PROPERTY_USE_TELEKOMSERVER = "USE_TELEKOMSERVER";
 
-    private static String[] serverList1 = new String[] { "cg","cg2","dt","l3","l32","l33","l34","l35","tg","tl","tl2","tl3" };
+    private static String[] serverList1 = new String[] { "cg", "cg2", "dt", "l3", "l32", "l33", "l34", "l35", "tg", "tl", "tl2", "tl3" };
 
-    private static String[] serverList2 = new String[] {  "cg","dt","l3","l32","l33","l34","l35","tg","tg2","tl","tl2","tl3"};
+    private static String[] serverList2 = new String[] { "cg", "dt", "l3", "l32", "l33", "l34", "l35", "tg", "tg2", "tl", "tl2", "tl3" };
 
-    private static String[] serverList3 = new String[] { "cg","dt","l3","l32","l33","l34","tg","tg2","tl","tl2","tl3","eu" };
+    private static String[] serverList3 = new String[] { "cg", "dt", "l3", "l32", "l33", "l34", "tg", "tg2", "tl", "tl2", "tl3", "eu" };
 
-    private static String[] serverList4 = new String[] {  "dt","l3","l32","l33","l34","l35","tg","tg2","tl","tl2","tl3","tl4" };
+    private static String[] serverList4 = new String[] { "dt", "l3", "l32", "l33", "l34", "l35", "tg", "tg2", "tl", "tl2", "tl3", "tl4" };
 
-    private static String[] serverList5 = new String[] { "dt","l3","l32","l33","l34","l35","tg","tl","tl2","tl3","tl4","eu" };
+    private static String[] serverList5 = new String[] { "dt", "l3", "l32", "l33", "l34", "l35", "tg", "tl", "tl2", "tl3", "tl4", "eu" };
 
-    
-    
-   
-    
-   
-    
-    
     final static private Object LOCK = new Object();
 
     final static private Boolean HTMLWORKAROUND = new Boolean(false);
@@ -116,74 +113,29 @@ public class Rapidshare extends PluginForHost {
 
     private static HashMap<String, String> serverMap = new HashMap<String, String>();
     static {
-        //todo:remove doubles
         serverMap.put("Cogent #1", "cg");
         serverMap.put("Cogent #2", "cg2");
+
         serverMap.put("Deutsche Telekom", "dt");
+
         serverMap.put("Level(3) #1", "l3");
         serverMap.put("Level(3) #2", "l32");
         serverMap.put("Level(3) #3", "l33");
         serverMap.put("Level(3) #4", "l34");
         serverMap.put("Level(3) #5", "l35");
-        serverMap.put("Tata Com.", "tg");
-        serverMap.put("TeliaSonera #1", "tl");
-        serverMap.put("TeliaSonera #2", "tl2");
-        serverMap.put("TeliaSonera #3", "tl3");
-        serverMap.put("Cogent", "cg");
-        serverMap.put("Deutsche Telekom", "dt");
-        serverMap.put("Level(3) #1", "l3");
-        serverMap.put("Level(3) #2", "l32");
-        serverMap.put("Level(3) #3", "l33");
-        serverMap.put("Level(3) #4", "l34");
-        serverMap.put("Level(3) #5", "l35");
-        serverMap.put("Tata Com. #1", "tg");
-        serverMap.put("Tata Com. #2", "tg2");
-        serverMap.put("TeliaSonera #1", "tl");
-        serverMap.put("TeliaSonera #2", "tl2");
-        serverMap.put("TeliaSonera #3", "tl3");
-        serverMap.put("Cogent", "cg");
-        serverMap.put("Deutsche Telekom", "dt");
-        serverMap.put("Level(3) #1", "l3");
-        serverMap.put("Level(3) #2", "l32");
-        serverMap.put("Level(3) #3", "l33");
-        serverMap.put("Level(3) #4", "l34");
-        serverMap.put("Tata Com. #1", "tg");
-        serverMap.put("Tata Com. #2", "tg2");
-        serverMap.put("TeliaSonera #1", "tl");
-        serverMap.put("TeliaSonera #2", "tl2");
-        serverMap.put("TeliaSonera #3", "tl3");
-        serverMap.put("euNetworks", "eu");
-        serverMap.put("Deutsche Telekom", "dt");
-        serverMap.put("Level(3) #1", "l3");
-        serverMap.put("Level(3) #2", "l32");
-        serverMap.put("Level(3) #3", "l33");
-        serverMap.put("Level(3) #4", "l34");
-        serverMap.put("Level(3) #5", "l35");
-        serverMap.put("Tata Com. #1", "tg");
-        serverMap.put("Tata Com. #2", "tg2");
+
         serverMap.put("TeliaSonera #1", "tl");
         serverMap.put("TeliaSonera #2", "tl2");
         serverMap.put("TeliaSonera #3", "tl3");
         serverMap.put("TeliaSonera #4", "tl4");
-        serverMap.put("Deutsche Telekom", "dt");
-        serverMap.put("Level(3) #1", "l3");
-        serverMap.put("Level(3) #2", "l32");
-        serverMap.put("Level(3) #3", "l33");
-        serverMap.put("Level(3) #4", "l34");
-        serverMap.put("Level(3) #5", "l35");
-        serverMap.put("Tata Com.", "tg");
-        serverMap.put("TeliaSonera #1", "tl");
-        serverMap.put("TeliaSonera #2", "tl2");
-        serverMap.put("TeliaSonera #3", "tl3");
-        serverMap.put("TeliaSonera #4", "tl4");
+
+        serverMap.put("Tata Com. #1", "tg");
+        serverMap.put("Tata Com. #2", "tg2");
+
         serverMap.put("euNetworks", "eu");
     }
 
     private static final Account dummyAccount = new Account("TRAFSHARE", "TRAFSHARE");
-
-    private static final String PROPERTY_SELECTED_SERVER4 = "SELECTED_SERVER#_4";
-
-    private static final String PROPERTY_SELECTED_SERVER5 = "SELECTED_SERVER#_5";
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
@@ -373,7 +325,7 @@ public class Rapidshare extends PluginForHost {
             return false;
         }
     }
- 
+
     /**
      * requests the API url req. if the http ip is blocked (UK-BT isp returns
      * 500 or 502 error) https is used.
@@ -817,7 +769,7 @@ public class Rapidshare extends PluginForHost {
 
         String postTarget = new Regex(ticketCode, PATTERN_FIND_DOWNLOAD_POST_URL).getMatch(0);
 
-        String server1 = getPluginConfig().getStringProperty(PROPERTY_SELECTED_SERVER, "Cogent #1");
+        String server1 = getPluginConfig().getStringProperty(PROPERTY_SELECTED_SERVER1, "Cogent #1");
         String server2 = getPluginConfig().getStringProperty(PROPERTY_SELECTED_SERVER2, "Cogent #1");
         String server3 = getPluginConfig().getStringProperty(PROPERTY_SELECTED_SERVER3, "Cogent #1");
         String server4 = getPluginConfig().getStringProperty(PROPERTY_SELECTED_SERVER4, "TeliaSonera #4");
@@ -992,7 +944,7 @@ public class Rapidshare extends PluginForHost {
         config.addEntry(cond);
 
         ConfigEntry ce;
-        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getPluginConfig(), PROPERTY_SELECTED_SERVER, m1.toArray(new String[] {}), "#1").setDefaultValue("Cognet #1"));
+        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getPluginConfig(), PROPERTY_SELECTED_SERVER1, m1.toArray(new String[] {}), "#1").setDefaultValue("Cognet #1"));
         ce.setEnabledCondidtion(cond, false);
         config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getPluginConfig(), PROPERTY_SELECTED_SERVER2, m2.toArray(new String[] {}), "#2").setDefaultValue("Cognet #1"));
         ce.setEnabledCondidtion(cond, false);
@@ -1000,7 +952,7 @@ public class Rapidshare extends PluginForHost {
         ce.setEnabledCondidtion(cond, false);
         config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getPluginConfig(), PROPERTY_SELECTED_SERVER4, m4.toArray(new String[] {}), "#4").setDefaultValue("TeliaSonera #4"));
         ce.setEnabledCondidtion(cond, false);
-        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getPluginConfig(), PROPERTY_SELECTED_SERVER3, m5.toArray(new String[] {}), "#5").setDefaultValue("euNetworks"));
+        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getPluginConfig(), PROPERTY_SELECTED_SERVER5, m5.toArray(new String[] {}), "#5").setDefaultValue("euNetworks"));
         ce.setEnabledCondidtion(cond, false);
         config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PROPERTY_USE_TELEKOMSERVER, JDL.L("plugins.hoster.rapidshare.com.telekom", "Telekom Server verwenden falls verfügbar")).setDefaultValue(false));
         ce.setEnabledCondidtion(cond, false);
