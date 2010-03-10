@@ -63,7 +63,7 @@ public class TurboBitNet extends PluginForHost {
             }
         }
         String fileSize = br.getRegex("<b>File size:</b>(.*?)</div>").getMatch(0);
-        if (fileName == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (fileName == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         fileSize = fileSize.replaceAll("М", "M");
         fileSize = fileSize.replaceAll("к", "k");
         if (!fileSize.endsWith("b")) fileSize = fileSize + "b";
