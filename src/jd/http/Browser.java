@@ -101,6 +101,8 @@ public class Browser {
 
     private static JDProxy GLOBAL_PROXY = null;
     private static Logger LOGGER;
+    // added proxy map to find proxy passwords.
+    private static final HashMap<String, JDProxy> PROXIES = new HashMap<String, JDProxy>();
 
     public static Logger getLogger() {
         return LOGGER;
@@ -114,6 +116,7 @@ public class Browser {
         if (LOGGER != null) {
             LOGGER.info("Use global proxy: " + p);
         }
+        PROXIES.put(p.getHost() + ":" + p.getPort(), p);
         GLOBAL_PROXY = p;
     }
 
@@ -982,7 +985,7 @@ public class Browser {
     // @Override
     public String toString() {
         if (request == null) { return "Browser. no request yet"; }
-        return request.toString();
+        return request.toString() + hashCode();
     }
 
     public Regex getRegex(final String string) {
@@ -1212,11 +1215,12 @@ public class Browser {
         String[] ret = logins.get(domain);
         if (ret == null) {
             // see proxy auth
-            if (selectProxy() != null) {
-                if ((selectProxy().getHost() + ":" + selectProxy().getPort()).equalsIgnoreCase(domain)) {
-                    ret = new String[] { selectProxy().getUser(), selectProxy().getPass() };
-                }
+
+            JDProxy proxyUsed = PROXIES.get(domain);
+            if (proxyUsed != null) {
+                ret = new String[] { proxyUsed.getUser(), proxyUsed.getPass() };
             }
+
         }
         return ret;
     }
@@ -1249,6 +1253,9 @@ public class Browser {
     }
 
     public void setProxy(final JDProxy proxy) {
+        System.out.println(this + "" + this.hashCode() + " set proxy " + proxy);
+
+        PROXIES.put(proxy.getHost() + ":" + proxy.getPort(), proxy);
         if (debug) {
             if (LOGGER != null) {
                 LOGGER.info("Use local proxy: " + proxy);
@@ -1290,7 +1297,10 @@ public class Browser {
     public PasswordAuthentication getPasswordAuthentication(final String host, int port) {
         if (port <= 0) port = 80;
         final String[] auth = this.getAuth(host + ":" + port);
-        if (auth == null) return null;
+        if (auth == null) {
+            // auth=auth;
+            return null;
+        }
         if (LOGGER != null) {
             /*
              * Removed logging of plain authentication password!
