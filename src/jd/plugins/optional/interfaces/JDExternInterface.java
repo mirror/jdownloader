@@ -140,6 +140,30 @@ public class JDExternInterface extends PluginOptional {
         LinkGrabberController.getInstance().addLinks(links, false, false);
 
     }
+    
+    /**
+     * This function will transform a message into a JSONP function if callback is specified
+     * @param message content of the request
+     * @param callback the request's callback parameter 
+     * @return the content of the message. if callback != null, packed in valid JSONP construction.
+     */
+    private static String addJSONPCallback(String message,String callback){
+        if(callback != null)
+        {
+            return Encoding.urlDecode(callback, false)+"({\"content\": \""+message+"\"})\r\n";
+        }
+        else
+        {
+            return message+"\r\n";
+        }
+    }
+    
+    /**
+     * @see #addJSONPCallback(String,String)
+     */
+    private static String addJSONPCallback(String message,Request request){
+        return addJSONPCallback(message,request.getParameter("callback"));
+    }
 
     @Override
     public String getIconKey() {
@@ -195,7 +219,6 @@ public class JDExternInterface extends PluginOptional {
         public void handle(Request request, Response response) {
             splitPath = request.getRequestUrl().substring(1).split("[/|\\\\]");
             namespace = splitPath[0];
-
             JDLogger.getLogger().finer(request.toString());
             JDLogger.getLogger().finer(request.getParameters().toString());
 
@@ -224,7 +247,7 @@ public class JDExternInterface extends PluginOptional {
                         WebUpdate.doUpdateCheck(false);
                     }
 
-                } else if (namespace.equalsIgnoreCase("flash")) {
+                } else if (namespace.equalsIgnoreCase("flash") || namespace.equalsIgnoreCase("jsonp")) {
                     if (splitPath.length > 1 && splitPath[1].equalsIgnoreCase("add")) {
                         askPermission(request);
                         /* parse the post data */
@@ -248,9 +271,9 @@ public class JDExternInterface extends PluginOptional {
                                 }
 
                             }.waitForEDT();
-                            response.addContent("success\r\n");
+                            response.addContent(addJSONPCallback("success",request));
                         } else {
-                            response.addContent("failed\r\n");
+                            response.addContent(addJSONPCallback("failed",request));
                         }
                     } else if (splitPath.length > 1 && splitPath[1].equalsIgnoreCase("addcrypted")) {
                         askPermission(request);
@@ -270,7 +293,7 @@ public class JDExternInterface extends PluginOptional {
                                 return null;
                             }
                         }.waitForEDT();
-                        response.addContent("success\r\n");
+                        response.addContent(addJSONPCallback("success",request));
                     } else if (splitPath.length > 1 && splitPath[1].equalsIgnoreCase("addcrypted2")) {
                         askPermission(request);
                         /* parse the post data */
@@ -282,7 +305,7 @@ public class JDExternInterface extends PluginOptional {
                         try {
                             decrypt(crypted, jk, k, passwords, source);
 
-                            response.addContent("success\r\n");
+                            response.addContent(addJSONPCallback("success",request));
                             new GuiRunnable<Object>() {
                                 @Override
                                 public Object runSave() {
@@ -292,17 +315,18 @@ public class JDExternInterface extends PluginOptional {
                             }.waitForEDT();
                         } catch (Exception e) {
                             JDLogger.exception(e);
-                            response.addContent("failed " + e.getMessage() + "\r\n");
+                            
+                            response.addContent(addJSONPCallback("failed " + e.getMessage(),request.getParameters().get("callback")));
                         }
                     } else {
-                        response.addContent(JDUtilities.getJDTitle() + "\r\n");
+                        response.addContent(addJSONPCallback(JDUtilities.getJDTitle(),request.getParameters().get("callback")));
                     }
                 } else if (request.getRequestUrl().equalsIgnoreCase("/jdcheck.js")) {
 
                     response.addContent("jdownloader=true;\r\n");
                     response.addContent("var version='" + JDUtilities.getRevision() + "';\r\n");
 
-                } else if (request.getRequestUrl().equalsIgnoreCase("/crossdomain.xml")) {
+                }  else if (request.getRequestUrl().equalsIgnoreCase("/crossdomain.xml")) {
                     response.addContent("<?xml version=\"1.0\"?>\r\n");
                     response.addContent("<!DOCTYPE cross-domain-policy SYSTEM \"http://www.macromedia.com/xml/dtds/cross-domain-policy.dtd\">\r\n");
                     response.addContent("<cross-domain-policy>\r\n");
