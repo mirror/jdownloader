@@ -96,6 +96,10 @@ public class SharingMatrixCom extends PluginForHost {
         String url = br.getRedirectLocation();
         boolean direct = true;
         if (url == null) {
+            if (br.containsHTML("download limit of 10Gb is over")) {
+                logger.info("Deposit: We are sorry, but your daily Premium user's download limit of 10Gb is over.");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            }
             if (br.containsHTML("no available free download slots left")) {
                 logger.info("Buggy Server: enable DirectDownload as workaround");
                 br.getPage("http://sharingmatrix.com/ajax_scripts/personal.php?query=settings");
@@ -142,6 +146,10 @@ public class SharingMatrixCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 0);
         if (dl.getConnection() != null && dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            if (br.containsHTML("download limit of 10Gb is over")) {
+                logger.info("Deposit: We are sorry, but your daily Premium user's download limit of 10Gb is over.");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            }
             if (br.containsHTML("Incorrect password for this file.")) {
                 logger.info("Password wrong");
                 downloadLink.setProperty("pass", null);

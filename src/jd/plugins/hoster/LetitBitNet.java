@@ -78,7 +78,9 @@ public class LetitBitNet extends PluginForHost {
         if (premiumform == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         premiumform.put("pass", Encoding.urlEncode(account.getPass()));
         br.submitForm(premiumform);
-        String url = br.getRegex("(http://[^/]*?/download.*?/.*?)(\"|')").getMatch(0);
+        /* because there can be another link to a downlodmanager first */
+        String url = br.getRegex("(http://[^/]*?/download.*?/.*?)(\"|').*?(http://[^/]*?/download.*?/.*?)(\"|')").getMatch(2);
+        if (url == null) url = br.getRegex("(http://[^/]*?/download.*?/.*?)(\"|')").getMatch(0);
         if (url == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         /* we have to wait little because server too buggy */
         sleep(5000, downloadLink);
@@ -144,7 +146,9 @@ public class LetitBitNet extends PluginForHost {
             String nextpage = br.getRegex("(http://s\\d+.letitbit.net/tmpl/tmpl_frame_top.*?)\"").getMatch(0);
             br.getPage(nextpage);
             /* letitbit and vipfile share same hosting server ;) */
-            url = br.getRegex("(http://[^/]*?/download.*?/.*?)(\"|')").getMatch(0);
+            /* because there can be another link to a downlodmanager first */
+            url = br.getRegex("(http://[^/]*?/download.*?/.*?)(\"|').*?(http://[^/]*?/download.*?/.*?)(\"|')").getMatch(2);
+            if (url == null) url = br.getRegex("(http://[^/]*?/download.*?/.*?)(\"|')").getMatch(0);
         }
         if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         /* we have to wait little because server too buggy */

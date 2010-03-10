@@ -24,8 +24,10 @@ import java.util.LinkedList;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Request;
+import jd.nutils.DynByteBuffer;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.io.JDIO;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -142,6 +144,28 @@ public class MegaVideo extends PluginForHost {
         link.setName(link.getName() + ".flv");
         if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, false, 1);
+        if (dl.getConnection().getContentLength() == -1) {
+            /* no content length= waiting page */
+            DynByteBuffer buffer = new DynByteBuffer(1024);
+            int read = -1;
+            while ((read = dl.getConnection().getInputStream().read()) != -1) {
+                /*
+                 * filter invalid chars
+                 */
+                if (((byte) read) > 33) buffer.put((byte) read);
+                if (buffer.position() > 8192) {
+                    logger.severe("more than 8kb loaded, but no content-length!");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            }
+            String ret = buffer.toString();
+            String waittime = new Regex(ret, "wait(\\d+)").getMatch(0);
+            if (waittime != null) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(waittime) * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
+            }
+        }
         dl.startDownload();
     }
 
