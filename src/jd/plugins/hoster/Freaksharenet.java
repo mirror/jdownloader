@@ -154,11 +154,11 @@ public class Freaksharenet extends PluginForHost {
         if (ttt != null) tt = Integer.parseInt(ttt);
         if (tt > 180) {
             if (waitReconnecttime && tt < 701)
-                sleep(tt * 1001l, downloadLink);
+                sleep((tt + 2) * 1001l, downloadLink);
             else
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, tt * 1001l);
         }
-        if (!waitReconnecttime) sleep(tt * 1001l, downloadLink);
+        if (!waitReconnecttime) sleep((tt + 2) * 1001l, downloadLink);
         br.submitForm(form);
         form = br.getForm(0);
         if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -181,6 +181,10 @@ public class Freaksharenet extends PluginForHost {
         URLConnectionAdapter con = dl.getConnection();
         if (!con.isContentDisposition()) {
             br.followConnection();
+            if (br.containsHTML("bad try")) {
+                logger.warning("Hoster said \"bad try\" which means that jd didn't wait enough time before trying to start the download!");
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
             if (br.containsHTML("your Traffic is used up for today")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1001);
             if (br.containsHTML("No Downloadserver. Please try again")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No Downloadserver. Please try again later", 15 * 60 * 1000l);
             if (br.containsHTML("you cant  download more then 1 at time")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1001);

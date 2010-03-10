@@ -59,12 +59,20 @@ public class WebShareNet extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         String captchaurl = "http://www.web-share.net/captcha";
-        Form captchaForm = br.getFormbyProperty("name", "fd");
-        if (captchaForm == null) captchaForm = br.getForm(1);
-        if (captchaForm == null || !br.containsHTML("/captcha")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String code = getCaptchaCode(captchaurl, downloadLink);
-        captchaForm.put("captcha", code);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, captchaForm, false, 1);
+        for (int i = 0; i <= 5; i++) {
+            Form captchaForm = br.getFormbyProperty("name", "fd");
+            if (captchaForm == null) captchaForm = br.getForm(1);
+            if (captchaForm == null || !br.containsHTML("/captcha")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            String code = getCaptchaCode(captchaurl, downloadLink);
+            captchaForm.put("captcha", code);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, captchaForm, false, 1);
+            if (dl.getConnection().getContentType().contains("html")) {
+                br.followConnection();
+                if (br.containsHTML("(Zadali ste nesprávny overovací kód|/captcha)")) continue;
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            break;
+        }
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML("(Zadali ste nesprávny overovací kód|/captcha)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
