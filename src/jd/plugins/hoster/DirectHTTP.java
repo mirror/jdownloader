@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -36,10 +37,12 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "DirectHTTP" }, urls = { "directhttp://.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "DirectHTTP", "http links" }, urls = { "directhttp://.+", "https?viajd://[\\d\\w\\.:\\-@]*/.*\\.(otrkey|ac3|3gp|7zip|7z|aiff|aif|aifc|au|avi|bin|bz2|ccf|cue|deb|divx|dlc|doc|docx|dot|exe|ff|flv|gif|gz|iwd|iso|java|jpg|jpeg|m4v|mkv|mp2|mp3|mp4|mov|movie|mpe|mpeg|mpg|msi|msu|nfo|oga|ogg|ogv|pkg|png|pdf|ppt|pptx|pps|ppz|pot|psd|qt|rmvb|rar|r\\d+|\\d+|rpm|run|rsdf|rtf|sh|srt|snd|sfv|tar|tif|tiff|viv|vivo|wav|wmv|xla|xls|zip|z\\d+|ts|load|xpi|_[_a-z]{2}|djvu)" }, flags = { 0, 0 })
 public class DirectHTTP extends PluginForHost {
 
     private String contentType;
+
+    static public final String ENDINGS = "\\.(cbr|cbz|otrkey|ac3|3gp|7zip|7z|aiff|aif|aifc|au|avi|bin|bz2|ccf|cue|deb|divx|dlc|doc|docx|dot|exe|ff|flv|gif|gz|iwd|iso|java|jpg|jpeg|m4v|mkv|mp2|mp3|mp4|mov|movie|mpe|mpeg|mpg|msi|msu|nfo|oga|ogg|ogv|pkg|png|pdf|ppt|pptx|pps|ppz|pot|psd|qt|rmvb|rar|r\\d+|\\d+|rpm|run|rsdf|rtf|sh|srt|snd|sfv|tar|tif|tiff|viv|vivo|wav|wmv|xla|xls|zip|z\\d+|ts|load|xpi|_[_a-z]{2}|djvu)";
 
     public DirectHTTP(PluginWrapper wrapper) {
         super(wrapper);
@@ -87,10 +90,21 @@ public class DirectHTTP extends PluginForHost {
         }
     }
 
-    private URLConnectionAdapter prepareConnection(Browser br, DownloadLink downloadLink) throws IOException {
-        URLConnectionAdapter urlConnection = null;
+    private void setCustomHeaders(Browser br, DownloadLink downloadLink) {
+        /* allow customized headers, eg useragent */
+        ArrayList<String[]> custom = downloadLink.getGenericProperty("customHeader", new ArrayList<String[]>());
+        if (custom != null && custom.size() > 0) {
+            for (String[] header : custom) {
+                br.getHeaders().put(header[0], header[1]);
+            }
+        }
         if (downloadLink.getStringProperty("referer", null) != null) br.getHeaders().put("Referer", downloadLink.getStringProperty("referer", null));
         if (downloadLink.getStringProperty("cookies", null) != null) br.getCookies(downloadLink.getDownloadURL()).add(Cookies.parseCookies(downloadLink.getStringProperty("cookies", null), Browser.getHost(downloadLink.getDownloadURL()), null));
+    }
+
+    private URLConnectionAdapter prepareConnection(Browser br, DownloadLink downloadLink) throws IOException {
+        URLConnectionAdapter urlConnection = null;
+        setCustomHeaders(br, downloadLink);
         if (downloadLink.getStringProperty("post", null) != null) {
             urlConnection = br.openPostConnection(downloadLink.getDownloadURL(), downloadLink.getStringProperty("post", null));
         } else {
@@ -152,7 +166,11 @@ public class DirectHTTP extends PluginForHost {
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceAll("^directhttp://", ""));
+        if (link.getDownloadURL().startsWith("directhttp")) {
+            link.setUrlDownload(link.getDownloadURL().replaceAll("^directhttp://", ""));
+        } else {
+            link.setUrlDownload(link.getDownloadURL().replaceAll("httpviajd://", "http://").replaceAll("httpsviajd://", "https://"));
+        }
         BasicAuthfromURL(link);
     }
 
@@ -167,9 +185,7 @@ public class DirectHTTP extends PluginForHost {
         if (downloadLink.getBooleanProperty("nochunk", false) == true || resume == false) {
             chunks = 1;
         }
-
-        if (downloadLink.getStringProperty("referer", null) != null) br.getHeaders().put("Referer", downloadLink.getStringProperty("referer", null));
-        if (downloadLink.getStringProperty("cookies", null) != null) br.getCookies(downloadLink.getDownloadURL()).add(Cookies.parseCookies(downloadLink.getStringProperty("cookies", null), Browser.getHost(downloadLink.getDownloadURL()), null));
+        setCustomHeaders(br, downloadLink);
         if (downloadLink.getStringProperty("post", null) != null) {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), downloadLink.getStringProperty("post", null), resume, chunks);
         } else {

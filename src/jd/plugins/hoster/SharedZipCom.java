@@ -59,6 +59,7 @@ public class SharedZipCom extends PluginForHost {
         login(account);
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
+        String passCode = null;
         // direct download or not?
         if (br.getRedirectLocation() != null) {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.getRedirectLocation(), true, 1);
@@ -66,11 +67,32 @@ public class SharedZipCom extends PluginForHost {
             br.loadConnection(null);
             br.forceDebug(true);
             Form download = br.getFormBySubmitvalue("Download+File");
+            if (download == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (br.containsHTML("(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)")) {
+
+                logger.info("The downloadlink seems to be password protected.");
+                if (downloadLink.getStringProperty("pass", null) == null) {
+                    passCode = Plugin.getUserInput("Password?", downloadLink);
+                } else {
+                    /* gespeicherten PassCode holen */
+                    passCode = downloadLink.getStringProperty("pass", null);
+                }
+                download.put("password", passCode);
+                logger.info("Put password \"" + passCode + "\" entered by user in the DLForm.");
+            }
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, download, true, 1);
         }
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
+            if (br.containsHTML("(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input|Wrong password)")) {
+                logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
+                downloadLink.setProperty("pass", null);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (passCode != null) {
+            downloadLink.setProperty("pass", passCode);
         }
         dl.startDownload();
     }

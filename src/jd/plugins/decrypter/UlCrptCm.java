@@ -137,7 +137,12 @@ public class UlCrptCm extends PluginForDecrypt {
         else
             dlclinks = br.getRegex("(http://www\\.xeem\\.in/download-" + format + "-.*?)\"").getColumn(0);
         if (dlclinks == null || dlclinks.length == 0) return null;
-        for (String link : dlclinks) {
+        for (int index = dlclinks.length - 1; index >= 0; index--) {
+            /*
+             * walk from end to beginning, so we load the all in one container
+             * first
+             */
+            String link = dlclinks[index];
             String test = Encoding.htmlDecode(link);
             File file = null;
             URLConnectionAdapter con = brc.openGetConnection(link);
@@ -155,7 +160,8 @@ public class UlCrptCm extends PluginForDecrypt {
             }
 
             if (file != null && file.exists() && file.length() > 100) {
-//                decryptedLinks = JDUtilities.getController().getContainerLinks(file);
+                // decryptedLinks =
+                // JDUtilities.getController().getContainerLinks(file);
                 if (decryptedLinks.size() > 0) return decryptedLinks;
             } else {
                 return null;

@@ -27,13 +27,16 @@ public class AppleTrailer extends PluginForDecrypt {
             /* custom trailer page */
             br.getPage(parameter.toString() + "/hd/");
         }
+        String customAgent[] = new String[] { "User-Agent", "QuickTime/7.6.2 (qtver=7.6.2;cpu=IA32;os=Mac 10.5.8)" };
+        ArrayList<String[]> customHeaders = new ArrayList<String[]>();
+        customHeaders.add(customAgent);
         hits = br.getRegex("class=\"hd\".*?href=\"(http://.*?apple.*?_h?\\d+p\\.mov)\"").getColumn(0);
         if (hits.length == 0) return decryptedLinks;
         String title = br.getRegex("var trailerTitle = '(.*?)';").getMatch(0);
         FilePackage fp = FilePackage.getInstance();
         if (title != null) fp.setName(title.trim() + " Trailers");
         for (String hit : hits) {
-            String url = hit.replaceFirst("http://.*?\\.com/", "http://www.apple.com/");
+            String url = hit.replaceFirst("movies\\.", "www.");
             String format = new Regex(url, "_h?(\\d+)p").getMatch(0);
             if (format == null) continue;
             String size = br.getRegex("class=\"hd\".*?>" + format + "p \\((\\d+ ?MB)\\)").getMatch(0);
@@ -42,10 +45,10 @@ public class AppleTrailer extends PluginForDecrypt {
             DownloadLink dlLink = createDownloadlink(url);
             if (size != null) dlLink.setDownloadSize(Regex.getSize(size));
             dlLink.setAvailable(true);
+            dlLink.setProperty("customHeader", customHeaders);
             decryptedLinks.add(dlLink);
         }
         if (title != null) fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }
-
 }

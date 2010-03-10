@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -404,7 +405,7 @@ public class HTTPLiveHeader extends ReconnectMethod {
                 br.setConnectTimeout(5000);
                 br.setReadTimeout(5000);
                 if (requestProperties != null) {
-                    br.getHeaders().putAll(requestProperties);
+                    br.getHeaders().putAll((Map<String, String>) requestProperties);
                 }
                 if (requestType.equalsIgnoreCase("GET")) {
                     br.getPage(http + host + path);

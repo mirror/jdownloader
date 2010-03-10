@@ -20,7 +20,7 @@ import java.util.regex.Pattern;
 
 import jd.config.SubConfiguration;
 import jd.parser.Regex;
-import jd.plugins.hoster.HTTPAllgemein;
+import jd.plugins.hoster.DirectHTTP;
 
 public class LinkGrabberPackager {
     public static final Pattern pat0 = Pattern.compile("(.*)(\\.|_|-)pa?r?t?\\.?[0-9]+.rar$", Pattern.CASE_INSENSITIVE);
@@ -35,7 +35,7 @@ public class LinkGrabberPackager {
     public static final Pattern pat9 = Pattern.compile("(.*)\\.a.$", Pattern.CASE_INSENSITIVE);
 
     public static final Pattern pat10 = Pattern.compile("(.*)\\._((_[a-z]{1})|([a-z]{2}))(\\.|$)");
-    public static final Pattern pat11 = Pattern.compile("(.*)(\\.|_|-)[\\d]+($|" + HTTPAllgemein.ENDINGS + "$)", Pattern.CASE_INSENSITIVE);
+    public static final Pattern pat11 = Pattern.compile("(.*)(\\.|_|-)[\\d]+($|" + DirectHTTP.ENDINGS + "$)", Pattern.CASE_INSENSITIVE);
 
     public static final Pattern pat12 = Pattern.compile("(CD\\d+)", Pattern.CASE_INSENSITIVE);
     public static final Pattern pat13 = Pattern.compile("(part\\d+)", Pattern.CASE_INSENSITIVE);

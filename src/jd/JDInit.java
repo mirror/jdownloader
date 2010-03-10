@@ -49,6 +49,7 @@ import jd.gui.swing.laf.LookAndFeelController;
 import jd.http.Browser;
 import jd.http.JDProxy;
 import jd.nutils.ClassFinder;
+import jd.nutils.Formatter;
 import jd.nutils.JDFlags;
 import jd.nutils.OSDetector;
 import jd.nutils.encoding.Encoding;
@@ -417,7 +418,6 @@ public class JDInit {
         try {
             for (final Class<?> c : ClassFinder.getClasses("jd.plugins.decrypter", getPluginClassLoader())) {
                 try {
-                    LOG.finest("Try to load " + c);
                     if (c != null && c.getAnnotations().length > 0) {
                         final DecrypterPlugin help = (DecrypterPlugin) c.getAnnotations()[0];
 
@@ -429,7 +429,7 @@ public class JDInit {
                         String[] patterns = help.urls();
                         int[] flags = help.flags();
                         final String revision = help.revision();
-
+                        LOG.finest("Try to load " + c + " Revision: " + Formatter.getRevision(revision));
                         // TODO: Change this String to test the changes from
                         // Wordpress/CMS/Redirector/... Decrypters WITHOUT
                         // commiting
@@ -457,9 +457,12 @@ public class JDInit {
                             try {
                                 new DecryptPluginWrapper(names[i], c.getSimpleName(), patterns[i], flags[i], revision);
                             } catch (Throwable e) {
+                                LOG.severe("could not load " + c);
                                 JDLogger.exception(e);
                             }
                         }
+                    } else {
+                        LOG.finest("could not load " + c);
                     }
                 } catch (Throwable e) {
                     JDLogger.exception(e);
@@ -496,7 +499,6 @@ public class JDInit {
         try {
             for (final Class<?> c : ClassFinder.getClasses("jd.plugins.hoster", getPluginClassLoader())) {
                 try {
-                    LOG.finest("Try to load " + c);
                     final Annotation[] cAnnotations = (c == null) ? null : c.getAnnotations();
                     if (cAnnotations != null && cAnnotations.length > 0) {
                         final HostPlugin help = (HostPlugin) cAnnotations[0];
@@ -508,15 +510,19 @@ public class JDInit {
                         final String[] names = help.names();
                         final int length = names.length;
                         final String revision = help.revision();
+                        LOG.finest("Try to load " + c + " Revision: " + Formatter.getRevision(revision));
                         final String[] urls = help.urls();
                         final int[] flags = help.flags();
                         for (int i = 0; i < length; i++) {
                             try {
                                 new HostPluginWrapper(names[i], cSimpleName, urls[i], flags[i], revision);
                             } catch (Throwable e) {
+                                LOG.severe("could not load " + c);
                                 JDLogger.exception(e);
                             }
                         }
+                    } else {
+                        LOG.severe("could not load " + c);
                     }
                 } catch (Throwable e) {
                     JDLogger.exception(e);

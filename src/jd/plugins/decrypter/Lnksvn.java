@@ -82,7 +82,7 @@ public class Lnksvn extends PluginForDecrypt {
         String[] container = br.getRegex("\\.href\\=unescape\\(\\'(.*?)\\'\\)\\;").getColumn(0);
 
         String[] pages = br.getRegex("\\?s=(\\d+)\\#down").getColumn(0);
-        //if there are less than 30 links, there are no pages links.
+        // if there are less than 30 links, there are no pages links.
         if (pages.length == 0) pages = new String[] { "1" };
         int pageID = 1;
         int foundlinks = 0;
@@ -107,6 +107,14 @@ public class Lnksvn extends PluginForDecrypt {
                             con.disconnect();
                         }
                     } else if (test.endsWith(".rsdf")) {
+                        URLConnectionAdapter con = clone.openGetConnection(test);
+                        if (con.getResponseCode() == 200) {
+                            file = JDUtilities.getResourceFile("tmp/linksave/" + test.replace("http://linksave.in", ""));
+                            clone.downloadConnection(file, con);
+                        } else {
+                            con.disconnect();
+                        }
+                    } else if (test.endsWith(".dlc")) {
                         URLConnectionAdapter con = clone.openGetConnection(test);
                         if (con.getResponseCode() == 200) {
                             file = JDUtilities.getResourceFile("tmp/linksave/" + test.replace("http://linksave.in", ""));
@@ -190,6 +198,7 @@ public class Lnksvn extends PluginForDecrypt {
                 if (link2 == null) link2 = br.getRegex("URL=([^\"]*)\"").getMatch(0);
                 br.getPage(link2);
                 link2 = Encoding.htmlDecode(br.getRegex("iframe src=\"([^\"]*)\"").getMatch(0));
+                if (link2 == null && br.getRedirectLocation() != null) link2 = br.getRedirectLocation();
                 if (link2 == null) {
                     js = new JavaScript(br);
                     js.runPage();
