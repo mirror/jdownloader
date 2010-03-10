@@ -195,10 +195,10 @@ public class Uploadedto extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         String id = new Regex(downloadLink.getDownloadURL(), "uploaded.to/file/(.*?)/").getMatch(0);
-
+        try {
         br.getPage("http://uploaded.to/api/file?id=" + id);
         String[] lines = Regex.getLines(br + "");
-        try {
+      
             String fileName = lines[0].trim();
 
             long fileSize = Long.parseLong(lines[1].trim());
