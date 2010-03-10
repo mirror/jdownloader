@@ -266,7 +266,7 @@ public class RouterUtils {
 
         threader.getBroadcaster().addListener(threader.new WorkerListener() {
             @Override
-            public void onThreadException(Threader th, JDRunnable job, Exception e) {
+            public void onThreadException(Threader th, JDRunnable job, Throwable e) {
             }
 
             @Override

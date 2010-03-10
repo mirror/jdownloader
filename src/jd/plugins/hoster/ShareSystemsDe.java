@@ -80,7 +80,7 @@ public class ShareSystemsDe extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.forceDebug(true);
-        br.getPage(downloadLink.getDownloadURL());
+  
         String hash = new Regex(downloadLink.getDownloadURL().toLowerCase(), "hash=([0-9a-f]{32})").getMatch(0);
 
         // method returns either the filename or an errorid.

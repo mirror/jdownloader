@@ -170,7 +170,7 @@ public class GetRouterInfo {
         th2.getBroadcaster().addListener(th2.new WorkerListener() {
 
             // @Override
-            public void onThreadException(Threader th, JDRunnable job, Exception e) {
+            public void onThreadException(Threader th, JDRunnable job, Throwable e) {
             }
 
             // @Override

@@ -443,7 +443,7 @@ public class HTTPDownload extends DownloadInterface {
         chunks.getBroadcaster().addListener(chunks.new WorkerListener() {
 
             // @Override
-            public void onThreadException(Threader th, JDRunnable job, Exception e) {
+            public void onThreadException(Threader th, JDRunnable job, Throwable e) {
                 System.err.println(job);
                 JDLogger.exception(e);
             }

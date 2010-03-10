@@ -176,7 +176,7 @@ public class Threader {
                 }
                 this.runnableAlive = true;
                 runnable.go();
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 for (int i = 0; i < broadcaster.size(); i++) {
                     broadcaster.get(i).onThreadException(Threader.this, getRunnable(), e);
                 }
@@ -184,8 +184,9 @@ public class Threader {
                 // JDLogger.exception(e);
             } finally {
                 this.runnableAlive = false;
+                onWorkerFinished(this);
             }
-            onWorkerFinished(this);
+           
         }
 
         public boolean isRunnableAlive() {
@@ -200,7 +201,7 @@ public class Threader {
 
         public abstract void onThreadStarts(Threader threader, JDRunnable runnable);
 
-        public abstract void onThreadException(Threader th, JDRunnable job, Exception e);
+        public abstract void onThreadException(Threader th, JDRunnable job, Throwable e);
 
     }
 
