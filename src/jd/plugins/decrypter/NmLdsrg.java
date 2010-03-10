@@ -26,7 +26,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anime-loads.org" }, urls = { "http://[\\w\\.]*?anime-loads\\.org/Weiterleitung/\\?cryptid=[0-9a-z]{32}|http://[\\w\\.]*?anime-loads\\.org/page.php\\?id=[0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anime-loads.org" }, urls = { "http://[\\w\\.]*?anime-loads\\.org/Weiterleitung/\\?cryptid=[0-9a-z]{32}|http://[\\w\\.]*?anime-loads\\.org/page.php\\?id=[0-9]+|http://[\\w\\.]*?anime-loads\\.org/media/\\d+" }, flags = { 0 })
 public class NmLdsrg extends PluginForDecrypt {
 
     public NmLdsrg(PluginWrapper wrapper) {
@@ -51,18 +51,21 @@ public class NmLdsrg extends PluginForDecrypt {
             for (String call : calls) {
                 links.add(getLink(call));
             }
+            calls = br.getRegex("(http://[\\w\\.]*?anime-loads\\.org/[^/]*?/\\d+/[a-zA-Z]*?\\.0)").getColumn(0);
+            for (String call : calls) {
+                links.add(call);
+            }
         }
 
         for (String link : links) {
             br.getPage(link);
             String dllink = Encoding.htmlDecode(br.getRegex("<meta http-equiv=\"refresh\" content=\"5; url=(.*?)\">").getMatch(0));
-            if (dllink == null) { return null; }
             DownloadLink dl = createDownloadlink(dllink);
             dl.setSourcePluginPasswordList(passwords);
             dl.setDecrypterPassword(passwords.get(0));
             decryptedLinks.add(dl);
         }
-
+        if (links.size() > 0 && decryptedLinks.size() == 0) return null;
         return decryptedLinks;
     }
 

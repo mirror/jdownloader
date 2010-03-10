@@ -159,7 +159,7 @@ public class UnrarWrapper extends Thread implements JDRunnable {
     public ArrayList<ArchivFile> getFiles() {
         return files;
     }
-    
+
     /**
      * Checks if the extracted file(s) has enough space.
      * 
@@ -167,33 +167,29 @@ public class UnrarWrapper extends Thread implements JDRunnable {
      * @return
      */
     private boolean checkSize() {
-        if(System.getProperty("java.version").contains("1.5")) {
-            return true;
-        }
-        
+        if (System.getProperty("java.version").contains("1.5")) { return true; }
+
         File f = extractTo;
-        
-        if(f == null) {
+
+        if (f == null) {
             f = file;
         }
-        
-        while(!f.exists()) {
+
+        while (!f.exists()) {
             f = f.getParentFile();
-            
-            if(f == null) return false;
+
+            if (f == null) return false;
         }
 
-        //Set 500MB extra Buffer
+        // Set 500MB extra Buffer
         long size = 1024 * 1024 * 1024 * 500;
-        
-        for(DownloadLink dlink : DownloadWatchDog.getInstance().getRunningDownloads()) {
+
+        for (DownloadLink dlink : DownloadWatchDog.getInstance().getRunningDownloads()) {
             size += dlink.getDownloadSize() - dlink.getDownloadCurrent();
         }
-        
-        if(f.getUsableSpace() < size + totalSize) {
-            return false;
-        }
-       
+
+        if (f.getUsableSpace() < size + totalSize) { return false; }
+
         return true;
     }
 
@@ -202,11 +198,11 @@ public class UnrarWrapper extends Thread implements JDRunnable {
         try {
             fireEvent(JDUnrarConstants.WRAPPER_STARTED);
             if (open()) {
-                if(!checkSize()) {
+                if (!checkSize()) {
                     fireEvent(JDUnrarConstants.NOT_ENOUGH_SPACE);
                     return;
                 }
-                
+
                 if (this.isProtected && this.password == null) {
                     fireEvent(JDUnrarConstants.WRAPPER_CRACK_PASSWORD);
 
@@ -988,6 +984,10 @@ public class UnrarWrapper extends Thread implements JDRunnable {
                 if ((match = new Regex(latestLine, " Total errors:").getMatch(0)) != null) {
                     statusid = JDUnrarConstants.WRAPPER_EXTRACTION_FAILED;
                     exec.interrupt();
+                }
+
+                if ((match = new Regex(latestLine, "(No files to extract)").getMatch(0)) != null) {
+                    exception = new Exception("Files already exist!");
                 }
                 if ((match = new Regex(latestLine, "CRC failed in (.*?) \\(").getMatch(0)) != null) {
                     statusid = JDUnrarConstants.WRAPPER_EXTRACTION_FAILED_CRC;
