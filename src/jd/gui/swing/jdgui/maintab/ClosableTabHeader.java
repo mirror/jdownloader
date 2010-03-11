@@ -16,9 +16,12 @@
 
 package jd.gui.swing.jdgui.maintab;
 
+import java.awt.event.MouseEvent;
+
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
+import jd.gui.swing.jdgui.interfaces.JDMouseAdapter;
 import jd.gui.swing.jdgui.views.ClosableView;
 import net.miginfocom.swing.MigLayout;
 
@@ -26,8 +29,20 @@ public class ClosableTabHeader extends JPanel {
 
     private static final long serialVersionUID = 4463352125800695922L;
 
-    public ClosableTabHeader(ClosableView view) {
+    public ClosableTabHeader(final ClosableView view) {
         setLayout(new MigLayout("ins 0", "[grow,fill]", "[16!]"));
+        setOpaque(false);
+
+        addMouseListener(new JDMouseAdapter() {
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                if (e.getButton() == MouseEvent.BUTTON2) {
+                    view.close();
+                }
+            }
+
+        });
 
         putClientProperty("paintActive", Boolean.TRUE);
 
@@ -37,6 +52,6 @@ public class ClosableTabHeader extends JPanel {
 
         add(label);
         add(view.getCloseButton(), "dock east, hidemode 3,gapleft 5,height 16!, width 16!");
-        setOpaque(false);
     }
+
 }

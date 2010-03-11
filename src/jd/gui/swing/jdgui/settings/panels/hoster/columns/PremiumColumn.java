@@ -16,44 +16,28 @@
 
 package jd.gui.swing.jdgui.settings.panels.hoster.columns;
 
-import jd.HostPluginWrapper;
-import jd.gui.swing.components.table.JDCheckBoxTableColumn;
-import jd.gui.swing.components.table.JDTableModel;
+import javax.swing.Icon;
 
-public class PremiumColumn extends JDCheckBoxTableColumn {
+import jd.HostPluginWrapper;
+import jd.gui.swing.components.table.JDIconColumn;
+import jd.gui.swing.components.table.JDTableModel;
+import jd.utils.JDTheme;
+
+public class PremiumColumn extends JDIconColumn {
 
     private static final long serialVersionUID = 7674821108904765680L;
 
+    private final Icon icon;
+
     public PremiumColumn(String name, JDTableModel table) {
         super(name, table);
+
+        icon = JDTheme.II("gui.images.premium", 16, 16);
     }
 
     @Override
-    public boolean isEditable(Object obj) {
-        return false;
-    }
-
-    @Override
-    public boolean isEnabled(Object obj) {
-        return true;
-    }
-
-    @Override
-    public boolean isSortable(Object obj) {
-        return false;
-    }
-
-    @Override
-    public void sort(Object obj, boolean sortingToggle) {
-    }
-
-    @Override
-    protected boolean getBooleanValue(Object value) {
-        return ((HostPluginWrapper) value).isLoaded() && ((HostPluginWrapper) value).isPremiumEnabled();
-    }
-
-    @Override
-    protected void setBooleanValue(boolean value, Object object) {
+    protected Icon getIcon(Object value) {
+        return ((HostPluginWrapper) value).isLoaded() && ((HostPluginWrapper) value).isPremiumEnabled() ? icon : null;
     }
 
 }
