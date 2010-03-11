@@ -89,7 +89,6 @@ public class DivShareCom extends PluginForHost {
             String dllink;
             dllink = br.getRegex("refresh\" content=\"1; url=(.*?)\" />").getMatch(0);
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            link.setFinalFileName(null);
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
             dl.startDownload();
 
@@ -121,7 +120,7 @@ public class DivShareCom extends PluginForHost {
                 br.submitForm(pw);
                 pw = br.getFormbyKey("gallery_password");
                 if (pw != null) {
-                    JDLogger.getLogger().warning("Wrong Password for " + downloadLink + ". YOu will need the correct password to download.");
+                    JDLogger.getLogger().warning("Wrong Password for " + downloadLink + ". You will need the correct password to download this file.");
                 } else {
                     downloadLink.setProperty("pass", password);
                     getPluginConfig().setProperty("pass", password);
@@ -146,7 +145,7 @@ public class DivShareCom extends PluginForHost {
             br.setFollowRedirects(false);
 
             if (con.isContentDisposition()) {
-                downloadLink.setFinalFileName(Plugin.getFileNameFromDispositionHeader(con.getHeaderField("Content-Disposition")));
+                downloadLink.setFinalFileName(Plugin.getFileNameFromDispositionHeader(con.getHeaderField("Content-Disposition")).replace("_", "."));
                 downloadLink.setDownloadSize(con.getContentLength());
                 return AvailableStatus.TRUE;
             }
@@ -172,9 +171,8 @@ public class DivShareCom extends PluginForHost {
             if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             // parameter.setName(filename.trim());
 
-            downloadLink.setName(filename.replaceAll("\\)|\\(", ""));
+            downloadLink.setName(filename.replaceAll("(\\)|\\()", "").replace("_", "."));
             downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
-            // http://www.divshare.com/download/718676-89e
         }
         return AvailableStatus.TRUE;
     }

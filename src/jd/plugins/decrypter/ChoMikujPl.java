@@ -58,33 +58,31 @@ public class ChoMikujPl extends PluginForDecrypt {
         for (String page : lolpages) {
             if (!pages.contains(page)) pages.add(page);
         }
-        int counter = 0;
         progress.setRange(pages.size());
         for (int i = 0; i < pages.size(); ++i) {
-            String postdata = "ctl00%24CT%24FW%24SubfolderID=" + subFolderID.trim() + "&GalSortType=0&GalPage=" + counter + "&__EVENTTARGET=ctl00%24CT%24FW%24RefreshButton&__ASYNCPOST=true&";
+            String postdata = "ctl00%24CT%24FW%24SubfolderID=" + subFolderID.trim() + "&GalSortType=0&GalPage=" + i + "&__EVENTTARGET=ctl00%24CT%24FW%24RefreshButton&__ASYNCPOST=true&";
             br.postPage(parameter, postdata);
-            // This regex is the buggy thing here!
+            // Every full page has 24 links (pictures)
+            // This regex finds all links to PICTUREs, the site also got .rar
+            // files but the regex doesn't find them because you need to be
+            // logged in to download them anyways
             String[] fileId = br.getRegex("href=\"/Image\\.aspx\\?id=(\\d+)\"").getColumn(0);
             String[] links = br.getRegex("(<a class=\"gallery\" href=\".*?\".*?<a class=\"photoLnk\" href=\".*?\")").getColumn(0);
             if (fileId == null || fileId.length == 0) return null;
             if (links == null || links.length == 0) return null;
             if (links.length != fileId.length) return null;
-            
+
             for (int j = 0; j < fileId.length; ++j) {
                 String id = fileId[j];
                 String fileEnding = new Regex(links[j], "class=\"photoLnk\" href=\".*?(\\..{2,4})\"").getMatch(0);
-                String tmp = "http://chomikuj.pl/services/InterfaceCommandService.asmx/DownloadFile";
-                String postData = String.format("language=pl-PL&fileId=%s&confirmed=false&ownTransfer=false&getWindow=true", id);
-                br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
-                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                br.postPage(tmp, postData);
-                String link = br.getRegex("<RedirectUrl>(.*?)</RedirectUrl>").getMatch(0);
-                String finalLink = String.format("&mainlink=%s&gallerylink=%s", link, param);
+                String finalLink = String.format("&id=%s&gallerylink=%s&", id, param.toString().replace("chomikuj.pl", "60423fhrzisweguikipo9re"));
                 DownloadLink dl = createDownloadlink(finalLink);
                 dl.setFinalFileName(fpName + "_" + fileId[j] + fileEnding);
+                // All found links are 99,99% available as long as the decrypter
+                // reaches this line of code^^
+                dl.setAvailable(true);
                 decryptedLinks.add(dl);
             }
-            counter = counter + 1;
             progress.increase(1);
         }
         FilePackage fp = FilePackage.getInstance();
