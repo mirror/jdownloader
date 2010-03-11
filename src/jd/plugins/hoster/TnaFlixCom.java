@@ -71,12 +71,13 @@ public class TnaFlixCom extends PluginForHost {
         String vidlink = br.getRegex("addVariable\\('config', '(.*?)'\\)").getMatch(0);
         if (vidlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         vidlink = Encoding.urlDecode((vidlink), true);
+        if (!vidlink.contains("cdn.tnaflix.com")) vidlink = "http://cdn.tnaflix.com/" + vidlink;
         br.getPage(vidlink);
         String dllink = br.getRegex("<file>(.*?)</file>").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dllink = dllink.replace("amp;", "");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        if ((dl.getConnection().getContentType().contains("http"))) {
+        if ((dl.getConnection().getContentType().contains("html"))) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
