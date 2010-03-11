@@ -60,20 +60,28 @@ public class ChoMikujPl extends PluginForDecrypt {
         }
         int counter = 0;
         progress.setRange(pages.size());
-        for (String getThatPage : pages) {
+        for (int i = 0; i < pages.size(); ++i) {
             String postdata = "ctl00%24CT%24FW%24SubfolderID=" + subFolderID.trim() + "&GalSortType=0&GalPage=" + counter + "&__EVENTTARGET=ctl00%24CT%24FW%24RefreshButton&__ASYNCPOST=true&";
             br.postPage(parameter, postdata);
             // This regex is the buggy thing here!
+            String[] fileId = br.getRegex("href=\"/Image\\.aspx\\?id=(\\d+)\"").getColumn(0);
             String[] links = br.getRegex("(<a class=\"gallery\" href=\".*?\".*?<a class=\"photoLnk\" href=\".*?\")").getColumn(0);
+            if (fileId == null || fileId.length == 0) return null;
             if (links == null || links.length == 0) return null;
-            for (String linkinformation : links) {
-                String finallink = new Regex(linkinformation, "<a class=\"gallery\" href=\"(.*?)\"").getMatch(0);
-                String fileEnding = new Regex(linkinformation, "class=\"photoLnk\" href=\".*?(\\..{2,4})\"").getMatch(0);
-                String fileid = new Regex(finallink, "vid=(\\d+)").getMatch(0);
-                if (finallink == null || fileEnding == null || fileid == null) return null;
-                DownloadLink dl = createDownloadlink("directhttp://" + finallink);
-                // Give it nice names ;)
-                dl.setFinalFileName(fpName + "_" + fileid + fileEnding);
+            if (links.length != fileId.length) return null;
+            
+            for (int j = 0; j < fileId.length; ++j) {
+                String id = fileId[j];
+                String fileEnding = new Regex(links[j], "class=\"photoLnk\" href=\".*?(\\..{2,4})\"").getMatch(0);
+                String tmp = "http://chomikuj.pl/services/InterfaceCommandService.asmx/DownloadFile";
+                String postData = String.format("language=pl-PL&fileId=%s&confirmed=false&ownTransfer=false&getWindow=true", id);
+                br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                br.postPage(tmp, postData);
+                String link = br.getRegex("<RedirectUrl>(.*?)</RedirectUrl>").getMatch(0);
+                String finalLink = String.format("&mainlink=%s&gallerylink=%s", link, param);
+                DownloadLink dl = createDownloadlink(finalLink);
+                dl.setFinalFileName(fpName + "_" + fileId[j] + fileEnding);
                 decryptedLinks.add(dl);
             }
             counter = counter + 1;
