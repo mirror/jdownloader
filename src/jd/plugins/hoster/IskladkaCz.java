@@ -19,6 +19,8 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -42,9 +44,12 @@ public class IskladkaCz extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replace("iskladka.cz/download.php?file=", "iskladka.cz/iCopy/index.php?file="));
     }
 
+    public String dllink = null;
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.setFollowRedirects(false);
         br.setCustomCharset("UTF-8");
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("or was removed") || br.containsHTML("is not existed")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -52,6 +57,30 @@ public class IskladkaCz extends PluginForHost {
         if (filename == null) filename = br.getRegex("downloadCounterLink = '(.*?)';").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         link.setName(filename.trim());
+        // Deep online-check and filesize check
+        String file = br.getRegex("downloadCounterLink = '(.*?)';").getMatch(0);
+        String ticket = br.getRegex("\"\\&ticket=(.*?)'").getMatch(0);
+        if (file == null || ticket == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dllink = "http://www.iskladka.cz/iCopy/downloadBalancer.php?file=" + file + "&ticket=" + ticket;
+        br.getPage(dllink);
+        dllink = br.getRedirectLocation();
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        Browser br2 = br.cloneBrowser();
+        // In case the link redirects to the finallink
+        br2.setFollowRedirects(true);
+        URLConnectionAdapter con = br2.openGetConnection(dllink);
+        if (!con.getContentType().contains("html"))
+            link.setDownloadSize(con.getLongContentLength());
+        else {
+            br.followConnection();
+            if (br.containsHTML("Tento soubor již na iSkladce.cz nemáme") || br.containsHTML("redirect")) {
+                logger.info("The file with the filename " + filename + " is 100% offline!");
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            if (br.containsHTML("downloadCounterLink =")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+            logger.warning("The file with the filename " + filename + " should be offline...");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -59,15 +88,9 @@ public class IskladkaCz extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
-        String file = br.getRegex("downloadCounterLink = '(.*?)';").getMatch(0);
-        String ticket = br.getRegex("\"\\&ticket=(.*?)'").getMatch(0);
-        if (file == null || ticket == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String dllink = "http://www.iskladka.cz/iCopy/downloadBalancer.php?file=" + file + "&ticket=" + ticket;
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.containsHTML("Tento soubor již na iSkladce.cz nemáme")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            if (br.containsHTML("downloadCounterLink =")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
