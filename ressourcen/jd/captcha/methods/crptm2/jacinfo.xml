@@ -1,6 +1,0 @@
-<jDownloader>
-  <method name="crypt-me.com Calculation-Captcha"
-  	services="crypt-me.com.Calc" author="ManiacMansion" />
-  <format type="png" minLetterNum="5" maxLetterNum="7" letterNum="7" />
-
-</jDownloader>

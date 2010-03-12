@@ -42,7 +42,7 @@ public class AzSharingCom extends PluginForHost {
         super(wrapper);
     }
 
-    // XfileSharingProBasic Version 1.3
+    // XfileSharingProBasic Version 1.3, modified standard captcha handling
     @Override
     public String getAGBLink() {
         return COOKIE_HOST + "/tos.html";
@@ -206,7 +206,7 @@ public class AzSharingCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             for (String link : sitelinks) {
-                if (link.contains("/captchas/")) {
+                if (link.matches(".*?/captchas/.*?\\.jpg") && !link.contains("clear")) {
                     captchaurl = link;
                     break;
                 }
@@ -215,6 +215,8 @@ public class AzSharingCom extends PluginForHost {
                 logger.warning("Standard captcha captchahandling broken!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            // String code = getCaptchaCode("xfilesharingpro", captchaurl,
+            // downloadLink);
             String code = getCaptchaCode(captchaurl, downloadLink);
             DLForm.put("code", code);
             logger.info("Put captchacode " + code + " obtained by captcha metod \"Standard captcha\" in the form.");
