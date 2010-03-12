@@ -16,6 +16,12 @@
 
 package jd.captcha;
 
+import java.io.File;
+import java.io.IOException;
+
+import jd.http.Browser;
+import jd.nutils.JDHash;
+
 /**
  * JAC Tester
  * 
@@ -29,6 +35,18 @@ public class JACLoad {
     }
 
     private void go() {
+            //http://duckload.com/design/Captcha2.php?wmid=1338&Sec=aDC54808130775Cb&nob=true
+//        System.out.println("aDC54808130775Cb".length());
+//        System.out.println();
+        for (int i = 0; i < 100; i++) {
+            String hash = JDHash.getMD5(""+System.currentTimeMillis()).substring(16);
+            try {
+                Browser.download(new File("/home/dwd/.jd_home/captchas/dckld/"+hash+".png"), "http://duckload.com/design/Captcha2.php?wmid=1338&Sec="+hash+"&nob=true");
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+        }
     }
 
 }

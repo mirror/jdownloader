@@ -17,11 +17,11 @@
 package jd.captcha.specials;
 
 import java.util.ArrayList;
-import java.util.Vector;
-
+import java.util.Collections;
 import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.pixelgrid.Letter;
-import jd.nutils.Colors;
+import jd.captcha.pixelgrid.PixelGrid;
+import jd.captcha.pixelobject.PixelObject;
 
 /**
  * 
@@ -29,82 +29,106 @@ import jd.nutils.Colors;
  * @author JD-Team
  */
 public class DuckLoad {
-    /**
-     * entfernt eine farbe... die tolleranz gibt die farbdistanz an die njoch
-     * entfernt wird
-     * 
-     * @param i
-     *            vergleichsfarbe
-     * @param d
-     *            tolleranz
-     */
-    public static void cleanByColor(int i, double d, Captcha captcha) {
-        int mv = captcha.getMaxPixelValue();
-        for (int x = 0; x < captcha.getWidth(); x++) {
-            for (int y = 0; y < captcha.getHeight(); y++) {
-                int c = captcha.getPixelValue(x, y);
-                if (c != mv && Colors.getRGBColorDifference2(i, c) < d) {
-                    captcha.setPixelValue(x, y, mv);
-                }
+    private static int follow(PixelGrid captcha, int x, int y, int color, int lastC, int distance) {
+        int i = 0;
+        if (x >= 0 && y >= 0 && captcha.getWidth() > x && captcha.getHeight() > y && captcha.grid[x][y] >= 0 && captcha.grid[x][y] != 0xffffff && captcha.grid[x][y] == lastC) {
+            captcha.grid[x][y] = color;
+            i++;
+            for (int x1 = -distance; x1 <= distance; x1++) {
+                for (int y1 = -distance; y1 <= distance; y1++) {
+                    i += follow(captcha, x + x1, y + y1, color, lastC, distance);
 
+                }
             }
+
         }
-        // grid = newgrid;
+        return i;
     }
-
-    private static void clean(Captcha captcha) {
-        int mv = captcha.getMaxPixelValue();
-        ArrayList<Integer[]> a = new ArrayList<Integer[]>();
-        int dist = 2;
-        Vector<Integer> cleaned = new Vector<Integer>();
+    private static void toBlack(PixelGrid captcha) {
         for (int x = 0; x < captcha.getWidth(); x++) {
-            for (int y = 0; y < 3; y++) {
-                int p = captcha.getPixelValue(x, y);
-                if (p != mv && !cleaned.contains(p)) {
-                    cleanByColor(p, dist, captcha);
-                    cleaned.add(p);
-                }
-            }
-            for (int y = captcha.getHeight() - 3; y < captcha.getHeight(); y++) {
-                int p = captcha.getPixelValue(x, y);
-                if (p != mv && !cleaned.contains(p)) {
-                    cleanByColor(p, dist, captcha);
-                    cleaned.add(p);
+            for (int y = 0; y < captcha.getHeight(); y++) {
+                if (captcha.grid[x][y] != 0xffffff)
+                    captcha.grid[x][y] = 0x000000;
 
-                }
+            }
+        }
+    }
+    public static Letter[] getLetters(Captcha captcha) {
+        int i = -2;
+        class colorD implements Comparable<colorD> {
+            public int color;
+            public int anzahl;
+
+            public colorD(int color, int anzahl) {
+                super();
+                this.color = color;
+                this.anzahl = anzahl;
+            }
+
+            public int compareTo(colorD o) {
+                return new Integer(o.anzahl).compareTo(anzahl);
             }
 
         }
+        ArrayList<colorD> colors = new ArrayList<colorD>();
         for (int x = 0; x < captcha.getWidth(); x++) {
             for (int y = 0; y < captcha.getHeight(); y++) {
+                if (captcha.grid[x][y] != 0xffffff) {
+                    colors.add(new colorD(i, follow(captcha, x, y, i, captcha.grid[x][y], 6)));
+                    i--;
+                }
 
-                int p = captcha.getPixelValue(x, y);
-
-                if (p != mv) {
-                    int pos = -1;
-                    for (Integer[] b : a) {
-                        if (b[0].intValue() == p) {
-                            pos = b[1];
-                            break;
+            }
+        }
+        Collections.sort(colors);
+        for (colorD colorD : colors) {
+            if (colorD.anzahl <= 200) {
+                for (int x = 0; x < captcha.getWidth(); x++) {
+                    for (int y = 0; y < captcha.getHeight(); y++) {
+                        if (captcha.grid[x][y] == colorD.color) {
+                            captcha.grid[x][y] = 0xffffff;
                         }
                     }
-                    if (pos != -1 && (x - pos) > 50 && !cleaned.contains(p)) {
-                        cleanByColor(p, dist, captcha);
-                        cleaned.add(p);
-
-                    } else
-                        a.add(new Integer[] { p, x });
+                }
+            }
+        }
+        for (int x = 0; x < captcha.getWidth(); x++) {
+            for (int y = 0; y < captcha.getHeight(); y++) {
+                if (captcha.grid[x][y] != 0xffffff)
+                    captcha.grid[x][y] *= -500;
+            }
+        }
+        ArrayList<PixelObject> coLetters = new ArrayList<PixelObject>();
+        for (int x = 0; x < captcha.getWidth(); x++) {
+            outerY: for (int y = 0; y < captcha.getHeight(); y++) {
+                if (captcha.grid[x][y] != 0xffffff) {
+                    for (PixelObject pixelObject : coLetters) {
+                        if (pixelObject.getAverage() == captcha.grid[x][y]) {
+                            pixelObject.add(x, y, captcha.grid[x][y]);
+                            continue outerY;
+                        }
+                    }
+                    PixelObject pix = new PixelObject(captcha);
+                    pix.add(x, y, captcha.grid[x][y]);
+                    coLetters.add(pix);
 
                 }
             }
-
         }
-    }
-
-    public static Letter[] getLetters(Captcha captcha) {
-        clean(captcha);
-        captcha.removeSmallObjects(0.75, 0.75, 10);
-        return EasyCaptcha.getLetters(captcha);
+        Letter[] letters = new Letter[coLetters.size()];
+        Collections.sort(coLetters);
+        i = 0;
+        for (PixelObject pixelObject : coLetters) {
+            Letter let = pixelObject.toLetter();
+            toBlack(let);
+            let.removeSmallObjects(0.9, 0.9, 4, 2, 2);
+            let.clean();
+//            let.autoAlign();
+            let.resizetoHeight(20);
+            letters[i] = let;
+            i++;
+        }
+        return letters;
 
     }
 
