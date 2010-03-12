@@ -61,11 +61,31 @@ public class FileshakerCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
         requestFileInformation(downloadLink);
-        /* Link holen */
-        Form form = br.getForm(0);
-        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form);
-        URLConnectionAdapter con = dl.getConnection();
+        Form captchaForm = null;
+        URLConnectionAdapter con = null;
+        boolean valid = false;
+
+        for (int i = 0; i <= 5; i++) {
+            captchaForm = br.getForm(0);
+            String captchaUrl = br.getRegex("(securimage/securimage_show\\.php\\?sid=[0-9a-z]{32})\"").getMatch(0);
+            if (captchaForm == null || captchaUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            captchaUrl = "http://www.fileshaker.com/" + captchaUrl;
+            String code = getCaptchaCode(captchaUrl, downloadLink);
+            captchaForm.put("code", code);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, captchaForm, false, 1);
+            con = dl.getConnection();
+
+            if (!dl.getConnection().getContentType().contains("html")) {
+                valid = true;
+                break;
+            } else {
+                con.disconnect();
+                br.getPage(downloadLink.getDownloadURL());
+            }
+
+        }
+
+        if (valid == false) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         if (con.getResponseCode() != 200 && con.getResponseCode() != 206) {
             con.disconnect();
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 5 * 60 * 1000l);

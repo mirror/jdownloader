@@ -197,3 +197,5 @@ jd/plugins/hoster/FilesFm.class
 jd/plugins/hoster/HTTPAllgemein.class
 jd/plugins/decrypter/WiSsOrg.class
 jd/plugins/decrypter/Pspssrg.class
+jd/captcha/methods/crptm2
+jd/plugins/decrypter/VdSz.class
