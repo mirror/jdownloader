@@ -199,3 +199,5 @@ jd/plugins/decrypter/WiSsOrg.class
 jd/plugins/decrypter/Pspssrg.class
 jd/captcha/methods/crptm2
 jd/plugins/decrypter/VdSz.class
+jd/plugins/decrypter/UploadBearCom.class
+jd/plugins/hoster/UploadBearCom.class

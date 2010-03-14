@@ -74,7 +74,7 @@ public class XFileSharingProBasic extends PluginForHost {
             if (filename == null) {
                 filename = br.getRegex("<h2>Download File(.*?)</h2>").getMatch(0);
                 if (filename == null) {
-                    filename = br.getRegex("Filename:</b></td><td >(.*?)</td>").getMatch(0);
+                    filename = br.getRegex("Filename:</b></td><td[ ]{0,2}>(.*?)</td>").getMatch(0);
                     if (filename == null) {
                         filename = br.getRegex("Filename.*?nowrap.*?>(.*?)</td").getMatch(0);
                         if (filename == null) {

@@ -53,25 +53,26 @@ public class EvilShareCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.setFollowRedirects(false);
         br.setCookie(COOKIE_HOST, "lang", "english");
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("You have reached the download-limit")) {
-            logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
-            return AvailableStatus.UNCHECKABLE;
-        }
         if (br.containsHTML("(No such file|No such user exist|File not found)")) {
             logger.warning("file is 99,99% offline, throwing \"file not found\" now...");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        System.out.print(br.toString());
         String filename = br.getRegex("You have requested.*?http://.*?[a-z0-9]{12}/(.*?)</font>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("fname\" value=\"(.*?)\"").getMatch(0);
             if (filename == null) {
                 filename = br.getRegex("<h2>Download File(.*?)</h2>").getMatch(0);
                 if (filename == null) {
-                    filename = br.getRegex("Filename.*?nowrap.*?>(.*?)</td").getMatch(0);
+                    filename = br.getRegex("Filename:</b></td><td[ ]{0,2}>(.*?)</td>").getMatch(0);
                     if (filename == null) {
-                        filename = br.getRegex("File Name.*?nowrap>(.*?)</td").getMatch(0);
+                        filename = br.getRegex("Filename.*?nowrap.*?>(.*?)</td").getMatch(0);
+                        if (filename == null) {
+                            filename = br.getRegex("File Name.*?nowrap>(.*?)</td").getMatch(0);
+                        }
                     }
                 }
             }
@@ -83,13 +84,17 @@ public class EvilShareCom extends PluginForHost {
                 filesize = br.getRegex("</font>[ ]+\\((.*?)\\)(.*?)</font>").getMatch(0);
             }
         }
-        if (filename == null) {
-            logger.warning("The filename equals null, throwing \"file not found\" now...");
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filename == null || filename.equals("")) {
+            if (br.containsHTML("You have reached the download-limit")) {
+                logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
+                return AvailableStatus.UNCHECKABLE;
+            }
+            logger.warning("The filename equals null, throwing \"plugin defect\" now...");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         filename = filename.replaceAll("(</b>|<b>|\\.html)", "");
         link.setName(filename.trim());
-        if (filesize != null) {
+        if (filesize != null && !filesize.equals("")) {
             logger.info("Filesize found, filesize = " + filesize);
             link.setDownloadSize(Regex.getSize(filesize));
         }
