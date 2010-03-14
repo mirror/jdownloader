@@ -172,7 +172,7 @@ public class WbShRnt {
                     PixelObject bestobject = null;
                     int bestdist = Integer.MAX_VALUE;
                     for (PixelObject pixelObject : coLetters) {
-                        int dist = pixelObject.getXDistanceTo(x, y);
+                        int dist = pixelObject.getXDistanceTo(x);
                         if (dist < bestdist) {
                             bestdist = dist;
                             bestobject = pixelObject;

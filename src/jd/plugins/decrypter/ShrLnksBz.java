@@ -101,8 +101,13 @@ public class ShrLnksBz extends PluginForDecrypt {
                 File file = this.getLocalCaptchaFile();
                 Browser temp = br.cloneBrowser();
                 temp.getDownload(file, "http://share-links.biz" + Captchamap);
-                Point p = UserIO.getInstance().requestClickPositionDialog(file, "Share-links.biz", JDL.L("plugins.decrypt.shrlnksbz.desc", "Read the combination in the background and click the corresponding combination in the overview!"));
-                String nexturl = getNextUrl(p.x, p.y);
+                // Point p =
+                // UserIO.getInstance().requestClickPositionDialog(file,
+                // "Share-links.biz", JDL.L("plugins.decrypt.shrlnksbz.desc",
+                // "Read the combination in the background and click the corresponding combination in the overview!"));
+                // String nexturl = getNextUrl(p.x, p.y);
+                String[] code = getCaptchaCode(file, param).split(":");
+                String nexturl = getNextUrl(Integer.parseInt(code[0]), Integer.parseInt(code[1]));
                 if (nexturl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 br.setFollowRedirects(true);
                 br.getPage("http://share-links.biz/" + nexturl);

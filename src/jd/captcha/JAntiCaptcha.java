@@ -1474,12 +1474,11 @@ public class JAntiCaptcha {
     public boolean isShowDebugGui() {
         return showDebugGui;
     }
-
     /**
      * MTH File wird geladen und verarbeitet
+     * @param f
      */
-    private void loadMTHFile() {
-        File f = getResourceFile("letters.mth");
+    public void loadMTHFile(File f) {
         String str = null;
         if (f.exists()) {
             str = JDIO.readFileToString(f);
@@ -1500,6 +1499,15 @@ public class JAntiCaptcha {
 
     }
 
+    /**
+     * MTH File wird geladen und verarbeitet
+     */
+    public void loadMTHFile() {
+        File f = getResourceFile("letters.mth");
+        loadMTHFile(f);
+        // sortLetterDB();
+    }
+    
     /**
      * Entfernt Buchstaben mit einem schlechetb Bad/Good verhältniss
      */
@@ -1656,20 +1664,35 @@ public class JAntiCaptcha {
         // }
         BasicWindow.showImage(captchaImage);
         Captcha captcha = createCaptcha(captchaImage);
-
+        
+        int skWidth= captcha.getWidth();
+        int skHeight = captcha.getHeight();
+        if(skHeight>200||skWidth>200)
+        {
+            if(skHeight>skWidth)
+            {
+                skWidth=200*skWidth/skHeight;
+                skHeight=200;
+            }
+            else
+            {
+                skHeight=200*skHeight/skWidth;
+                skWidth=200;
+            }
+        }
         logger.info("CAPTCHA :_" + checkCaptcha(captchafile, captcha));
         if (bw3 != null) {
             bw3.dispose();
         }
-        bw3 = BasicWindow.showImage(captchaImage, "Captchas");
+        bw3 = BasicWindow.showImage(captchaImage.getScaledInstance(skWidth, skHeight, 1), "Captchas");
         bw3.add(new JLabel("ORIGINAL"), Utilities.getGBC(2, 0, 2, 2));
         bw3.setLocationByScreenPercent(50, 70);
 
-        bw3.add(new ImageComponent(captcha.getImage(1)), Utilities.getGBC(0, 2, 2, 2));
+        bw3.add(new ImageComponent(captcha.getImage(1).getScaledInstance(skWidth, skHeight, 1)), Utilities.getGBC(0, 2, 2, 2));
         bw3.add(new JLabel("Farbraum Anpassung"), Utilities.getGBC(2, 2, 2, 2));
         jas.executePrepareCommands(captchafile, captcha);
 
-        bw3.add(new ImageComponent(captcha.getImage(1)), Utilities.getGBC(0, 4, 2, 2));
+        bw3.add(new ImageComponent(captcha.getImage(1).getScaledInstance(skWidth, skHeight, 1)), Utilities.getGBC(0, 4, 2, 2));
         bw3.add(new JLabel("Prepare Code ausgeführt"), Utilities.getGBC(2, 4, 2, 2));
 
         // Hole die letters aus dem neuen captcha
@@ -1691,7 +1714,7 @@ public class JAntiCaptcha {
 
         }
 
-        bw3.add(new ImageComponent(captcha.getImageWithGaps(1)), Utilities.getGBC(0, 6, 2, 2));
+        bw3.add(new ImageComponent(captcha.getImageWithGaps(1).getScaledInstance(skWidth, skHeight, 1)), Utilities.getGBC(0, 6, 2, 2));
         bw3.add(new JLabel("Buchstaben freistellen"), Utilities.getGBC(2, 6, 2, 2));
         bw3.refreshUI();
         if (bw2 != null) {
@@ -1874,6 +1897,23 @@ public class JAntiCaptcha {
         Image captchaImage = Utilities.loadImage(captchafile);
 
         final Captcha captcha = createCaptcha(captchaImage);
+        int sk1Width= captcha.getWidth();
+        int sk1Height = captcha.getHeight();
+        if(sk1Height>200||sk1Width>200)
+        {
+            if(sk1Height>sk1Width)
+            {
+                sk1Width=200*sk1Width/sk1Height;
+                sk1Height=200;
+            }
+            else
+            {
+                sk1Height=200*sk1Height/sk1Width;
+                sk1Width=200;
+            }
+        }
+        final int skWidth= sk1Width;
+        final int skHeight = sk1Height;
         if (captcha == null) return -1;
         String code = null;
         // Zeige das OriginalBild
@@ -1890,7 +1930,7 @@ public class JAntiCaptcha {
                 f.setLayout(new GridBagLayout());
                 f.add(new JLabel("original captcha: " + captchafile.getName()), Utilities.getGBC(0, 0, 10, 1));
 
-                f.add(new ImageComponent(captcha.getImage()), Utilities.getGBC(0, 1, 10, 1));
+                f.add(new ImageComponent(captcha.getImage().getScaledInstance(skWidth, skHeight, 1)), Utilities.getGBC(0, 1, 10, 1));
 
                 f.setSize(1400, 800);
                 f.pack();
@@ -1986,7 +2026,7 @@ public class JAntiCaptcha {
             public Object runSave() {
                 f.add(new JLabel("Letter Detection"), Utilities.getGBC(0, 3, 10, 1));
 
-                f.add(new ImageComponent(captcha.getImageWithGaps(1)), Utilities.getGBC(0, 4, 10, 1));
+                f.add(new ImageComponent(captcha.getImageWithGaps(1).getScaledInstance(skWidth, skHeight, 1)), Utilities.getGBC(0, 4, 10, 1));
 
                 f.add(new JLabel("Seperated"), Utilities.getGBC(0, 5, 10, 1));
                 for (int i = 0; i < letters.length; i++) {
@@ -2024,7 +2064,7 @@ public class JAntiCaptcha {
 
                     f.add(new JLabel("Letter Detection"), Utilities.getGBC(0, 3, 10, 1));
 
-                    f.add(new ImageComponent(captcha.getImageWithGaps(1)), Utilities.getGBC(0, 4, 10, 1));
+                    f.add(new ImageComponent(captcha.getImageWithGaps(1).getScaledInstance(skWidth, skHeight, 1)), Utilities.getGBC(0, 4, 10, 1));
 
                     f.add(new JLabel("Seperated"), Utilities.getGBC(0, 5, 10, 1));
                     for (int i = 0; i < letters.length; i++) {
@@ -2074,7 +2114,7 @@ public class JAntiCaptcha {
                 }
                 f.add(new JLabel("prepared captcha"), Utilities.getGBC(0, 11, 10, 1));
 
-                f.add(new ImageComponent(captcha.getImage()), Utilities.getGBC(0, 12, 10, 1));
+                f.add(new ImageComponent(captcha.getImage().getScaledInstance(skWidth, skHeight, 1)), Utilities.getGBC(0, 12, 10, 1));
                 f.pack();
                 return null;
             }

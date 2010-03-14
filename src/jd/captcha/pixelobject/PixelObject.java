@@ -479,7 +479,7 @@ public class PixelObject implements Comparable<PixelObject> {
 
     }
 
-    public int getXDistanceTo(int x, int y) {
+    public int getXDistanceTo(int x) {
         int mindist = Integer.MAX_VALUE;
         for (int[] akt : object) {
             int xd = Math.abs(x - akt[0]);
