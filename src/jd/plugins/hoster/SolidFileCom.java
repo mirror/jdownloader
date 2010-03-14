@@ -43,7 +43,7 @@ public class SolidFileCom extends PluginForHost {
         // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
-    // XfileSharingProBasic Version 1.6
+    // XfileSharingProBasic Version 1.6, costum filename
     @Override
     public String getAGBLink() {
         return COOKIE_HOST + "/tos.html";
@@ -93,8 +93,8 @@ public class SolidFileCom extends PluginForHost {
             logger.warning("The filename equals null, throwing \"plugin defect\" now...");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        filename = filename.replaceAll("(</b>|<b>|\\.html)", "");
-        link.setName(filename.trim());
+        filename = filename.replaceAll("(</b>|<b>|\\.html)", "").replace("_", " ");
+        link.setFinalFileName(filename.trim());
         if (filesize != null && !filesize.equals("")) {
             logger.info("Filesize found, filesize = " + filesize);
             link.setDownloadSize(Regex.getSize(filesize));
