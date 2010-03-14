@@ -344,7 +344,12 @@ public class XFileSharingProBasic extends PluginForHost {
             ai.setPremiumPoints(Long.parseLong(points.trim()));
         }
         account.setValid(true);
-        ai.setUnlimitedTraffic();
+        String availabletraffic = br.getRegex("Traffic available.*?:</TD><TD><b>(.*?)</b>").getMatch(0);
+        if (availabletraffic != null) {
+            ai.setTrafficLeft(Regex.getSize(availabletraffic));
+        } else {
+            ai.setUnlimitedTraffic();
+        }
         if (!nopremium) {
             String expire = br.getRegex("<td>Premium-Account expire:</td>.*?<td>(.*?)</td>").getMatch(0);
             if (expire == null) {

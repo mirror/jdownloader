@@ -16,6 +16,8 @@
 
 package jd.plugins.hoster;
 
+import java.io.File;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -30,6 +32,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.pluginUtils.Recaptcha;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesmonster.com" }, urls = { "http://[\\w\\.\\d]*?filesmonster\\.com/download.php\\?id=.+" }, flags = { 2 })
@@ -50,7 +53,7 @@ public class FilesMonsterCom extends PluginForHost {
     }
 
     private void setConfigElements() {
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), PROPERTY_NO_SLOT_WAIT_TIME, JDL.L("plugins.hoster.filesmonster.com.noSlotWaitTime", "No slot wait time (s)"), 30, 86400).setDefaultValue(60).setStep(30));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), PROPERTY_NO_SLOT_WAIT_TIME, JDL.L("plugins.hoster.filesmonster.com.noSlotWaitTime", "No slot wait time (seconds)"), 30, 86400).setDefaultValue(60).setStep(30));
     }
 
     @Override
@@ -173,20 +176,31 @@ public class FilesMonsterCom extends PluginForHost {
 
         br.postPage(fmurl + "get/free/", "t=" + fileID);
         /* now we have the data page, check for wait time and data id */
-
+        // Captcha handling
+        for (int i = 0; i <= 3; i++) {
+            Recaptcha rc = new Recaptcha(br);
+            rc.parse();
+            rc.load();
+            File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+            String c = getCaptchaCode(cf, downloadLink);
+            rc.setCode(c);
+            if (br.containsHTML("class=\"error em red\">Captcha number error or expired</div>")) continue;
+            break;
+        }
+        if (br.containsHTML("class=\"error em red\">Captcha number error or expired</div>")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         String data = br.getRegex("name='data' value='(.*?)'>").getMatch(0);
         wait = br.getRegex("'wait_sec'>(\\d+)<").getMatch(0);
-        if (data == null || wait == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (data == null || wait == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
         /* request ticket for this file */
 
         br.postPage(fmurl + "ajax.php", "act=rticket&data=" + data);
-        data = br.getRegex("\\{\"text\":\"(.*?)\"").getMatch(0);
         if (br.containsHTML("\"error\":\"error\"")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.FilesMonsterCom.NoFreeSlots", "There are no free download slots available"), getPluginConfig().getIntegerProperty(PROPERTY_NO_SLOT_WAIT_TIME, 60) * 1000l);
+        data = br.getRegex("\\{\"text\":\"(.*?)\"").getMatch(0);
         /* wait */
         sleep(1000l * (Long.parseLong(wait) + 4), downloadLink);
         /* request download information */
-        br.postPage(fmurl + "ajax.php", "act=getdl&data=" + data);
+        br.postPage("http://filesmonster.com/ajax.php", "act=getdl&data=" + data);
         String url = br.getRegex("\\{\"url\":\"(.*?)\"").getMatch(0);
         data = br.getRegex("\"file_request\":\"(.*?)\"").getMatch(0);
         if (data == null || url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

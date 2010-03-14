@@ -41,9 +41,11 @@ public class FileBoxCom extends PluginForHost {
         super(wrapper);
         enablePremium("http://www.filebox.com/premium.html");
     }
+
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("https://", "http://"));
     }
+
     public boolean registered = false;
 
     @Override
@@ -163,8 +165,9 @@ public class FileBoxCom extends PluginForHost {
             }
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             dl = BrowserAdapter.openDownload(br, link, dllink, true, 0);
-            if (dl.getConnection() != null && dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getContentType().contains("html")) {
                 br.followConnection();
+                if (br.containsHTML("<title>404 Not Found</title>")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error!", 60 * 60 * 1000l);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl.startDownload();
@@ -240,6 +243,7 @@ public class FileBoxCom extends PluginForHost {
         }
         if ((dl.getConnection().getContentType().contains("html"))) {
             br.followConnection();
+            if (br.containsHTML("<title>404 Not Found</title>")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error!", 60 * 60 * 1000l);
             if (br.containsHTML(">Free Registration<")) throw new PluginException(LinkStatus.ERROR_FATAL, "Register for free and add your free filebox account like a premium account to download this file!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

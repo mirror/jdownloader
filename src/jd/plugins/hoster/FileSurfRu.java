@@ -19,7 +19,6 @@ package jd.plugins.hoster;
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.parser.html.Form;
-import jd.plugins.BrowserAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -28,7 +27,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-//filesurf.ru by pspzockerscene
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesurf.ru" }, urls = { "http://[\\w\\.]*?(filesurf|4ppl|files\\.youmama|upload\\.xradio)\\.ru/[0-9]+" }, flags = { 0 })
 public class FileSurfRu extends PluginForHost {
 
@@ -44,52 +42,66 @@ public class FileSurfRu extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
+        br.setCustomCharset("windows-1251");
         br.getPage(parameter.getDownloadURL());
-        if (!br.containsHTML("<form")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("���� <b>(.*?)</b>").getMatch(0);
-        String filesize = br.getRegex("�������� <b>(.*?)</b>").getMatch(0);
-        filesize = filesize.replace("����", "Bytes");
-        filesize = filesize.replaceAll(",", "");
-        filesize = filesize.replaceAll("\\.", "");
+        if (br.containsHTML("Запрошенный файл не существует")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("Файл <b>(.*?)</b>").getMatch(0);
+        // String filesize = br.getRegex("(\\d+,[0-9.]+ Кб)").getMatch(0);
+        String filesize = br.getRegex("<b>([0-9,]+ байт)</b>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        filesize = filesize.replace("Кб", "KB").replace("байт", "byte");
         parameter.setName(filename.trim());
-        parameter.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
+        parameter.setDownloadSize(Regex.getSize(filesize.replace(",", "")));
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
-        br.getPage(link.getDownloadURL());
-        Form captchaForm = br.getForm(0);
-        if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String passCode = null;
-        if (br.containsHTML("password")) {
-            if (link.getStringProperty("pass", null) == null) {
-                passCode = Plugin.getUserInput("Password?", link);
-            } else {
-                /* gespeicherten PassCode holen */
-                passCode = link.getStringProperty("pass", null);
+        br.getPage(link.getDownloadURL());
+        for (int i = 0; i <= 3; i++) {
+            Form captchaForm = br.getForm(0);
+            String captchaid = br.getRegex("src=\"/captcha.png\\?key=(.*?)\"><br>").getMatch(0);
+            if (captchaForm == null || captchaid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (br.containsHTML("password")) {
+                if (link.getStringProperty("pass", null) == null) {
+                    passCode = Plugin.getUserInput("Password?", link);
+                } else {
+                    /* gespeicherten PassCode holen */
+                    passCode = link.getStringProperty("pass", null);
+                }
+                captchaForm.put("password", passCode);
             }
-            captchaForm.put("password", passCode);
+            String captchaurl = "http://filesurf.ru/captcha.png?key=" + captchaid;
+            String code = getCaptchaCode(captchaurl, link);
+            // Captcha Usereingabe in die Form einfügen
+            captchaForm.put("respond", code);
+            br.submitForm(captchaForm);
+            if (br.containsHTML("captcha")) {
+                logger.warning("Wrong password!");
+                link.setProperty("pass", null);
+                continue;
+            }
+            break;
         }
-        String captchaid = br.getRegex("src=\"/captcha.png\\?key=(.*?)\"><br>").getMatch(0);
-        String captchaurl = "http://filesurf.ru/captcha.png?key=" + captchaid;
-        String code = getCaptchaCode(captchaurl, link);
-        // Captcha Usereingabe in die Form einfügen
-        captchaForm.put("respond", code);
-        br.submitForm(captchaForm);
         if (br.containsHTML("captcha")) {
             logger.warning("Wrong password!");
             link.setProperty("pass", null);
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
+        String dllink = br.getRegex("Ссылка для скачивания:<br><b><a href=\"(.*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\"(http://[a-z]+\\.filesurf\\.ru/\\d+/\\d+/[a-z0-9]+/[a-z0-9]+/.*?)\"").getMatch(0);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         if (passCode != null) {
             link.setProperty("pass", passCode);
         }
-        String dllink = br.getRegex("<br><br>������ ��� ����������:<br><b><a href=\"(.*?)\">").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        BrowserAdapter.openDownload(br, link, dllink, true, 1);
         dl.startDownload();
     }
 
@@ -103,7 +115,7 @@ public class FileSurfRu extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return -1;
     }
 
 }

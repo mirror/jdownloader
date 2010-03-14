@@ -46,6 +46,7 @@ public class MsCreNt extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        parameter = parameter.replace("amp;", "");
         br.setCookiesExclusive(true);
         if (!getUserLogin(parameter)) return null;
         br.setFollowRedirects(false);
@@ -62,6 +63,7 @@ public class MsCreNt extends PluginForDecrypt {
                 logger.warning("Decrypter is defect, browser contains: " + br.toString());
                 return null;
             }
+            decryptedLinks.add(createDownloadlink(finallink));
         } else {
             String fpName = br.getRegex("<title>(.*?)- musiCore Forums</title>").getMatch(0);
             if (fpName == null) {
@@ -80,6 +82,7 @@ public class MsCreNt extends PluginForDecrypt {
                 if (finallink == null) finallink = br.getRegex("URL=(.*?)\"").getMatch(0);
                 if (finallink == null) {
                     logger.warning("finallink from the following link had to be regexes and could not be found by the direct redirect: " + parameter);
+                    logger.warning("Browser contains test: " + br.toString());
                     finallink = br.getRegex("URL=(.*?)\"").getMatch(0);
                 }
                 decryptedLinks.add(createDownloadlink(finallink));
