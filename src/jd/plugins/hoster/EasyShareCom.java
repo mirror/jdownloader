@@ -33,6 +33,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "easy-share.com" }, urls = { "http://[\\w\\d\\.]*?easy-share\\.com/\\d{6}.*" }, flags = { 2 })
 public class EasyShareCom extends PluginForHost {
@@ -57,7 +58,7 @@ public class EasyShareCom extends PluginForHost {
         br.getPage("http://www.easy-share.com/");
         br.setDebug(true);
         br.postPage("http://www.easy-share.com/accounts/login", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember=1");
-        if (br.getCookie("http://www.easy-share.com/", "logacc") == null || br.getCookie("http://www.easy-share.com/", "PREMIUM") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (br.getCookie("http://www.easy-share.com/", "ACCOUNT") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
     @Override
@@ -70,7 +71,7 @@ public class EasyShareCom extends PluginForHost {
             return ai;
         }
         br.getPage("http://www.easy-share.com/accounts/changepassword");
-        if (br.getRegex("li>Premium: <span class=.*?>(.*?)</span>").getMatch(0) == null || !br.getRegex("li>Premium: <span class=.*?>(.*?)</span>").getMatch(0).equals("active")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (br.getRegex("li>Premium: <span class=.*?>(.*?)</span>").getMatch(0) == null || br.getRegex("li>Premium: <span class=.*?>(.*?)</span>").getMatch(0) == null || !br.getRegex("li>Premium: <span class=.*?>(.*?)</span>").getMatch(0).equals("active")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         ai.setUnlimitedTraffic();
         account.setValid(true);
         ai.setStatus("Premium User");
@@ -87,6 +88,7 @@ public class EasyShareCom extends PluginForHost {
         if (con.getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         br.followConnection();
         if (br.containsHTML("Requested file is deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("You need a premium membership to download this file")) downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.host.errormsg.only4premium", "Only downloadable for premium users!"));
         String filename = br.getRegex(Pattern.compile("You are requesting (.*?)\\(", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
         String filesize = br.getRegex("You are requesting.*? \\((.*?)\\)<").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -99,6 +101,7 @@ public class EasyShareCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
         requestFileInformation(downloadLink);
+        if (br.containsHTML("You need a premium membership to download this file")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.host.errormsg.only4premium", "Only downloadable for premium users!"));
         String wait = br.getRegex("w='(\\d+)'").getMatch(0);
         int waittime = 0;
         if (wait != null) waittime = Integer.parseInt(wait.trim());
