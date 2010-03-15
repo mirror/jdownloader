@@ -34,6 +34,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.pluginUtils.Recaptcha;
+import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "oron.com" }, urls = { "http://[\\w\\.]*?oron\\.com/[a-z|0-9]+/.+" }, flags = { 2 })
 public class OronCom extends PluginForHost {
@@ -81,7 +82,8 @@ public class OronCom extends PluginForHost {
         String points = br.getRegex(Pattern.compile("You have collected:</td>.*?(\\d+) premium", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (points != null) ai.setPremiumPoints(Long.parseLong(points));
         account.setValid(true);
-        ai.setUnlimitedTraffic();
+        String availableTraffic = br.getRegex("<td>Available:</td>.*?<td>(.*?)</td>").getMatch(0);
+        if (availableTraffic != null) ai.setTrafficLeft(Regex.getSize(availableTraffic));
         if (!nopremium) {
             String expire = br.getRegex("<td>Premium-Account expire:</td>.*?<td>(.*?)</td>").getMatch(0);
             if (expire == null) {
@@ -110,6 +112,13 @@ public class OronCom extends PluginForHost {
         } else {
             String dllink = br.getRedirectLocation();
             if (dllink == null) {
+                if (br.containsHTML("You have reached the download-limit")) {
+                    String errormessage = "You have reached the download-limit!";
+                    if (br.getRegex("class=\"err\">(.*?)<br>").getMatch(0) != null) errormessage = br.getRegex("class=\"err\">(.*?)<br>").getMatch(0);
+                    logger.warning(errormessage);
+                    link.getLinkStatus().setStatusText(errormessage);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, errormessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                }
                 Form DLForm = br.getFormbyProperty("name", "F1");
                 if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 if (br.containsHTML("name=\"password\"")) {
@@ -191,13 +200,16 @@ public class OronCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setCookie("http://www.oron.com", "lang", "english");
         br.getPage(link.getDownloadURL());
-        // Handling for links which can only be downloaded by premium users
-        if (br.containsHTML("The file status can only be queried by Premium Users")) return AvailableStatus.UNCHECKABLE;
         if (br.containsHTML("No such file with this filename")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("No such user exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("File Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = Encoding.htmlDecode(br.getRegex("div.*?Filename:.*?<.*?>(.*?)<").getMatch(0));
         String filesize = br.getRegex("Size: (.*?)<").getMatch(0);
+        // Handling for links which can only be downloaded by premium users
+        if (br.containsHTML("The file status can only be queried by Premium Users")) {
+            // return AvailableStatus.UNCHECKABLE;
+            link.getLinkStatus().setStatusText(JDL.L("plugins.host.errormsg.only4premium", "Only downloadable for premium users!"));
+        }
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         link.setName(filename);
         link.setDownloadSize(Regex.getSize(filesize));
@@ -205,7 +217,7 @@ public class OronCom extends PluginForHost {
     }
 
     public void doFree(DownloadLink downloadLink) throws Exception, PluginException {
-        if (br.containsHTML("The file status can only be queried by Premium Users")) throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium account");
+        if (br.containsHTML("The file status can only be queried by Premium Users")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.host.errormsg.only4premium", "Only downloadable for premium users!"));
         br.setFollowRedirects(true);
         // Form um auf free zu "klicken"
         Form DLForm0 = br.getForm(0);
