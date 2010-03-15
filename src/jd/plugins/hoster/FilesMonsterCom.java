@@ -53,7 +53,7 @@ public class FilesMonsterCom extends PluginForHost {
     }
 
     private void setConfigElements() {
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), PROPERTY_NO_SLOT_WAIT_TIME, JDL.L("plugins.hoster.filesmonster.com.noSlotWaitTime", "No slot wait time (seconds)"), 30, 86400).setDefaultValue(60).setStep(30));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), PROPERTY_NO_SLOT_WAIT_TIME, JDL.L("plugins.hoster.filesmonstercom.noslotwaittime", "No slot wait time (seconds)"), 30, 86400).setDefaultValue(60).setStep(30));
     }
 
     @Override
@@ -159,15 +159,17 @@ public class FilesMonsterCom extends PluginForHost {
 
         if (fileID == null || fmurl == null) {
             if (br.containsHTML("UNDER MAINTENANCE")) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Maintenance", 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.filesmonstercom.maintenance", "Maintenance"), 60 * 1000l);
             } else if (fmurl == null) { /* no filesmonsterpage, retry */
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Invalid page", 20 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.filesmonstercom.invalidpage", "Invalid page"), 20 * 1000l);
+            } else if (br.containsHTML("File was deleted by")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
 
             String isPay = br.getRegex("<input type=\"hidden\" name=\"showpayment\" value=\"(1)").getMatch(0);
             Boolean isFree = br.containsHTML("slowdownload");
             if (!isFree && isPay != null) {
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium");
+                throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.filesmonstercom.premiumonly", "Only downloadable via premium"));
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -195,7 +197,7 @@ public class FilesMonsterCom extends PluginForHost {
         /* request ticket for this file */
 
         br.postPage(fmurl + "ajax.php", "act=rticket&data=" + data);
-        if (br.containsHTML("\"error\":\"error\"")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.FilesMonsterCom.NoFreeSlots", "There are no free download slots available"), getPluginConfig().getIntegerProperty(PROPERTY_NO_SLOT_WAIT_TIME, 60) * 1000l);
+        if (br.containsHTML("\"error\":\"error\"")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.filesmonstercom.nofreeslots", "There are no free download slots available"), getPluginConfig().getIntegerProperty(PROPERTY_NO_SLOT_WAIT_TIME, 60) * 1000l);
         data = br.getRegex("\\{\"text\":\"(.*?)\"").getMatch(0);
         /* wait */
         sleep(1000l * (Long.parseLong(wait) + 4), downloadLink);
