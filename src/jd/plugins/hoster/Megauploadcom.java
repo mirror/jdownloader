@@ -383,6 +383,10 @@ public class Megauploadcom extends PluginForHost {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, resume, isPremium(account, br.cloneBrowser(), false) ? 0 : 1);
             if (!dl.getConnection().isOK()) {
                 dl.getConnection().disconnect();
+                if (dl.getConnection().getResponseCode() == 416) {
+                    /* server error for resume, try again */
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError(Reset might help)", 10 * 60 * 1000l);
+                }
                 if (dl.getConnection().getResponseCode() == 503) {
                     String wait = dl.getConnection().getHeaderField("Retry-After");
                     if (wait == null) wait = "120";

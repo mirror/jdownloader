@@ -145,15 +145,12 @@ public class LetitBitNet extends PluginForHost {
             if (nextpage == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             br.getPage(nextpage);
             // Ticket Time
-            String ttt = br.getRegex("id=\"errt\">(\\d+)</span>").getMatch(0);
-            int tt = 100;
-            if (ttt != null) {
-                logger.info("Waittime detected, waiting " + ttt.trim() + " seconds from now on...");
-                tt = Integer.parseInt(ttt);
+            String time = br.getRegex("id=\"errt\">(\\d+)</span>").getMatch(0);
+            if (time != null) {
+                sleep((Integer.parseInt(time.trim()) + 5) * 1001, downloadLink);
+            } else {
+                sleep(105 * 1001, downloadLink);
             }
-            // Add 5 seconds to the original waittime
-            tt = tt + 5;
-            sleep(tt * 1001, downloadLink);
             br.getPage(nextpage);
             /* letitbit and vipfile share same hosting server ;) */
             /* because there can be another link to a downlodmanager first */
