@@ -80,7 +80,16 @@ public class AccountController extends SubConfiguration implements ActionListene
         public int compare(final Account o1, final Account o2) {
             final AccountInfo ai1 = o1.getAccountInfo();
             final AccountInfo ai2 = o2.getAccountInfo();
-            return (ai1 != null && ai2 != null) ? (ai1.getTrafficLeft() < ai2.getTrafficLeft()) ? -1 : 1 : 0;
+            if (ai1 != null && ai2 != null) {
+                if (ai1.getTrafficLeft() == ai2.getTrafficLeft()) return 0;
+                if (ai1.getTrafficLeft() < ai2.getTrafficLeft()) {
+                    return -1;
+                } else {
+                    return 1;
+                }
+            } else {
+                return 0;
+            }
         }
     };
 
