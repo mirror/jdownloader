@@ -17,8 +17,16 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.config.Configuration;
+import jd.config.SubConfiguration;
+import jd.controlling.JDController;
+import jd.event.ControlEvent;
+import jd.event.ControlListener;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -36,11 +44,81 @@ import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploaded.to" }, urls = { "(http://[\\w\\.]*?uploaded\\.to/.*?(file/|\\?id=|&id=)[\\w]+/?)|(http://[\\w\\.]*?ul\\.to/[\\w\\-]+/.+)|(http://[\\w\\.]*?ul\\.to/[\\w\\-]+/?)" }, flags = { 2 })
 public class Uploadedto extends PluginForHost {
+    private static final UploadedtoLinkObserver LINK_OBSERVER = new UploadedtoLinkObserver();
+
+    static class UploadedtoLinkObserver {
+        private ArrayList<DownloadLink> list;
+        private Object lock = new Object();
+        private Thread th;
+
+        public UploadedtoLinkObserver() {
+            list = new ArrayList<DownloadLink>();
+            th = new Thread("UploadedCRCObserver") {
+                public void run() {
+                    while (true) {
+                        try {
+                            Thread.sleep(10000);
+                        } catch (InterruptedException e) {
+                            // TODO Auto-generated catch block
+                            e.printStackTrace();
+                        }
+                        synchronized (lock) {
+                            ArrayList<DownloadLink> unregister = new ArrayList<DownloadLink>();
+                            for (DownloadLink link : list) {
+                                LinkStatus ls = link.getLinkStatus();
+                                if (ls.hasStatus(LinkStatus.ERROR_DOWNLOAD_FAILED) && ls.getValue() == LinkStatus.VALUE_FAILED_HASH) {
+                                    String pat = Pattern.quote(JDL.L("plugins.optional.jdunrar.crcerrorin", "Extract: failed (CRC in %s)"));
+                                    pat = pat.replace("%s", "\\E(.*?)\\Q");
+                                    if (pat == null) continue;
+                                    String rg = new Regex(ls.getErrorMessage(), pat).getMatch(0);
+                                    if (rg == null) continue;
+                                    if (rg.equalsIgnoreCase(link.getName())) {
+
+                                        collectCRCLinks(link, false);
+                                        unregister.add(link);
+                                    }
+
+                                }
+
+                            }
+                            list.removeAll(unregister);
+
+                        }
+                    }
+                }
+
+            };
+            if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_DO_CRC, false)) {
+                th.start();
+            }
+        }
+
+        public void register(DownloadLink downloadLink) {
+            synchronized (lock) {
+                list.remove(downloadLink);
+                list.add(downloadLink);
+            }
+
+        }
+    }
 
     public Uploadedto(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://uploaded.to/ref?id=70683&r");
         setMaxConnections(20);
+
+        JDController.getInstance().addControlListener(new ControlListener() {
+
+            public void controlEvent(ControlEvent event) {
+                // TODO Auto-generated method stub
+                if (event.getID() == ControlEvent.CONTROL_ON_FILEOUTPUT) {
+                    System.out.println("");
+                }
+
+            }
+
+        });
+
         // config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER,
         // getPluginConfig(), "PREMIUMCHUNKS",
         // JDLocale.L("plugins.hoster.uploadedto.chunks",
@@ -132,6 +210,7 @@ public class Uploadedto extends PluginForHost {
 
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         requestFileInformation(downloadLink);
         login(account);
@@ -182,7 +261,32 @@ public class Uploadedto extends PluginForHost {
             linkStatus.setValue(5 * 60 * 1000l);
             return;
         }
+
         dl.startDownload();
+
+        String server = new Regex(dl.getConnection().getURL(), "http:/(.*?)\\..*?.to/dl\\?id=(.+)").getMatch(0);
+        String id = new Regex(dl.getConnection().getURL(), "http:/(.*?)\\..*?.to/dl\\?id=(.+)").getMatch(1);
+        downloadLink.setProperty("server", server);
+        downloadLink.setProperty("id", id);
+
+        if (downloadLink.getLinkStatus().hasStatus(LinkStatus.ERROR_DOWNLOAD_FAILED) && downloadLink.getLinkStatus().getValue() == LinkStatus.VALUE_FAILED_HASH) {
+
+            collectCRCLinks(downloadLink, true);
+        }
+
+    }
+
+    private static void collectCRCLinks(DownloadLink downloadLink, boolean b) {
+        String server = downloadLink.getStringProperty("server");
+        String id = downloadLink.getStringProperty("id");
+        try {
+            Browser br = new Browser();
+            br.setDebug(true);
+            br.getPage("http://uploaded.to/rarerrors?auth=" + Encoding.urlEncode(id) + "&server=" + Encoding.urlEncode(server) + "&flag=" + (b ? 1 : 0));
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -193,12 +297,13 @@ public class Uploadedto extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
+        LINK_OBSERVER.register(downloadLink);
         br.setFollowRedirects(true);
         String id = new Regex(downloadLink.getDownloadURL(), "uploaded.to/file/(.*?)/").getMatch(0);
         try {
-        br.getPage("http://uploaded.to/api/file?id=" + id);
-        String[] lines = Regex.getLines(br + "");
-      
+            br.getPage("http://uploaded.to/api/file?id=" + id);
+            String[] lines = Regex.getLines(br + "");
+
             String fileName = lines[0].trim();
 
             long fileSize = Long.parseLong(lines[1].trim());
@@ -240,6 +345,7 @@ public class Uploadedto extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
+
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         requestFileInformation(downloadLink);
         br.setCookie("http://uploaded.to/", "lang", "de");
@@ -293,7 +399,16 @@ public class Uploadedto extends PluginForHost {
             linkStatus.setValue(10 * 60 * 1000l);
             return;
         }
+
         dl.startDownload();
+        String server = new Regex(dl.getConnection().getURL(), "http://(.*?)\\.").getMatch(0);
+        String id = new Regex(downloadLink.getDownloadURL(), "http://uploaded.to/file/(.*?)/").getMatch(0);
+        downloadLink.setProperty("server", server);
+        downloadLink.setProperty("id", id);
+
+        if (downloadLink.getLinkStatus().hasStatus(LinkStatus.ERROR_DOWNLOAD_FAILED) && downloadLink.getLinkStatus().getValue() == LinkStatus.VALUE_FAILED_HASH) {
+            collectCRCLinks(downloadLink, true);
+        }
     }
 
     @Override
