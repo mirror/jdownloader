@@ -17,7 +17,6 @@ public abstract class JDIconColumn extends JDTableColumn {
         label = new JRendererLabel();
         label.setHorizontalAlignment(JRendererLabel.CENTER);
         label.setBorder(null);
-        label.setOpaque(false);
     }
 
     /**
