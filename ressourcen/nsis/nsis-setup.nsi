@@ -167,7 +167,7 @@ done${UNSECTION_ID}:
 !macroend
 
 # Uninstaller sections
-Section /o "-un.Associate JDownloader with Containerfiles" UNSecAssociateFiles
+Section /o "-un.$(SecAssociateFiles_TITLE)" UNSecAssociateFiles
     ${unregisterExtension} ".jd" "JDownloader JD File"
     ${unregisterExtension} ".jdc" "JDownloader JDContainer File"
     ${unregisterExtension} ".dlc" "JDownloader DLC Container"
@@ -189,8 +189,48 @@ Section /o "-un.Associate JDownloader with Containerfiles" UNSecAssociateFiles
     
 SectionEnd
 
-Section /o -un.JDownloader UNSecJDMain
-    RMDir /REBOOTOK /r $INSTDIR
+Function un.RmButOne
+ Exch $R0 ; exclude dir
+ Exch
+ Exch $R1 ; route dir
+ Push $R2
+ Push $R3
+ 
+  ClearErrors
+  FindFirst $R3 $R2 "$R1\*.*"
+  IfErrors Exit
+ 
+  Top:
+   StrCmp $R2 "." Next
+   StrCmp $R2 ".." Next
+   StrCmp $R2 $R0 Next
+   IfFileExists "$R1\$R2\*.*" 0 DelFile # is it a dir?
+   RmDir /r /REBOOTOK "$R1\$R2"
+   Goto Next
+   DelFile:
+    Delete /REBOOTOK "$R1\$R2"
+   Next:
+    ClearErrors
+    FindNext $R3 $R2
+    IfErrors Exit
+   Goto Top
+ 
+  Exit:
+  FindClose $R3
+ 
+ Pop $R3
+ Pop $R2
+ Pop $R1
+ Pop $R0
+FunctionEnd
+
+Section /o "-un.$(SecJDMain_TITLE)" UNSecJDMain
+    Push $INSTDIR
+    Push "downloads"
+    Call un.RmButOne
+    RMDir $INSTDIR\downloads #won't delete if not empty
+    RMDir $INSTDIR
+    
     Delete /REBOOTOK $DESKTOP\JDownloader.lnk
     Delete /REBOOTOK "$SMPROGRAMS\$StartMenuGroup\JDownloader Support.lnk"
     Delete /REBOOTOK $SMPROGRAMS\$StartMenuGroup\JDownloader.lnk
@@ -225,7 +265,7 @@ SectionEnd
 # Installer functions
 Function .onInit
     InitPluginsDir
-    StrCpy $StartMenuGroup JDownloader
+    StrCpy $StartMenuGroup $(^Name)
     
 !insertmacro UAC_RunElevated
 ${Switch} $0
@@ -281,7 +321,7 @@ Function un.onInit
 
 UninstDirFound:
   
-    StrCpy $StartMenuGroup JDownloader
+    StrCpy $StartMenuGroup $(^Name)
     
     !insertmacro SELECT_UNSECTION JDownloader ${UNSecJDMain}
     !insertmacro SELECT_UNSECTION "Associate JDownloader with Containerfiles" ${UNSecAssociateFiles}
