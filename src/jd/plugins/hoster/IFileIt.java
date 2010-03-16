@@ -136,35 +136,54 @@ public class IFileIt extends PluginForHost {
     public void doFree(DownloadLink downloadLink) throws Exception, PluginException {
         br.setDebug(true);
         br.setFollowRedirects(true);
-        String downlink = br.getRegex("var.*?fsa.*?=.*?'(.*?)'").getMatch(0);
-        String downid = br.getRegex("var.*?fs =.*?'(.*?)'").getMatch(0);
-        String esn = br.getRegex("var.*?esn.*?=.*?(\\d+);<").getMatch(0);
-        if (downlink == null || esn == null || downid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String downlink = br.getRegex("alias_id.*?=.*?'(.*?)';").getMatch(0);
+        if (downlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // Example how current links(last updated plugin-links) look(ed)
         // like
-        // http://ifile.it/download:dl_request?x64=741603&type=na&esn=1&b3da197159a22d301ad99f58f8137557=9bf31c7ff062936a96d3c8bd1f8f2ff3
-        String finaldownlink = "http://ifile.it/download:dl_request?" + downlink + "&type=na&esn=" + esn + "&" + downid;
-        xmlrequest(br, finaldownlink);
-        if (!br.containsHTML("status\":\"ok\"")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.getPage("http://ifile.it/dl");
-        if (br.containsHTML("download:captcha")) {
-            Browser br2 = br.cloneBrowser();
+        // http://ifile.it/download:dl_request?alias_id=3180283&type=na&esn=1
+        String finaldownlink = "http://ifile.it/download:dl_request?alias_id=" + downlink + "&type=na&esn=1";
+        // Br2 is our xml browser now!
+        Browser br2 = br.cloneBrowser();
+        xmlrequest(br2, finaldownlink);
+        if (!br2.containsHTML("status\":\"ok\"")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (br2.containsHTML("download:captcha")) {
+            // Old captcha handling
             for (int i = 0; i <= 5; i++) {
                 String captchashit = br.getRegex("url \\+=.*?\\+.*?\\+.*?\"(.*?)\"").getMatch(0);
                 String captchacrap = br.getRegex("var.*?x.*?c = '(.*?)'").getMatch(0);
                 if (captchashit == null || captchacrap == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 String code = getCaptchaCode("http://ifile.it/download:captcha?0." + Math.random(), downloadLink);
-                String captchaget = "http://ifile.it/download:dl_request?" + downlink + "&type=simple&esn=0&" + captchacrap + "=" + code + "&" + downid + captchashit;
+                String captchaget = "http://ifile.it/download:dl_request?alias_id=" + downlink + "&type=simple&esn=0&" + captchacrap + "=" + code + "&" + captchashit;
                 logger.info("Captchagetpage = " + captchaget);
                 // Example of the last working captchaget
                 // http://ifile.it/download:dl_request?x65=549427&type=simple&esn=1&8a1e7=9fa&920e4e7d3666c587258c93ef87cb3365=a8c5e3fdae3471388ec44741b41b3c2d&d51500b7a7cd5292d9db0b98dc022447=98f13708210194c475687be6106a3b84
                 xmlrequest(br2, captchaget);
                 if (br2.containsHTML("\"retry\":\"retry\"")) continue;
-                br.getPage("http://ifile.it/dl");
                 break;
             }
-            if (br2.containsHTML("\"retry\":\"retry\"")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        } else if (br2.containsHTML("\"captcha\":1")) {
+            for (int i = 0; i <= 5; i++) {
+                // Manuel Re Captcha handling
+                String k = br.getRegex("recaptcha_public.*?=.*?'(.*?)'").getMatch(0);
+                if (k == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                br2.getPage("http://api.recaptcha.net/challenge?k=" + k);
+                String challenge = br2.getRegex("challenge : '(.*?)',").getMatch(0);
+                String server = br2.getRegex("server : '(.*?)',").getMatch(0);
+                if (challenge == null || server == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                String captchaAddress = server + "image?c=" + challenge;
+                String code = getCaptchaCode(captchaAddress, downloadLink);
+                String recaptchaget = "http://ifile.it/download:dl_request?alias_id=" + downlink + "&type=recaptcha&esn=1&recaptcha_response_field=" + code + "&recaptcha_challenge_field=" + challenge;
+                xmlrequest(br2, recaptchaget);
+                if (br2.containsHTML("\"retry\":1")) {
+                    xmlrequest(br2, finaldownlink);
+                    continue;
+                }
+                break;
+            }
         }
+        if (br2.containsHTML("(\"retry\":\"retry\"|\"retry\":1)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        if (!br2.containsHTML("status\":\"ok\"")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.getPage("http://ifile.it/dl");
         String dllink = br.getRegex("req_btn.*?target=\".*?\" href=\"(http.*?)\"").getMatch(0);
         if (dllink == null) {
             logger.info("first try getting dllink failed");

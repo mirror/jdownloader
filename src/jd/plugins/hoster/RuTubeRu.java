@@ -17,7 +17,6 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
@@ -51,11 +50,12 @@ public class RuTubeRu extends PluginForHost {
         String fsk18 = br.getRegex("<br><b>.*?18.*?href=\"(http://rutube.ru/.*?confirm=.*?)\"").getMatch(0);
         if (fsk18 != null) br.getPage(fsk18);
         br.setFollowRedirects(true);
-        String filename = br.getRegex(Pattern.compile("<h3[^>]*>(.*?)</h3>", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        String filename = br.getRegex("<title>(.*?):: Видео на RuTube </title>").getMatch(0);
+        if (filename == null) filename = br.getRegex("<meta name=\"description\" content=\"(.*?)- \"").getMatch(0);
         String filesize = br.getRegex("<span class=\"icn-size\"[^>]*>(.*?)</span>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim() + ".flv");
-        downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
+        downloadLink.setDownloadSize(Regex.getSize(filesize.replace(",", ".")));
         return AvailableStatus.TRUE;
     }
 

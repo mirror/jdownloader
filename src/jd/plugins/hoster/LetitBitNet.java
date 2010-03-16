@@ -141,9 +141,19 @@ public class LetitBitNet extends PluginForHost {
         if (!br.containsHTML("<frame")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         url = br.getRegex("<frame src=\"http://letitbit.net/tmpl/tmpl_frame_top.php\\?link=(.*?)\" name=\"topFrame\" scrolling=\"No\" noresize=\"noresize\" id=\"topFrame\" title=\"topFrame\" />").getMatch(0);
         if (url == null) {
-            /* if we have to wait, lets wait 60+5 buffer secs */
-            sleep(65 * 1000l, downloadLink);
             String nextpage = br.getRegex("(http://s\\d+.letitbit.net/tmpl/tmpl_frame_top.*?)\"").getMatch(0);
+            if (nextpage == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            br.getPage(nextpage);
+            // Ticket Time
+            String ttt = br.getRegex("id=\"errt\">(\\d+)</span>").getMatch(0);
+            int tt = 100;
+            if (ttt != null) {
+                logger.info("Waittime detected, waiting " + ttt.trim() + " seconds from now on...");
+                tt = Integer.parseInt(ttt);
+            }
+            // Add 5 seconds to the original waittime
+            tt = tt + 5;
+            sleep(tt * 1001, downloadLink);
             br.getPage(nextpage);
             /* letitbit and vipfile share same hosting server ;) */
             /* because there can be another link to a downlodmanager first */
