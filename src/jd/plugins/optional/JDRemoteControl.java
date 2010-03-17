@@ -80,7 +80,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
     private static final String PARAM_ENABLED = "ENABLED";
     private final SubConfiguration subConfig;
 
-    private boolean grabberIsBusy;
+    private boolean grabberIsBusy = false;
 
     private static final String LINK_TYPE_OFFLINE = "offline";
     private static final String LINK_TYPE_AVAIL = "available";
@@ -542,7 +542,11 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
                 // queue
 
                 if (request.getRequestUrl().matches(".+/confirm/.+")) {
-                    grabberIsBusy = true;
+                    try {
+                        Thread.sleep(3000);
+                    } catch (InterruptedException e) {
+                        logger.warning(e.toString());
+                    }
 
                     while (grabberIsBusy) {
                         try {
@@ -574,7 +578,16 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
                 // Open a local or remote DLC-container
                 String dlcfilestr = new Regex(request.getRequestUrl(), ".*/action/add(/confirm)?/container/(.+)").getMatch(1);
                 dlcfilestr = Encoding.htmlDecode(dlcfilestr);
+                ArrayList<LinkGrabberFilePackage> packagesBefore = null;
+                ArrayList<LinkGrabberFilePackage> packages = null;
 
+                // get packages from linkgrabber list before dlc import
+                if (request.getRequestUrl().matches(".+/confirm/.+")) {
+                    packagesBefore = new ArrayList<LinkGrabberFilePackage>();
+                    packagesBefore.addAll(LinkGrabberController.getInstance().getPackages());
+                }
+
+                // import dlc
                 if (dlcfilestr.matches("http://.*?\\.(dlc|ccf|rsdf)")) {
                     // remote container file
                     String containerFormat = new Regex(dlcfilestr, ".+\\.((dlc|ccf|rsdf))").getMatch(0);
@@ -585,7 +598,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
                         JDUtilities.getController().loadContainerFile(container, false, false);
 
                         try {
-                            Thread.sleep(1000);
+                            Thread.sleep(3000);
                         } catch (Exception e) {
                             JDLogger.exception(e);
                         }
@@ -599,38 +612,40 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
                     JDUtilities.getController().loadContainerFile(new File(dlcfilestr), false, false);
                 }
 
-                // TODO: compare links in grabber before and after adding dlc ->
-                // then confirm only new links
+                // compare links in grabber before and after adding dlc, then
+                // confirm only new links
+                if (request.getRequestUrl().matches(".+/confirm/.+")) {
+                    try {
+                        Thread.sleep(3000);
+                    } catch (InterruptedException e) {
+                        logger.warning(e.toString());
+                    }
 
-                // if (request.getRequestUrl().matches(".+/confirm/.+")) {
-                // grabberIsBusy = true;
-                // while (grabberIsBusy) {
-                // try {
-                // Thread.sleep(1000);
-                // } catch (InterruptedException e) {
-                // logger.warning(e.toString());
-                // }
-                // }
-                //
-                // ArrayList<LinkGrabberFilePackage> lgPackages = new
-                // ArrayList<LinkGrabberFilePackage>();
-                //
-                // synchronized (LinkGrabberController.ControllerLock) {
-                // lgPackages.addAll(LinkGrabberController.getInstance().getPackages());
-                //
-                // for (int i = 0; i < lgPackages.size(); i++) {
-                // for (String linkurl : links) {
-                // for (DownloadLink dll : lgPackages.get(i).getDownloadLinks())
-                // {
-                // if (linkurl.equals(dll.getBrowserUrl())) {
-                // LinkGrabberPanel.getLinkGrabber().confirmPackage(lgPackages.get(i),
-                // null, i);
-                // }
-                // }
-                // }
-                // }
-                // }
-                // }
+                    while (grabberIsBusy) {
+                        try {
+                            Thread.sleep(1000);
+                        } catch (InterruptedException e) {
+                            logger.warning(e.toString());
+                        }
+                    }
+
+                    synchronized (LinkGrabberController.ControllerLock) {
+                        packages = new ArrayList<LinkGrabberFilePackage>();
+                        packages.addAll(LinkGrabberController.getInstance().getPackages());
+
+                        for (LinkGrabberFilePackage packa : packages) {
+                            for (LinkGrabberFilePackage packb : packagesBefore) {
+                                if (packa.equals(packb)) {
+                                    packages.remove(packa);
+                                }
+                            }
+                        }
+
+                        for (int i = 0; i < packages.size(); i++) {
+                            LinkGrabberPanel.getLinkGrabber().confirmPackage(packages.get(i), null, i);
+                        }
+                    }
+                }
 
                 response.addContent("Container opened. (" + dlcfilestr + ")");
             } else if (request.getRequestUrl().matches("(?is).*/action/save/container(/fromgrabber)?/.+")) {
@@ -780,8 +795,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
                         packages.addAll(LinkGrabberController.getInstance().getPackages());
 
                         for (int i = 0; i < packages.size(); i++) {
-                            LinkGrabberFilePackage fp = packages.get(i);
-                            LinkGrabberPanel.getLinkGrabber().confirmPackage(fp, null, i);
+                            LinkGrabberPanel.getLinkGrabber().confirmPackage(packages.get(i), null, i);
                         }
 
                         response.addContent("All links are now scheduled for download.");
