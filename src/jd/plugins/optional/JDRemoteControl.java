@@ -25,10 +25,13 @@ import java.io.File;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.Locale;
 import java.util.Random;
 import java.util.Vector;
 import java.util.Map.Entry;
+import java.util.regex.Pattern;
 
+import jd.HostPluginWrapper;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -64,6 +67,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkGrabberFilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.OptionalPlugin;
+import jd.plugins.PluginForHost;
 import jd.plugins.PluginOptional;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
@@ -222,7 +226,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
                 infovector.add("Set whether downloads should start or not start after adding the links to the download queue");
 
                 commandvec.add("/action/add(/confirm)/links/%X%");
-                infovector.add("Add links %X% to grabber<br/>" + "e.g. /action/add/links/http://tinyurl.com/6o73eq" + "<p>the confirm parameter will send the links to download queue afterwards</p>" + "Note: Links must be URLEncoded. Use NEWLINE between Links!");
+                infovector.add("Add links %X% to grabber<br/>" + "e.g. /action/add/links/http://tinyurl.com/6o73eq" + "<p>the confirm parameter will send the links to download queue afterwards</p>" + "Note: Links must be URLEncoded. Use NEWLINE between links!");
 
                 commandvec.add("/action/add(/confirm)/container/%X%");
                 infovector.add("Add (remote or local) container %X%<br/>" + "e.g. /action/add/container/C:\\container.dlc" + "<p>the confirm parameter will send the links to download queue afterwards</p>" + "Note: Address (remote or local) must be URLEncoded!");
@@ -230,10 +234,10 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
                 commandvec.add("/action/save/container(/fromgrabber)/%X%");
                 infovector.add("Save DLC-container with all links to %X%<br/>" + "e.g. /action/add/container/%X%" + "<p>fromgrabber: save DLC-container from grabber list instead from download list</p>");
 
-                commandvec.add("/action/grabber/join/%X% %Y%");
-                infovector.add("Join all denoted linkgrabber packages %Y% to the package %X%");
+                commandvec.add("/action/grabber/join/%X%/%Y%");
+                infovector.add("Join all denoted linkgrabber packages %Y%, each separated by a slash, to the package %X%");
 
-                commandvec.add("/action/grabber/rename/%X% %Y%");
+                commandvec.add("/action/grabber/rename/%X%/%Y%");
                 infovector.add("Rename link grabber package from %X% to %Y%");
 
                 commandvec.add("/action/grabber/confirmall");
@@ -242,7 +246,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
                 commandvec.add("/action/grabber/confirm/%X%");
                 infovector.add("Schedule all denoted grabber packages %X% as download");
 
-                commandvec.add("/action/grabber/removetype/%X% %Y%");
+                commandvec.add("/action/grabber/removetype/%X%/%Y%");
                 infovector.add("Remove links from grabber that match the denoted type %X% and/or %Y%. Possible values: 'offline' for offline links and 'available' for links that are already scheduled as download");
 
                 commandvec.add("/action/grabber/removeall");
@@ -256,6 +260,10 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
 
                 commandvec.add("/action/downloads/remove/%X%");
                 infovector.add("Remove packages %X% from download list");
+
+                // special table
+                commandvec.add("/special/check/%X%");
+                infovector.add("Check links in %X% without adding them to the linkgrabber or the download list. %X% may be a list of urls. Note: Links must be URLEncoded. Use NEWLINE between links!");
 
                 // here goes the whole page construct + css
                 response.addContent("<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">" + "<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" lang=\"en\"><head><title>JDRemoteControl Help</title><style type=\"text/css\">" + "a {text-decoration:none; color:#5f5f5f}" + "a:hover {text-decoration:underline; color_#5f5f5f;}" + "body {margin:0% 10% 20% 10%; font-size:12px; color:#5f5f5f; background-color:#ffffff; font-family:Verdana, Arial, Helvetica, sans-serif;}" + "table {width:100%; padding:none; border:1px solid #5f5f5f; border-collapse:collapse; background-color:#ffffff;}" + "td {width:50%; padding:5px; border-top:1px solid #5f5f5f; border-bottom:1px solid #5f5f5f; vertical-align:top;}" + "th {color:#ffffff; background-color:#5f5f5f; font-size:13px; font-weight:normal; text-align:left; padding:5px;}"
@@ -673,7 +681,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
 
                                 for (DownloadLink link : lgPackages.get(i).getDownloadLinks()) {
                                     dllinks.add(link); // collecting download
-                                                       // links
+                                    // links
                                     link.setEnabled(false);
                                     if (dl == null) dl = link;
                                 }
@@ -725,7 +733,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
                     response.addContent(ERROR_LINK_GRABBER_RUNNING);
                 } else {
                     ArrayList<LinkGrabberFilePackage> srcPackages = new ArrayList<LinkGrabberFilePackage>();
-                    String[] packagenames = Encoding.htmlDecode(new Regex(request.getRequestUrl(), ".*/action/grabber/join/(.+)").getMatch(0)).split(" ");
+                    String[] packagenames = Encoding.htmlDecode(new Regex(request.getRequestUrl(), ".*/action/grabber/join/(.+)").getMatch(0)).split("/");
 
                     synchronized (LinkGrabberController.ControllerLock) {
                         LinkGrabberFilePackage destPackage = LinkGrabberController.getInstance().getFPwithName(packagenames[0]);
@@ -772,7 +780,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
                 if (LinkGrabberPanel.getLinkGrabber().isRunning()) {
                     response.addContent(ERROR_LINK_GRABBER_RUNNING);
                 } else {
-                    String[] packagenames = Encoding.htmlDecode(new Regex(request.getRequestUrl(), "(?is).*/action/grabber/rename/(.+)").getMatch(0)).split(" ");
+                    String[] packagenames = Encoding.htmlDecode(new Regex(request.getRequestUrl(), "(?is).*/action/grabber/rename/(.+)").getMatch(0)).split("/");
 
                     synchronized (LinkGrabberController.ControllerLock) {
                         LinkGrabberFilePackage destPackage = LinkGrabberController.getInstance().getFPwithName(packagenames[0]);
@@ -844,7 +852,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
                     ArrayList<String> delLinks = new ArrayList<String>();
                     ArrayList<String> delPackages = new ArrayList<String>();
 
-                    String[] types = Encoding.htmlDecode(new Regex(request.getRequestUrl(), "(?is).*/action/grabber/removetype/(.+)").getMatch(0)).split(" ");
+                    String[] types = Encoding.htmlDecode(new Regex(request.getRequestUrl(), "(?is).*/action/grabber/removetype/(.+)").getMatch(0)).split("/");
 
                     synchronized (LinkGrabberController.ControllerLock) {
                         ArrayList<LinkGrabberFilePackage> packages = new ArrayList<LinkGrabberFilePackage>();
@@ -966,6 +974,45 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
                     response.addContent("'" + removelist.get(i).getName() + "'");
                 }
 
+            } else if (request.getRequestUrl().matches("(?is).*/special/check/.+")) {
+                // Add link(s)
+                ArrayList<String> links = new ArrayList<String>();
+
+                String link = new Regex(request.getRequestUrl(), ".*/special/check/(.+)").getMatch(0);
+
+                for (String tlink : HTMLParser.getHttpLinks(Encoding.urlDecode(link, false), null)) {
+                    links.add(tlink);
+                }
+
+                if (request.getParameters().size() > 0) {
+                    Iterator<String> it = request.getParameters().keySet().iterator();
+
+                    while (it.hasNext()) {
+                        String help = it.next();
+
+                        if (!request.getParameter(help).equals("")) {
+                            links.add(request.getParameter(help));
+                        }
+                    }
+                }
+
+                // response.addContent("Link check result:");
+
+                // check all links sequentially
+                ArrayList<DownloadLink> dls = new ArrayList<DownloadLink>();
+                for (String chklink : links) {
+
+                    dls = new DistributeData(chklink, false).findLinks();
+
+                    Element element = xml.createElement("link");
+                    xml.getFirstChild().appendChild(element);
+                    element.setAttribute("url", chklink);
+
+                    for (DownloadLink dl : dls) {
+                        element.appendChild(addGrabberLink(xml, dl));
+                    }
+                }
+                response.addContent(JDUtilities.createXmlString(xml));
             } else {
                 response.addContent(ERROR_MALFORMED_REQUEST);
             }
@@ -994,17 +1041,25 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
             element.setAttribute("file_hoster", dl.getHost());
             element.setAttribute("file_status", dl.getLinkStatus().getStatusString().toString());
             element.setAttribute("file_speed", dl.getDownloadSpeed() + "");
+            element.setAttribute("file_size", Formatter.formatReadable(dl.getDownloadSize()));
+            element.setAttribute("file_downloaded", Formatter.formatReadable(dl.getDownloadCurrent()));
             return element;
         }
 
         private Element addGrabberLink(Document xml, DownloadLink dl) {
             Element element = xml.createElement("file");
+            
+            // fetch available status in advance - also updates other stuff like file size
+            AvailableStatus status = dl.getAvailableStatus();
+            
             element.setAttribute("file_name", dl.getName());
             element.setAttribute("file_package", dl.getFilePackage().getName());
             element.setAttribute("file_hoster", dl.getHost());
             element.setAttribute("file_status", dl.getLinkStatus().getStatusString().toString());
+            element.setAttribute("file_available", status.toString());
             element.setAttribute("file_download_url", dl.getDownloadURL().toString());
             element.setAttribute("file_browser_url", dl.getBrowserUrl().toString());
+            element.setAttribute("file_size", Formatter.formatReadable(dl.getDownloadSize()));
             return element;
         }
 

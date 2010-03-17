@@ -129,6 +129,7 @@ system.download.triggerfileexists.rename = Auto rename
 jd.controlling.singledownloadcontroller.askexists.title = File exists
 jd.controlling.singledownloadcontroller.askexists = The file \r\n%s\r\n already exists. What do you want to do?
 controller.status.fileexists.skip = File already exists.
+controller.status.fileexists.othersource = File loaded from other source
 controller.status.fileexists.overwritefailed = Überschreiben fehlgeschlagen 
 controller.status.connectionproblems = Connection lost.
 controller.status.tempunavailable = kurzzeitig nicht verfügbar

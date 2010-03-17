@@ -27,6 +27,7 @@ controller.status.connectionproblems = Verbindung verloren
 controller.status.containererror = Container Fehler
 controller.status.fileexists.overwritefailed = Überschreiben fehlgeschlagen
 controller.status.fileexists.skip = Datei schon vorhanden
+controller.status.fileexists.othersource = Datei von anderer Quelle geladen
 controller.status.pluindefekt = Plugin defekt
 controller.status.tempunavailable = kurzzeitig nicht verfügbar
 convert.dialog.chooseformat = Wähle das Dateiformat:

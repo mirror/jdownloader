@@ -295,7 +295,7 @@ public class SingleDownloadController extends Thread {
             ArrayList<DownloadLink> links = DownloadController.getInstance().getAllDownloadLinks();
             for (DownloadLink link : links) {
                 if (downloadLink != link && downloadLink.getFileOutput().equals(link.getFileOutput())) {
-                    link.getLinkStatus().setErrorMessage(JDL.L("controller.status.fileexists.skip", "File already exists."));
+                    link.getLinkStatus().setErrorMessage(JDL.L("controller.status.fileexists.othersource", "File loaded from " + link.getHost() + "."));
                     link.setEnabled(false);
                     DownloadController.getInstance().fireDownloadLinkUpdate(downloadLink);
                 }
