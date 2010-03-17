@@ -672,6 +672,8 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
                                 DownloadLink dl = null;
 
                                 for (DownloadLink link : lgPackages.get(i).getDownloadLinks()) {
+                                    dllinks.add(link); // collecting download
+                                                       // links
                                     link.setEnabled(false);
                                     if (dl == null) dl = link;
                                 }
