@@ -819,7 +819,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
                     ArrayList<LinkGrabberFilePackage> addedlist = new ArrayList<LinkGrabberFilePackage>();
                     ArrayList<LinkGrabberFilePackage> packages = new ArrayList<LinkGrabberFilePackage>();
 
-                    String[] packagenames = Encoding.htmlDecode(new Regex(request.getRequestUrl(), "(?is).*/action/grabber/confirm/(.+)").getMatch(0)).split(" ");
+                    String[] packagenames = Encoding.htmlDecode(new Regex(request.getRequestUrl(), "(?is).*/action/grabber/confirm/(.+)").getMatch(0)).split("/");
 
                     synchronized (LinkGrabberController.ControllerLock) {
                         packages.addAll(LinkGrabberController.getInstance().getPackages());
@@ -908,7 +908,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
                 }
             } else if (request.getRequestUrl().matches("(?is).*/action/grabber/remove/.+")) {
                 // remove denoted packages from grabber
-                String[] packagenames = Encoding.htmlDecode(new Regex(request.getRequestUrl(), ".*/action/grabber/remove/(.+)").getMatch(0)).split(" ");
+                String[] packagenames = Encoding.htmlDecode(new Regex(request.getRequestUrl(), ".*/action/grabber/remove/(.+)").getMatch(0)).split("/");
 
                 if (LinkGrabberPanel.getLinkGrabber().isRunning()) {
                     response.addContent(ERROR_LINK_GRABBER_RUNNING);
@@ -952,7 +952,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
                 // remove denoted packages from download list
                 ArrayList<FilePackage> packages = new ArrayList<FilePackage>();
                 ArrayList<FilePackage> removelist = new ArrayList<FilePackage>();
-                String[] packagenames = Encoding.htmlDecode(new Regex(request.getRequestUrl(), ".*/action/downloads/remove/(.+)").getMatch(0)).split(" ");
+                String[] packagenames = Encoding.htmlDecode(new Regex(request.getRequestUrl(), ".*/action/downloads/remove/(.+)").getMatch(0)).split("/");
 
                 packages.addAll(DownloadController.getInstance().getPackages());
 
@@ -995,8 +995,6 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
                         }
                     }
                 }
-
-                // response.addContent("Link check result:");
 
                 // check all links sequentially
                 ArrayList<DownloadLink> dls = new ArrayList<DownloadLink>();
