@@ -23,9 +23,6 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
-import jd.controlling.JDController;
-import jd.event.ControlEvent;
-import jd.event.ControlListener;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -106,18 +103,6 @@ public class Uploadedto extends PluginForHost {
         super(wrapper);
         this.enablePremium("http://uploaded.to/ref?id=70683&r");
         setMaxConnections(20);
-
-        JDController.getInstance().addControlListener(new ControlListener() {
-
-            public void controlEvent(ControlEvent event) {
-                // TODO Auto-generated method stub
-                if (event.getID() == ControlEvent.CONTROL_ON_FILEOUTPUT) {
-                    System.out.println("");
-                }
-
-            }
-
-        });
 
         // config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER,
         // getPluginConfig(), "PREMIUMCHUNKS",

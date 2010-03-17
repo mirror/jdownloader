@@ -96,6 +96,7 @@ public class SharingMatrixCom extends PluginForHost {
         String url = br.getRedirectLocation();
         boolean direct = true;
         if (url == null) {
+            if (br.containsHTML("We are sorry but")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server maintenance", 60 * 60 * 1000l);
             if (br.containsHTML("download limit of 10Gb is over")) {
                 logger.info("Deposit: We are sorry, but your daily Premium user's download limit of 10Gb is over.");
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
@@ -146,6 +147,7 @@ public class SharingMatrixCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 0);
         if (dl.getConnection() != null && dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            if (br.containsHTML("We are sorry but")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server maintenance", 60 * 60 * 1000l);
             if (br.containsHTML("download limit of 10Gb is over")) {
                 logger.info("Deposit: We are sorry, but your daily Premium user's download limit of 10Gb is over.");
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
@@ -243,6 +245,7 @@ public class SharingMatrixCom extends PluginForHost {
                 }
             }
             br2.postPage("http://sharingmatrix.com/ajax_scripts/verifier.php", "?&code=" + code);
+            if (br2.containsHTML("We are sorry but")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server maintenance", 60 * 60 * 1000l);
             if (Integer.parseInt(br2.toString().trim()) != 1) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
 
         }
