@@ -37,12 +37,12 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "DirectHTTP", "http links" }, urls = { "directhttp://.+", "https?viajd://[\\d\\w\\.:\\-@]*/.*\\.(otrkey|ac3|3gp|7zip|7z|aiff|aif|aifc|au|avi|bin|bz2|ccf|cue|deb|divx|dlc|doc|docx|dot|exe|ff|flv|gif|gz|iwd|iso|java|jpg|jpeg|m4v|mkv|mp2|mp3|mp4|mov|movie|mpe|mpeg|mpg|msi|msu|nfo|oga|ogg|ogv|pkg|png|pdf|ppt|pptx|pps|ppz|pot|psd|qt|rmvb|rar|r\\d+|\\d+|rpm|run|rsdf|rtf|sh|srt|snd|sfv|tar|tif|tiff|viv|vivo|wav|wmv|xla|xls|zip|z\\d+|ts|load|xpi|_[_a-z]{2}|djvu)" }, flags = { 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "DirectHTTP", "http links" }, urls = { "directhttp://.+", "https?viajd://[\\d\\w\\.:\\-@]*/.*\\.(otrkey|ac3|3gp|7zip|7z|aiff|aif|aifc|au|avi|bin|bz2|ccf|cue|deb|divx|dlc|dmg|doc|docx|dot|exe|ff|flv|gif|gz|iwd|iso|java|jpg|jpeg|m4v|mkv|mp2|mp3|mp4|mov|movie|mpe|mpeg|mpg|msi|msu|nfo|oga|ogg|ogv|pkg|png|pdf|ppt|pptx|pps|ppz|pot|psd|qt|rmvb|rar|r\\d+|\\d+|rpm|run|rsdf|rtf|sh|srt|snd|sfv|tar|tif|tiff|viv|vivo|wav|wmv|xla|xls|zip|z\\d+|ts|load|xpi|_[_a-z]{2}|djvu)" }, flags = { 0, 0 })
 public class DirectHTTP extends PluginForHost {
 
     private String contentType;
 
-    static public final String ENDINGS = "\\.(cbr|cbz|otrkey|ac3|3gp|7zip|7z|aiff|aif|aifc|au|avi|bin|bz2|ccf|cue|deb|divx|dlc|doc|docx|dot|exe|ff|flv|gif|gz|iwd|iso|java|jpg|jpeg|m4v|mkv|mp2|mp3|mp4|mov|movie|mpe|mpeg|mpg|msi|msu|nfo|oga|ogg|ogv|pkg|png|pdf|ppt|pptx|pps|ppz|pot|psd|qt|rmvb|rar|r\\d+|\\d+|rpm|run|rsdf|rtf|sh|srt|snd|sfv|tar|tif|tiff|viv|vivo|wav|wmv|xla|xls|zip|z\\d+|ts|load|xpi|_[_a-z]{2}|djvu)";
+    static public final String ENDINGS = "\\.(cbr|cbz|otrkey|ac3|3gp|7zip|7z|aiff|aif|aifc|au|avi|bin|bz2|ccf|cue|deb|divx|dlc|dmg|doc|docx|dot|exe|ff|flv|gif|gz|iwd|iso|java|jpg|jpeg|m4v|mkv|mp2|mp3|mp4|mov|movie|mpe|mpeg|mpg|msi|msu|nfo|oga|ogg|ogv|pkg|png|pdf|ppt|pptx|pps|ppz|pot|psd|qt|rmvb|rar|r\\d+|\\d+|rpm|run|rsdf|rtf|sh|srt|snd|sfv|tar|tif|tiff|viv|vivo|wav|wmv|xla|xls|zip|z\\d+|ts|load|xpi|_[_a-z]{2}|djvu)";
 
     public DirectHTTP(PluginWrapper wrapper) {
         super(wrapper);
