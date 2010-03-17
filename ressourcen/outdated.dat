@@ -201,3 +201,6 @@ jd/captcha/methods/crptm2
 jd/plugins/decrypter/VdSz.class
 jd/plugins/decrypter/UploadBearCom.class
 jd/plugins/hoster/UploadBearCom.class
+jd/plugins/decrypter/FlmpldCm.class
+jd/plugins/decrypter/FnkypldCm.class
+jd/plugins/decrypter/LGylCm.class

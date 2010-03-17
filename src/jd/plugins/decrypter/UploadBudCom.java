@@ -20,7 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.parser.Regex;
+import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
@@ -28,32 +28,27 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "lougyl.com" }, urls = { "http://[\\w\\.]*lougyl\\.com/files/[A-Z0-9]{8}" }, flags = { 0 })
-public class LGylCm extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadbud.com" }, urls = { "http://[\\w\\.]*?uploadbud\\.com/files/[A-Z0-9]{8}/.+" }, flags = { 0 })
+public class UploadBudCom extends PluginForDecrypt {
 
-    public LGylCm(PluginWrapper wrapper) {
+    public UploadBudCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String dlsite0 = new Regex(param, "lougyl\\.com/files/([A-Z0-9]{8})").getMatch(0);
-        String dlsite1 = "http://www.lougyl.com/status.php?uid=" + dlsite0;
-        br.getPage(dlsite1);
-        /* Error handling */
-        if (!br.containsHTML("<td><img src=")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-        String[] links = br.getRegex(" href=(.*?) target").getColumn(0);
-        if (links == null || links.length == 0) return null;
-        progress.setRange(links.length);
-        for (String link : links) {
-            String link1 = "http://www.lougyl.com" + link;
-            br.getPage(link1);
-            String finallink = br.getRegex("name=\"main\" src=\"(.*?)\"").getMatch(0);
-            if (finallink == null) return null;
-            DownloadLink dl = createDownloadlink(finallink);
-            decryptedLinks.add(dl);
-            progress.increase(1);
+        String parameter = param.toString();
+        br.getPage(parameter);
+        String pagepiece = br.getRegex("<textarea(.*?)</textarea").getMatch(0);
+        if (pagepiece == null) return null;
+        String[] links = HTMLParser.getHttpLinks(pagepiece, "");
+        if (links == null || links.length == 0) {
+            logger.info("The following link appears to be offline: " + parameter);
+            throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         }
+        for (String dl : links)
+            decryptedLinks.add(createDownloadlink(dl));
+
         return decryptedLinks;
     }
 

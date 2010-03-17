@@ -29,7 +29,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ex.ua" }, urls = { "http://www\\.ex\\.ua/((view|get)/[0-9]+|(view/[0-9]+\\?r=[0-9]+|view/[0-9]+\\?r=[0-9,]+))" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ex.ua" }, urls = { "http://[\\w\\.]*?(ex\\.ua|luxport\\.eu)/((view|get|load)/[0-9]+|(view/[0-9]+\\?r=[0-9]+|view/[0-9]+\\?r=[0-9,]+))" }, flags = { 0 })
 public class Xa extends PluginForDecrypt {
 
     public Xa(PluginWrapper wrapper) {
@@ -39,18 +39,28 @@ public class Xa extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        parameter = parameter.replace("/load/", "/view/").replace("ex.ua", "luxport.eu");
         br.setFollowRedirects(false);
         br.getPage(parameter);
-        if (br.getRedirectLocation() != null && br.getRedirectLocation().equals("http://www.ex.ua/")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-        String fpName = br.getRegex("<title>(.*?)@ EX\\.UA</title>").getMatch(0);
+        // To get and check more than 1 redirect after another
+        for (int i = 0; i <= 3; i++) {
+            if (br.getRedirectLocation() != null && br.getRedirectLocation().equals("http://luxport.eu/")) {
+                logger.info("The following link was added but is offline: " + parameter);
+                throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+            }
+            if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
+            if (br.getRedirectLocation() == null) break;
+        }
+        String fpName = br.getRegex("align='left' style='margin-right: 16px;' alt='(.*?)'").getMatch(0);
+        if (fpName == null || fpName.trim().equals("kein titel")) fpName = br.getRegex("<h1>(.*?)</h1><br>").getMatch(0);
         if (parameter.contains("/view/")) {
             String[] linksandmd5 = br.getRegex("'(/get/[0-9]+.*?md5:[0-9a-z]+)'").getColumn(0);
-            if (linksandmd5 != null) {
+            if (linksandmd5 != null && linksandmd5.length != 0) {
                 progress.setRange(linksandmd5.length);
                 for (String pagepiece : linksandmd5) {
                     String md5hash = new Regex(pagepiece, "md5:([a-z0-9]+)").getMatch(0);
                     String cryptedlink = new Regex(pagepiece, "(/get/[0-9]+)").getMatch(0);
-                    br.getPage("http://www.ex.ua" + cryptedlink);
+                    br.getPage("http://www.luxport.eu" + cryptedlink);
                     String finallink = br.getRedirectLocation();
                     if (finallink == null) return null;
                     DownloadLink decryptedlink = createDownloadlink("directhttp://" + finallink);
@@ -59,18 +69,19 @@ public class Xa extends PluginForDecrypt {
                     }
                     // Errorhandling for offline links, adding them makes no
                     // sense!
-                    if (!finallink.contains("http://www.ex.ua/online")) {
+                    if (!finallink.contains("http://luxport.eu/online")) {
                         decryptedLinks.add(decryptedlink);
                     }
                     progress.increase(1);
                 }
 
             } else {
+                System.out.print(br.toString());
                 String[] links = br.getRegex("'(/get/[0-9]+)'").getColumn(0);
                 if (links.length == 0) return null;
                 progress.setRange(links.length);
                 for (String cryptedlink : links) {
-                    br.getPage("http://www.ex.ua" + cryptedlink);
+                    br.getPage("http://luxport.eu" + cryptedlink);
                     String finallink = br.getRedirectLocation();
                     if (finallink == null) return null;
                     decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
