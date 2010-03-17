@@ -76,7 +76,6 @@ public class Xa extends PluginForDecrypt {
                 }
 
             } else {
-                System.out.print(br.toString());
                 String[] links = br.getRegex("'(/get/[0-9]+)'").getColumn(0);
                 if (links.length == 0) return null;
                 progress.setRange(links.length);

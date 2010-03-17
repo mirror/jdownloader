@@ -24,9 +24,10 @@ import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anime-loads.org" }, urls = { "http://[\\w\\.]*?anime-loads\\.org/Weiterleitung/\\?cryptid=[0-9a-z]{32}|http://[\\w\\.]*?anime-loads\\.org/page.php\\?id=[0-9]+|http://[\\w\\.]*?anime-loads\\.org/media/\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anime-loads.org" }, urls = { "http://[\\w\\.]*?anime-loads\\.org/download/\\d+/rs\\.0|http://[\\w\\.]*?anime-loads\\.org/media/\\d+" }, flags = { 0 })
 public class NmLdsrg extends PluginForDecrypt {
 
     public NmLdsrg(PluginWrapper wrapper) {
@@ -39,24 +40,22 @@ public class NmLdsrg extends PluginForDecrypt {
         ArrayList<String> passwords = new ArrayList<String>();
         passwords.add("www.anime-loads.org");
         String parameter = param.toString();
-
+        String fpName = null;
         br.setCookiesExclusive(true);
-        if (parameter.contains("Weiterleitung")) {
+        if (parameter.contains("/download/")) {
             links.add(parameter);
         } else {
             br.getPage(parameter);
-            Thread.sleep(200);
-            br.getPage(parameter);
-            String[] calls = br.getRegex("(\\||')([a-z0-9]{32})").getColumn(1);
-            for (String call : calls) {
-                links.add(getLink(call));
-            }
-            calls = br.getRegex("(http://[\\w\\.]*?anime-loads\\.org/[^/]*?/\\d+/[a-zA-Z]*?\\.0)").getColumn(0);
-            for (String call : calls) {
-                links.add(call);
+            fpName = br.getRegex("<title>\\[ ANIME-LOADS\\.ORG ] - Serie:(.*?)</title>").getMatch(0);
+            if (fpName == null) fpName = br.getRegex("<div class=\"headlinebg\"><h1 class=\"headline_inner\">(.*?)</h1>").getMatch(0);
+            String[] continueLinks = br.getRegex("\"(http://www\\.anime-loads\\.org/download/\\d+/.*?)\"").getColumn(0);
+            if (continueLinks == null || continueLinks.length == 0) continueLinks = br.getRegex("<a target=\"_blank\" href=\"(http.*?)\"").getColumn(0);
+            if (continueLinks == null || continueLinks.length == 0) return null;
+            for (String singlelink : continueLinks) {
+                links.add(singlelink);
             }
         }
-
+        progress.setRange(links.size());
         for (String link : links) {
             br.getPage(link);
             String dllink = Encoding.htmlDecode(br.getRegex("<meta http-equiv=\"refresh\" content=\"5; url=(.*?)\">").getMatch(0));
@@ -64,17 +63,15 @@ public class NmLdsrg extends PluginForDecrypt {
             dl.setSourcePluginPasswordList(passwords);
             dl.setDecrypterPassword(passwords.get(0));
             decryptedLinks.add(dl);
+            progress.increase(1);
+        }
+        if (fpName != null) {
+            FilePackage fp = FilePackage.getInstance();
+            fp.setName(fpName.trim());
+            fp.addLinks(decryptedLinks);
         }
         if (links.size() > 0 && decryptedLinks.size() == 0) return null;
         return decryptedLinks;
-    }
-
-    public String getLink(String a) {
-        String d = "";
-        for (int i = a.length() - 1; i >= 0; i--) {
-            d += a.charAt(i);
-        }
-        return "http://anime-loads.org/Weiterleitung/?cryptid=" + d;
     }
 
 }

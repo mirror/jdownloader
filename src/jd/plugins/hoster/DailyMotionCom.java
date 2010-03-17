@@ -60,14 +60,16 @@ public class DailyMotionCom extends PluginForHost {
                 }
             }
         }
+        String allLinks = null;
         dllink = new Regex(Encoding.htmlDecode(br.toString()), "addVariable\\(\"video\", \"(.*?)\"\\);").getMatch(0);
         if (dllink != null) {
-            String allLinks = Encoding.htmlDecode(dllink);
+            allLinks = Encoding.htmlDecode(dllink);
             dllink = new Regex(allLinks, "(http://www\\.dailymotion\\.com/cdn/H264-848x480/video/.*?\\.mp4.*?@@h264-hq)").getMatch(0);
             if (dllink == null) {
                 dllink = new Regex(allLinks, "(http://www\\.dailymotion\\.com/cdn/H264-512x384/video/.*?\\.mp4.*?@@h264)").getMatch(0);
             }
         }
+        if (dllink == null) dllink = allLinks;
         if (filename == null || dllink == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         filename = filename.trim();
         downloadLink.setFinalFileName(filename + ".mp4");
