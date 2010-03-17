@@ -155,7 +155,7 @@ public class PpscnRg {
         // clearlines2(captcha);
 
         // clearlines2(captcha);
-        captcha.crop(3, 30, 3, 50);
+        captcha.crop(0, 2, 0, 20);
         // clearlines2(captcha);
 
         // clearlines2(captcha);
