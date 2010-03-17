@@ -43,7 +43,6 @@ public class EasyShareCom extends PluginForHost {
     public EasyShareCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.easy-share.com/cgi-bin/premium.cgi");
-        /* brauche neuen prem account zum einbauen und testen */
     }
 
     @Override
@@ -58,7 +57,16 @@ public class EasyShareCom extends PluginForHost {
         br.getPage("http://www.easy-share.com/");
         br.setDebug(true);
         br.postPage("http://www.easy-share.com/accounts/login", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember=1");
-        if (br.getCookie("http://www.easy-share.com/", "ACCOUNT") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        String acc = br.getCookie("http://www.easy-share.com/", "ACCOUNT");
+        String prem = br.getCookie("http://www.easy-share.com/", "PREMIUM");
+        if (acc == null && prem == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (acc != null && prem == null) {
+            /*
+             * buggy easyshare server, login does not work always, it needs
+             * PREMIUM cookie
+             */
+            br.setCookie("http://www.easy-share.com/", "PREMIUM", acc);
+        }
     }
 
     @Override
@@ -147,8 +155,17 @@ public class EasyShareCom extends PluginForHost {
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         requestFileInformation(downloadLink);
         login(account);
-        br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, 0);
+        br.getPage("http://www.easy-share.com");
+        br.setFollowRedirects(false);
+        br.getPage(downloadLink.getDownloadURL());
+        String url = null;
+        if (br.getRedirectLocation() == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
+            url = br.getRedirectLocation();
+        }
+        if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 0);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
