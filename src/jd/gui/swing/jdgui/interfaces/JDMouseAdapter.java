@@ -16,9 +16,13 @@
 
 package jd.gui.swing.jdgui.interfaces;
 
+import java.awt.Component;
+import java.awt.Point;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
+
+import javax.swing.SwingUtilities;
 
 public class JDMouseAdapter implements MouseMotionListener, MouseListener {
 
@@ -41,6 +45,14 @@ public class JDMouseAdapter implements MouseMotionListener, MouseListener {
     }
 
     public void mouseReleased(MouseEvent e) {
+    }
+
+    /* HINT: we must dispatch events to underlying component ourself */
+    static public void forwardEvent(MouseEvent e, Component dest) {
+        if (e == null || dest == null) return;
+        Point p = SwingUtilities.convertPoint(e.getComponent(), e.getPoint(), dest);
+        MouseEvent ee = new MouseEvent(dest, e.getID(), e.getWhen(), e.getModifiers(), p.x, p.y, e.getClickCount(), e.isPopupTrigger(), e.getButton());
+        dest.dispatchEvent(ee);
     }
 
 }

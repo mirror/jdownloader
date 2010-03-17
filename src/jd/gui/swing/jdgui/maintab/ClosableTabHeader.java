@@ -21,6 +21,7 @@ import java.awt.event.MouseEvent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
+import jd.gui.swing.jdgui.MainTabbedPane;
 import jd.gui.swing.jdgui.interfaces.JDMouseAdapter;
 import jd.gui.swing.jdgui.views.ClosableView;
 import net.miginfocom.swing.MigLayout;
@@ -32,13 +33,43 @@ public class ClosableTabHeader extends JPanel {
     public ClosableTabHeader(final ClosableView view) {
         setLayout(new MigLayout("ins 0", "[grow,fill]", "[16!]"));
         setOpaque(false);
-
         addMouseListener(new JDMouseAdapter() {
+            @Override
+            public void mouseDragged(MouseEvent e) {
+                JDMouseAdapter.forwardEvent(e, MainTabbedPane.getInstance());
+            }
+
+            @Override
+            public void mouseMoved(MouseEvent e) {
+                JDMouseAdapter.forwardEvent(e, MainTabbedPane.getInstance());
+            }
+
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                JDMouseAdapter.forwardEvent(e, MainTabbedPane.getInstance());
+            }
+
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                JDMouseAdapter.forwardEvent(e, MainTabbedPane.getInstance());
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                JDMouseAdapter.forwardEvent(e, MainTabbedPane.getInstance());
+            }
+
+            @Override
+            public void mousePressed(MouseEvent e) {
+                JDMouseAdapter.forwardEvent(e, MainTabbedPane.getInstance());
+            }
 
             @Override
             public void mouseReleased(MouseEvent e) {
                 if (e.getButton() == MouseEvent.BUTTON2) {
                     view.close();
+                } else {
+                    JDMouseAdapter.forwardEvent(e, MainTabbedPane.getInstance());
                 }
             }
 
@@ -46,7 +77,7 @@ public class ClosableTabHeader extends JPanel {
 
         putClientProperty("paintActive", Boolean.TRUE);
 
-        JLabel label = new JLabel(view.getTitle());
+        final JLabel label = new JLabel(view.getTitle());
         label.setIcon(view.getIcon());
         label.setOpaque(false);
 
