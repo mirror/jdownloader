@@ -197,7 +197,7 @@ public class FilesMonsterCom extends PluginForHost {
         /* request ticket for this file */
 
         br.postPage(fmurl + "ajax.php", "act=rticket&data=" + data);
-        if (br.containsHTML("\"error\":\"error\"")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.filesmonstercom.nofreeslots", "There are no free download slots available"), getPluginConfig().getIntegerProperty(PROPERTY_NO_SLOT_WAIT_TIME, 60) * 1000l);
+        if (br.containsHTML("\"error\":\"error\"")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.filesmonstercom.nofreeslots", "There are no free download slots available"), getPluginConfig().getIntegerProperty(PROPERTY_NO_SLOT_WAIT_TIME, 60) * 1000l);
         data = br.getRegex("\\{\"text\":\"(.*?)\"").getMatch(0);
         /* wait */
         sleep(1000l * (Long.parseLong(wait) + 4), downloadLink);
