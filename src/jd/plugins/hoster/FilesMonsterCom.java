@@ -156,7 +156,6 @@ public class FilesMonsterCom extends PluginForHost {
 
         String fileID = br.getRegex("<input type=\"hidden\" name=\"t\" value=\"(.*?)\"").getMatch(0);
         String fmurl = br.getRegex("(http://[\\w\\.\\d]*?filesmonster\\.com/)").getMatch(0);
-System.out.println(br + "\nX8XX " + fileID + " " + fmurl);
 
         if (fileID == null || fmurl == null) {
             if (br.containsHTML("UNDER MAINTENANCE")) {
