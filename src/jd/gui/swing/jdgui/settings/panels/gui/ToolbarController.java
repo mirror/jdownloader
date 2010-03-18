@@ -112,6 +112,7 @@ public class ToolbarController extends ConfigPanel {
 
     }
     private static final long serialVersionUID = -7024581410075950497L;
+    private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.gui.ToolbarController.";
 
     @Override
     public String getBreadcrum() {
@@ -121,8 +122,6 @@ public class ToolbarController extends ConfigPanel {
     public static String getTitle() {
         return JDL.L(JDL_PREFIX + ".toolbarController.title", "Toolbar Manager");
     }
-
-    private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.gui.ToolbarController.";
 
     private class InternalTableModel extends AbstractTableModel {
 

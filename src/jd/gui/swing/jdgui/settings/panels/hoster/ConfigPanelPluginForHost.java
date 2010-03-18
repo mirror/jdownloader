@@ -50,6 +50,8 @@ import net.miginfocom.swing.MigLayout;
 
 public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListener, MouseListener {
 
+    private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.ConfigPanelPluginForHost.";
+
     @Override
     public String getBreadcrum() {
         return JDL.L(this.getClass().getName() + ".breadcrum", this.getClass().getSimpleName());
@@ -58,8 +60,6 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
     public static String getTitle() {
         return JDL.L(JDL_PREFIX + "host.title", "Hoster & Premium");
     }
-
-    private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.ConfigPanelPluginForHost.";
 
     private class InternalTableModel extends JDTableModel {
 

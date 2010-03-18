@@ -54,13 +54,6 @@ import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 public class MethodSelection extends ConfigPanel implements ActionListener {
-    public String getBreadcrum() {
-        return JDL.L(this.getClass().getName() + ".breadcrum", this.getClass().getSimpleName());
-    }
-
-    public static String getTitle() {
-        return JDL.L(JDL_PREFIX + "reconnect.title", "Reconnection");
-    }
 
     private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.reconnect.MethodSelection.";
     private static final long serialVersionUID = 3383448498625377495L;
@@ -87,6 +80,13 @@ public class MethodSelection extends ConfigPanel implements ActionListener {
 
     private JPanel method;
 
+    public String getBreadcrum() {
+        return JDL.L(this.getClass().getName() + ".breadcrum", this.getClass().getSimpleName());
+    }
+
+    public static String getTitle() {
+        return JDL.L(JDL_PREFIX + "reconnect.title", "Reconnection");
+    }
     public MethodSelection(Configuration configuration) {
         super();
         this.configuration = configuration;

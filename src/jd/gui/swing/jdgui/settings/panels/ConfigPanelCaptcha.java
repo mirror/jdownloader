@@ -29,6 +29,9 @@ import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 
 public class ConfigPanelCaptcha extends ConfigPanel {
+    private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.ConfigPanelCaptcha.";
+    private static final long serialVersionUID = 3383448498625377495L;
+
     public String getBreadcrum() {
         return JDL.L(this.getClass().getName() + ".breadcrum", this.getClass().getSimpleName());
     }
@@ -36,9 +39,6 @@ public class ConfigPanelCaptcha extends ConfigPanel {
     public static String getTitle() {
         return JDL.L(JDL_PREFIX + "captcha.title", "JAntiCaptcha");
     }
-
-    private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.ConfigPanelCaptcha.";
-    private static final long serialVersionUID = 3383448498625377495L;
 
     public ConfigPanelCaptcha(Configuration configuration) {
         super();
