@@ -59,7 +59,7 @@ public class ShareBaseTo extends PluginForHost {
         setBrowserExclusive();
         br.getPage("http://sharebase.to/apito/jd.php?f=" + downloadLink.getDownloadURL());
         String[] info = Regex.getLines(br.toString());
-        if (info.length != 3 || info[0].matches("NONE")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (info.length < 3 || info[0].matches("NONE")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setFinalFileName(info[0]);
         downloadLink.setDownloadSize(Regex.getSize(info[1]));
         if (info[2].matches("OFFLINE")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

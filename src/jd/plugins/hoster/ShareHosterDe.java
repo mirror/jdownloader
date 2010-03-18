@@ -28,7 +28,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharehoster.de" }, urls = { "http://[\\w\\.]*?sharehoster\\.(de|com|net)/dl/[a-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharehoster.de" }, urls = { "http://[\\w\\.]*?sharehoster\\.(de|com|net)/(dl|wait)/[a-z0-9]+" }, flags = { 0 })
 public class ShareHosterDe extends PluginForHost {
 
     public ShareHosterDe(PluginWrapper wrapper) {
@@ -41,7 +41,7 @@ public class ShareHosterDe extends PluginForHost {
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceAll("sharehoster\\.(com|net)", "sharehoster.de"));
+        link.setUrlDownload(link.getDownloadURL().replaceAll("sharehoster\\.(com|net)", "sharehoster.de").replace("/wait/", "/dl/"));
     }
 
     @Override

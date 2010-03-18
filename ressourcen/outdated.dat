@@ -204,3 +204,10 @@ jd/plugins/hoster/UploadBearCom.class
 jd/plugins/decrypter/FlmpldCm.class
 jd/plugins/decrypter/FnkypldCm.class
 jd/plugins/decrypter/LGylCm.class
+jd/plugins/decrypter/MaiShreCom.class
+jd/plugins/decrypter/MirrorCreatorCom.class
+jd/plugins/decrypter/PldgrndCm.class
+jd/plugins/decrypter/QCm.class
+jd/plugins/decrypter/Share2ManyCom.class
+jd/plugins/decrypter/UploaderRo.class
+jd/plugins/decrypter/UploadMirrorsCom.class
