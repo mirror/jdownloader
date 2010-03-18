@@ -241,7 +241,7 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
             } else {
                 addEntry(JDL.L("gui.linkinfo.download", "Download"), JDL.L("gui.linkinfo.download.activated", " ist aktiviert"));
             }
-            addEntry(JDL.L("gui.linkinfo.download", "Status"), downloadLink.getLinkStatus().getStatusString());
+            addEntry(JDL.L("gui.linkinfo.status", "Status"), downloadLink.getLinkStatus().getStatusString());
 
             if (downloadLink.isEnabled()) {
                 switch (downloadLink.getLinkStatus().getLatestStatus()) {

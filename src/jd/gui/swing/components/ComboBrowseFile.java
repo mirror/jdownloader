@@ -195,7 +195,7 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
 
         }
 
-        btnBrowse = new JButton(JDL.L("gui.btn_select", "Auswählen"));
+        btnBrowse = new JButton(JDL.L("gui.btn_select", "Browse"));
         btnBrowse.addActionListener(this);
 
         this.add(cmboInput, "grow");

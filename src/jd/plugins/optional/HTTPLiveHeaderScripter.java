@@ -444,7 +444,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
         String script = textArea.getText();
 
         if (script == null) {
-            UserIO.getInstance().requestMessageDialog(JDL.L("plugins.optional.httpliveheaderscripter.gui.validate.error", "Script not valid"));
+            UserIO.getInstance().requestMessageDialog(JDL.L("plugins.optional.httpliveheaderscripter.gui.validate.error2", "Script not valid"));
             return false;
         }
         // script = script.replaceAll("\\<", "&lt;");

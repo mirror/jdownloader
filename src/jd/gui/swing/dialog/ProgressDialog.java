@@ -65,7 +65,7 @@ public class ProgressDialog extends JDialog implements ActionListener {
             this.add(btnOK, cancel ? "split 2" : "");
         }
         if (cancel) {
-            btnNotOK = new JButton(JDL.L("gui.btn_cancel", "Abbrechen"));
+            btnNotOK = new JButton(JDL.L("gui.btn_cancel", "Cancel"));
             btnNotOK.addActionListener(this);
             this.add(btnNotOK);
         }

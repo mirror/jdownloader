@@ -41,12 +41,13 @@ public class ShortTextCom extends PluginForDecrypt {
         br.setFollowRedirects(false);
         br.getPage(parameter);
         /* Error handling */
-        if (br.containsHTML("the page has expired or no such shortText information available")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or there are no links to add"));
+        if (br.containsHTML("the page has expired or no such shortText information available"))
+            throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.nolinks", "Perhaps wrong URL or there are no links to add."));
         String plaintxt = br.getRegex("<span id=\"lblEdit\"></span>(.*?)<span id=\"lblCount\"><br><br>").getMatch(0);
         if (plaintxt == null) plaintxt = br.getRegex("<DIV align=\"justify\">(.*?)</DIV>").getMatch(0);
         if (plaintxt == null) return null;
         String[] links = HTMLParser.getHttpLinks(plaintxt, "");
-        if (links.length == 0) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or there are no links to add"));
+        if (links.length == 0) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.nolinks", "Perhaps wrong URL or there are no links to add."));
         for (String dl : links) {
             if (!dl.contains("shorttext.com") && !dl.contains("tweetmeme.com") || !dl.contains("sharethis.com")) {
                 decryptedLinks.add(createDownloadlink(dl));

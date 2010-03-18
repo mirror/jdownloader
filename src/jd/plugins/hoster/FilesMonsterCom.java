@@ -156,6 +156,7 @@ public class FilesMonsterCom extends PluginForHost {
 
         String fileID = br.getRegex("<input type=\"hidden\" name=\"t\" value=\"(.*?)\"").getMatch(0);
         String fmurl = br.getRegex("(http://[\\w\\.\\d]*?filesmonster\\.com/)").getMatch(0);
+System.out.println(br + "\nX8XX " + fileID + " " + fmurl);
 
         if (fileID == null || fmurl == null) {
             if (br.containsHTML("UNDER MAINTENANCE")) {
@@ -179,17 +180,13 @@ public class FilesMonsterCom extends PluginForHost {
         br.postPage(fmurl + "get/free/", "t=" + fileID);
         /* now we have the data page, check for wait time and data id */
         // Captcha handling
-        for (int i = 0; i <= 3; i++) {
-            Recaptcha rc = new Recaptcha(br);
-            rc.parse();
-            rc.load();
-            File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-            String c = getCaptchaCode(cf, downloadLink);
-            rc.setCode(c);
-            if (br.containsHTML("class=\"error em red\">Captcha number error or expired</div>")) continue;
-            break;
-        }
-        if (br.containsHTML("class=\"error em red\">Captcha number error or expired</div>")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        Recaptcha rc = new Recaptcha(br);
+        rc.parse();
+        rc.load();
+        File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+        String c = getCaptchaCode(cf, downloadLink);
+        rc.setCode(c);
+        if (br.containsHTML("Captcha number error or expired")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         String data = br.getRegex("name='data' value='(.*?)'>").getMatch(0);
         wait = br.getRegex("'wait_sec'>(\\d+)<").getMatch(0);
         if (data == null || wait == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

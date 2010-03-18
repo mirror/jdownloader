@@ -46,7 +46,7 @@ public class LinkGrabberInfoPanel extends InfoPanel {
         this.setIcon(JDTheme.II("gui.images.taskpanes.linkgrabber", 32, 32));
         addInfoEntry(JDL.L(JDL_PREFIX + "packages", "Package(s)"), "0", 0, 0);
         addInfoEntry(JDL.L(JDL_PREFIX + "links", "Links(s)"), "0", 0, 1);
-        addInfoEntry(JDL.L(JDL_PREFIX + "filteredlinks", " filtered Links(s)"), "0", 1, 1);
+        addInfoEntry(JDL.L(JDL_PREFIX + "filteredlinks", "filtered Links(s)"), "0", 1, 1);
         addInfoEntry(JDL.L(JDL_PREFIX + "size", "Total size"), "0", 1, 0);
         addCheckboxes();
         lgi = LinkGrabberController.getInstance();

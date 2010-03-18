@@ -258,14 +258,14 @@ public class DepositFiles extends PluginForHost {
             return ai;
         }
         if (isFreeAccount()) {
-            ai.setStatus(JDL.L("plugins.hoster.depositfilescom.accountok", "Account is OK.(Free User)"));
+            ai.setStatus(JDL.L("plugins.hoster.depositfilescom.accountokfree", "Account is OK.(Free User)"));
             account.setValid(true);
             return ai;
         }
         String expire = br.getRegex("noch den Gold-Zugriff: <b>(.*?)</b></div>").getMatch(0);
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss", Locale.UK);
         if (expire == null) {
-            ai.setStatus(JDL.L("plugins.hoster.depositfilescom.accountbad", "Account expitred or not valid."));
+            ai.setStatus(JDL.L("plugins.hoster.depositfilescom.accountbad", "Account expired or not valid."));
             account.setValid(false);
             return ai;
         }

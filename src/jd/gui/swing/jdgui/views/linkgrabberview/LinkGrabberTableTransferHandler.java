@@ -204,7 +204,7 @@ public class LinkGrabberTableTransferHandler extends TransferHandler {
                 return false;
             }
         }
-        popup.add(m = new JMenuItem(JDL.L("gui.btn_cancel", "Abbrechen")));
+        popup.add(m = new JMenuItem(JDL.L("gui.btn_cancel", "Cancel")));
         m.setIcon(JDTheme.II("gui.images.unselected", 16, 16));
         popup.show(table, point.x, point.y);
         return true;

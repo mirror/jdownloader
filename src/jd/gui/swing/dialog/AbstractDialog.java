@@ -85,7 +85,7 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
         setTitle(title);
 
         this.icon = (JDFlags.hasAllFlags(flag, UserIO.NO_ICON)) ? null : icon;
-        this.okOption = (okOption == null) ? JDL.L("gui.btn_ok", "Ok") : okOption;
+        this.okOption = (okOption == null) ? JDL.L("gui.btn_ok", "OK") : okOption;
         this.cancelOption = (cancelOption == null) ? JDL.L("gui.btn_cancel", "Cancel") : cancelOption;
     }
 

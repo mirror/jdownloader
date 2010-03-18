@@ -63,7 +63,7 @@ public class PdPsteCm extends PluginForDecrypt {
         String plaintxt = br.getRegex("class=\"line code\"(.*?)</table>").getMatch(0);
         if (plaintxt == null) return null;
         String[] links = HTMLParser.getHttpLinks(plaintxt, "");
-        if (links.length == 0) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the page doesn't contain any links to add."));
+        if (links.length == 0) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.nolinks", "Perhaps wrong URL or there are no links to add."));
         for (String dl : links)
             decryptedLinks.add(createDownloadlink(dl));
 

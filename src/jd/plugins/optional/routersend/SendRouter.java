@@ -170,7 +170,7 @@ public class SendRouter extends PluginOptional implements ControlListener {
 
         // TODO: perhaps the user has not entered his routerpassword...ask him
         String routerlogins = UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN | UserIO.NO_CANCEL_OPTION, JDL.L(JDL_PREFIX + "password.name", "Router's Username? \r\nIt will NOT be uploaded. We need it to remove it from the script."), "");
-        String routerpassword = UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN | UserIO.NO_CANCEL_OPTION, JDL.L(JDL_PREFIX + "password.name", "Router's Password? \r\nIT will NOT be uploaded. We need it to remove it from the script."), "");
+        String routerpassword = UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN | UserIO.NO_CANCEL_OPTION, JDL.L(JDL_PREFIX + "password.password", "Router's Password? \r\nIT will NOT be uploaded. We need it to remove it from the script."), "");
 
         if (routerlogins != null) currentScript = currentScript.replace(routerlogins, "%%%username%%%");
         if (routerpassword != null) currentScript = currentScript.replace(routerpassword, "%%%password%%%");
