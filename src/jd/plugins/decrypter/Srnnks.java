@@ -19,9 +19,6 @@ package jd.plugins.decrypter;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Vector;
-import java.util.logging.Level;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -29,6 +26,8 @@ import jd.controlling.reconnect.Reconnecter;
 import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.jobber.JDRunnable;
+import jd.nutils.jobber.Jobber;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
@@ -61,31 +60,35 @@ public class Srnnks extends PluginForDecrypt {
 
     private synchronized static boolean limitsReached(Browser br) throws IOException {
         int ret = -100;
-        if (br.containsHTML("Error 503")) {
-            UserIO.getInstance().requestMessageDialog("Serienjunkies ist überlastet. Bitte versuch es später nocheinmal!");
-            return true;
-        }
-
-        if (br.containsHTML("Du hast zu oft das Captcha falsch")) {
-
-            if (System.currentTimeMillis() - LATEST_BLOCK_DETECT < 60000) return true;
-            if (System.currentTimeMillis() - LATEST_RECONNECT < 15000) {
-                // redo the request
-                br.loadConnection(br.openRequestConnection(br.getRequest().cloneRequest()));
-                return false;
+        if (br == null) {
+            ret = UserIO.RETURN_OK;
+        } else {
+            if (br.containsHTML("Error 503")) {
+                UserIO.getInstance().requestMessageDialog("Serienjunkies ist überlastet. Bitte versuch es später nocheinmal!");
+                return true;
             }
-            ret = UserIO.getInstance().requestConfirmDialog(0, "Captchalimit", "Sie haben zu oft das Captcha falsch eingegeben sie müssen entweder warten oder einen Reconnect durchführen", null, "Reconnect", "Decrypten abbrechen");
 
-        }
-        if (br.containsHTML("Download-Limit")) {
-            if (System.currentTimeMillis() - LATEST_BLOCK_DETECT < 60000) return true;
-            if (System.currentTimeMillis() - LATEST_RECONNECT < 15000) {
-                // redo the request
-                br.loadConnection(br.openRequestConnection(br.getRequest().cloneRequest()));
-                return false;
+            if (br.containsHTML("Du hast zu oft das Captcha falsch")) {
+
+                if (System.currentTimeMillis() - LATEST_BLOCK_DETECT < 60000) return true;
+                if (System.currentTimeMillis() - LATEST_RECONNECT < 15000) {
+                    // redo the request
+                    br.loadConnection(br.openRequestConnection(br.getRequest().cloneRequest()));
+                    return false;
+                }
+                ret = UserIO.getInstance().requestConfirmDialog(0, "Captchalimit", "Sie haben zu oft das Captcha falsch eingegeben sie müssen entweder warten oder einen Reconnect durchführen", null, "Reconnect", "Decrypten abbrechen");
+
             }
-            ret = UserIO.getInstance().requestConfirmDialog(0, "Downloadlimit", "Das Downloadlimit wurde erreicht sie müssen entweder warten oder einen Reconnect durchführen", null, "Reconnect", "Decrypten abbrechen");
+            if (br.containsHTML("Download-Limit")) {
+                if (System.currentTimeMillis() - LATEST_BLOCK_DETECT < 60000) return true;
+                if (System.currentTimeMillis() - LATEST_RECONNECT < 15000) {
+                    // redo the request
+                    br.loadConnection(br.openRequestConnection(br.getRequest().cloneRequest()));
+                    return false;
+                }
+                ret = UserIO.getInstance().requestConfirmDialog(0, "Downloadlimit", "Das Downloadlimit wurde erreicht sie müssen entweder warten oder einen Reconnect durchführen", null, "Reconnect", "Decrypten abbrechen");
 
+            }
         }
         if (ret != -100) {
             if (UserIO.isOK(ret)) {
@@ -108,9 +111,9 @@ public class Srnnks extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, final ProgressController progress) throws Exception {
         Browser.setRequestIntervalLimitGlobal("serienjunkies.org", 400);
         Browser.setRequestIntervalLimitGlobal("download.serienjunkies.org", 400);
-        final Vector<DownloadLink> ret = new Vector<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         // progress.setStatusText("Lade Downloadseite");
-        br.setConnectTimeout(10000);
+
         br.getPage(parameter.getCryptedUrl());
 
         if (limitsReached(br)) return new ArrayList<DownloadLink>(ret);
@@ -124,22 +127,24 @@ public class Srnnks extends PluginForDecrypt {
 
         // linkendung kommt auch im action der form vor
         String sublink = parameter.getCryptedUrl().substring(parameter.getCryptedUrl().indexOf("org/") + 3);
+
+        // try captcha max 5 times
         for (int i = 0; i < 5; i++) {
             // suche wahrscheinlichste form
             // progress.setStatusText("Suche Captcha Form");
             Form form = null;
-            {
-                Form[] forms = br.getForms();
-                int bestdist = Integer.MAX_VALUE;
-                for (Form form1 : forms) {
-                    int dist = EditDistance.damerauLevenshteinDistance(sublink, form1.getAction());
-                    if (dist < bestdist) {
-                        form = form1;
-                        bestdist = dist;
-                    }
+
+            Form[] forms = br.getForms();
+            int bestdist = Integer.MAX_VALUE;
+            for (Form form1 : forms) {
+                int dist = EditDistance.damerauLevenshteinDistance(sublink, form1.getAction());
+                if (dist < bestdist) {
+                    form = form1;
+                    bestdist = dist;
                 }
-                if (bestdist > 100) form = null;
             }
+            if (bestdist > 100) form = null;
+
             if (form == null) throw new Exception("Serienjunkies Captcha Form konnte nicht gefunden werden!");
             progress.increase(30);
 
@@ -178,7 +183,7 @@ public class Srnnks extends PluginForDecrypt {
                 return new ArrayList<DownloadLink>(ret);
             } else {
                 progress.setStatus(0);
-                Form[] forms = br.getForms();
+                forms = br.getForms();
                 // suche die downloadlinks
                 ArrayList<String> actions = new ArrayList<String>();
                 for (Form frm : forms) {
@@ -193,116 +198,104 @@ public class Srnnks extends PluginForDecrypt {
                     // progress.setStatusText("Captcha code falsch");
                     continue;
                 }
-                // durch paralleles laden der Links wird schneller
-                // entschlüsselt
-                // ist noch von der alten SerienJunkies Klasse
-                final Vector<Thread> threads = new Vector<Thread>();
-               
-                final Browser[] br2 = new Browser[] { br.cloneBrowser(), br.cloneBrowser(), br.cloneBrowser(), br.cloneBrowser() };
-                progress.setStatus(0);
 
-                for (int d = 0; d < actions.size(); d++) {
-                    // fortschritt pro Link
-                    final int inc = 100 / actions.size();
-                    try {
-                        final String action = actions.get(d);
-                        final int bd = d % 4;
-                        Thread t = new Thread(new Runnable() {
-                            public void run() {
-                                int errors = 0;
-                                for (int j = 0; j < 2000; j++) {
-                                    try {
-                                        //try to avoid ip blocks
-                                        Thread.sleep(300 * (j+1));
-                                    } catch (InterruptedException e) {
-                                        return;
-                                    }
-                                    try {
+                final Jobber decryptJobbers = new Jobber(1);
+                decryptJobbers.addWorkerListener(decryptJobbers.new WorkerListener() {
 
-                                        String tx = null;
-                                        synchronized (br2[bd]) {
-                                            try {
-                                                tx = br2[bd].getPage(action);
-                                            } catch (Exception e) {
-                                                if (errors == 3) {
-                                                    ret.clear();
-                                                    for (Thread thread : threads) {
-                                                        try {
-                                                            thread.notify();
-                                                            thread.interrupt();
-                                                        } catch (Exception e2) {
-                                                        }
-                                                    }
-                                                    threads.clear();
-                                                    ret.clear();
-                                                    return;
-                                                }
-                                                errors++;
-                                                continue;
-                                            }
-                                            if (tx != null) {
-                                                String link = new Regex(tx, Pattern.compile("SRC=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
-                                                if (link != null) {
-                                                    try {
-                                                        Browser brc = br2[bd].cloneBrowser();
-                                                        brc.getPage(link);
-                                                        String loc = brc.getRedirectLocation();
-                                                        if (loc != null) {
-                                                            ret.add(createDownloadlink(loc));
-                                                            synchronized (progress) {
-                                                                progress.increase(inc);
-                                                            }
-                                                            synchronized (this) {
-                                                                notify();
-                                                            }
-                                                            return;
-                                                        }
-                                                    } catch (Exception e) {
-
-                                                    }
-                                                }
-
-                                            }
-                                        }
-                                    } catch (Exception e) {
-                                        logger.log(Level.SEVERE, "Exception occurred", e);
-                                    }
-
-                                }
-
-                            }
-                        });
-                        t.start();
-                        threads.add(t);
-                    } catch (Exception e) {
-                    }
-
-                }
-                try {
-                    for (Thread t : threads) {
-                        while (t.isAlive()) {
-                            synchronized (t) {
-                                try {
-                                    t.wait();
-                                } catch (InterruptedException e) {
-                                    logger.log(Level.SEVERE, "Exception occurred", e);
-                                }
-                            }
+                    @Override
+                    public void onJobException(Jobber jobber, JDRunnable job, Exception e) {
+                        e.printStackTrace();
+                        try {
+                            limitsReached(null);
+                        } catch (IOException e1) {
+                            // TODO Auto-generated catch block
+                            e1.printStackTrace();
                         }
                     }
-                } catch (Exception e) {
-                    progress.doFinalize();
-                    return null;
+
+                    @Override
+                    public void onJobFinished(Jobber jobber, JDRunnable job) {
+                        progress.increase(1);
+
+                    }
+
+                    @Override
+                    public void onJobListFinished(Jobber jobber) {
+                        // TODO Auto-generated method stub
+
+                    }
+
+                    @Override
+                    public void onJobStarted(Jobber jobber, JDRunnable job) {
+                        // TODO Auto-generated method stub
+
+                    }
+
+                });
+                progress.setRange(30 + actions.size(), 30);
+                for (int d = 0; d < actions.size(); d++) {
+                    decryptJobbers.add(this.new DecryptRunnable(actions.get(d), br.cloneBrowser(), ret));
+
                 }
+                decryptJobbers.start();
+                final int todo = decryptJobbers.getJobsAdded();
+                decryptJobbers.start();
+                while (decryptJobbers.getJobsFinished() != todo) {
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException e) {
+                    }
+                }
+                decryptJobbers.stop();
+
+                progress.doFinalize();
+
+                // wenn keine links drinnen sind ist bestimmt was mit dem
+                // captcha
+                // schief gegangen einfach nochmal versuchen
+                if (ret.size() != 0) { return ret; }
             }
-            progress.doFinalize();
 
-            // wenn keine links drinnen sind ist bestimmt was mit dem captcha
-            // schief gegangen einfach nochmal versuchen
-            if (ret.size() != 0) break;
         }
-
         return new ArrayList<DownloadLink>(ret);
     }
 
+    class DecryptRunnable implements JDRunnable {
+
+        private String action;
+        private Browser br;
+        private ArrayList<DownloadLink> results;
+
+        public DecryptRunnable(String action, Browser br, ArrayList<DownloadLink> results) {
+            this.action = action;
+            this.br = br;
+            this.results = results;
+        }
+
+        public void go() throws Exception {
+
+            // sj heuristic detection.
+            Thread.sleep(1300);
+            br.getPage(action);
+            String link = br.getRegex("SRC=\"(.*?)\"").getMatch(0);
+
+            if (link != null) {
+
+                br.getPage(link);
+                String loc = br.getRedirectLocation();
+                if (loc != null) {
+                    results.add(createDownloadlink(loc));
+                    return;
+                } else {
+                    throw new Exception("no Redirect found");
+                }
+            } else {
+
+                throw new Exception("no Frame found");
+
+            }
+
+        }
+
+    }
 }
