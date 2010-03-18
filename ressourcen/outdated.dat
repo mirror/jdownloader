@@ -211,3 +211,5 @@ jd/plugins/decrypter/QCm.class
 jd/plugins/decrypter/Share2ManyCom.class
 jd/plugins/decrypter/UploaderRo.class
 jd/plugins/decrypter/UploadMirrorsCom.class
+jd/plugins/decrypter/RbkprrWs.class
+jd/captcha/methods/rbkprrws

@@ -16,12 +16,14 @@
 
 package jd.plugins.decrypter;
 
+import java.io.IOException;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -37,6 +39,8 @@ public class ChoMikujPl extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        // The message used on errors in this plugin
+        String error = "Error while decrypting link: " + parameter;
         br.getPage(parameter);
         String fpName = br.getRegex("<title>(.*?) - .*? - Chomikuj\\.pl.*?</title>").getMatch(0);
         if (fpName == null) {
@@ -50,27 +54,41 @@ public class ChoMikujPl extends PluginForDecrypt {
         }
         String subFolderID = br.getRegex("id=\"ctl00_CT_FW_SubfolderID\" value=\"(.*?)\"").getMatch(0);
         if (subFolderID == null) subFolderID = br.getRegex("name=\"ChomikSubfolderId\" type=\"hidden\" value=\"(.*?)\"").getMatch(0);
-        // Find number of pages
-        String[] lolpages = br.getRegex("href=\"javascript:;\">(\\d+)<").getColumn(0);
-        if (lolpages == null || lolpages.length == 0 || subFolderID == null || fpName == null) return null;
-        ArrayList<String> pages = new ArrayList<String>();
-        // Remove double-entrys
-        for (String page : lolpages) {
-            if (!pages.contains(page)) pages.add(page);
+        if (subFolderID == null || fpName == null) {
+            logger.warning(error);
+            return null;
         }
-        progress.setRange(pages.size());
-        for (int i = 0; i < pages.size(); ++i) {
-            String postdata = "ctl00%24CT%24FW%24SubfolderID=" + subFolderID.trim() + "&GalSortType=0&GalPage=" + i + "&__EVENTTARGET=ctl00%24CT%24FW%24RefreshButton&__ASYNCPOST=true&";
-            br.postPage(parameter, postdata);
+        subFolderID = subFolderID.trim();
+        String postdata = "ctl00%24CT%24FW%24SubfolderID=" + subFolderID + "&GalSortType=0&__EVENTTARGET=ctl00%24CT%24FW%24RefreshButton&__ASYNCPOST=true&GalPage=";
+        logger.info("Looking how many pages we got here for folder " + subFolderID + " ...");
+        int pageCount = getPageCount(postdata, parameter);
+        if (pageCount == -1) {
+            logger.warning("Error, couldn't successfully find the number of pages for link: " + parameter);
+            return null;
+        }
+        logger.info("Found " + pageCount + " pages. Starting to decrypt them now.");
+        progress.setRange(pageCount);
+        for (int i = 0; i < pageCount; ++i) {
+            logger.info("Decrypting page " + i + " of folder " + subFolderID + " now...");
+            String postThatData = postdata + i;
+            br.postPage(parameter, postThatData);
             // Every full page has 24 links (pictures)
             // This regex finds all links to PICTUREs, the site also got .rar
             // files but the regex doesn't find them because you need to be
             // logged in to download them anyways
             String[] fileId = br.getRegex("href=\"/Image\\.aspx\\?id=(\\d+)\"").getColumn(0);
             String[] links = br.getRegex("(<a class=\"gallery\" href=\".*?\".*?<a class=\"photoLnk\" href=\".*?\")").getColumn(0);
-            if (fileId == null || fileId.length == 0) return null;
-            if (links == null || links.length == 0) return null;
-            if (links.length != fileId.length) return null;
+            if (fileId == null || fileId.length == 0 || links == null || links.length == 0 || links.length != fileId.length) {
+                // If the last page only contains a file or fileS the regexes
+                // don't work but the decrypter isn't broken so the user should
+                // get the links!
+                if (br.containsHTML(".zip")) {
+                    logger.info("Stopping at page " + i + " because there were no pictures found on the page but i did find a .zip file!");
+                    return decryptedLinks;
+                }
+                logger.warning(error);
+                return null;
+            }
 
             for (int j = 0; j < fileId.length; ++j) {
                 String id = fileId[j];
@@ -91,4 +109,29 @@ public class ChoMikujPl extends PluginForDecrypt {
         return decryptedLinks;
     }
 
+    public int getPageCount(String postdata, String theParameter) throws NumberFormatException, DecrypterException, IOException {
+        int pageCount = 0;
+        int tempint = 0;
+        // Loop limited to 20 in case something goes seriously wrong
+        for (int i = 0; i <= 20; i++) {
+            // Find number of pages
+            String[] lolpages = br.getRegex("href=\"javascript:;\">(\\d+)<").getColumn(0);
+            if (lolpages == null || lolpages.length == 0) return -1;
+            // Find highest number of page
+            for (String page : lolpages) {
+                if (Integer.parseInt(page) > tempint) tempint = Integer.parseInt(page);
+            }
+            if (tempint == pageCount) break;
+            // If we find less than 6-7 pages there are no more so we have to
+            // stop this here before getting an error!
+            if (tempint < 7) {
+                pageCount = tempint;
+                break;
+            }
+            String postThoseData = postdata + tempint;
+            br.postPage(theParameter, postThoseData);
+            pageCount = tempint;
+        }
+        return pageCount;
+    }
 }
