@@ -110,7 +110,7 @@ public class Srnnks extends PluginForDecrypt {
         Browser.setRequestIntervalLimitGlobal("download.serienjunkies.org", 400);
         final Vector<DownloadLink> ret = new Vector<DownloadLink>();
         // progress.setStatusText("Lade Downloadseite");
-
+        br.setConnectTimeout(10000);
         br.getPage(parameter.getCryptedUrl());
 
         if (limitsReached(br)) return new ArrayList<DownloadLink>(ret);
@@ -197,6 +197,7 @@ public class Srnnks extends PluginForDecrypt {
                 // entschlüsselt
                 // ist noch von der alten SerienJunkies Klasse
                 final Vector<Thread> threads = new Vector<Thread>();
+               
                 final Browser[] br2 = new Browser[] { br.cloneBrowser(), br.cloneBrowser(), br.cloneBrowser(), br.cloneBrowser() };
                 progress.setStatus(0);
 
@@ -211,7 +212,8 @@ public class Srnnks extends PluginForDecrypt {
                                 int errors = 0;
                                 for (int j = 0; j < 2000; j++) {
                                     try {
-                                        Thread.sleep(300 * j);
+                                        //try to avoid ip blocks
+                                        Thread.sleep(300 * (j+1));
                                     } catch (InterruptedException e) {
                                         return;
                                     }
