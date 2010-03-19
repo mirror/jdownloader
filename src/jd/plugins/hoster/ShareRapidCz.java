@@ -129,7 +129,8 @@ public class ShareRapidCz extends PluginForHost {
         br.setFollowRedirects(true);
         if (br.containsHTML("Nastala chyba 404") || br.containsHTML("Soubor byl smazán")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
-        String filename = Encoding.htmlDecode(br.getRegex("<title>(.*?)- Share-Rapid</title>").getMatch(0));
+        String filename = Encoding.htmlDecode(br.getRegex("style=\"padding: 12px 0px 0px 10px; display: block\">(.*?)</ br>").getMatch(0));
+        if (filename == null) filename = Encoding.htmlDecode(br.getRegex("<title>(.*?)- Share-Rapid</title>").getMatch(0));
         String filesize = Encoding.htmlDecode(br.getRegex("Velikost:</td>.*?<td class=\"h\"><strong>.*?(.*?)</strong></td>").getMatch(0));
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
