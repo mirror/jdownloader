@@ -44,7 +44,7 @@ public class ImageHostOrg extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        if (link.getDownloadURL().contains("b.imagehost.org")) {
+        if (link.getDownloadURL().contains("/download/")) {
             // Handling for normal (file) links
             br.getPage(link.getDownloadURL());
             if (br.containsHTML("</i> not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -76,7 +76,7 @@ public class ImageHostOrg extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         String dllink = null;
-        if (downloadLink.getDownloadURL().contains("b.imagehost.org")) {
+        if (downloadLink.getDownloadURL().contains("/download/")) {
             // Handling for normal (file) links
             String postlink = downloadLink.getDownloadURL().replace("/download/", "/ajax/");
             String poststuff = "a=ajax&rand=" + new Regex(Math.random() * 100000, "(\\d+)").getMatch(0);

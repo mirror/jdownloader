@@ -44,6 +44,8 @@ public class ExtaBitCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
+        // To get the english version of the page
+        br.setCookie("http://extabit.com", "language", "en");
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("(File not found|Such file doesn't exsist)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -54,7 +56,7 @@ public class ExtaBitCom extends PluginForHost {
                 filename = br.getRegex("extabit\\.com/file/.*?'>(.*?)</a>").getMatch(0);
             }
         }
-        String filesize = br.getRegex("File size: <b class=.*?>(.*?)</").getMatch(0);
+        String filesize = br.getRegex("class=\"download_filesize(_en)\">.*?\\[(.*?)\\]").getMatch(1);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
         if (filesize != null) downloadLink.setDownloadSize(Regex.getSize(filesize));
@@ -66,7 +68,6 @@ public class ExtaBitCom extends PluginForHost {
         this.setBrowserExclusive();
         requestFileInformation(link);
         String addedlink = br.getURL();
-        br.getPage(addedlink + "?go");
         if (br.containsHTML("The daily downloads limit from your IP is exceeded")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
         // If the waittime was forced it yould be here but it isn't!
         // Re Captcha handling
@@ -89,13 +90,12 @@ public class ExtaBitCom extends PluginForHost {
                 String code = getCaptchaCode(captchaurl, link);
                 dlform.put("capture", code);
                 br.submitForm(dlform);
-                if (br.containsHTML("/capture")) continue;
+                if (br.containsHTML("/capture") || br.getRedirectLocation() != null) continue;
                 break;
             }
         }
         if (br.containsHTML("(api.recaptcha.net|/capture)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        br.getPage(addedlink + "?af");
-        String dllink = br.getRegex("color:black;font-weight:normal;font-family:arial;\" href=\"(.*?)\"").getMatch(0);
+        String dllink = br.getRegex("Turn your download manager off and <a href=\"(http.*?)\">click here to download<").getMatch(0);
         if (dllink == null) dllink = br.getRegex("\"(http://[a-zA-Z]+[0-9]+\\.extabit\\.com/.*?/.*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
