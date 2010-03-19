@@ -30,6 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hellshare.com" }, urls = { "http://[\\w\\.]*?(download\\.((sk|cz|en)\\.hellshare\\.com|hellshare\\.(sk|hu|de))/.+/[0-9]+|hellshare\\.com/[0-9]+/.+/.+)" }, flags = { 2 })
 public class HellShareCom extends PluginForHost {
@@ -175,12 +176,18 @@ public class HellShareCom extends PluginForHost {
         }
         br.setDebug(true);
         if (br.containsHTML("Current load 100%")) {
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, 15 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.HellShareCom.error.CurrentLoadIs100Percent", "The current serverload is 100%"), 15 * 60 * 1000l);
         } else {
             br.setCustomCharset("utf-8");
             br.getPage(br.getURL() + "/free");
-            if (br.containsHTML("The server is under the maximum load")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server is under maximum load", 10 * 60 * 1000l);
-            if (br.containsHTML("You are exceeding the limitations on this download")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
+            if (br.containsHTML("The server is under the maximum load")) {
+                logger.info(JDL.L("plugins.hoster.HellShareCom.error.ServerUnterMaximumLoad", "Server is under maximum load"));
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.HellShareCom.error.ServerUnterMaximumLoad", "Server is under maximum load"), 10 * 60 * 1000l);
+            }
+            if (br.containsHTML("You are exceeding the limitations on this download")) {
+                logger.info("You are exceeding the limitations on this download");
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
+            }
             if (br.containsHTML("<h1>File not found</h1>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             String captcha = br.getRegex("(http://www\\.(en|cz)\\.hellshare\\.com/antispam\\.php\\?sv=FreeDown:\\d+)\"").getMatch(0);
             Form form = br.getForm(0);
@@ -191,9 +198,15 @@ public class HellShareCom extends PluginForHost {
             if (!(dl.getConnection().isContentDisposition())) {
                 br.followConnection();
                 if (br.containsHTML("<h1>File not found</h1>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                if (br.containsHTML("The server is under the maximum load")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server is under maximum load", 10 * 60 * 1000l);
+                if (br.containsHTML("The server is under the maximum load")) {
+                    logger.info(JDL.L("plugins.hoster.HellShareCom.error.ServerUnterMaximumLoad", "Server is under maximum load"));
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.HellShareCom.error.ServerUnterMaximumLoad", "Server is under maximum load"), 10 * 60 * 1000l);
+                }
                 if (br.containsHTML("(Incorrectly copied code from the image|Opište barevný kód z obrázku)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                if (br.containsHTML("You are exceeding the limitations on this download")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
+                if (br.containsHTML("You are exceeding the limitations on this download")) {
+                    logger.info("You are exceeding the limitations on this download");
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
+                }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl.startDownload();
