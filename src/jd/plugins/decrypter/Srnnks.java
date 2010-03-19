@@ -214,7 +214,8 @@ public class Srnnks extends PluginForDecrypt {
                         continue;
                     }
                     // we need the 300 ms gap between two requests..
-                    progress.setRange(10 + actions.size(), 10);
+                    progress.setRange(10 + actions.size());
+                    progress.setStatus(10);
                     synchronized (GLOBAL_LOCK) {
                         for (int d = 0; d < actions.size(); d++) {
                             this.new DecryptRunnable(actions.get(d), br.cloneBrowser(), ret).go();
