@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -37,8 +38,6 @@ public class XHamsterCom extends PluginForHost {
     public String getAGBLink() {
         return "http://xhamster.com/terms.php";
     }
-
-    public String dllink = null;
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
@@ -61,17 +60,13 @@ public class XHamsterCom extends PluginForHost {
         }
         String ending = br.getRegex("'type':'(.*?)'").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        filename = filename.trim();
+        filename = Encoding.htmlDecode(filename.trim());
         if (ending != null) {
             downloadLink.setFinalFileName(filename + "." + ending);
         } else {
             downloadLink.setName(filename);
         }
-        String server = br.getRegex("'srv': '(.*?)'").getMatch(0);
-        String type = br.getRegex("'type':'(.*?)'").getMatch(0);
-        String file = br.getRegex("'file': '(.*?)'").getMatch(0);
-        if (server == null || type == null || file == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dllink = server + "/" + type + "2/" + file;
+        String dllink = getDllink();
         if (!br.openGetConnection(dllink).getContentType().contains("html")) downloadLink.setDownloadSize(br.getHttpConnection().getLongContentLength());
         return AvailableStatus.TRUE;
     }
@@ -79,12 +74,25 @@ public class XHamsterCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        // Access the page again to get a new direct link because by checking
+        // the availibility the first linkisn't valid anymore
+        br.getPage(downloadLink.getDownloadURL());
+        String dllink = getDllink();
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    public String getDllink() throws IOException, PluginException {
+        String server = br.getRegex("'srv': '(.*?)'").getMatch(0);
+        String type = br.getRegex("'type':'(.*?)'").getMatch(0);
+        String file = br.getRegex("'file': '(.*?)'").getMatch(0);
+        if (server == null || type == null || file == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String dllink = server + "/" + type + "2/" + file;
+        return dllink;
     }
 
     @Override
