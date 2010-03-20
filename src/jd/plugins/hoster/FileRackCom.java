@@ -82,6 +82,7 @@ public class FileRackCom extends PluginForHost {
         } while (br.containsHTML("<b>Verification Code doesn't match </b>"));
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setDebug(true);
+        br.setReadTimeout(120 * 1000);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (dl.getConnection().getResponseCode() == 404) {
             dl.getConnection().disconnect();
