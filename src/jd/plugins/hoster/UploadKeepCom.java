@@ -40,7 +40,6 @@ public class UploadKeepCom extends PluginForHost {
 
     public UploadKeepCom(PluginWrapper wrapper) {
         super(wrapper);
-        // TODO Auto-generated constructor stub
     }
 
     @Override
@@ -183,14 +182,13 @@ public class UploadKeepCom extends PluginForHost {
         String passCode = null;
         boolean password = false;
         boolean recaptcha = false;
-        if (br.containsHTML("(<b>Passwort:</b>|<b>Password:</b>)")) {
+        if (br.containsHTML("(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)")) {
             password = true;
             logger.info("The downloadlink seems to be password protected.");
         }
-        password = false;
 
         // Get the captcha
-        if (br.containsHTML("background:#ccc;text-align")) {
+        if (br.containsHTML("background:#ccc;text-align") && !br.containsHTML("display:none;\">background:#ccc;text-align")) {
             logger.info("Detected captcha method \"plaintext captchas\" for this host");
             // Captcha method by ManiacMansion
             String[][] letters = new Regex(Encoding.htmlDecode(br.toString()), "<span style='position:absolute;padding-left:(\\d+)px;padding-top:\\d+px;'>(\\d)</span>").getMatches();
@@ -315,7 +313,7 @@ public class UploadKeepCom extends PluginForHost {
                     }
                 }
                 if (br.containsHTML("You're using all download slots for IP")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
-                if (br.containsHTML("(<b>Passwort:</b>|<b>Password:</b>|Wrong password)")) {
+                if (br.containsHTML("(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input|Wrong password)")) {
                     logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
                     downloadLink.setProperty("pass", null);
                     throw new PluginException(LinkStatus.ERROR_RETRY);
