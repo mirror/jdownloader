@@ -28,7 +28,7 @@ import jd.JDInitFlags;
 import jd.controlling.JDLogger;
 import jd.event.ControlListener;
 import jd.gui.UserIF;
-import jd.gui.swing.jdgui.interfaces.SwitchPanel;
+import jd.gui.swing.jdgui.interfaces.View;
 
 public abstract class SwingGui extends UserIF implements ControlListener, WindowListener, WindowStateListener, WindowFocusListener {
     protected JFrame mainFrame;
@@ -139,7 +139,7 @@ public abstract class SwingGui extends UserIF implements ControlListener, Window
 
     abstract public void closeWindow();
 
-    abstract public void setContent(SwitchPanel tabbedPanel);
+    abstract public void setContent(View view);
 
     /**
      * Throws an RuntimeException if the current thread is not the edt
@@ -160,6 +160,6 @@ public abstract class SwingGui extends UserIF implements ControlListener, Window
      * 
      * @param view
      */
-    abstract public void disposeView(SwitchPanel view);
+    abstract public void disposeView(View view);
 
 }

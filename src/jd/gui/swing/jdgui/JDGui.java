@@ -413,9 +413,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
     }
 
     @Override
-    public void setContent(SwitchPanel tabbedPanel) {
-        View view = (View) tabbedPanel;
-
+    public void setContent(View view) {
         if (!mainTabbedPane.contains(view)) {
             mainTabbedPane.addTab(view);
         }
@@ -517,11 +515,9 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
     }
 
     @Override
-    public void disposeView(SwitchPanel view) {
-        if (view instanceof View) {
-            view = mainTabbedPane.getComponentEquals((View) view);
-            mainTabbedPane.remove((View) view);
-        }
+    public void disposeView(View view) {
+        view = mainTabbedPane.getComponentEquals(view);
+        mainTabbedPane.remove(view);
     }
 
     public void addLinks(final ArrayList<DownloadLink> links, boolean hidegrabber, final boolean autostart) {

@@ -41,6 +41,7 @@ public class InfoDialog extends JDialog {
 
         ds = new DownloadInformations();
 
+        this.setTitle(JDL.L("jd.plugins.optional.infobar.InfoDialog.title", "QuickInfo"));
         this.setAlwaysOnTop(true);
         this.setModal(false);
         this.setResizable(false);
@@ -60,11 +61,14 @@ public class InfoDialog extends JDialog {
     }
 
     private void initGui() {
+        prgTotal = new JDProgressBar();
+        prgTotal.setStringPainted(true);
+
         this.setLayout(new MigLayout("ins 5, wrap 2", "[][grow,fill]"));
         this.add(new SpeedMeterPanel(false, true), "h 30!, w 300!, spanx");
         this.add(new JLabel(JDL.L("plugins.optional.trayIcon.progress", "Progress:")));
         this.add(lblProgress = new JLabel(""));
-        this.add(prgTotal = new JDProgressBar(), "spanx, growx");
+        this.add(prgTotal, "spanx, growx");
         this.add(new JLabel(JDL.L("plugins.optional.trayIcon.eta", "ETA:")));
         this.add(lblETA = new JLabel(""));
         this.pack();
@@ -91,8 +95,11 @@ public class InfoDialog extends JDialog {
 
         lblProgress.setText(Formatter.formatFilesize(ds.getCurrentDownloadSize(), 0) + " / " + Formatter.formatFilesize(ds.getTotalDownloadSize(), 0));
 
-        prgTotal.setMaximum(ds.getTotalDownloadSize());
-        prgTotal.setValue(ds.getCurrentDownloadSize());
+        long totalDl = ds.getTotalDownloadSize();
+        long curDl = ds.getCurrentDownloadSize();
+        prgTotal.setString(Math.round((curDl * 10000.0) / totalDl) / 100.0 + "%");
+        prgTotal.setMaximum(totalDl);
+        prgTotal.setValue(curDl);
 
         lblETA.setText(Formatter.formatSeconds(ds.getETA()));
     }

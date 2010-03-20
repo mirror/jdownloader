@@ -69,7 +69,7 @@ public class DownloadInfoPanel extends InfoPanel {
                 dlc.getDownloadStatus(ds);
                 speed = DownloadWatchDog.getInstance().getConnectionManager().getIncommingBandwidthUsage();
                 updateInfo(JDL.L(JDL_PREFIX + "speed", "Downloadspeed"), Formatter.formatReadable(speed) + "/s");
-                updateInfo(JDL.L(JDL_PREFIX + "eta", "Download complete in"), Formatter.formatSeconds(speed == 0 ? -1 : (ds.getTotalDownloadSize() - ds.getCurrentDownloadSize()) / speed));
+                updateInfo(JDL.L(JDL_PREFIX + "eta", "Download complete in"), Formatter.formatSeconds(speed == 0 ? -1 : ds.getETA()));
                 updateInfo(JDL.L(JDL_PREFIX + "packages", "Package(s)"), ds.getPackagesCount());
                 updateInfo(JDL.L(JDL_PREFIX + "links", "Links(s)"), ds.getDownloadCount());
                 updateInfo(JDL.L(JDL_PREFIX + "size", "Total size"), Formatter.formatReadable(ds.getTotalDownloadSize()));
