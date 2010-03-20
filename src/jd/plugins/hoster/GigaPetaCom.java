@@ -112,7 +112,7 @@ public class GigaPetaCom extends PluginForHost {
             account.setValid(false);
             return ai;
         } else {
-            ai.setValidUntil(Regex.getMilliSeconds(expire.trim(), "dd.MM.yyyy hh:mm", null));
+            ai.setValidUntil(Regex.getMilliSeconds(expire.trim(), "dd.MM.yyyy HH:mm", null));
         }
         ai.setStatus("Premium User");
         return ai;

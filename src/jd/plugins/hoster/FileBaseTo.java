@@ -88,7 +88,7 @@ public class FileBaseTo extends PluginForHost {
         String time = br.getRegex("Gueltig bis.*?<td width=.*?<b>.*?um(.*?)Uhr.*?\\(.*?</b>").getMatch(0);
         if (date != null || time != null) expires = date.trim() + "|" + time.trim();
         if (expires != null) {
-            ai.setValidUntil(Regex.getMilliSeconds(expires, "dd.MM.yyyy|hh:mm", null));
+            ai.setValidUntil(Regex.getMilliSeconds(expires, "dd.MM.yyyy|HH:mm", null));
             account.setValid(true);
             return ai;
         }

@@ -97,7 +97,7 @@ public class DataHu extends PluginForHost {
 
         String days = br.getRegex("logged_user_prem_date\">(.*?)<").getMatch(0);
         if (days != null && !days.equals("0")) {
-            ai.setValidUntil(Regex.getMilliSeconds(days, "yyyy-MM-dd hh:mm:ss", Locale.ENGLISH));
+            ai.setValidUntil(Regex.getMilliSeconds(days, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH));
         } else {
             logger.warning("Couldn't get the expire date, stopping premium!");
             ai.setExpired(true);

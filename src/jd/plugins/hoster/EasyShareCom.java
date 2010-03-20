@@ -78,11 +78,16 @@ public class EasyShareCom extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        br.getPage("http://www.easy-share.com/accounts/changepassword");
-        if (br.getRegex("li>Premium: <span class=.*?>(.*?)</span>").getMatch(0) == null || br.getRegex("li>Premium: <span class=.*?>(.*?)</span>").getMatch(0) == null || !br.getRegex("li>Premium: <span class=.*?>(.*?)</span>").getMatch(0).equals("active")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        br.getPage("http://www.easy-share.com/accounts");
+        String ends = br.getRegex("Ends:</span>.*?<span>(.*?)<").getMatch(0);
+        String isPremium = br.getRegex("Premium membership: <.*?>(.*?)<").getMatch(0);
+        if (ends == null || isPremium == null || !isPremium.equalsIgnoreCase("Active")) {
+            account.setValid(false);
+            return ai;
+        }
+        ai.setValidUntil(Regex.getMilliSeconds(ends.replaceAll(", in", ""), "dd MMM yyyy HH:mm:ss", null));
         ai.setUnlimitedTraffic();
         account.setValid(true);
-        ai.setStatus("Premium User");
         return ai;
     }
 
