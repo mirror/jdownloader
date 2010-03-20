@@ -25,13 +25,10 @@ import java.io.File;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.Locale;
 import java.util.Random;
 import java.util.Vector;
 import java.util.Map.Entry;
-import java.util.regex.Pattern;
 
-import jd.HostPluginWrapper;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -67,7 +64,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkGrabberFilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.OptionalPlugin;
-import jd.plugins.PluginForHost;
 import jd.plugins.PluginOptional;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
@@ -1046,10 +1042,11 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
 
         private Element addGrabberLink(Document xml, DownloadLink dl) {
             Element element = xml.createElement("file");
-            
-            // fetch available status in advance - also updates other stuff like file size
+
+            // fetch available status in advance - also updates other stuff like
+            // file size
             AvailableStatus status = dl.getAvailableStatus();
-            
+
             element.setAttribute("file_name", dl.getName());
             element.setAttribute("file_package", dl.getFilePackage().getName());
             element.setAttribute("file_hoster", dl.getHost());

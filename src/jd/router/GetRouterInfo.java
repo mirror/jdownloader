@@ -42,6 +42,7 @@ import jd.gui.userio.DummyFrame;
 import jd.http.Browser;
 import jd.nutils.JDFlags;
 import jd.nutils.Threader;
+import jd.nutils.Threader.WorkerListener;
 import jd.nutils.jobber.JDRunnable;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
@@ -167,13 +168,11 @@ public class GetRouterInfo {
 
         };
 
-        th2.getBroadcaster().addListener(th2.new WorkerListener() {
+        th2.getBroadcaster().addListener(new WorkerListener() {
 
-            // @Override
             public void onThreadException(Threader th, JDRunnable job, Throwable e) {
             }
 
-            // @Override
             public void onThreadFinished(Threader th, JDRunnable runnable) {
                 if (runnable == jupnp) {
                     isalv.isAlv = false;
@@ -181,9 +180,9 @@ public class GetRouterInfo {
                 }
             }
 
-            // @Override
             public void onThreadStarts(Threader threader, JDRunnable runnable) {
             }
+
         });
         th2.add(jupnp);
         th2.add(new JDRunnable() {

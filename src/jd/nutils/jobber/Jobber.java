@@ -57,7 +57,7 @@ public class Jobber {
     }
 
     /**
-     * Jobber.class Diese Klasse ermöglicht  das paralelle Ausführen mehrere
+     * Jobber.class Diese Klasse ermöglicht das paralelle Ausführen mehrere
      * Jobs. Es ist möglich während der Ausführung neue Jobs hinzuzufügen.
      * 
      * @param i
@@ -300,9 +300,9 @@ public class Jobber {
 
     }
 
-    public abstract class WorkerListener {
+    public static interface WorkerListener {
 
-        public abstract void onJobFinished(Jobber jobber, JDRunnable job);
+        public void onJobFinished(Jobber jobber, JDRunnable job);
 
         /**
          * Broadcastes occuring Exceptions
@@ -311,11 +311,11 @@ public class Jobber {
          * @param job
          * @param e
          */
-        public abstract void onJobException(Jobber jobber, JDRunnable job, Exception e);
+        public void onJobException(Jobber jobber, JDRunnable job, Exception e);
 
-        public abstract void onJobListFinished(Jobber jobber);
+        public void onJobListFinished(Jobber jobber);
 
-        public abstract void onJobStarted(Jobber jobber, JDRunnable job);
+        public void onJobStarted(Jobber jobber, JDRunnable job);
 
     }
 

@@ -30,6 +30,7 @@ import jd.controlling.JDLogger;
 import jd.nutils.Executer;
 import jd.nutils.OSDetector;
 import jd.nutils.Threader;
+import jd.nutils.Threader.WorkerListener;
 import jd.nutils.jobber.JDRunnable;
 import jd.parser.Regex;
 
@@ -261,15 +262,13 @@ public class RouterUtils {
         final Threader threader = new Threader();
         for (int i = 0; i < size; i++) {
             threader.add(new WebServerChecker(HOST_NAMES.get(i)));
-
         }
 
-        threader.getBroadcaster().addListener(threader.new WorkerListener() {
-            @Override
+        threader.getBroadcaster().addListener(new WorkerListener() {
+
             public void onThreadException(Threader th, JDRunnable job, Throwable e) {
             }
 
-            @Override
             public void onThreadFinished(Threader th, JDRunnable runnable) {
                 if (((WebServerChecker) runnable).getAddress() != null) {
                     th.interrupt();
@@ -278,7 +277,6 @@ public class RouterUtils {
 
             }
 
-            @Override
             public void onThreadStarts(Threader threader, JDRunnable runnable) {
             }
 

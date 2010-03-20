@@ -29,6 +29,7 @@ import jd.http.Browser;
 import jd.http.Request;
 import jd.nutils.Threader;
 import jd.nutils.Threader.Worker;
+import jd.nutils.Threader.WorkerListener;
 import jd.nutils.jobber.JDRunnable;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
@@ -440,24 +441,19 @@ public class HTTPDownload extends DownloadInterface {
      */
     private void initChunks() throws IOException, BrowserException {
         this.chunks = new Threader();
-        chunks.getBroadcaster().addListener(chunks.new WorkerListener() {
+        chunks.getBroadcaster().addListener(new WorkerListener() {
 
-            // @Override
             public void onThreadException(Threader th, JDRunnable job, Throwable e) {
                 System.err.println(job);
                 JDLogger.exception(e);
             }
 
-            // @Override
             public void onThreadFinished(Threader th, JDRunnable job) {
                 try {
                     updateActiveChunkCount(-1);
                     fireEvent(new DownloadEvent(DownloadEvent.PROGRESS_CHUNK_FINISHED, HTTPDownload.this, (DownloadChunk) job));
 
                     checkForMissingParts();
-                    // if(activeChunks<chunkNum)
-                    //                    
-                    // addChunksDyn(i - tmp);
 
                     updateChunks();
                 } catch (BrowserException e) {
@@ -475,7 +471,6 @@ public class HTTPDownload extends DownloadInterface {
                 }
             }
 
-            // @Override
             public void onThreadStarts(Threader threader, JDRunnable runnable) {
                 updateActiveChunkCount(+1);
                 fireEvent(new DownloadEvent(DownloadEvent.PROGRESS_CHUNK_STARTED, HTTPDownload.this, (DownloadChunk) runnable));

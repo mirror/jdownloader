@@ -33,27 +33,6 @@ import jd.nutils.jobber.JDRunnable;
  */
 public class Threader {
 
-    public static void main(String[] args) throws Exception {
-
-        Threader th = new Threader();
-
-        for (int i = 0; i < 1000; i++) {
-            th.add(new JDRunnable() {
-                public void go() throws Exception {
-                    System.out.println("DA");
-
-                }
-
-            });
-
-        }
-
-        th.startAndWait();
-
-        System.out.println("ALLES OK");
-
-    }
-
     private ArrayList<Worker> workerlist;
     private Integer returnedWorker = 0;
     private boolean waitFlag = false;
@@ -103,8 +82,8 @@ public class Threader {
             this.notify();
         }
     }
-    public void startWorkers()
-    {
+
+    public void startWorkers() {
         this.hasStarted = true;
         for (Worker w : workerlist) {
             w.start();
@@ -112,8 +91,8 @@ public class Threader {
 
         waitFlag = true;
     }
-    public void waitOnWorkers()
-    {
+
+    public void waitOnWorkers() {
         synchronized (this) {
             while (waitFlag) {
                 try {
@@ -128,6 +107,7 @@ public class Threader {
         }
         this.hasDied = true;
     }
+
     public void startAndWait() {
         this.hasStarted = true;
         for (Worker w : workerlist) {
@@ -186,7 +166,7 @@ public class Threader {
                 this.runnableAlive = false;
                 onWorkerFinished(this);
             }
-           
+
         }
 
         public boolean isRunnableAlive() {
@@ -195,13 +175,13 @@ public class Threader {
 
     }
 
-    public abstract class WorkerListener {
+    public static interface WorkerListener {
 
-        public abstract void onThreadFinished(Threader th, JDRunnable runnable);
+        public void onThreadFinished(Threader th, JDRunnable runnable);
 
-        public abstract void onThreadStarts(Threader threader, JDRunnable runnable);
+        public void onThreadStarts(Threader threader, JDRunnable runnable);
 
-        public abstract void onThreadException(Threader th, JDRunnable job, Throwable e);
+        public void onThreadException(Threader th, JDRunnable job, Throwable e);
 
     }
 

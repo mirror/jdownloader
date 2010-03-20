@@ -24,9 +24,7 @@ import jd.gui.swing.components.SpeedMeterPanel;
 import jd.gui.swing.jdgui.actions.ActionController;
 
 public class MainToolBar extends ToolBar implements ControlListener {
-    /**
-     * 
-     */
+
     private static final long serialVersionUID = 922971719957349497L;
     private SpeedMeterPanel speedmeter;
     private static MainToolBar INSTANCE = null;
@@ -44,7 +42,7 @@ public class MainToolBar extends ToolBar implements ControlListener {
     }
 
     private void addSpeedMeter() {
-        if (speedmeter == null) speedmeter = new SpeedMeterPanel();
+        if (speedmeter == null) speedmeter = new SpeedMeterPanel(true, false);
         add(speedmeter, "dock east,hidemode 3,height 30!,width 30:200:300");
     }
 
