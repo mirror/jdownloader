@@ -136,7 +136,7 @@ public class MegasharesCom extends PluginForHost {
         if (br.containsHTML("All download slots for this link are currently filled")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
         // Reconnet/wartezeit check
         String[] dat = br.getRegex("Your download passport will renew.*?in.*?(\\d+).*?:.*?(\\d+).*?:.*?(\\d+)</strong>").getRow(0);
-        if (br.containsHTML("You have reached the maximum download limit")) {
+        if (br.containsHTML("You have reached.*?maximum download limit")) {
             long wait = Long.parseLong(dat[1]) * 60000l + Long.parseLong(dat[2]) * 1000l;
             linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
             linkStatus.setValue(wait);
