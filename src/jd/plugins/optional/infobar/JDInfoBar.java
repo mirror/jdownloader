@@ -1,8 +1,6 @@
 package jd.plugins.optional.infobar;
 
 import java.awt.event.ActionEvent;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
@@ -31,9 +29,9 @@ public class JDInfoBar extends PluginOptional {
     @Override
     public void setGuiEnable(boolean b) {
         if (b) {
-            if (!infoDialog.isVisible()) infoDialog.setVisible(true);
+            infoDialog.showDialog();
         } else {
-            if (infoDialog.isVisible()) infoDialog.dispose();
+            infoDialog.hideDialog();
         }
         if (activateAction != null && activateAction.isSelected() != b) activateAction.setSelected(b);
     }
@@ -46,15 +44,7 @@ public class JDInfoBar extends PluginOptional {
         activateAction.setIcon(this.getIconKey());
         activateAction.setSelected(false);
 
-        infoDialog = InfoDialog.getInstance();
-        infoDialog.addWindowListener(new WindowAdapter() {
-
-            @Override
-            public void windowClosing(WindowEvent e) {
-                activateAction.setSelected(false);
-            }
-
-        });
+        infoDialog = InfoDialog.getInstance(activateAction);
 
         return true;
     }
@@ -74,7 +64,7 @@ public class JDInfoBar extends PluginOptional {
 
     @Override
     public String getIconKey() {
-        return "gui.images.about";
+        return "gui.images.help";
     }
 
 }

@@ -68,7 +68,6 @@ import jd.gui.swing.jdgui.settings.panels.premium.Premium;
 import jd.gui.swing.jdgui.views.ConfigurationView;
 import jd.gui.swing.jdgui.views.DownloadView;
 import jd.gui.swing.jdgui.views.LinkgrabberView;
-import jd.gui.swing.jdgui.views.TabbedPanelView;
 import jd.gui.swing.jdgui.views.linkgrabberview.LinkGrabberPanel;
 import jd.gui.swing.jdgui.views.logview.LogView;
 import jd.gui.swing.jdgui.views.sidebars.configuration.AddonConfig;
@@ -415,13 +414,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
 
     @Override
     public void setContent(SwitchPanel tabbedPanel) {
-
-        View view;
-        if (tabbedPanel instanceof View) {
-            view = (View) tabbedPanel;
-        } else {
-            view = new TabbedPanelView(tabbedPanel);
-        }
+        View view = (View) tabbedPanel;
 
         if (!mainTabbedPane.contains(view)) {
             mainTabbedPane.addTab(view);

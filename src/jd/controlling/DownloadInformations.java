@@ -130,4 +130,10 @@ public class DownloadInformations {
     public int getDuplicateDownloads() {
         return duplicateDownloads;
     }
+
+    public long getETA() {
+        long etanum = 0;
+        if (DownloadWatchDog.getInstance().getConnectionManager().getIncommingBandwidthUsage() > 1024) etanum = (getTotalDownloadSize() - getCurrentDownloadSize()) / DownloadWatchDog.getInstance().getConnectionManager().getIncommingBandwidthUsage();
+        return etanum;
+    }
 }

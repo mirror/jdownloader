@@ -57,7 +57,7 @@ public class TrayIconTooltip extends JWindowTooltip {
         panel.add(lblDlTotal = new JLabel(""));
         panel.add(new JLabel(JDL.L("plugins.optional.trayIcon.speed", "Speed:")));
         panel.add(lblSpeed = new JLabel(""));
-        panel.add(new JLabel(JDL.L("plugins.optional.trayIcon.progress", "Progress: ")));
+        panel.add(new JLabel(JDL.L("plugins.optional.trayIcon.progress", "Progress:")));
         panel.add(lblProgress = new JLabel(""));
         panel.add(prgTotal = new JDProgressBar(), "spanx 2");
         panel.add(new JLabel(JDL.L("plugins.optional.trayIcon.eta", "ETA:")));
@@ -76,10 +76,7 @@ public class TrayIconTooltip extends JWindowTooltip {
         prgTotal.setMaximum(ds.getTotalDownloadSize());
         prgTotal.setValue(ds.getCurrentDownloadSize());
 
-        long etanum = 0;
-        if (DownloadWatchDog.getInstance().getConnectionManager().getIncommingBandwidthUsage() > 1024) etanum = (ds.getTotalDownloadSize() - ds.getCurrentDownloadSize()) / DownloadWatchDog.getInstance().getConnectionManager().getIncommingBandwidthUsage();
-
-        lblETA.setText(Formatter.formatSeconds(etanum));
+        lblETA.setText(Formatter.formatSeconds(ds.getETA()));
     }
 
 }
