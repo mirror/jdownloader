@@ -203,6 +203,7 @@ public class SharingMatrixCom extends PluginForHost {
             filesize = reg.getMatch(0) + reg.getMatch(1);
         }
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("Only premium users are entitled to download files larger than")) parameter.getLinkStatus().setStatusText(JDL.L("plugins.hoster.sharingmatrixcom.only4premium", "This file is only downloadable for premium users!"));
         parameter.setName(filename.trim());
         parameter.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
         return AvailableStatus.TRUE;
@@ -213,6 +214,7 @@ public class SharingMatrixCom extends PluginForHost {
         br.forceDebug(true);
         requestFileInformation(downloadLink);
         String passCode = null;
+        if (br.containsHTML("Only premium users are entitled to download files larger than")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.sharingmatrixcom.only4premium", "This file is only downloadable for premium users!"));
         if (br.containsHTML("You are already downloading file. Only premium")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
         if (br.containsHTML("no available free download slots left")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.sharingmatrixcom.nofreeslots", "No free slots available for this file"));
         if (br.containsHTML("daily download limit is over")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.sharingmatrixcom.dailylimit", "Daily limit reached"), 60 * 60 * 1000l);
