@@ -100,12 +100,6 @@ public class SharingMatrixCom extends PluginForHost {
         String url = br.getRedirectLocation();
         boolean direct = true;
         if (url == null) {
-            // They got java script on their site which decides if the text
-            // shows up on the page so "We are sorry but" is always on the page
-            // if (br.containsHTML("We are sorry but")) throw new
-            // PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE,
-            // JDL.L("plugins.hoster.sharingmatrixcom.maintenance",
-            // "Server maintenance"), 60 * 60 * 1000l);
             if (br.containsHTML("download limit of 10Gb is over")) {
                 logger.info(JDL.L("plugins.hoster.sharingmatrixcom.limit", "Deposit: We are sorry, but your daily Premium user's download limit of 10Gb is over."));
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
