@@ -79,14 +79,22 @@ public class EasyShareCom extends PluginForHost {
             return ai;
         }
         br.getPage("http://www.easy-share.com/accounts");
+        String isPremium = br.getRegex("Premium membership: <.*?>(Active)<").getMatch(0);
         String ends = br.getRegex("Ends:</span>.*?<span>(.*?)<").getMatch(0);
-        String isPremium = br.getRegex("Premium membership: <.*?>(.*?)<").getMatch(0);
-        if (ends == null || isPremium == null || !isPremium.equalsIgnoreCase("Active")) {
+        /* there are 2 different versions of account info pages */
+        if (ends == null) ends = br.getRegex("End time:(.*?)<").getMatch(0);
+        if (isPremium == null) isPremium = br.getRegex("Premium account: <.*?>(active)<").getMatch(0);
+        if (ends == null || isPremium == null) {
             account.setValid(false);
             return ai;
         }
-        ai.setValidUntil(Regex.getMilliSeconds(ends.replaceAll(", in", ""), "dd MMM yyyy HH:mm:ss", null));
-        ai.setUnlimitedTraffic();
+        ai.setValidUntil(Regex.getMilliSeconds(ends.replaceAll(", in", "").trim(), "dd MMM yyyy HH:mm:ss", null));
+        String trafficLeft = br.getRegex("Traffic left:(.*?)<").getMatch(0);
+        if (trafficLeft != null) {
+            ai.setTrafficLeft(Regex.getSize(trafficLeft));
+        } else {
+            ai.setUnlimitedTraffic();
+        }
         account.setValid(true);
         return ai;
     }

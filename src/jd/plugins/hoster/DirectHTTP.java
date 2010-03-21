@@ -23,6 +23,7 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.controlling.HTACCESSController;
+import jd.controlling.JDLogger;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
@@ -158,6 +159,7 @@ public class DirectHTTP extends PluginForHost {
         } catch (PluginException e2) {
             throw e2;
         } catch (Exception e) {
+            JDLogger.exception(e);
         } finally {
             if (urlConnection != null) urlConnection.disconnect();
         }
