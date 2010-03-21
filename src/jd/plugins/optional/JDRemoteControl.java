@@ -42,6 +42,7 @@ import jd.controlling.JDLogger;
 import jd.controlling.LinkGrabberController;
 import jd.controlling.LinkGrabberControllerEvent;
 import jd.controlling.LinkGrabberControllerListener;
+import jd.controlling.LinkGrabberPackager;
 import jd.controlling.reconnect.Reconnecter;
 import jd.event.ControlListener;
 import jd.gui.UserIO;
@@ -258,6 +259,9 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
                 infovector.add("Remove packages %X% from download list");
 
                 // special table
+                commandvec.add(" ");
+                infovector.add("Specials");
+
                 commandvec.add("/special/check/%X%");
                 infovector.add("Check links in %X% without adding them to the linkgrabber or the download list. %X% may be a list of urls. Note: Links must be URLEncoded. Use NEWLINE between links!");
 
@@ -971,7 +975,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
                 }
 
             } else if (request.getRequestUrl().matches("(?is).*/special/check/.+")) {
-                // Add link(s)
+
                 ArrayList<String> links = new ArrayList<String>();
 
                 String link = new Regex(request.getRequestUrl(), ".*/special/check/(.+)").getMatch(0);
@@ -1003,6 +1007,9 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
                     element.setAttribute("url", chklink);
 
                     for (DownloadLink dl : dls) {
+                        dl.getAvailableStatus(); // force update
+                        LinkGrabberFilePackage pack = LinkGrabberController.getInstance().getGeneratedPackage(dl);
+                        dl.getFilePackage().setName(pack.getName());
                         element.appendChild(addGrabberLink(xml, dl));
                     }
                 }
