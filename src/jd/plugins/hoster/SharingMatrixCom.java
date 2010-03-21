@@ -57,7 +57,9 @@ public class SharingMatrixCom extends PluginForHost {
         br.getPage("http://sharingmatrix.com/login");
         br.getPage("http://sharingmatrix.com/ajax_scripts/login.php?email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember_me=true");
         String validornot = br.toString();
-        validornot = validornot.replaceAll("(\n|\r)", "");
+        String number = new Regex(validornot, "(\r\n\\d{2,})").getMatch(0);
+        if (number != null) validornot = validornot.replace(number, "");
+        validornot = validornot.trim();
         if (!validornot.equals("1")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
@@ -74,6 +76,7 @@ public class SharingMatrixCom extends PluginForHost {
         String expiredate = br.getRegex("([0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2})").getMatch(0);
         String daysleft = br.getRegex(",.*?([0-9]{1,3}).*?day\\(s\\) left").getMatch(0);
         if (expiredate != null) {
+            ai.setStatus("Premium User");
             ai.setValidUntil(Regex.getMilliSeconds(expiredate, "yyyy-MM-dd HH:mm:ss", null));
             account.setValid(true);
             return ai;
@@ -97,13 +100,18 @@ public class SharingMatrixCom extends PluginForHost {
         String url = br.getRedirectLocation();
         boolean direct = true;
         if (url == null) {
-            if (br.containsHTML("We are sorry but")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.sharingmatrixcom.maintenance","Server maintenance"), 60 * 60 * 1000l);
+            // They got java script on their site which decides if the text
+            // shows up on the page so "We are sorry but" is always on the page
+            // if (br.containsHTML("We are sorry but")) throw new
+            // PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE,
+            // JDL.L("plugins.hoster.sharingmatrixcom.maintenance",
+            // "Server maintenance"), 60 * 60 * 1000l);
             if (br.containsHTML("download limit of 10Gb is over")) {
-                logger.info(JDL.L("plugins.hoster.sharingmatrixcom.limit","Deposit: We are sorry, but your daily Premium user's download limit of 10Gb is over."));
+                logger.info(JDL.L("plugins.hoster.sharingmatrixcom.limit", "Deposit: We are sorry, but your daily Premium user's download limit of 10Gb is over."));
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             }
             if (br.containsHTML("no available free download slots left")) {
-                logger.info(JDL.L("plugins.hoster.sharingmatrixcom.buggy","Buggy Server: enable DirectDownload as workaround"));
+                logger.info(JDL.L("plugins.hoster.sharingmatrixcom.buggy", "Buggy Server: enable DirectDownload as workaround"));
                 br.getPage("http://sharingmatrix.com/ajax_scripts/personal.php?query=settings");
                 Form form = br.getForm(0);
                 Form newform = new Form();
@@ -123,7 +131,7 @@ public class SharingMatrixCom extends PluginForHost {
             direct = false;
             if (br.containsHTML("Enter password:<") && !br.containsHTML("enter_password\" style=\"display:none\"")) {
                 if (downloadLink.getStringProperty("pass", null) == null) {
-                    passCode = Plugin.getUserInput(JDL.L("plugins.hoster.sharingmatrixcom.password","Password?"), downloadLink);
+                    passCode = Plugin.getUserInput(JDL.L("plugins.hoster.sharingmatrixcom.password", "Password?"), downloadLink);
                 } else {
                     /* gespeicherten PassCode holen */
                     passCode = downloadLink.getStringProperty("pass", null);
@@ -134,7 +142,7 @@ public class SharingMatrixCom extends PluginForHost {
             if (linkid == null || link_name == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             Browser brc = br.cloneBrowser();
             brc.getPage("http://www.sharingmatrix.com/ajax_scripts/_get.php?link_id=" + linkid + "&link_name=" + link_name + "&dl_id=0&prem=1" + (passCode == null ? "" : "&password=" + Encoding.urlEncode(passCode)));
-            if (brc.containsHTML("server_down")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.sharingmatrixcom.failure","Serverfailure, Please try again later!"), 30 * 60 * 1000l);
+            if (brc.containsHTML("server_down")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.sharingmatrixcom.failure", "Serverfailure, Please try again later!"), 30 * 60 * 1000l);
             String server = brc.getRegex("serv:\"(http://.*?)\"").getMatch(0);
             String hash = brc.getRegex("hash:\"(.*?)\"").getMatch(0);
             if (server == null || hash == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -148,16 +156,16 @@ public class SharingMatrixCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 0);
         if (dl.getConnection() != null && dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.containsHTML("We are sorry but")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.sharingmatrixcom.maintenance","Server maintenance"), 60 * 60 * 1000l);
+            if (br.containsHTML("We are sorry but")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.sharingmatrixcom.maintenance", "Server maintenance"), 60 * 60 * 1000l);
             if (br.containsHTML("download limit of 10Gb is over")) {
-                logger.info(JDL.L("plugins.hoster.sharingmatrixcom.limit","Deposit: We are sorry, but your daily Premium user's download limit of 10Gb is over."));
+                logger.info(JDL.L("plugins.hoster.sharingmatrixcom.limit", "Deposit: We are sorry, but your daily Premium user's download limit of 10Gb is over."));
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             }
             if (br.containsHTML("Incorrect password for this file.")) {
-                logger.info(JDL.L("plugins.hoster.sharingmatrixcom.wrongpass","Password wrong"));
+                logger.info(JDL.L("plugins.hoster.sharingmatrixcom.wrongpass", "Password wrong"));
                 downloadLink.setProperty("pass", null);
                 if (direct) {
-                    passCode = Plugin.getUserInput(JDL.L("plugins.hoster.sharingmatrixcom.password","Password?"), downloadLink);
+                    passCode = Plugin.getUserInput(JDL.L("plugins.hoster.sharingmatrixcom.password", "Password?"), downloadLink);
                     downloadLink.setProperty("pass", passCode);
                 }
                 throw new PluginException(LinkStatus.ERROR_RETRY);
@@ -213,8 +221,8 @@ public class SharingMatrixCom extends PluginForHost {
         requestFileInformation(downloadLink);
         String passCode = null;
         if (br.containsHTML("You are already downloading file. Only premium")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
-        if (br.containsHTML("no available free download slots left")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.sharingmatrixcom.nofreeslots","No free slots available for this file"));
-        if (br.containsHTML("daily download limit is over")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.sharingmatrixcom.dailylimit","Daily limit reached"), 60 * 60 * 1000l);
+        if (br.containsHTML("no available free download slots left")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.sharingmatrixcom.nofreeslots", "No free slots available for this file"));
+        if (br.containsHTML("daily download limit is over")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.sharingmatrixcom.dailylimit", "Daily limit reached"), 60 * 60 * 1000l);
         String linkid = br.getRegex("link_id = '(\\d+)';").getMatch(0);
         if (linkid == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         String freepage = "http://sharingmatrix.com/ajax_scripts/download.php?type_membership=free&link_id=" + linkid;
@@ -239,14 +247,14 @@ public class SharingMatrixCom extends PluginForHost {
 
             if (br.containsHTML("Enter password:<") && !br.containsHTML("enter_password\" style=\"display:none\"")) {
                 if (downloadLink.getStringProperty("pass", null) == null) {
-                    passCode = Plugin.getUserInput(JDL.L("plugins.hoster.sharingmatrixcom.password","Password?"), downloadLink);
+                    passCode = Plugin.getUserInput(JDL.L("plugins.hoster.sharingmatrixcom.password", "Password?"), downloadLink);
                 } else {
                     /* gespeicherten PassCode holen */
                     passCode = downloadLink.getStringProperty("pass", null);
                 }
             }
             br2.postPage("http://sharingmatrix.com/ajax_scripts/verifier.php", "?&code=" + code);
-            if (br2.containsHTML("We are sorry but")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.sharingmatrixcom.maintenance","Server maintenance"), 60 * 60 * 1000l);
+            if (br2.containsHTML("We are sorry but")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.sharingmatrixcom.maintenance", "Server maintenance"), 60 * 60 * 1000l);
             if (Integer.parseInt(br2.toString().trim()) != 1) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
 
         }
@@ -254,14 +262,14 @@ public class SharingMatrixCom extends PluginForHost {
         this.sleep(ctjvv * 1000, downloadLink);
         String dl_id = br2.getPage("/ajax_scripts/dl.php").trim();
         br2.getPage("/ajax_scripts/_get2.php?link_id=" + linkid + "&link_name=" + link_name + "&dl_id=" + dl_id + (passCode == null ? "" : "&password=" + Encoding.urlEncode(passCode)));
-        if (br2.containsHTML("server_down")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.sharingmatrixcom.failure","Serverfailure, Please try again later!"), 30 * 60 * 1000l);
+        if (br2.containsHTML("server_down")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.sharingmatrixcom.failure", "Serverfailure, Please try again later!"), 30 * 60 * 1000l);
         String linkurl = br2.getRegex("serv:\"([^\"]+)\"").getMatch(0) + "/download/" + br2.getRegex("hash:\"([^\"]+)\"").getMatch(0) + "/" + dl_id.trim() + "/" + (passCode == null ? "" : "&password=" + Encoding.urlEncode(passCode));
         if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br2, downloadLink, linkurl, true, 1);
         if (dl.getConnection() != null && dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML("Incorrect password for this file.")) {
-                logger.info(JDL.L("plugins.hoster.sharingmatrixcom.wrongpass","Password wrong"));
+                logger.info(JDL.L("plugins.hoster.sharingmatrixcom.wrongpass", "Password wrong"));
                 downloadLink.setProperty("pass", null);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
