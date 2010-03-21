@@ -33,12 +33,13 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.RAFDownload;
 import jd.plugins.download.DownloadInterface.Chunk;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ftp" }, urls = { "ftp://.+/.+" }, flags = { 0 })
 public class Ftp extends PluginForHost {
+
+    Long speed = new Long(0);
 
     public Ftp(PluginWrapper wrapper) {
         super(wrapper);
@@ -76,6 +77,7 @@ public class Ftp extends PluginForHost {
 
     public void download(String ftpurl, final DownloadLink downloadLink) throws IOException, PluginException {
         SimpleFTP ftp = new SimpleFTP();
+
         try {
             if (new File(downloadLink.getFileOutput()).exists()) throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS);
             URL url = new URL(ftpurl);
@@ -88,21 +90,18 @@ public class Ftp extends PluginForHost {
             ftp.bin();
             ftp.getBroadcaster().addListener(new FtpListener() {
 
+                private long before = 0;
                 private long last = 0;
                 private long lastTime = System.currentTimeMillis();
 
                 public void onDownloadProgress(FtpEvent event) {
                     downloadLink.setDownloadCurrent(event.getProgress());
-
-                    if (System.currentTimeMillis() - lastTime > 250) {
-                        DownloadInterface dli = downloadLink.getDownloadInstance();
-                        /* TODO: change ftp to meteredinputStream */
-                        // if (dli != null)
-                        // dli.getChunks().get(0).getSpeedMeter().addSpeedValue((event.getProgress()
-                        // - last), System.currentTimeMillis() - lastTime);
-                        downloadLink.requestGuiUpdate();
+                    if (System.currentTimeMillis() - lastTime > 1000) {
                         last = event.getProgress();
+                        speed = ((last - before) / (System.currentTimeMillis() - lastTime)) * 1000l;
                         lastTime = System.currentTimeMillis();
+                        before = last;
+                        downloadLink.requestGuiUpdate();
                         downloadLink.setChunksProgress(new long[] { last });
                     }
                 }
@@ -115,7 +114,12 @@ public class Ftp extends PluginForHost {
 
             downloadLink.setDownloadInstance(dl);
             dl.addChunksDownloading(1);
-            Chunk ch = dl.new Chunk(0, 0, null, null);
+            Chunk ch = dl.new Chunk(0, 0, null, null) {
+                @Override
+                public long getSpeed() {
+                    return speed;
+                }
+            };
             ch.setInProgress(true);
             dl.getChunks().add(ch);
             String name = new Regex(ftpurl, ".*/(.+)").getMatch(0);

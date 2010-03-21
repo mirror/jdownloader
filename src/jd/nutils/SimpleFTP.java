@@ -52,9 +52,13 @@ import java.net.URL;
 import java.rmi.ConnectException;
 import java.util.StringTokenizer;
 
+import jd.controlling.DownloadWatchDog;
 import jd.controlling.JDLogger;
 import jd.event.JDBroadcaster;
 import jd.parser.Regex;
+
+import org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream;
+import org.appwork.utils.speedmeter.AverageSpeedMeter;
 
 /**
  * SimpleFTP is a simple package that implements a Java FTP client. With
@@ -163,7 +167,15 @@ public class SimpleFTP {
         writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
         String response = readLines(220, "SimpleFTP received an unknown response when connecting to the FTP server: ");
         sendLine("USER " + user);
-        response = readLines(331, "SimpleFTP received an unknown response after sending the user: ");
+        try {
+            response = readLines(331, "SimpleFTP received an unknown response after sending the user: ");
+        } catch (IOException e) {
+            /*
+             * anonymous only login does not response with 331, it responses
+             * with 230
+             */
+            if (!e.getMessage().contains("user: 230")) throw e;
+        }
         sendLine("PASS " + pass);
         response = readLines(230, "SimpleFTP was unable to log in with the supplied password: ");
         sendLine("PWD");
@@ -611,13 +623,14 @@ public class SimpleFTP {
         InetSocketAddress pasv = pasv();
 
         sendLine("RETR " + filename);
-
+        MeteredThrottledInputStream input = null;
+        DataOutputStream out = null;
         Socket dataSocket;
         try {
             dataSocket = new Socket(pasv.getHostName(), pasv.getPort());
-
-            BufferedInputStream input = new BufferedInputStream(dataSocket.getInputStream());
-            DataOutputStream out = new DataOutputStream(new FileOutputStream(file));
+            input = new MeteredThrottledInputStream(dataSocket.getInputStream(), new AverageSpeedMeter());
+            out = new DataOutputStream(new FileOutputStream(file));
+            DownloadWatchDog.getInstance().getConnectionManager().addManagedThrottledInputStream(input);
 
             String response = readLine();
             if (!response.startsWith("150")) {
@@ -680,6 +693,15 @@ public class SimpleFTP {
             readLine();
             download(filename, file);
             return;
+        } finally {
+            try {
+                if (input != null) input.close();
+            } catch (Throwable e) {
+            }
+            try {
+                if (out != null) out.close();
+            } catch (Throwable e) {
+            }
         }
 
     }
