@@ -213,3 +213,4 @@ jd/plugins/decrypter/UploaderRo.class
 jd/plugins/decrypter/UploadMirrorsCom.class
 jd/plugins/decrypter/RbkprrWs.class
 jd/captcha/methods/rbkprrws
+jd/plugins/hoster/UploadcellCom.class
