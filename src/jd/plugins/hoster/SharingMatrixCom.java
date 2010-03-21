@@ -57,9 +57,8 @@ public class SharingMatrixCom extends PluginForHost {
         br.getPage("http://sharingmatrix.com/login");
         br.getPage("http://sharingmatrix.com/ajax_scripts/login.php?email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember_me=true");
         String validornot = br.toString();
-        String number = new Regex(validornot, "(\r\n\\d{2,})").getMatch(0);
-        if (number != null) validornot = validornot.replace(number, "");
-        validornot = validornot.trim();
+        String number = new Regex(validornot, "(\\d+)").getMatch(0);
+        if (number != null) validornot = number.trim();
         if (!validornot.equals("1")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
