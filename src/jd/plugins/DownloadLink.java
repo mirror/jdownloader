@@ -46,18 +46,9 @@ import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.DownloadInterface.Chunk;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
-
-/**
- * Hier werden alle notwendigen Informationen zu einem einzelnen Download
- * festgehalten. Die Informationen werden dann in einer Tabelle dargestellt
- * 
- * @author astaldo
- */
 
 class DownloadLinkBroadcaster extends JDBroadcaster<DownloadLinkListener, DownloadLinkEvent> {
 
-    // @Override
     @Override
     protected void fireEvent(DownloadLinkListener listener, DownloadLinkEvent event) {
         listener.onDownloadLinkEvent(event);
@@ -65,6 +56,12 @@ class DownloadLinkBroadcaster extends JDBroadcaster<DownloadLinkListener, Downlo
 
 }
 
+/**
+ * Hier werden alle notwendigen Informationen zu einem einzelnen Download
+ * festgehalten. Die Informationen werden dann in einer Tabelle dargestellt
+ * 
+ * @author astaldo
+ */
 public class DownloadLink extends Property implements Serializable, Comparable<DownloadLink> {
 
     public static enum AvailableStatus {
@@ -416,9 +413,8 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * zwangsläufig um einen Valid-Filename. Dieser String eignet sich zur
      * darstellung des link und kann zusatzinformationen wie dateigröße oder
      * verfügbarkeit haben Diese Zusatzinformationen liefert das zugehörige
-     * Plugin ACHTUNG: Weil der Dateiname kein zuverlässiger Dateiname sein
-     * muss darf diese FUnktion nicht verwendet werden um eine datei zu
-     * benennen.
+     * Plugin ACHTUNG: Weil der Dateiname kein zuverlässiger Dateiname sein muss
+     * darf diese FUnktion nicht verwendet werden um eine datei zu benennen.
      * 
      * @return Erweiterter "Dateiname"
      */
@@ -580,10 +576,10 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     /**
-     * Gibt zurück ob Dieser Link schon auf verfügbarkeit getestet wurde.+
-     * Diese FUnktion führt keinen!! Check durch. Sie prüft nur ob schon
-     * geprüft worden ist. anschießend kann mit isAvailable() die
-     * verfügbarkeit überprüft werden
+     * Gibt zurück ob Dieser Link schon auf verfügbarkeit getestet wurde.+ Diese
+     * FUnktion führt keinen!! Check durch. Sie prüft nur ob schon geprüft
+     * worden ist. anschießend kann mit isAvailable() die verfügbarkeit
+     * überprüft werden
      * 
      * @return Link wurde schon getestet (true) nicht getestet(false)
      */
@@ -749,12 +745,12 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         }
         if (finalfile && new File(this.getFileOutput()).exists()) {
             if (!new File(this.getFileOutput()).delete()) {
-                logger.severe(JDL.L("system.download.errors.couldnotdelete", "Could not delete file") + this.getFileOutput());
+                logger.severe("Could not delete file " + this.getFileOutput());
             }
         }
         if (partfile && new File(this.getFileOutput() + ".part").exists()) {
             if (!new File(this.getFileOutput() + ".part").delete()) {
-                logger.severe(JDL.L("system.download.errors.couldnotdelete", "Could not delete file") + this.getFileOutput());
+                logger.severe("Could not delete file " + this.getFileOutput());
             }
         }
 
@@ -1026,7 +1022,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * Setzt den Statischen Dateinamen. Ist dieser wert != null, so wird er zum
      * Speichern der Datei verwendet. ist er == null, so wird der dateiName im
      * Plugin automatisch ermittelt. ACHTUNG: Der angegebene Dateiname ist
-     * endg�ltig. Diese Funktion sollte nach Möglichkeit nicht von Plugins
+     * endg�ltig. Diese Funktion sollte nach Möglichkeit nicht von Plugins
      * verwendet werden. Sie gibt der Gui die Möglichkeit unabhängig von den
      * Plugins einen Downloadnamen festzulegen. Userinputs>Automatische
      * Erkennung - Plugins sollten setName(String) verwenden um den
@@ -1061,9 +1057,8 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     /**
-     * Diese Methhode fragt das eigene Plugin welche Informationen über die
-     * File bereit gestellt werden. Der String eignet Sich zur Darstellung in
-     * der UI
+     * Diese Methhode fragt das eigene Plugin welche Informationen über die File
+     * bereit gestellt werden. Der String eignet Sich zur Darstellung in der UI
      * 
      * @return STring
      */

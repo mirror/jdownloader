@@ -982,10 +982,9 @@ public class Browser {
         return request.read();
     }
 
-    // @Override
     public String toString() {
-        if (request == null) { return "Browser. no request yet"; }
-        return request.toString() + hashCode();
+        if (request == null) return "Browser. no request yet";
+        return request.toString();
     }
 
     public Regex getRegex(final String string) {
