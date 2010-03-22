@@ -109,7 +109,7 @@ public class SimpleFTP {
     public synchronized boolean ascii() throws IOException {
         sendLine("TYPE A");
         try {
-            readLines(200, "could not enter ascii mode");
+            readLines(new int[] { 200 }, "could not enter ascii mode");
             if (binarymode) binarymode = false;
             return true;
         } catch (IOException e) {
@@ -127,7 +127,7 @@ public class SimpleFTP {
     public synchronized boolean bin() throws IOException {
         sendLine("TYPE I");
         try {
-            readLines(200, "could not enter binary mode");
+            readLines(new int[] { 200 }, "could not enter binary mode");
             if (!binarymode) binarymode = true;
             return true;
         } catch (IOException e) {
@@ -165,19 +165,11 @@ public class SimpleFTP {
         socket.setSoTimeout(TIMEOUT);
         reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
-        String response = readLines(220, "SimpleFTP received an unknown response when connecting to the FTP server: ");
+        String response = readLines(new int[] { 220 }, "SimpleFTP received an unknown response when connecting to the FTP server: ");
         sendLine("USER " + user);
-        try {
-            response = readLines(331, "SimpleFTP received an unknown response after sending the user: ");
-        } catch (IOException e) {
-            /*
-             * anonymous only login does not response with 331, it responses
-             * with 230
-             */
-            if (!e.getMessage().contains("user: 230")) throw e;
-        }
+        response = readLines(new int[] { 230, 331 }, "SimpleFTP received an unknown response after sending the user: ");
         sendLine("PASS " + pass);
-        response = readLines(230, "SimpleFTP was unable to log in with the supplied password: ");
+        response = readLines(new int[] { 230 }, "SimpleFTP was unable to log in with the supplied password: ");
         sendLine("PWD");
         while ((response = readLine()).startsWith("230") || response.charAt(0) >= '9' || response.charAt(0) <= '0') {
 
@@ -200,7 +192,7 @@ public class SimpleFTP {
         if (dir.equals(this.dir)) return true;
         sendLine("CWD " + dir);
         try {
-            readLines(250, "SimpleFTP was unable to change directory");
+            readLines(new int[] { 250 }, "SimpleFTP was unable to change directory");
             if (!dir.endsWith("/") && !dir.endsWith("\\")) dir += "/";
             if (dir.startsWith("/")) {
                 this.dir = dir;
@@ -234,7 +226,7 @@ public class SimpleFTP {
     public synchronized String pwd() throws IOException {
         sendLine("PWD");
         String dir = null;
-        String response = readLines(257, null);
+        String response = readLines(new int[] { 257 }, null);
         if (response.startsWith("257 ")) {
             int firstQuote = response.indexOf('\"');
             int secondQuote = response.indexOf('\"', firstQuote + 1);
@@ -254,23 +246,30 @@ public class SimpleFTP {
     }
 
     /* read response and check if it matches expectcode */
-    private String readLines(int expectcode, String errormsg) throws IOException {
+    private String readLines(int expectcodes[], String errormsg) throws IOException {
         StringBuilder sb = new StringBuilder();
         String response = null;
+        boolean error = true;
         while (true) {
             response = readLine();
             if (response == null) return sb.toString();
             sb.append(response + "\r\n");
-            if (response.startsWith("" + expectcode + " ")) return sb.toString();
-            if (response.startsWith("" + expectcode)) continue;
-            throw new IOException((errormsg != null ? errormsg : "revieved unexpected responsecode ") + sb.toString());
+            error = true;
+            for (int expectcode : expectcodes) {
+                if (response.startsWith("" + expectcode + " ")) return sb.toString();
+                if (response.startsWith("" + expectcode)) {
+                    error = false;
+                    break;
+                }
+            }
+            if (error) throw new IOException((errormsg != null ? errormsg : "revieved unexpected responsecode ") + sb.toString());
         }
     }
 
     public boolean remove(String string) throws IOException {
         sendLine("DELE " + string);
         try {
-            readLines(250, "could not remove file");
+            readLines(new int[] { 250 }, "could not remove file");
             return true;
         } catch (IOException e) {
             if (e.getMessage().contains("could not remove file")) {
@@ -284,7 +283,7 @@ public class SimpleFTP {
     public boolean rename(String from, String to) throws IOException {
         sendLine("RNFR " + from);
         try {
-            readLines(350, "RNFR failed");
+            readLines(new int[] { 350 }, "RNFR failed");
         } catch (IOException e) {
             if (e.getMessage().contains("RNFR")) {
                 JDLogger.exception(e);
@@ -293,7 +292,7 @@ public class SimpleFTP {
         }
         sendLine("RNTO " + to);
         try {
-            readLines(250, "RNTO failed");
+            readLines(new int[] { 250 }, "RNTO failed");
         } catch (IOException e) {
             if (e.getMessage().contains("RNTO")) {
                 JDLogger.exception(e);
@@ -381,7 +380,7 @@ public class SimpleFTP {
 
     private InetSocketAddress pasv() throws IOException {
         sendLine("PASV");
-        String response = readLines(227, "SimpleFTP could not request passive mode:");
+        String response = readLines(new int[] { 227 }, "SimpleFTP could not request passive mode:");
         String ip = null;
         int port = -1;
         int opening = response.indexOf('(');
@@ -632,13 +631,7 @@ public class SimpleFTP {
             out = new DataOutputStream(new FileOutputStream(file));
             DownloadWatchDog.getInstance().getConnectionManager().addManagedThrottledInputStream(input);
 
-            String response = readLine();
-            if (!response.startsWith("150")) {
-                this.shutDownSocket(dataSocket);
-                input.close();
-                out.close();
-                throw new IOException("Unexpected Response: " + response);
-            }
+            String response = readLines(new int[] { 150 }, null);
             byte[] buffer = new byte[4096];
             int bytesRead = 0;
             long counter = 0;
@@ -746,7 +739,7 @@ public class SimpleFTP {
         // FileOutputStream(file));
         //
         StringBuilder sb = new StringBuilder();
-        readLines(150, null);
+        readLines(new int[] { 150 }, null);
         char[] buffer = new char[4096];
         int bytesRead = 0;
         while ((bytesRead = input.read(buffer)) != -1) {
@@ -754,7 +747,7 @@ public class SimpleFTP {
         }
         input.close();
         shutDownSocket(dataSocket);
-        readLines(226, null);
+        readLines(new int[] { 226 }, null);
         // if (!response.startsWith("226")) { throw new
         // IOException("Download failed: " + response); }
         // return null;

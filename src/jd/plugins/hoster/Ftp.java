@@ -134,6 +134,7 @@ public class Ftp extends PluginForHost {
             } finally {
                 downloadLink.getLinkStatus().removeStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
                 downloadLink.setDownloadInstance(null);
+                downloadLink.getLinkStatus().setStatusText(null);
                 ch.setInProgress(false);
             }
             if (tmp.length() != downloadLink.getDownloadSize()) {
