@@ -33,7 +33,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 public class DownloadSu extends PluginForHost {
     // NOTE: If you delete this plugin (in case the host goes offline) please
     // also delete
-    // the other part of it shich is in the decrypter
+    // the other part of it which is in the decrypter
     // DecrypterForRedirectServicesWithoutDirectRedirects
     public DownloadSu(PluginWrapper wrapper) {
         super(wrapper);
