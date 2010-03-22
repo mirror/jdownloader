@@ -46,7 +46,7 @@ public class DecryptPluginWrapper extends PluginWrapper {
         this.revision = Formatter.getRevision(revision);
         synchronized (LOCK) {
             for (DecryptPluginWrapper plugin : DECRYPT_WRAPPER) {
-                if (plugin.getID().equalsIgnoreCase(this.getID())) {
+                if (plugin.getID().equalsIgnoreCase(this.getID()) && plugin.getPattern().equals(this.getPattern())) {
                     if (JDFlags.hasNoFlags(flags, ALLOW_DUPLICATE)) {
                         logger.severe("Cannot add DecryptPlugin!DecryptPluginID " + getID() + " already exists!");
                         return;

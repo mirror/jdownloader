@@ -268,6 +268,9 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                     JDController.getInstance().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOAD_START, this));
                     /* reset downloadcounter */
                     downloadssincelastStart = 0;
+                    synchronized (CountLOCK) {
+                        this.activeDownloads = 0;
+                    }
                     startWatchDogThread();
                     return true;
                 }
@@ -521,10 +524,14 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
      * limits
      */
     public void forceDownload(final ArrayList<DownloadLink> links) {
-        synchronized (StartStopSync) {
-            if (downloadStatus != STATE.RUNNING) return;
-        }
         synchronized (DownloadLOCK) {
+            synchronized (StartStopSync) {
+                if (downloadStatus == STATE.NOT_RUNNING || downloadStatus == STATE.RUNNING) {
+                    startDownloads();
+                } else {
+                    return;
+                }
+            }
             for (final DownloadLink link : links) {
                 if (!link.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE)) {
                     if (link.getPlugin().isPremiumDownload() || (getRemainingIPBlockWaittime(link.getHost()) <= 0 && getRemainingTempUnavailWaittime(link.getHost()) <= 0)) {
@@ -603,9 +610,6 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
             /**
              * Workaround, due to activeDownloads bug.
              */
-            synchronized (CountLOCK) {
-                this.activeDownloads = 0;
-            }
             watchDogThread = new Thread() {
                 @Override
                 public void run() {
@@ -801,21 +805,23 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
         DownloadLink dlink;
         int ret = 0;
         if (!newDLStartAllowed()) return ret;
-        while (activeDownloads < getSimultanDownloadNum()) {
-            dlink = getNextDownloadLink();
-            if (dlink == null) {
-                break;
+        synchronized (DownloadLOCK) {
+            while (activeDownloads < getSimultanDownloadNum()) {
+                dlink = getNextDownloadLink();
+                if (dlink == null) {
+                    break;
+                }
+                if (dlink != getNextDownloadLink()) {
+                    break;
+                }
+                if (reachedStopMark()) return ret;
+                if (!checkSize(dlink)) {
+                    dlink.getLinkStatus().setStatus(LinkStatus.NOT_ENOUGH_HARDDISK_SPACE);
+                    continue;
+                }
+                startDownloadThread(dlink);
+                ret++;
             }
-            if (dlink != getNextDownloadLink()) {
-                break;
-            }
-            if (reachedStopMark()) return ret;
-            if (!checkSize(dlink)) {
-                dlink.getLinkStatus().setStatus(LinkStatus.NOT_ENOUGH_HARDDISK_SPACE);
-                continue;
-            }
-            startDownloadThread(dlink);
-            ret++;
         }
         return ret;
     }
@@ -827,13 +833,12 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
      * @return
      */
     private boolean checkSize(DownloadLink dlLink) {
-        if (System.getProperty("java.version").contains("1.5")) { return true; }
+        if (System.getProperty("java.version").contains("1.5")) return true;
 
         File f = new File(dlLink.getFileOutput()).getParentFile();
 
         while (!f.exists()) {
             f = f.getParentFile();
-
             if (f == null) return false;
         }
 
@@ -844,7 +849,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
             size += dlink.getDownloadSize() - dlink.getDownloadCurrent();
         }
 
-        if (f.getUsableSpace() < size + dlLink.getDownloadSize() - dlLink.getDownloadCurrent()) { return false; }
+        if (f.getUsableSpace() < size + dlLink.getDownloadSize() - dlLink.getDownloadCurrent()) return false;
 
         return true;
     }

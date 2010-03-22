@@ -155,7 +155,7 @@ public abstract class PluginWrapper implements Comparable<PluginWrapper> {
         }
         if (JDFlags.hasNoFlags(flags, DEBUG_ONLY) || JDInitFlags.SWITCH_DEBUG) {
             for (PluginWrapper plugin : WRAPPER.values()) {
-                if (plugin.getID().equalsIgnoreCase(this.getID())) {
+                if (plugin.getID().equalsIgnoreCase(this.getID()) && plugin.getClassName().equalsIgnoreCase(className)) {
                     if (JDFlags.hasNoFlags(flags, ALLOW_DUPLICATE)) {
                         logger.severe("Cannot add Plugin!PluginID " + getID() + " already exists!");
                         return;

@@ -35,7 +35,7 @@ public class CPluginWrapper extends PluginWrapper {
         super(host, classNamePrefix, className, patternSupported, flags);
         if (loadPlugin() != null) {
             for (CPluginWrapper plugin : C_WRAPPER) {
-                if (plugin.getID().equalsIgnoreCase(this.getID())) {
+                if (plugin.getID().equalsIgnoreCase(this.getID()) && plugin.getPattern().equals(this.getPattern())) {
                     if (JDFlags.hasNoFlags(flags, ALLOW_DUPLICATE)) {
                         logger.severe("Cannot add CPlugin!CPluginID " + getID() + " already exists!");
                         return;

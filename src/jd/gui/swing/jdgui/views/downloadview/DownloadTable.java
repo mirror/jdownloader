@@ -358,7 +358,7 @@ public class DownloadTable extends JDTable implements MouseListener, KeyListener
                 if (links_enabled == 0) tmp.setEnabled(false);
                 popup.add(tmp = new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.resume", 16, 16), JDL.L("gui.table.contextmenu.resume", "fortsetzen") + " (" + resumlinks.size() + ")", TableAction.DOWNLOAD_RESUME, new Property("links", resumlinks))));
                 if (resumlinks.size() == 0) tmp.setEnabled(false);
-                if (notrunning.size() > 0 && DownloadWatchDog.getInstance().getDownloadStatus() == DownloadWatchDog.STATE.RUNNING) popup.add(new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.next", 16, 16), JDL.L("gui.table.contextmenu.tryforce", "Force download") + " (" + notrunning.size() + ")", TableAction.FORCE_DOWNLOAD, new Property("links", notrunning))));
+                if (notrunning.size() > 0 && DownloadWatchDog.getInstance().getDownloadStatus() != DownloadWatchDog.STATE.STOPPING) popup.add(new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.next", 16, 16), JDL.L("gui.table.contextmenu.tryforce", "Force download") + " (" + notrunning.size() + ")", TableAction.FORCE_DOWNLOAD, new Property("links", notrunning))));
                 popup.add(new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.undo", 16, 16), JDL.L("gui.table.contextmenu.reset", "zurücksetzen") + " (" + alllinks.size() + ")", TableAction.DOWNLOAD_RESET, new Property("links", alllinks))));
                 popup.addSeparator();
                 propItem.setObject(obj);
