@@ -149,6 +149,7 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
         /* nach dem deserialisieren sollen die transienten neu geholt werden */
         stream.defaultReadObject();
         links_Disabled = new Integer(0);
+        resetUpdateTimer();
         broadcaster = new FilePackageBroadcaster();
         broadcaster.addListener(this);
     }
@@ -374,6 +375,11 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
             } else if (isFinished && finishedDate == -1) finishedDate = lastfinished;
         }
         return isFinished;
+    }
+
+    public void resetUpdateTimer() {
+        updateTime = 0;
+        updateTime1 = 0;
     }
 
     public String getName() {

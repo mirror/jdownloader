@@ -22,7 +22,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Vector;
 import java.util.logging.Logger;
 
 import javax.swing.Timer;
@@ -225,51 +224,6 @@ public class DownloadController implements FilePackageListener, DownloadControll
         JDController.releaseDelayExit(id);
     }
 
-    // public void backupDownloadLinksSync() {
-    // synchronized (packages) {
-    // ArrayList<DownloadLink> links = getAllDownloadLinks();
-    // Iterator<DownloadLink> it = links.iterator();
-    // ArrayList<BackupLink> ret = new ArrayList<BackupLink>();
-    // while (it.hasNext()) {
-    // DownloadLink next = it.next();
-    // BackupLink bl;
-    // if (next.getLinkType() == DownloadLink.LINKTYPE_CONTAINER) {
-    // bl = (new
-    // BackupLink(JDUtilities.getResourceFile(next.getContainerFile()),
-    // next.getContainerIndex(), next.getContainer()));
-    //
-    // } else {
-    // bl = (new BackupLink(next.getDownloadURL()));
-    // }
-    // bl.setProperty("downloaddirectory",
-    // next.getFilePackage().getDownloadDirectory());
-    // bl.setProperty("packagename", next.getFilePackage().getName());
-    // bl.setProperty("plugin", next.getPlugin().getClass().getSimpleName());
-    // bl.setProperty("name", new File(next.getFileOutput()).getName());
-    // bl.setProperty("properties", next.getProperties());
-    // bl.setProperty("enabled", next.isEnabled());
-    //
-    // ret.add(bl);
-    // }
-    // if (ret.size() == 0) return;
-    // File file = JDUtilities.getResourceFile("backup/links.linkbackup");
-    // if (file.exists()) {
-    // File old = JDUtilities.getResourceFile("backup/links_" +
-    // file.lastModified() + ".linkbackup");
-    //
-    // file.getParentFile().mkdirs();
-    // if (file.exists()) {
-    // file.renameTo(old);
-    // }
-    // file.delete();
-    // } else {
-    // file.getParentFile().mkdirs();
-    // }
-    // JDIO.saveObject(null, ret, file, "links.linkbackup", "linkbackup",
-    // false);
-    // }
-    // }
-
     /**
      * Lädt eine LinkListe
      * 
@@ -343,81 +297,9 @@ public class DownloadController implements FilePackageListener, DownloadControll
                         }
                     }
                 }
+                fp.resetUpdateTimer();
             }
             return packages;
-        } else if (obj != null && obj instanceof Vector && (((Vector) obj).size() == 0 || ((Vector) obj).size() > 0 && ((Vector) obj).get(0) instanceof FilePackage)) {
-            final Vector<FilePackage> packages = (Vector<FilePackage>) obj;
-            final ArrayList<FilePackage> convert = new ArrayList<FilePackage>();
-            final Iterator<FilePackage> iterator = packages.iterator();
-            DownloadLink localLink;
-            PluginForHost pluginForHost = null;
-            PluginsC pluginForContainer = null;
-            String tmp1 = null;
-            String tmp2 = null;
-            Iterator<DownloadLink> it;
-            FilePackage fp;
-            while (iterator.hasNext()) {
-                fp = iterator.next();
-                if (fp.getDownloadLinkList() == null) {
-
-                    fp.convert();
-                }
-                convert.add(fp);
-                if (fp.getDownloadLinkList().size() == 0) {
-                    convert.remove(fp);
-                    continue;
-                }
-
-                it = fp.getDownloadLinkList().iterator();
-                while (it.hasNext()) {
-                    localLink = it.next();
-
-                    if (!localLink.getLinkStatus().isFinished()) {
-                        tmp1 = localLink.getLinkStatus().getStatusText();
-                        tmp2 = localLink.getLinkStatus().getErrorMessage();
-                        localLink.getLinkStatus().reset();
-                        localLink.getLinkStatus().setErrorMessage(tmp2);
-                        localLink.getLinkStatus().setStatusText(tmp1);
-                    }
-                    if (localLink.getLinkStatus().isFinished() && JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_FINISHED_DOWNLOADS_ACTION) == 1) {
-                        it.remove();
-                        if (fp.getDownloadLinkList().size() == 0) {
-                            convert.remove(fp);
-                            continue;
-                        }
-                    } else {
-                        // Anhand des Hostnamens aus dem DownloadLink
-                        // wird ein passendes Plugin gesucht
-                        try {
-                            pluginForHost = JDUtilities.getNewPluginForHostInstance(localLink.getHost());
-                        } catch (Exception e) {
-                            JDLogger.exception(e);
-                        }
-                        // Gibt es einen Names für ein Containerformat,
-                        // wird ein passendes Plugin gesucht
-                        try {
-                            if (localLink.getContainer() != null) {
-                                pluginForContainer = JDUtilities.getPluginForContainer(localLink.getContainer(), localLink.getContainerFile());
-                                if (pluginForContainer == null) {
-                                    localLink.setEnabled(false);
-                                }
-                            }
-                        } catch (NullPointerException e) {
-                            JDLogger.exception(e);
-                        }
-                        if (pluginForHost != null) {
-                            localLink.setLoadedPlugin(pluginForHost);
-                        }
-                        if (pluginForContainer != null) {
-                            localLink.setLoadedPluginForContainer(pluginForContainer);
-                        }
-                        if (pluginForHost == null) {
-                            logger.severe("couldn't find plugin(" + localLink.getHost() + ") for this DownloadLink." + localLink.getName());
-                        }
-                    }
-                }
-            }
-            return convert;
         }
         throw new Exception("Linklist incompatible");
     }
