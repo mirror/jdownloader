@@ -396,7 +396,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     public String getBrowserUrl() {
-        if (browserurl != null) { return browserurl; }
+        if (browserurl != null) return browserurl;
         return getDownloadURL();
     }
 
@@ -440,7 +440,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
             if (getFilePackage() != null && getFilePackage().getDownloadDirectory() != null && getFilePackage().getDownloadDirectory().length() > 0) {
                 return new File(new File(getFilePackage().getDownloadDirectory(), File.separator + subdirectory), getName()).getAbsolutePath();
             } else {
-
                 return null;
             }
         } else {

@@ -308,6 +308,8 @@ public class DistributeData extends Thread {
          * multiple links without new line
          */
         if (new Regex(data, " http").count() > 1) return null;
+        String[] res = Regex.getLines(data);
+        if (res != null && res.length > 1 && res[0].contains("http") && res[1].contains("http")) return null;
         for (final HostPluginWrapper pw : HostPluginWrapper.getHostWrapper()) {
             final Pattern pattern = pw.getPattern();
 

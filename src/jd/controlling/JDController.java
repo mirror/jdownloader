@@ -117,11 +117,6 @@ public class JDController implements ControlListener {
                     if (event == null || waitFlag) continue;
                     eventStart = System.currentTimeMillis();
                     currentListener = JDController.this;
-                    try {
-                        controlEvent(event);
-                    } catch (Exception e) {
-                        JDLogger.exception(e);
-                    }
                     eventStart = 0;
                     synchronized (controlListener) {
                         if (controlListener.size() > 0) {
@@ -139,6 +134,12 @@ public class JDController implements ControlListener {
                             controlListener.removeAll(removeList);
                             removeList.clear();
                         }
+                    }
+                    try {
+                        /* the last one to call is the JDController itself */
+                        controlEvent(event);
+                    } catch (Exception e) {
+                        JDLogger.exception(e);
                     }
                     // JDUtilities.getLogger().severe("THREAD2");
 
@@ -243,7 +244,7 @@ public class JDController implements ControlListener {
             break;
         case ControlEvent.CONTROL_PLUGIN_INACTIVE:
             // Nur Hostpluginevents auswerten
-            if (!(event.getSource() instanceof PluginForHost)) { return; }
+            if (!(event.getSource() instanceof PluginForHost)) return;
             lastDownloadFinished = ((SingleDownloadController) event.getParameter()).getDownloadLink();
 
             // Prüfen ob das Paket fertig ist und entfernt werden soll
@@ -442,6 +443,12 @@ public class JDController implements ControlListener {
                             JDLogger.exception(e);
                         }
                     }
+                }
+                try {
+                    /* the last one to call is the JDController itself */
+                    controlEvent(controlEvent);
+                } catch (Exception e) {
+                    JDLogger.exception(e);
                 }
             }
         } catch (Exception e) {

@@ -72,7 +72,7 @@ public class JDExternInterface extends PluginOptional {
 
     public JDExternInterface(PluginWrapper wrapper) {
         super(wrapper);
-    
+
         handler = new RequestHandler();
     }
 
@@ -102,7 +102,6 @@ public class JDExternInterface extends PluginOptional {
 
         if (jk != null) {
 
-       
             Context cx = ContextFactory.getGlobal().enter();
             cx.setClassShutter(new ClassShutter() {
                 public boolean visibleToScripts(String className) {
@@ -128,8 +127,8 @@ public class JDExternInterface extends PluginOptional {
         String decryted = decrypt(baseDecoded, key).trim();
 
         String passwords[] = Regex.getLines(password);
-
-        ArrayList<DownloadLink> links = new DistributeData(Encoding.htmlDecode(decryted)).findLinks();
+        decryted = Encoding.htmlDecode(decryted);
+        ArrayList<DownloadLink> links = new DistributeData(decryted).findLinks();
         for (DownloadLink link : links)
             link.addSourcePluginPasswords(passwords);
         for (DownloadLink l : links) {
@@ -140,29 +139,31 @@ public class JDExternInterface extends PluginOptional {
         LinkGrabberController.getInstance().addLinks(links, false, false);
 
     }
-    
+
     /**
-     * This function will transform a message into a JSONP function if callback is specified
-     * @param message content of the request
-     * @param callback the request's callback parameter 
-     * @return the content of the message. if callback != null, packed in valid JSONP construction.
+     * This function will transform a message into a JSONP function if callback
+     * is specified
+     * 
+     * @param message
+     *            content of the request
+     * @param callback
+     *            the request's callback parameter
+     * @return the content of the message. if callback != null, packed in valid
+     *         JSONP construction.
      */
-    private static String addJSONPCallback(String message,String callback){
-        if(callback != null)
-        {
-            return Encoding.urlDecode(callback, false)+"({\"content\": \""+message+"\"})\r\n";
-        }
-        else
-        {
-            return message+"\r\n";
+    private static String addJSONPCallback(String message, String callback) {
+        if (callback != null) {
+            return Encoding.urlDecode(callback, false) + "({\"content\": \"" + message + "\"})\r\n";
+        } else {
+            return message + "\r\n";
         }
     }
-    
+
     /**
      * @see #addJSONPCallback(String,String)
      */
-    private static String addJSONPCallback(String message,Request request){
-        return addJSONPCallback(message,request.getParameter("callback"));
+    private static String addJSONPCallback(String message, Request request) {
+        return addJSONPCallback(message, request.getParameter("callback"));
     }
 
     @Override
@@ -271,9 +272,9 @@ public class JDExternInterface extends PluginOptional {
                                 }
 
                             }.waitForEDT();
-                            response.addContent(addJSONPCallback("success",request));
+                            response.addContent(addJSONPCallback("success", request));
                         } else {
-                            response.addContent(addJSONPCallback("failed",request));
+                            response.addContent(addJSONPCallback("failed", request));
                         }
                     } else if (splitPath.length > 1 && splitPath[1].equalsIgnoreCase("addcrypted")) {
                         askPermission(request);
@@ -293,7 +294,7 @@ public class JDExternInterface extends PluginOptional {
                                 return null;
                             }
                         }.waitForEDT();
-                        response.addContent(addJSONPCallback("success",request));
+                        response.addContent(addJSONPCallback("success", request));
                     } else if (splitPath.length > 1 && splitPath[1].equalsIgnoreCase("addcrypted2")) {
                         askPermission(request);
                         /* parse the post data */
@@ -305,7 +306,7 @@ public class JDExternInterface extends PluginOptional {
                         try {
                             decrypt(crypted, jk, k, passwords, source);
 
-                            response.addContent(addJSONPCallback("success",request));
+                            response.addContent(addJSONPCallback("success", request));
                             new GuiRunnable<Object>() {
                                 @Override
                                 public Object runSave() {
@@ -315,18 +316,18 @@ public class JDExternInterface extends PluginOptional {
                             }.waitForEDT();
                         } catch (Exception e) {
                             JDLogger.exception(e);
-                            
-                            response.addContent(addJSONPCallback("failed " + e.getMessage(),request.getParameters().get("callback")));
+
+                            response.addContent(addJSONPCallback("failed " + e.getMessage(), request.getParameters().get("callback")));
                         }
                     } else {
-                        response.addContent(addJSONPCallback(JDUtilities.getJDTitle(),request.getParameters().get("callback")));
+                        response.addContent(addJSONPCallback(JDUtilities.getJDTitle(), request.getParameters().get("callback")));
                     }
                 } else if (request.getRequestUrl().equalsIgnoreCase("/jdcheck.js")) {
 
                     response.addContent("jdownloader=true;\r\n");
                     response.addContent("var version='" + JDUtilities.getRevision() + "';\r\n");
 
-                }  else if (request.getRequestUrl().equalsIgnoreCase("/crossdomain.xml")) {
+                } else if (request.getRequestUrl().equalsIgnoreCase("/crossdomain.xml")) {
                     response.addContent("<?xml version=\"1.0\"?>\r\n");
                     response.addContent("<!DOCTYPE cross-domain-policy SYSTEM \"http://www.macromedia.com/xml/dtds/cross-domain-policy.dtd\">\r\n");
                     response.addContent("<cross-domain-policy>\r\n");

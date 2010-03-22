@@ -96,15 +96,8 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
             if (this.getPluginConfig().getBooleanProperty("ACTIVATED", true) || link.getFilePackage().isExtractAfterDownload()) {
                 link = findStartLink(link);
                 if (link == null) return;
-                if (link.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
-                    /*
-                     * check again if we really want to extract the package
-                     * 
-                     * 
-                     * check for defaultfilepackage in case link already
-                     * removed, TODO: better way to handle this
-                     */
-                    if (link.getFilePackage().isExtractAfterDownload() || link.getFilePackage() == FilePackage.getDefaultFilePackage()) {
+                if (link.getLinkStatus().isFinished()) {
+                    if (link.getFilePackage().isExtractAfterDownload()) {
                         if (isArchiveComplete(link)) {
                             this.addToQueue(link);
                         }
@@ -122,13 +115,14 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
                          * skip file if it belongs to an archive which is
                          * already queued
                          */
-                        if (processed.contains(archiveStartFile.toString())) {
+                        if (processed.contains(archiveStartFile.toString())) continue;
+                        if (getArchivePartType(archiveStartFile) == JDUnrarConstants.NO_RAR_ARCHIVE || getArchivePartType(archiveStartFile) == JDUnrarConstants.NO_START_PART) {
+                            processed.add(archiveStartFile.toString());
                             continue;
                         }
-                        if (getArchivePartType(archiveStartFile) == JDUnrarConstants.NO_RAR_ARCHIVE || getArchivePartType(archiveStartFile) == JDUnrarConstants.NO_START_PART) continue;
                         link = JDUtilities.getController().getDownloadLinkByFileOutput(archiveStartFile, LinkStatus.FINISHED);
-
                         if (link == null) {
+                            /* link no longer in list */
                             link = new DownloadLink(null, archiveStartFile.getName(), DUMMY_HOSTER, "", true);
                             link.setDownloadSize(archiveStartFile.length());
                             FilePackage fp = FilePackage.getInstance();
@@ -136,14 +130,12 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
                             link.setFilePackage(fp);
                         }
                         link = this.findStartLink(link);
-                        if (link == null) {
-                            continue;
-                        }
+                        if (link == null || processed.contains(link.getFileOutput0())) continue;
                         /* find/add all files that belongs to the queued archive */
+                        processed.add(link.getFileOutput0());
                         processed.addAll(getFileList(link.getFileOutput0()));
                         addToQueue(link);
                     }
-
                 } catch (Exception e) {
                     JDLogger.exception(e);
                 }
@@ -207,7 +199,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
      * @return
      */
     private boolean isArchiveComplete(DownloadLink link) {
-        String pattern = link.getFileOutput().replaceAll("\\.pa?r?t?\\.?[0-9]+.rar$", "");
+        String pattern = link.getFileOutput().replaceAll("\\.pa?r?t?\\.?[0-9]+.*?.rar$", "");
         pattern = pattern.replaceAll("\\.rar$", "");
         pattern = pattern.replaceAll("\\.r\\d+$", "");
         pattern = "^" + Regex.escape(pattern) + ".*";
@@ -281,10 +273,15 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
 
         DownloadLink dlink = JDUtilities.getController().getDownloadLinkByFileOutput(file, LinkStatus.FINISHED);
         if (dlink == null) {
+            /* in case link is already removed */
+            /* we create new package with settings of link that calles jdunrar */
             dlink = new DownloadLink(null, file.getName(), DUMMY_HOSTER, "", true);
-            dlink.getLinkStatus().setStatus(link.getLinkStatus().getStatus());
+            dlink.setProperty(JDUnrarConstants.DOWNLOADLINK_KEY_EXTRACTTOPATH, link.getProperty(JDUnrarConstants.DOWNLOADLINK_KEY_EXTRACTTOPATH, null));
+            dlink.getLinkStatus().setStatus(LinkStatus.FINISHED);
             FilePackage fp = FilePackage.getInstance();
-            fp.setDownloadDirectory(file.getParent());
+            fp.setDownloadDirectory(link.getFilePackage().getDownloadDirectory());
+            fp.setExtractAfterDownload(link.getFilePackage().isExtractAfterDownload());
+            fp.setPassword(link.getFilePackage().getPassword());
             dlink.setFilePackage(fp);
         }
         return dlink;
@@ -336,11 +333,12 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         String dlpw = link.getStringProperty("pass", null);
         if (dlpw != null) pwList.add(dlpw);
         pwList.addAll(PasswordListController.getInstance().getPasswordList());
-        // Adds the archive name at the end of the password list (example.part01.rar)
+        // Adds the archive name at the end of the password list
+        // (example.part01.rar)
         String archiveName = this.getArchiveName(link);
-        pwList.add(archiveName); //example
-        pwList.add(archiveName+".rar"); //example.rar
-        pwList.add(new File(link.getFileOutput()).getName()); //example.part01.rar
+        pwList.add(archiveName); // example
+        pwList.add(archiveName + ".rar"); // example.rar
+        pwList.add(new File(link.getFileOutput()).getName()); // example.part01.rar
         wrapper.setPasswordList(pwList);
 
         queue.add(wrapper);
@@ -445,7 +443,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
             break;
         case 1000:
             link = this.findStartLink((DownloadLink) source.getProperty("LINK"));
-            if (link == null) { return; }
+            if (link == null) return;
             final DownloadLink finalLink = link;
             System.out.print("queued to extract: " + link);
             new Thread() {
@@ -455,30 +453,26 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
                 }
             }.start();
             break;
-
         case 1001:
-
             FilePackage fp = (FilePackage) source.getProperty("PACKAGE");
             ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
             for (DownloadLink l : fp.getDownloadLinkList()) {
-                if (l.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
-                    if (l.getName().matches(".*pa?r?t?\\.?[0]*[1].rar$") || (!l.getName().matches(".*p?a?r?t?\\.?[0-9]+.rar$") && l.getName().matches(".*rar$"))) {
-                        links.add(l);
-                    }
-
+                if (l.getLinkStatus().isFinished()) {
+                    links.add(l);
                 }
-
             }
             if (links.size() <= 0) return;
-
+            ArrayList<String> added = new ArrayList<String>();
             for (DownloadLink link0 : links) {
                 link = link0;
-
                 link = this.findStartLink(link);
-                if (link == null) {
-                    continue;
-                }
+                if (link == null) continue;
                 final DownloadLink finalLink0 = link;
+                if (added.contains(link.getFileOutput0())) {
+                    continue;
+                } else {
+                    added.add(link.getFileOutput0());
+                }
                 System.out.print("queued to extract: " + link);
                 new Thread() {
                     @Override
@@ -486,26 +480,19 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
                         addToQueue(finalLink0);
                     }
                 }.start();
-
             }
             break;
-
         case 1002:
-
             link = (DownloadLink) source.getProperty("LINK");
-            if (link == null) { return; }
+            if (link == null) return;
             String path = link.getStringProperty(JDUnrarConstants.DOWNLOADLINK_KEY_EXTRACTEDPATH + "2");
-
             if (!new File(path).exists()) {
                 UserIO.getInstance().requestMessageDialog(JDL.LF("plugins.optional.jdunrar.messages", "The path %s does not exist.", path));
             } else {
                 JDUtilities.openExplorer(new File(path));
             }
-
             break;
-
         case 1003:
-
             link = (DownloadLink) source.getProperty("LINK");
             ArrayList<DownloadLink> list = this.getArchiveList(link);
             JDFileChooser fc = new JDFileChooser("_JDUNRAR_");
@@ -531,31 +518,22 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
                 extractto = extractto.getParentFile();
             fc.setCurrentDirectory(extractto);
             if (fc.showOpenDialog(SwingGui.getInstance().getMainFrame()) == JDFileChooser.APPROVE_OPTION) {
-
                 File dl = fc.getSelectedFile();
                 if (dl == null) { return; }
                 for (DownloadLink l : list) {
                     l.setProperty(JDUnrarConstants.DOWNLOADLINK_KEY_EXTRACTTOPATH, dl);
                 }
-
             }
-
             break;
-
         case 1005:
-
             link = (DownloadLink) source.getProperty("LINK");
-            if (link == null) { return; }
+            if (link == null) return;
             link.getFilePackage().setExtractAfterDownload(!link.getFilePackage().isExtractAfterDownload());
-
             break;
-
         case 1006:
-
             fp = (FilePackage) source.getProperty("PACKAGE");
-            if (fp == null) { return; }
+            if (fp == null) return;
             fp.setExtractAfterDownload(!fp.isExtractAfterDownload());
-
             break;
         }
 
@@ -958,7 +936,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
                 link.getLinkStatus().setStatusText(JDL.L("plugins.optional.jdunrar.status.notenoughspace", "Not enough space to extract"));
                 link.requestGuiUpdate();
             }
-            
+
             this.onFinished(wrapper);
             break;
         }

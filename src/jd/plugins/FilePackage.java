@@ -148,7 +148,7 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
     private void readObject(java.io.ObjectInputStream stream) throws java.io.IOException, ClassNotFoundException {
         /* nach dem deserialisieren sollen die transienten neu geholt werden */
         stream.defaultReadObject();
-        links_Disabled = new Integer(0);
+        links_Disabled = Integer.valueOf(0);
         resetUpdateTimer();
         broadcaster = new FilePackageBroadcaster();
         broadcaster.addListener(this);
