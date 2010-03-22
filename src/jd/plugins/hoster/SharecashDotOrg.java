@@ -19,7 +19,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
@@ -27,11 +26,13 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharecash.org" }, urls = { "http://[\\w\\.]*?sharecash\\.org/download.php\\?(file|id)=\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharecash.org" }, urls = { "http://[\\w\\.]*?sharecash\\.org/download.php\\?(file|id)=\\d+" }, flags = { 2 })
 public class SharecashDotOrg extends PluginForHost {
     public SharecashDotOrg(PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium("/premium.html");
     }
 
     @Override
@@ -47,8 +48,11 @@ public class SharecashDotOrg extends PluginForHost {
             String filename = br.getRegex("<td width=\"120\"><strong>(.*?)</strong></td>").getMatch(0);
             if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             long size = Regex.getSize(br.getRegex("<b>Size:</b>(.*?)</td>").getMatch(0));
+            String md5hash = br.getRegex("<b>MD5:</b>(.*?)<div").getMatch(0);
+            if (md5hash != null) downloadLink.setMD5Hash(md5hash);
             downloadLink.setFinalFileName(filename.trim());
             downloadLink.setDownloadSize(size);
+            downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.SharecashDotNet.only4premium", "This file is only downloadable for premium users!"));
             return AvailableStatus.TRUE;
         } catch (NullPointerException e) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -58,25 +62,12 @@ public class SharecashDotOrg extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        String[] vars = br.getRegex("\"(\\\\.*?)\"").getColumn(0);
-        String url = null;
-        for (String v : vars) {
-            String decoded = Encoding.htmlDecode(v.replace("\\x", "%"));
-            url = new Regex(decoded, "<h2>Click <a href=\"(.*?)\"").getMatch(0);
-            if (url != null) break;
-        }
-        if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 1);
-        if (!dl.getConnection().isContentDisposition()) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
+        throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.SharecashDotNet.only4premium", "This file is only downloadable for premium users!"));
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return -1;
     }
 
     @Override

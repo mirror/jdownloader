@@ -65,20 +65,18 @@ public class GigaPetaCom extends PluginForHost {
         String captchaKey = (int) (Math.random() * 100000000) + "";
         String captchaUrl = "http://gigapeta.com/img/captcha.gif?x=" + captchaKey;
 
-        Form form = br.getForm(1);
-
         for (int i = 1; i <= 3; i++) {
             String captchaCode = getCaptchaCode(captchaUrl, downloadLink);
-
-            form.put("captcha", captchaCode);
-            form.put("captcha_key", captchaKey);
-            form.put("download", "");
-            br.submitForm(form);
+            br.postPage(br.getURL(), "download=&captcha_key=" + captchaKey + "&captcha=" + captchaCode);
             if (br.getRedirectLocation() != null) break;
         }
         if (br.getRedirectLocation() == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
 
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.getRedirectLocation(), true, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl.startDownload();
     }
 
