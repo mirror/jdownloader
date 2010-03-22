@@ -17,10 +17,6 @@
 
 package jd;
 
-import it.sauronsoftware.junique.AlreadyLockedException;
-import it.sauronsoftware.junique.JUnique;
-import it.sauronsoftware.junique.MessageHandler;
-
 import java.awt.EventQueue;
 import java.io.File;
 import java.io.IOException;
@@ -34,7 +30,6 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Properties;
 import java.util.TreeSet;
-import java.util.Vector;
 import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -65,14 +60,18 @@ import jd.utils.JDUtilities;
 import jd.utils.WebUpdate;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.singleapp.AnotherInstanceRunningException;
+import org.appwork.utils.singleapp.InstanceMessageListener;
+import org.appwork.utils.singleapp.SingleAppInstance;
+
 /**
  * @author JD-Team
  */
 public class Main {
 
     private static Logger LOG;
-    public static final String instanceID = Main.class.getName();
     private static boolean instanceStarted = false;
+    public static SingleAppInstance SINGLE_INSTANCE_CONTROLLER = null;
 
     public static boolean returnedfromUpdate() {
         return JDInitFlags.SWITCH_RETURNED_FROM_UPDATE;
@@ -81,7 +80,7 @@ public class Main {
     public static void main(String args[]) {
 
         System.setProperty("file.encoding", "UTF-8");
-        //OSDetector.setOSString(System.getProperty("os.name"));
+        // OSDetector.setOSString(System.getProperty("os.name"));
         // System.setProperty("os.name", "Windows Vista m.a.c");
         System.setProperty("sun.swing.enableImprovedDragGesture", "true");
         // only use ipv4, because debian changed default stack to ipv6
@@ -195,35 +194,15 @@ public class Main {
 
         }
         try {
-            JUnique.acquireLock(instanceID, new MessageHandler() {
-                private int counter = -1;
-                private Vector<String> params = new Vector<String>();
-
-                public String handle(String message) {
-                    if (counter == -2) return null;
-                    if (counter == -1) {
-                        try {
-                            counter = Integer.parseInt(message.trim());
-                        } catch (Exception e) {
-                            counter = -2;
-                            return null;
-                        }
-                        if (counter == -1) counter = -2;/* Abort */
-                    } else {
-                        params.add(message);
-                        counter--;
-                        if (counter == 0) {
-                            String[] args = params.toArray(new String[params.size()]);
-                            ParameterManager.processParameters(args);
-                            counter = -1;
-                            params = new Vector<String>();
-                        }
-                    }
-                    return null;
+            SINGLE_INSTANCE_CONTROLLER = new SingleAppInstance("JD", JDUtilities.getJDHomeDirectoryFromEnvironment());
+            SINGLE_INSTANCE_CONTROLLER.setInstanceMessageListener(new InstanceMessageListener() {
+                public void parseMessage(String[] args) {
+                    ParameterManager.processParameters(args);
                 }
             });
+            SINGLE_INSTANCE_CONTROLLER.start();
             instanceStarted = true;
-        } catch (AlreadyLockedException e) {
+        } catch (AnotherInstanceRunningException e) {
             LOG.info("existing jD instance found!");
             instanceStarted = false;
         } catch (Exception e) {
@@ -260,14 +239,10 @@ public class Main {
         } else {
             if (args.length > 0) {
                 LOG.info("Send parameters to existing jD instance and exit");
-                JUnique.sendMessage(instanceID, "" + args.length);
-                for (String arg : args) {
-                    JUnique.sendMessage(instanceID, arg);
-                }
+                SINGLE_INSTANCE_CONTROLLER.sendToRunningInstance(args);
             } else {
                 LOG.info("There is already a running jD instance");
-                JUnique.sendMessage(instanceID, "1");
-                JUnique.sendMessage(instanceID, "--focus");
+                SINGLE_INSTANCE_CONTROLLER.sendToRunningInstance(new String[] { "--focus" });
             }
             System.exit(0);
         }

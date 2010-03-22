@@ -16,8 +16,6 @@
 
 package jd.controlling;
 
-import it.sauronsoftware.junique.JUnique;
-
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -337,7 +335,7 @@ public class JDController implements ControlListener {
                  * try catch errors in case when lock has not been aquired (eg
                  * firewall prevent junique server creation)
                  */
-                JUnique.releaseLock(Main.instanceID);
+                if (Main.SINGLE_INSTANCE_CONTROLLER != null) Main.SINGLE_INSTANCE_CONTROLLER.exit();
             } catch (Exception e) {
             }
             fireControlEventDirect(new ControlEvent(this, ControlEvent.CONTROL_SYSTEM_SHUTDOWN_PREPARED, this));
