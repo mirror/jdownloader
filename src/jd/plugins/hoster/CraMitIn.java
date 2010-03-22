@@ -104,7 +104,7 @@ public class CraMitIn extends PluginForHost {
 
     public void doFree(DownloadLink downloadLink) throws Exception, PluginException {
         boolean resumable = true;
-        int maxchunks = -10;
+        int maxchunks = -4;
         // If the filesize regex above doesn't match you can copy this part into
         // the available status (and delete it here)
         Form freeform = br.getForm(0);
