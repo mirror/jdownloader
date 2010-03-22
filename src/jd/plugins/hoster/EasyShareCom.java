@@ -91,7 +91,9 @@ public class EasyShareCom extends PluginForHost {
         ai.setValidUntil(Regex.getMilliSeconds(ends.replaceAll(", in", "").trim(), "dd MMM yyyy HH:mm:ss", null));
         String trafficLeft = br.getRegex("Traffic left:(.*?)<").getMatch(0);
         if (trafficLeft != null) {
-            ai.setTrafficLeft(Regex.getSize(trafficLeft));
+            /* it seems they have unlimited traffic */
+            // ai.setTrafficLeft(Regex.getSize(trafficLeft));
+            ai.setUnlimitedTraffic();
         } else {
             ai.setUnlimitedTraffic();
         }

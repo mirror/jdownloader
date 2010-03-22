@@ -38,6 +38,7 @@ public class UploadingCom extends PluginForHost {
     private static int simultanpremium = 1;
     private static final Object PREMLOCK = new Object();
     private String userAgent = "Mozilla/5.0 (Windows; U; Windows NT 6.0; chrome://global/locale/intl.properties; rv:1.8.1.12) Gecko/2008102920  Firefox/3.0.0";
+    private boolean free = false;
 
     public UploadingCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -94,7 +95,7 @@ public class UploadingCom extends PluginForHost {
 
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
-        boolean free = false;
+        free = false;
         br.setDebug(true);
         synchronized (PREMLOCK) {
             login(account);
@@ -177,8 +178,7 @@ public class UploadingCom extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("but due to abuse or through deletion by")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("file was removed")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        
-        
+
         String filesize = br.getRegex("File size: <b>(.*?)</b>").getMatch(0);
         String filename = br.getRegex(">Download(.*?)for free on uploading.com").getMatch(0);
         if (filename == null) {
@@ -220,7 +220,13 @@ public class UploadingCom extends PluginForHost {
         handleFree0(downloadLink);
     }
 
-    public String getDownloadUrl(Browser br, DownloadLink downloadLink) throws PluginException, IOException {
+    public String getDownloadUrl(Browser br, DownloadLink downloadLink) throws Exception {
+        String timead = br.getRegex("timead_counter\">(\\d+)<").getMatch(0);
+        if (timead != null) {
+            Form form = br.getForm(0);
+            sleep(Integer.parseInt(timead) * 1000l, downloadLink);
+            br.submitForm(form);
+        }
         String varLink = br.getRegex("var file_link = '(http://.*?)'").getMatch(0);
         if (varLink != null) {
             sleep(2000, downloadLink);
@@ -228,7 +234,7 @@ public class UploadingCom extends PluginForHost {
         }
         br.setFollowRedirects(false);
         String fileID = br.getRegex("file_id: (\\d+)").getMatch(0);
-        String code = br.getRegex("code: \"(.*?)\"").getMatch(0); 
+        String code = br.getRegex("code: \"(.*?)\"").getMatch(0);
         if (fileID == null || code == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String starttimer = br.getRegex("start_timer\\((\\d+)\\);").getMatch(0);
         String redirect = null;
@@ -275,7 +281,14 @@ public class UploadingCom extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
+    }
 
+    @Override
+    public boolean isPremiumDownload() {
+        /* free user accounts are no premium accounts */
+        boolean ret = super.isPremiumDownload();
+        if (ret && free) ret = false;
+        return ret;
     }
 
 }

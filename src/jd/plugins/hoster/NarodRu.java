@@ -59,7 +59,7 @@ public class NarodRu extends PluginForHost {
         /*
          * no captcha because of http://userscripts.org/scripts/review/64343
          */
-        br.getHeaders().put("User-Agent", "Firefox/3.5.1 YB/4.2.0");
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows; U; Windows NT 6.0; chrome://global/locale/intl.properties; rv:1.8.1.12) Gecko/2008102920  Firefox/3.0.0 YB/4.2.0");
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("<title>404</title>") || br.containsHTML("Файл удален с сервиса")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String name = br.getRegex(Pattern.compile("<dt class=\"name\"><i class=\"b-old-icon b-old-icon-arc\"></i>(.*?)</dt>")).getMatch(0);
