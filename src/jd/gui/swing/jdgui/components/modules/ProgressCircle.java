@@ -1,5 +1,6 @@
 package jd.gui.swing.jdgui.components.modules;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
@@ -7,6 +8,8 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Polygon;
 import java.awt.RenderingHints;
+import java.awt.geom.Line2D;
+import java.awt.geom.Point2D;
 
 import javax.swing.Icon;
 import javax.swing.JPanel;
@@ -122,39 +125,41 @@ public class ProgressCircle extends JPanel {
 
             // Create the Polygon for the "upper" Icon
             Polygon colorArea = new Polygon();
+            Point2D point = null;
             colorArea.addPoint(ICONSIZE / 2, ICONSIZE / 2);
             colorArea.addPoint(ICONSIZE / 2, 0);
-            if (progress >= 0.125) {
+            if (progress > 0.125) {
                 colorArea.addPoint(ICONSIZE, 0);
-                if (progress >= 0.375) {
+                if (progress > 0.375) {
                     colorArea.addPoint(ICONSIZE, ICONSIZE);
-                    if (progress >= 0.625) {
+                    if (progress > 0.625) {
                         colorArea.addPoint(0, ICONSIZE);
-                        if (progress >= 0.875) {
+                        if (progress > 0.875) {
                             colorArea.addPoint(0, 0);
                             // Between 87.5 and 100.0 (Up-Left)
                             int h = (int) ((ICONSIZE / 2) * tan(degree - 360));
-                            colorArea.addPoint(ICONSIZE / 2 + h, 0);
+                            point = new Point2D.Float(ICONSIZE / 2 + h, 0);
                         } else {
                             // Between 62.5 and 87.5 (Left)
                             int h = (int) ((ICONSIZE / 2) * tan(degree - 270));
-                            colorArea.addPoint(0, ICONSIZE / 2 - h);
+                            point = new Point2D.Float(0, ICONSIZE / 2 - h);
                         }
                     } else {
                         // Between 37.5 and 62.5 (Down)
                         int h = (int) ((ICONSIZE / 2) * tan(degree - 180));
-                        colorArea.addPoint(ICONSIZE / 2 - h, ICONSIZE);
+                        point = new Point2D.Float(ICONSIZE / 2 - h, ICONSIZE);
                     }
                 } else {
                     // Between 12.5 and 37.5 (Right)
                     int h = (int) ((ICONSIZE / 2) * tan(degree - 90));
-                    colorArea.addPoint(ICONSIZE, ICONSIZE / 2 + h);
+                    point = new Point2D.Float(ICONSIZE, ICONSIZE / 2 + h);
                 }
             } else {
                 // Between 0.0 and 12.5 (Up-Right)
                 int h = (int) ((ICONSIZE / 2) * tan(degree));
-                colorArea.addPoint(ICONSIZE / 2 + h, 0);
+                point = new Point2D.Float(ICONSIZE / 2 + h, 0);
             }
+            colorArea.addPoint((int) point.getX(), (int) point.getY());
 
             g2.setClip(colorArea);
             if (!backward) {
@@ -162,6 +167,13 @@ public class ProgressCircle extends JPanel {
             } else {
                 iconGrey.paintIcon(this, g2, 0, 0);
             }
+
+            // Create "cutting lines" between the fore- and background
+            Point2D.Float center = new Point2D.Float(ICONSIZE / 2, ICONSIZE / 2);
+            g2.setColor(Color.BLACK);
+            g2.setStroke(new BasicStroke(2));
+            g2.draw(new Line2D.Float(new Point2D.Float(ICONSIZE / 2, 0), center));
+            g2.draw(new Line2D.Float(center, point));
         }
     }
 
