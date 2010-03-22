@@ -155,7 +155,7 @@ public class Rapidshare extends PluginForHost {
         }
         String fileid = new Regex(link, "http://[\\w\\.]*?rapidshare\\.com/files/([\\d]{3,9})/?.*").getMatch(0);
         String filename = new Regex(link, "http://[\\w\\.]*?rapidshare\\.com/files/[\\d]{3,9}/?(.*)").getMatch(0);
-        return "http://rapidshare.com/files/" + fileid + "/" + filename;
+        return "https://rapidshare.com/files/" + fileid + "/" + filename;
     }
 
     private String selectedServer;
@@ -209,7 +209,7 @@ public class Rapidshare extends PluginForHost {
                 idlist.append("," + getID(u));
                 namelist.append("," + getName(u));
                 links.add(u);
-                size = ("http://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=checkfiles_v1&files=" + idlist.toString().substring(1) + "&filenames=" + namelist.toString().substring(1) + "&incmd5=1").length();
+                size = ("https://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=checkfiles_v1&files=" + idlist.toString().substring(1) + "&filenames=" + namelist.toString().substring(1) + "&incmd5=1").length();
             }
             if (links.size() != 0) {
                 if (links.size() != urls.length) {
@@ -254,7 +254,7 @@ public class Rapidshare extends PluginForHost {
                     idlist.append("," + getID(u));
                     namelist.append("," + getName(u));
                 }
-                String req = "http://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=checkfiles_v1&files=" + idlist.toString().substring(1) + "&filenames=" + namelist.toString().substring(1) + "&incmd5=1";
+                String req = "https://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=checkfiles_v1&files=" + idlist.toString().substring(1) + "&filenames=" + namelist.toString().substring(1) + "&incmd5=1";
 
                 queryAPI(null, req);
 
@@ -983,7 +983,7 @@ public class Rapidshare extends PluginForHost {
                     account.setProperty("cookies", null);
                 }
             }
-            String req = "http://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=getaccountdetails_v1&withcookie=1&type=prem&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass());
+            String req = "https://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=getaccountdetails_v1&withcookie=1&type=prem&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass());
             queryAPI(br, req);
             try {
                 Thread.sleep(2000);
@@ -1023,7 +1023,7 @@ public class Rapidshare extends PluginForHost {
          * rs has specialtraffic: trafficshare, pointconverting
          */
         ai.setSpecialTraffic(true);
-        String api = "http://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=getaccountdetails_v1&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&type=prem";
+        String api = "https://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=getaccountdetails_v1&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&type=prem";
         queryAPI(br, api);
         String error = br.getRegex("ERROR:(.*)").getMatch(0);
         if (error != null) {
@@ -1038,7 +1038,7 @@ public class Rapidshare extends PluginForHost {
             ai.setTrafficLeft((long) (Long.parseLong(data.get("premkbleft")) / 1000.0) * 1024l * 1024l);
             ai.setTrafficMax(25 * 1000 * 1000 * 1000l);
             ai.setFilesNum(Long.parseLong(data.get("curfiles")));
-            ai.setPremiumPoints(Long.parseLong(data.get("fpoints")));     
+            ai.setPremiumPoints(Long.parseLong(data.get("fpoints")));
             ai.setUsedSpace(Long.parseLong(data.get("curspace")));
             ai.setTrafficShareLeft((long) (Long.parseLong(data.get("bodkb")) / 1000.0) * 1024l * 1024l);
             ai.setValidUntil(Long.parseLong(data.get("validuntil")) * 1000);
