@@ -211,13 +211,31 @@ public class MegasharesCom extends PluginForHost {
         return "http://d01.megashares.com/tos.php";
     }
 
+    public void renew(Browser br, int buttonID) throws IOException {
+        Browser brc = br.cloneBrowser();
+        String renew[] = br.getRegex("\"renew\\('(.*?)','(.*?)'").getRow(0);
+        String post = br.getRegex("renew\\.php'.*?\\{(.*?):").getMatch(0);
+        if (post != null) post = post.trim();
+        if (renew == null || renew.length != 2) return;
+        if (buttonID <= 0) {
+            brc.postPage("/renew.php", post + "=" + renew[0]);
+        } else {
+            brc.postPage("/renew.php", post + "=" + renew[0] + "&button_id=" + buttonID);
+        }
+        br.getPage(renew[1]);
+        brc = null;
+    }
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         setBrowserExclusive();
+        br.setDebug(true);
         loadpage(downloadLink.getDownloadURL());
+        renew(br, 0);
         if (br.containsHTML("class=\"button_free\">")) {
-            loadpage(downloadLink.getDownloadURL());
+            renew(br, 1);
         }
+        if (br.containsHTML("Invalid link")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("You already have the maximum")) {
             downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.megasharescom.errors.alreadyloading", "Cannot check, because aready loading file"));
             return AvailableStatus.UNCHECKABLE;

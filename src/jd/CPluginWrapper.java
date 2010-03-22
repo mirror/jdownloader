@@ -20,6 +20,7 @@ import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 
 import jd.controlling.JDLogger;
+import jd.nutils.JDFlags;
 import jd.plugins.PluginsC;
 import jd.utils.JDUtilities;
 
@@ -33,6 +34,14 @@ public class CPluginWrapper extends PluginWrapper {
     public CPluginWrapper(String name, String host, String classNamePrefix, String className, String patternSupported, int flags) {
         super(host, classNamePrefix, className, patternSupported, flags);
         if (loadPlugin() != null) {
+            for (CPluginWrapper plugin : C_WRAPPER) {
+                if (plugin.getID().equalsIgnoreCase(this.getID())) {
+                    if (JDFlags.hasNoFlags(flags, ALLOW_DUPLICATE)) {
+                        logger.severe("Cannot add CPlugin!CPluginID " + getID() + " already exists!");
+                        return;
+                    }
+                }
+            }
             C_WRAPPER.add(this);
         }
     }

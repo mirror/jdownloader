@@ -20,25 +20,23 @@ import java.util.ArrayList;
 
 import jd.controlling.JDLogger;
 import jd.nutils.Formatter;
+import jd.nutils.JDFlags;
 import jd.plugins.PluginForDecrypt;
 
 public class DecryptPluginWrapper extends PluginWrapper {
     private static final ArrayList<DecryptPluginWrapper> DECRYPT_WRAPPER = new ArrayList<DecryptPluginWrapper>();
-    private static volatile boolean uninitialized = true;
     public static final Object LOCK = new Object();
 
-    public static ArrayList<DecryptPluginWrapper> getDecryptWrapper() {
-        synchronized (LOCK) {
-            if (uninitialized) {
-                try {
-                    JDInit.loadPluginForDecrypt();
-                } catch (Throwable e) {
-                    JDLogger.exception(e);
-                }
-                uninitialized = false;
-            }
-            return DECRYPT_WRAPPER;
+    static {
+        try {
+            JDInit.loadPluginForDecrypt();
+        } catch (Throwable e) {
+            JDLogger.exception(e);
         }
+    }
+
+    public static ArrayList<DecryptPluginWrapper> getDecryptWrapper() {
+        return DECRYPT_WRAPPER;
     }
 
     private final String revision;
@@ -47,6 +45,14 @@ public class DecryptPluginWrapper extends PluginWrapper {
         super(host, classNamePrefix, className, patternSupported, flags);
         this.revision = Formatter.getRevision(revision);
         synchronized (LOCK) {
+            for (DecryptPluginWrapper plugin : DECRYPT_WRAPPER) {
+                if (plugin.getID().equalsIgnoreCase(this.getID())) {
+                    if (JDFlags.hasNoFlags(flags, ALLOW_DUPLICATE)) {
+                        logger.severe("Cannot add DecryptPlugin!DecryptPluginID " + getID() + " already exists!");
+                        return;
+                    }
+                }
+            }
             DECRYPT_WRAPPER.add(this);
         }
     }

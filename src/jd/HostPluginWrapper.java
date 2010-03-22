@@ -23,25 +23,23 @@ import javax.swing.ImageIcon;
 import jd.config.container.JDLabelContainer;
 import jd.controlling.JDLogger;
 import jd.nutils.Formatter;
+import jd.nutils.JDFlags;
 import jd.plugins.PluginForHost;
 
 public class HostPluginWrapper extends PluginWrapper implements JDLabelContainer {
     private static final ArrayList<HostPluginWrapper> HOST_WRAPPER = new ArrayList<HostPluginWrapper>();
-    private static boolean uninitialized = true;
     public static final Object LOCK = new Object();
 
-    public static ArrayList<HostPluginWrapper> getHostWrapper() {
-        synchronized (LOCK) {
-            if (uninitialized) {
-                try {
-                    JDInit.loadPluginForHost();
-                } catch (Throwable e) {
-                    JDLogger.exception(e);
-                }
-                uninitialized = false;
-            }
-            return HOST_WRAPPER;
+    static {
+        try {
+            JDInit.loadPluginForHost();
+        } catch (Throwable e) {
+            JDLogger.exception(e);
         }
+    }
+
+    public static ArrayList<HostPluginWrapper> getHostWrapper() {
+        return HOST_WRAPPER;
     }
 
     private static final String AGB_CHECKED = "AGB_CHECKED";
@@ -52,6 +50,14 @@ public class HostPluginWrapper extends PluginWrapper implements JDLabelContainer
         super(host, classNamePrefix, className, patternSupported, flags);
         this.revision = Formatter.getRevision(revision);
         synchronized (LOCK) {
+            for (HostPluginWrapper plugin : HOST_WRAPPER) {
+                if (plugin.getID().equalsIgnoreCase(this.getID())) {
+                    if (JDFlags.hasNoFlags(flags, ALLOW_DUPLICATE)) {
+                        logger.severe("Cannot add HostPlugin!HostPluginID " + getID() + " already exists!");
+                        return;
+                    }
+                }
+            }
             HOST_WRAPPER.add(this);
         }
     }

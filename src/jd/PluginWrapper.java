@@ -68,7 +68,10 @@ public abstract class PluginWrapper implements Comparable<PluginWrapper> {
     /**
      * Load only if debug flag is set. For internal developer plugins
      */
-    public static final int DEBUG_ONLY = 1 << 4;
+    public static final int DEBUG_ONLY = 1 << 5;
+
+    /** Allow duplicate entries */
+    public static final int ALLOW_DUPLICATE = 1 << 6;
 
     /**
      * The Regular expression pattern. This pattern defines which urls can be
@@ -151,7 +154,16 @@ public abstract class PluginWrapper implements Comparable<PluginWrapper> {
             this.alwaysenabled = true;
         }
         if (JDFlags.hasNoFlags(flags, DEBUG_ONLY) || JDInitFlags.SWITCH_DEBUG) {
+            for (PluginWrapper plugin : WRAPPER.values()) {
+                if (plugin.getID().equalsIgnoreCase(this.getID())) {
+                    if (JDFlags.hasNoFlags(flags, ALLOW_DUPLICATE)) {
+                        logger.severe("Cannot add Plugin!PluginID " + getID() + " already exists!");
+                        return;
+                    }
+                }
+            }
             WRAPPER.put(classn, this);
+
         }
     }
 

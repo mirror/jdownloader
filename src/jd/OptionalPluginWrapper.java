@@ -52,6 +52,12 @@ public class OptionalPluginWrapper extends PluginWrapper {
         try {
 
             logger.finer("OPTIONAL loaded " + help);
+            for (OptionalPluginWrapper plugin : OPTIONAL_WRAPPER) {
+                if (plugin.getID().equalsIgnoreCase(this.getID())) {
+                    logger.severe("Cannot add OptionalPlugin!OptionalPluginID " + getID() + " already exists!");
+                    return;
+                }
+            }
             OPTIONAL_WRAPPER.add(this);
 
             if (this.isEnabled()) {
