@@ -1022,10 +1022,10 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * Setzt den Statischen Dateinamen. Ist dieser wert != null, so wird er zum
      * Speichern der Datei verwendet. ist er == null, so wird der dateiName im
      * Plugin automatisch ermittelt. ACHTUNG: Der angegebene Dateiname ist
-     * endg�ltig. Diese Funktion sollte nach Möglichkeit nicht von Plugins
+     * endgültig. Diese Funktion sollte nach Möglichkeit nicht von Plugins
      * verwendet werden. Sie gibt der Gui die Möglichkeit unabhängig von den
      * Plugins einen Downloadnamen festzulegen. Userinputs>Automatische
-     * Erkennung - Plugins sollten setName(String) verwenden um den
+     * Erkennung - Plugins sollten {@link #setName(String)} verwenden um den
      * Speichernamen anzugeben.
      */
     public void setFinalFileName(String newfinalFileName) {

@@ -215,3 +215,4 @@ jd/plugins/decrypter/RbkprrWs.class
 jd/captcha/methods/rbkprrws
 jd/plugins/hoster/UploadcellCom.class
 jd/plugins/hoster/BizHatCom.class
+libs/JUnique.jar
