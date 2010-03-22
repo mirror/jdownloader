@@ -635,7 +635,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
                                 nfp.setComment(fp.getComment());
                                 for (DownloadLink dlink : selected_links) {
                                     fp = LGINSTANCE.getFPwithLink(dlink);
-                                    if (fp != null) nfp.setPassword(fp.getPassword());
+                                    if (fp != null) dlink.addSourcePluginPassword(fp.getPassword());
                                 }
                                 nfp.addAll(selected_links);
                                 if (GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_INSERT_NEW_LINKS_AT, false)) {

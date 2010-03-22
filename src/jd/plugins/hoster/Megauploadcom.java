@@ -388,9 +388,7 @@ public class Megauploadcom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError(Reset might help)", 10 * 60 * 1000l);
                 }
                 if (dl.getConnection().getResponseCode() == 503) {
-                    String wait = dl.getConnection().getHeaderField("Retry-After");
-                    if (wait == null) wait = "120";
-                    limitReached(link, Integer.parseInt(wait.trim()), "Limit Reached (2)!");
+                    limitReached(link, 10 * 60, "Limit Reached (2)!");
                 }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
