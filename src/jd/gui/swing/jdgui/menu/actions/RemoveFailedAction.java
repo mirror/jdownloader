@@ -21,6 +21,7 @@ import java.util.ArrayList;
 
 import jd.controlling.DownloadController;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
+import jd.gui.swing.jdgui.views.linkgrabberview.LinkGrabberPanel;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
@@ -34,6 +35,7 @@ public class RemoveFailedAction extends ToolBarAction {
 
     @Override
     public void onAction(ActionEvent e) {
+        if (!LinkGrabberPanel.getLinkGrabber().isNotVisible()) return;
         DownloadController dlc = DownloadController.getInstance();
         ArrayList<DownloadLink> downloadstodelete = new ArrayList<DownloadLink>();
         synchronized (dlc.getPackages()) {
