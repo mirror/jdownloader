@@ -95,6 +95,8 @@ public class Rapidshare extends PluginForHost {
 
     private static final String PROPERTY_USE_TELEKOMSERVER = "USE_TELEKOMSERVER";
 
+    private static final String HTTPS_WORKAROUND = "HTTPS_WORKAROUND";
+
     private static String[] serverList1 = new String[] { "cg", "cg2", "dt", "l3", "l32", "l33", "l34", "l35", "tg", "tl", "tl2", "tl3" };
 
     private static String[] serverList2 = new String[] { "cg", "dt", "l3", "l32", "l33", "l34", "l35", "tg", "tg2", "tl", "tl2", "tl3" };
@@ -155,19 +157,16 @@ public class Rapidshare extends PluginForHost {
         }
         String fileid = new Regex(link, "http://[\\w\\.]*?rapidshare\\.com/files/([\\d]{3,9})/?.*").getMatch(0);
         String filename = new Regex(link, "http://[\\w\\.]*?rapidshare\\.com/files/[\\d]{3,9}/?(.*)").getMatch(0);
-        return "https://rapidshare.com/files/" + fileid + "/" + filename;
+        return "http://rapidshare.com/files/" + fileid + "/" + filename;
     }
 
     private String selectedServer;
 
     public Rapidshare(PluginWrapper wrapper) {
-
         super(wrapper);
-
         setConfigElements();
         enablePremium("http://rapidshare.com/premium.html");
         this.setMaxConnections(30);
-
     }
 
     @Override
@@ -390,7 +389,10 @@ public class Rapidshare extends PluginForHost {
             br.setFollowRedirects(false);
 
             String link = downloadLink.getDownloadURL();
-
+            /* use https to workaround isp block in uk (sky) */
+            if (getPluginConfig().getBooleanProperty(HTTPS_WORKAROUND, false)) {
+                link = link.replaceFirst("http:", "https:");
+            }
             // RS URL wird aufgerufen
             br.getPage(link);
             if (br.getRedirectLocation() != null) {
@@ -624,7 +626,12 @@ public class Rapidshare extends PluginForHost {
 
             br.setFollowRedirects(false);
             br.setAcceptLanguage(ACCEPT_LANGUAGE);
-            br.getPage(downloadLink.getDownloadURL());
+            String link = downloadLink.getDownloadURL();
+            /* use https to workaround isp block in uk (sky) */
+            if (getPluginConfig().getBooleanProperty(HTTPS_WORKAROUND, false)) {
+                link = link.replaceFirst("http:", "https:");
+            }
+            br.getPage(link);
 
             String directurl = br.getRedirectLocation();
 
@@ -955,6 +962,9 @@ public class Rapidshare extends PluginForHost {
         config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getPluginConfig(), PROPERTY_SELECTED_SERVER5, m5.toArray(new String[] {}), "#5").setDefaultValue("euNetworks"));
         ce.setEnabledCondidtion(cond, false);
         config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PROPERTY_USE_TELEKOMSERVER, JDL.L("plugins.hoster.rapidshare.com.telekom", "Telekom Server verwenden falls verfügbar")).setDefaultValue(false));
+        ce.setEnabledCondidtion(cond, false);
+
+        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), HTTPS_WORKAROUND, JDL.L("plugins.hoster.rapidshare.com.https", "Use HTTPS workaround for ISP Block")).setDefaultValue(false));
         ce.setEnabledCondidtion(cond, false);
 
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
