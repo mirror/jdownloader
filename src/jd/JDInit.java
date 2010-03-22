@@ -30,12 +30,9 @@ import java.util.logging.Logger;
 import jd.config.Configuration;
 import jd.config.DatabaseConnector;
 import jd.config.SubConfiguration;
-import jd.controlling.AccountController;
-import jd.controlling.ByteBufferController;
 import jd.controlling.DownloadController;
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
-import jd.controlling.PasswordListController;
 import jd.event.ControlEvent;
 import jd.gui.UserIF;
 import jd.gui.UserIO;
@@ -192,10 +189,6 @@ public class JDInit {
 
     public void initControllers() {
         DownloadController.getInstance();
-        PasswordListController.getInstance();
-        DownloadController.getInstance().addListener(PasswordListController.getInstance());
-        AccountController.getInstance();
-        ByteBufferController.getInstance();
         /* add ShutdownHook so we have chance to save database properly */
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override

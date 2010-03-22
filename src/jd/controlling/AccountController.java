@@ -45,7 +45,7 @@ public class AccountController extends SubConfiguration implements ActionListene
 
     private static TreeMap<String, ArrayList<Account>> hosteraccounts = null;
 
-    private static AccountController INSTANCE = null;
+    private static AccountController INSTANCE = new AccountController();
 
     private JDBroadcaster<AccountControllerListener, AccountControllerEvent> broadcaster = new JDBroadcaster<AccountControllerListener, AccountControllerEvent>() {
 
@@ -191,10 +191,7 @@ public class AccountController extends SubConfiguration implements ActionListene
         return null;
     }
 
-    public synchronized static AccountController getInstance() {
-        if (INSTANCE == null) {
-            INSTANCE = new AccountController();
-        }
+    public static AccountController getInstance() {
         return INSTANCE;
     }
 

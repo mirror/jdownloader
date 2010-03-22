@@ -28,7 +28,7 @@ public class ByteBufferController {
 
     public final static String MAXBUFFERSIZE = "MAX_BUFFER_SIZE_V3";
 
-    private static ByteBufferController INSTANCE;
+    private static ByteBufferController INSTANCE = new ByteBufferController();
 
     private final Comparator<ByteBufferEntry> bytebuffercomp = new Comparator<ByteBufferEntry>() {
         public int compare(final ByteBufferEntry a, final ByteBufferEntry b) {
@@ -40,10 +40,7 @@ public class ByteBufferController {
 
     protected long bufferEntries = 0;
 
-    public synchronized static ByteBufferController getInstance() {
-        if (INSTANCE == null) {
-            INSTANCE = new ByteBufferController();
-        }
+    public static ByteBufferController getInstance() {
         return INSTANCE;
     }
 

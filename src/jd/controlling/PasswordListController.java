@@ -27,22 +27,17 @@ import javax.swing.Timer;
 
 import jd.config.SubConfiguration;
 import jd.parser.Regex;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 
-public class PasswordListController implements ActionListener, DownloadControllerListener, ListController {
+public class PasswordListController implements ActionListener, ListController {
     private transient static SubConfiguration CONFIG = null;
     private transient ArrayList<String> LIST2;
-    private transient static PasswordListController INSTANCE = null;
+    private transient static PasswordListController INSTANCE = new PasswordListController();
 
     private Timer asyncSaveIntervalTimer;
 
     private boolean saveinprogress;
 
-    public static synchronized PasswordListController getInstance() {
-        if (INSTANCE == null) {
-            INSTANCE = new PasswordListController();
-        }
+    public static PasswordListController getInstance() {
         return INSTANCE;
     }
 
@@ -180,17 +175,4 @@ public class PasswordListController implements ActionListener, DownloadControlle
         }
     }
 
-    public void onDownloadControllerEvent(DownloadControllerEvent event) {
-        switch (event.getID()) {
-        case DownloadControllerEvent.ADD_DOWNLOADLINK:
-            this.addPasswords(((DownloadLink) event.getParameter()).getSourcePluginPasswordList());
-            break;
-        case DownloadControllerEvent.ADD_FILEPACKAGE:
-            this.addPassword(((FilePackage) event.getParameter()).getPassword(), false);
-            break;
-        default:
-            break;
-        }
-
-    }
 }
