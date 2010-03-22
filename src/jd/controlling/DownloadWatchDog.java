@@ -525,6 +525,16 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
      */
     public void forceDownload(final ArrayList<DownloadLink> links) {
         synchronized (DownloadLOCK) {
+            for (final DownloadLink link : links) {
+                if (!link.getPlugin().isAGBChecked()) {
+                    try {
+                        SingleDownloadController.onErrorAGBNotSigned(link, link.getPlugin());
+                    } catch (InterruptedException e) {
+                        return;
+                    }
+
+                }
+            }
             synchronized (StartStopSync) {
                 if (downloadStatus == STATE.NOT_RUNNING || downloadStatus == STATE.RUNNING) {
                     startDownloads();

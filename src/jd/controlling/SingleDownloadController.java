@@ -144,17 +144,17 @@ public class SingleDownloadController extends Thread {
             } catch (UnknownHostException e) {
                 linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                 linkStatus.setErrorMessage(JDL.L("plugins.errors.nointernetconn", "No Internet connection?"));
-                linkStatus.setValue(SubConfiguration.getConfig("CONNECTION_PROBLEMS").getGenericProperty("UnknownHostException",5 * 60 * 1000l));
+                linkStatus.setValue(SubConfiguration.getConfig("CONNECTION_PROBLEMS").getGenericProperty("UnknownHostException", 5 * 60 * 1000l));
             } catch (SocketTimeoutException e) {
                 linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                 linkStatus.setErrorMessage(JDL.L("plugins.errors.hosteroffline", "Hoster offline?"));
-                linkStatus.setValue(SubConfiguration.getConfig("CONNECTION_PROBLEMS").getGenericProperty("SocketTimeoutException",10 * 60 * 1000l));
+                linkStatus.setValue(SubConfiguration.getConfig("CONNECTION_PROBLEMS").getGenericProperty("SocketTimeoutException", 10 * 60 * 1000l));
             } catch (SocketException e) {
                 linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                 linkStatus.setErrorMessage(JDL.L("plugins.errors.disconnect", "Disconnect?"));
-             
-                linkStatus.setValue(SubConfiguration.getConfig("CONNECTION_PROBLEMS").getGenericProperty("SocketException",5 * 60 * 1000l));
-                
+
+                linkStatus.setValue(SubConfiguration.getConfig("CONNECTION_PROBLEMS").getGenericProperty("SocketException", 5 * 60 * 1000l));
+
             } catch (IOException e) {
                 linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                 linkStatus.setErrorMessage(JDL.L("plugins.errors.hosterproblem", "Hoster problem?"));
@@ -290,7 +290,8 @@ public class SingleDownloadController extends Thread {
 
         // set all links to disabled that point to the same file location
         // - prerequisite: 'skip link' option selected
-        // TODO WORKAROUND FOR NOW.. WILL BE HANDLED BY A MIRROR MANAGER IN THE FUTURE
+        // TODO WORKAROUND FOR NOW.. WILL BE HANDLED BY A MIRROR MANAGER IN THE
+        // FUTURE
         if (SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_FILE_EXISTS, 1) == 1) {
             ArrayList<DownloadLink> links = DownloadController.getInstance().getAllDownloadLinks();
             for (DownloadLink link : links) {
@@ -311,7 +312,7 @@ public class SingleDownloadController extends Thread {
 
     }
 
-    private void onErrorAGBNotSigned(DownloadLink downloadLink2, PluginForHost plugin) throws InterruptedException {
+    public static void onErrorAGBNotSigned(DownloadLink downloadLink2, PluginForHost plugin) throws InterruptedException {
         downloadLink2.getLinkStatus().setStatusText(JDL.L("controller.status.agb_tos", "TOS haven't been accepted."));
         if (!plugin.isAGBChecked()) {
             synchronized (JDUtilities.USERIO_LOCK) {
@@ -324,7 +325,7 @@ public class SingleDownloadController extends Thread {
         } else {
             downloadLink2.getLinkStatus().reset();
         }
-        DownloadController.getInstance().fireDownloadLinkUpdate(downloadLink);
+        DownloadController.getInstance().fireDownloadLinkUpdate(downloadLink2);
     }
 
     /**
@@ -332,7 +333,7 @@ public class SingleDownloadController extends Thread {
      * 
      * @param downloadLink2
      */
-    private void showAGBDialog(final DownloadLink downloadLink2) {
+    public static void showAGBDialog(final DownloadLink downloadLink2) {
         new GuiRunnable<Object>() {
             @Override
             public Object runSave() {
