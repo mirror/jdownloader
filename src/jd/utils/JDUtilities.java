@@ -77,6 +77,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.PluginsC;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.Application;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -414,55 +415,61 @@ public class JDUtilities {
      */
     public static File getJDHomeDirectoryFromEnvironment() {
         if (JD_HOME != null) return JD_HOME;
-        String envDir = null;// System.getenv("JD_HOME");
-        File currentDir = null;
+        if (false) {
+            String envDir = null;// System.getenv("JD_HOME");
+            File currentDir = null;
 
-        URL ressource = Thread.currentThread().getContextClassLoader().getResource("jd/Main.class");
-        // System.out.println("Ressource: " + ressource);
-        if (ressource == null) {
-            ressource = Thread.currentThread().getContextClassLoader().getResource("jd/update/Main.class");
-        }
-        String dir = ressource + "";
-        // System.out.println(dir);
-        dir = dir.split("\\.jar\\!")[0] + ".jar";
-        // System.out.println(dir);
-        dir = dir.substring(Math.max(dir.indexOf("file:"), 0));
-        try {
-            // System.out.println(dir);
-            currentDir = new File(new URI(dir));
-            // System.out.println(currentDir);
-            // JDUtilities.getLogger().info(" App dir: "+currentDir+" -
-            // "+System.getProperty("java.class.path"));
-            if (currentDir.isFile()) {
-                currentDir = currentDir.getParentFile();
+            URL ressource = Thread.currentThread().getContextClassLoader().getResource("jd/Main.class");
+            // System.out.println("Ressource: " + ressource);
+            if (ressource == null) {
+                ressource = Thread.currentThread().getContextClassLoader().getResource("jd/update/Main.class");
             }
-        } catch (URISyntaxException e) {
-            JDLogger.exception(e);
-        }
+            String dir = ressource + "";
+            // System.out.println(dir);
+            dir = dir.split("\\.jar\\!")[0] + ".jar";
+            // System.out.println(dir);
+            dir = dir.substring(Math.max(dir.indexOf("file:"), 0));
+            try {
+                // System.out.println(dir);
+                currentDir = new File(new URI(dir));
+                // System.out.println(currentDir);
+                // JDUtilities.getLogger().info(" App dir: "+currentDir+" -
+                // "+System.getProperty("java.class.path"));
+                if (currentDir.isFile()) {
+                    currentDir = currentDir.getParentFile();
+                }
+            } catch (URISyntaxException e) {
+                JDLogger.exception(e);
+            }
 
-        // JDUtilities.getLogger().info("RunDir: " + currentDir);
+            // JDUtilities.getLogger().info("RunDir: " + currentDir);
 
-        switch (JDUtilities.getRunType()) {
-        case RUNTYPE_LOCAL_JARED:
-            System.out.println("JAR");
-            envDir = currentDir.getAbsolutePath();
-            break;
-        default:
-            System.out.println("USER");
-            envDir = System.getProperty("user.home") + System.getProperty("file.separator") + ".jd_home/";
+            switch (JDUtilities.getRunType()) {
+            case RUNTYPE_LOCAL_JARED:
+                System.out.println("JAR");
+                envDir = currentDir.getAbsolutePath();
+                break;
+            default:
+                System.out.println("USER");
+                envDir = System.getProperty("user.home") + System.getProperty("file.separator") + ".jd_home/";
+            }
+            // System.out.println("ENV " + envDir);
+            if (envDir == null) {
+                envDir = "." + System.getProperty("file.separator") + ".jd_home/";
+                LOGGER.info("JD_HOME from current directory:" + envDir);
+            }
+            // System.out.println("ENV " + envDir);
+            final File jdHomeDir = new File(envDir);
+            if (!jdHomeDir.exists()) {
+                jdHomeDir.mkdirs();
+            }
+            JD_HOME = jdHomeDir;
+        } else {
+            Application.setApplication(".jd_home");
+            JD_HOME = new File(Application.getRoot());
         }
-        // System.out.println("ENV " + envDir);
-        if (envDir == null) {
-            envDir = "." + System.getProperty("file.separator") + ".jd_home/";
-            LOGGER.info("JD_HOME from current directory:" + envDir);
-        }
-        // System.out.println("ENV " + envDir);
-        final File jdHomeDir = new File(envDir);
-        if (!jdHomeDir.exists()) {
-            jdHomeDir.mkdirs();
-        }
-        JD_HOME = jdHomeDir;
-        return jdHomeDir;
+        LOGGER.info("JD_HOME:" + JD_HOME);
+        return JD_HOME;
     }
 
     public static String getJDTitle() {
@@ -698,13 +705,7 @@ public class JDUtilities {
         if (clURL != null) {
             try {
                 return new File(clURL.toURI());
-            } catch (Throwable e) {
-                try {
-                    JDLogger.getLogger().severe(clURL.toString() + " " + clURL.toURI().toString());
-                } catch (URISyntaxException e1) {
-                    JDLogger.exception(e1);
-                }
-                JDLogger.exception(e);
+            } catch (URISyntaxException e) {
             }
         }
         return null;
