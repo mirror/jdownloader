@@ -99,7 +99,7 @@ public class HotFileCom extends PluginForHost {
         }
         br.setFollowRedirects(true);
         if (finalUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalUrl, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalUrl, true, -5);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
             finalUrl = br.getRegex("<h3 style='margin-top: 20px'><a href=\"(.*?hotfile.*?)\">Click here to download</a></h3>").getMatch(0);

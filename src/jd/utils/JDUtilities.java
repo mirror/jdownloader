@@ -698,7 +698,13 @@ public class JDUtilities {
         if (clURL != null) {
             try {
                 return new File(clURL.toURI());
-            } catch (URISyntaxException e) {
+            } catch (Throwable e) {
+                try {
+                    JDLogger.getLogger().severe(clURL.toString() + " " + clURL.toURI().toString());
+                } catch (URISyntaxException e1) {
+                    JDLogger.exception(e1);
+                }
+                JDLogger.exception(e);
             }
         }
         return null;

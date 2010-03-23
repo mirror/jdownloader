@@ -78,7 +78,7 @@ public class Usershare extends PluginForHost {
         }
         if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setDebug(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, linkurl, true, -4);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, linkurl, true, 1);
         dl.startDownload();
     }
 
