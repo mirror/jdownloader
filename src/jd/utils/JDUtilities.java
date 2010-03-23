@@ -466,7 +466,7 @@ public class JDUtilities {
             JD_HOME = jdHomeDir;
         } else {
             Application.setApplication(".jd_home");
-            JD_HOME = new File(Application.getRoot());
+            JD_HOME = new File(Application.getRoot(jd.Main.class));
         }
         LOGGER.info("JD_HOME:" + JD_HOME);
         return JD_HOME;
