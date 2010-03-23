@@ -31,7 +31,6 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.lang.management.ManagementFactory;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.text.DecimalFormat;
@@ -414,62 +413,23 @@ public class JDUtilities {
      * @return ein File, dass das Basisverzeichnis angibt
      */
     public static File getJDHomeDirectoryFromEnvironment() {
-        if (JD_HOME != null) return JD_HOME;
-        if (false) {
-            String envDir = null;// System.getenv("JD_HOME");
-            File currentDir = null;
-
-            URL ressource = Thread.currentThread().getContextClassLoader().getResource("jd/Main.class");
-            // System.out.println("Ressource: " + ressource);
-            if (ressource == null) {
-                ressource = Thread.currentThread().getContextClassLoader().getResource("jd/update/Main.class");
-            }
-            String dir = ressource + "";
-            // System.out.println(dir);
-            dir = dir.split("\\.jar\\!")[0] + ".jar";
-            // System.out.println(dir);
-            dir = dir.substring(Math.max(dir.indexOf("file:"), 0));
-            try {
-                // System.out.println(dir);
-                currentDir = new File(new URI(dir));
-                // System.out.println(currentDir);
-                // JDUtilities.getLogger().info(" App dir: "+currentDir+" -
-                // "+System.getProperty("java.class.path"));
-                if (currentDir.isFile()) {
-                    currentDir = currentDir.getParentFile();
-                }
-            } catch (URISyntaxException e) {
-                JDLogger.exception(e);
-            }
-
-            // JDUtilities.getLogger().info("RunDir: " + currentDir);
-
-            switch (JDUtilities.getRunType()) {
-            case RUNTYPE_LOCAL_JARED:
-                System.out.println("JAR");
-                envDir = currentDir.getAbsolutePath();
-                break;
-            default:
-                System.out.println("USER");
-                envDir = System.getProperty("user.home") + System.getProperty("file.separator") + ".jd_home/";
-            }
-            // System.out.println("ENV " + envDir);
-            if (envDir == null) {
-                envDir = "." + System.getProperty("file.separator") + ".jd_home/";
-                LOGGER.info("JD_HOME from current directory:" + envDir);
-            }
-            // System.out.println("ENV " + envDir);
-            final File jdHomeDir = new File(envDir);
-            if (!jdHomeDir.exists()) {
-                jdHomeDir.mkdirs();
-            }
-            JD_HOME = jdHomeDir;
+        if (JD_HOME != null) {
+            return JD_HOME;
         } else {
             Application.setApplication(".jd_home");
-            JD_HOME = new File(Application.getRoot(jd.Main.class));
+            URL ressource = Thread.currentThread().getContextClassLoader().getResource("jd/Main.class");
+            /* we have 2 different Main classes */
+            if (ressource != null) {
+                JD_HOME = new File(Application.getRoot(jd.Main.class));
+            } else {
+                JD_HOME = new File(Application.getRoot(jd.update.Main.class));
+            }
+            if (!JD_HOME.exists()) {
+                JD_HOME.mkdirs();
+            }
+            LOGGER.info("JD_HOME:" + JD_HOME);
+            return JD_HOME;
         }
-        LOGGER.info("JD_HOME:" + JD_HOME);
-        return JD_HOME;
     }
 
     public static String getJDTitle() {
