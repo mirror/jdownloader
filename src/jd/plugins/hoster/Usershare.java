@@ -110,10 +110,7 @@ public class Usershare extends PluginForHost {
     }
 
     @Override
-    // TODO: Hoster allows 4 connections (1 download with 4 chunks or 4 simultan
-    // downloads) at all, a controller to set the max.number of the connections
-    // would be nice for that
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return 6;
     }
 }

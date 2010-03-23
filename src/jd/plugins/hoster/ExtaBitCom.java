@@ -19,8 +19,8 @@ package jd.plugins.hoster;
 import java.io.File;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.parser.Regex;
-import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -68,9 +68,12 @@ public class ExtaBitCom extends PluginForHost {
         this.setBrowserExclusive();
         requestFileInformation(link);
         String addedlink = br.getURL();
+        if (!addedlink.equals(link.getDownloadURL())) link.setUrlDownload(addedlink);
         if (br.containsHTML("The daily downloads limit from your IP is exceeded")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
         // If the waittime was forced it yould be here but it isn't!
         // Re Captcha handling
+        Browser xmlbrowser = br.cloneBrowser();
+        xmlbrowser.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         if (br.containsHTML("api.recaptcha.net")) {
             Recaptcha rc = new Recaptcha(br);
             rc.parse();
@@ -83,20 +86,25 @@ public class ExtaBitCom extends PluginForHost {
         } else {
             for (int i = 0; i <= 5; i++) {
                 // *Normal* captcha handling
-                Form dlform = br.getFormbyProperty("id", "cmn_form");
+                // Form dlform = br.getFormbyProperty("id", "cmn_form");
                 String captchaurl = br.getRegex("\"(/capture.*?\\?-?[0-9]+)\"").getMatch(0);
-                if (dlform == null || captchaurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (captchaurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 captchaurl = "http://extabit.com" + captchaurl;
                 String code = getCaptchaCode(captchaurl, link);
-                dlform.put("capture", code);
-                br.submitForm(dlform);
-                if (br.containsHTML("/capture") || br.getRedirectLocation() != null) continue;
+                // dlform.put("capture", code);
+                // br.submitForm(dlform);
+                xmlbrowser.getPage(link.getDownloadURL() + "?capture=" + code);
+                if (!xmlbrowser.containsHTML("\"ok\":true")) {
+                    br.getPage(br.getURL());
+                    continue;
+                }
+                br.getPage(link.getDownloadURL());
                 break;
             }
         }
-        if (br.containsHTML("(api.recaptcha.net|/capture)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        String dllink = br.getRegex("Turn your download manager off and <a href=\"(http.*?)\">click here to download<").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://[a-zA-Z]+[0-9]+\\.extabit\\.com/.*?/.*?)\"").getMatch(0);
+        if (br.containsHTML("api.recaptcha.net") || !xmlbrowser.containsHTML("\"ok\":true")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        String dllink = br.getRegex("Turn your download manager off and <a href=\"(http.*?)\">click here to download").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\"(http://\\d+\\.\\d+\\.\\d+\\.\\d+/[a-z0-9]+/.*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
         if ((dl.getConnection().getContentType().contains("html"))) {
