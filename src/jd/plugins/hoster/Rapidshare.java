@@ -208,7 +208,7 @@ public class Rapidshare extends PluginForHost {
                 idlist.append("," + getID(u));
                 namelist.append("," + getName(u));
                 links.add(u);
-                size = ("https://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=checkfiles_v1&files=" + idlist.toString().substring(1) + "&filenames=" + namelist.toString().substring(1) + "&incmd5=1").length();
+                size = ("http://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=checkfiles_v1&files=" + idlist.toString().substring(1) + "&filenames=" + namelist.toString().substring(1) + "&incmd5=1").length();
             }
             if (links.size() != 0) {
                 if (links.size() != urls.length) {
@@ -253,7 +253,7 @@ public class Rapidshare extends PluginForHost {
                     idlist.append("," + getID(u));
                     namelist.append("," + getName(u));
                 }
-                String req = "https://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=checkfiles_v1&files=" + idlist.toString().substring(1) + "&filenames=" + namelist.toString().substring(1) + "&incmd5=1";
+                String req = "http://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=checkfiles_v1&files=" + idlist.toString().substring(1) + "&filenames=" + namelist.toString().substring(1) + "&incmd5=1";
 
                 queryAPI(null, req);
 
@@ -335,6 +335,9 @@ public class Rapidshare extends PluginForHost {
      */
     private void queryAPI(Browser br, String req) throws Exception {
         if (br == null) br = this.br;
+        if (getPluginConfig().getBooleanProperty(HTTPS_WORKAROUND, false)) {
+            req = req.replaceFirst("http:", "https:");
+        }
         try {
             br.getPage(req);
         } catch (BrowserException e) {
@@ -993,7 +996,7 @@ public class Rapidshare extends PluginForHost {
                     account.setProperty("cookies", null);
                 }
             }
-            String req = "https://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=getaccountdetails_v1&withcookie=1&type=prem&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass());
+            String req = "http://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=getaccountdetails_v1&withcookie=1&type=prem&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass());
             queryAPI(br, req);
             try {
                 Thread.sleep(2000);
@@ -1008,7 +1011,11 @@ public class Rapidshare extends PluginForHost {
                 logger.warning("RS API flooded! will not check again the next 5 minutes!");
                 logger.finer("HTTPS Login");
                 br.setAcceptLanguage("en, en-gb;q=0.8");
-                br.getPage("https://ssl.rapidshare.com/cgi-bin/premiumzone.cgi?login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                String req2 = "http://ssl.rapidshare.com/cgi-bin/premiumzone.cgi?login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass());
+                if (getPluginConfig().getBooleanProperty(HTTPS_WORKAROUND, false)) {
+                    req2 = req2.replaceFirst("http:", "https:");
+                }
+                br.getPage(req2);
             } else {
                 logger.finer("API Login");
                 String cookie = br.getRegex("cookie=([A-Z0-9]+)").getMatch(0);
@@ -1033,7 +1040,7 @@ public class Rapidshare extends PluginForHost {
          * rs has specialtraffic: trafficshare, pointconverting
          */
         ai.setSpecialTraffic(true);
-        String api = "https://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=getaccountdetails_v1&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&type=prem";
+        String api = "http://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=getaccountdetails_v1&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&type=prem";
         queryAPI(br, api);
         String error = br.getRegex("ERROR:(.*)").getMatch(0);
         if (error != null) {
