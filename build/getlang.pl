@@ -8,7 +8,7 @@ use File::Find;
 use strict;
 use utf8;
 
-my $debug = 1; # set this to get verbose output.
+my $debug = 1; # set this to 1 or 2 to get verbose output.
 my $path = $ARGV[1] || "src/jd";
 my $rpath = $ARGV[1] || "ressourcen/jd/languages/";
 
@@ -17,7 +17,9 @@ main();
 sub loadres
 {
   my %res;
-  foreach my $l ("en", "de")
+  my @all = map {/$rpath(.*?)\.loc/;$1} glob("$rpath*.loc");
+
+  foreach my $l (@all)
   {
     my $file = "$rpath$l.loc";
     open FILE,"<",$file or die "Can't open $file\n";
@@ -59,7 +61,7 @@ sub main
     open FILE,"<",$file or die;
     my $name = $file; $name =~ s/.*?src\///; $name =~ s/\//./g; $name =~ s/\.java$//;
     my $sname = $name; $sname =~ s/^.*\.//;
-    print STDERR "Parsing $file ($name, $sname)\n" if $debug;
+    print STDERR "Parsing $file ($name, $sname)\n" if $debug >= 3;
     while(my $line = <FILE>)
     {
       $line = "$line$lastline"; $lastline = "";
@@ -71,13 +73,18 @@ sub main
 
       while($line =~ s/JDL\.LF?\("(.*?)",\s*"(.*?)"//)
       {
-        print STDERR "Mismatch for $1: '$2' != '$res{$1}'\n" if($res{$1} && $res{$1} ne $2);
-        $res{$1} = $2;
+        my $o = $1;
+        my $k = lc($o);
+        print STDERR "Mismatch for $1: '$2' != '$res{$k}'\n" if($res{$k} && $res{$k} ne $2);
+        print STDERR "Uppercase string $o\n" if $debug >= 2 && $k ne $o;
+        $res{$k} = $2;
       }
       while($prefix && $line =~ s/JDL\.LF?\([A-Z]+_PREFIX\s*\+\s*"(.*?)",\s*"(.*?)"//)
       {
-        my $k = "$prefix$1";
+        my $o = "$prefix$1";
+        my $k = lc($o);
         print STDERR "Mismatch for $k: '$2' != '$res{$k}'\n" if($res{$k} && $res{$k} ne $2);
+        print STDERR "Uppercase string $o\n" if $debug >= 2 && $k ne $o;
         $res{$k} = $2;
       }
       if($line =~ /JDL\.L/)
@@ -86,7 +93,7 @@ sub main
         {
           $lastline = $line;
         }
-        elsif($debug)
+        elsif($debug >= 3)
         {
           print STDERR "Can't parse following line in $file: $line";
         }
@@ -104,7 +111,7 @@ sub main
     }
     elsif($refde && $res{$k} eq $refde)
     {
-      print STDERR "German reference: $k = $refde\n";
+      print STDERR "German reference: $k = $refde".($refen?" ($refen) ":"")."\n";
     }
     elsif($refen)
     {
@@ -113,6 +120,15 @@ sub main
     else
     {
       print STDERR "Missing string in langfile $k: '$res{$k}'\n" if $debug;
+    }
+    delete $ref{$k};
+  }
+  if($debug)
+  {
+    foreach my $k (sort keys %ref)
+    {
+      my $langs = join(" ", keys %{$ref{$k}});
+      print STDERR "Superfluos translation ($langs): $k\n";
     }
   }
   foreach my $k (sort keys %res)
