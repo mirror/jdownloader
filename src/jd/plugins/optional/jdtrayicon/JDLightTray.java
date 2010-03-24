@@ -360,7 +360,7 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
     }
 
     private void miniIt(final boolean minimize) {
-        if (!minimize && subConfig.getBooleanProperty(PROPERTY_PASSWORD_REQUIRED, false)) {
+        if (!minimize && subConfig.getBooleanProperty(PROPERTY_PASSWORD_REQUIRED, false) && !subConfig.getStringProperty(PROPERTY_PASSWORD, "").equals("")) {
             String password = UserIO.getInstance().requestInputDialog(JDL.L("plugins.optional.JDLightTray.enterPassword", "Enter the Password to open JD:"));
             if (password == null || !password.equals(subConfig.getStringProperty(PROPERTY_PASSWORD, ""))) {
                 UserIO.getInstance().requestMessageDialog(JDL.L("plugins.optional.JDLightTray.enterPassword.wrong", "The entered Password was wrong!"));

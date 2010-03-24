@@ -35,6 +35,7 @@ import jd.nutils.jobber.JDRunnable;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.utils.EditDistance;
+import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 /**
@@ -167,13 +168,11 @@ public class UnrarWrapper extends Thread implements JDRunnable {
      * @return
      */
     private boolean checkSize() {
-        if (System.getProperty("java.version").contains("1.5")) { return true; }
+        if (JDUtilities.getJavaVersion() < 1.6) return true;
 
         File f = extractTo;
 
-        if (f == null) {
-            f = file;
-        }
+        if (f == null) f = file;
 
         while (!f.exists()) {
             f = f.getParentFile();
@@ -188,7 +187,7 @@ public class UnrarWrapper extends Thread implements JDRunnable {
             size += dlink.getDownloadSize() - dlink.getDownloadCurrent();
         }
 
-        if (f.getUsableSpace() < size + totalSize) { return false; }
+        if (f.getUsableSpace() < size + totalSize) return false;
 
         return true;
     }

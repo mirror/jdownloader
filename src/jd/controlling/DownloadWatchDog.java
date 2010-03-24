@@ -843,7 +843,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
      * @return
      */
     private boolean checkSize(DownloadLink dlLink) {
-        if (System.getProperty("java.version").contains("1.5")) return true;
+        if (JDUtilities.getJavaVersion() < 1.6) return true;
 
         File f = new File(dlLink.getFileOutput()).getParentFile();
 
@@ -894,67 +894,6 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
         /* add download to stopMarkTracker */
         if (!stopMarkTracker.contains(dlink)) stopMarkTracker.add(dlink);
         download.start();
-
-        // TODO: rework this
-        // Interaction.handleInteraction(Interaction.INTERACTION_BEFORE_DOWNLOAD,
-        // dlink);
-        //        
-        // String outputFilePath = dlink.getFileOutput();
-        // int index = outputFilePath.lastIndexOf(PATH_SEPARATOR);
-        // String outputFolder = outputFilePath.substring(0, index);
-        //        
-        // File destinationFolder = new File(outputFolder);
-        // if (!destinationFolder.exists()) {
-        // boolean createFolder = destinationFolder.mkdirs();
-        // if (!createFolder) {
-        // logger.warning("The folder '" + destinationFolder +
-        // "' couldn't be created, cannot get free space");
-        // LinkStatus status = dlink.getLinkStatus();
-        // status.setErrorMessage("Cannot create folder " + outputFolder);
-        // status.addStatus(LinkStatus.ERROR_LOCAL_IO);
-        //	        	
-        // dlink.setEnabled(false);
-        // dlink.requestGuiUpdate();
-        // } else {
-        // logger.info("The folder '" + destinationFolder +
-        // "' was successfully created, continuing download...");
-        // }
-        // }
-        //        
-        // long freeDiskSpace = destinationFolder.getUsableSpace();
-        // long fileSize = dlink.getDownloadSize();
-        // if (freeDiskSpace > fileSize) {
-        // SingleDownloadController download = new
-        // SingleDownloadController(dlink);
-        // logger.info("Start new Download: " + dlink.getHost());
-        // dlink.getLinkStatus().setActive(true);
-        // this.activateDownload(dlink, download);
-        // /* add download to stopMarkTracker */
-        // if (!stopMarkTracker.contains(dlink)) stopMarkTracker.add(dlink);
-        // download.start();
-        // } else {
-        // String fileName = dlink.getName();
-        // logger.warning("The file '" + fileName +
-        // "' is bigger than the available free space on '"
-        // + outputFolder + "' [" + fileSize + " > " + freeDiskSpace + "]");
-        //        	
-        // String title =
-        // JDL.L("system.download.errors.notenoughfreespace.title",
-        // "There is not enough free space on '" + outputFolder + "'");
-        // String message =
-        // JDL.L("system.download.errors.notenoughfreespace.message",
-        // "There is not enough free space to download the file '" + fileName +
-        // "', please relocate the file");
-        // UserIO.getInstance().requestConfirmDialog(UserIO.NO_CANCEL_OPTION,
-        // title, message);
-        //        	
-        // LinkStatus status = dlink.getLinkStatus();
-        // status.setErrorMessage(message);
-        // status.addStatus(LinkStatus.ERROR_LOCAL_IO);
-        //        	
-        // dlink.setEnabled(false);
-        // dlink.requestGuiUpdate();
-        // }
     }
 
     public void onDownloadControllerEvent(final DownloadControllerEvent event) {
