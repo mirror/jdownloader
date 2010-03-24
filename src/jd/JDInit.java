@@ -477,7 +477,12 @@ public class JDInit {
         if (CL == null) {
             try {
                 if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL_JARED) {
-                    CL = new URLClassLoader(new URL[] { JDUtilities.getJDHomeDirectoryFromEnvironment().toURI().toURL(), JDUtilities.getResourceFile("java").toURI().toURL() }, Thread.currentThread().getContextClassLoader());
+                    try {
+                        System.out.println(JDUtilities.getResourceFile("java").toURI().toURL());
+                    } catch (Throwable e) {
+                        e.printStackTrace();
+                    }
+                    CL = new URLClassLoader(new URL[] { JDUtilities.getJDHomeDirectoryFromEnvironment().toURI().toURL() }, Thread.currentThread().getContextClassLoader());
                 } else {
                     CL = Thread.currentThread().getContextClassLoader();
                 }

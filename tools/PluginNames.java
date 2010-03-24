@@ -23,7 +23,7 @@ public class PluginNames {
         if (CL == null) {
             try {
                 if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL_JARED) {
-                    CL = new URLClassLoader(new URL[] { JDUtilities.getJDHomeDirectoryFromEnvironment().toURI().toURL(), JDUtilities.getResourceFile("java").toURI().toURL() }, Thread.currentThread().getContextClassLoader());
+                    CL = new URLClassLoader(new URL[] { JDUtilities.getJDHomeDirectoryFromEnvironment().toURI().toURL() }, Thread.currentThread().getContextClassLoader());
                 } else {
                     CL = Thread.currentThread().getContextClassLoader();
                 }

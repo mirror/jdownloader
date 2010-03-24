@@ -450,7 +450,7 @@ public class Main {
      */
     public static void loadDynamics() throws Exception {
         ArrayList<String> classes = new ArrayList<String>();
-        URLClassLoader classLoader = new URLClassLoader(new URL[] { JDUtilities.getJDHomeDirectoryFromEnvironment().toURI().toURL(), JDUtilities.getResourceFile("java").toURI().toURL() }, Thread.currentThread().getContextClassLoader());
+        URLClassLoader classLoader = new URLClassLoader(new URL[] { JDUtilities.getJDHomeDirectoryFromEnvironment().toURI().toURL() }, Thread.currentThread().getContextClassLoader());
         if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL) {
             /* dynamics aus eclipse heraus laden */
 
