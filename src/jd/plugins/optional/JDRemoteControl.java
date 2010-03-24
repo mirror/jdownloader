@@ -25,6 +25,7 @@ import java.io.File;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Random;
 import java.util.Vector;
 import java.util.Map.Entry;
@@ -250,6 +251,9 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
 
                 commandvec.add("/action/grabber/remove/%X%");
                 infovector.add("Remove packages %X% from linkgrabber");
+
+                commandvec.add("/action/grabber/move/%X%/%Y%");
+                infovector.add("Move %Y% (single link or list of links, each separated by NEWLINE char) to package %X%. In case the package given is not available, it will be newly created. Please note that if there are multiple packages named equally, the links will be put into the first one that is found. The term 'link' equals the 'browser url' you've provided previously, not the final download url. Package will be searched by case insensitive search.");
 
                 commandvec.add("/action/downloads/removeall");
                 infovector.add("Remove all scheduled downloads");
@@ -732,7 +736,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
                     response.addContent(ERROR_LINK_GRABBER_RUNNING);
                 } else {
                     ArrayList<LinkGrabberFilePackage> srcPackages = new ArrayList<LinkGrabberFilePackage>();
-                    String[] packagenames = Encoding.htmlDecode(new Regex(request.getRequestUrl(), ".*/action/grabber/join/(.+)").getMatch(0)).split("/");
+                    String[] packagenames = getHTMLDecoded(new Regex(request.getRequestUrl(), ".*/action/grabber/join/(.+)").getMatch(0).split("/"));
 
                     synchronized (LinkGrabberController.ControllerLock) {
                         LinkGrabberFilePackage destPackage = LinkGrabberController.getInstance().getFPwithName(packagenames[0]);
@@ -779,7 +783,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
                 if (LinkGrabberPanel.getLinkGrabber().isRunning()) {
                     response.addContent(ERROR_LINK_GRABBER_RUNNING);
                 } else {
-                    String[] packagenames = Encoding.htmlDecode(new Regex(request.getRequestUrl(), "(?is).*/action/grabber/rename/(.+)").getMatch(0)).split("/");
+                    String[] packagenames = getHTMLDecoded(new Regex(request.getRequestUrl(), "(?is).*/action/grabber/rename/(.+)").getMatch(0).split("/"));
 
                     synchronized (LinkGrabberController.ControllerLock) {
                         LinkGrabberFilePackage destPackage = LinkGrabberController.getInstance().getFPwithName(packagenames[0]);
@@ -818,7 +822,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
                     ArrayList<LinkGrabberFilePackage> addedlist = new ArrayList<LinkGrabberFilePackage>();
                     ArrayList<LinkGrabberFilePackage> packages = new ArrayList<LinkGrabberFilePackage>();
 
-                    String[] packagenames = Encoding.htmlDecode(new Regex(request.getRequestUrl(), "(?is).*/action/grabber/confirm/(.+)").getMatch(0)).split("/");
+                    String[] packagenames = getHTMLDecoded(new Regex(request.getRequestUrl(), "(?is).*/action/grabber/confirm/(.+)").getMatch(0).split("/"));
 
                     synchronized (LinkGrabberController.ControllerLock) {
                         packages.addAll(LinkGrabberController.getInstance().getPackages());
@@ -851,7 +855,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
                     ArrayList<String> delLinks = new ArrayList<String>();
                     ArrayList<String> delPackages = new ArrayList<String>();
 
-                    String[] types = Encoding.htmlDecode(new Regex(request.getRequestUrl(), "(?is).*/action/grabber/removetype/(.+)").getMatch(0)).split("/");
+                    String[] types = getHTMLDecoded(new Regex(request.getRequestUrl(), "(?is).*/action/grabber/removetype/(.+)").getMatch(0).split("/"));
 
                     synchronized (LinkGrabberController.ControllerLock) {
                         ArrayList<LinkGrabberFilePackage> packages = new ArrayList<LinkGrabberFilePackage>();
@@ -907,7 +911,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
                 }
             } else if (request.getRequestUrl().matches("(?is).*/action/grabber/remove/.+")) {
                 // remove denoted packages from grabber
-                String[] packagenames = Encoding.htmlDecode(new Regex(request.getRequestUrl(), ".*/action/grabber/remove/(.+)").getMatch(0)).split("/");
+                String[] packagenames = getHTMLDecoded(new Regex(request.getRequestUrl(), ".*/action/grabber/remove/(.+)").getMatch(0).split("/"));
 
                 if (LinkGrabberPanel.getLinkGrabber().isRunning()) {
                     response.addContent(ERROR_LINK_GRABBER_RUNNING);
@@ -937,6 +941,82 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
                         }
                     }
                 }
+            } else if (request.getRequestUrl().matches("(?is).*/action/grabber/move/.+")) {
+                // move links (index 1 to length-1) into package (index 0)
+
+                if (LinkGrabberPanel.getLinkGrabber().isRunning()) {
+                    response.addContent(ERROR_LINK_GRABBER_RUNNING);
+                } else {
+                    Regex reg = new Regex(request.getRequestUrl(), ".*/action/grabber/move/([^/]+)/(.+)");
+
+                    if (reg.getMatch(0) == null || reg.getMatch(1) == null) {
+                        response.addContent(ERROR_MALFORMED_REQUEST);
+                        return;
+                    }
+
+                    String dest_package_name = Encoding.htmlDecode(reg.getMatch(0));
+                    ArrayList<String> links = new ArrayList<String>();
+                    for (String tlink : HTMLParser.getHttpLinks(Encoding.urlDecode(reg.getMatch(1), false), null)) {
+                        links.add(tlink);
+                    }
+
+                    boolean packageWasAvailable = false;
+                    int numLinksMoved = 0;
+                    int numPackagesDeleted = 0;
+
+                    synchronized (LinkGrabberController.ControllerLock) {
+
+                        // search package
+                        LinkGrabberFilePackage dest_package = null;
+                        for (LinkGrabberFilePackage pack : LinkGrabberController.getInstance().getPackages()) {
+                            if (pack.getName().equalsIgnoreCase(dest_package_name)) {
+                                dest_package = pack;
+                                packageWasAvailable = true;
+                            }
+                        }
+
+                        // not available so create new
+                        if (dest_package == null) {
+                            dest_package = new LinkGrabberFilePackage(dest_package_name);
+                            dest_package.setComment("Created by JDRemoteControl move command");
+                        }
+
+                        // move links
+                        List<LinkGrabberFilePackage> availPacks = LinkGrabberController.getInstance().getPackages();
+                        for (int k = 0; k < availPacks.size(); ++k) {
+
+                            LinkGrabberFilePackage pack = availPacks.get(k);
+                            for (int i = 0; i < pack.size(); ++i) {
+
+                                if (pack == dest_package) {
+                                    continue;
+                                }
+
+                                DownloadLink packLink = pack.get(i);
+                                for (String userLink : links) {
+
+                                    if (packLink.getBrowserUrl().equalsIgnoreCase(userLink)) {
+                                        pack.remove(i);
+                                        --i;
+                                        dest_package.add(packLink);
+                                        ++numLinksMoved;
+                                        if (pack.size() == 0) {
+                                            --k; // adjust index as remove event
+                                                 // was fired
+                                        }
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+
+                        if (packageWasAvailable == false && dest_package.size() > 0) {
+                            LinkGrabberController.getInstance().addPackage(dest_package);
+                        }
+                    }
+
+                    response.addContent(numLinksMoved + " links were moved into " + (packageWasAvailable ? "the available" : "the newly created") + " package '" + dest_package_name + "'. " + numPackagesDeleted + " packages were deleted as they were emtpy.");
+                }
             } else if (request.getRequestUrl().matches("(?is).*/action/downloads/removeall")) {
                 // remove all packages in download list
                 ArrayList<FilePackage> packages = new ArrayList<FilePackage>();
@@ -951,7 +1031,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
                 // remove denoted packages from download list
                 ArrayList<FilePackage> packages = new ArrayList<FilePackage>();
                 ArrayList<FilePackage> removelist = new ArrayList<FilePackage>();
-                String[] packagenames = Encoding.htmlDecode(new Regex(request.getRequestUrl(), ".*/action/downloads/remove/(.+)").getMatch(0)).split("/");
+                String[] packagenames = getHTMLDecoded(new Regex(request.getRequestUrl(), ".*/action/downloads/remove/(.+)").getMatch(0).split("/"));
 
                 packages.addAll(DownloadController.getInstance().getPackages());
 
@@ -1016,6 +1096,16 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
             } else {
                 response.addContent(ERROR_MALFORMED_REQUEST);
             }
+        }
+
+        private String[] getHTMLDecoded(String[] arr) {
+            String[] retval = new String[arr.length];
+
+            for (int i = 0; i < arr.length; ++i) {
+                retval[i] = Encoding.htmlDecode(arr[i]);
+            }
+
+            return retval;
         }
 
         private Element addFilePackage(Document xml, FilePackage fp) {
