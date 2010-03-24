@@ -22,50 +22,46 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wrzuta.pl" }, urls = { "http://[\\w\\.]*?wrzuta\\.pl/katalog/\\w+.+" }, flags = { 0 })
 public class WrztPl extends PluginForDecrypt {
 
     public WrztPl(PluginWrapper wrapper) {
         super(wrapper);
-        // TODO Auto-generated constructor stub
     }
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setCookiesExclusive(true);
         br.getPage(parameter.getCryptedUrl());
-        String user = br.getRegex("<h3><strong>U.ytkownik</strong>/(.*?)</h3>").getMatch(0);
-        if (user == null) return null;
-        user = user.trim();
-        FilePackage fp = FilePackage.getInstance();
-        fp.setName(user);
-        String id = new Regex(parameter.getCryptedUrl(), "katalog/(\\w+)/?").getMatch(0);
-        if (id == null) return null;
-        id = id.trim();
+        if (br.containsHTML("Nie odnaleziono użytkownika")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        String user = br.getRegex("<div id=\"user_info_data_login\"><a href=\"http://(.*?)\\.wrzuta\\.pl/\"").getMatch(0);
+        if (user == null) user = br.getRegex("title=\"RSS 2\\.0\" href=\"http://(.*?)\\.wrzuta\\.pl/").getMatch(0);
+        // String id = new Regex(parameter.getCryptedUrl(),
+        // "katalog/(\\w+)/?").getMatch(0);
+        // if (id == null) return null;
+        // id = id.trim();
         int counter = 0;
-        int page = 1;
-        while (true) {
-            br.getPage("http://" + user + ".pl.wrzuta.pl/dir.php?key=" + id + "&page=" + page + "#");
-            page++;
-            String links[] = br.getRegex("<div class=\"title\"><a href=\"(.*?)\">.*?</a>").getColumn(0);
-            if (links == null || links.length == 0) break;
-            for (String link : links) {
-                if (new Regex(link, "http://[\\w\\.]*?wrzuta\\.pl/(audio|film|obraz)/\\w+.+").matches()) {
-                    DownloadLink dllink = this.createDownloadlink(link);
-                    dllink.setProperty("nameextra", counter);
-                    fp.add(dllink);
-                    counter++;
-                    decryptedLinks.add(dllink);
-                }
+        String links[] = br.getRegex("<div class=\"title\"><a href=\"(.*?)\">.*?</a>").getColumn(0);
+        for (String link : links) {
+            if (new Regex(link, "http://[\\w\\.]*?wrzuta\\.pl/(audio|film|obraz)/\\w+.+").matches()) {
+                DownloadLink dllink = this.createDownloadlink(link);
+                dllink.setProperty("nameextra", counter);
+                counter++;
+                decryptedLinks.add(dllink);
             }
         }
-
+        if (user != null) {
+            FilePackage fp = FilePackage.getInstance();
+            fp.setName(user.trim());
+            fp.addLinks(decryptedLinks);
+        }
         return decryptedLinks;
     }
 

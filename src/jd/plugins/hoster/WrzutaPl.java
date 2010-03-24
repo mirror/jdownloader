@@ -55,11 +55,13 @@ public class WrzutaPl extends PluginForHost {
         String filesize = br.getRegex(Pattern.compile("Rozmiar: <strong>(.*?)</strong>", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         filetype = new Regex(downloadLink.getDownloadURL(), ".*?wrzuta.pl/([^/]*)").getMatch(0);
-        downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
-        if (downloadLink.getIntegerProperty("nameextra", -1) != -1) {
-            filename = filename + "_" + downloadLink.getIntegerProperty("nameextra", -1);
-            downloadLink.setName(filename.trim());
-        } else
+        downloadLink.setDownloadSize(Regex.getSize(filesize.replace(",", ".")));
+        if (downloadLink.getIntegerProperty("nameextra", -1) != -1) filename = filename + "_" + downloadLink.getIntegerProperty("nameextra", -1);
+        // Set the ending if the file doesn't have it but don't set it as a
+        // final filename as it could be wrong!
+        if (downloadLink.getDownloadURL().contains("/audio/") && !filename.contains(".mp3"))
+            downloadLink.setName(filename.trim() + ".mp3");
+        else
             downloadLink.setName(filename.trim());
         return AvailableStatus.TRUE;
     }
