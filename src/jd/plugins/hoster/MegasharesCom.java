@@ -232,7 +232,7 @@ public class MegasharesCom extends PluginForHost {
         br.setDebug(true);
         loadpage(downloadLink.getDownloadURL());
         renew(br, 0);
-        if (br.containsHTML("class=\"button_free\">")) {
+        if (br.containsHTML("class=\"order_push_box_left_2\">")) {
             renew(br, 1);
         }
         if (br.containsHTML("Invalid link")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
