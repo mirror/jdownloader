@@ -1312,6 +1312,7 @@ plugins.hoster.general.enterpassword = Inserire password:
 plugins.hoster.general.passwordprotectedinput = Collegamenti protetti da password; inserire password:
 plugins.hoster.general.reenterpassword = Password errata. Inserire nuovamente la password:
 plugins.hoster.gigasizecom.errors.alreadyloading = Verifica impossibile: file già in caricamento
+plugins.hoster.hellsharecom.error.404 = Errore server 404. Il file potrebbe non essere disponibile per la vostra nazione!
 plugins.hoster.hellsharecom.error.currentloadis100percent = Carico attuale server 100%
 plugins.hoster.hellsharecom.error.serveruntermaximumload = Il server è a carico massimo
 plugins.hoster.httplinks.errors.basicauthneeded = Autorizzazione necessaria
