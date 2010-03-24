@@ -26,7 +26,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "adf.ly", "download.su", "wowebook.com", "link.songs.pk + songspk.info", "imageto.net", "clubteam.eu", "jforum.uni.cc" }, urls = { "http://[\\w\\.]*?adf\\.ly/[A-Za-z0-9]+", "http://[\\w\\.]*?download\\.su/go/\\?id=.*?=/files/\\d+/.+", "http://[\\w\\.]*?wowebook\\.com/(e-|non-e-)book/.*?/.*?\\.html", "http://[\\w\\.]*?(link\\.songs\\.pk/(popsong|song1|bhangra)\\.php\\?songid=|songspk\\.info/ghazals/download/ghazals\\.php\\?id=)[0-9]+", "http://[\\w\\.]*?imageto\\.net/(\\?v=|images/)[0-9a-z]+\\..{2,4}", "http://[\\w\\.]*?clubteam\\.eu/dl\\.php\\?id=\\d+\\&c=[a-zA-z0-9=]+", "http://[\\w\\.]*?jforum\\.uni\\.cc/protect/\\?r=[a-z0-9]+" }, flags = { 0, 0, 0, 0, 0, 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "adf.ly", "download.su", "wowebook.com", "link.songs.pk + songspk.info", "imageto.net", "clubteam.eu", "jforum.uni.cc", "linksole.com" }, urls = { "http://[\\w\\.]*?adf\\.ly/[A-Za-z0-9]+", "http://[\\w\\.]*?download\\.su/go/\\?id=.*?=/files/\\d+/.+", "http://[\\w\\.]*?wowebook\\.com/(e-|non-e-)book/.*?/.*?\\.html", "http://[\\w\\.]*?(link\\.songs\\.pk/(popsong|song1|bhangra)\\.php\\?songid=|songspk\\.info/ghazals/download/ghazals\\.php\\?id=)[0-9]+", "http://[\\w\\.]*?imageto\\.net/(\\?v=|images/)[0-9a-z]+\\..{2,4}", "http://[\\w\\.]*?clubteam\\.eu/dl\\.php\\?id=\\d+\\&c=[a-zA-z0-9=]+", "http://[\\w\\.]*?jforum\\.uni\\.cc/protect/\\?r=[a-z0-9]+", "http://[\\w\\.]*?linksole\\.com/[0-9a-z]+" }, flags = { 0, 0, 0, 0, 0, 0, 0, 0 })
 public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginForDecrypt {
 
     public DecrypterForRedirectServicesWithoutDirectRedirects(PluginWrapper wrapper) {
@@ -61,10 +61,16 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
             if (redirectLink == null) return null;
             br.getPage(redirectLink);
             finallink = br.getRedirectLocation();
-        } else if (parameter.contains("jforum.uni.cc")) {
+        } else if (parameter.contains("jforum.uni.cc/")) {
             finallink = br.getRegex("<frame name=\"page\" src=\"(.*?)\"").getMatch(0);
+        } else if (parameter.contains("linksole.com/")) {
+            finallink = br.getRegex("linkRefererUrl = '(.*?)';").getMatch(0);
+            if (finallink == null) finallink = br.getRegex("<iframe src=\"(.*?)\"").getMatch(0);
         }
-        if (finallink == null) return null;
+        if (finallink == null) {
+            logger.info("DecrypterForRedirectServicesWithoutDirectRedirects says \"Out of date\" for link: " + parameter);
+            return null;
+        }
         decryptedLinks.add(createDownloadlink(finallink));
 
         return decryptedLinks;

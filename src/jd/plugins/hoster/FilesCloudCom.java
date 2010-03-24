@@ -140,15 +140,14 @@ public class FilesCloudCom extends PluginForHost {
         br.setFollowRedirects(false);
         Form DLForm = br.getFormbyProperty("name", "F1");
         if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // // Ticket Time.....not needed in this case!
-        // String ttt =
-        // br.getRegex("countdown\">.*?(\\d+).*?</span>").getMatch(0);
-        // if (ttt != null) {
-        // logger.info("Waittime detected, waiting " + ttt.trim() +
-        // " seconds from now on...");
-        // int tt = Integer.parseInt(ttt);
-        // sleep(tt * 1001, downloadLink);
-        // }
+        // Ticket Time
+        String ttt = br.getRegex("countdown\">.*?(\\d+).*?</span>").getMatch(0);
+        if (ttt == null) ttt = br.getRegex("id=\"countdown_str\".*?<span id=\".*?\">.*?(\\d+).*?</span").getMatch(0);
+        if (ttt != null) {
+            logger.info("Waittime detected, waiting " + ttt.trim() + " seconds from now on...");
+            int tt = Integer.parseInt(ttt);
+            sleep(tt * 1001, downloadLink);
+        }
         String c = null;
         String passCode = null;
         boolean password = false;
@@ -278,7 +277,7 @@ public class FilesCloudCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 2;
+        return -1;
     }
 
     @Override

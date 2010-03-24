@@ -22,6 +22,7 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 
 import jd.PluginWrapper;
+import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -43,7 +44,7 @@ public class CraMitIn extends PluginForHost {
         // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
-    // XfileSharingProBasic Version 1.6, modified handleFree
+    // XfileSharingProBasic Version 1.6, modified handleFree & useragent
     @Override
     public String getAGBLink() {
         return COOKIE_HOST + "/tos.html";
@@ -55,13 +56,10 @@ public class CraMitIn extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.setFollowRedirects(false);
         br.setCookie(COOKIE_HOST, "lang", "english");
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(No such file|No such user exist|File not found)")) {
-            logger.warning("file is 99,99% offline, throwing \"file not found\" now...");
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
         String filename = br.getRegex("You have requested.*?http://.*?[a-z0-9]{12}/(.*?)</font>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("fname\" value=\"(.*?)\"").getMatch(0);
@@ -84,6 +82,10 @@ public class CraMitIn extends PluginForHost {
             if (filesize == null) {
                 filesize = br.getRegex("</font>[ ]+\\((.*?)\\)(.*?)</font>").getMatch(0);
             }
+        }
+        if (br.containsHTML("<b>File Not Found</b><br><br>") && (filename == null || filename.matches(""))) {
+            logger.warning("file is 99,99% offline, throwing \"file not found\" now...");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (filename == null || filename.equals("")) {
             if (br.containsHTML("You have reached the download-limit")) {

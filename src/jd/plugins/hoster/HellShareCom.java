@@ -197,6 +197,7 @@ public class HellShareCom extends PluginForHost {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, false, 1);
             if (!(dl.getConnection().isContentDisposition())) {
                 br.followConnection();
+                if (br.getURL().contains("errno=404")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.HellShareCom.error.404", "404 Server error. File might not be available for your country!"));
                 if (br.containsHTML("<h1>File not found</h1>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 if (br.containsHTML("The server is under the maximum load")) {
                     logger.info(JDL.L("plugins.hoster.HellShareCom.error.ServerUnterMaximumLoad", "Server is under maximum load"));
