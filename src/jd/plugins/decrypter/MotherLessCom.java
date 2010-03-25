@@ -24,10 +24,11 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "motherless.com" }, urls = { "http://([\\w\\.]*?|members\\.)motherless\\.com/((?!movies|thumbs)\\w)\\w*" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "motherless.com" }, urls = { "http://([\\w\\.]*?|members\\.)motherless\\.com/((?!movies|thumbs)\\w)[A-Z0-9/]+" }, flags = { 0 })
 public class MotherLessCom extends PluginForDecrypt {
 
     public MotherLessCom(PluginWrapper wrapper) {
@@ -36,32 +37,65 @@ public class MotherLessCom extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        String fpName = parameter.getStringProperty("package");
         br.setFollowRedirects(true);
         br.getPage(parameter.toString());
         if (br.containsHTML("Not Available") || br.containsHTML("not found") || br.containsHTML("You will be redirected to")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-        String parm = parameter.toString();
-        String filelink = br.getRegex("var __file_url = '([^']*)';").getMatch(0);
-        if (filelink == null) return null;
-        String matches = br.getRegex("s1.addParam\\('flashvars','file=([^)]*)").getMatch(0);
-        if (matches == null) {
-            matches = br.getRegex("(Not Available)").getMatch(0);
-            if (matches == null) return null;
-            logger.warning("The requested document was not found on this server.");
-            logger.warning(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-            return decryptedLinks;
+        if (br.containsHTML("player.swf")) {
+            String parm = parameter.toString();
+            String filelink = br.getRegex("var __file_url = '([^']*)';").getMatch(0);
+            if (filelink == null) return null;
+            String matches = br.getRegex("s1.addParam\\('flashvars','file=([^)]*)").getMatch(0);
+            if (matches == null) {
+                matches = br.getRegex("(Not Available)").getMatch(0);
+                if (matches == null) return null;
+                logger.warning("The requested document was not found on this server.");
+                logger.warning(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+                return decryptedLinks;
+            }
+            filelink = rot13(filelink);
+            String downloadlink = "http://members.motherless.com/movies/" + filelink + ".flv?start=0&id=player&client=FLASH%20WIN%2010,0,32,18&version=4.1.60";
+            DownloadLink dlink = createDownloadlink(downloadlink);
+            dlink.setBrowserUrl(parm);
+            dlink.setFinalFileName(filelink.split("-")[0] + ".flv");
+            decryptedLinks.add(dlink);
+        } else if (br.containsHTML("class=\"media_image\"")) {
+            ArrayList<String> pages = new ArrayList<String>();
+            pages.add("currentPage");
+            String pagenumbers[] = br.getRegex("page=(\\d+)\"").getColumn(0);
+            if (!(pagenumbers == null && !(pagenumbers.length == 0))) {
+                for (String aPageNumer : pagenumbers) {
+                    if (!pages.contains(aPageNumer)) pages.add(aPageNumer);
+                }
+            }
+            progress.setRange(pages.size());
+
+            logger.info("Found " + pages.size() + " pages, decrypting now...");
+            for (String getthepage : pages) {
+                if (!getthepage.equals("currentPage")) br.getPage(parameter.toString() + "?page=" + getthepage);
+                fpName = br.getRegex("<title>MOTHERLESS\\.COM - Moral Free Hosting : Galleries :(.*?)</title>").getMatch(0);
+                if (fpName == null) fpName = br.getRegex("<h1 style=\"font-size: 1.4em; font-weight: bold;\">(.*?)</h1>").getMatch(0);
+                String[] links = br.getRegex("<div class=\"media_image\" id=\".*?\">.*?<a href=\"(.*?)\">").getColumn(0);
+                if (links == null || links.length == 0) br.getRegex("<a href=\"(http://motherless\\.com/[A-Z0-9]+/[A-Z0-9]+)\"").getColumn(0);
+                if (links == null || links.length == 0) return null;
+                logger.info("Decrypting page " + getthepage + " which contains " + links.length + " links.");
+                for (String singlelink : links) {
+                    DownloadLink dl = createDownloadlink(singlelink);
+                    if (fpName != null) dl.setProperty("package", fpName);
+                    decryptedLinks.add(dl);
+                }
+                progress.increase(1);
+            }
+        } else {
+            String finallink = br.getRegex("\"(http://members\\.motherless\\.com/img/.*?)\"").getMatch(0);
+            if (finallink == null) return null;
+            decryptedLinks.add(createDownloadlink(finallink.replace("motherless", "motherlesspictures")));
         }
-
-        filelink = rot13(filelink);
-
-        String downloadlink = "http://members.motherless.com/movies/" + filelink + ".flv?start=0&id=player&client=FLASH%20WIN%2010,0,32,18&version=4.1.60";
-        DownloadLink dlink = createDownloadlink(downloadlink);
-
-        dlink.setBrowserUrl(parm);
-
-        dlink.setFinalFileName(filelink.split("-")[0] + ".flv");
-
-        decryptedLinks.add(dlink);
-
+        if (fpName != null) {
+            FilePackage fp = FilePackage.getInstance();
+            fp.setName(fpName.trim());
+            fp.addLinks(decryptedLinks);
+        }
         return decryptedLinks;
     }
 
@@ -80,5 +114,4 @@ public class MotherLessCom extends PluginForDecrypt {
         }
         return output;
     }
-
 }

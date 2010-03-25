@@ -52,7 +52,7 @@ public class ShareFlareNet extends PluginForHost {
                 filename = br.getRegex("name=\"realname\" value=\"(.*?)\"").getMatch(0);
             }
         }
-        String filesize = br.getRegex("<small>\\((.*?)\\)</small>").getMatch(0);
+        String filesize = br.getRegex("name=\"sssize\" value=\"(.*?)\"").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(filename.trim());
         if (filesize != null) link.setDownloadSize(Regex.getSize(filesize));

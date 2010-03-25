@@ -27,15 +27,20 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "motherless.com" }, urls = { "http://([\\w\\.]*?|members\\.)motherless\\.com/(movies|thumbs).*" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "motherless.com" }, urls = { "http://([\\w\\.]*?|members\\.)(motherless\\.com/(movies|thumbs).*|motherlesspictures\\.com/[a-zA-Z0-9/.]+)" }, flags = { 0 })
 public class MotherLessCom extends PluginForHost {
 
     public MotherLessCom(PluginWrapper wrapper) {
         super(wrapper);
+        this.setStartIntervall(2500l);
     }
 
     public String getAGBLink() {
         return "http://motherless.com/terms";
+    }
+
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("motherlesspictures", "motherless"));
     }
 
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws IOException, PluginException {
@@ -50,7 +55,7 @@ public class MotherLessCom extends PluginForHost {
     }
 
     public void handleFree(DownloadLink link) throws Exception {
-        requestFileInformation(link);
+        if (!link.getDownloadURL().contains("/img/")) requestFileInformation(link);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

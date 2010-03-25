@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.RandomUserAgent;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -36,23 +37,19 @@ public class LnkBCm extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.setFollowRedirects(false);
         String found = null;
         br.getPage(parameter);
         if (br.getRedirectLocation() != null) {
             found = br.getRedirectLocation();
         } else {
-            // if (found == null) found =
-            // br.getRegex("<div id=\"skipBtn\">.*?<a href=\"(.*?)\"").getMatch(0);
             String[] lol = HTMLParser.getHttpLinks(br.toString(), "");
             for (String pwned : lol) {
-                if (!pwned.equals(parameter)) decryptedLinks.add(createDownloadlink(pwned));
+                if (!pwned.equals(parameter) && !pwned.endsWith(".gif")) decryptedLinks.add(createDownloadlink(pwned));
             }
             return decryptedLinks;
         }
-        // I don't know if this pattern still is valid. May be that there is a
-        // version for iframes, and one without iframes.
-        // Thats why I left it
         if (found == null) return null;
         decryptedLinks.add(createDownloadlink(found));
         return decryptedLinks;
