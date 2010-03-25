@@ -253,7 +253,7 @@ public class SharingMatrixCom extends PluginForHost {
             if (Integer.parseInt(br2.toString().trim()) != 1) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
 
         }
-        if (ctjvv > 80) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
+        if (ctjvv > 80) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, ctjvv * 1001l);
         this.sleep(ctjvv * 1000, downloadLink);
         String dl_id = br2.getPage("/ajax_scripts/dl.php").trim();
         br2.getPage("/ajax_scripts/_get2.php?link_id=" + linkid + "&link_name=" + link_name + "&dl_id=" + dl_id + (passCode == null ? "" : "&password=" + Encoding.urlEncode(passCode)));

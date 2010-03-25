@@ -28,10 +28,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "empflix.com" }, urls = { "http://[\\w\\.]*?empflix\\.com/view\\.php\\?id=\\d+" }, flags = { 0 })
-public class EmpFlixCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yuvutu.com" }, urls = { "http://[\\w\\.]*?yuvutu\\.com/modules\\.php\\?name=Video\\&op=view\\&video_id=\\d+" }, flags = { 0 })
+public class YuvutuCom extends PluginForHost {
 
-    public EmpFlixCom(PluginWrapper wrapper) {
+    public YuvutuCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -39,19 +39,21 @@ public class EmpFlixCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.empflix.com/terms.php";
+        return "http://www.yuvutu.com/modules.php?name=Video&op=terms";
     }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.setCookie("http://www.yuvutu.com/", "lang", "english");
+        br.setCookie("http://www.yuvutu.com/", "warningcookie", "viewed");
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("This video does not exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>(.*?), Free Streaming Porn</title>").getMatch(0);
-        if (filename == null) filename = br.getRegex("class=\"leftSideView\">.*?<div class=\"line\">.*?<h2>(.*?)</h2>").getMatch(0);
-        dllink = br.getRegex("class=\"linkRight\">.*?<span class=\"icon iconDownload\"><img src=\"images/blank\\.gif\"></span>.*?<a href=\"(http.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://cdn\\.empflix\\.com/empdl/.*?/.*?key=[a-z0-9]+)\"").getMatch(0);
+        if (br.containsHTML(">The video you requested does not exist<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("Amateur Videos, Amateur Porn, TV Sex Porno XXX -(.*?)</title>").getMatch(0);
+        if (filename == null) filename = br.getRegex("<span class=\"authorName\">.*?<a href=\".*?\">.*?</a>.*?</span>(.*?)</td>.*?<td class=\"videoTitle\"").getMatch(0);
+        dllink = br.getRegex("value=\"file=(http.*?)\\&width").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("(http://vs\\d+\\.yuvutu\\.com/dl/.*?/streams/.*?\\.flv)").getMatch(0);
         if (filename == null || dllink == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         filename = filename.trim();
         downloadLink.setFinalFileName(filename + ".flv");
