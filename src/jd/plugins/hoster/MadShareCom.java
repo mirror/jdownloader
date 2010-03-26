@@ -25,7 +25,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "madshare.com" }, urls = { "http://[\\w\\.]*?madshare.com/download/[a-zA-Z0-9]+/" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "madshare.com" }, urls = { "http://[\\w\\.]*?madshare\\.com/en/download/[a-zA-Z0-9]+/" }, flags = { 0 })
 public class MadShareCom extends PluginForHost {
 
     public MadShareCom(PluginWrapper wrapper) {
@@ -63,13 +63,19 @@ public class MadShareCom extends PluginForHost {
         if (id == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage("http://www.madshare.com/api/get-download-id?id=" + id);
         // Usually happens when you try to start more than 1 dl at the same time
-        if (br.containsHTML("dailyLimitExceeded")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
+        if (br.containsHTML("dailyLimitExceeded")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1000l);
         String server = br.getRegex("server.*?'(.*?)'").getMatch(0);
         String key = br.getRegex("key.*?'(.*?)'").getMatch(0);
         if (server == null || key == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String dllink = "http://" + server + "/download/" + key;
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        int tt = 61;
+        int tt = 60;
+        String ttt = br.getRegex("class=\"counter\" style='font-size:48px;color:#f15a22;'>(\\d+)</span><br />seconds left</b>").getMatch(0);
+        if (ttt != null) {
+            logger.info("Waittime detected, waiting " + ttt.trim() + " seconds from now on...");
+            tt = Integer.parseInt(ttt);
+        }
+        tt = tt + 1;
         sleep(tt * 1001, link);
         br.setDebug(true);
         jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1).startDownload();

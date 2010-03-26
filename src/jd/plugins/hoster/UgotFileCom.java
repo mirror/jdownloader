@@ -16,6 +16,9 @@
 
 package jd.plugins.hoster;
 
+import java.io.IOException;
+import java.util.ArrayList;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -104,6 +107,7 @@ public class UgotFileCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
+        br.getPage(link.getDownloadURL());
         // IP:Blocked handling
         int sleep = 30;
         if (br.containsHTML("seconds: ")) {
@@ -133,20 +137,92 @@ public class UgotFileCom extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
-        this.setBrowserExclusive();
-        br.getPage(parameter.getDownloadURL());
-        if (br.containsHTML("FileId and filename mismatched or file does not exist!")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML("has been deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>(.*?) - Free File Hosting - uGotFile</title>").getMatch(0);
-        String filesize = br.getRegex("<span style=\"font-size: 14px;\">(.*?)</span>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        filesize = filesize.replace("&nbsp;", "");
-        parameter.setName(filename.trim());
-        parameter.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "")));
-        return AvailableStatus.TRUE;
+    public boolean checkLinks(DownloadLink[] urls) {
+        if (urls == null || urls.length == 0) { return false; }
+        try {
+            ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
+            int index = 0;
+            while (true) {
+                links.clear();
+                while (true) {
+                    /* we test 100 links at once */
+                    if (index == urls.length || links.size() > 100) break;
+                    links.add(urls[index]);
+                    index++;
+                }
+                br.getPage("http://ugotfile.com/tools/check-links");
+                String post = "links=";
+                for (DownloadLink dl : links) {
+                    post = post + dl.getDownloadURL();
+                }
+                br.postPage("http://ugotfile.com/tools/check-links", post);
+                for (DownloadLink dl : links) {
+                    String fileid = new Regex(dl.getDownloadURL(), "ugotfile.com/file/(\\d+)/").getMatch(0);
+                    if (fileid == null) {
+                        logger.warning("Ugotfile availablecheck is broken!");
+                        return false;
+                    }
+                    String regexForThisLink = "(class='(green|red) (odd|even)'><td>http://ugotfile\\.com/file/" + fileid + "/.*?</td><td align='right'>.*?</td><td align='center'>(Alive|Dead)</td>)";
+                    String theData = br.getRegex(regexForThisLink).getMatch(0);
+                    if (theData == null) {
+                        logger.warning("Ugotfile availablecheck is broken!");
+                        return false;
+                    }
+                    String classx = new Regex(theData, "class='(.*?)'").getMatch(0);
+                    String status = new Regex(theData, "<td align='center'>(.*?)</td").getMatch(0);
+                    if (classx.contains("red") || !status.matches("Alive")) {
+                        dl.setAvailable(false);
+                    } else {
+                        String filename = new Regex(theData, "ugotfile.com/file/\\d+/(.*?)</td>").getMatch(0);
+                        String filesize = new Regex(theData, "<td align='right'>(.*?)</td>").getMatch(0);
+                        if (filename == null || filesize == null) {
+                            logger.warning("Ugotfile availablecheck is broken!");
+                            dl.setAvailable(false);
+                        } else {
+                            dl.setName(filename);
+                            dl.setDownloadSize(Regex.getSize(filesize));
+                            dl.setAvailable(true);
+                        }
+                    }
+                }
+                if (index == urls.length) break;
+            }
+        } catch (Exception e) {
+            return false;
+        }
+        return true;
     }
+
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException {
+        checkLinks(new DownloadLink[] { downloadLink });
+        if (!downloadLink.isAvailabilityStatusChecked()) {
+            downloadLink.setAvailableStatus(AvailableStatus.UNCHECKABLE);
+        }
+        return downloadLink.getAvailableStatus();
+    }
+
+    // Old availablecheck
+    // public AvailableStatus requestFileInformation(DownloadLink parameter)
+    // throws Exception {
+    // this.setBrowserExclusive();
+    // br.getPage(parameter.getDownloadURL());
+    // if
+    // (br.containsHTML("FileId and filename mismatched or file does not exist!"))
+    // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+    // if (br.containsHTML("has been deleted")) throw new
+    // PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+    // String filename =
+    // br.getRegex("<title>(.*?) - Free File Hosting - uGotFile</title>").getMatch(0);
+    // String filesize =
+    // br.getRegex("<span style=\"font-size: 14px;\">(.*?)</span>").getMatch(0);
+    // if (filename == null || filesize == null) throw new
+    // PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+    // filesize = filesize.replace("&nbsp;", "");
+    // parameter.setName(filename.trim());
+    // parameter.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "")));
+    // return AvailableStatus.TRUE;
+    // }
 
     @Override
     public void reset() {
