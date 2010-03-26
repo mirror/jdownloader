@@ -55,6 +55,7 @@ public class XFileSharingProBasic extends PluginForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
+    private static final String passwordText = "(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)";
     private static final String COOKIE_HOST = "http://ForDevsToPlayWith.com";
     public boolean nopremium = false;
 
@@ -109,8 +110,12 @@ public class XFileSharingProBasic extends PluginForHost {
     }
 
     public void doFree(DownloadLink downloadLink) throws Exception, PluginException {
+        String passCode = null;
         boolean resumable = true;
         int maxchunks = 0;
+        Form lolform = br.getFormbyProperty("name", "F1");
+        lolform.put("method_free2", "1");
+        br.submitForm(lolform);
         // If the filesize regex above doesn't match you can copy this part into
         // the available status (and delete it here)
         Form freeform = br.getFormBySubmitvalue("Kostenloser+Download");
@@ -124,7 +129,7 @@ public class XFileSharingProBasic extends PluginForHost {
             freeform.remove("method_premium");
             br.submitForm(freeform);
         }
-        checkErrors(downloadLink);
+        checkErrors(downloadLink, false, passCode);
         String md5hash = br.getRegex("<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
         if (md5hash != null) {
             md5hash = md5hash.trim();
@@ -142,10 +147,9 @@ public class XFileSharingProBasic extends PluginForHost {
             int tt = Integer.parseInt(ttt);
             sleep(tt * 1001, downloadLink);
         }
-        String passCode = null;
         boolean password = false;
         boolean recaptcha = false;
-        if (br.containsHTML("(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)")) {
+        if (br.containsHTML(passwordText)) {
             password = true;
             logger.info("The downloadlink seems to be password protected.");
         }
@@ -200,16 +204,8 @@ public class XFileSharingProBasic extends PluginForHost {
             rc.load();
             File cf = rc.downloadCaptcha(getLocalCaptchaFile());
             String c = getCaptchaCode(cf, downloadLink);
-            if (password == true) {
-                if (downloadLink.getStringProperty("pass", null) == null) {
-                    passCode = Plugin.getUserInput("Password?", downloadLink);
-                } else {
-                    /* gespeicherten PassCode holen */
-                    passCode = downloadLink.getStringProperty("pass", null);
-                }
-                rc.getForm().put("password", passCode);
-                logger.info("Put password \"" + passCode + "\" entered by user in the DLForm.");
-                password = false;
+            if (password) {
+                passCode = handlePassword(passCode, rc.getForm(), downloadLink);
             }
             recaptcha = true;
             rc.setCode(c);
@@ -220,16 +216,9 @@ public class XFileSharingProBasic extends PluginForHost {
         // If the hoster uses Re Captcha the form has already been sent before
         // here so here it's checked. Most hosters don't use Re Captcha so
         // usually recaptcha is false
-        if (recaptcha == false) {
-            if (password == true) {
-                if (downloadLink.getStringProperty("pass", null) == null) {
-                    passCode = Plugin.getUserInput("Password?", downloadLink);
-                } else {
-                    /* gespeicherten PassCode holen */
-                    passCode = downloadLink.getStringProperty("pass", null);
-                }
-                DLForm.put("password", passCode);
-                logger.info("Put password \"" + passCode + "\" entered by user in the DLForm.");
+        if (!recaptcha) {
+            if (password) {
+                passCode = handlePassword(passCode, DLForm, downloadLink);
             }
             jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLForm, resumable, maxchunks);
             logger.info("Submitted DLForm");
@@ -242,22 +231,12 @@ public class XFileSharingProBasic extends PluginForHost {
         } catch (Exception e) {
             error = true;
         }
-        if (br.getRedirectLocation() != null || error == true) {
+        if (br.getRedirectLocation() != null || error) {
             br.followConnection();
             logger.info("followed connection...");
             String dllink = br.getRedirectLocation();
             if (dllink == null) {
-                checkErrors(downloadLink);
-                if (br.containsHTML("You're using all download slots for IP")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
-                if (br.containsHTML("(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input|Wrong password)")) {
-                    logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
-                    downloadLink.setProperty("pass", null);
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
-                }
-                if (br.containsHTML("Wrong captcha")) {
-                    logger.warning("Wrong captcha or wrong password!");
-                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                }
+                checkErrors(downloadLink, true, passCode);
                 if (dllink == null) {
                     dllink = br.getRegex("dotted #bbb;padding.*?<a href=\"(.*?)\"").getMatch(0);
                     if (dllink == null) {
@@ -305,6 +284,11 @@ public class XFileSharingProBasic extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         doFree(downloadLink);
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     private void login(Account account) throws Exception {
@@ -383,25 +367,13 @@ public class XFileSharingProBasic extends PluginForHost {
             if (dllink == null) {
                 Form DLForm = br.getFormbyProperty("name", "F1");
                 if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                if (br.containsHTML("(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)")) {
-                    if (link.getStringProperty("pass", null) == null) {
-                        passCode = Plugin.getUserInput("Password?", link);
-                    } else {
-                        /* gespeicherten PassCode holen */
-                        passCode = link.getStringProperty("pass", null);
-                    }
-                    DLForm.put("password", passCode);
-                    logger.info("Put password \"" + passCode + "\" entered by user in the DLForm.");
+                if (br.containsHTML(passwordText)) {
+                    passCode = handlePassword(passCode, DLForm, link);
                 }
                 br.submitForm(DLForm);
-                checkErrors(link);
                 dllink = br.getRedirectLocation();
                 if (dllink == null) {
-                    if (br.containsHTML("(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input|Wrong password)")) {
-                        logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
-                        link.setProperty("pass", null);
-                        throw new PluginException(LinkStatus.ERROR_RETRY);
-                    }
+                    checkErrors(link, true, passCode);
                     if (dllink == null) {
                         dllink = br.getRegex("dotted #bbb;padding.*?<a href=\"(.*?)\"").getMatch(0);
                         if (dllink == null) {
@@ -450,16 +422,30 @@ public class XFileSharingProBasic extends PluginForHost {
         return -1;
     }
 
-    @Override
-    public void reset() {
+    public String handlePassword(String passCode, Form pwform, DownloadLink thelink) throws IOException, PluginException {
+        if (thelink.getStringProperty("pass", null) == null) {
+            passCode = Plugin.getUserInput("Password?", thelink);
+        } else {
+            /* gespeicherten PassCode holen */
+            passCode = thelink.getStringProperty("pass", null);
+        }
+        pwform.put("password", passCode);
+        logger.info("Put password \"" + passCode + "\" entered by user in the DLForm.");
+        return passCode;
     }
 
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
-    }
-
-    public void checkErrors(DownloadLink theLink) throws NumberFormatException, PluginException {
+    public void checkErrors(DownloadLink theLink, boolean checkAll, String passCode) throws NumberFormatException, PluginException {
+        if (checkAll) {
+            if (br.containsHTML("(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input|Wrong password)")) {
+                logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
+                theLink.setProperty("pass", null);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+            if (br.containsHTML("Wrong captcha")) {
+                logger.warning("Wrong captcha or wrong password!");
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
+        }
         // Some waittimes...
         if (br.containsHTML("You have to wait")) {
             int minutes = 0, seconds = 0, hours = 0;
@@ -491,6 +477,7 @@ public class XFileSharingProBasic extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
             }
         }
+        if (br.containsHTML("You're using all download slots for IP")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
         if (br.containsHTML("Error happened when generating Download Link")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error!", 10 * 60 * 1000l);
         // Errorhandling for only-premium links
         if (br.containsHTML("(You can download files up to.*?only|Upgrade your account to download bigger files|This file reached max downloads)")) {
@@ -504,6 +491,10 @@ public class XFileSharingProBasic extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium");
             }
         }
+    }
+
+    @Override
+    public void reset() {
     }
 
     @Override

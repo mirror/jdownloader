@@ -58,8 +58,9 @@ public class Vipfilecom extends PluginForHost {
         if (br.containsHTML("This file not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         // This is made for 2 languages
         String fileSize = br.getRegex("<span.*?(Size|Ðàçìåð):.*?<b style=.*?>(.*?)</b>").getMatch(1);
-        if (fileSize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (fileSize == null) fileSize = br.getRegex("name=\"sssize\" value=\"(.*?)\"").getMatch(0);
         String fileName = br.getRegex("<input type=\"hidden\" name=\"realname\" value=\"(.*?)\" />").getMatch(0);
+        if (fileSize == null || fileName == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setDownloadSize(Regex.getSize(fileSize));
         downloadLink.setName(fileName);
         String link = Encoding.htmlDecode(br.getRegex(Pattern.compile(freelinkregex, Pattern.CASE_INSENSITIVE)).getMatch(0));
