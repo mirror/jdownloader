@@ -113,9 +113,6 @@ public class XFileSharingProBasic extends PluginForHost {
         String passCode = null;
         boolean resumable = true;
         int maxchunks = 0;
-        Form lolform = br.getFormbyProperty("name", "F1");
-        lolform.put("method_free2", "1");
-        br.submitForm(lolform);
         // If the filesize regex above doesn't match you can copy this part into
         // the available status (and delete it here)
         Form freeform = br.getFormBySubmitvalue("Kostenloser+Download");
