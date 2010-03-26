@@ -42,12 +42,10 @@ public class SpiegelDe extends PluginForHost {
         super(wrapper);
     }
 
-    // @Override
     public String getAGBLink() {
         return AGB_LINK;
     }
 
-    // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException {
         URLConnectionAdapter urlConnection;
         try {
@@ -66,19 +64,12 @@ public class SpiegelDe extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    // @Override
-    /*
-     * public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    // @Override
     public void reset() {
     }
 
-    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         this.requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, downloadLink.getDownloadURL(), false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), false, 1);
 
         if (new Regex(downloadLink.getDownloadURL(), PATTERN_SUPPORTED_FOTOSTRECKE).matches()) {
             dl.startDownload();
@@ -101,12 +92,10 @@ public class SpiegelDe extends PluginForHost {
         }
     }
 
-    // @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return -1;
     }
 
-    // @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 

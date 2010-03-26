@@ -218,3 +218,4 @@ jd/plugins/hoster/BizHatCom.class
 libs/JUnique.jar
 jd/plugins/decrypter/SvflCmPrct.class
 jd/plugins/hoster/SavefileCom.class
+jd/plugins/hoster/LeteckaPostaCz.class

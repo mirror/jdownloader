@@ -29,17 +29,20 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharegadget.com" }, urls = { "http://[\\w\\.]*?sharegadget\\.com/[0-9]+." }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharegadget.com" }, urls = { "http://[\\w\\.]*?(sharegadget\\.com|leteckaposta\\.cz)/[0-9]+." }, flags = { 0 })
 public class ShareGadgetCom extends PluginForHost {
 
     public ShareGadgetCom(PluginWrapper wrapper) {
         super(wrapper);
-        // this.setStartIntervall(5000l);
     }
 
     @Override
     public String getAGBLink() {
         return "http://sharegadget.com/tos";
+    }
+
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("leteckaposta.cz", "sharegadget.com"));
     }
 
     @Override
@@ -64,14 +67,14 @@ public class ShareGadgetCom extends PluginForHost {
         br.setFollowRedirects(true);
         // this.sleep(40000, downloadLink); //Remove if they find a better way
         // to force wait time
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, true, 1);
         dl.startDownload();
 
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return -1;
     }
 
     @Override
