@@ -141,7 +141,10 @@ public class Srnnks extends PluginForDecrypt {
 
             // try captcha max 5 times
             for (int i = 0; i < 5; i++) {
-                progress.setRange(100, 5);
+
+                progress.setRange(100);
+                progress.setStatus(5);
+
                 // suche wahrscheinlichste form
                 // progress.setStatusText("Suche Captcha Form");
                 Form form = null;
