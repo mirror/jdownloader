@@ -1197,15 +1197,15 @@ abstract public class DownloadInterface {
      * über error() kann ein fehler gemeldet werden. DIe Methode entscheided
      * dann ob dieser fehler zu einem Abbruch führen muss
      */
-    protected void error(int id, String string) {
-        if (!externalDownloadStop()) {
-            logger.severe("Error occured: " + LinkStatus.toString(id));
-        }
+    protected synchronized void error(int id, String string) {
+        /* if we recieved external stop, then we dont have to handle errors */
+        if (externalDownloadStop()) return;
 
-        if (errors.indexOf(id) < 0) {
-            errors.add(id);
-        }
-        if (fatalErrorOccured) { return; }
+        logger.severe("Error occured: " + LinkStatus.toString(id));
+
+        if (errors.indexOf(id) < 0) errors.add(id);
+        if (fatalErrorOccured) return;
+        System.out.println("Oh OH 2 set " + id + LinkStatus.toString(id));
         linkStatus.addStatus(id);
 
         linkStatus.setErrorMessage(string);

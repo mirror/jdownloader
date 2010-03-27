@@ -142,7 +142,10 @@ public class UgotFileCom extends PluginForHost {
         try {
             ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
             int index = 0;
+            StringBuilder sb = new StringBuilder();
             while (true) {
+                sb.delete(0, sb.capacity());
+                sb.append("links=");
                 links.clear();
                 while (true) {
                     /* we test 100 links at once */
@@ -151,11 +154,17 @@ public class UgotFileCom extends PluginForHost {
                     index++;
                 }
                 br.getPage("http://ugotfile.com/tools/check-links");
-                String post = "links=";
+                int c = 0;
                 for (DownloadLink dl : links) {
-                    post = post + dl.getDownloadURL();
+                    /*
+                     * append fake filename, because api will not report
+                     * anything else
+                     */
+                    if (c > 0) sb.append("%0D%0A");
+                    sb.append(Encoding.urlEncode(dl.getDownloadURL()));
+                    c++;
                 }
-                br.postPage("http://ugotfile.com/tools/check-links", post);
+                br.postPage("http://ugotfile.com/tools/check-links", sb.toString());
                 for (DownloadLink dl : links) {
                     String fileid = new Regex(dl.getDownloadURL(), "ugotfile.com/file/(\\d+)/").getMatch(0);
                     if (fileid == null) {
@@ -170,20 +179,18 @@ public class UgotFileCom extends PluginForHost {
                     }
                     String classx = new Regex(theData, "class='(.*?)'").getMatch(0);
                     String status = new Regex(theData, "<td align='center'>(.*?)</td").getMatch(0);
+                    String filename = new Regex(theData, "ugotfile.com/file/\\d+/(.*?)</td>").getMatch(0);
+                    String filesize = new Regex(theData, "<td align='right'>(.*?)</td>").getMatch(0);
                     if (classx.contains("red") || !status.matches("Alive")) {
                         dl.setAvailable(false);
+                    } else if (filename == null || filesize == null) {
+                        logger.warning("Ugotfile availablecheck is broken!");
+                        dl.setAvailable(false);
                     } else {
-                        String filename = new Regex(theData, "ugotfile.com/file/\\d+/(.*?)</td>").getMatch(0);
-                        String filesize = new Regex(theData, "<td align='right'>(.*?)</td>").getMatch(0);
-                        if (filename == null || filesize == null) {
-                            logger.warning("Ugotfile availablecheck is broken!");
-                            dl.setAvailable(false);
-                        } else {
-                            dl.setName(filename);
-                            dl.setDownloadSize(Regex.getSize(filesize));
-                            dl.setAvailable(true);
-                        }
+                        dl.setAvailable(true);
                     }
+                    if (filename != null) dl.setName(filename);
+                    if (filesize != null) dl.setDownloadSize(Regex.getSize(filesize));
                 }
                 if (index == urls.length) break;
             }

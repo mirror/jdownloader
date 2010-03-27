@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
@@ -30,6 +31,7 @@ import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -111,13 +113,18 @@ public class HotFileCom extends PluginForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl.setFilenameFix(true);
+        /* filename workaround */
+        String urlFileName = Plugin.getFileNameFromURL(new URL(br.getURL()));
+        urlFileName = Encoding.htmlDecode(urlFileName);
+        downloadLink.setFinalFileName(urlFileName);
         dl.startDownload();
     }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
+        /* workaround as server does not send correct encoding information */
+        br.setCustomCharset("UTF-8");
         br.setCookie("http://hotfile.com", "lang", "en");
         br.getPage(parameter.getDownloadURL());
         if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
@@ -192,7 +199,14 @@ public class HotFileCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.setDebug(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dl_url, false, 1);
-        dl.setFilenameFix(true);
+        if (!dl.getConnection().isContentDisposition()) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        /* filename workaround */
+        String urlFileName = Plugin.getFileNameFromURL(new URL(br.getURL()));
+        urlFileName = Encoding.htmlDecode(urlFileName);
+        link.setFinalFileName(urlFileName);
         dl.startDownload();
     }
 

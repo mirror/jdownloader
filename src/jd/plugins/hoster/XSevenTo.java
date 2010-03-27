@@ -142,6 +142,7 @@ public class XSevenTo extends PluginForHost {
                 if (error == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 if (error.contains("limit-parallel")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
                 if (error.contains("limit-dl")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1000l);
+                if (error.contains("Download denied")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerProblem", 30 * 60 * 1000l);
                 /* unknown error */
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }

@@ -71,11 +71,10 @@ public final class Reconnecter {
      */
     private static boolean RECONNECT_REQUESTED = false;
 
-    
     public static boolean isReconnectAllowed() {
         return JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true);
     }
-    
+
     public static void toggleReconnect() {
         final Configuration configuration = JDUtilities.getConfiguration();
         final boolean newState = !configuration.getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true);
@@ -128,28 +127,28 @@ public final class Reconnecter {
         final ArrayList<DownloadLink> disabled = DownloadWatchDog.getInstance().getRunningDownloads();
         if (!disabled.isEmpty()) {
             LOG.info("Stopping all running downloads!");
-        }
-        for (final DownloadLink link : disabled) {
-            link.setEnabled(false);
-        }
-        /* warte bis alle gestoppt sind */
-        for (int wait = 0; wait < 10; wait++) {
-            if (DownloadWatchDog.getInstance().getActiveDownloads() == 0) break;
-            try {
-                Thread.sleep(1000);
-                LOG.info("Still waiting for all downloads to stop!");
-            } catch (InterruptedException e) {
-                break;
+
+            for (final DownloadLink link : disabled) {
+                link.setEnabled(false);
+            }
+            /* warte bis alle gestoppt sind */
+            for (int wait = 0; wait < 10; wait++) {
+                if (DownloadWatchDog.getInstance().getActiveDownloads() == 0) break;
+                try {
+                    Thread.sleep(1000);
+                    LOG.info("Still waiting for all downloads to stop!");
+                } catch (InterruptedException e) {
+                    break;
+                }
+            }
+            if (DownloadWatchDog.getInstance().getActiveDownloads() > 0) {
+                LOG.severe("Could not stop all running downloads!");
             }
         }
-        if (DownloadWatchDog.getInstance().getActiveDownloads() > 0) {
-            LOG.severe("Could not stop all running downloads!");
-        }
-
         JDUtilities.getController().fireControlEventDirect(new ControlEvent(JDUtilities.getController(), ControlEvent.CONTROL_RECONNECT_REQUEST, messageBox));
 
         if (messageBox.getBooleanProperty(VERIFY_IP_AGAIN, false)) {
-            LOG.severe("Use Reconnect Addon. disable the reconnect addons to use normal reconnect settings.!");
+            LOG.severe("Using special reconnect addon");
             try {
                 ipChangeSuccess = checkExternalIPChange();
             } catch (Exception e) {

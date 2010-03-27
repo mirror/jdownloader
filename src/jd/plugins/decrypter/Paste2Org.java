@@ -53,12 +53,13 @@ public class Paste2Org extends PluginForDecrypt {
         String plaintxt = br.getRegex("main-container(.*?)footer-contents").getMatch(0);
         if (plaintxt == null) return null;
         String[] links = HTMLParser.getHttpLinks(plaintxt, "");
-        if (links == null || links.length == 0) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.nolinks", "Perhaps wrong URL or there are no links to add."));
-        logger.info("Found " + links.length + " links in total.");
-        for (String dl : links)
-            decryptedLinks.add(createDownloadlink(dl));
-
+        /* avoid recursion */
+        for (int i = 0; i < links.length; i++) {
+            String dlLink = links[i];
+            if (!this.canHandle(dlLink)) {
+                decryptedLinks.add(createDownloadlink(dlLink));
+            }
+        }
         return decryptedLinks;
     }
-
 }
