@@ -41,7 +41,7 @@ public class CraMitIn extends PluginForHost {
 
     public CraMitIn(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium(COOKIE_HOST + "/premium.html");
+        this.setStartIntervall(2000l);
     }
 
     // XfileSharingProBasic Version 1.6, modified handleFree & useragent
@@ -114,11 +114,16 @@ public class CraMitIn extends PluginForHost {
             // If the filesize regex above doesn't match you can copy this part
             // into
             // the available status (and delete it here)
-            Form freeform = br.getForm(0);
-            if (freeform != null) {
-                freeform.remove("method_premium");
-                br.submitForm(freeform);
+            Form freeform = null;
+            Form forms[] = br.getForms();
+            for (Form oneForm : forms) {
+                if (oneForm.containsHTML("download1") && oneForm.containsHTML("name=\"fname\"") && oneForm.containsHTML("name=\"referer\"")) freeform = oneForm;
             }
+            if (freeform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            freeform.remove("method_premium");
+            freeform.remove("method_free");
+            freeform.put("method_free", "Continue to Download");
+            br.submitForm(freeform);
             brbefore = br.toString().replace(br.getRegex(Encoding.htmlDecode("(&lt;font color=#FCAF03&gt;.*?&lt;/font&gt;)")).getMatch(0), "");
             String md5hash = br.getRegex("<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
             if (md5hash != null) {
@@ -129,14 +134,15 @@ public class CraMitIn extends PluginForHost {
             br.setFollowRedirects(false);
             Form DLForm = br.getFormbyProperty("name", "F1");
             if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            int tt = 60;
             // Ticket Time
             String ttt = br.getRegex("countdown\">.*?(\\d+).*?</span>").getMatch(0);
             if (ttt == null) ttt = br.getRegex("id=\"countdown_str\".*?<span id=\".*?\">.*?(\\d+).*?</span").getMatch(0);
-            if (ttt != null) {
+            if (ttt != null && Integer.parseInt(ttt) < 180) {
                 logger.info("Waittime detected, waiting " + ttt.trim() + " seconds from now on...");
-                int tt = Integer.parseInt(ttt);
-                sleep(tt * 1001, downloadLink);
+                tt = Integer.parseInt(ttt);
             }
+            sleep(tt * 1001, downloadLink);
             String passCode = null;
             boolean password = false;
             boolean recaptcha = false;
@@ -294,6 +300,7 @@ public class CraMitIn extends PluginForHost {
             dl.startDownload();
         } catch (Exception e) {
             checkErrors(downloadLink);
+            logger.warning(br.toString());
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
     }
