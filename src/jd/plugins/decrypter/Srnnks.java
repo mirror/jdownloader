@@ -41,10 +41,11 @@ public class Srnnks extends PluginForDecrypt {
     private final static String[] passwords = { "serienjunkies.dl.am", "serienjunkies.org", "dokujunkies.org" };
     private static long LATEST_BLOCK_DETECT = 0;
     private static long LATEST_RECONNECT = 0;
- 
+
     private static Object GLOBAL_LOCK = new Object();
-    //seems like sj does block ips if requestlimit is not ok
+    // seems like sj does block ips if requestlimit is not ok
     private static final long FW_WAIT = 300;
+
     public Srnnks(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -113,8 +114,9 @@ public class Srnnks extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, final ProgressController progress) throws Exception {
         try {
-//            Browser.setRequestIntervalLimitGlobal("serienjunkies.org", 400);
-//            Browser.setRequestIntervalLimitGlobal("download.serienjunkies.org", 400);
+            // Browser.setRequestIntervalLimitGlobal("serienjunkies.org", 400);
+            // Browser.setRequestIntervalLimitGlobal("download.serienjunkies.org",
+            // 400);
             final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
             // progress.setStatusText("Lade Downloadseite");
             progress.setRange(100);
@@ -139,7 +141,7 @@ public class Srnnks extends PluginForDecrypt {
 
             // try captcha max 5 times
             for (int i = 0; i < 5; i++) {
-                progress.setRange(100,5);
+                progress.setRange(100, 5);
                 // suche wahrscheinlichste form
                 // progress.setStatusText("Suche Captcha Form");
                 Form form = null;
@@ -241,7 +243,6 @@ public class Srnnks extends PluginForDecrypt {
 
     class DecryptRunnable implements JDRunnable {
 
-   
         private String action;
         private Browser br;
         private ArrayList<DownloadLink> results;
@@ -262,7 +263,7 @@ public class Srnnks extends PluginForDecrypt {
             Thread.sleep(FW_WAIT);
             br.getPage(action);
 
-            String link = br.getRegex("SRC=\"(.*?)\"").getMatch(0);
+            String link = br.getRegex("SRC=\"(http://download\\.serienjunkies\\.org.*?)\"").getMatch(0);
 
             if (link != null) {
                 Thread.sleep(FW_WAIT);
