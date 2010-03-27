@@ -130,6 +130,8 @@ public class DepositFiles extends PluginForHost {
     }
 
     public void checkErrors() throws NumberFormatException, PluginException {
+        /* Server under maintenance */
+        if (br.containsHTML("html_download_api-temporary_unavailable")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Under maintenance", 30 * 60 * 1000l);
         /* download not available at the moment */
         if (br.containsHTML("Entschuldigung aber im Moment koennen Sie nur diesen Downloadmodus")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l);
         /* limit reached */
