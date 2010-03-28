@@ -219,7 +219,11 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         this.setUrlDownload(urlDownload);
         if (plugin != null && this.getDownloadURL() != null) {
             try {
+                String oldLink = getDownloadURL();
                 plugin.correctDownloadLink(this);
+                if (oldLink.equalsIgnoreCase(getDownloadURL()) == false) {
+                    setBrowserUrl(oldLink);
+                }
             } catch (Exception e) {
                 JDLogger.exception(e);
             }
