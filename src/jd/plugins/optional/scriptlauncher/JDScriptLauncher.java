@@ -22,8 +22,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
-
-import org.appwork.utils.Regex;
+import java.util.HashMap;
 
 import jd.PluginWrapper;
 import jd.event.ControlListener;
@@ -32,15 +31,19 @@ import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.Regex;
+
 @OptionalPlugin(rev = "$Revision$", id = "scriptlauncher", interfaceversion = 5)
 public class JDScriptLauncher extends PluginOptional implements ControlListener {
 
     private String scriptdir = "./scripts/";
     private ArrayList<File> scripts = new ArrayList<File>();
     private ArrayList<MenuAction> menuitems = new ArrayList<MenuAction>();
-    private ArrayList<Process> processlist = new ArrayList<Process>();
+    private HashMap<Integer, Process> processlist = new HashMap<Integer, Process>();
+    private ArrayList<String> launcherprops = new ArrayList<String>();
 
-    private static final String LINUX_POLLING = "LINUX_POLLING";
+    private static final String LINUX_INFINITE_LOOP = "LINUX_INFINITE_LOOP";
+    private static final String ADD_CHECKBOX = "ADD_CHECKBOX";
 
     public JDScriptLauncher(PluginWrapper wrapper) {
         super(wrapper);
@@ -63,16 +66,17 @@ public class JDScriptLauncher extends PluginOptional implements ControlListener 
         if (event.getID() >= 1000) {
             int index = event.getID() - 1000;
 
-            if (this.menuitems.get(index).isSelected() == true) {
+            if (this.processlist.get(index) == null) {
                 try {
                     Process p = Runtime.getRuntime().exec(this.scripts.get(index).getPath());
-                    this.processlist.add(index, p);
-                } catch (IOException e) {
-                    logger.warning(e.toString());
+                    this.processlist.put(index, p);
+                } catch (IOException eio) {
+                    logger.warning(eio.toString());
                 }
-            } else {
+            } else if (launcherprops.contains(LINUX_INFINITE_LOOP)) {
                 /* unix only */
                 String[] cmd = { "/bin/sh", "-c", "killall " + this.scripts.get(index).getName() };
+
                 try {
                     Runtime.getRuntime().exec(cmd);
                 } catch (IOException e) {
@@ -104,14 +108,13 @@ public class JDScriptLauncher extends PluginOptional implements ControlListener 
     }
 
     private ArrayList<String> readLauncherProps(int index) throws IOException {
-        ArrayList<String> launcherprops = new ArrayList<String>();
         FileReader fr = new FileReader(this.scripts.get(index));
         BufferedReader in = new BufferedReader(fr);
         String line = "";
 
         while ((line = in.readLine()) != null) {
-            if (line.matches("#___LAUNCHER_:[A-Z_]+")) {
-                launcherprops.add(new Regex(line, "#___LAUNCHER_:([A-Z_]+)").getMatch(0));
+            if (line.matches(".*?__LAUNCHER__:[A-Z_]+")) {
+                launcherprops.add(new Regex(line, ".*?__LAUNCHER__:([A-Z_]+)").getMatch(0));
             }
         }
 
@@ -129,7 +132,7 @@ public class JDScriptLauncher extends PluginOptional implements ControlListener 
             String scriptname = this.scripts.get(i).getName().split("\\.")[0];
             ma = new MenuAction(scriptname, i + 1000);
 
-            if (launcherprops.contains(LINUX_POLLING)) {
+            if (launcherprops.contains(ADD_CHECKBOX)) {
                 ma.setSelected(false);
             }
 
