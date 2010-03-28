@@ -955,9 +955,9 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
                     }
 
                     String dest_package_name = Encoding.htmlDecode(reg.getMatch(0));
-                    ArrayList<String> links = new ArrayList<String>();
+                    ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
                     for (String tlink : HTMLParser.getHttpLinks(Encoding.urlDecode(reg.getMatch(1), false), null)) {
-                        links.add(tlink);
+                        links.addAll(new DistributeData(tlink).findLinks());
                     }
 
                     boolean packageWasAvailable = false;
@@ -993,9 +993,9 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
                                 }
 
                                 DownloadLink packLink = pack.get(i);
-                                for (String userLink : links) {
+                                for (DownloadLink userLink : links) {
 
-                                    if (packLink.getBrowserUrl().equalsIgnoreCase(userLink)) {
+                                    if (packLink.compareTo(userLink) == 0) {
                                         pack.remove(i);
                                         --i;
                                         dest_package.add(packLink);
@@ -1015,7 +1015,11 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
                         }
                     }
 
-                    response.addContent(numLinksMoved + " links were moved into " + (packageWasAvailable ? "the available" : "the newly created") + " package '" + dest_package_name + "'. " + numPackagesDeleted + " packages were deleted as they were emtpy.");
+                    if (numLinksMoved > 0) {
+                        response.addContent(numLinksMoved + " links were moved into " + (packageWasAvailable ? "the available" : "the newly created") + " package '" + dest_package_name + "'. " + numPackagesDeleted + " packages were deleted as they were emtpy.");
+                    } else {
+                        response.addContent("No links moved - check input.");
+                    }
                 }
             } else if (request.getRequestUrl().matches("(?is).*/action/downloads/removeall")) {
                 // remove all packages in download list
