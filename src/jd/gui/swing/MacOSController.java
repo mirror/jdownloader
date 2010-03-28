@@ -17,6 +17,8 @@
 package jd.gui.swing;
 
 import javax.swing.JFrame;
+import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 
 import jd.controlling.JDController;
 import jd.gui.swing.dialog.AboutDialog;
@@ -27,8 +29,26 @@ import com.apple.eawt.ApplicationEvent;
 
 public class MacOSController extends Application {
 
+    @SuppressWarnings("deprecation")
     public MacOSController() {
-        setEnabledAboutMenu(true);
+
+        try {
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+
+        } catch (ClassNotFoundException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (InstantiationException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (UnsupportedLookAndFeelException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+
         addApplicationListener(new Handler());
     }
 

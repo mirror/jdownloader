@@ -308,11 +308,25 @@ public class Main {
     private static void initMACProperties() {
         // Mac specific //
         if (OSDetector.isMac()) {
-            LOG.info("com.apple.mrj.application.growbox.intrudes=false");
-            LOG.info("com.apple.mrj.application.apple.menu.about.name=jDownloader");
-            System.setProperty("com.apple.mrj.application.apple.menu.about.name", "jDownloader");
+
+            // set Properties
+            // Mac Java from 1.3
+            System.setProperty("com.apple.macos.useScreenMenuBar", "true");
             System.setProperty("com.apple.mrj.application.growbox.intrudes", "false");
-            new MacOSController();
+            System.setProperty("com.apple.hwaccel", "true");
+            System.setProperty("com.apple.mrj.application.apple.menu.about.name", "JDownloader");
+
+            // Mac Java from 1.4
+            System.setProperty("apple.laf.useScreenMenuBar", "true");
+            System.setProperty("apple.awt.showGrowBox", "false");
+
+            try {
+                new MacOSController();
+
+            } catch (Exception e) {
+                LOG.info("Error Initializing Look and Feel: " + e);
+                e.printStackTrace();
+            }
 
             /*
              * TODO: Pfade müssen nicht absolut angegeben werden.
