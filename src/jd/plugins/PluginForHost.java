@@ -671,7 +671,7 @@ public abstract class PluginForHost extends Plugin {
     }
 
     private final ImageIcon initHosterIcon() {
-        Image image = JDImage.getScaledImageNonAspectRatio(JDImage.getImage("hosterlogos/" + getHost()), 16, 16);
+        Image image = JDImage.getImage("hosterlogos/" + getHost());
         if (image == null) image = createDefaultIcon();
         if (image != null) return new ImageIcon(image);
         return null;

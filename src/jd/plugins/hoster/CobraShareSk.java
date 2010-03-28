@@ -18,9 +18,12 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 
 import jd.PluginWrapper;
+import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -28,11 +31,12 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cobrashare.sk" }, urls = { "http://[\\w\\.]*?cobrashare\\.sk(/downloadFile\\.php\\?id=.+|:[0-9]+/CobraShare-v.0.9/download/.+id=.+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cobrashare.sk" }, urls = { "http://[\\w\\.]*?cobrashare\\.sk(/downloadFile\\.php\\?id=.+|:[0-9]+/CobraShare-v.0.9/download/.+id=.+)" }, flags = { 2 })
 public class CobraShareSk extends PluginForHost {
 
     public CobraShareSk(PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium("http://cobrashare.sk/index.php?sp=cp");
     }
 
     @Override
@@ -50,6 +54,7 @@ public class CobraShareSk extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("Poadovaný súbor sa na serveri nenachádza")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = Encoding.htmlDecode(br.getRegex("File name :&nbsp;</td>.*?<td class=\"data\">(.*?)</td>").getMatch(0));
@@ -64,6 +69,10 @@ public class CobraShareSk extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        handleFree0(downloadLink);
+    }
+
+    public void handleFree0(DownloadLink downloadLink) throws Exception, PluginException {
         for (int i = 0; i <= 5; i++) {
             String captchaurl = Encoding.htmlDecode(br.getRegex("id=\"overImg\" src=\"(.*?)\" width=\"100\" hei").getMatch(0));
             Form captchaForm = br.getForm(0);
@@ -90,6 +99,53 @@ public class CobraShareSk extends PluginForHost {
 
         }
         dl.startDownload();
+
+    }
+
+    public void login(Account account) throws Exception {
+        setBrowserExclusive();
+        br.getPage("http://cobrashare.sk/index.php");
+        br.postPage("http://cobrashare.sk/index.php", "lo_g_in=" + Encoding.urlEncode(account.getUser()) + "&pa_ss=" + Encoding.urlEncode(account.getPass()));
+        if (br.getCookie("http://cobrashare.sk", "userId") == null || br.getCookie("http://cobrashare.sk", "userHa") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        br.getPage("http://cobrashare.sk/index.php?sp=u");
+        String availableTraffic = br.getRegex(">Za posledné 7 dní ste stiahli spolu: </td>.*?<td style=\"color:.*?; font-weight:bold;\" align=\"right\">(.*?)</td>").getMatch(0);
+        if (availableTraffic != null) ai.setTrafficLeft(Regex.getSize(availableTraffic.replace("&nbsp;", "")));
+        String validUntil = br.getRegex(">Vá premium account je platný do:</td>.*?<td style=\"color:.*?; font-weight:bold;\" align=\"right\">(.*?)</td>").getMatch(0);
+        String points = br.getRegex(">Premium points:</td>.*?<td style=\"color:.*?; font-weight:bold;\" align=\"right\">(\\d+)</td>").getMatch(0);
+        if (points == null) points = br.getRegex(">Premium points: </td>.*?<td valign=\"top\"><b>(\\d+)</b></td></tr>").getMatch(0);
+        if (points != null) {
+            ai.setPremiumPoints(Integer.parseInt(points.trim()));
+        }
+        if (validUntil != null)
+            ai.setValidUntil(Regex.getMilliSeconds(validUntil, "dd.MM.yyyy HH:mm", null));
+        else
+            account.setValid(false);
+        ai.setStatus("Premium User");
+        account.setValid(true);
+        return ai;
+    }
+
+    public void handlePremium(DownloadLink parameter, Account account) throws Exception {
+        requestFileInformation(parameter);
+        login(account);
+        br.getPage(parameter.getDownloadURL());
+        handleFree0(parameter);
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return 1;
     }
 
     @Override
@@ -105,7 +161,4 @@ public class CobraShareSk extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
-    /*
-     * public String getVersion() { return getVersion("$Revision$"); }
-     */
 }

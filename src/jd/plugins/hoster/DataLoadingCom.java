@@ -95,7 +95,7 @@ public class DataLoadingCom extends PluginForHost {
             ai.setValidUntil(cal.getTimeInMillis());
         }
 
-        String create = br.getRegex("Register Date</b></td>.*?<td align=.*?>(.*?)<").getMatch(0).trim();
+        String create = br.getRegex("Register Date</b></td>.*?<td align=.*?>(.*?)<").getMatch(0);
         if (create != null) {
             String[] c = create.split("/");
             Calendar cal = new GregorianCalendar(Integer.parseInt("20" + c[2]), Integer.parseInt(c[0]) - 1, Integer.parseInt(c[1]));
@@ -103,13 +103,13 @@ public class DataLoadingCom extends PluginForHost {
         }
 
         ai.setFilesNum(0);
-        String files = br.getRegex("<b>Hosted Files</b></td>.*?<td align=.*?>(.*?)<").getMatch(0).trim();
+        String files = br.getRegex("<b>Hosted Files</b></td>.*?<td align=.*?>(.*?)<").getMatch(0);
         if (files != null) {
             ai.setFilesNum(Integer.parseInt(files.trim()));
         }
 
         ai.setPremiumPoints(0);
-        String points = br.getRegex("<b>Total Points</b></td>.*?<td align=.*?>(.*?)</td>").getMatch(0).trim();
+        String points = br.getRegex("<b>Total Points</b></td>.*?<td align=.*?>(.*?)</td>").getMatch(0);
         if (points != null) {
             ai.setPremiumPoints(Integer.parseInt(points.trim()));
         }

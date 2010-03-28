@@ -19,6 +19,8 @@ package jd.plugins.hoster;
 import java.io.File;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -40,11 +42,19 @@ public class SharingMatrixCom extends PluginForHost {
     public SharingMatrixCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://sharingmatrix.com/premium");
+        setConfigElements();
     }
 
     @Override
     public String getAGBLink() {
         return "http://sharingmatrix.com/contact";
+    }
+
+    private static final String WAIT1 = "WAIT1";
+
+    private void setConfigElements() {
+        ConfigEntry cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), WAIT1, JDL.L("plugins.hoster.SharingMatrixCom.waitInsteadOfReconnect", "Wait 5 minutes instead of reconnecting")).setDefaultValue(false);
+        config.addEntry(cond);
     }
 
     public void login(Account account) throws Exception {
@@ -211,6 +221,7 @@ public class SharingMatrixCom extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
+        boolean waitReconnecttime = getPluginConfig().getBooleanProperty(WAIT1, false);
         br.forceDebug(true);
         requestFileInformation(downloadLink);
         String passCode = null;
@@ -253,8 +264,13 @@ public class SharingMatrixCom extends PluginForHost {
             if (Integer.parseInt(br2.toString().trim()) != 1) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
 
         }
-        if (ctjvv > 80) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, ctjvv * 1001l);
-        this.sleep(ctjvv * 1000, downloadLink);
+        if (ctjvv > 80) {
+            if (waitReconnecttime && ctjvv < 360)
+                sleep(ctjvv * 1001l, downloadLink);
+            else
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, ctjvv * 1001l);
+        } else
+            this.sleep(ctjvv * 1000, downloadLink);
         String dl_id = br2.getPage("/ajax_scripts/dl.php").trim();
         br2.getPage("/ajax_scripts/_get2.php?link_id=" + linkid + "&link_name=" + link_name + "&dl_id=" + dl_id + (passCode == null ? "" : "&password=" + Encoding.urlEncode(passCode)));
         if (br2.containsHTML("server_down")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.sharingmatrixcom.failure", "Serverfailure, Please try again later!"), 30 * 60 * 1000l);

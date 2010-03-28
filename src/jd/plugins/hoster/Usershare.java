@@ -111,6 +111,6 @@ public class Usershare extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 6;
+        return 2;
     }
 }

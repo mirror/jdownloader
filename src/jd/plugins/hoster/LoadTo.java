@@ -36,12 +36,12 @@ public class LoadTo extends PluginForHost {
 
     public LoadTo(PluginWrapper wrapper) {
         super(wrapper);
+        this.setStartIntervall(5000l);
     }
 
     @Override
     public String getAGBLink() {
         Browser.setRequestIntervalLimitGlobal(getHost(), 500);
-        this.setStartIntervall(2000l);
         return "http://www.load.to/terms.php";
     }
 
@@ -95,7 +95,7 @@ public class LoadTo extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 5;
+        return 3;
     }
 
     @Override

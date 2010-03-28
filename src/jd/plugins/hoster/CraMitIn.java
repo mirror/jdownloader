@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
@@ -50,7 +51,7 @@ public class CraMitIn extends PluginForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
-    public String brbefore = null;
+    public String brbefore = "";
     private static final String COOKIE_HOST = "http://cramit.in";
     public boolean nopremium = false;
 
@@ -61,6 +62,7 @@ public class CraMitIn extends PluginForHost {
         br.setFollowRedirects(false);
         br.setCookie(COOKIE_HOST, "lang", "english");
         br.getPage(link.getDownloadURL());
+        doSomething();
         String filename = br.getRegex("You have requested.*?http://.*?[a-z0-9]{12}/(.*?)</font>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("fname\" value=\"(.*?)\"").getMatch(0);
@@ -84,12 +86,12 @@ public class CraMitIn extends PluginForHost {
                 filesize = br.getRegex("</font>[ ]+\\((.*?)\\)(.*?)</font>").getMatch(0);
             }
         }
-        if (br.containsHTML("<b>File Not Found</b><br><br>") && (filename == null || filename.matches(""))) {
+        if (brbefore.contains("<b>File Not Found</b><br><br>") && (filename == null || filename.matches(""))) {
             logger.warning("file is 99,99% offline, throwing \"file not found\" now...");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (filename == null || filename.equals("")) {
-            if (br.containsHTML("You have reached the download-limit")) {
+            if (brbefore.contains("You have reached the download-limit")) {
                 logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
                 return AvailableStatus.UNCHECKABLE;
             }
@@ -106,7 +108,7 @@ public class CraMitIn extends PluginForHost {
     }
 
     public void doFree(DownloadLink downloadLink) throws Exception, PluginException {
-        brbefore = br.toString().replace(br.getRegex(Encoding.htmlDecode("(&lt;font color=#FCAF03&gt;.*?&lt;/font&gt;)")).getMatch(0), "");
+        doSomething();
         try {
 
             boolean resumable = true;
@@ -124,7 +126,7 @@ public class CraMitIn extends PluginForHost {
             freeform.remove("method_free");
             freeform.put("method_free", "Continue to Download");
             br.submitForm(freeform);
-            brbefore = br.toString().replace(br.getRegex(Encoding.htmlDecode("(&lt;font color=#FCAF03&gt;.*?&lt;/font&gt;)")).getMatch(0), "");
+            doSomething();
             String md5hash = br.getRegex("<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
             if (md5hash != null) {
                 md5hash = md5hash.trim();
@@ -213,7 +215,7 @@ public class CraMitIn extends PluginForHost {
                 rc.setCode(c);
                 logger.info("Put captchacode " + c + " obtained by captcha metod \"Re Captcha\" in the form and submitted it.");
             }
-            brbefore = br.toString().replace(br.getRegex(Encoding.htmlDecode("(&lt;font color=#FCAF03&gt;.*?&lt;/font&gt;)")).getMatch(0), "");
+            doSomething();
             /* Captcha END */
 
             // If the hoster uses Re Captcha the form has already been sent
@@ -245,7 +247,7 @@ public class CraMitIn extends PluginForHost {
             if (br.getRedirectLocation() != null || error == true) {
                 br.followConnection();
                 logger.info("followed connection...");
-                brbefore = br.toString().replace(br.getRegex(Encoding.htmlDecode("(&lt;font color=#FCAF03&gt;.*?&lt;/font&gt;)")).getMatch(0), "");
+                doSomething();
                 String dllink = br.getRedirectLocation();
                 if (dllink == null) {
                     if (brbefore.contains("You're using all download slots for IP")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
@@ -363,6 +365,25 @@ public class CraMitIn extends PluginForHost {
                 logger.warning("Only downloadable via premium");
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium");
             }
+        }
+    }
+
+    public void doSomething() throws NumberFormatException, PluginException {
+        brbefore = br.toString();
+        ArrayList<String> someStuff = new ArrayList<String>();
+        ArrayList<String> regexStuff = new ArrayList<String>();
+        regexStuff.add(Encoding.htmlDecode("%3C%21%28--.*%3F--%29%3E"));
+        regexStuff.add(Encoding.htmlDecode("(&lt;font color=#FCAF03&gt;.*?&lt;/font&gt;)"));
+        for (String aRegex : regexStuff) {
+            String lolz[] = br.getRegex(aRegex).getColumn(0);
+            if (lolz != null) {
+                for (String dingdang : lolz) {
+                    someStuff.add(dingdang);
+                }
+            }
+        }
+        for (String fun : someStuff) {
+            brbefore = brbefore.replace(fun, "");
         }
     }
 
