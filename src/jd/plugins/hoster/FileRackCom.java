@@ -105,6 +105,7 @@ public class FileRackCom extends PluginForHost {
             parameter.setUrlDownload(movedLink);
             logger.info("Link has moved, setting new link \"" + movedLink + "\"");
         }
+        if (br.containsHTML("File is deleted by owner")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<h2>Download File(.*?)</h2>").getMatch(0);
         String filesize = br.getRegex("\\(<b>(.*?)</b>\\)").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
