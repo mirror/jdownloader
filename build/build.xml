@@ -264,6 +264,16 @@
 				<include name="jd/plugins/optional/${package}/**" />
 			</fileset>
 		</jar>
+		
+		
+		<property name="addonnumber" value="137" />
+			<property name="package" value="scriptlauncher" />
+			<mkdir dir="${dist}/pluginressourcen/${addonnumber}__${package}/plugins" />
+			<jar jarfile="${dist}/pluginressourcen/${addonnumber}__${package}/plugins/${package}.jar" manifest="Manifest.MF">
+				<fileset dir="${cls}">
+					<include name="jd/plugins/optional/${package}/**" />
+				</fileset>
+			</jar>
 	</target>
 
 	<target name="sign">
