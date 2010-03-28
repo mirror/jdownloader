@@ -241,16 +241,16 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
                 infovector.add("Schedule all packages as download that are located in the link grabber");
 
                 commandvec.add("/action/grabber/confirm/%X%");
-                infovector.add("Schedule all denoted grabber packages %X% as download");
+                infovector.add("Schedule all denoted grabber packages %X%, each seperated by a slash, as download");
 
-                commandvec.add("/action/grabber/removetype/%X%/%Y%");
-                infovector.add("Remove links from grabber that match the denoted type %X% and/or %Y%. Possible values: 'offline' for offline links and 'available' for links that are already scheduled as download");
+                commandvec.add("/action/grabber/removetype/%X%");
+                infovector.add("Remove links from grabber that match the denoted type(s) %X% - the types must be seperated by a slash. Possible type values: 'offline' for offline links and 'available' for links that are already scheduled as download");
 
                 commandvec.add("/action/grabber/removeall");
                 infovector.add("Remove all links from linkgrabber");
 
                 commandvec.add("/action/grabber/remove/%X%");
-                infovector.add("Remove packages %X% from linkgrabber");
+                infovector.add("Remove packages %X% from linkgrabber, each packagename seperated by a slash");
 
                 commandvec.add("/action/grabber/move/%X%/%Y%");
                 infovector.add("Move %Y% (single link or list of links, each separated by NEWLINE char) to package %X%. In case the package given is not available, it will be newly created. Please note that if there are multiple packages named equally, the links will be put into the first one that is found. The term 'link' equals the 'browser url' you've provided previously, not the final download url. Package will be searched by case insensitive search.");
@@ -259,7 +259,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
                 infovector.add("Remove all scheduled downloads");
 
                 commandvec.add("/action/downloads/remove/%X%");
-                infovector.add("Remove packages %X% from download list");
+                infovector.add("Remove packages %X% from download list, each packagename seperated by a slash");
 
                 // special table
                 commandvec.add(" ");
@@ -1002,7 +1002,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
                                         ++numLinksMoved;
                                         if (pack.size() == 0) {
                                             --k; // adjust index as remove event
-                                                 // was fired
+                                            // was fired
                                         }
                                         break;
                                     }
