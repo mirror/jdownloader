@@ -86,7 +86,12 @@ public class Main {
         // only use ipv4, because debian changed default stack to ipv6
         System.setProperty("java.net.preferIPv4Stack", "true");
         LOG = JDLogger.getLogger();
-        initMACProperties();
+
+        // Mac OS specific
+        if (OSDetector.isMac()) {
+            initMACProperties();
+        }
+
         LOG.info("Start JDownloader");
         for (String p : args) {
             if (p.equalsIgnoreCase("-debug")) {
@@ -306,38 +311,34 @@ public class Main {
      * Sets special Properties for MAC
      */
     private static void initMACProperties() {
-        // Mac specific //
-        if (OSDetector.isMac()) {
+        // set Properties
+        // Mac Java from 1.3
+        System.setProperty("com.apple.macos.useScreenMenuBar", "true");
+        System.setProperty("com.apple.mrj.application.growbox.intrudes", "true");
+        System.setProperty("com.apple.hwaccel", "true");
+        System.setProperty("com.apple.mrj.application.apple.menu.about.name", "JDownloader");
 
-            // set Properties
-            // Mac Java from 1.3
-            System.setProperty("com.apple.macos.useScreenMenuBar", "true");
-            System.setProperty("com.apple.mrj.application.growbox.intrudes", "false");
-            System.setProperty("com.apple.hwaccel", "true");
-            System.setProperty("com.apple.mrj.application.apple.menu.about.name", "JDownloader");
+        // Mac Java from 1.4
+        System.setProperty("apple.laf.useScreenMenuBar", "true");
+        System.setProperty("apple.awt.showGrowBox", "true");
 
-            // Mac Java from 1.4
-            System.setProperty("apple.laf.useScreenMenuBar", "true");
-            System.setProperty("apple.awt.showGrowBox", "false");
+        try {
+            new MacOSController();
 
-            try {
-                new MacOSController();
+        } catch (Exception e) {
+            LOG.info("Error Initializing Look and Feel: " + e);
+            e.printStackTrace();
+        }
 
-            } catch (Exception e) {
-                LOG.info("Error Initializing Look and Feel: " + e);
-                e.printStackTrace();
-            }
-
-            /*
-             * TODO: Pfade müssen nicht absolut angegeben werden.
-             */
-            if (System.getProperty("java.version").startsWith("1.5")) {
-                File info15 = JDUtilities.getResourceFile("../../info_15.plist");
-                File info = JDUtilities.getResourceFile("../../info.plist");
-                if (info15.exists()) {
-                    if (info.delete()) {
-                        info15.renameTo(JDUtilities.getResourceFile("../../info.plist"));
-                    }
+        /*
+         * TODO: Pfade müssen nicht absolut angegeben werden.
+         */
+        if (System.getProperty("java.version").startsWith("1.5")) {
+            File info15 = JDUtilities.getResourceFile("../../info_15.plist");
+            File info = JDUtilities.getResourceFile("../../info.plist");
+            if (info15.exists()) {
+                if (info.delete()) {
+                    info15.renameTo(JDUtilities.getResourceFile("../../info.plist"));
                 }
             }
         }

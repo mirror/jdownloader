@@ -75,7 +75,8 @@ public class LookAndFeelController {
                 LookAndFeelWrapper lafm = new LookAndFeelWrapper(lafis[i]);
                 lafm.setName(lafis[i].getName());
                 ret.add(lafm);
-            } else if (clname.startsWith("apple.laf")) {
+                // Before Java 1.6 || with Java 1.6
+            } else if ((clname.startsWith("apple.laf")) || (clname.startsWith("com.apple.laf"))) {
                 LookAndFeelWrapper lafm = new LookAndFeelWrapper(lafis[i]);
                 lafm.setName("Apple Aqua");
                 ret.add(lafm);
