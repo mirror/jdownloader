@@ -528,12 +528,21 @@ public class Megauploadcom extends PluginForHost {
                     String name = queryQ.get("n");
                     checked++;
                     DownloadLink downloadLink = urls[d];
+                    // idX=1 -->invalid
+                    // idX=3 -->temp not available
                     if (name != null) {
+
                         downloadLink.setFinalFileName(name);
                         downloadLink.setDownloadSize(Long.parseLong(queryQ.get("s")));
                         downloadLink.setAvailable(true);
                     } else {
-                        downloadLink.setAvailable(false);
+                        if (Integer.parseInt(queryQ.get("id" + d)) == 3) {
+                            downloadLink.setAvailableStatus(AvailableStatus.UNCHECKABLE);
+                        } else {
+                            downloadLink.setAvailable(false);
+                            // downloadLink.setAvailableStatus(AvailableStatus.UNCHECKABLE);
+                        }
+
                     }
                     downloadLink.setProperty("webcheck", true);
                 } catch (Exception e) {
