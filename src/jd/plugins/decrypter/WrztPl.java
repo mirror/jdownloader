@@ -36,6 +36,9 @@ public class WrztPl extends PluginForDecrypt {
         super(wrapper);
     }
 
+    // TODO: Links with more than one page do actually not work but i didn't
+    // have any example links so implement that so i guess no one is interested
+    // in thus function
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setCookiesExclusive(true);

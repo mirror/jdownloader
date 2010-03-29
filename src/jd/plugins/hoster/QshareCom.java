@@ -76,12 +76,20 @@ public class QshareCom extends PluginForHost {
 
         if (br.getRegex("(Du hast die maximal zulässige Anzahl|You have exceeded the maximum allowed)").matches()) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l);
         if (br.containsHTML("There are currently too many free downloads")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "There are currently too many free downloads", 10 * 60 * 1000l);
-        String wait = br.getRegex("Dein Freivolumen wird in <b>([\\d]*?) Minuten").getMatch(0);
-        if (wait != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait.trim()) * 60 * 1000l);
-
         String link = br.getRegex("writeToPage\\('<A HREF=\"(.*?)\"").getMatch(0);
-        if (link == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-
+        if (link == null) {
+            String wait = br.getRegex("Dein Freivolumen wird in <b>([\\d]*?) Minuten").getMatch(0);
+            if (wait != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait.trim()) * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        // Ticket Time
+        int tt = 45;
+        String ttt = br.getRegex("count_down\\((\\d+)\\)").getMatch(0);
+        if (ttt != null) {
+            logger.info("Waittime detected, waiting " + ttt.trim() + " seconds from now on...");
+            tt = Integer.parseInt(ttt);
+        }
+        sleep(tt * 1001l, downloadLink);
         br.setFollowRedirects(false);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, link, true, 1);
         if (!dl.getConnection().isContentDisposition()) {
