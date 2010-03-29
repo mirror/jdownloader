@@ -209,28 +209,6 @@ public class UgotFileCom extends PluginForHost {
         return downloadLink.getAvailableStatus();
     }
 
-    // Old availablecheck
-    // public AvailableStatus requestFileInformation(DownloadLink parameter)
-    // throws Exception {
-    // this.setBrowserExclusive();
-    // br.getPage(parameter.getDownloadURL());
-    // if
-    // (br.containsHTML("FileId and filename mismatched or file does not exist!"))
-    // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-    // if (br.containsHTML("has been deleted")) throw new
-    // PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-    // String filename =
-    // br.getRegex("<title>(.*?) - Free File Hosting - uGotFile</title>").getMatch(0);
-    // String filesize =
-    // br.getRegex("<span style=\"font-size: 14px;\">(.*?)</span>").getMatch(0);
-    // if (filename == null || filesize == null) throw new
-    // PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-    // filesize = filesize.replace("&nbsp;", "");
-    // parameter.setName(filename.trim());
-    // parameter.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "")));
-    // return AvailableStatus.TRUE;
-    // }
-
     @Override
     public void reset() {
     }

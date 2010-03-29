@@ -49,29 +49,6 @@ public class MekaShareCom extends PluginForHost {
         link.setUrlDownload("http://mekashare.com/" + fileid);
     }
 
-    // Old availablecheck for single files
-    // @Override
-    // public AvailableStatus requestFileInformation(DownloadLink link) throws
-    // IOException, PluginException {
-    // this.setBrowserExclusive();
-    // String checklinks = "http://mekashare.com/check/";
-    // br.getPage(checklinks);
-    // br.postPage(checklinks, "links=" + link.getDownloadURL());
-    // // if (br.containsHTML("you have requested could not be found")) throw
-    // // new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-    // if (br.containsHTML(">Inexistent<")) throw new
-    // PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-    // String filename = new Regex(link.getDownloadURL(),
-    // "mekashare\\.com/\\d+/(.+)").getMatch(0);
-    // String filesize =
-    // br.getRegex("width=\"112\" align=\"left\" style=\"padding:5px\">(.*?)</td>").getMatch(0);
-    // if (filename == null || filename == null) throw new
-    // PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-    // filesize = filesize.replace("i", "");
-    // link.setName(filename.trim());
-    // link.setDownloadSize(Regex.getSize(filesize));
-    // return AvailableStatus.TRUE;
-    // }
     public boolean checkLinks(DownloadLink[] urls) {
         if (urls == null || urls.length == 0) { return false; }
         try {
@@ -110,13 +87,9 @@ public class MekaShareCom extends PluginForHost {
                         return false;
                     }
                     theData = theData.replace("style=\"padding:5px\">" + dl.getDownloadURL() + "</td>", "");
-                    String infos[][] = new Regex(theData, ".*?style=\"padding:5px\">(.*?)</td>.*?style=\"padding:5px\">(.*?)</td>").getMatches();
-                    String filesize = null;
-                    String status = null;
-                    for (String[] info : infos) {
-                        filesize = info[0].toString();
-                        status = info[1].toString();
-                    }
+                    String infos[] = new Regex(theData, "\"padding:5px\">(.*?)</td>").getColumn(0);
+                    String filesize = infos[0].toString();
+                    String status = infos[1].toString();
                     String filename = new Regex(dl.getDownloadURL(), "mekashare\\.com/\\d+/(.+)").getMatch(0);
                     if (!status.matches("Available")) {
                         dl.setAvailable(false);
