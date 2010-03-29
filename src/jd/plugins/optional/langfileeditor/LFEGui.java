@@ -209,7 +209,7 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
                     if (Subversion.checkLogin(SOURCE_SVN, subConfig.getStringProperty(PROPERTY_SVN_ACCESS_USER), subConfig.getStringProperty(PROPERTY_SVN_ACCESS_PASS))) {
                         break;
                     } else {
-                        UserIO.getInstance().requestMessageDialog(JDL.L("jd.plugins.optional.langfileeditor.LangFileEditor.badlogins", "Logins incorrect.\r\n PLease enter correct logins."));
+                        UserIO.getInstance().requestMessageDialog(JDL.L("jd.plugins.optional.langfileeditor.langfileeditor.badlogins", "Logins incorrect.\r\nPlease enter correct logins."));
                         subConfig.setProperty(PROPERTY_SVN_ACCESS_USER, null);
                         subConfig.setProperty(PROPERTY_SVN_ACCESS_PASS, null);
                         subConfig.save();

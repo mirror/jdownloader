@@ -194,18 +194,18 @@ public class TrayIconPopup extends JWindow implements MouseListener, ChangeListe
     }
 
     private void initBottomPanel() {
-        spMaxSpeed = new JDSpinner(JDL.L("plugins.trayicon.popup.bottom.speed", "Geschwindigkeitsbegrenzung"), "width 60!,h 20!,right");
+        spMaxSpeed = new JDSpinner(JDL.L("plugins.trayicon.popup.bottom.speed", "Speed limit(KiB/s)"), "width 60!,h 20!,right");
         spMaxSpeed.getSpinner().setModel(new SpinnerNumberModel(config.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0), 0, Integer.MAX_VALUE, 50));
-        spMaxSpeed.setToolTipText(JDL.L("gui.tooltip.statusbar.speedlimiter", "Geschwindigkeitsbegrenzung festlegen (KB/s) [0:unendlich]"));
+        spMaxSpeed.setToolTipText(JDL.L("gui.tooltip.statusbar.speedlimiter", "Speed Limit (KiB/s) [0 = Infinite]"));
         spMaxSpeed.getSpinner().addChangeListener(this);
         colorizeSpinnerSpeed();
 
-        spMaxDls = new JDSpinner(JDL.L("plugins.trayicon.popup.bottom.simDls", "Gleichzeitige Downloads"), "width 60!,h 20!,right");
+        spMaxDls = new JDSpinner(JDL.L("plugins.trayicon.popup.bottom.simdls", "Simultaneous downloads"), "width 60!,h 20!,right");
         spMaxDls.getSpinner().setModel(new SpinnerNumberModel(config.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2), 1, 20, 1));
-        spMaxDls.setToolTipText(JDL.L("gui.tooltip.statusbar.simultan_downloads", "Max. gleichzeitige Downloads"));
+        spMaxDls.setToolTipText(JDL.L("gui.tooltip.statusbar.simultan_downloads", "Maximum simultaneous Downloads [1..20]"));
         spMaxDls.getSpinner().addChangeListener(this);
 
-        spMaxChunks = new JDSpinner(JDL.L("plugins.trayicon.popup.bottom.simChunks", "Gleichzeitige Verbindungen"), "width 60!,h 20!,right");
+        spMaxChunks = new JDSpinner(JDL.L("plugins.trayicon.popup.bottom.simchunks", "Concurrent Connections"), "width 60!,h 20!,right");
         spMaxChunks.getSpinner().setModel(new SpinnerNumberModel(config.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2), 1, 20, 1));
         spMaxChunks.setToolTipText(JDL.L("gui.tooltip.statusbar.max_chunks", "Max. Connections/File"));
         spMaxChunks.getSpinner().addChangeListener(this);

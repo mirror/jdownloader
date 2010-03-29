@@ -258,7 +258,7 @@ public class Rapidshare extends PluginForHost {
                 queryAPI(null, req);
 
                 if (br.containsHTML("access flood")) {
-                    logger.warning("RS API flooded! will not check again the next 5 minutes!");
+                    logger.warning("RS API flooded! Will not check again the next 5 minutes!");
                     RS_API_WAIT = System.currentTimeMillis() + 5 * 60 * 1000l;
                     return false;
                 }
@@ -318,7 +318,7 @@ public class Rapidshare extends PluginForHost {
             return false;
         } catch (Exception e) {
             if (br.containsHTML("access flood")) {
-                logger.warning("RS API flooded! will not check again the next 5 minutes!");
+                logger.warning("RS API flooded! Will not check again the next 5 minutes!");
                 RS_API_WAIT = System.currentTimeMillis() + 5 * 60 * 1000l;
             }
             return false;
@@ -445,12 +445,12 @@ public class Rapidshare extends PluginForHost {
             if (tt != null) ticketCode = code;
             Context.exit();
             if (ticketCode.contains("Leider sind derzeit keine freien Slots ")) {
-                downloadLink.getLinkStatus().setStatusText("All free slots in use: try to download again after 2 minutes");
+                downloadLink.getLinkStatus().setStatusText(JDL.L("plugin.host.rapidshare.status.inuselong", "All free slots in use: try to download again after 2 minutes"));
                 logger.warning("All free slots in use: try to download again after 2 minutes");
                 if (getPluginConfig().getBooleanProperty(WAIT_HOSTERFULL, true)) {
-                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "All free slots in use", 120 * 1000l);
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugin.host.rapidshare.status.inuse", "All free slots in use"), 120 * 1000l);
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "All free slots in use", 120 * 1000l);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugin.host.rapidshare.status.inuse", "All free slots in use"), 120 * 1000l);
                 }
             }
             if (new Regex(ticketCode, ".*download.{0,3}limit.{1,50}free.{0,3}users.*").matches()) {
@@ -568,21 +568,21 @@ public class Rapidshare extends PluginForHost {
         if (Regex.matches(error, Pattern.compile("(weder einem Premiumaccount)"))) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         if (Regex.matches(error, Pattern.compile("(keine freien Slots)")) || Regex.matches(error, Pattern.compile("(Sie sind nicht angemeldet)")) || Regex.matches(error, Pattern.compile("(Diese Datei k.*?Sie nur als)")) || Regex.matches(error, Pattern.compile("(Es sind derzeit keine freien Download)"))) {
             if (getPluginConfig().getBooleanProperty(WAIT_HOSTERFULL, true)) {
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "All free slots in use", 2 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugin.host.rapidshare.status.inuse", "All free slots in use"), 2 * 60 * 1000l);
             } else {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "All free slots in use", 2 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugin.host.rapidshare.status.inuse", "All free slots in use"), 2 * 60 * 1000l);
             }
         }
         if (Regex.matches(error, Pattern.compile("(in 2 Minuten)"))) {
             if (getPluginConfig().getBooleanProperty(WAIT_HOSTERFULL, true)) {
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many users are currently downloading this file", 2 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugin.host.rapidshare.status.toomany", "Too many users are currently downloading this file"), 2 * 60 * 1000l);
             } else {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many users are currently downloading this file", 2 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugin.host.rapidshare.status.toomany", "Too many users are currently downloading this file"), 2 * 60 * 1000l);
             }
         }
         if (Regex.matches(error, Pattern.compile("(Die Datei konnte nicht gefunden werden)"))) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         if (Regex.matches(error, Pattern.compile("Der Server .*? ist momentan nicht verf.*"))) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.LF("plugin.rapidshare.error.serverunavailable", "The Server %s is currently unavailable.", error.substring(11, error.indexOf(" ist"))), 3600 * 1000l); }
-        if (Regex.matches(error, PATTERM_MATCHER_ALREADY_LOADING)) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Already a download from your ip in progress!", 2 * 60 * 1000l); }
+        if (Regex.matches(error, PATTERM_MATCHER_ALREADY_LOADING)) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, JDL.L("plugin.host.rapidshare.status.ipblock", "Already a download from your ip in progress!"), 2 * 60 * 1000l); }
         // für java 1.5
         if (new Regex(error, "(kostenlose Nutzung erreicht)|(.*download.{0,3}limit.{1,50}free.{0,3}users.*)").matches()) {
             if (false) {
@@ -943,14 +943,14 @@ public class Rapidshare extends PluginForHost {
         for (String element : serverList5) {
             m5.add(getServerName(element));
         }
-        m1.add(JDL.L("plugins.hoster.rapidshare.com.prefferedServer.random", "Random"));
-        m2.add(JDL.L("plugins.hoster.rapidshare.com.prefferedServer.random", "Random"));
-        m3.add(JDL.L("plugins.hoster.rapidshare.com.prefferedServer.random", "Random"));
-        m4.add(JDL.L("plugins.hoster.rapidshare.com.prefferedServer.random", "Random"));
-        m5.add(JDL.L("plugins.hoster.rapidshare.com.prefferedServer.random", "Random"));
+        m1.add(JDL.L("plugins.hoster.rapidshare.com.preferedserver.random", "Random"));
+        m2.add(JDL.L("plugins.hoster.rapidshare.com.preferedserver.random", "Random"));
+        m3.add(JDL.L("plugins.hoster.rapidshare.com.preferedserver.random", "Random"));
+        m4.add(JDL.L("plugins.hoster.rapidshare.com.preferedserver.random", "Random"));
+        m5.add(JDL.L("plugins.hoster.rapidshare.com.preferedserver.random", "Random"));
 
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, JDL.L("plugins.hoster.rapidshare.com.prefferedServer", "Bevorzugte Server")));
-        ConfigEntry cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PROPERTY_USE_PRESELECTED, JDL.L("plugins.hoster.rapidshare.com.preSelection", "Vorauswahl übernehmen")).setDefaultValue(true);
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, JDL.L("plugins.hoster.rapidshare.com.preferedserver", "Prefered server mirror")));
+        ConfigEntry cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PROPERTY_USE_PRESELECTED, JDL.L("plugins.hoster.rapidshare.com.preselection", "Use preselection")).setDefaultValue(true);
         config.addEntry(cond);
 
         ConfigEntry ce;
@@ -964,14 +964,14 @@ public class Rapidshare extends PluginForHost {
         ce.setEnabledCondidtion(cond, false);
         config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getPluginConfig(), PROPERTY_SELECTED_SERVER5, m5.toArray(new String[] {}), "#5").setDefaultValue("euNetworks"));
         ce.setEnabledCondidtion(cond, false);
-        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PROPERTY_USE_TELEKOMSERVER, JDL.L("plugins.hoster.rapidshare.com.telekom", "Telekom Server verwenden falls verfügbar")).setDefaultValue(false));
+        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PROPERTY_USE_TELEKOMSERVER, JDL.L("plugins.hoster.rapidshare.com.telekom", "Use Telekom server if possible")).setDefaultValue(false));
         ce.setEnabledCondidtion(cond, false);
 
         config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), HTTPS_WORKAROUND, JDL.L("plugins.hoster.rapidshare.com.https", "Use HTTPS workaround for ISP Block")).setDefaultValue(false));
         ce.setEnabledCondidtion(cond, false);
 
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), PROPERTY_INCREASE_TICKET, JDL.L("plugins.hoster.rapidshare.com.increaseTicketTime", "Ticketwartezeit verlängern (0%-500%)"), 0, 500).setDefaultValue(0).setStep(1));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), PROPERTY_INCREASE_TICKET, JDL.L("plugins.hoster.rapidshare.com.increaseTicketTime", "Increase Ticketwaittime (0%-500%)"), 0, 500).setDefaultValue(0).setStep(1));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), WAIT_HOSTERFULL, JDL.L("plugins.hoster.rapidshare.com.waithosterfull", "Wait if all FreeUser Slots are full")).setDefaultValue(true));
     }
 

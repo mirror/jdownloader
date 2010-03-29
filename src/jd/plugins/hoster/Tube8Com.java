@@ -69,13 +69,13 @@ public class Tube8Com extends PluginForHost {
         if (prefer3gp) {
             find3gpLinks();
             if (dllink == null) {
-                logger.warning("Couldn't find 3gp links even if they're preffered, trying to get the normal links now!");
+                logger.warning("Couldn't find 3gp links even if they're prefered, trying to get the normal links now!");
                 findNormalLinks();
             }
         } else {
             findNormalLinks();
             if (dllink == null) {
-                logger.warning("Couldn't find normal links even if they're preffered, trying to get the 3gp links now!");
+                logger.warning("Couldn't find normal links even if they're prefered, trying to get the 3gp links now!");
                 find3gpLinks();
             }
         }

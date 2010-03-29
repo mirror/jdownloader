@@ -527,7 +527,7 @@ public class Form extends Property {
     public ArrayList<RequestVariable> getRequestVariables() {
         ArrayList<RequestVariable> ret = new ArrayList<RequestVariable>();
         for (InputField ipf : this.inputfields) {
-            // DO not send not preffered Submit types
+            // Do not send not prefered Submit types
             if (this.getPreferredSubmit() != null && ipf.getType().equalsIgnoreCase("submit") && getPreferredSubmit() != ipf) continue;
             if (ipf.getKey() == null) continue;/*
                                                 * nameless key-value are not
