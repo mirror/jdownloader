@@ -339,23 +339,35 @@ public class Uploadedto extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         checkPassword(downloadLink);
         if (br.containsHTML("ist aufgebraucht")) {
-            long wait = Regex.getMilliSeconds(br.getRegex("\\(Oder warten Sie (.*?)\\!\\)").getMatch(0));
-            linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
-            logger.info("Traffic Limit reached....");
-            linkStatus.setValue(wait);
-            return;
+            String wTime = br.getRegex("\\(Oder warten Sie (.*?)\\!\\)").getMatch(0);
+            long wait = 0;
+            if (wTime != null) {
+                logger.info("Traffic Limit reached...." + wTime);
+                wait = Regex.getMilliSeconds(wTime);
+            } else {
+                logger.info("Traffic Limit reached...." + br);
+            }
+            if (wait <= 0) wait = 65 * 60 * 1000l;
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait);
         }
         String error = new Regex(br.getURL(), "http://uploaded.to/\\?view=(.*)").getMatch(0);
         if (error == null) {
             error = new Regex(br.getURL(), "\\?view=(.*?)&").getMatch(0);
         }
         if (error != null) {
-            if (error.contains("error_traffic")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 61 * 60 * 1000l);
+            String wTime = br.getRegex("\\(Oder warten Sie (.*?)\\!\\)").getMatch(0);
+            if (error.contains("error_traffic")) {
+                if (wTime != null) {
+                    logger.info("Traffic Limit reached...." + wTime);
+                } else {
+                    logger.info("Traffic Limit reached...." + br);
+                }
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 65 * 60 * 1000l);
+            }
             String message = JDL.L("plugins.errors.uploadedto." + error, error.replaceAll("_", " "));
             linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFECT);
             linkStatus.setErrorMessage(message);
             return;
-
         }
 
         br.setFollowRedirects(false);

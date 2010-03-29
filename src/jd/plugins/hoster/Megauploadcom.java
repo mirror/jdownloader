@@ -65,7 +65,7 @@ public class Megauploadcom extends PluginForHost {
     private static int simultanpremium = 1;
     private boolean onlyapi = false;
     private String wait = null;
-    private boolean free = false;
+    private static boolean free = false;
 
     /*
      * every jd session starts with 1=default, because no waittime does not work
@@ -300,7 +300,7 @@ public class Megauploadcom extends PluginForHost {
             }
             if (br.containsHTML("location='http://www\\.megaupload\\.com/\\?c=msg")) {
                 br.getPage("http://www.megaupload.com/?c=msg");
-                wait = br.getRegex("Please check back in (\\+d) minutes").getMatch(0);
+                wait = br.getRegex("Please check back in (\\d+) minutes").getMatch(0);
                 logger.info("Megaupload blocked this IP(3): " + wait + " mins");
                 if (wait != null) {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait.trim()) * 60 * 1000l);
@@ -566,7 +566,7 @@ public class Megauploadcom extends PluginForHost {
             }
             if (br.containsHTML("A temporary access restriction is place") || br.containsHTML("We have detected an elevated")) {
                 /* ip blocked by megauploaded */
-                wait = br.getRegex("Please check back in (\\+d) minutes").getMatch(0);
+                wait = br.getRegex("Please check back in (\\d+) minutes").getMatch(0);
                 if (wait != null) {
                     logger.info("Megaupload blocked this IP(1): " + wait + " mins");
                 } else {
@@ -720,7 +720,7 @@ public class Megauploadcom extends PluginForHost {
         if (form != null && form.containsHTML("captchacode")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         if (br.containsHTML("location='http://www\\.megaupload\\.com/\\?c=msg")) {
             br.getPage("http://www.megaupload.com/?c=msg");
-            wait = br.getRegex("Please check back in (\\+d) minutes").getMatch(0);
+            wait = br.getRegex("Please check back in (\\d+) minutes").getMatch(0);
             if (wait != null) {
                 logger.info("Megaupload blocked this IP(3): " + wait + " mins");
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait.trim()) * 60 * 1000l);

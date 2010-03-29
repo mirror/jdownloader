@@ -236,7 +236,7 @@ public class MegasharesCom extends PluginForHost {
         String dsize = br.getRegex("FILE Download.*?>.*?>.*?>(\\d+.*?)<").getMatch(0);
         try {
             renew(br, 0);
-            if (br.containsHTML("class=\"order_push_box_left_2\">")) {
+            if (br.containsHTML("class=\"order_push_box_left(_2)?\">")) {
                 renew(br, 1);
             }
             if (br.containsHTML("Invalid link")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

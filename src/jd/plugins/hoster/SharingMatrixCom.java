@@ -50,10 +50,10 @@ public class SharingMatrixCom extends PluginForHost {
         return "http://sharingmatrix.com/contact";
     }
 
-    private static final String WAIT1 = "WAIT1";
+    private static final String WAIT1 = "WAIT1_1";
 
     private void setConfigElements() {
-        ConfigEntry cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), WAIT1, JDL.L("plugins.hoster.SharingMatrixCom.waitInsteadOfReconnect", "Wait 5 minutes instead of reconnecting")).setDefaultValue(false);
+        ConfigEntry cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), WAIT1, JDL.L("plugins.hoster.SharingMatrixCom.waitInsteadOfReconnect", "Wait 5 minutes instead of reconnecting")).setDefaultValue(true);
         config.addEntry(cond);
     }
 
@@ -221,7 +221,7 @@ public class SharingMatrixCom extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        boolean waitReconnecttime = getPluginConfig().getBooleanProperty(WAIT1, false);
+        boolean waitReconnecttime = getPluginConfig().getBooleanProperty(WAIT1, true);
         br.forceDebug(true);
         requestFileInformation(downloadLink);
         String passCode = null;
@@ -264,6 +264,7 @@ public class SharingMatrixCom extends PluginForHost {
             if (Integer.parseInt(br2.toString().trim()) != 1) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
 
         }
+        /* we will wait up to 10 mins */
         if (ctjvv > 80) {
             if (waitReconnecttime && ctjvv < 360)
                 sleep(ctjvv * 1001l, downloadLink);
