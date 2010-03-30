@@ -81,8 +81,9 @@ public class Youtube extends PluginForHost {
         this.setBrowserExclusive();
         prem = false;
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, 1);
-        if (!dl.getConnection().isContentDisposition()) {
+        br.setDebug(true);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), false, 1);
+        if (!dl.getConnection().isContentDisposition() && !dl.getConnection().getContentType().startsWith("video")) {
             downloadLink.setProperty("valid", false);
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_RETRY);
@@ -98,9 +99,10 @@ public class Youtube extends PluginForHost {
             login(account, br);
             prem = true;
             requestFileInformation(downloadLink);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, 1);
+            br.setDebug(true);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), false, 1);
         }
-        if (!dl.getConnection().isContentDisposition()) {
+        if (!dl.getConnection().isContentDisposition() && !dl.getConnection().getContentType().startsWith("video")) {
             downloadLink.setProperty("valid", false);
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_RETRY);

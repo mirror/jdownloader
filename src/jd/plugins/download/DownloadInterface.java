@@ -638,7 +638,7 @@ abstract public class DownloadInterface {
 
                     if (startByte > 0 && (connection.getHeaderField("Content-Range") == null || connection.getHeaderField("Content-Range").length() == 0)) {
                         error(LinkStatus.ERROR_DOWNLOAD_FAILED, JDL.L("download.error.message.rangeheaders", "Server does not support chunkload"));
-                        logger.severe("ERROR Chunk (no range header response)" + chunks.indexOf(this));
+                        logger.severe("ERROR Chunk (no range header response)" + chunks.indexOf(this) + connection.toString());
                         // logger.finest(connection.toString());
                         return;
 
@@ -704,8 +704,9 @@ abstract public class DownloadInterface {
                                 // schon fertig
                                 return;
                             }
+                            logger.severe("ERROR Chunk (range header parse error)" + chunks.indexOf(this) + connection.toString());
                             error(LinkStatus.ERROR_DOWNLOAD_FAILED, JDL.L("download.error.message.rangeheaderparseerror", "Unexpected rangeheader format:") + connection.getHeaderField("Content-Range"));
-                            logger.severe("ERROR Chunk (range header parse error)" + chunks.indexOf(this) + connection.getHeaderField("Content-Range") + ": " + connection.getHeaderField("Content-Range"));
+
                             // logger.finest(connection.toString());
                             return;
                         }
