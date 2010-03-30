@@ -1324,6 +1324,7 @@ plugins.hoster.httplinks.errors.basicauthneeded = Autorizzazione necessaria
 plugins.hoster.ifolderru.errors.ticketwait = In attesa per un ticket
 plugins.hoster.jamendo = Preferisci donwload di alta qualità
 plugins.hoster.letitbitnet.errors.countryblock = E' vietato il download di questo file nel tuo Paese
+plugins.hoster.madsharecom.nofreeslotsavailable = Nessuno slot gratuito disponibile
 plugins.hoster.mega1280com.servererror = Errore server!
 plugins.hoster.megasharescom.errors.allslotsfilled = Verifica impossibile: tutti gli slot sono occupati
 plugins.hoster.megasharescom.errors.alreadyloading = Verifica impossibile: file già in caricamento
