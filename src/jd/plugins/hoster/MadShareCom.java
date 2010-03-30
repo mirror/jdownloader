@@ -24,8 +24,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "madshare.com" }, urls = { "http://[\\w\\.]*?madshare\\.com/en/download/[a-zA-Z0-9]+/" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "madshare.com" }, urls = { "http://[\\w\\.]*?madshare\\.com/(en/)?download/[a-zA-Z0-9]+/" }, flags = { 0 })
 public class MadShareCom extends PluginForHost {
 
     public MadShareCom(PluginWrapper wrapper) {
@@ -61,6 +62,7 @@ public class MadShareCom extends PluginForHost {
         br.getPage("http://www.madshare.com/" + freelink);
         String id = br.getRegex("id:'(.*?)'").getMatch(0);
         if (id == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String ttt = br.getRegex("class=\"counter\" style='font-size:48px;color:#f15a22;'>(\\d+)</span><br />seconds left</b>").getMatch(0);
         br.getPage("http://www.madshare.com/api/get-download-id?id=" + id);
         // Usually happens when you try to start more than 1 dl at the same time
         if (br.containsHTML("dailyLimitExceeded")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1000l);
@@ -70,7 +72,6 @@ public class MadShareCom extends PluginForHost {
         String dllink = "http://" + server + "/download/" + key;
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         int tt = 60;
-        String ttt = br.getRegex("class=\"counter\" style='font-size:48px;color:#f15a22;'>(\\d+)</span><br />seconds left</b>").getMatch(0);
         if (ttt != null) {
             logger.info("Waittime detected, waiting " + ttt.trim() + " seconds from now on...");
             tt = Integer.parseInt(ttt);
@@ -78,10 +79,11 @@ public class MadShareCom extends PluginForHost {
         tt = tt + 1;
         sleep(tt * 1001, link);
         br.setDebug(true);
-        jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1).startDownload();
+        jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
         if ((dl.getConnection().getContentType().contains("html"))) {
             String check = br.getURL();
             if (check.contains("freeWait") || check.contains("freeStarted")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
+            if (check.contains("freeSlotsOver")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.MadShareCom.NoFreeSlotsAvailable", "No free slots available"), 10 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
