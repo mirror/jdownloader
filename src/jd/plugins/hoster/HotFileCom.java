@@ -201,6 +201,7 @@ public class HotFileCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dl_url, false, 1);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
+            if (br.containsHTML("You are currently downloading")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         /* filename workaround */
