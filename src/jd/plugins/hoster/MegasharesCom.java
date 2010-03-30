@@ -169,6 +169,7 @@ public class MegasharesCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 1);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
+            if (br.getHttpConnection().toString().contains("Your Passport needs to")) throw new PluginException(LinkStatus.ERROR_RETRY);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (!dl.startDownload()) {

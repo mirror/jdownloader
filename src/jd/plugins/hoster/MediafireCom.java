@@ -310,10 +310,10 @@ public class MediafireCom extends PluginForHost {
          * for building downloadurl later
          */
         String[] ids = br.getRegex("function " + parameters[3] + "\\(.*?io=.*?ElementbyId\\('(.*?)'").getColumn(0);
-        // String[] ids =
-        // br.getRegex("<div class=\".*?\" style=\".*?\" id=\"(.*?)\"").getColumn(0);
+        String[] ids2 = br.getRegex("<div class=\".*?\" style=\".*?\" id=\"(.*?)\"").getColumn(0);
         br.getPage("http://www.mediafire.com/dynamic/download.php?qk=" + qk + "&pk=" + pk + "&r=" + r);
         String error = br.getRegex("var et=(.*?);").getMatch(0);
+        if (error != null && !error.trim().equalsIgnoreCase("15")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
         /* now we have to js the functions and find the right js parts */
         String evalsWhat[] = br.getRegex("eval\\((?!\")(.*?)\\)").getColumn(0);
         ArrayList<String> evals = new ArrayList<String>();
@@ -321,9 +321,6 @@ public class MediafireCom extends PluginForHost {
             String evalThis = br.getRegex("(var " + evalWhat + "=.*?var [a-zA-Z0-9]+=unes.*?)eval\\(").getMatch(0);
             if (evalThis != null) evals.add(evalThis);
         }
-        if (evals.size() == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        if (error != null && !error.trim().equalsIgnoreCase("15")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
-        /* all var parts to build a downloadurl */
         vars = br.getRegex("<!--(.*?)function").getMatch(0);
         if (vars == null) {
             logger.info("Error (1)");
@@ -341,35 +338,61 @@ public class MediafireCom extends PluginForHost {
             }
         }
         String varMap = sb.toString();
-        for (String eval : evals) {
-            String evaled = evalLoop(eval, varMap);
-            String searchID = new Regex(evaled, "getElementById\\('(.*?)'\\)").getMatch(0);
-            if (searchID == null) continue;
-            for (String id : ids) {
-                if (id.equalsIgnoreCase(searchID)) {
-                    idmatch = new Regex(evaled, "(http:.*?)\"> Cl").getMatch(0);
-                    if (idmatch == null) continue;
+        if (evals.size() == 0) {
+            /* we try our function id first */
+            if (ids.length == 1) ids2[0] = ids[0];
+            for (String id : ids2) {
+                idmatch = br.getRegex(id + ".*?(http:.*?)\">").getMatch(0);
+                if (idmatch != null) {
+                    /*
+                     * we found the right id, so lets build our downloadurl
+                     */
+                    while (true) {
+                        String nextreplace = new Regex(idmatch, "\\+(.*?)(\\+|$)").getMatch(0);
+                        if (nextreplace == null) break;
+                        String match = varmap.get(nextreplace.trim());
+                        if (match != null) {
+                            idmatch = idmatch.replaceFirst("\\+" + nextreplace, match);
+                        } else {
+                            idmatch = idmatch.replaceFirst("\\+" + nextreplace, nextreplace.replaceAll("'", ""));
+                        }
+                    }
+                    url = idmatch.replaceAll("( |\")", "");
                     break;
                 }
             }
-            // idmatch = br.getRegex(id + ".*?(http:.*?)\\+'\">").getMatch(0);
-            if (idmatch != null) {
-                /*
-                 * we found the right id, so lets build our downloadurl
-                 */
-                while (true) {
-                    if (idmatch == null) break;
-                    String nextreplace = new Regex(idmatch, "\\+(.*?)(\\+|$)").getMatch(0);
-                    if (nextreplace == null) break;
-                    String match = varmap.get(nextreplace.trim());
-                    if (match != null) {
-                        idmatch = idmatch.replaceFirst("\\+" + nextreplace, match);
-                    } else {
-                        idmatch = idmatch.replaceFirst("\\+" + nextreplace, nextreplace.replaceAll("'", ""));
+        } else {
+            for (String eval : evals) {
+                String evaled = evalLoop(eval, varMap);
+                String searchID = new Regex(evaled, "getElementById\\('(.*?)'\\)").getMatch(0);
+                if (searchID == null) continue;
+                for (String id : ids) {
+                    if (id.equalsIgnoreCase(searchID)) {
+                        idmatch = new Regex(evaled, "(http:.*?)\"> Cl").getMatch(0);
+                        if (idmatch == null) continue;
+                        break;
                     }
                 }
-                if (idmatch != null) url = idmatch.replaceAll(" |\"", "");
-                break;
+                // idmatch = br.getRegex(id +
+                // ".*?(http:.*?)\\+'\">").getMatch(0);
+                if (idmatch != null) {
+                    /*
+                     * we found the right id, so lets build our downloadurl
+                     */
+                    while (true) {
+                        if (idmatch == null) break;
+                        String nextreplace = new Regex(idmatch, "\\+(.*?)(\\+|$)").getMatch(0);
+                        if (nextreplace == null) break;
+                        String match = varmap.get(nextreplace.trim());
+                        if (match != null) {
+                            idmatch = idmatch.replaceFirst("\\+" + nextreplace, match);
+                        } else {
+                            idmatch = idmatch.replaceFirst("\\+" + nextreplace, nextreplace.replaceAll("'", ""));
+                        }
+                    }
+                    if (idmatch != null) url = idmatch.replaceAll(" |\"", "");
+                    break;
+                }
             }
         }
         /* we need a valid url now, if not then something went wrong */
