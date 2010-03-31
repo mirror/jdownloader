@@ -138,6 +138,7 @@ public class L4dMapsCom extends PluginForHost {
         dllink = "http://www.l4dmaps.com/" + dllink;
         br.getPage(dllink);
         dllink = br.getRedirectLocation();
+        if (dllink == null || dllink.contains("index.php")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         logger.info("Final downloadlink = " + dllink);
         // You can download up to 3 files simultaneously from one server so if
         // someone knows how to make JD know that it is downloading 3 files from

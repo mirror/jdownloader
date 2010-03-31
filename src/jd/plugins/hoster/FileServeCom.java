@@ -17,7 +17,6 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.parser.Regex;
@@ -57,20 +56,30 @@ public class FileServeCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
-        // They got captchas but they don't check if you enter em valid so lets
-        // enter random stuff
-        String randomstuff = new Regex(downloadLink.getDownloadURL(), "fileserve.com/file/(.+)").getMatch(0) + new Random().nextInt(10);
-        br.postPage(downloadLink.getDownloadURL(), "captcha=" + randomstuff);
-        sleep(60 * 1001l, downloadLink);
+        if (!br.containsHTML("captica.php")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        for (int i = 0; i <= 3; i++) {
+            String captchaUrl = "http://www.fileserve.com/captica.php" + "";
+            String code = getCaptchaCode(captchaUrl, downloadLink);
+            br.postPage(downloadLink.getDownloadURL(), "captcha=" + code);
+            if (br.containsHTML("captica.php")) continue;
+            break;
+        }
+        // Ticket Time
+        int tt = 60;
+        String ttt = br.getRegex("id=\"timmer\">(\\d+)</span").getMatch(0);
+        if (ttt != null) {
+            logger.info("Waittime detected, waiting " + ttt.trim() + " seconds from now on...");
+            tt = Integer.parseInt(ttt);
+        }
+        sleep(tt * 1001, downloadLink);
         br.postPage(downloadLink.getDownloadURL(), "downloadLink=show");
         br.postPage(downloadLink.getDownloadURL(), "download=normal");
         String dllink = br.getRedirectLocation();
         // Waittime
-        String ttt = br.getRegex("<p>Wait (\\d+) seconds before next download</p>").getMatch(0);
-        if (ttt != null) {
-            logger.info("Waittime detected, waiting " + ttt.trim() + " seconds from now on...");
-            int tt = Integer.parseInt(ttt);
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Wait some seconds till retry", tt * 1001l);
+        String reconTime = br.getRegex("<p>Wait (\\d+) seconds before next download</p>").getMatch(0);
+        if (reconTime != null) {
+            logger.info("Waittime detected, waiting " + reconTime + " seconds from now on...");
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Wait some seconds till retry", Integer.parseInt(reconTime) * 1001l);
         }
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
