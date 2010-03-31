@@ -147,7 +147,8 @@ public class DepositFiles extends PluginForHost {
             // if (wait != null) throw new
             // PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE,
             // Integer.parseInt(wait.trim()) * 1000l);
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.depositfilescom.errors.allslotsbusy", "All download slots for your country are busy"), 10 * 60 * 1000l);
+            // set to one minute according to user request
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.depositfilescom.errors.allslotsbusy", "All download slots for your country are busy"), 1 * 60 * 1000l);
         }
         /* already loading */
         if (br.containsHTML("Von Ihren IP-Addresse werden schon einige")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1001l);
