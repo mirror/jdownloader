@@ -19,6 +19,8 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.URLConnectionAdapter;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -46,16 +48,22 @@ public class MotherLessCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.openGetConnection(parameter.getDownloadURL());
-        if (br.containsHTML("Not Available") || br.containsHTML("not found") || br.containsHTML("You will be redirected to")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        parameter.setName(Plugin.getFileNameFromHeader(br.getHttpConnection()));
-        parameter.setDownloadSize(br.getHttpConnection().getLongContentLength());
-        br.getHttpConnection().disconnect();
+        URLConnectionAdapter con = br.openGetConnection(parameter.getDownloadURL());
+        if (con.getContentType().contains("html")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        parameter.setName(Plugin.getFileNameFromHeader(con));
+        parameter.setDownloadSize(con.getLongContentLength());
+        con.disconnect();
         return AvailableStatus.TRUE;
     }
 
     public void handleFree(DownloadLink link) throws Exception {
-        if (!link.getDownloadURL().contains("/img/")) requestFileInformation(link);
+        if (!link.getDownloadURL().contains("/img/"))
+            requestFileInformation(link);
+        else {
+            // Access the page first to make the finallink valid
+            String fileid = new Regex(link.getDownloadURL(), "/img/([A-Z0-9]+)").getMatch(0);
+            if (fileid != null) br.getPage("http://motherless.com/" + fileid);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

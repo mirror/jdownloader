@@ -41,7 +41,7 @@ public class FpsBananaCom extends PluginForDecrypt {
         br.setFollowRedirects(false);
         if (!parameter.contains("/download/")) parameter = parameter.replace("/maps/", "/maps/download/");
         br.getPage(parameter);
-        if (br.containsHTML("(This Map doesn't have a file|None found!)")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        if (br.containsHTML("This Map doesn't have a file")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         String fpName = br.getRegex("class=\"bold tbig\">(.*?)</span").getMatch(0);
         String[] links = br.getRegex("path=(http.*?)\"").getColumn(0);
         if (links == null || links.length == 0) return null;

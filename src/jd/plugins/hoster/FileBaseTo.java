@@ -188,7 +188,7 @@ public class FileBaseTo extends PluginForHost {
         }
         try {
             URLConnectionAdapter con = dl.getConnection();
-            if (!con.isContentDisposition()) {
+            if (con.getContentType().contains("html")) {
                 br.getPage(forms.getAction());
                 if (br.containsHTML("error")) {
                     con.disconnect();

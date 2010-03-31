@@ -87,22 +87,21 @@ public class IfolderRu extends PluginForHost {
             watchAd = "http://ints.ifolder.ru/ints/?".concat(watchAd);
             br.getPage(watchAd);
             watchAd = br.getRegex("<font size=\"\\+1\"><a href=(.*?)>").getMatch(0);
-            // I hope i didn't destroy anything by taking that part out
-            // if (watchAd == null) throw new
-            // PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            // br.getPage(watchAd);
-            // watchAd = br.getRegex("\"f_top\" src=\"(.*?)\"").getMatch(0);
-            // if (watchAd == null) throw new
-            // PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            // watchAd = "http://ints.ifolder.ru" + watchAd;
-            // br.getPage(watchAd);
-            // /* Tickettime */
-            // String ticketTimeS = br.getRegex("delay = (\\d+)").getMatch(0);
-            // if (ticketTimeS == null) throw new
-            // PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            // int ticketTime = Integer.parseInt(ticketTimeS) * 1000;
-            // this.sleep(ticketTime + 1, downloadLink);
-            // br.getPage(watchAd);
+            // If they take the waittime out this part is optional
+            if (watchAd != null) {
+                if (watchAd == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                br.getPage(watchAd);
+                watchAd = br.getRegex("\"f_top\" src=\"(.*?)\"").getMatch(0);
+                if (watchAd == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                watchAd = "http://ints.ifolder.ru" + watchAd;
+                br.getPage(watchAd);
+                /* Tickettime */
+                String ticketTimeS = br.getRegex("delay = (\\d+)").getMatch(0);
+                if (ticketTimeS == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                int ticketTime = Integer.parseInt(ticketTimeS) * 1000;
+                this.sleep(ticketTime + 1, downloadLink);
+                br.getPage(watchAd);
+            }
         }
         for (int retry = 1; retry <= 5; retry++) {
             Form captchaForm = br.getFormbyProperty("name", "form1");

@@ -63,7 +63,7 @@ public class MotherLessCom extends PluginForDecrypt {
             ArrayList<String> pages = new ArrayList<String>();
             pages.add("currentPage");
             String pagenumbers[] = br.getRegex("page=(\\d+)\"").getColumn(0);
-            if (!(pagenumbers == null && !(pagenumbers.length == 0))) {
+            if (!(pagenumbers == null) && !(pagenumbers.length == 0)) {
                 for (String aPageNumer : pagenumbers) {
                     if (!pages.contains(aPageNumer)) pages.add(aPageNumer);
                 }
