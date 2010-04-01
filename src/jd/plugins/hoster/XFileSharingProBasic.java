@@ -374,7 +374,7 @@ public class XFileSharingProBasic extends PluginForHost {
                     if (dllink == null) {
                         dllink = br.getRegex("dotted #bbb;padding.*?<a href=\"(.*?)\"").getMatch(0);
                         if (dllink == null) {
-                            dllink = br.getRegex("This direct link will be available for your IP.*?href=\"(http.*?)\"").getMatch(0);
+                            dllink = br.getRegex("This (direct link|download link) will be available for your IP.*?href=\"(http.*?)\"").getMatch(1);
                             if (dllink == null) {
                                 // This was for fileop.com, maybe also works for
                                 // others!

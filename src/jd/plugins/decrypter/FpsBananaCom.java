@@ -28,7 +28,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fpsbanana.com" }, urls = { "http://[\\w\\.]*?fpsbanana\\.com/(maps/download|maps)/\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fpsbanana.com" }, urls = { "http://[\\w\\.]*?fpsbanana\\.com/((/download)?maps/\\d+|maps/games/\\d+(\\?page=\\d+\\&mn=\\d+_body)?)" }, flags = { 0 })
 public class FpsBananaCom extends PluginForDecrypt {
 
     public FpsBananaCom(PluginWrapper wrapper) {
@@ -39,26 +39,40 @@ public class FpsBananaCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.setFollowRedirects(false);
-        if (!parameter.contains("/download/")) parameter = parameter.replace("/maps/", "/maps/download/");
-        br.getPage(parameter);
-        if (br.containsHTML("This Map doesn't have a file")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-        String fpName = br.getRegex("class=\"bold tbig\">(.*?)</span").getMatch(0);
-        String[] links = br.getRegex("path=(http.*?)\"").getColumn(0);
-        if (links == null || links.length == 0) return null;
-        progress.setRange(links.length);
-        for (String alink : links) {
-            br.getPage("http://www.fpsbanana.com/mirrors/startdl/?path=" + alink);
-            String finallink = br.getRedirectLocation();
-            if (finallink == null)
-                logger.info("Mirror " + br.getHost() + " for link " + parameter + " doesn't seem to work, decrypt goes on.");
-            else
-                decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
-            progress.increase(1);
-        }
-        if (fpName != null) {
-            FilePackage fp = FilePackage.getInstance();
-            fp.setName(fpName.trim());
-            fp.addLinks(decryptedLinks);
+        if (parameter.contains("/games/")) {
+            // To decrypt whole categories
+            br.getPage(parameter);
+            ArrayList<String> someLinks = new ArrayList<String>();
+            String alLinks[] = br.getRegex("\"(http://www\\.fpsbanana\\.com/maps/\\d+)\"").getColumn(0);
+            if (alLinks == null || alLinks.length == 0) return null;
+            for (String aLink : alLinks) {
+                if (!someLinks.contains(aLink)) someLinks.add(aLink);
+            }
+            for (String finallink : someLinks) {
+                decryptedLinks.add(createDownloadlink(finallink));
+            }
+        } else {
+            if (!parameter.contains("/download/")) parameter = parameter.replace("/maps/", "/maps/download/");
+            br.getPage(parameter);
+            if (br.containsHTML("This Map doesn't have a file")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+            String fpName = br.getRegex("class=\"bold tbig\">(.*?)</span").getMatch(0);
+            String[] links = br.getRegex("path=(http.*?)\"").getColumn(0);
+            if (links == null || links.length == 0) return null;
+            progress.setRange(links.length);
+            for (String alink : links) {
+                br.getPage("http://www.fpsbanana.com/mirrors/startdl/?path=" + alink);
+                String finallink = br.getRedirectLocation();
+                if (finallink == null)
+                    logger.info("Mirror " + br.getHost() + " for link " + parameter + " doesn't seem to work, decrypt goes on.");
+                else
+                    decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
+                progress.increase(1);
+            }
+            if (fpName != null) {
+                FilePackage fp = FilePackage.getInstance();
+                fp.setName(fpName.trim());
+                fp.addLinks(decryptedLinks);
+            }
         }
         return decryptedLinks;
     }
