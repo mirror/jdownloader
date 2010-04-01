@@ -16,6 +16,8 @@
 
 package jd.plugins.hoster;
 
+import java.util.HashMap;
+
 import jd.PluginWrapper;
 import jd.gui.swing.components.ConvertDialog.ConversionMode;
 import jd.http.Browser;
@@ -36,7 +38,7 @@ import jd.utils.JDMediaConvert;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youtube.com" }, urls = { "http://[\\w\\.]*?youtube\\.com/get_video\\?video_id=.+&t=.+(&fmt=\\d+)?" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youtube.com" }, urls = { "http://[\\w\\.]*?youtube\\.com/(videoplayback\\?.+|get_video\\?video_id=.+&t=.+(&fmt=\\d+)?)" }, flags = { 2 })
 public class Youtube extends PluginForHost {
 
     private static final Object lock = new Object();
@@ -63,14 +65,21 @@ public class Youtube extends PluginForHost {
             downloadLink.setDownloadSize((Long) downloadLink.getProperty("size", Long.valueOf(0l)));
             PluginForDecrypt plugin = JDUtilities.getPluginForDecrypt("youtube.com");
             if (plugin == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "cannot decrypt videolink");
-            if (downloadLink.getStringProperty("fmt", null) == null) throw new PluginException(LinkStatus.ERROR_FATAL, "You have to add link again");
+            if (downloadLink.getStringProperty("fmtNew", null) == null) throw new PluginException(LinkStatus.ERROR_FATAL, "You have to add link again");
             if (downloadLink.getStringProperty("videolink", null) == null) throw new PluginException(LinkStatus.ERROR_FATAL, "You have to add link again");
-            String link = ((TbCm) plugin).getLink(downloadLink.getStringProperty("videolink", null), prem, this.br);
-            if (link == null) {
+            HashMap<Integer, String> links = ((TbCm) plugin).getLinks(downloadLink.getStringProperty("videolink", null), prem, this.br);
+            boolean oldLayout = false;
+            if (links != null) oldLayout = true;
+            if (links == null) links = ((TbCm) plugin).getLinksNew(downloadLink.getStringProperty("videolink", null), prem, this.br);
+            if (links == null || links.size() == 0) {
                 if (br.containsHTML("verify_age")) throw new PluginException(LinkStatus.ERROR_FATAL, "The entered account couldn't pass the age verification!");
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            downloadLink.setUrlDownload(link + downloadLink.getStringProperty("fmt", null));
+            if (oldLayout) {
+                downloadLink.setUrlDownload(links.get(0) + "&fmt=" + downloadLink.getIntegerProperty("fmtNew", 0));
+            } else {
+                downloadLink.setUrlDownload(links.get(downloadLink.getIntegerProperty("fmtNew", 0)));
+            }
             return AvailableStatus.TRUE;
         }
 
@@ -80,6 +89,8 @@ public class Youtube extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         prem = false;
+        /* we now have to get fresh links */
+        downloadLink.setProperty("valid", false);
         requestFileInformation(downloadLink);
         br.setDebug(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), false, 1);
@@ -98,6 +109,7 @@ public class Youtube extends PluginForHost {
         synchronized (lock) {
             login(account, br);
             prem = true;
+            /* we now have to get fresh links */
             requestFileInformation(downloadLink);
             br.setDebug(true);
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), false, 1);

@@ -163,6 +163,7 @@ public class MegasharesCom extends PluginForHost {
         }
         // Downloadlink
         String url = br.getRegex("<div>\\s*?<a href=\"(http://.*?megashares.*?)\">").getMatch(0);
+        if (url == null) url = br.getRegex("<div id=\"show_download_button(_2)?\">\\s*?<a href=\"(http://.*?megashares.*?)\">").getMatch(1);
         if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // Dateigröße holen
         br.setFollowRedirects(true);
