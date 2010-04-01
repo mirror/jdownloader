@@ -216,8 +216,16 @@ public class CraMitIn extends PluginForHost {
                     logger.info("Put password \"" + passCode + "\" entered by user in the DLForm.");
                     password = false;
                 }
+                rc.getForm().remove("method_free");
+                rc.getForm().put("method_free", "Free Download");
+                rc.getForm().put("op", "download2");
+                rc.getForm().put("recaptcha_challenge_field", rc.getChallenge());
+                rc.getForm().put("recaptcha_response_field", c);
+                rc.getForm().put("referer", downloadLink.getDownloadURL());
+                Form lol = rc.getForm();
                 recaptcha = true;
-                rc.setCode(c);
+                // rc.setCode(c);
+                br.submitForm(lol);
                 logger.info("Put captchacode " + c + " obtained by captcha metod \"Re Captcha\" in the form and submitted it.");
             }
             doSomething();
