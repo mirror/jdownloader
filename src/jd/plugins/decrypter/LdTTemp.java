@@ -17,18 +17,23 @@
 package jd.plugins.decrypter;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.http.RandomUserAgent;
-import jd.parser.html.HTMLParser;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.pluginUtils.Recaptcha;
+import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "iload.to", "lof.cc" }, urls = { "http://[\\w\\.]*?links\\.iload\\.to/links/\\?lid=.+", "http://[\\w\\.]*?lof\\.cc/[!a-zA-Z0-9_]+" }, flags = { 0, 0 })
 public class LdTTemp extends PluginForDecrypt {
@@ -58,13 +63,40 @@ public class LdTTemp extends PluginForDecrypt {
             break;
         }
         if (br.containsHTML("(api.recaptcha.net|Das war leider Falsch|das Falsche Captcha eingegeben)")) throw new DecrypterException(DecrypterException.CAPTCHA);
-        String[] links = HTMLParser.getHttpLinks(br.toString(), "");
-        if (links.length == 0) return null;
-        for (String finallink : links) {
-            if (!finallink.contains("iload.to") && !finallink.contains("lof.cc")) decryptedLinks.add(createDownloadlink(finallink));
-        }
-
+        loadcontainer(br, param);
         return decryptedLinks;
     }
 
+    private ArrayList<DownloadLink> loadcontainer(Browser br, CryptedLink param) throws IOException, PluginException {
+        ArrayList<DownloadLink> decryptedLinks = null;
+        Browser brc = br.cloneBrowser();
+        String thelink = param.toString() + "/dlc";
+        /*
+         * walk from end to beginning, so we load the all in one container first
+         */
+        String test = Encoding.htmlDecode(thelink);
+        File file = null;
+        URLConnectionAdapter con = brc.openGetConnection(thelink);
+        if (con.getResponseCode() == 200) {
+            file = JDUtilities.getResourceFile("tmp/ldttemp/" + test.replaceAll("(:|/)", "") + ".dlc");
+            if (file == null) return null;
+            file.deleteOnExit();
+            brc.downloadConnection(file, con);
+            if (file != null && file.exists() && file.length() > 100) {
+                decryptedLinks = JDUtilities.getController().getContainerLinks(file);
+            }
+        } else {
+            con.disconnect();
+            return null;
+        }
+
+        if (file != null && file.exists() && file.length() > 100) {
+            // decryptedLinks =
+            // JDUtilities.getController().getContainerLinks(file);
+            if (decryptedLinks.size() > 0) return decryptedLinks;
+        } else {
+            return null;
+        }
+        return null;
+    }
 }
