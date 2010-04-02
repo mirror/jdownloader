@@ -49,6 +49,7 @@ import jd.gui.swing.components.linkbutton.JLink;
 import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.jdgui.JDGuiConstants;
 import jd.gui.swing.jdgui.userio.UserIOGui;
+import jd.gui.swing.laf.LookAndFeelController;
 import jd.http.Browser;
 import jd.nutils.OSDetector;
 import jd.nutils.OutdatedParser;
@@ -78,7 +79,10 @@ public class Main {
     }
 
     public static void main(String args[]) {
-
+        // Mac OS specific
+        if (OSDetector.isMac()) {
+            initMACProperties();
+        }
         System.setProperty("file.encoding", "UTF-8");
         // OSDetector.setOSString(System.getProperty("os.name"));
         // System.setProperty("os.name", "Windows Vista m.a.c");
@@ -87,12 +91,8 @@ public class Main {
         System.setProperty("java.net.preferIPv4Stack", "true");
         LOG = JDLogger.getLogger();
 
-        // Mac OS specific
-        if (OSDetector.isMac()) {
-            initMACProperties();
-        }
-
         LOG.info("Start JDownloader");
+
         for (String p : args) {
             if (p.equalsIgnoreCase("-debug")) {
                 JDInitFlags.SWITCH_DEBUG = true;
@@ -312,15 +312,21 @@ public class Main {
      */
     private static void initMACProperties() {
         // set Properties
-        // Mac Java from 1.3
-        System.setProperty("com.apple.macos.useScreenMenuBar", "true");
-        System.setProperty("com.apple.mrj.application.growbox.intrudes", "true");
-        System.setProperty("com.apple.hwaccel", "true");
+
+        // MenuName in every LAF
         System.setProperty("com.apple.mrj.application.apple.menu.about.name", "JDownloader");
 
-        // Mac Java from 1.4
-        System.setProperty("apple.laf.useScreenMenuBar", "true");
-        System.setProperty("apple.awt.showGrowBox", "true");
+        // native Mac just if User Choose Aqua as Skin
+        if (LookAndFeelController.getPlaf().getName().equals("Apple Aqua")) {
+            // Mac Java from 1.3
+            System.setProperty("com.apple.macos.useScreenMenuBar", "true");
+            System.setProperty("com.apple.mrj.application.growbox.intrudes", "true");
+            System.setProperty("com.apple.hwaccel", "true");
+
+            // Mac Java from 1.4
+            System.setProperty("apple.laf.useScreenMenuBar", "true");
+            System.setProperty("apple.awt.showGrowBox", "true");
+        }
 
         try {
             new MacOSController();
@@ -331,7 +337,9 @@ public class Main {
         }
 
         /*
-         * TODO: Pfade müssen nicht absolut angegeben werden.
+         * TODO: Pfade müssen nicht absolut angegeben werden. Detmud: verstehe
+         * diesen Codezeilen nicht, wenn wer weiß was sie sollen bitte
+         * defenieren
          */
         if (System.getProperty("java.version").startsWith("1.5")) {
             File info15 = JDUtilities.getResourceFile("../../info_15.plist");

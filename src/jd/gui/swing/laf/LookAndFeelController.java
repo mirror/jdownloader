@@ -193,8 +193,8 @@ public class LookAndFeelController {
                 } catch (InvocationTargetException e) {
 
                     // ON some systems (turkish) sntheticy throws bugs when
-                    // inited for the SPlashscreen. this workaroudn disables the
-                    // spashscreen and
+                    // inited for the Splashscreen. this workaround disables the
+                    // Splashscreen and
                     // this the synthetica lafs work
                     JDLogger.exception(e);
                     try {
