@@ -37,15 +37,7 @@ public class JDInfoBar extends PluginOptional {
 
                 @Override
                 public void valueChanged(final Object newValue) {
-                    new GuiRunnable<Object>() {
-
-                        @Override
-                        public Object runSave() {
-                            AWTUtilities.setWindowOpacity(infoDialog, Float.parseFloat(newValue.toString()) / 100);
-                            return null;
-                        }
-
-                    }.start();
+                    updateOpacity(newValue);
                     super.valueChanged(newValue);
                 }
             };
@@ -53,6 +45,24 @@ public class JDInfoBar extends PluginOptional {
             ce.setStep(10);
             config.addEntry(ce);
         }
+    }
+
+    private void updateOpacity(Object value) {
+        final Float newValue;
+        if (value == null) {
+            newValue = getPluginConfig().getDoubleProperty(JDInfoBar.PROPERTY_OPACITY, 100.0).floatValue();
+        } else {
+            newValue = Float.parseFloat(value.toString());
+        }
+        new GuiRunnable<Object>() {
+
+            @Override
+            public Object runSave() {
+                AWTUtilities.setWindowOpacity(infoDialog, newValue / 100);
+                return null;
+            }
+
+        }.start();
     }
 
     @Override
@@ -81,6 +91,7 @@ public class JDInfoBar extends PluginOptional {
         activateAction.setSelected(false);
 
         infoDialog = InfoDialog.getInstance(activateAction);
+        updateOpacity(null);
 
         return true;
     }
