@@ -4,12 +4,21 @@ import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
+import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
+import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
+
+import com.sun.awt.AWTUtilities;
 
 @OptionalPlugin(rev = "$Revision$", id = "infobar", hasGui = true, interfaceversion = 5)
 public class JDInfoBar extends PluginOptional {
+
+    private static final String PROPERTY_OPACITY = "PROPERTY_OPACITY";
 
     private MenuAction activateAction;
 
@@ -17,6 +26,33 @@ public class JDInfoBar extends PluginOptional {
 
     public JDInfoBar(PluginWrapper wrapper) {
         super(wrapper);
+
+        initConfigEntries();
+    }
+
+    private void initConfigEntries() {
+        if (JDUtilities.getJavaVersion() >= 1.6) {
+            ConfigEntry ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), JDInfoBar.PROPERTY_OPACITY, JDL.L("jd.plugins.optional.infobar.JDInfoBar.opacity", "Opacity of the Dialog [in %]"), 1, 100) {
+                private static final long serialVersionUID = 1L;
+
+                @Override
+                public void valueChanged(final Object newValue) {
+                    new GuiRunnable<Object>() {
+
+                        @Override
+                        public Object runSave() {
+                            AWTUtilities.setWindowOpacity(infoDialog, Float.parseFloat(newValue.toString()) / 100);
+                            return null;
+                        }
+
+                    }.start();
+                    super.valueChanged(newValue);
+                }
+            };
+            ce.setDefaultValue(100);
+            ce.setStep(10);
+            config.addEntry(ce);
+        }
     }
 
     @Override

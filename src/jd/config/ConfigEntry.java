@@ -81,7 +81,7 @@ public class ConfigEntry implements Serializable {
     private int type;
 
     /**
-     * Konstruktor für Komponenten die nix brauchen. z.B. JSpearator
+     * Konstruktor für Komponenten die nix brauchen. z.B. JSeparator
      * 
      * @param type
      */
@@ -90,7 +90,7 @@ public class ConfigEntry implements Serializable {
     }
 
     /**
-     * Konstruktor für z.B. Buttons (Label+ Actionlistener)
+     * Konstruktor für z.B. Buttons (Label + Actionlistener)
      * 
      * @param type
      *            Typ ID (ConfigContainer.TYPE_*)
@@ -122,15 +122,6 @@ public class ConfigEntry implements Serializable {
         this.controller = controller;
         this.propertyName = "ListControlled";
         enabled = true;
-    }
-
-    public ConfigEntry(int type, Property propertyInstance, String propertyName, int num) {
-        // sets defaultvalue in pi
-
-        this.type = type;
-        this.propertyName = propertyName;
-        this.propertyInstance = propertyInstance;
-        this.end = num;
     }
 
     /**
@@ -221,10 +212,7 @@ public class ConfigEntry implements Serializable {
     }
 
     /**
-     * Konstruktor für z.B. einen Link (label& url
-     * 
-     * 
-     * public ConfigEntry(int type, String label, String link) {
+     * Konstruktor für z.B. einen Link (label & url)
      */
     public ConfigEntry(int type, String label, String link) {
         this.type = type;

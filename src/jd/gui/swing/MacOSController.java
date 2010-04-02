@@ -29,23 +29,16 @@ import com.apple.eawt.ApplicationEvent;
 
 public class MacOSController extends Application {
 
-    @SuppressWarnings("deprecation")
     public MacOSController() {
-
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-
         } catch (ClassNotFoundException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         } catch (InstantiationException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         } catch (IllegalAccessException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         } catch (UnsupportedLookAndFeelException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
 

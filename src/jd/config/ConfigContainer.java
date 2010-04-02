@@ -21,6 +21,7 @@ import java.util.ArrayList;
 
 import javax.swing.ImageIcon;
 
+import jd.controlling.ListController;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -38,18 +39,23 @@ public class ConfigContainer implements Serializable {
      */
     private static final long serialVersionUID = 6583843494325603616L;
     /**
-     * ConfigElement ist ein Textfeld public ConfigEntry(int type, Property
-     * propertyInstance, String propertyName, String label) {
+     * ConfigElement ist ein Textfeld
+     * 
+     * @see ConfigEntry#ConfigEntry(int, Property, String, String)
      */
     public static final int TYPE_TEXTFIELD = 0;
     /**
-     * ConfigElement ist ein Combobox ConfigEntry(int type, Property
-     * propertyInstance, String propertyName, Object[] list, String label)
+     * ConfigElement ist ein Combobox
+     * 
+     * @see ConfigEntry#ConfigEntry(int, Property, String, Object[], String)
      */
     public static final int TYPE_COMBOBOX = 1;
     /**
      * ConfigElement ist ein Button ConfigEntry(int type, ActionListener
      * listener, String label)
+     * 
+     * @see ConfigEntry#ConfigEntry(int, ActionListener, String, String,
+     *      ImageIcon)
      */
     public static final int TYPE_BUTTON = 2;
     /**
@@ -57,42 +63,51 @@ public class ConfigContainer implements Serializable {
      */
     public static final int TYPE_CHECKBOX = 3;
     /**
-     * ConfigElement ist ein Label ConfigEntry(int type, String label)
+     * ConfigElement ist ein Label
+     * 
+     * @see ConfigEntry#ConfigEntry(int, String)
      */
     public static final int TYPE_LABEL = 4;
     /**
-     * ConfigElement ist ein Radiobutton ConfigEntry(int type, Property
-     * propertyInstance, String propertyName, Object[] list, String label)
+     * ConfigElement ist ein Radiobutton
+     * 
+     * @see ConfigEntry#ConfigEntry(int, Property, String, Object[], String)
      */
     public static final int TYPE_RADIOFIELD = 5;
     /**
      * ConfigElement ist eine Trennlinie ConfigEntry(int type)
+     * 
+     * @see ConfigEntry#ConfigEntry(int)
      */
     public static final int TYPE_SEPARATOR = 6;
     /**
-     * ConfigElement ist ein Browser für eine Datei public ConfigEntry(int type,
-     * Property propertyInstance, String propertyName, String label) {
+     * ConfigElement ist ein Browser für eine Datei
+     * 
+     * @see ConfigEntry#ConfigEntry(int, Property, String, String)
      */
     public static final int TYPE_BROWSEFILE = 7;
     /**
-     * ConfigElement ist eine Zahlenkomponente (Spinner) ConfigEntry(int type,
-     * Property propertyInstance, String propertyName, String label, int start,
-     * int end)
+     * ConfigElement ist eine Zahlenkomponente (Spinner)
+     * 
+     * @see ConfigEntry#ConfigEntry(int, Property, String, String, int, int)
      */
     public static final int TYPE_SPINNER = 8;
     /**
-     * ConfigElement ist ein Browser für ein Verzeichnis public ConfigEntry(int
-     * type, Property propertyInstance, String propertyName, String label) {
+     * ConfigElement ist ein Browser für ein Verzeichnis
+     * 
+     * @see ConfigEntry#ConfigEntry(int, Property, String, String)
      */
     public static final int TYPE_BROWSEFOLDER = 9;
     /**
-     * ConfigElement ist ein Textbereich public ConfigEntry(int type, Property
-     * propertyInstance, String propertyName, String label) {
+     * ConfigElement ist ein Textbereich
+     * 
+     * @see ConfigEntry#ConfigEntry(int, Property, String, String)
      */
     public static final int TYPE_TEXTAREA = 10;
     /**
-     * ConfigElement ist ein Textbereich public ConfigEntry(int type, Property
-     * propertyInstance, String propertyName, String label) {
+     * ConfigElement ist ein Textbereich
+     * 
+     * @see ConfigEntry#ConfigEntry(int, Property, String, String)
      */
     public static final int TYPE_PASSWORDFIELD = 11;
     public static final int TYPE_LINK = 12;
@@ -101,13 +116,15 @@ public class ConfigContainer implements Serializable {
     /**
      * ConfigElement ist ein Textbereich, welcher von einem eigenen Controller
      * verwaltet wird (siehe PasswordListController und HTAccessController)
-     * public ConfigEntry(int type, ListController controller, String label)
+     * 
+     * @see ConfigEntry#ConfigEntry(int, ListController, String)
      */
     public static final int TYPE_LISTCONTROLLED = 110;
     /**
-     * ConfigElement ist ein Combobox ConfigEntry(int type, Property
-     * propertyInstance, String propertyName, Object[] list, String label)
-     * dessen Index (und nicht Text) gespeichert und geladen wird
+     * ConfigElement ist ein Combobox dessen Index (und nicht Text) gespeichert
+     * und geladen wird
+     * 
+     * @see ConfigEntry#ConfigEntry(int, Property, String, Object[], String)
      */
     public static final int TYPE_COMBOBOX_INDEX = 15;
 
