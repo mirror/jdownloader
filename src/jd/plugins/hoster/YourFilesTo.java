@@ -22,8 +22,8 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
+import jd.parser.JavaScript;
 import jd.parser.Regex;
-import jd.parser.html.HTMLParser;
 import jd.plugins.BrowserAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
@@ -69,51 +69,16 @@ public class YourFilesTo extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        String filename = br.getRegex("Filename:</b></font></td>.*?<td align=.*?width=.*?>(.*?)</td>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        filename = Encoding.deepHtmlDecode(filename);
-        String page = Encoding.urlDecode(br.toString(), true);
-        String[] links = HTMLParser.getHttpLinks(page, null);
-        if (br.containsHTML("var timeout=")) {
-            String[] times = br.getRegex("var.*?=.*?(\\d+)").getColumn(0);
-            int tt = 30;
-            if (times.length > 0) {
-                for (String t : times) {
-                    if (Integer.parseInt(t) > 10 && Integer.parseInt(t) < tt) tt = Integer.parseInt(t);
-                }
-            }
-            sleep(tt * 1001l, downloadLink);
+        JavaScript js = new JavaScript(br);
+        try {
+            js.runPage();
+        } catch (Exception e) {
         }
-        boolean found = false;
-        for (String link : links) {
-            String fakelink = Encoding.deepHtmlDecode(link);
-            if (!fakelink.contains(filename)) continue;
-            if (br.containsHTML("replace")) {
-                String[] replacessuck = br.getRegex("(\\.replace\\(.*?,.*?\\))").getColumn(0);
-                if (replacessuck != null) {
-                    for (String fckU : replacessuck) {
-                        String rpl1 = new Regex(fckU, "replace\\((.*?),.*?\\)").getMatch(0).replace("/", "");
-                        String rpl2 = new Regex(fckU, "replace\\(.*?, \"(.*?)\"\\)").getMatch(0);
-                        fakelink = fakelink.replace(rpl1, rpl2);
-                    }
-                }
-            }
-            Browser brc = br.cloneBrowser();
-            dl = BrowserAdapter.openDownload(brc, downloadLink, fakelink);
-            if (dl.getConnection().isContentDisposition()) {
-                String fakename = Plugin.getFileNameFromHeader(dl.getConnection());
-                if (fakename.contains("README.TXT")) {
-                    dl.getConnection().disconnect();
-                    continue;
-                }
-                found = true;
-                break;
-            } else {
-                dl.getConnection().disconnect();
-            }
-        }
-        if (!found) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String fakelink = js.getVar("dumdi1");
+        if (br.getRegex("'<a href=\"' \\+ (.*?) \\+").getMatch(0) != null) fakelink = js.getVar(br.getRegex("'<a href=\"' \\+ (.*?) \\+").getMatch(0).trim());
+        if (fakelink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        Browser brc = br.cloneBrowser();
+        dl = BrowserAdapter.openDownload(brc, downloadLink, fakelink);
         /* Workaround für fehlerhaften Filename Header */
         String name = Plugin.getFileNameFromHeader(dl.getConnection());
         if (name != null) downloadLink.setFinalFileName(Encoding.deepHtmlDecode(name));

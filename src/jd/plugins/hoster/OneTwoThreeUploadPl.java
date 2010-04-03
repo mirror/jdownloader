@@ -27,28 +27,30 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileserve.com" }, urls = { "http://[\\w\\.]*?fileserve\\.com/file/[a-zA-Z0-9]+" }, flags = { 0 })
-public class FileServeCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "123upload.pl" }, urls = { "http://[\\w\\.]*?123upload\\.pl/files/get/[a-zA-Z0-9]+" }, flags = { 0 })
+public class OneTwoThreeUploadPl extends PluginForHost {
 
-    public FileServeCom(PluginWrapper wrapper) {
+    public OneTwoThreeUploadPl(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
     public String getAGBLink() {
-        return "http://www.fileserve.com/terms.php";
+        return "http://123upload.pl/rules.php";
     }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(The file could not be found|Please check the download link)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("class=\"wlight\">(.*?)</b>").getMatch(0);
-        String filesize = br.getRegex("</b> \\((.*?)\\)").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (br.containsHTML("(> File Link Error<|Your file could not be found)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<span id=\"name\">.*?<nobr>(.*?)<img").getMatch(0);
+        String filesize = br.getRegex("<span id=\"size\">(.*?)</span>").getMatch(0);
+        String md5 = br.getRegex("id=\"md5\">(.*?)</span>").getMatch(0);
+        if (md5 != null) link.setMD5Hash(md5);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(filename.trim());
-        if (filesize != null) link.setDownloadSize(Regex.getSize(filesize));
+        link.setDownloadSize(Regex.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
@@ -56,27 +58,15 @@ public class FileServeCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
-        br.postPage(downloadLink.getDownloadURL(), "downloadLink=wait");
-        // Ticket Time
-        String reconTime = br.getRegex("(\\d+)").getMatch(0);
-        int tt = 60;
-        if (reconTime != null) {
-            logger.info("Waittime detected, waiting " + reconTime + " seconds from now on...");
-            tt = Integer.parseInt(reconTime);
-        }
-        sleep(tt * 1001, downloadLink);
-        br.postPage(downloadLink.getDownloadURL(), "download=normal");
+        String downlink = br.getRegex("\"(http://123upload\\.pl/files/gen/.*?/.*?)\"").getMatch(0);
+        if (downlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.postPage(downlink, "pass=&waited=1");
         String dllink = br.getRedirectLocation();
-        if (dllink == null) {
-            String wait = br.getRegex("<p>You have to wait (\\d+) seconds to start another download").getMatch(0);
-            if (wait != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait) * 1001l);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            String wait = br.getRegex("<p>You have to wait (\\d+) seconds to start another download").getMatch(0);
-            if (wait != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait) * 1001l);
+            if (br.containsHTML("(Unable to connect to your database server|A Database Error Occurred)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -88,7 +78,7 @@ public class FileServeCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 2;
+        return -1;
     }
 
     @Override

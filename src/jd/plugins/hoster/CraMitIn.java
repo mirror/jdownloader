@@ -337,9 +337,7 @@ public class CraMitIn extends PluginForHost {
         br.setFollowRedirects(false);
         Form check = br.getFormbyProperty("name", "F1");
         String rand = br.getRegex("name=\"rand\" value=\"(.*?)\"").getMatch(0);
-        String ttt = br.getRegex("countdown\">.*?(\\d+).*?</span>").getMatch(0);
-        if (ttt == null) ttt = br.getRegex("id=\"countdown_str\".*?<span id=\".*?\">.*?(\\d+).*?</span").getMatch(0);
-        if (check == null || ttt == null || rand == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (check == null || rand == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
     private void login(Account account) throws Exception {
