@@ -22,6 +22,8 @@ import java.net.URL;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -36,6 +38,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.pluginUtils.Recaptcha;
+import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hotfile.com" }, urls = { "http://[\\w\\.]*?hotfile\\.com/dl/\\d+/[0-9a-zA-Z]+/(.*?/|.+)" }, flags = { 2 })
 public class HotFileCom extends PluginForHost {
@@ -45,6 +48,14 @@ public class HotFileCom extends PluginForHost {
     public HotFileCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://hotfile.com/register.html?reff=274657");
+        setConfigElements();
+    }
+
+    private static final String UNLIMITEDMAXCON = "UNLIMITEDMAXCON";
+
+    private void setConfigElements() {
+        ConfigEntry cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), UNLIMITEDMAXCON, JDL.L("plugins.hoster.HotFileCom.SetUnlimitedConnectionsForPremium", "Allow more than 5 connections per file for premium (default maximum = 5). Enabling this can cause errors!!")).setDefaultValue(false);
+        config.addEntry(cond);
     }
 
     @Override
@@ -101,13 +112,17 @@ public class HotFileCom extends PluginForHost {
         }
         br.setFollowRedirects(true);
         if (finalUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalUrl, true, -5);
+        // Set the meximum connections per file
+        boolean waitReconnecttime = getPluginConfig().getBooleanProperty(UNLIMITEDMAXCON, false);
+        int maxcon = -5;
+        if (waitReconnecttime) maxcon = 0;
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalUrl, true, maxcon);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
             finalUrl = br.getRegex("<h3 style='margin-top: 20px'><a href=\"(.*?hotfile.*?)\">Click here to download</a></h3>").getMatch(0);
             if (finalUrl == null) finalUrl = br.getRegex("table id=\"download_file\".*?<a href=\"(.*?)\"").getMatch(0);/* polish */
             if (finalUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalUrl, true, -5);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalUrl, true, maxcon);
         }
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
