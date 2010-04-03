@@ -50,6 +50,7 @@ import jd.plugins.LinkGrabberFilePackage;
 import jd.plugins.LinkStatus;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
+import jd.utils.MenuScroller;
 import jd.utils.locale.JDL;
 
 class PropMenuItem extends JMenuItem implements ActionListener {
@@ -393,6 +394,7 @@ public class LinkGrabberTable extends JDTable implements MouseListener, KeyListe
                 tmp.setSelected(!fl.contains(e));
             }
         }
+        MenuScroller.setScrollerFor(men);
         popup.add(men);
     }
 
