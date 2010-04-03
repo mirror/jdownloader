@@ -78,7 +78,7 @@ public class StatusColumn extends JDTableColumn {
         strPriority1 = JDL.L("gui.treetable.tooltip.priority1", "High Priority");
         strPriority2 = JDL.L("gui.treetable.tooltip.priority2", "Higher Priority");
         strPriority3 = JDL.L("gui.treetable.tooltip.priority3", "Highest Priority");
-        strDownloadLinkActive = JDL.L("gui.treetable.packagestatus.links_active", "aktiv");
+        strDownloadLinkActive = JDL.L("gui.treetable.packagestatus.links_active", "Active");
         strETA = JDL.L("gui.eta", "ETA");
     }
 

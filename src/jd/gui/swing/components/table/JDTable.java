@@ -57,7 +57,7 @@ class SortMenuItem extends JMenuItem implements ActionListener {
     private static final long serialVersionUID = 6328630034846759725L;
     private Object obj = null;
     private JDTableColumn column = null;
-    private static String defaultString = JDL.L("gui.table.contextmenu.sort", " Sort");
+    private static String defaultString = JDL.L("gui.table.contextmenu.sort", "Sort");
 
     public SortMenuItem() {
         super(defaultString);

@@ -34,7 +34,7 @@ public class RestartAction extends ToolBarAction {
 
     @Override
     public void onAction(ActionEvent e) {
-        if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(0, JDL.L("sys.ask.rlyrestart", "Wollen Sie jDownloader wirklich neustarten?")), UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
+        if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(0, JDL.L("sys.ask.rlyrestart", "Are you sure that you want to restart JDownloader?")), UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
             JDUtilities.restartJD(false);
         }
     }

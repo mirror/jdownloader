@@ -83,7 +83,7 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
     public FilePackageInfo() {
         buildGui();
         fp = null;
-        menutitle.setText(JDL.L("gui.linkgrabber.packagetab.title", "FilePackage"));
+        menutitle.setText(JDL.L("gui.linkgrabber.packagetab.title", "Properties / Package / Filename"));
     }
 
     public void setPackage(FilePackage fp) {
@@ -156,17 +156,17 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
         panel.add(lblFiles = new JLabel(JDL.LF("gui.fileinfopanel.packagetab.lbl.files", "%s File(s)", 0)), "spanx, split 3");
         panel.add(progressBarFilePackage = new MultiProgressBar(), "growx, pushx, h 18!");
         panel.add(lblSize = new JLabel("0B/0B"), "alignx right");
-        panel.add(new JLabel(JDL.L("gui.fileinfopanel.packagetab.lbl.name", "Paketname")));
+        panel.add(new JLabel(JDL.L("gui.fileinfopanel.packagetab.lbl.name", "Package Name")));
         panel.add(txtName, "growx, span 2");
-        panel.add(new JLabel(JDL.L("gui.fileinfopanel.packagetab.lbl.saveto", "Speichern unter")));
+        panel.add(new JLabel(JDL.L("gui.fileinfopanel.packagetab.lbl.saveto", "Save to")));
         panel.add(brwSaveTo.getInput(), "shrinkx");
         panel.add(brwSaveTo.getButton(), "pushx, growx");
-        panel.add(new JLabel(JDL.L("gui.fileinfopanel.packagetab.lbl.password", "Archivpasswort")));
+        panel.add(new JLabel(JDL.L("gui.fileinfopanel.packagetab.lbl.password", "Archive Password")));
         panel.add(txtPassword, "growx");
         panel.add(chbExtract, "alignx right");
         panel.add(new JLabel(JDL.L("gui.fileinfopanel.packagetab.lbl.password2", "Archive Password(auto)")));
         panel.add(txtPassword2, "growx, span 2");
-        panel.add(new JLabel(JDL.L("gui.fileinfopanel.packagetab.lbl.comment", "Kommentar")));
+        panel.add(new JLabel(JDL.L("gui.fileinfopanel.packagetab.lbl.comment", "Comment")));
         panel.add(txtComment, "growx, span 2");
         return panel;
     }

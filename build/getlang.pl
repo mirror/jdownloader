@@ -8,7 +8,7 @@ use File::Find;
 use strict;
 use utf8;
 
-my $debug = 1; # set this to 1 or 2 to get verbose output.
+my $debug = 1; # set this to 1, 2 or 3 to get verbose output.
 my $path = $ARGV[1] || "src/jd";
 my $rpath = $ARGV[1] || "ressourcen/jd/languages/";
 
@@ -51,12 +51,38 @@ sub findfiles
   return sort @findres;
 }
 
+sub check
+{
+  my ($o, $v, $res, $file) = @_;
+
+  if($o =~ /"/ && $debug >= 3)
+  {
+    print STDERR "Can't parse following expression in $file: $o = $v\n";
+    return;
+  }
+
+  my $k = lc($o);
+  print STDERR "Mismatch for $k: '$v' != '$res->{$k}'\n" if($res->{$k} && $res->{$k} ne $v);
+  print STDERR "Uppercase string $o\n" if $debug >= 2 && $k ne $o;
+  $res->{$k} = $v;
+}
+
+sub checktb
+{
+  my ($o, $res, $file) = @_;
+  check("gui.menu.$o.name", $o, $res, $file);
+  check("gui.menu.$o.tooltip", $o, $res, $file);
+  check("gui.menu.$o.mnem", "-", $res, $file);
+  check("gui.menu.$o.accel", "-", $res, $file);
+}
+
 sub main
 {
   my %res;
   foreach my $file (findfiles($path))
   {
     my $prefix;
+    my $toolbar;
     my $lastline = "";
     open FILE,"<",$file or die;
     my $name = $file; $name =~ s/.*?src\///; $name =~ s/\//./g; $name =~ s/\.java$//;
@@ -67,25 +93,27 @@ sub main
       $line = "$line$lastline"; $lastline = "";
       $line =~ s/^\s*\/\/.*$//; # remove comments
       $line =~ s/^\s*\*.*$//; # remove comments
+      $line =~ s/JDL.LOCALE_PARAM//; # prevent false warning in code below
       $line =~ s/this\.getClass\(\)\.getName\(\) \+ "/"$name/g;
       $line =~ s/this\.getClass\(\)\.getSimpleName\(\)/"$sname"/g;
       $prefix = $1 if($line =~ s/[A-Z]+_PREFIX\s*=\s*"(.*?)"//);
+      $toolbar = 1 if($line =~ /extends\s+(ToolBar|Threaded)Action/);
 
       while($line =~ s/JDL\.LF?\("(.*?)",\s*"(.*?)"//)
       {
-        my $o = $1;
-        my $k = lc($o);
-        print STDERR "Mismatch for $1: '$2' != '$res{$k}'\n" if($res{$k} && $res{$k} ne $2);
-        print STDERR "Uppercase string $o\n" if $debug >= 2 && $k ne $o;
-        $res{$k} = $2;
+        check($1, $2, \%res, $file);
       }
       while($prefix && $line =~ s/JDL\.LF?\([A-Z]+_PREFIX\s*\+\s*"(.*?)",\s*"(.*?)"//)
       {
-        my $o = "$prefix$1";
-        my $k = lc($o);
-        print STDERR "Mismatch for $k: '$2' != '$res{$k}'\n" if($res{$k} && $res{$k} ne $2);
-        print STDERR "Uppercase string $o\n" if $debug >= 2 && $k ne $o;
-        $res{$k} = $2;
+        check("$prefix$1", $2, \%res, $file);
+      }
+      while($toolbar && $line =~ s/super\("(.*?)",\s*"(.*?)"//)
+      {
+        checktb($1, \%res, $file);
+      }
+      while($line =~ s/(?:new\s+|\.get)(?:ToolBar|Threaded)Action\("(.*?)",\s*"(.*?)"//)
+      {
+        checktb($1, \%res, $file);
       }
       if($line =~ /JDL\.L/)
       {
@@ -109,7 +137,7 @@ sub main
     if($refen && $res{$k} eq $refen)
     {
     }
-    elsif($refde && $res{$k} eq $refde)
+    elsif(!($k =~ /\.(accel|mnem)/) && $refde && $res{$k} eq $refde)
     {
       print STDERR "German reference: $k = $refde".($refen?" ($refen) ":"")."\n";
     }
