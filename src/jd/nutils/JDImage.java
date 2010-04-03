@@ -141,7 +141,7 @@ public class JDImage {
         String id = img.hashCode() + "_" + width + "x" + height;
         Image ret = SCALED_IMAGE_CACHE.get(id);
         if (ret != null) return ret;
-        double faktor = Math.min((double) img.getWidth() / width, (double) img.getHeight() / height);
+        double faktor = Math.max((double) img.getWidth() / width, (double) img.getHeight() / height);
         if (faktor == 1.0) return img;
         width = (int) (img.getWidth() / faktor);
         height = (int) (img.getHeight() / faktor);
