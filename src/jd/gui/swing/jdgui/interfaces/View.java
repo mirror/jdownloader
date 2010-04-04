@@ -16,35 +16,27 @@
 
 package jd.gui.swing.jdgui.interfaces;
 
-import java.awt.Color;
 import java.awt.Component;
 
-import javax.swing.BorderFactory;
 import javax.swing.Icon;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.ScrollPaneConstants;
-import javax.swing.border.Border;
-import javax.swing.plaf.metal.MetalLookAndFeel;
 
 import jd.gui.swing.SwingGui;
+import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.views.toolbar.ViewToolbar;
-import jd.utils.JDTheme;
 import net.miginfocom.swing.MigLayout;
 
 /**
- * A view is an abstract class for a contentpanel in JDGui
+ * A view is an abstract class for a contentpanel in {@link JDGui}
  * 
  * @author Coalado
- * 
  */
 public abstract class View extends SwitchPanel {
-    /**
-     * 
-     */
+
     private static final long serialVersionUID = 8661526331504317690L;
     public static final int ICON_SIZE = 16;
-    public static final Border ORG_BORDER = BorderFactory.createEmptyBorder();
 
     private JPanel rightPane;
     protected JScrollPane sidebar;
@@ -54,46 +46,22 @@ public abstract class View extends SwitchPanel {
     private JPanel bottomContent;
     private SwitchPanel infoPanel;
     private SwitchPanel defaultInfoPanel;
-    @SuppressWarnings("unused")
-    private ViewToolbar toolbar;
-    private Border orgSidebarBorder;
 
     public View() {
         SwingGui.checkEDT();
-        this.setLayout(new MigLayout("ins 0", "[]0[grow,fill]", "[grow,fill]"));
+        setLayout(new MigLayout("ins 0", "[]0[grow,fill]", "[grow,fill]"));
 
         add(sidebar = new JScrollPane(), "width 200!,hidemode 1,gapright 3");
-        Color line;
-
-        // MetalLookAndFeel.getControlDarkShadow();
-        // MetalLookAndFeel.getControlHighlight() ;
-        line = MetalLookAndFeel.getControl();
-
-        orgSidebarBorder = sidebar.getBorder();
-        sidebar.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, line));
         sidebar.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         sidebar.setVisible(false);
-        rightPane = new JPanel(new MigLayout("ins 0", "[grow,fill]", "[grow,fill]"));
-        add(rightPane);
+
+        add(rightPane = new JPanel(new MigLayout("ins 0", "[grow,fill]", "[grow,fill]")));
+
         add(topContent = new JPanel(new MigLayout("ins 0", "[grow,fill]", "[]")), "gapbottom 3,dock NORTH,hidemode 3");
         topContent.setVisible(false);
-        add(bottomContent = new JPanel(new MigLayout("ins 0 0 0 0", "[grow,fill]", "[]")), "dock SOUTH,hidemode 3");
+
+        add(bottomContent = new JPanel(new MigLayout("ins 0", "[grow,fill]", "[]")), "dock SOUTH,hidemode 3");
         bottomContent.setVisible(false);
-    }
-
-    /**
-     * Serts the sidebar's border View.ORG_BORDER --> the LAF original Border
-     * 
-     * @param b
-     */
-    public void setSidebarBorder(Border b) {
-        if (ORG_BORDER == b) {
-            sidebar.setBorder(orgSidebarBorder);
-
-        } else {
-            sidebar.setBorder(b);
-        }
-
     }
 
     /**
@@ -117,7 +85,7 @@ public abstract class View extends SwitchPanel {
         SwingGui.checkEDT();
         if (info == null) info = defaultInfoPanel;
         if (infoPanel == info) return;
-     
+
         if (info == null) {
             bottomContent.setVisible(false);
         } else {
@@ -149,7 +117,6 @@ public abstract class View extends SwitchPanel {
             topContent.removeAll();
             topContent.add(toolbar);
         }
-        this.toolbar = toolbar;
         revalidate();
     }
 
@@ -159,16 +126,16 @@ public abstract class View extends SwitchPanel {
      * @param right
      */
     public synchronized void setContent(SwitchPanel right) {
-        SwingGui.checkEDT();        
+        SwingGui.checkEDT();
         boolean found = false;
         for (Component c : rightPane.getComponents()) {
             c.setVisible(false);
-            if(c==right)found=true;
+            if (c == right) found = true;
         }
-       
+
         if (right != null) {
             right.setVisible(true);
-           if(!found) rightPane.add(right, "hidemode 3");
+            if (!found) rightPane.add(right, "hidemode 3");
         }
         if (this.content != null && isShown()) this.content.setHidden();
         this.content = right;
@@ -225,14 +192,5 @@ public abstract class View extends SwitchPanel {
      * @return
      */
     abstract public Icon getIcon();
-
-    /**
-     * Returns the defaulticon
-     * 
-     * @return
-     */
-    public static Icon getDefaultIcon() {
-        return JDTheme.II("gui.images.add_package", 16, 16);
-    }
 
 }

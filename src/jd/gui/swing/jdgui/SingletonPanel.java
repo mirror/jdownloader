@@ -17,17 +17,15 @@
 package jd.gui.swing.jdgui;
 
 import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 
 import jd.controlling.JDLogger;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 
 /**
- * This calss is used as a jpanelwrapper.. it creates an instance of a Class<?
- * extends SwitchPanel> class only once
+ * This class is used as a wrapper for {@link SwitchPanel}'s. It creates only
+ * one instance of the desired SwitchPanel.
  * 
  * @author Coalado
- * 
  */
 public class SingletonPanel {
 
@@ -36,47 +34,42 @@ public class SingletonPanel {
     private Class<? extends SwitchPanel> clazz;
     private Object[] objs;
 
-    public SingletonPanel(SwitchPanel linkListPane) {
-        this.panel = linkListPane;
+    public SingletonPanel(SwitchPanel panel) {
+        this.panel = panel;
     }
 
     /**
      * 
-     * @param Class
-     *            <? extends SwitchPanel> class
-     * @param paranmeter
-     *            of the desred constructor in class
+     * @param clazz
+     *            {@link Class} reference of the extended {@link SwitchPanel}
+     * @param objects
+     *            the parameters of the desired constructor in class
      */
-    public SingletonPanel(Class<? extends SwitchPanel> class1, Object... objects) {
-        clazz = class1;
-        objs = objects;
+    public SingletonPanel(Class<? extends SwitchPanel> clazz, Object... objects) {
+        this.clazz = clazz;
+        this.objs = objects;
     }
 
     public synchronized SwitchPanel getPanel() {
         if (panel == null) {
-
             try {
-
                 createPanel();
             } catch (Exception e) {
                 JDLogger.exception(e);
                 return null;
             }
-
         }
 
         return panel;
     }
 
-    private void createPanel() throws SecurityException, NoSuchMethodException, IllegalArgumentException, InstantiationException, IllegalAccessException, InvocationTargetException {
-
+    private void createPanel() throws Exception {
         Class<?>[] classes = new Class[objs.length];
         for (int i = 0; i < objs.length; i++)
             classes[i] = objs[i].getClass();
 
         Constructor<? extends SwitchPanel> c = clazz.getConstructor(classes);
         panel = c.newInstance(objs);
-
     }
 
 }

@@ -125,7 +125,7 @@ public class JDImage {
         return ret;
     }
 
-    /* ignores aspect ratio */
+    /** ignores aspect ratio */
     public static Image getScaledImageNonAspectRatio(BufferedImage img, int width, int height) {
         if (img == null) return null;
         String id = img.hashCode() + "_" + width + "x" + height;

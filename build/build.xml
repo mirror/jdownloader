@@ -124,6 +124,21 @@
 		<delete file="Manifest.MF" failonerror="false" />
 	</target>
 
+	<!-- Use this to build an addon -->
+	<macrodef name="buildAddon">
+		<attribute name="number" />
+		<attribute name="package" />
+		<sequential>
+			<echo>Creating @{package}</echo>
+			<mkdir dir="${dist}/pluginressourcen/@{number}__@{package}/plugins" />
+			<jar jarfile="${dist}/pluginressourcen/@{number}__@{package}/plugins/@{package}.jar" manifest="Manifest.MF">
+				<fileset dir="${cls}">
+					<include name="jd/plugins/optional/@{package}/**" />
+				</fileset>
+			</jar>
+		</sequential>
+	</macrodef>
+
 	<target name="jarOptionals">
 		<!-- Optional Plugins -->
 		<manifest file="Manifest.MF">
@@ -256,24 +271,10 @@
 			</fileset>
 		</jar>
 
-		<property name="addonnumber" value="136" />
-		<property name="package" value="proxyrot" />
-		<mkdir dir="${dist}/pluginressourcen/${addonnumber}__${package}/plugins" />
-		<jar jarfile="${dist}/pluginressourcen/${addonnumber}__${package}/plugins/${package}.jar" manifest="Manifest.MF">
-			<fileset dir="${cls}">
-				<include name="jd/plugins/optional/${package}/**" />
-			</fileset>
-		</jar>
-		
-		
-		<property name="addonnumber" value="137" />
-			<property name="package" value="scriptlauncher" />
-			<mkdir dir="${dist}/pluginressourcen/${addonnumber}__${package}/plugins" />
-			<jar jarfile="${dist}/pluginressourcen/${addonnumber}__${package}/plugins/${package}.jar" manifest="Manifest.MF">
-				<fileset dir="${cls}">
-					<include name="jd/plugins/optional/${package}/**" />
-				</fileset>
-			</jar>
+		<buildAddon number="136" package="proxyrot" />
+		<buildAddon number="137" package="scriptlauncher" />
+		<buildAddon number="102" package="infobar" />
+
 	</target>
 
 	<target name="sign">
