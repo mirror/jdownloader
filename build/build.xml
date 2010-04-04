@@ -5,7 +5,7 @@
 	<property name="dist" value="dist" />
 	<property name="res" value="ressourcen" />
 	<property name="keystore" value="/home/coalado/Desktop/jDownloader.keystore" />
-	<!-- plugins that serialize ohn classes have to be put in the classpath -->
+	<!-- plugins that serialize own classes have to be put in the classpath -->
 	<property name="class-path" value="libs/appworkutilities.jar libs/Filters.jar libs/JTattoo.jar plugins/JDPackageCustomizer.jar plugins/schedule.jar libs/jna.jar libs/JDGUI.jar libs/JDHttp.jar libs/JAntiCaptcha.jar libs/JDUtils.jar libs/BrowserLauncher2.jar libs/clink170.jar libs/cobra.jar libs/hsqldb.jar libs/htmlcleaner2_0.jar libs/irclib.jar libs/js.jar libs/looks.jar libs/mail.jar libs/miglayout.jar libs/savemytube.jar libs/laf/substance-swingx.jar libs/laf/substance.jar libs/svnkit.jar libs/swingworker.jar libs/swingx.jar libs/ui.jar libs/laf/synthetica.jar libs/laf/syntheticaBatik.jar libs/laf/syntheticaBlackMoon.jar libs/laf/syntheticaBlackStar.jar libs/laf/syntheticaBlueIce.jar libs/laf/syntheticaBlueMoon.jar libs/laf/syntheticaBlueSteel.jar libs/laf/syntheticaGreenDream.jar libs/laf/syntheticaMauveMetallic.jar libs/laf/syntheticaOrangeMetallic.jar libs/laf/syntheticaBlackEye.jar libs/laf/syntheticaGreenDream.jar libs/laf/syntheticaSilverMoon.jar libs/laf/syntheticaSimple2D.jar libs/laf/syntheticaSkyMetallic.jar libs/laf/syntheticaWhiteVision.jar" />
 
 	<target name="compile">
@@ -13,8 +13,8 @@
 		<javac srcdir="${src}" destdir="${cls}" encoding="UTF-8" source="1.5" target="1.5" />
 	</target>
 
+	<!-- JDownloader -->
 	<target name="jar">
-		<!-- jDownloader -->
 		<manifest file="Manifest.MF">
 			<attribute name="Created-By" value="JD-Team and AppWork UG" />
 			<attribute name="Main-Class" value="jd.Main" />
@@ -79,8 +79,8 @@
 		<delete file="Manifest.MF" failonerror="false" />
 	</target>
 
+	<!--Webupdater-->
 	<target name="jarWebupdater">
-		<!--Webupdater-->
 		<manifest file="Manifest.MF">
 			<attribute name="Created-By" value="coalado" />
 			<attribute name="Main-Class" value="jd.update.Main" />
@@ -104,8 +104,9 @@
 		</jar>
 		<delete file="Manifest.MF" failonerror="false" />
 	</target>
-	<target name="jarRestarter">
-		<!--Restarter-->
+
+	<!-- Restarter -->
+	<target name="jarRestarter" >
 		<manifest file="Manifest.MF">
 			<attribute name="Created-By" value="coalado" />
 			<attribute name="Main-Class" value="jd.update.Restarter" />
@@ -125,11 +126,11 @@
 	</target>
 
 	<!-- Use this to build an addon -->
-	<macrodef name="buildAddon">
+	<macrodef name="buildAddon" description="Function for creating an optional addon">
 		<attribute name="number" />
 		<attribute name="package" />
 		<sequential>
-			<echo>Creating @{package}</echo>
+			<echo message="Creating @{package}" />
 			<mkdir dir="${dist}/pluginressourcen/@{number}__@{package}/plugins" />
 			<jar jarfile="${dist}/pluginressourcen/@{number}__@{package}/plugins/@{package}.jar" manifest="Manifest.MF">
 				<fileset dir="${cls}">
@@ -139,8 +140,8 @@
 		</sequential>
 	</macrodef>
 
-	<target name="jarOptionals">
-		<!-- Optional Plugins -->
+	<!-- Optional Plugins -->
+	<target name="jarOptionals" description="Creates the Optional Plugins">
 		<manifest file="Manifest.MF">
 			<attribute name="Created-By" value="JD-Team" />
 		</manifest>
@@ -285,6 +286,7 @@
 		</signjar>
 	</target>
 
+	<!-- Is this still used? -->
 	<target name="cryptContainer">
 		<taskdef name="yguard" classname="com.yworks.yguard.YGuardTask" />
 		<yguard>
