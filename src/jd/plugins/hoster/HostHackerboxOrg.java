@@ -23,6 +23,7 @@ import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -44,6 +45,13 @@ public class HostHackerboxOrg extends PluginForHost {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("<h1>Invalid download link")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("Password Protected: <input")) {
+            link.getLinkStatus().setStatusText("This file is password protected");
+            if (link.getStringProperty("pass", null) != null) {
+                handlePassword(link.getStringProperty("pass", null), link);
+            } else
+                return AvailableStatus.TRUE;
+        }
         String filename = br.getRegex("<d2>File Name[ ]+:(.*?)</d2>").getMatch(0);
         String filesize = br.getRegex("<d2>File Size[ ]+:(.*?)</d2>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -55,6 +63,10 @@ public class HostHackerboxOrg extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        String passCode = null;
+        if (br.containsHTML("Password Protected: <input")) {
+            handlePassword(passCode, downloadLink);
+        }
         String dllink = br.getRegex("document\\.getElementById\\(\"dl\"\\)\\.innerHTML = '<a href=\"(http://.*?)\"").getMatch(0);
         if (dllink == null) dllink = br.getRegex("\"(http://host\\.hackerbox\\.org/download2\\.php\\?a=[0-9a-z]+\\&b=[0-9a-z]+)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -64,6 +76,35 @@ public class HostHackerboxOrg extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    public String handlePassword(String passCode, DownloadLink downloadLink) throws IOException, PluginException {
+        for (int i = 0; i <= 3; i++) {
+            if (downloadLink.getStringProperty("pass", null) == null) {
+                passCode = Plugin.getUserInput("Password?", downloadLink);
+            } else {
+                /* gespeicherten PassCode holen */
+                passCode = downloadLink.getStringProperty("pass", null);
+            }
+
+            br.postPage(downloadLink.getDownloadURL(), "pass=" + passCode);
+            logger.info("File is password protected, password = " + passCode);
+            if (br.containsHTML("Password Protected: <input")) {
+                logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
+                downloadLink.setProperty("pass", null);
+                continue;
+            }
+            break;
+        }
+        if (br.containsHTML("Password Protected: <input")) {
+            logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
+            downloadLink.setProperty("pass", null);
+            throw new PluginException(LinkStatus.ERROR_RETRY);
+        }
+        if (passCode != null) {
+            downloadLink.setProperty("pass", passCode);
+        }
+        return passCode;
     }
 
     @Override

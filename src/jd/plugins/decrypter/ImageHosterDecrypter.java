@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagebam.com", "imageshack.us", "photobucket.com", "freeimagehosting.net", "pixhost.org" }, urls = { "http://[\\w\\.]*?imagebam\\.com/image/[a-z0-9]+", "http://[\\w\\.]*?img[0-9]{1,4}\\.imageshack\\.us/i/[a-z]+\\.[a-zA-Z]{1,3}/", "http://[\\w\\.]*?media\\.photobucket.com/image/.+\\..{3,4}\\?o=[0-9]+", "http://[\\w\\.]*?freeimagehosting\\.net/image\\.php\\?.*?\\..{3,4}", "http://[\\w\\.]*?pixhost\\.org/show/[0-9]+/.*?\\.{3,4}" }, flags = { 0, 0, 0, 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagebam.com", "photobucket.com", "freeimagehosting.net", "pixhost.org" }, urls = { "http://[\\w\\.]*?imagebam\\.com/image/[a-z0-9]+", "http://[\\w\\.]*?media\\.photobucket.com/image/.+\\..{3,4}\\?o=[0-9]+", "http://[\\w\\.]*?freeimagehosting\\.net/image\\.php\\?.*?\\..{3,4}", "http://[\\w\\.]*?pixhost\\.org/show/[0-9]+/.*?\\.{3,4}" }, flags = { 0, 0, 0, 0 })
 public class ImageHosterDecrypter extends PluginForDecrypt {
 
     public ImageHosterDecrypter(PluginWrapper wrapper) {
@@ -47,11 +47,6 @@ public class ImageHosterDecrypter extends PluginForDecrypt {
             /* Error handling */
             if (br.containsHTML("Image not found")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
             finallink = br.getRegex("'(http://[0-9]+\\.imagebam\\.com/dl\\.php\\?ID=.*?)'").getMatch(0);
-        } else if (parameter.contains("imageshack.us")) {
-            /* Error handling */
-            String offlinecheck = br.getRedirectLocation();
-            if (offlinecheck != null) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-            finallink = br.getRegex("/rss\\+xml\" href=\"(.*?)\\.comments\\.xml\"").getMatch(0);
         } else if (parameter.contains("media.photobucket.com")) {
             finallink = br.getRegex("mediaUrl':'(http.*?)'").getMatch(0);
         } else if (parameter.contains("freeimagehosting.net")) {

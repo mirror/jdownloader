@@ -28,7 +28,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fpsbanana.com" }, urls = { "http://[\\w\\.]*?fpsbanana\\.com/((/download)?maps/\\d+|maps/games/\\d+(\\?page=\\d+\\&mn=\\d+_body)?)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fpsbanana.com" }, urls = { "http://[\\w\\.]*?fpsbanana\\.com/((/download)?maps/(download/)?\\d+|maps/games/\\d+(\\?page=\\d+\\&mn=\\d+_body)?)" }, flags = { 0 })
 public class FpsBananaCom extends PluginForDecrypt {
 
     public FpsBananaCom(PluginWrapper wrapper) {
@@ -43,7 +43,8 @@ public class FpsBananaCom extends PluginForDecrypt {
             // To decrypt whole categories
             br.getPage(parameter);
             ArrayList<String> someLinks = new ArrayList<String>();
-            String alLinks[] = br.getRegex("\"(http://www\\.fpsbanana\\.com/maps/\\d+)\"").getColumn(0);
+            String alLinks[] = br.getRegex("valign=\"middle\"><td align=\"center\" nowrap><a href=\"(.*?)\"").getColumn(0);
+            if (alLinks == null || alLinks.length == 0) alLinks = br.getRegex("</td><td align=\"center\" width=\"100%\"><b><a href=\"(.*?)\"").getColumn(0);
             if (alLinks == null || alLinks.length == 0) return null;
             for (String aLink : alLinks) {
                 if (!someLinks.contains(aLink)) someLinks.add(aLink);

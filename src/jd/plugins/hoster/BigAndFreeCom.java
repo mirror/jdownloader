@@ -156,7 +156,7 @@ public class BigAndFreeCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setDebug(true);
         br.setFollowRedirects(true);
-        br.getPage("http://www.bigandfree.com/members");
+        br.getPage("http://bigandfree.com/account.php");
         Form form = br.getFormbyProperty("name", "login");
         if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         form.put("uname", Encoding.urlEncode(account.getUser()));
