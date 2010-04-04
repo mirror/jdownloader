@@ -28,7 +28,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharehoster.de" }, urls = { "http://[\\w\\.]*?sharehoster\\.(de|com|net)/(dl|wait)/[a-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharehoster.de" }, urls = { "http://[\\w\\.]*?sharehoster\\.(de|com|net)/(dl|wait|vid)/[a-z0-9]+" }, flags = { 0 })
 public class ShareHosterDe extends PluginForHost {
 
     public ShareHosterDe(PluginWrapper wrapper) {
@@ -41,7 +41,7 @@ public class ShareHosterDe extends PluginForHost {
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceAll("sharehoster\\.(com|net)", "sharehoster.de").replace("/wait/", "/dl/"));
+        link.setUrlDownload(link.getDownloadURL().replaceAll("sharehoster\\.(com|net)", "sharehoster.de").replaceAll("/(dl|vid)/", "/wait/"));
     }
 
     @Override
@@ -64,25 +64,29 @@ public class ShareHosterDe extends PluginForHost {
         Form waitform = br.getFormbyProperty("name", "prepare");
         if (waitform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.submitForm(waitform);
-        String dllink = null;
-        for (int i = 0; i <= 5; i++) {
-            br.setFollowRedirects(false);
-            Form dlform = br.getFormbyProperty("name", "downloadprepare");
-            if (dlform == null || !br.containsHTML("captcha.php")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            String captchaUrl = "http://www.sharehoster.de/content/captcha.php";
-            String code = getCaptchaCode(captchaUrl, downloadLink);
-            dlform.put("code", code);
-            br.submitForm(dlform);
-            dllink = br.getRedirectLocation();
-            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            if (dllink.contains("&err")) {
-                br.setFollowRedirects(true);
-                br.getPage(br.getRedirectLocation());
-                continue;
+        // Streaming links don't need any captchas
+        String dllink = br.getRegex("addVariable\\(\"file\",\"(http://.*?)\"\\)").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\"(http://media\\d+\\.sharehoster.com/stream/[a-z0-9]+\\.flv)\"").getMatch(0);
+        if (dllink == null) {
+            for (int i = 0; i <= 5; i++) {
+                br.setFollowRedirects(false);
+                Form dlform = br.getFormbyProperty("name", "downloadprepare");
+                if (dlform == null || !br.containsHTML("captcha.php")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                String captchaUrl = "http://www.sharehoster.com/content/captcha.php";
+                String code = getCaptchaCode(captchaUrl, downloadLink);
+                dlform.put("code", code);
+                br.submitForm(dlform);
+                dllink = br.getRedirectLocation();
+                if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (dllink.contains("&err")) {
+                    br.setFollowRedirects(true);
+                    br.getPage(br.getRedirectLocation());
+                    continue;
+                }
+                break;
             }
-            break;
+            if (dllink.contains("&error")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
-        if (dllink.contains("&error")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -8);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

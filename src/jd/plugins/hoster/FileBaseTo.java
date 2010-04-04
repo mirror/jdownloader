@@ -137,26 +137,29 @@ public class FileBaseTo extends PluginForHost {
         br.setCookie("http://filebase.to", "fb_language", "de");
         String url = downloadLink.getDownloadURL();
         br.getPage(url);
-
         downloadLink.setName(Plugin.extractFileNameFromURL(url).replaceAll("&dl=1", ""));
         if (br.containsHTML("eider\\s+nicht\\s+gefunden")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        Form[] forms = br.getForms();
-        try {
-            br.submitForm(forms[1]);
-            String size = br.getRegex("<b>Datei-Groesse:</b>.*?</td>.*?<td width=.*?>(.*?)</td>").getMatch(0);
-            String name = br.getRegex("\"submit\" value=\"Download \\- (.*?)\"").getMatch(0);
-            downloadLink.setName(name);
-            downloadLink.setDownloadSize(Regex.getSize(size));
-        } catch (Exception e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
         return AvailableStatus.TRUE;
 
     }
 
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        String uidValue = br.getRegex("id=\"uid\" value=\"(.*?)\"").getMatch(0);
+        if (uidValue == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        Browser br2 = br.cloneBrowser();
+        br2.getPage("http://filebase.to/js/dl_s_code.js");
+        // Ticket Time
+        String ttt = br2.getRegex("var secs =.*?(\\d+);").getMatch(0);
+        int tt = 10;
+        if (ttt != null) {
+            logger.info("Waittime detected, waiting " + ttt.trim() + " seconds from now on...");
+            tt = Integer.parseInt(ttt);
+        }
+        // Add some waittime to prevent errors
+        tt = tt + 10;
+        sleep(tt * 1001, downloadLink);
+        br.postPage(br.getURL(), "uid=" + uidValue);
         Form forms = null;
         String directLink = br.getRegex("<param value=\"(http://[0-9]+\\..*?/download/ticket.*?)\"").getMatch(0);
         if (directLink != null) {
@@ -182,7 +185,7 @@ public class FileBaseTo extends PluginForHost {
                 // if captcha error after loop
                 if (br.containsHTML("Code wurde falsch")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
-            forms = br.getForm(0);
+            forms = br.getForm(1);
             if (forms == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             dl = BrowserAdapter.openDownload(br, downloadLink, forms);
         }

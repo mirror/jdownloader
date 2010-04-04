@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
@@ -34,46 +35,33 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.pluginUtils.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fofly.com" }, urls = { "http://[\\w\\.]*?fofly\\.com/[a-z0-9]{12}" }, flags = { 0 })
-public class FoFlyCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "file-share.cc" }, urls = { "http://[\\w\\.]*?file-share\\.cc/[a-z0-9]{12}" }, flags = { 0 })
+public class FileShareCc extends PluginForHost {
 
-    public FoFlyCom(PluginWrapper wrapper) {
+    public FileShareCc(PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
-    // Modified XfileSharingProBasic Version 1.6, extended server errorhandling
+    // XfileSharingProBasic Version 1.6
     @Override
     public String getAGBLink() {
         return COOKIE_HOST + "/tos.html";
     }
 
-    private static final String COOKIE_HOST = "http://fofly.com";
+    private static final String passwordText = "(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)";
+    private static final String COOKIE_HOST = "http://file-share.cc";
+    public boolean nopremium = false;
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.setFollowRedirects(false);
         br.setCookie(COOKIE_HOST, "lang", "english");
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("You have reached the download-limit")) {
-            logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
-            return AvailableStatus.UNCHECKABLE;
-        }
         if (br.containsHTML("(No such file|No such user exist|File not found)")) {
             logger.warning("file is 99,99% offline, throwing \"file not found\" now...");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        Form[] forms = br.getForms();
-        Form freeform = null;
-        for (Form singleForm : forms) {
-            if (singleForm.containsHTML("download1")) {
-                freeform = singleForm;
-                break;
-            }
-        }
-        if (freeform != null) {
-            freeform.remove("method_premium");
-            br.submitForm(freeform);
         }
         String filename = br.getRegex("You have requested.*?http://.*?[a-z0-9]{12}/(.*?)</font>").getMatch(0);
         if (filename == null) {
@@ -81,7 +69,7 @@ public class FoFlyCom extends PluginForHost {
             if (filename == null) {
                 filename = br.getRegex("<h2>Download File(.*?)</h2>").getMatch(0);
                 if (filename == null) {
-                    filename = br.getRegex("Filename:</b></td><td >(.*?)</td>").getMatch(0);
+                    filename = br.getRegex("Filename:</b></td><td[ ]{0,2}>(.*?)</td>").getMatch(0);
                     if (filename == null) {
                         filename = br.getRegex("Filename.*?nowrap.*?>(.*?)</td").getMatch(0);
                         if (filename == null) {
@@ -99,8 +87,12 @@ public class FoFlyCom extends PluginForHost {
             }
         }
         if (filename == null || filename.equals("")) {
-            logger.warning("The filename equals null, throwing \"file not found\" now...");
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML("You have reached the download-limit")) {
+                logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
+                return AvailableStatus.UNCHECKABLE;
+            }
+            logger.warning("The filename equals null, throwing \"plugin defect\" now...");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         filename = filename.replaceAll("(</b>|<b>|\\.html)", "");
         link.setName(filename.trim());
@@ -112,9 +104,23 @@ public class FoFlyCom extends PluginForHost {
     }
 
     public void doFree(DownloadLink downloadLink) throws Exception, PluginException {
-        boolean resumable = true;
-        int maxchunks = 0;
-        checkErrors(downloadLink);
+        String passCode = null;
+        boolean resumable = false;
+        int maxchunks = 1;
+        // If the filesize regex above doesn't match you can copy this part into
+        // the available status (and delete it here)
+        Form freeform = br.getFormBySubmitvalue("Kostenloser+Download");
+        if (freeform == null) {
+            freeform = br.getFormBySubmitvalue("Free+Download");
+            if (freeform == null) {
+                freeform = br.getFormbyKey("download1");
+            }
+        }
+        if (freeform != null) {
+            freeform.remove("method_premium");
+            br.submitForm(freeform);
+        }
+        checkErrors(downloadLink, false, passCode);
         String md5hash = br.getRegex("<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
         if (md5hash != null) {
             md5hash = md5hash.trim();
@@ -126,21 +132,21 @@ public class FoFlyCom extends PluginForHost {
         if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // Ticket Time
         String ttt = br.getRegex("countdown\">.*?(\\d+).*?</span>").getMatch(0);
+        if (ttt == null) ttt = br.getRegex("id=\"countdown_str\".*?<span id=\".*?\">.*?(\\d+).*?</span").getMatch(0);
         if (ttt != null) {
             logger.info("Waittime detected, waiting " + ttt.trim() + " seconds from now on...");
             int tt = Integer.parseInt(ttt);
             sleep(tt * 1001, downloadLink);
         }
-        String passCode = null;
         boolean password = false;
         boolean recaptcha = false;
-        if (br.containsHTML("(<br><b>Passwort:</b>|<br><b>Password:</b>)")) {
+        if (br.containsHTML(passwordText)) {
             password = true;
             logger.info("The downloadlink seems to be password protected.");
         }
 
         /* Captcha START */
-        if (br.containsHTML("background:#ccc;text-align")) {
+        if (br.containsHTML(";background:#ccc;text-align")) {
             logger.info("Detected captcha method \"plaintext captchas\" for this host");
             // Captcha method by ManiacMansion
             String[][] letters = new Regex(Encoding.htmlDecode(br.toString()), "<span style='position:absolute;padding-left:(\\d+)px;padding-top:\\d+px;'>(\\d)</span>").getMatches();
@@ -179,7 +185,7 @@ public class FoFlyCom extends PluginForHost {
             String code = getCaptchaCode(captchaurl, downloadLink);
             DLForm.put("code", code);
             logger.info("Put captchacode " + code + " obtained by captcha metod \"Standard captcha\" in the form.");
-        } else if (br.containsHTML("api.recaptcha.net") && !br.containsHTML("api\\.recaptcha\\.net.*?<Textarea.*?<input type=\"submit\" value.*?</Form>")) {
+        } else if (br.containsHTML("api.recaptcha.net")) {
             // Some hosters also got commentfields with captchas, therefore is
             // the !br.contains...check Exampleplugin:
             // FileGigaCom
@@ -189,16 +195,8 @@ public class FoFlyCom extends PluginForHost {
             rc.load();
             File cf = rc.downloadCaptcha(getLocalCaptchaFile());
             String c = getCaptchaCode(cf, downloadLink);
-            if (password == true) {
-                if (downloadLink.getStringProperty("pass", null) == null) {
-                    passCode = Plugin.getUserInput("Password?", downloadLink);
-                } else {
-                    /* gespeicherten PassCode holen */
-                    passCode = downloadLink.getStringProperty("pass", null);
-                }
-                rc.getForm().put("password", passCode);
-                logger.info("Put password \"" + passCode + "\" entered by user in the DLForm.");
-                password = false;
+            if (password) {
+                passCode = handlePassword(passCode, rc.getForm(), downloadLink);
             }
             recaptcha = true;
             rc.setCode(c);
@@ -209,16 +207,9 @@ public class FoFlyCom extends PluginForHost {
         // If the hoster uses Re Captcha the form has already been sent before
         // here so here it's checked. Most hosters don't use Re Captcha so
         // usually recaptcha is false
-        if (recaptcha == false) {
-            if (password == true) {
-                if (downloadLink.getStringProperty("pass", null) == null) {
-                    passCode = Plugin.getUserInput("Password?", downloadLink);
-                } else {
-                    /* gespeicherten PassCode holen */
-                    passCode = downloadLink.getStringProperty("pass", null);
-                }
-                DLForm.put("password", passCode);
-                logger.info("Put password \"" + passCode + "\" entered by user in the DLForm.");
+        if (!recaptcha) {
+            if (password) {
+                passCode = handlePassword(passCode, DLForm, downloadLink);
             }
             jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLForm, resumable, maxchunks);
             logger.info("Submitted DLForm");
@@ -231,26 +222,16 @@ public class FoFlyCom extends PluginForHost {
         } catch (Exception e) {
             error = true;
         }
-        if (br.getRedirectLocation() != null || error == true) {
+        if (br.getRedirectLocation() != null || error) {
             br.followConnection();
             logger.info("followed connection...");
             String dllink = br.getRedirectLocation();
             if (dllink == null) {
-                checkErrors(downloadLink);
-                if (br.containsHTML("You're using all download slots for IP")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
-                if (br.containsHTML("(<br><b>Passwort:</b>|<br><b>Password:</b>|Wrong password)")) {
-                    logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
-                    downloadLink.setProperty("pass", null);
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
-                }
-                if (br.containsHTML("Wrong captcha")) {
-                    logger.warning("Wrong captcha or wrong password!");
-                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                }
+                checkErrors(downloadLink, true, passCode);
                 if (dllink == null) {
                     dllink = br.getRegex("dotted #bbb;padding.*?<a href=\"(.*?)\"").getMatch(0);
                     if (dllink == null) {
-                        dllink = br.getRegex("This direct link will be available for your IP.*?href=\"(http.*?)\"").getMatch(0);
+                        dllink = br.getRegex("This (direct link|download link) will be available for your IP.*?href=\"(http.*?)\"").getMatch(1);
                         if (dllink == null) {
                             // This was for fileop.com, maybe also works for
                             // others!
@@ -259,13 +240,6 @@ public class FoFlyCom extends PluginForHost {
                     }
                 }
             }
-
-            if (dllink == null) {
-                requestFileInformation(downloadLink);
-                String crypted = br.getRegex("p}\\((.*?)\\.split\\('\\|'\\)").getMatch(0);
-                dllink = decodeDownloadLink(crypted);
-            }
-
             if (dllink == null) {
                 logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -287,11 +261,11 @@ public class FoFlyCom extends PluginForHost {
         if (error2 == true) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
+            if (br.containsHTML("No file")) throw new PluginException(LinkStatus.ERROR_FATAL, "Server error");
             if (br.containsHTML("File Not Found")) {
                 logger.warning("Server says link offline, please recheck that!");
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            if (br.containsHTML("<title>404 Not Found</title>")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error (404)", 10 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -304,15 +278,34 @@ public class FoFlyCom extends PluginForHost {
     }
 
     @Override
-    public void reset() {
-    }
-
-    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
     }
 
-    public void checkErrors(DownloadLink theLink) throws NumberFormatException, PluginException {
+    public String handlePassword(String passCode, Form pwform, DownloadLink thelink) throws IOException, PluginException {
+        if (thelink.getStringProperty("pass", null) == null) {
+            passCode = Plugin.getUserInput("Password?", thelink);
+        } else {
+            /* gespeicherten PassCode holen */
+            passCode = thelink.getStringProperty("pass", null);
+        }
+        pwform.put("password", passCode);
+        logger.info("Put password \"" + passCode + "\" entered by user in the DLForm.");
+        return passCode;
+    }
+
+    public void checkErrors(DownloadLink theLink, boolean checkAll, String passCode) throws NumberFormatException, PluginException {
+        if (checkAll) {
+            if (br.containsHTML("(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input|Wrong password)")) {
+                logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
+                theLink.setProperty("pass", null);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+            if (br.containsHTML("Wrong captcha")) {
+                logger.warning("Wrong captcha or wrong password!");
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
+        }
         // Some waittimes...
         if (br.containsHTML("You have to wait")) {
             int minutes = 0, seconds = 0, hours = 0;
@@ -344,6 +337,8 @@ public class FoFlyCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
             }
         }
+        if (br.containsHTML("You're using all download slots for IP")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
+        if (br.containsHTML("Error happened when generating Download Link")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error!", 10 * 60 * 1000l);
         // Errorhandling for only-premium links
         if (br.containsHTML("(You can download files up to.*?only|Upgrade your account to download bigger files|This file reached max downloads)")) {
             String filesizelimit = br.getRegex("You can download files up to(.*?)only").getMatch(0);
@@ -359,34 +354,11 @@ public class FoFlyCom extends PluginForHost {
     }
 
     @Override
+    public void reset() {
+    }
+
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 
-    private String decodeDownloadLink(String s) {
-        String decoded = null;
-
-        try {
-            Regex params = new Regex(s, "'(.*?[^\\\\])',(\\d+),(\\d+),'(.*?)'");
-
-            String p = params.getMatch(0).replaceAll("\\\\", "");
-            int a = Integer.parseInt(params.getMatch(1));
-            int c = Integer.parseInt(params.getMatch(2));
-            String[] k = params.getMatch(3).split("\\|");
-
-            while (c != 0) {
-                c--;
-                if (!k[c].isEmpty()) p = p.replaceAll("\\b" + Integer.toString(c, a) + "\\b", k[c]);
-            }
-
-            decoded = p;
-        } catch (Exception e) {
-        }
-
-        if (decoded != null) {
-            Regex link = new Regex(decoded, "'file','(.*?)'");
-            if (link.matches()) decoded = link.getMatch(0);
-        }
-
-        return decoded;
-    }
 }

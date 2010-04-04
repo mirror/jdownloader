@@ -47,6 +47,7 @@ public class QuickUploadDotNet extends PluginForHost {
     }
 
     private static final String COOKIE_HOST = "http://www.quickupload.net";
+    public boolean nopremium = false;
 
     @Override
     public String getAGBLink() {
@@ -158,12 +159,14 @@ public class QuickUploadDotNet extends PluginForHost {
             DLForm.put("code", code);
             logger.info("Put captchacode " + code + " obtained by captcha metod \"Standard captcha\" in the form.");
         } else if (br.containsHTML("api.recaptcha.net")) {
-            // Some hosters also got commentfields with captchas, therefore is
-            // the !br.contains...check Exampleplugin:
-            // FileGigaCom
+            // Manual Re Captcha handling
             logger.info("Detected captcha method \"Re Captcha\" for this host");
             Recaptcha rc = new Recaptcha(br);
-            rc.parse();
+            // rc.parse();
+            String id = br.getRegex("challenge\\?k=(.*?)\"").getMatch(0);
+            if (id == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            rc.setId(id);
+            rc.setForm(br.getFormbyProperty("name", "F1"));
             rc.load();
             File cf = rc.downloadCaptcha(getLocalCaptchaFile());
             String c = getCaptchaCode(cf, downloadLink);
@@ -284,8 +287,9 @@ public class QuickUploadDotNet extends PluginForHost {
         loginform.put("password", Encoding.urlEncode(account.getPass()));
         br.submitForm(loginform);
         br.getPage(COOKIE_HOST + "/?op=my_account");
-        if (!br.containsHTML("Premium-Account expire")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (!br.containsHTML("Premium-Account expire") && !br.containsHTML("Upgrade to premium")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (!br.containsHTML("Premium-Account expire")) nopremium = true;
     }
 
     @Override
@@ -310,17 +314,26 @@ public class QuickUploadDotNet extends PluginForHost {
             ai.setPremiumPoints(Long.parseLong(points.trim()));
         }
         account.setValid(true);
-        ai.setUnlimitedTraffic();
-        String expire = br.getRegex("<td>Premium-Account expire:</td>.*?<td>(.*?)</td>").getMatch(0);
-        if (expire == null) {
-            ai.setExpired(true);
-            account.setValid(false);
-            return ai;
+        String availabletraffic = br.getRegex("Traffic available.*?:</TD><TD><b>(.*?)</b>").getMatch(0);
+        if (availabletraffic != null) {
+            ai.setTrafficLeft(Regex.getSize(availabletraffic));
         } else {
-            expire = expire.replaceAll("(<b>|</b>)", "");
-            ai.setValidUntil(Regex.getMilliSeconds(expire, "dd MMMM yyyy", null));
+            ai.setUnlimitedTraffic();
         }
-        ai.setStatus("Premium User");
+        if (!nopremium) {
+            String expire = br.getRegex("<td>Premium-Account expire:</td>.*?<td>(.*?)</td>").getMatch(0);
+            if (expire == null) {
+                ai.setExpired(true);
+                account.setValid(false);
+                return ai;
+            } else {
+                expire = expire.replaceAll("(<b>|</b>)", "");
+                ai.setValidUntil(Regex.getMilliSeconds(expire, "dd MMMM yyyy", null));
+            }
+            ai.setStatus("Premium User");
+        } else {
+            ai.setStatus("Registered (free) User");
+        }
         return ai;
     }
 
@@ -332,68 +345,72 @@ public class QuickUploadDotNet extends PluginForHost {
         br.setCookie(COOKIE_HOST, "lang", "english");
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
-        String dllink = br.getRedirectLocation();
-        if (dllink == null) {
-            Form DLForm = br.getFormbyProperty("name", "F1");
-            if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            if (br.containsHTML("(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)")) {
-                if (link.getStringProperty("pass", null) == null) {
-                    passCode = Plugin.getUserInput("Password?", link);
-                } else {
-                    /* gespeicherten PassCode holen */
-                    passCode = link.getStringProperty("pass", null);
-                }
-                DLForm.put("password", passCode);
-                logger.info("Put password \"" + passCode + "\" entered by user in the DLForm.");
-            }
-            br.submitForm(DLForm);
-            dllink = br.getRedirectLocation();
+        if (nopremium) {
+            doFree(link);
+        } else {
+            String dllink = br.getRedirectLocation();
             if (dllink == null) {
-                if (br.containsHTML("(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input|Wrong password)")) {
-                    logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
-                    link.setProperty("pass", null);
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                Form DLForm = br.getFormbyProperty("name", "F1");
+                if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (br.containsHTML("(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)")) {
+                    if (link.getStringProperty("pass", null) == null) {
+                        passCode = Plugin.getUserInput("Password?", link);
+                    } else {
+                        /* gespeicherten PassCode holen */
+                        passCode = link.getStringProperty("pass", null);
+                    }
+                    DLForm.put("password", passCode);
+                    logger.info("Put password \"" + passCode + "\" entered by user in the DLForm.");
                 }
+                br.submitForm(DLForm);
+                dllink = br.getRedirectLocation();
                 if (dllink == null) {
-                    dllink = br.getRegex("dotted #bbb;padding.*?<a href=\"(.*?)\"").getMatch(0);
+                    if (br.containsHTML("(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input|Wrong password)")) {
+                        logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
+                        link.setProperty("pass", null);
+                        throw new PluginException(LinkStatus.ERROR_RETRY);
+                    }
                     if (dllink == null) {
-                        dllink = br.getRegex("This direct link will be available for your IP.*?href=\"(http.*?)\"").getMatch(0);
+                        dllink = br.getRegex("dotted #bbb;padding.*?<a href=\"(.*?)\"").getMatch(0);
                         if (dllink == null) {
-                            // This was for fileop.com, maybe also works for
-                            // others!
-                            dllink = br.getRegex("Download: <a href=\"(.*?)\"").getMatch(0);
+                            dllink = br.getRegex("This direct link will be available for your IP.*?href=\"(http.*?)\"").getMatch(0);
+                            if (dllink == null) {
+                                // This was for fileop.com, maybe also works for
+                                // others!
+                                dllink = br.getRegex("Download: <a href=\"(.*?)\"").getMatch(0);
+                            }
                         }
                     }
                 }
             }
-        }
-        if (dllink == null) {
-            logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        logger.info("Final downloadlink = " + dllink + " starting the download...");
-        jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-        if (passCode != null) {
-            link.setProperty("pass", passCode);
-        }
-        boolean error = false;
-        try {
-            if (dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("html")) {
+            if (dllink == null) {
+                logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            logger.info("Final downloadlink = " + dllink + " starting the download...");
+            jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+            if (passCode != null) {
+                link.setProperty("pass", passCode);
+            }
+            boolean error = false;
+            try {
+                if (dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("html")) {
+                    error = true;
+                }
+            } catch (Exception e) {
                 error = true;
             }
-        } catch (Exception e) {
-            error = true;
-        }
-        if (error == true) {
-            logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
-            if (br.containsHTML("File Not Found")) {
-                logger.warning("Server says link offline, please recheck that!");
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (error == true) {
+                logger.warning("The final dllink seems not to be a file!");
+                br.followConnection();
+                if (br.containsHTML("File Not Found")) {
+                    logger.warning("Server says link offline, please recheck that!");
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            dl.startDownload();
         }
-        dl.startDownload();
     }
 
     public void checkErrors(DownloadLink theLink) throws NumberFormatException, PluginException {
