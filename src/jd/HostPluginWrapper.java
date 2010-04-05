@@ -17,6 +17,9 @@
 package jd;
 
 import java.util.ArrayList;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 
 import javax.swing.ImageIcon;
 
@@ -28,13 +31,19 @@ import jd.plugins.PluginForHost;
 
 public class HostPluginWrapper extends PluginWrapper implements JDLabelContainer {
     private static final ArrayList<HostPluginWrapper> HOST_WRAPPER = new ArrayList<HostPluginWrapper>();
-    public static final Object LOCK = new Object();
+
+    private static final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+    public static final ReadLock readLock = lock.readLock();
+    public static final WriteLock writeLock = lock.writeLock();
 
     static {
         try {
+            writeLock.lock();
             JDInit.loadPluginForHost();
         } catch (Throwable e) {
             JDLogger.exception(e);
+        } finally {
+            writeLock.unlock();
         }
     }
 
@@ -49,7 +58,8 @@ public class HostPluginWrapper extends PluginWrapper implements JDLabelContainer
     public HostPluginWrapper(final String host, final String classNamePrefix, final String className, final String patternSupported, final int flags, final String revision) {
         super(host, classNamePrefix, className, patternSupported, flags);
         this.revision = Formatter.getRevision(revision);
-        synchronized (LOCK) {
+        try {
+            writeLock.lock();
             for (HostPluginWrapper plugin : HOST_WRAPPER) {
                 if (plugin.getID().equalsIgnoreCase(this.getID()) && plugin.getPattern().equals(this.getPattern())) {
                     if (JDFlags.hasNoFlags(flags, ALLOW_DUPLICATE)) {
@@ -59,6 +69,8 @@ public class HostPluginWrapper extends PluginWrapper implements JDLabelContainer
                 }
             }
             HOST_WRAPPER.add(this);
+        } finally {
+            writeLock.unlock();
         }
     }
 

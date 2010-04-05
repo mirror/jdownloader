@@ -488,16 +488,20 @@ public class JDUtilities {
     }
 
     public static PluginForHost getPluginForHost(final String host) {
-        for (final HostPluginWrapper pHost : HostPluginWrapper.getHostWrapper()) {
-            if (pHost.getHost().equals(host.toLowerCase(Locale.getDefault()))) return pHost.getPlugin();
+        try {
+            HostPluginWrapper.readLock.lock();
+            for (final HostPluginWrapper pHost : HostPluginWrapper.getHostWrapper()) {
+                if (pHost.getHost().equals(host.toLowerCase(Locale.getDefault()))) return pHost.getPlugin();
+            }
+        } finally {
+            HostPluginWrapper.readLock.unlock();
         }
         return null;
     }
 
     public static PluginForHost getNewPluginForHostInstance(final String host) {
-        for (final HostPluginWrapper pHost : HostPluginWrapper.getHostWrapper()) {
-            if (pHost.getHost().equals(host.toLowerCase(Locale.getDefault()))) return (PluginForHost) pHost.getNewPluginInstance();
-        }
+        PluginForHost plugin = getPluginForHost(host);
+        if (plugin != null) return (PluginForHost) plugin.getWrapper().getNewPluginInstance();
         return null;
     }
 
@@ -509,13 +513,18 @@ public class JDUtilities {
     }
 
     public static ArrayList<HostPluginWrapper> getPremiumPluginsForHost() {
-        final ArrayList<HostPluginWrapper> plugins = new ArrayList<HostPluginWrapper>(HostPluginWrapper.getHostWrapper());
-        for (int i = plugins.size() - 1; i >= 0; --i) {
-            if (!plugins.get(i).isPremiumEnabled()) {
-                plugins.remove(i);
+        try {
+            HostPluginWrapper.readLock.lock();
+            final ArrayList<HostPluginWrapper> plugins = new ArrayList<HostPluginWrapper>(HostPluginWrapper.getHostWrapper());
+            for (int i = plugins.size() - 1; i >= 0; --i) {
+                if (!plugins.get(i).isPremiumEnabled()) {
+                    plugins.remove(i);
+                }
             }
+            return plugins;
+        } finally {
+            HostPluginWrapper.readLock.unlock();
         }
-        return plugins;
     }
 
     /**

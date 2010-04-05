@@ -104,7 +104,7 @@ public class DownloadController implements FilePackageListener, DownloadControll
 
     public final static Object ControllerLock = new Object();
 
-    private static DownloadController INSTANCE = null;
+    private static DownloadController INSTANCE = new DownloadController();
 
     private ArrayList<FilePackage> packages = new ArrayList<FilePackage>();
 
@@ -123,11 +123,8 @@ public class DownloadController implements FilePackageListener, DownloadControll
 
     private boolean saveinprogress;
 
-    public synchronized static DownloadController getInstance() {
+    public static DownloadController getInstance() {
         /* darf erst nachdem der JDController init wurde, aufgerufen werden */
-        if (INSTANCE == null) {
-            INSTANCE = new DownloadController();
-        }
         return INSTANCE;
     }
 
