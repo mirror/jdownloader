@@ -48,6 +48,7 @@ public class JDInfoBar extends PluginOptional {
     }
 
     private void updateOpacity(Object value) {
+        if (infoDialog == null) return;
         final Float newValue;
         if (value == null) {
             newValue = getPluginConfig().getDoubleProperty(JDInfoBar.PROPERTY_OPACITY, 100.0).floatValue();
@@ -75,9 +76,13 @@ public class JDInfoBar extends PluginOptional {
     @Override
     public void setGuiEnable(boolean b) {
         if (b) {
+            if (infoDialog == null) {
+                infoDialog = InfoDialog.getInstance(activateAction);
+                updateOpacity(null);
+            }
             infoDialog.showDialog();
         } else {
-            infoDialog.hideDialog();
+            if (infoDialog != null) infoDialog.hideDialog();
         }
         if (activateAction != null && activateAction.isSelected() != b) activateAction.setSelected(b);
     }
@@ -89,9 +94,6 @@ public class JDInfoBar extends PluginOptional {
         activateAction.setActionListener(this);
         activateAction.setIcon(this.getIconKey());
         activateAction.setSelected(false);
-
-        infoDialog = InfoDialog.getInstance(activateAction);
-        updateOpacity(null);
 
         return true;
     }
