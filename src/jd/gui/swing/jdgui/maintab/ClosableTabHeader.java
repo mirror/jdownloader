@@ -66,7 +66,7 @@ public class ClosableTabHeader extends JPanel {
 
             @Override
             public void mouseReleased(MouseEvent e) {
-                if (e.getButton() == MouseEvent.BUTTON2) {
+                if (e.getButton() == MouseEvent.BUTTON2 || (e.getButton() == MouseEvent.BUTTON1 && e.getClickCount() == 2)) {
                     view.close();
                 } else {
                     JDMouseAdapter.forwardEvent(e, MainTabbedPane.getInstance());
