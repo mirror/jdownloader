@@ -148,7 +148,7 @@ public abstract class PluginForHost extends Plugin {
 
     private String premiumurl = null;
 
-    private ImageIcon hosterIcon;
+    protected ImageIcon hosterIcon;
     private MenuAction premiumAction;
 
     public boolean checkLinks(final DownloadLink[] urls) {
@@ -670,7 +670,7 @@ public abstract class PluginForHost extends Plugin {
         return hosterIcon;
     }
 
-    private final ImageIcon initHosterIcon() {
+    public ImageIcon initHosterIcon() {
         Image image = JDImage.getImage("hosterlogos/" + getHost());
         if (image == null) image = createDefaultIcon();
         if (image != null) return new ImageIcon(image);
@@ -684,7 +684,7 @@ public abstract class PluginForHost extends Plugin {
     /**
      * Creates a dummyHosterIcon
      */
-    private final Image createDefaultIcon() {
+    public Image createDefaultIcon() {
         int w = 16;
         int h = 16;
         int size = 9;

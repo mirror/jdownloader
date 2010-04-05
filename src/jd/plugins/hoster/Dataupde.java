@@ -31,7 +31,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 public class Dataupde extends PluginForHost {
     public Dataupde(PluginWrapper wrapper) {
         super(wrapper);
-        // TODO Auto-generated constructor stub
     }
 
     @Override
