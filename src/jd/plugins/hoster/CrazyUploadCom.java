@@ -55,7 +55,7 @@ public class CrazyUploadCom extends PluginForHost {
         if (br.containsHTML("No such file") || br.containsHTML("No such user exist") || br.containsHTML("File not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<input type=\"hidden\" name=\"fname\" value=\"(.*?)\">").getMatch(0);
         String filesize = br.getRegex("You have requested <font.*?>http.*?</font>.*?\\((.*?)\\)</font>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filename == null || filesize == null || filesize.equals("") || filename.equals("")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         link.setName(filename);
         link.setDownloadSize(Regex.getSize(filesize));
         return AvailableStatus.TRUE;

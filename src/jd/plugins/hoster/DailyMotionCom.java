@@ -46,6 +46,7 @@ public class DailyMotionCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.setCookie("http://www.dailymotion.com", "family_filter", "off");
         br.getPage(downloadLink.getDownloadURL());
         String filename = br.getRegex("<title>Dailymotion -(.*?)- ein Film \\& Kino Video</title>").getMatch(0);
         if (filename == null) {
