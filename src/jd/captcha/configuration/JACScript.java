@@ -971,7 +971,8 @@ public class JACScript {
          */
         set("easyCaptchaRemoveSmallObjects", true);
         /**
-         * Gibt an ob bei EasyCaptcha die Buchstaben als Schwarzweiß gewertet werden sollen
+         * Gibt an ob bei EasyCaptcha die Buchstaben als Schwarzweiß gewertet
+         * werden sollen
          * 
          */
         set("easyCaptchaBW", false);
