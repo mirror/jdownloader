@@ -28,7 +28,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "failai.lt.net" }, urls = { "http://[\\w\\.]*?failai\\.lt/[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "failai.lt" }, urls = { "http://[\\w\\.]*?failai\\.lt/[a-z0-9]{12}" }, flags = { 0 })
 public class FaiLaiLt extends PluginForHost {
 
     public FaiLaiLt(PluginWrapper wrapper) {

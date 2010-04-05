@@ -220,3 +220,4 @@ jd/plugins/decrypter/SvflCmPrct.class
 jd/plugins/hoster/SavefileCom.class
 jd/plugins/hoster/LeteckaPostaCz.class
 jd/plugins/hoster/YabaDabaRu.class
+jd/plugins/hoster/DownloadSu.class
