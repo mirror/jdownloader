@@ -49,7 +49,7 @@ public class GetExplorer {
         return null;
     }
 
-    private Object[] explorer = (Object[]) JDUtilities.getConfiguration().getProperty(Configuration.PARAM_FILE_BROWSER, null);
+    private static Object[] explorer = JDUtilities.getConfiguration().getGenericProperty(Configuration.PARAM_FILE_BROWSER, (Object[]) null);
 
     /**
      * Object[0] = Browsername Object[1] = Befehl zum Browser Object[2] =
@@ -57,7 +57,7 @@ public class GetExplorer {
      * 
      * @return
      */
-    public Object[] getExplorerCommand() {
+    public static Object[] getExplorerCommand() {
         if (explorer != null) {
             if (!new File((String) explorer[1]).exists()) {
                 explorer = null;
@@ -75,7 +75,7 @@ public class GetExplorer {
         return explorer;
     }
 
-    public boolean openExplorer(File path) {
+    public static boolean openExplorer(File path) {
         if (path != null) {
             getExplorerCommand();
             while (path != null && !path.isDirectory()) {

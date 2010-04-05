@@ -16,15 +16,12 @@
 
 package jd;
 
-import java.awt.AWTException;
 import java.awt.Color;
 import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
-import java.awt.Image;
 import java.awt.Point;
 import java.awt.Rectangle;
-import java.io.IOException;
 
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
@@ -43,38 +40,12 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
-class SplashProgressImage {
-
-    private final Image image;
-
-    private long startTime = 0;
-    private static final int DUR = 2500;
-
-    public SplashProgressImage(final Image image) {
-        this.image = image;
-    }
-
-    public Image getImage() {
-        return image;
-    }
-
-    public float getAlpha() {
-        if (this.startTime == 0) {
-            this.startTime = System.currentTimeMillis();
-        }
-        return Math.min((System.currentTimeMillis() - startTime) / (float) DUR, 1.0f);
-    }
-
-}
-
 public class SplashScreen implements ControlListener {
 
     public static final int SPLASH_FINISH = 0;
     public static final int SPLASH_PROGRESS = 1;
 
     private final ImageIcon image;
-
-    // private JLabel label;
 
     private JWindow window;
 
@@ -87,7 +58,7 @@ public class SplashScreen implements ControlListener {
 
     private final GraphicsDevice gd;
 
-    public SplashScreen(JDController controller) throws IOException, AWTException {
+    public SplashScreen(JDController controller) {
 
         LookAndFeelController.setUIManager();
         this.image = new ImageIcon(JDTheme.I("gui.splash"));
@@ -149,7 +120,6 @@ public class SplashScreen implements ControlListener {
         new GuiRunnable<Object>() {
             @Override
             public Object runSave() {
-
                 window.dispose();
                 return null;
             }
@@ -174,7 +144,6 @@ public class SplashScreen implements ControlListener {
                     curString = (String) event.getParameter();
                 }
             }
-
             incProgress();
         } else if (event.getID() == ControlEvent.CONTROL_INIT_COMPLETE && event.getSource() instanceof Main) {
             JDUtilities.getController().removeControlListener(this);

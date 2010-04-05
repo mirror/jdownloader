@@ -816,7 +816,7 @@ public class JDUtilities {
 
     public static boolean openExplorer(final File path) {
         try {
-            return new GetExplorer().openExplorer(path);
+            return GetExplorer.openExplorer(path);
         } catch (Exception e) {
             JDLogger.exception(e);
             return false;
@@ -877,12 +877,6 @@ public class JDUtilities {
 
     public static String getDefaultDownloadDirectory() {
         return JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY, JDUtilities.getResourceFile("downloads").getAbsolutePath());
-    }
-
-    @Deprecated
-    /* only here so we have a fallback for old plugins */
-    public static ArrayList<HostPluginWrapper> getPluginsForHost() {
-        return HostPluginWrapper.getHostWrapper();
     }
 
 }

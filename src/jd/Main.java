@@ -40,7 +40,6 @@ import jd.config.SubConfiguration;
 import jd.controlling.DynamicPluginInterface;
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
-import jd.controlling.interaction.Interaction;
 import jd.event.ControlEvent;
 import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
@@ -237,8 +236,6 @@ public class Main {
                     }.waitForEDT();
                 }
             }
-
-            Interaction.deleteInteractions();
 
             start(args);
         } else {

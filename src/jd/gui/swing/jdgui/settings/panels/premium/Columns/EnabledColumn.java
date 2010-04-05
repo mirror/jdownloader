@@ -48,9 +48,6 @@ public class EnabledColumn extends JDCheckBoxTableColumn {
 
     @Override
     public boolean isEnabled(Object obj) {
-        if (obj == null) return false;
-        if (obj instanceof Account) return ((Account) obj).isEnabled();
-        if (obj instanceof HostAccounts) return ((HostAccounts) obj).isEnabled();
         return true;
     }
 
