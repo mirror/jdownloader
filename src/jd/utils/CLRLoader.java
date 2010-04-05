@@ -31,22 +31,17 @@ import org.xml.sax.InputSource;
 
 public class CLRLoader {
 
-    static Logger logger = jd.controlling.JDLogger.getLogger();
+    private static final Logger logger = JDLogger.getLogger();
 
-    public static String[] createLiveHeader(String CLR) {
+    public static String[] createLiveHeader(String clr) {
         try {
-            DocumentBuilderFactory factory;
-
-            InputSource inSource;
-            Document doc;
-
-            factory = DocumentBuilderFactory.newInstance();
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             factory.setIgnoringComments(true);
-
             factory.setValidating(false);
-            inSource = new InputSource(new StringReader(CLR));
 
-            doc = factory.newDocumentBuilder().parse(inSource);
+            InputSource inSource = new InputSource(new StringReader(clr));
+
+            Document doc = factory.newDocumentBuilder().parse(inSource);
 
             NodeList nodes = doc.getFirstChild().getChildNodes();
             String routerName = null;
@@ -135,6 +130,5 @@ public class CLRLoader {
                 logger.severe("UNKNOWN AUTH TYPE");
             }
         }
-
     }
 }

@@ -24,17 +24,17 @@
 		<jar jarfile="${dist}/JDownloader.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="**/*.class" />
-				<exclude name="jd/http/**" />
 				<exclude name="jd/captcha/**" />
+				<exclude name="jd/dynamics/**" />
 				<exclude name="jd/gui/**" />
+				<exclude name="jd/http/**" />
 				<exclude name="jd/nutils/**" />
 				<exclude name="jd/plugins/hoster/**" />
-				<exclude name="jd/dynamics/**" />
-				<exclude name="jd/plugins/decrypter/**" />
-				<exclude name="jd/captcha/methods/**" />
-				<exclude name="jd/plugins/optional/**" />
-				<exclude name="sun/net/www/protocol/**" />
 				<include name="jd/plugins/hoster/DirectHTTP*" />
+				<exclude name="jd/plugins/decrypter/**" />
+				<exclude name="jd/plugins/optional/**" />
+				<exclude name="jd/utils/dev/**" />
+				<exclude name="sun/net/www/protocol/**" />
 				<exclude name="tests/**" />
 			</fileset>
 			<fileset dir="${res}">

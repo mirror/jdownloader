@@ -46,8 +46,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.RAFDownload;
-import jd.utils.SnifferException;
-import jd.utils.Sniffy;
 import jd.utils.locale.JDL;
 
 import org.mozilla.javascript.Context;
@@ -382,9 +380,6 @@ public class Rapidshare extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         try {
-            if (downloadLink.getLinkType() == DownloadLink.LINKTYPE_CONTAINER) {
-                if (Sniffy.hasSniffer()) throw new SnifferException();
-            }
             LinkStatus linkStatus = downloadLink.getLinkStatus();
 
             String freeOrPremiumSelectPostURL = null;
@@ -613,10 +608,6 @@ public class Rapidshare extends PluginForHost {
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         try {
-            if (downloadLink.getLinkType() == DownloadLink.LINKTYPE_CONTAINER) {
-                if (Sniffy.hasSniffer()) throw new SnifferException();
-            }
-
             String freeOrPremiumSelectPostURL = null;
             Request request = null;
 
