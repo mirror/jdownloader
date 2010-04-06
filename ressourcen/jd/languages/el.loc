@@ -419,6 +419,7 @@ gui.linkinfo.filesize = Μέγεθος αρχείου
 gui.linkinfo.package = Πακέτο
 gui.linkinfo.password = Κωδικός
 gui.linkinfo.saveto = Αποθήκευση σε
+gui.linkinfo.secs = {0} δευτ.
 gui.linkinfo.speed = Ταχύτητα
 gui.linkinfo.status = Κατάσταση
 gui.linkinfo.waittime = Χρόνος αναμονής
@@ -1318,6 +1319,7 @@ plugins.hoster.gigasizecom.errors.alreadyloading = Ο έλεγχος δεν εί
 plugins.hoster.hellsharecom.error.404 = Σφάλμα 404. Το αρχείο μπορεί να μην είναι διαθέσιμο στη χώρα σας!
 plugins.hoster.hellsharecom.error.currentloadis100percent = Η υπάρχουσα φόρτωση του Εξυπηρετητή είναι 100%
 plugins.hoster.hellsharecom.error.serveruntermaximumload = Ο Εξυπηρετητής φορτώνει στο μέγιστο
+plugins.hoster.hotfilecom.setunlimitedconnectionsforpremium = Να επιτρέπονται περισσότερες από 5 συνδέσεις ανά αρχείο για premium λογαριασμούς (προεπιλεγμένο μέγιστο = 5). Ενεργοποιώντας αυτό μπορεί να προκληθούν σφάλματα!!
 plugins.hoster.httplinks.errors.basicauthneeded = Απαιτείται εξουσιοδότηση
 plugins.hoster.ifolderru.errors.ticketwait = Αναμονή για εισιτήριο
 plugins.hoster.jamendo = Προτίμηση λήψης Υψηλής Ποιότητας
