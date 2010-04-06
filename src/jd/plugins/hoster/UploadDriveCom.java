@@ -16,19 +16,20 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
-import java.util.regex.Pattern;
-
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
+import jd.parser.html.Form;
+import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "upload-drive.com" }, urls = { "http://[\\w\\.]*?upload-drive\\.com/\\d+/.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "upload-drive.com" }, urls = { "http://[\\w\\.]*?upload-drive\\.com/file/\\d+/" }, flags = { 0 })
 public class UploadDriveCom extends PluginForHost {
 
     public UploadDriveCom(PluginWrapper wrapper) {
@@ -41,35 +42,125 @@ public class UploadDriveCom extends PluginForHost {
         return "http://www.upload-drive.com/terms.html";
     }
 
+    private static final String COOKIE_HOST = "http://www.upload-drive.com";
+
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL() + "?setlang=en");
+    }
+
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("Invalid file") || br.containsHTML("Invalid request") || br.containsHTML("Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = Encoding.htmlDecode(br.getRegex(Pattern.compile("<b>File name:</b> (.*?)\\s+<b>", Pattern.CASE_INSENSITIVE)).getMatch(0));
-        // String filesize =
-        // br.getRegex("<b> File size:</b>\\s+(.*?)</p>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        // || filesize.equalsIgnoreCase("0.00 KB"))
-        downloadLink.setName(filename.trim());
-        // downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",",
-        // "\\.")));
+        br.setFollowRedirects(true);
+        br.setCookie(COOKIE_HOST, "mfh_mylang", "en");
+        br.setCookie(COOKIE_HOST, "yab_mylang", "en");
+        br.getPage(parameter.getDownloadURL());
+        if (br.containsHTML("Your requested file is not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<b>File name:</b></td>.*?<td align=.*?width=.*?>(.*?)</td>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("\"Click this to report for(.*?)\"").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
+                if (filename == null) {
+                    filename = br.getRegex("content=\"(.*?), The best file hosting service").getMatch(0);
+                }
+            }
+        }
+        String filesize = br.getRegex("<b>File size:</b></td>.*?<td align=.*?>(.*?)</td>").getMatch(0);
+        if (filename == null || filename.matches("")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        parameter.setFinalFileName(filename.trim());
+        if (filesize != null) parameter.setDownloadSize(Regex.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        String linkurl = br.getRegex("<div class=\"logo\"[^>]*>\\s*<a href=\"(.*?)\"><img").getMatch(0);
-        if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl);
+    public void handleFree(DownloadLink link) throws Exception {
+        this.setBrowserExclusive();
+        requestFileInformation(link);
+        // br.postPage(link.getDownloadURL(), "Free=Free+Users");
+        String passCode = null;
+        Form captchaform = br.getFormbyProperty("name", "myform");
+        if (captchaform == null) {
+            captchaform = br.getFormbyProperty("name", "validateform");
+            if (captchaform == null) {
+                captchaform = br.getFormbyProperty("name", "valideform");
+            }
+        }
+        if (br.containsHTML("(captcha.php|downloadpw)")) {
+            if (captchaform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            for (int i = 0; i <= 3; i++) {
+                if (br.containsHTML("captcha.php")) {
+                    String captchaurl = COOKIE_HOST + "/captcha.php";
+                    String code = getCaptchaCode(captchaurl, link);
+                    captchaform.put("captchacode", code);
+                }
+                if (br.containsHTML("downloadpw")) {
+                    if (br.containsHTML("downloadpw")) {
+                        if (link.getStringProperty("pass", null) == null) {
+                            passCode = Plugin.getUserInput("Password?", link);
+
+                        } else {
+                            /* gespeicherten PassCode holen */
+                            passCode = link.getStringProperty("pass", null);
+                        }
+                        captchaform.put("downloadpw", passCode);
+                    }
+                }
+                br.submitForm(captchaform);
+                if (br.containsHTML("Password Error")) {
+                    logger.warning("Wrong password!");
+                    link.setProperty("pass", null);
+                    continue;
+                }
+                if (br.containsHTML("Captcha number error") || br.containsHTML("captcha.php") && !br.containsHTML("You have got max allowed bandwidth size per hour")) {
+                    logger.warning("Wrong captcha or wrong password!");
+                    link.setProperty("pass", null);
+                    continue;
+                }
+                break;
+            }
+        }
+        if (br.containsHTML("Password Error")) {
+            logger.warning("Wrong password!");
+            link.setProperty("pass", null);
+            throw new PluginException(LinkStatus.ERROR_RETRY);
+        }
+        if (br.containsHTML("Captcha number error") || br.containsHTML("captcha.php") && !br.containsHTML("You have got max allowed bandwidth size per hour")) {
+            logger.warning("Wrong captcha or wrong password!");
+            link.setProperty("pass", null);
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        }
+        if (passCode != null) {
+            link.setProperty("pass", passCode);
+        }
+        if (br.containsHTML("You have got max allowed bandwidth size per hour")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
+        String finalLink = findLink();
+        if (finalLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, finalLink, false, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl.startDownload();
+    }
+
+    public String findLink() throws Exception {
+        String finalLink = null;
+        String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
+        if (sitelinks == null || sitelinks.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        for (String alink : sitelinks) {
+            alink = Encoding.htmlDecode(alink);
+            if (alink.contains("access_key=") || alink.contains("getfile.php?")) {
+                finalLink = alink;
+                break;
+            }
+        }
+        return finalLink;
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 10;
+        return -1;
     }
 
     @Override

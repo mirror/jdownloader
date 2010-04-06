@@ -221,3 +221,5 @@ jd/plugins/hoster/SavefileCom.class
 jd/plugins/hoster/LeteckaPostaCz.class
 jd/plugins/hoster/YabaDabaRu.class
 jd/plugins/hoster/DownloadSu.class
+jd/plugins/hoster/FileHostMecom.class
+jd/plugins/hoster/SuborySk.class

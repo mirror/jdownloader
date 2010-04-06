@@ -51,7 +51,6 @@ public class MhfScriptBasic extends PluginForHost {
         return COOKIE_HOST + "/rules.php";
     }
 
-    public String finalLink = null;
     private static final String COOKIE_HOST = "http://Only4Devs2Test.com";
 
     public void correctDownloadLink(DownloadLink link) {
@@ -144,7 +143,7 @@ public class MhfScriptBasic extends PluginForHost {
             link.setProperty("pass", passCode);
         }
         if (br.containsHTML("You have got max allowed bandwidth size per hour")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
-        findLink(link);
+        String finalLink = findLink();
         if (finalLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, finalLink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -154,7 +153,8 @@ public class MhfScriptBasic extends PluginForHost {
         dl.startDownload();
     }
 
-    public void findLink(DownloadLink link) throws Exception {
+    public String findLink() throws Exception {
+        String finalLink = null;
         String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
         if (sitelinks == null || sitelinks.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         for (String alink : sitelinks) {
@@ -164,6 +164,7 @@ public class MhfScriptBasic extends PluginForHost {
                 break;
             }
         }
+        return finalLink;
     }
 
     public void login(Account account) throws Exception {
@@ -248,6 +249,7 @@ public class MhfScriptBasic extends PluginForHost {
         br.setFollowRedirects(false);
         br.setCookie(COOKIE_HOST, "mfh_mylang", "en");
         br.getPage(parameter.getDownloadURL());
+        String finalLink = null;
         if (br.getRedirectLocation() != null && (br.getRedirectLocation().contains("access_key=") || br.getRedirectLocation().contains("getfile.php"))) {
             finalLink = br.getRedirectLocation();
         } else {
@@ -276,7 +278,7 @@ public class MhfScriptBasic extends PluginForHost {
             if (passCode != null) {
                 parameter.setProperty("pass", passCode);
             }
-            findLink(parameter);
+            finalLink = findLink();
         }
         if (finalLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, finalLink, true, 0);
