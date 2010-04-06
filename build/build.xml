@@ -1,5 +1,5 @@
 <project default="standardBuild" basedir=".">
-	<property environment="env" />
+
 	<property name="src" value="src" />
 	<property name="cls" value="bin" />
 	<property name="dist" value="dist" />
@@ -20,6 +20,7 @@
 			<attribute name="Main-Class" value="jd.Main" />
 			<attribute name="Class-Path" value="${class-path}" />
 		</manifest>
+
 		<mkdir dir="${dist}" />
 		<jar jarfile="${dist}/JDownloader.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
@@ -85,6 +86,7 @@
 			<attribute name="Created-By" value="coalado" />
 			<attribute name="Main-Class" value="jd.update.Main" />
 		</manifest>
+
 		<jar jarfile="${dist}/jdupdate.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/update/*.class" />
@@ -111,6 +113,7 @@
 			<attribute name="Created-By" value="coalado" />
 			<attribute name="Main-Class" value="jd.update.Restarter" />
 		</manifest>
+
 		<jar jarfile="${dist}/tinyupdate.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/update/Restarter*.class" />
