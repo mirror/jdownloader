@@ -1,18 +1,18 @@
-//    jDownloader - Downloadmanager
-//    Copyright (C) 2009  JD-Team support@jdownloader.org
+//jDownloader - Downloadmanager
+//Copyright (C) 2009  JD-Team support@jdownloader.org
 //
-//    This program is free software: you can redistribute it and/or modify
-//    it under the terms of the GNU General Public License as published by
-//    the Free Software Foundation, either version 3 of the License, or
-//    (at your option) any later version.
+//This program is free software: you can redistribute it and/or modify
+//it under the terms of the GNU General Public License as published by
+//the Free Software Foundation, either version 3 of the License, or
+//(at your option) any later version.
 //
-//    This program is distributed in the hope that it will be useful,
-//    but WITHOUT ANY WARRANTY; without even the implied warranty of
-//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-//    GNU General Public License for more details.
+//This program is distributed in the hope that it will be useful,
+//but WITHOUT ANY WARRANTY; without even the implied warranty of
+//MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//GNU General Public License for more details.
 //
-//    You should have received a copy of the GNU General Public License
-//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//You should have received a copy of the GNU General Public License
+//along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package jd.plugins.hoster;
 
@@ -35,32 +35,30 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.pluginUtils.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filechip.com" }, urls = { "http://[\\w\\.]*?filechip\\.com/[a-z0-9]{12}" }, flags = { 0 })
-public class FileChipCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "eeeshare.com" }, urls = { "http://[\\w\\.]*?eeeshare\\.com/[a-z0-9]{12}" }, flags = { 0 })
+public class EeeShareCom extends PluginForHost {
 
-    public FileChipCom(PluginWrapper wrapper) {
+    public EeeShareCom(PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
-    // XfileSharingProBasic Version 1.6
+    // XfileSharingProBasic Version 1.6, special dllink form handling
     @Override
     public String getAGBLink() {
         return COOKIE_HOST + "/tos.html";
     }
 
-    private static final String COOKIE_HOST = "http://filechip.com";
+    private static final String passwordText = "(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)";
+    private static final String COOKIE_HOST = "http://eeeshare.com";
     public boolean nopremium = false;
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.setFollowRedirects(false);
         br.setCookie(COOKIE_HOST, "lang", "english");
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("You have reached the download-limit")) {
-            logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
-            return AvailableStatus.UNCHECKABLE;
-        }
         if (br.containsHTML("(No such file|No such user exist|File not found)")) {
             logger.warning("file is 99,99% offline, throwing \"file not found\" now...");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -71,7 +69,7 @@ public class FileChipCom extends PluginForHost {
             if (filename == null) {
                 filename = br.getRegex("<h2>Download File(.*?)</h2>").getMatch(0);
                 if (filename == null) {
-                    filename = br.getRegex("Filename:</b></td><td >(.*?)</td>").getMatch(0);
+                    filename = br.getRegex("Filename:</b></td><td[ ]{0,2}>(.*?)</td>").getMatch(0);
                     if (filename == null) {
                         filename = br.getRegex("Filename.*?nowrap.*?>(.*?)</td").getMatch(0);
                         if (filename == null) {
@@ -89,8 +87,12 @@ public class FileChipCom extends PluginForHost {
             }
         }
         if (filename == null || filename.equals("")) {
-            logger.warning("The filename equals null, throwing \"file not found\" now...");
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML("You have reached the download-limit")) {
+                logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
+                return AvailableStatus.UNCHECKABLE;
+            }
+            logger.warning("The filename equals null, throwing \"plugin defect\" now...");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         filename = filename.replaceAll("(</b>|<b>|\\.html)", "");
         link.setName(filename.trim());
@@ -102,23 +104,25 @@ public class FileChipCom extends PluginForHost {
     }
 
     public void doFree(DownloadLink downloadLink) throws Exception, PluginException {
-        br.setReadTimeout((int) (60 * 1000l));
+        String passCode = null;
         boolean resumable = true;
         int maxchunks = 0;
         // If the filesize regex above doesn't match you can copy this part into
         // the available status (and delete it here)
-        Form freeform = br.getFormBySubmitvalue("Kostenloser+Download");
-        if (freeform == null) {
-            freeform = br.getFormBySubmitvalue("Free+Download");
-            if (freeform == null) {
-                freeform = br.getFormbyKey("download1");
+        Form freeform = null;
+        Form[] allForms = br.getForms();
+        if (allForms == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        for (Form singleForm : allForms) {
+            if (singleForm.toString().contains("download1")) {
+                freeform = singleForm;
+                break;
             }
         }
         if (freeform != null) {
             freeform.remove("method_premium");
             br.submitForm(freeform);
         }
-        checkErrors(downloadLink);
+        checkErrors(downloadLink, false, passCode);
         String md5hash = br.getRegex("<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
         if (md5hash != null) {
             md5hash = md5hash.trim();
@@ -128,26 +132,23 @@ public class FileChipCom extends PluginForHost {
         br.setFollowRedirects(false);
         Form DLForm = br.getFormbyProperty("name", "F1");
         if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // // Ticket Time
-        // String ttt =
-        // br.getRegex("countdown\">.*?(\\d+).*?</span>").getMatch(0);
-        // if (ttt == null) ttt =
-        // br.getRegex("id=\"countdown_str\".*?<span id=\".*?\">.*?(\\d+).*?</span").getMatch(0);
-        // if (ttt != null) {
-        // logger.info("Waittime detected, waiting " + ttt.trim() +
-        // " seconds from now on...");
-        // int tt = Integer.parseInt(ttt);
-        // sleep(tt * 1001, downloadLink);
-        // }
-        String passCode = null;
+        // Ticket Time
+        String ttt = br.getRegex("countdown\">.*?(\\d+).*?</span>").getMatch(0);
+        if (ttt == null) ttt = br.getRegex("id=\"countdown_str\".*?<span id=\".*?\">.*?(\\d+).*?</span").getMatch(0);
+        if (ttt != null) {
+            logger.info("Waittime detected, waiting " + ttt.trim() + " seconds from now on...");
+            int tt = Integer.parseInt(ttt);
+            sleep(tt * 1001, downloadLink);
+        }
         boolean password = false;
         boolean recaptcha = false;
-        if (br.containsHTML("(<br><b>Passwort:</b>|<br><b>Password:</b>)")) {
+        if (br.containsHTML(passwordText)) {
             password = true;
             logger.info("The downloadlink seems to be password protected.");
         }
+
         /* Captcha START */
-        if (br.containsHTML("background:#ccc;text-align")) {
+        if (br.containsHTML(";background:#ccc;text-align")) {
             logger.info("Detected captcha method \"plaintext captchas\" for this host");
             // Captcha method by ManiacMansion
             String[][] letters = new Regex(Encoding.htmlDecode(br.toString()), "<span style='position:absolute;padding-left:(\\d+)px;padding-top:\\d+px;'>(\\d)</span>").getMatches();
@@ -196,16 +197,8 @@ public class FileChipCom extends PluginForHost {
             rc.load();
             File cf = rc.downloadCaptcha(getLocalCaptchaFile());
             String c = getCaptchaCode(cf, downloadLink);
-            if (password == true) {
-                if (downloadLink.getStringProperty("pass", null) == null) {
-                    passCode = Plugin.getUserInput("Password?", downloadLink);
-                } else {
-                    /* gespeicherten PassCode holen */
-                    passCode = downloadLink.getStringProperty("pass", null);
-                }
-                rc.getForm().put("password", passCode);
-                logger.info("Put password \"" + passCode + "\" entered by user in the DLForm.");
-                password = false;
+            if (password) {
+                passCode = handlePassword(passCode, rc.getForm(), downloadLink);
             }
             recaptcha = true;
             rc.setCode(c);
@@ -216,16 +209,9 @@ public class FileChipCom extends PluginForHost {
         // If the hoster uses Re Captcha the form has already been sent before
         // here so here it's checked. Most hosters don't use Re Captcha so
         // usually recaptcha is false
-        if (recaptcha == false) {
-            if (password == true) {
-                if (downloadLink.getStringProperty("pass", null) == null) {
-                    passCode = Plugin.getUserInput("Password?", downloadLink);
-                } else {
-                    /* gespeicherten PassCode holen */
-                    passCode = downloadLink.getStringProperty("pass", null);
-                }
-                DLForm.put("password", passCode);
-                logger.info("Put password \"" + passCode + "\" entered by user in the DLForm.");
+        if (!recaptcha) {
+            if (password) {
+                passCode = handlePassword(passCode, DLForm, downloadLink);
             }
             jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLForm, resumable, maxchunks);
             logger.info("Submitted DLForm");
@@ -238,26 +224,20 @@ public class FileChipCom extends PluginForHost {
         } catch (Exception e) {
             error = true;
         }
-        if (br.getRedirectLocation() != null || error == true) {
+        if (br.getRedirectLocation() != null || error) {
             br.followConnection();
             logger.info("followed connection...");
+            Form fcbkForm = br.getFormbyProperty("id", "form1");
+            if (fcbkForm != null) br.submitForm(fcbkForm);
+            fcbkForm = br.getFormbyProperty("id", "form1");
+            if (fcbkForm != null) br.submitForm(fcbkForm);
             String dllink = br.getRedirectLocation();
             if (dllink == null) {
-                checkErrors(downloadLink);
-                if (br.containsHTML("You're using all download slots for IP")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
-                if (br.containsHTML("(<br><b>Passwort:</b>|<br><b>Password:</b>|Wrong password)")) {
-                    logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
-                    downloadLink.setProperty("pass", null);
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
-                }
-                if (br.containsHTML("Wrong captcha")) {
-                    logger.warning("Wrong captcha or wrong password!");
-                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                }
+                checkErrors(downloadLink, true, passCode);
                 if (dllink == null) {
                     dllink = br.getRegex("dotted #bbb;padding.*?<a href=\"(.*?)\"").getMatch(0);
                     if (dllink == null) {
-                        dllink = br.getRegex("This direct link will be available for your IP.*?href=\"(http.*?)\"").getMatch(0);
+                        dllink = br.getRegex("This (direct link|download link) will be available for your IP.*?href=\"(http.*?)\"").getMatch(1);
                         if (dllink == null) {
                             // This was for fileop.com, maybe also works for
                             // others!
@@ -287,7 +267,7 @@ public class FileChipCom extends PluginForHost {
         if (error2 == true) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
-            if (br.containsHTML("No file")) throw new PluginException(LinkStatus.ERROR_FATAL, "Server error (caused by the hoster, this is NO JD BUG!)");
+            if (br.containsHTML("No file")) throw new PluginException(LinkStatus.ERROR_FATAL, "Server error");
             if (br.containsHTML("File Not Found")) {
                 logger.warning("Server says link offline, please recheck that!");
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -304,15 +284,34 @@ public class FileChipCom extends PluginForHost {
     }
 
     @Override
-    public void reset() {
-    }
-
-    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
     }
 
-    public void checkErrors(DownloadLink theLink) throws NumberFormatException, PluginException {
+    public String handlePassword(String passCode, Form pwform, DownloadLink thelink) throws IOException, PluginException {
+        if (thelink.getStringProperty("pass", null) == null) {
+            passCode = Plugin.getUserInput("Password?", thelink);
+        } else {
+            /* gespeicherten PassCode holen */
+            passCode = thelink.getStringProperty("pass", null);
+        }
+        pwform.put("password", passCode);
+        logger.info("Put password \"" + passCode + "\" entered by user in the DLForm.");
+        return passCode;
+    }
+
+    public void checkErrors(DownloadLink theLink, boolean checkAll, String passCode) throws NumberFormatException, PluginException {
+        if (checkAll) {
+            if (br.containsHTML("(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input|Wrong password)")) {
+                logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
+                theLink.setProperty("pass", null);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+            if (br.containsHTML("Wrong captcha")) {
+                logger.warning("Wrong captcha or wrong password!");
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
+        }
         // Some waittimes...
         if (br.containsHTML("You have to wait")) {
             int minutes = 0, seconds = 0, hours = 0;
@@ -344,6 +343,7 @@ public class FileChipCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
             }
         }
+        if (br.containsHTML("You're using all download slots for IP")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
         if (br.containsHTML("Error happened when generating Download Link")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error!", 10 * 60 * 1000l);
         // Errorhandling for only-premium links
         if (br.containsHTML("(You can download files up to.*?only|Upgrade your account to download bigger files|This file reached max downloads)")) {
@@ -357,6 +357,10 @@ public class FileChipCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium");
             }
         }
+    }
+
+    @Override
+    public void reset() {
     }
 
     @Override

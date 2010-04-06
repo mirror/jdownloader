@@ -125,7 +125,7 @@ public class ExtaBitCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 2;
+        return 1;
     }
 
 }

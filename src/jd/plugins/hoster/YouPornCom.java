@@ -19,6 +19,8 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
@@ -44,21 +46,30 @@ public class YouPornCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.postPage(parameter.getDownloadURL(), "user_choice=Enter");
-        String matches = br.getRegex("addVariable\\('file', encodeURIComponent\\('(.*?)'\\)\\);").getMatch(0);
-        if (matches == null) matches = br.getRegex("var file_url.*?=.*?'(.*?)'").getMatch(0);
+        String matches = br.getRegex("flashvars\\.file = encodeURIComponent\\('(http://.*?)'\\)").getMatch(0);
+        if (matches == null) matches = br.getRegex("'(http://download\\.youporn\\.com/download/\\d+/flv/.*?\\.flv\\?ll=1\\&xml=1)'").getMatch(0);
         String filename = br.getRegex("<title>(.*?)- Free Porn Videos - YouPorn.com Lite \\(BETA\\)</title>").getMatch(0);
-        if (matches == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (matches == null || filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         br.getPage(matches);
         dlLink = br.getRegex("location>(http://.*?)<").getMatch(0);
         if (dlLink == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (filename != null) parameter.setFinalFileName(filename.trim().replaceAll(" ", "-") + ".flv");
+        dlLink = dlLink.trim().replace("amp;", "");
+        parameter.setFinalFileName(Encoding.htmlDecode(filename).trim().replaceAll(" ", "-") + ".flv");
+        Browser br2 = br.cloneBrowser();
+        // In case the link redirects to the finallink
+        br2.setFollowRedirects(true);
+        URLConnectionAdapter con = br2.openGetConnection(dlLink);
+        if (!con.getContentType().contains("html"))
+            parameter.setDownloadSize(con.getLongContentLength());
+        else
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         return AvailableStatus.TRUE;
     }
 
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
         dlLink = Encoding.htmlDecode(dlLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlLink, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlLink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -67,7 +78,7 @@ public class YouPornCom extends PluginForHost {
     }
 
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return -1;
     }
 
     public void reset() {
