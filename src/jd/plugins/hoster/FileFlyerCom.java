@@ -45,10 +45,13 @@ public class FileFlyerCom extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         String filesize = br.getRegex(Pattern.compile("<a id=\"ItemsList_ctl00_size\">(.*?)</a>", Pattern.CASE_INSENSITIVE)).getMatch(0);
         String name = br.getRegex(Pattern.compile("<a id=\"ItemsList_ctl00_file\".*\\ title=\"(.*?)\".*?class=", Pattern.CASE_INSENSITIVE)).getMatch(0);
-        if (name == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (name == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         downloadLink.setName(name.trim());
         downloadLink.setDownloadSize(Regex.getSize(filesize));
-        return AvailableStatus.TRUE;
+        if (br.containsHTML("(class=\"handlink\">Expired</a>|class=\"handlink\">Removed</a>)"))
+            return AvailableStatus.FALSE;
+        else
+            return AvailableStatus.TRUE;
     }
 
     public void handleFree(DownloadLink downloadLink) throws Exception {

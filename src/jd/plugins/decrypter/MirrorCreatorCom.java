@@ -28,26 +28,19 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flameupload.com", "kewlfile.com", "mirrorafile.com", "klurk.com", "uploadsharefiles.com", "lougyl.com", "maishare.com", "uploadground.com", "qooy.com", "share2many.com", "uploader.ro", "uploadmirrors.com" }, urls = { "http://[\\w\\.]*?flameupload\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?kewlfile\\.com/dl/\\d+", "http://[\\w\\.]*?mirrorafile\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?klurk\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?uploadsharefiles\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?lougyl\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?maishare\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?uploadground\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?qooy\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?share2many\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?uploader\\.ro/files/[0-9A-Z]{8}",
-        "http://[\\w\\.]*?uploadmirrors\\.com/download/[0-9A-Z]{8}" }, flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
-public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mirrorcreator.com" }, urls = { "http://[\\w\\.]*?mirrorcreator\\.com/files/[0-9A-Z]{8}" }, flags = { 0 })
+public class MirrorCreatorCom extends PluginForDecrypt {
 
-    public GeneralMultiuploadDecrypter(PluginWrapper wrapper) {
+    public MirrorCreatorCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    // This decrypter should handle all sites using the qooy.com script!
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(false);
         String parameter = param.toString();
-        // Only uploadmirrors.com has those "/download/" links so we need to
-        // correct them
-        parameter = parameter.replace("/download/", "/files/");
-        String host = new Regex(parameter, "(.+)/(files|dl)").getMatch(0);
-        // At the moment kewlfile.com is the only host in this plugin which has
-        // this "kewlfile.com/rd/" links
-        String id = new Regex(parameter, "(files|dl)/([0-9A-Z]+)").getMatch(1);
+        String host = new Regex(parameter, "(.+)/files").getMatch(0);
+        String id = new Regex(parameter, "files/([0-9A-Z]+)").getMatch(0);
         // This should never happen but in case a dev changes the plugin without
         // much testing he ll see the error later!
         if (host == null || id == null) {
@@ -61,7 +54,7 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
             logger.info("The following link should be offline: " + parameter);
             throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         }
-        String[] redirectLinks = br.getRegex("(/(redirect|rd)/[0-9A-Z]+/[a-z0-9]+)").getColumn(0);
+        String[] redirectLinks = br.getRegex("(/redirect/[0-9A-Z]+/[a-z0-9]+)").getColumn(0);
         if (redirectLinks == null || redirectLinks.length == 0) redirectLinks = br.getRegex("><a href=(.*?)target=").getColumn(0);
         if (redirectLinks == null || redirectLinks.length == 0) return null;
         progress.setRange(redirectLinks.length);
@@ -71,10 +64,10 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
             String dllink = null;
             // Handling for links that need to be regexed or that need to be get
             // by redirect
-            if (singlelink.contains("/redirect/") || singlelink.contains("/rd/")) {
+            if (singlelink.contains("/redirect/")) {
                 br.getPage(host + singlelink);
                 dllink = br.getRedirectLocation();
-                if (dllink == null) dllink = br.getRegex("<frame name=\"main\" src=\"(.*?)\">").getMatch(0);
+                if (dllink == null) dllink = br.getRegex("window\\.location = \"(.*?)\"").getMatch(0);
             } else {
                 // Handling for already regexed final-links
                 dllink = singlelink;
