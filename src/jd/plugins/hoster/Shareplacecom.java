@@ -56,19 +56,22 @@ public class Shareplacecom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(url);
         if (br.getRedirectLocation() == null) {
-            String filename = br.getRegex(Encoding.Base64Decode("RmlsZW5hbWU6KC4qPyk8YnI+")).getMatch(0);
-            if (filename == null) filename = br.getRegex(Encoding.Base64Decode("PHRpdGxlPiguKj8pPC90aXRsZT5PV05FRA==").replace("OWNED", "")).getMatch(0);
-            filename = filename.trim().replaceAll("(<noscript>.*?</noscript>|<b>|</b>|</font>|<font>|YOUSUCKyoulose)", "");
+
+            String iframe = url = br.getRegex("<frame name=\"main\" src=\"(.*?)\">").getMatch(0);
+            br.getPage(iframe);
+            if (br.containsHTML("Your requested file is not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            String filename = br.getRegex("Filename:</font></b>(.*?)<b><br>").getMatch(0).trim();
             String filesize = br.getRegex("Filesize.*?b>(.*?)<b>").getMatch(0);
             if (filesize == null) filesize = br.getRegex("File.*?size.*?:.*?</b>(.*?)<b><br>").getMatch(0);
-            if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             downloadLink.setFinalFileName(filename.trim());
             if (filesize != null) {
                 downloadLink.setDownloadSize(Regex.getSize(filesize.trim()));
             }
             return AvailableStatus.TRUE;
-        } else
+        } else {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
     }
 
     @Override
@@ -91,15 +94,13 @@ public class Shareplacecom extends PluginForHost {
             String fakelink = Encoding.deepHtmlDecode(link);
             if (!fakelink.contains(filename)) continue;
             if (br.containsHTML("replace")) {
-                String[] replacessuck = br.getRegex("(\\.replace\\(.*?,.*?\\))").getColumn(0);
-                if (replacessuck != null) {
-                    for (String fckU : replacessuck) {
-                        String rpl1 = new Regex(fckU, "replace\\((.*?),.*?\\)").getMatch(0).replace("/", "");
-                        String rpl2 = new Regex(fckU, "replace\\(.*?, \"(.*?)\"\\)").getMatch(0);
-                        fakelink = fakelink.replace(rpl1, rpl2);
-                    }
-                }
+                fakelink = fakelink.replace("vvvvvvvvv", "");
+                fakelink = fakelink.replace("teletubbies", "");
+                fakelink = fakelink.substring(13);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+
             Browser brc = br.cloneBrowser();
             dl = BrowserAdapter.openDownload(brc, downloadLink, fakelink);
             if (dl.getConnection().isContentDisposition()) {
