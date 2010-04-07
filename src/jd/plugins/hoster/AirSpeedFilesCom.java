@@ -32,7 +32,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "airspeedfiles.com" }, urls = { "http://[\\w\\.]*?airspeedfiles\\.com/file/[0-9]+/" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "airspeedfiles.com" }, urls = { "http://[\\w\\.]*?airspeedfiles\\.com/([a-z]{2}/)?file/[0-9]+/" }, flags = { 2 })
 public class AirSpeedFilesCom extends PluginForHost {
 
     public AirSpeedFilesCom(PluginWrapper wrapper) {
@@ -52,29 +52,7 @@ public class AirSpeedFilesCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
-        // Handling without API
-        // br.setFollowRedirects(true);
-        // br.setCookie(COOKIE_HOST, "mfh_mylang", "en");
-        // br.setCookie(COOKIE_HOST, "yab_mylang", "en");
-        // br.getPage(parameter.getDownloadURL());
-        // if (br.containsHTML("Your requested file is not found")) throw new
-        // PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        // String filename =
-        // br.getRegex("<b>File name:</b></td>.*?<td align=.*?width=.*?>(.*?)</td>").getMatch(0);
-        // if (filename == null) {
-        // filename =
-        // br.getRegex("\"Click this to report for(.*?)\"").getMatch(0);
-        // if (filename == null) {
-        // filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
-        // if (filename == null) {
-        // filename =
-        // br.getRegex("content=\"(.*?), The best file hosting service").getMatch(0);
-        // }
-        // }
-        // }
-        // String filesize =
-        // br.getRegex("<font color=\"#0000FF\">.*?\\((.*?)\\)</font>").getMatch(0);
-        String fileid = new Regex(parameter.getDownloadURL(), "com/file/(\\d+)/").getMatch(0);
+        String fileid = new Regex(parameter.getDownloadURL(), "/file/(\\d+)/").getMatch(0);
         br.getPage("http://www.airspeedfiles.com/api/index.php?number=" + fileid);
         String status = br.getRegex("STATUS:'(.*?)'").getMatch(0);
         if (status == null || !status.equals("1")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -91,15 +69,6 @@ public class AirSpeedFilesCom extends PluginForHost {
         this.setBrowserExclusive();
         requestFileInformation(link);
         findLink(link);
-        // we have an API so we don't need that but just in case...
-        // br.postPage(link.getDownloadURL(), "sent=1&B7=Guest+User");
-        // if
-        // (br.containsHTML("You have got max allowed bandwidth size per hour"))
-        // throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60
-        // * 1001l);
-        // findLink(link);
-        // if (finalLink == null) throw new
-        // PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, finalLink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -109,17 +78,6 @@ public class AirSpeedFilesCom extends PluginForHost {
     }
 
     public void findLink(DownloadLink link) throws Exception {
-        // String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
-        // if (sitelinks == null || sitelinks.length == 0) throw new
-        // PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // for (String alink : sitelinks) {
-        // alink = Encoding.htmlDecode(alink);
-        // if (alink.contains("access_key=") || alink.contains("getfile.php?"))
-        // {
-        // finalLink = alink;
-        // break;
-        // }
-        // }
         finalLink = br.getRegex("DOWNLOADURL:'(.*?)'").getMatch(0);
     }
 
@@ -204,7 +162,7 @@ public class AirSpeedFilesCom extends PluginForHost {
         login(account);
         br.setFollowRedirects(false);
         br.setCookie(COOKIE_HOST, "mfh_mylang", "en");
-        String fileid = new Regex(parameter.getDownloadURL(), "com/file/(\\d+)/").getMatch(0);
+        String fileid = new Regex(parameter.getDownloadURL(), "/file/(\\d+)/").getMatch(0);
         br.getPage("http://www.airspeedfiles.com/api/index.php?number=" + fileid);
         // br.getPage(parameter.getDownloadURL());
         if (br.getRedirectLocation() != null && (br.getRedirectLocation().contains("access_key=") || br.getRedirectLocation().contains("getfile.php"))) {

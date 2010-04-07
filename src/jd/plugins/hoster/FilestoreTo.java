@@ -17,15 +17,12 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
-import jd.parser.html.HTMLParser;
-import jd.plugins.BrowserAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -33,7 +30,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filestore.to" }, urls = { "http://[\\w\\.]*?filestore\\.to/\\?d=[\\w]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filestore.to" }, urls = { "http://[\\w\\.]*?filestore\\.to/\\?d=[A-Z0-9]+" }, flags = { 0 })
 public class FilestoreTo extends PluginForHost {
 
     public FilestoreTo(PluginWrapper wrapper) {
@@ -51,7 +48,6 @@ public class FilestoreTo extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
-        br.setCookie("http://www.filestore.to", "yab_mylang", "en");
         String url = downloadLink.getDownloadURL();
         String downloadName = null;
         String downloadSize = null;
@@ -61,12 +57,12 @@ public class FilestoreTo extends PluginForHost {
             } catch (Exception e) {
                 continue;
             }
-            if (!br.containsHTML("Your requested file is not found")) {
-                downloadName = Encoding.htmlDecode(br.getRegex(Pattern.compile("Download: (.*)</td>", Pattern.CASE_INSENSITIVE)).getMatch(0));
-                downloadSize = (br.getRegex(Pattern.compile("<td align=left width=\"76%\">(.*? [\\w]{2,})</td>", Pattern.CASE_INSENSITIVE)).getMatch(0));
-                if (!(downloadName == null || downloadSize == null)) {
+            if (!br.containsHTML("<strong>Download-Datei wurde nicht gefunden</strong")) {
+                downloadName = Encoding.htmlDecode(br.getRegex("\">Dateiname:</td>.*?<td colspan=\"2\" style=\"color:.*?;\">(.*?)</td>").getMatch(0));
+                downloadSize = (br.getRegex("\">Dateigr\\&ouml;\\&szlig;e:</td>.*?<td width=\"\\d+\" style=\".*?\">(.*?)</td>").getMatch(0));
+                if (downloadName != null) {
                     downloadLink.setName(downloadName);
-                    downloadLink.setDownloadSize(Regex.getSize(downloadSize.replaceAll(",", "\\.")));
+                    if (downloadSize != null) downloadLink.setDownloadSize(Regex.getSize(downloadSize.replaceAll(",", "\\.")));
                     return AvailableStatus.TRUE;
                 }
             }
@@ -77,20 +73,21 @@ public class FilestoreTo extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        String page = Encoding.urlDecode(br.toString(), true);
-        String[] links = HTMLParser.getHttpLinks(page, null);
-        boolean found = false;
-        for (String link : links) {
-            if (!new Regex(link, ".*?.getfile\\.php.*?$").matches()) continue;
-            Browser brc = br.cloneBrowser();
-            dl = BrowserAdapter.openDownload(brc, downloadLink, link);
-            if (dl.getConnection().isContentDisposition()) {
-                found = true;
-                break;
-            } else
-                dl.getConnection().disconnect();
+        String sid = br.getRegex("name=\"sid\" value=\"(.*?)\"").getMatch(0);
+        String fid = new Regex(downloadLink.getDownloadURL(), "filestore\\.to/\\?d=([A-Z0-9]+)").getMatch(0);
+        // String ajaxFun = "http://filestore.to/ajax/download.php?a=1&f=" + fid
+        // + "&s=" + sid;
+        // br.getPage(ajaxFun);
+        String ajaxDownload = "http://filestore.to/ajax/download.php?f=" + fid + "&s=" + sid;
+        br.getPage(ajaxDownload);
+        br.setFollowRedirects(true);
+        String dllink = br.toString().trim();
+        if (!dllink.startsWith("http://")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (found == false) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl.startDownload();
     }
 
