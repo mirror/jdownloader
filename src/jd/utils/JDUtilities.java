@@ -150,42 +150,6 @@ public class JDUtilities {
     }
 
     /**
-     * Genau wie add, aber mit den Standardwerten iPadX,iPadY=0
-     * 
-     * @param cont
-     *            Der Container, dem eine Komponente hinzugefuegt werden soll
-     * @param comp
-     *            Die Komponente, die hinzugefuegt werden soll
-     * @param x
-     *            X-Position innerhalb des GriBagLayouts
-     * @param y
-     *            Y-Position innerhalb des GriBagLayouts
-     * @param width
-     *            Anzahl der Spalten, ueber die sich diese Komponente erstreckt
-     * @param height
-     *            Anzahl der Reihen, ueber die sich diese Komponente erstreckt
-     * @param weightX
-     *            Verteilung von zur Verfuegung stehendem Platz in X-Richtung
-     * @param weightY
-     *            Verteilung von zur Verfuegung stehendem Platz in Y-Richtung
-     * @param insets
-     *            Abstände der Komponente
-     * @param fill
-     *            Verteilung der Komponente innerhalb der zugewiesen Zelle/n
-     * @param anchor
-     *            Positionierung der Komponente innerhalb der zugewiesen Zelle/n
-     */
-    public static void addToGridBag(final Container cont, final Component comp, final int x, final int y, final int width, final int height, final int weightX, final int weightY, final Insets insets, final int fill, final int anchor) {
-        if (cont == null) {
-            LOGGER.severe("Container ==null");
-        } else if (comp == null) {
-            LOGGER.severe("Componente ==null");
-        } else {
-            JDUtilities.addToGridBag(cont, comp, x, y, width, height, weightX, weightY, insets, 0, 0, fill, anchor);
-        }
-    }
-
-    /**
      * Diese Klasse fuegt eine Komponente einem Container hinzu
      * 
      * @param cont
@@ -206,18 +170,12 @@ public class JDUtilities {
      *            Verteilung von zur Verfuegung stehendem Platz in Y-Richtung
      * @param insets
      *            Abständer der Komponente
-     * @param iPadX
-     *            Leerraum zwischen einer GridBagZelle und deren Inhalt
-     *            (X-Richtung)
-     * @param iPadY
-     *            Leerraum zwischen einer GridBagZelle und deren Inhalt
-     *            (Y-Richtung)
      * @param fill
      *            Verteilung der Komponente innerhalb der zugewiesen Zelle/n
      * @param anchor
      *            Positionierung der Komponente innerhalb der zugewiesen Zelle/n
      */
-    public static void addToGridBag(final Container cont, final Component comp, final int x, final int y, final int width, final int height, final int weightX, final int weightY, final Insets insets, final int iPadX, final int iPadY, final int fill, final int anchor) {
+    public static void addToGridBag(final Container cont, final Component comp, final int x, final int y, final int width, final int height, final int weightX, final int weightY, final Insets insets, final int fill, final int anchor) {
         final GridBagConstraints cons = new GridBagConstraints();
         cons.gridx = x;
         cons.gridy = y;
@@ -232,8 +190,6 @@ public class JDUtilities {
         if (insets != null) {
             cons.insets = insets;
         }
-        cons.ipadx = iPadX;
-        cons.ipady = iPadY;
         cont.add(comp, cons);
     }
 

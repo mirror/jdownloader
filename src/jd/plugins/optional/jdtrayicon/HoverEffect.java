@@ -18,15 +18,15 @@ package jd.plugins.optional.jdtrayicon;
 
 import java.awt.event.MouseEvent;
 
-import javax.swing.JToggleButton;
+import javax.swing.AbstractButton;
 
 import jd.gui.swing.jdgui.interfaces.JDMouseAdapter;
 
 public class HoverEffect extends JDMouseAdapter {
 
-    private final JToggleButton comp;
+    private final AbstractButton comp;
 
-    public HoverEffect(JToggleButton comp) {
+    public HoverEffect(AbstractButton comp) {
         this.comp = comp;
     }
 

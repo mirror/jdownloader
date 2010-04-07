@@ -57,12 +57,9 @@ import jd.gui.swing.jdgui.menu.AboutMenu;
 import jd.gui.swing.jdgui.menu.AddLinksMenu;
 import jd.gui.swing.jdgui.menu.AddonsMenu;
 import jd.gui.swing.jdgui.menu.CleanupMenu;
+import jd.gui.swing.jdgui.menu.FileMenu;
 import jd.gui.swing.jdgui.menu.JStartMenu;
 import jd.gui.swing.jdgui.menu.PremiumMenu;
-import jd.gui.swing.jdgui.menu.SaveMenu;
-import jd.gui.swing.jdgui.menu.actions.ExitAction;
-import jd.gui.swing.jdgui.menu.actions.RestartAction;
-import jd.gui.swing.jdgui.menu.actions.RestoreAction;
 import jd.gui.swing.jdgui.settings.panels.addons.ConfigPanelAddons;
 import jd.gui.swing.jdgui.settings.panels.premium.Premium;
 import jd.gui.swing.jdgui.views.ConfigurationView;
@@ -71,7 +68,6 @@ import jd.gui.swing.jdgui.views.LinkgrabberView;
 import jd.gui.swing.jdgui.views.linkgrabberview.LinkGrabberPanel;
 import jd.gui.swing.jdgui.views.logview.LogView;
 import jd.gui.swing.jdgui.views.sidebars.configuration.AddonConfig;
-import jd.gui.swing.jdgui.views.sidebars.configuration.ConfigSidebar;
 import jd.nutils.JDFlags;
 import jd.nutils.JDImage;
 import jd.nutils.OSDetector;
@@ -94,7 +90,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
     private MainTabbedPane mainTabbedPane;
     private DownloadView downloadView;
     private LinkgrabberView linkgrabberView;
-    private ConfigurationView configurationView;
+    // private ConfigurationView configurationView;
 
     private MainToolBar toolBar;
     private JPanel waitingPane;
@@ -162,11 +158,11 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         toolBar.registerAccelerators(this);
         downloadView = DownloadView.getInstance();
         linkgrabberView = LinkgrabberView.getInstance();
-        configurationView = new ConfigurationView();
+        // configurationView = new ConfigurationView();
 
         mainTabbedPane.addTab(downloadView);
         mainTabbedPane.addTab(linkgrabberView);
-        mainTabbedPane.addTab(configurationView);
+        // mainTabbedPane.addTab(configurationView);
         if (GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_LOGVIEW_SHOWN, false)) mainTabbedPane.addTab(LogView.getLogView());
         mainTabbedPane.setSelectedComponent(downloadView);
         toolBar.setList(GUIUtils.getConfig().getGenericProperty("TOOLBAR", ToolBar.DEFAULT_LIST).toArray(new String[] {}));
@@ -228,21 +224,12 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
     private JMenuBar createMenuBar() {
         JMenuBar ret = new JMenuBar();
 
-        JMenu file = new JMenu(JDL.L("jd.gui.skins.simple.simplegui.menubar.filemenu", "File"));
-
-        file.add(new SaveMenu());
-        file.addSeparator();
-
-        file.add(new RestoreAction());
-        file.add(new RestartAction());
-        file.add(new ExitAction());
-
         JMenu edit = new JMenu(JDL.L("jd.gui.skins.simple.simplegui.menubar.linksmenu", "Links"));
 
         edit.add(new AddLinksMenu());
         edit.add(new CleanupMenu());
 
-        ret.add(file);
+        ret.add(new FileMenu());
         ret.add(edit);
         JStartMenu m;
         ret.add(m = PremiumMenu.getInstance());
@@ -437,16 +424,16 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
                     mainTabbedPane.setSelectedComponent(linkgrabberView);
                     break;
                 case PREMIUMCONFIG:
-                    ((ConfigSidebar) JDGui.this.configurationView.getSidebar()).setSelectedTreeEntry(Premium.class);
-                    mainTabbedPane.setSelectedComponent(configurationView);
+                    ConfigurationView.getInstance().getSidebar().setSelectedTreeEntry(Premium.class);
+                    openSettings();
                     if (param != null && param instanceof Account) {
-                        Premium p = (Premium) configurationView.getContent();
+                        Premium p = (Premium) ConfigurationView.getInstance().getContent();
                         p.setSelectedAccount((Account) param);
                     }
                     break;
                 case ADDON_MANAGER:
-                    ((ConfigSidebar) configurationView.getSidebar()).setSelectedTreeEntry(ConfigPanelAddons.class);
-                    mainTabbedPane.setSelectedComponent(configurationView);
+                    ConfigurationView.getInstance().getSidebar().setSelectedTreeEntry(ConfigPanelAddons.class);
+                    openSettings();
                     break;
                 case CONFIGPANEL:
                     if (param instanceof ConfigContainer) {
@@ -462,8 +449,15 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         }.start();
     }
 
+    private void openSettings() {
+        ConfigurationView config = ConfigurationView.getInstance();
+        if (!mainTabbedPane.contains(config)) mainTabbedPane.addTab(config);
+        mainTabbedPane.setSelectedComponent(config);
+    }
+
     /**
-     * Converts a ConfigContainer to a Configpanel and displays it
+     * Converts a {@link ConfigContainer} to a {@link AddonConfig} and displays
+     * it
      * 
      * @param container
      */

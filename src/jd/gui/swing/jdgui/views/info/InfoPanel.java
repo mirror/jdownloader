@@ -21,13 +21,13 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.HashMap;
 
-import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.event.EventListenerList;
 
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.interfaces.DroppedPanel;
+import jd.utils.JDTheme;
 import net.miginfocom.swing.MigLayout;
 
 public abstract class InfoPanel extends DroppedPanel {
@@ -36,22 +36,21 @@ public abstract class InfoPanel extends DroppedPanel {
 
     protected EventListenerList listenerList;
 
-    private JLabel iconContainer;
-
     protected final Color valueColor;
     protected final Color titleColor;
     private final HashMap<String, JComponent> map;
 
-    public InfoPanel() {
+    public InfoPanel(String iconKey) {
         super();
         SwingGui.checkEDT();
+
         listenerList = new EventListenerList();
         map = new HashMap<String, JComponent>();
-        this.setLayout(new MigLayout("ins 5", "[]5[]", "[][]"));
         valueColor = getBackground().darker().darker().darker().darker().darker();
         titleColor = getBackground().darker().darker();
-        this.iconContainer = new JLabel();
-        add(iconContainer, "spany 2,cell 0 0,gapleft 1");
+
+        setLayout(new MigLayout("ins 5", "[]5[]", "[][]"));
+        add(new JLabel(JDTheme.II(iconKey, 32, 32)), "spany 2,cell 0 0,gapleft 1");
     }
 
     /**
@@ -119,7 +118,7 @@ public abstract class InfoPanel extends DroppedPanel {
         x *= 2;
         x += 1;
         myComponent.setForeground(valueColor);
-        add(myComponent, "gapleft 20,cell " + x + " " + y + ",spanx 2");
+        add(myComponent, "gapleft 20,cell " + x + " " + y + ",spanx 2,growx");
         map.put(myComponent.getName(), myComponent);
     }
 
@@ -137,10 +136,6 @@ public abstract class InfoPanel extends DroppedPanel {
 
     protected JComponent getComponent(String key) {
         return map.get(key);
-    }
-
-    protected void setIcon(ImageIcon ii) {
-        iconContainer.setIcon(ii);
     }
 
     @Override

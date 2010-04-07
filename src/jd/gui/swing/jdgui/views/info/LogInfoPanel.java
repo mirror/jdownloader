@@ -16,14 +16,13 @@
 
 package jd.gui.swing.jdgui.views.info;
 
+import java.awt.Cursor;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
+import javax.swing.Icon;
 import javax.swing.JButton;
 
-import jd.controlling.JDLogger;
-import jd.gui.swing.Factory;
-import jd.gui.swing.GuiRunnable;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 
@@ -37,25 +36,26 @@ public class LogInfoPanel extends InfoPanel implements ActionListener {
 
     private JButton btnSave;
     private JButton btnUpload;
-    private int severeCount = 0;
-    private int warningCount = 0;
-    private int httpCount = 0;
-    private int exceptionCount = 0;
 
     public LogInfoPanel() {
-        super();
-        this.setIcon(JDTheme.II("gui.images.taskpanes.log", 32, 32));
+        super("gui.images.taskpanes.log");
 
-        btnSave = Factory.createButton(JDL.L(JDL_PREFIX + "save", "Save Log As"), JDTheme.II("gui.images.save", 16, 16), this);
-        btnUpload = Factory.createButton(JDL.L(JDL_PREFIX + "upload", "Upload Log"), JDTheme.II("gui.images.upload", 16, 16), this);
-        this.addInfoEntry("", JDL.LF(JDL_PREFIX + "loglevel", "Log Level %s", JDLogger.getLogger().getLevel().getLocalizedName()), 0, 0);
+        btnSave = createButton(JDL.L(JDL_PREFIX + "save", "Save Log As"), JDTheme.II("gui.images.save", 16, 16));
+        btnUpload = createButton(JDL.L(JDL_PREFIX + "upload", "Upload Log"), JDTheme.II("gui.images.upload", 16, 16));
+
         addComponent(btnSave, 1, 0);
         addComponent(btnUpload, 1, 1);
-        this.addInfoEntry(JDL.L(JDL_PREFIX + "info.severe", "Error(s)"), severeCount + "", 2, 0);
-        this.addInfoEntry(JDL.L(JDL_PREFIX + "info.warning", "Warning(s)"), warningCount + "", 2, 1);
+    }
 
-        this.addInfoEntry(JDL.L(JDL_PREFIX + "info.warninghttp", "HTTP Notify"), httpCount + "", 3, 0);
-        this.addInfoEntry(JDL.L(JDL_PREFIX + "info.exceptions", "Fatal error(s)"), exceptionCount + "", 3, 1);
+    public JButton createButton(String string, Icon i) {
+        final JButton bt = new JButton(string, i);
+        bt.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        bt.setFocusPainted(false);
+        bt.setHorizontalAlignment(JButton.LEFT);
+        bt.setIconTextGap(5);
+        bt.addActionListener(this);
+        // bt.addMouseListener(new JDUnderlinedText(bt));
+        return bt;
     }
 
     public void actionPerformed(ActionEvent e) {
@@ -66,77 +66,4 @@ public class LogInfoPanel extends InfoPanel implements ActionListener {
         }
     }
 
-    /**
-     * @param severeCount
-     *            the severeCount to set
-     */
-    public void setSevereCount(int severeCount) {
-        this.severeCount = severeCount;
-    }
-
-    /**
-     * @return the severeCount
-     */
-    public int getSevereCount() {
-        return severeCount;
-    }
-
-    /**
-     * @param warningCount
-     *            the warningCount to set
-     */
-    public void setWarningCount(int warningCount) {
-        this.warningCount = warningCount;
-    }
-
-    /**
-     * @return the warningCount
-     */
-    public int getWarningCount() {
-        return warningCount;
-    }
-
-    /**
-     * @param httpCount
-     *            the httpCount to set
-     */
-    public void setHttpCount(int httpCount) {
-        this.httpCount = httpCount;
-    }
-
-    /**
-     * @return the httpCount
-     */
-    public int getHttpCount() {
-        return httpCount;
-    }
-
-    /**
-     * @param exceptionCount
-     *            the exceptionCount to set
-     */
-    public void setExceptionCount(int exceptionCount) {
-        this.exceptionCount = exceptionCount;
-    }
-
-    /**
-     * @return the exceptionCount
-     */
-    public int getExceptionCount() {
-        return exceptionCount;
-    }
-
-    public void update() {
-        new GuiRunnable<Object>() {
-            @Override
-            public Object runSave() {
-                updateInfo("", JDL.LF(JDL_PREFIX + "loglevel", "Log Level %s", JDLogger.getLogger().getLevel().getLocalizedName()));
-                updateInfo(JDL.L(JDL_PREFIX + "info.severe", "Error(s)"), severeCount + "");
-                updateInfo(JDL.L(JDL_PREFIX + "info.warning", "Warning(s)"), warningCount + "");
-                updateInfo(JDL.L(JDL_PREFIX + "info.warninghttp", "HTTP Notify"), httpCount + "");
-                updateInfo(JDL.L(JDL_PREFIX + "info.exceptions", "Fatal error(s)"), exceptionCount + "");
-                return null;
-            }
-        }.start();
-    }
 }

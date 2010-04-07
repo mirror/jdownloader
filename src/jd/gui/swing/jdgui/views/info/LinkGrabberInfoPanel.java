@@ -28,7 +28,6 @@ import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.jdgui.JDGuiConstants;
 import jd.nutils.Formatter;
 import jd.plugins.LinkGrabberFilePackage;
-import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 
 public class LinkGrabberInfoPanel extends InfoPanel {
@@ -42,8 +41,8 @@ public class LinkGrabberInfoPanel extends InfoPanel {
     protected ArrayList<LinkGrabberFilePackage> fps = new ArrayList<LinkGrabberFilePackage>();
 
     public LinkGrabberInfoPanel() {
-        super();
-        this.setIcon(JDTheme.II("gui.images.taskpanes.linkgrabber", 32, 32));
+        super("gui.images.taskpanes.linkgrabber");
+
         addInfoEntry(JDL.L(JDL_PREFIX + "packages", "Package(s)"), "0", 0, 0);
         addInfoEntry(JDL.L(JDL_PREFIX + "links", "Links(s)"), "0", 0, 1);
         addInfoEntry(JDL.L(JDL_PREFIX + "filteredlinks", "filtered Links(s)"), "0", 1, 1);

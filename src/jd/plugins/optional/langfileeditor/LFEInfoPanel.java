@@ -3,7 +3,6 @@ package jd.plugins.optional.langfileeditor;
 import jd.gui.swing.components.pieapi.ChartAPIEntity;
 import jd.gui.swing.components.pieapi.PieChartAPI;
 import jd.gui.swing.jdgui.views.info.InfoPanel;
-import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 
 public class LFEInfoPanel extends InfoPanel {
@@ -21,12 +20,13 @@ public class LFEInfoPanel extends InfoPanel {
     }
 
     private LFEInfoPanel() {
+        super("gui.splash.languages");
+
         keyChart = new PieChartAPI(350, 50);
         keyChart.addEntity(entDone = new ChartAPIEntity(JDL.L(LOCALE_PREFIX + "keychart.done", "Done"), 0, LFEGui.COLOR_DONE));
         keyChart.addEntity(entMissing = new ChartAPIEntity(JDL.L(LOCALE_PREFIX + "keychart.missing", "Missing"), 0, LFEGui.COLOR_MISSING));
         keyChart.addEntity(entOld = new ChartAPIEntity(JDL.L(LOCALE_PREFIX + "keychart.old", "Old"), 0, LFEGui.COLOR_OLD));
 
-        this.setIcon(JDTheme.II("gui.splash.languages", 32, 32));
         this.addComponent(keyChart, 0, 0);
     }
 

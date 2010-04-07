@@ -18,47 +18,34 @@ package jd.gui.swing.jdgui.views;
 
 import javax.swing.Icon;
 
-import jd.gui.swing.GuiRunnable;
-import jd.gui.swing.jdgui.interfaces.View;
 import jd.gui.swing.jdgui.views.sidebars.configuration.ConfigSidebar;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 
-public class ConfigurationView extends View {
+public class ConfigurationView extends ClosableView {
 
     private static final long serialVersionUID = -5607304856678049342L;
 
-    /**
-     * DO NOT MOVE THIS CONSTANT. IT's important to have it in this file for the
-     * LFE to parse JDL Keys correct
-     */
     private static final String IDENT_PREFIX = "jd.gui.swing.jdgui.views.configurationview.";
 
-    public ConfigurationView() {
+    private static ConfigurationView INSTANCE = null;
+
+    public synchronized static ConfigurationView getInstance() {
+        if (INSTANCE == null) INSTANCE = new ConfigurationView();
+        return INSTANCE;
+    }
+
+    private ConfigurationView() {
         super();
-        sidebar.setBorder(null);
-        // init config with 2 seconds delay to avoid gui locks at startup
-        new Thread() {
-            public void run() {
-                try {
-                    Thread.sleep(2000);
-                } catch (InterruptedException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }
-                new GuiRunnable<Object>() {
 
-                    @Override
-                    public Object runSave() {
-                        setSideBar(ConfigSidebar.getInstance(ConfigurationView.this));
-                        return null;
-                    }
+        setSideBar(ConfigSidebar.getInstance(ConfigurationView.this));
 
-                }.start();
-            }
-        }.start();
-  
+        init();
+    }
 
+    @Override
+    public ConfigSidebar getSidebar() {
+        return (ConfigSidebar) super.getSidebar();
     }
 
     @Override
@@ -78,12 +65,10 @@ public class ConfigurationView extends View {
 
     @Override
     protected void onHide() {
-
     }
 
     @Override
     protected void onShow() {
-
     }
 
 }

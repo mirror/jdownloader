@@ -21,7 +21,6 @@ import jd.controlling.DownloadInformations;
 import jd.controlling.DownloadWatchDog;
 import jd.gui.swing.GuiRunnable;
 import jd.nutils.Formatter;
-import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -34,8 +33,8 @@ public class DownloadInfoPanel extends InfoPanel {
     private long speed;
 
     public DownloadInfoPanel() {
-        super();
-        this.setIcon(JDTheme.II("gui.images.taskpanes.download", 32, 32));
+        super("gui.images.taskpanes.download");
+
         addInfoEntry(JDL.L(JDL_PREFIX + "packages", "Package(s)"), "0", 0, 0);
         addInfoEntry(JDL.L(JDL_PREFIX + "links", "Links(s)"), "0", 0, 1);
         addInfoEntry(JDL.L(JDL_PREFIX + "size", "Total size"), "0", 1, 0);
