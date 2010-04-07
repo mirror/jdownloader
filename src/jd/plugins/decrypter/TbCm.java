@@ -45,7 +45,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.hoster.Youtube;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youtube.com" }, urls = { "http://[\\w\\.]*?youtube\\.com/(watch\\?v=[a-z-_A-Z0-9]+|view_play_list\\?p=[a-z-_A-Z0-9]+(.*?page=\\d+)?)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youtube.com" }, urls = { "http://[\\w\\.]*?youtube\\.com/(watch.{1,2}v=[a-z-_A-Z0-9]+|view_play_list\\?p=[a-z-_A-Z0-9]+(.*?page=\\d+)?)" }, flags = { 0 })
 public class TbCm extends PluginForDecrypt {
 
     static private String host = "youtube.com";
@@ -104,7 +104,7 @@ public class TbCm extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         possibleconverts = new HashMap<ConversionMode, ArrayList<Info>>();
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        String parameter = param.toString().replace("watch#!v", "watch?v");
         br.setFollowRedirects(true);
         br.setCookiesExclusive(true);
         br.clearCookies("youtube.com");
