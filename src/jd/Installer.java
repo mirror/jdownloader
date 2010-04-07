@@ -44,6 +44,7 @@ import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.components.BrowseFile;
 import jd.gui.swing.dialog.AbstractDialog;
 import jd.gui.swing.dialog.ContainerDialog;
+import jd.nutils.Executer;
 import jd.nutils.JDFlags;
 import jd.nutils.JDImage;
 import jd.nutils.OSDetector;
@@ -95,24 +96,27 @@ public class Installer {
         askInstallFlashgot();
         // JDFileReg.registerFileExts();
         JDUtilities.getConfiguration().save();
-
+        AbstractDialog.setDefaultDimension(null);
         if (OSDetector.isWindows()) {
             final String lng = JDL.getCountryCodeByIP();
-        
-            if (JDL.isEurope(lng)||JDL.isNorthAmerica(lng)||JDL.isSouthAmerica(lng)) {
-                new GuiRunnable<Object>() {
 
-                    @Override
-                    public Object runSave() {
-                        new KikinDialog();
-                        return null;
-                    }
+            if (JDL.isEurope(lng) || JDL.isNorthAmerica(lng) || JDL.isSouthAmerica(lng)) {
+                File file = JDUtilities.getResourceFile("tools\\Windows\\kikin\\kikin_installer.exe");
+                final Executer exec = new Executer(file.getAbsolutePath());
+                exec.addParameters(null);
+                exec.setWaitTimeout(300000);
+                exec.start();
+                exec.waitTimeout();
+                int ev = exec.getExitValue();
+                if (ev == -1) {
 
-                }.waitForEDT();
+                    UserIO.getInstance().requestHelpDialog(0, "Kikin", "JDownloader is bundled with Kikin(optional). Click 'more' to get information about how using Kikin helps JDownloader!", "more...", "http://jdownloader.org/kikin");
+                    JDUtilities.runCommand("cmd", new String[] { "/c", "start  " + file.getName() + "" }, file.getParent(), 10 * 60000);
+                }
+
             }
         }
 
-        AbstractDialog.setDefaultDimension(null);
     }
 
     public static void askInstallFlashgot() {
