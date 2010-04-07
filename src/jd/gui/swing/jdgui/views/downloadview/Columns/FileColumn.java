@@ -54,11 +54,11 @@ public class FileColumn extends JDTableColumn {
     public FileColumn(String name, JDTableModel table) {
         super(name, table);
         leftGap = BorderFactory.createEmptyBorder(0, 30, 0, 0);
-        icon_fp_open = JDTheme.II("gui.images.package_opened_tree", 16, 16);
-        icon_fp_open_error = JDTheme.II("gui.images.package_open_error_tree", 16, 16);
-        icon_fp_closed = JDTheme.II("gui.images.package_closed_tree", 16, 16);
-        icon_fp_closed_error = JDTheme.II("gui.images.package_closed_error_tree", 16, 16);
-        imgFileFailed = JDTheme.II("gui.images.offlinefile", 16, 16);
+        icon_fp_open = JDTheme.II("gui.images.package_opened_tree", 100, 16);
+        icon_fp_open_error = JDTheme.II("gui.images.package_open_error_tree", 100, 16);
+        icon_fp_closed = JDTheme.II("gui.images.package_closed_tree", 100, 16);
+        icon_fp_closed_error = JDTheme.II("gui.images.package_closed_error_tree", 100, 16);
+        imgFileFailed = JDTheme.II("gui.images.offlinefile", 100, 16);
         jlr = new StatusLabel();
         jlr.setBorder(null);
     }

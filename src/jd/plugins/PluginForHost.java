@@ -56,6 +56,7 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.DownloadInterface;
+import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -671,8 +672,14 @@ public abstract class PluginForHost extends Plugin {
     }
 
     public ImageIcon initHosterIcon() {
-        Image image = JDImage.getImage("hosterlogos/" + getHost());
-        if (image == null) image = createDefaultIcon();
+        // Image image = JDImage.getImage("hosterlogos/" + getHost());
+
+        Image image = JDTheme.getImage("hosterlogos/" + getHost(), 16, 16);
+
+        if (image == null) {
+            image = createDefaultIcon();
+        }
+
         if (image != null) return new ImageIcon(image);
         return null;
     }
