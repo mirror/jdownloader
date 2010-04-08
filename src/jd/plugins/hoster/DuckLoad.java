@@ -41,19 +41,18 @@ public class DuckLoad extends PluginForHost {
         return "http://duckload.com/impressum.html";
     }
 
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("youload.to/", "duckload.com/"));
+    }
+
+    public String aBrowser = "";
+
     @Override
     public void handleFree(DownloadLink link) throws Exception {
         boolean stream = false;
         requestFileInformation(link);
         br.setDebug(true);
-        String aBrowser = br.toString();
-        String replaces[] = br.getRegex("<!--(.*?)-->").getColumn(0);
-        if (replaces != null) {
-            for (String dingdang : replaces) {
-                dingdang = dingdang.trim();
-                aBrowser = aBrowser.replace(dingdang, "");
-            }
-        }
+        haveFun();
         // waittime check
         if (aBrowser.contains("Your downloadticket was booked")) {
             sleep(10 * 1000l, link);
@@ -154,6 +153,17 @@ public class DuckLoad extends PluginForHost {
         parameter.setName(filename.trim());
         parameter.setDownloadSize(Regex.getSize(filesize.trim()));
         return AvailableStatus.TRUE;
+    }
+
+    public void haveFun() throws Exception {
+        aBrowser = br.toString();
+        String replaces[] = br.getRegex("<!--(.*?)-->").getColumn(0);
+        if (replaces != null) {
+            for (String dingdang : replaces) {
+                dingdang = dingdang.trim();
+                aBrowser = aBrowser.replace(dingdang, "");
+            }
+        }
     }
 
     @Override
