@@ -169,7 +169,7 @@ public class Config {
     @SuppressWarnings("unchecked")
     private void createMap(final HashMap<?, ?> hashMap, final ArrayList<String> keys, final ArrayList<Object> values, String pre) {
         pre = (pre.length() > 0) ? pre + "/" : "";
-        for (Entry<?, ?> next : hashMap.entrySet()) {
+        for (final Entry<?, ?> next : hashMap.entrySet()) {
             final String key = pre + next.getKey();
             final Object value = next.getValue();
             keys.add(key);
@@ -178,7 +178,6 @@ public class Config {
                 createMap((HashMap) value, keys, values, key);
             }
         }
-
     }
 
     private void initGUI() {
@@ -220,7 +219,7 @@ public class Config {
             public void valueChanged(ListSelectionEvent e) {
                 final int[] rows = getSelectedRows();
                 if (rows.length == 0) return;
-                Object value = tableModel.getValueAt(rows[0], 1);
+                final Object value = tableModel.getValueAt(rows[0], 1);
                 try {
                     new ObjectConverter().toString(value);
                     edit.setEnabled(true);
@@ -259,7 +258,7 @@ public class Config {
 
                         final int length = configKeys.length;
                         for (int i = 0; i < length; i++) {
-                            String k = configKeys[i];
+                            final String k = configKeys[i];
                             if (i < length) {
                                 final Object next = props.get(k);
 
@@ -309,7 +308,7 @@ public class Config {
                             String myKey = null;
                             System.out.println("Save Object " + key);
 
-                            for (String k : configKeys) {
+                            for (final String k : configKeys) {
                                 final Object next = props.get(k);
                                 if (next instanceof HashMap<?, ?>) {
                                     System.out.println("sub Hashmap " + k);
@@ -324,7 +323,7 @@ public class Config {
                             currentConfig.save();
                             setCurrentConfig(currentConfig);
                         }
-                    } catch (Exception e1) {
+                    } catch (final Exception e1) {
                         e1.printStackTrace();
                         UserIOGui.getInstance().requestMessageDialog("Could not save object. Failures in XML structure!");
                     }
@@ -343,7 +342,7 @@ public class Config {
                 if (rows.length == 0) { return; }
 
                 final Object key = tableModel.getValueAt(rows[0], 0);
-                String[] keys = key.toString().split("/");
+                final String[] keys = key.toString().split("/");
                 final int keysLength = keys.length;
                 if (keys[keysLength - 1].equals("null")) {
                     keys[keysLength - 1] = null;
@@ -354,7 +353,7 @@ public class Config {
                     setCurrentConfig(currentConfig);
                 } else {
                     HashMap<String, Object> props = currentConfig.getProperties();
-                    for (String k : keys) {
+                    for (final String k : keys) {
                         final Object next = props.get(k);
                         if (next instanceof HashMap<?, ?>) {
                             System.out.println("sub Hashmap " + k);
