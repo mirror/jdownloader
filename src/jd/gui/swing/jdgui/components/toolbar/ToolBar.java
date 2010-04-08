@@ -56,13 +56,14 @@ public class ToolBar extends JToolBar {
         DEFAULT_LIST.add("action.downloadview.movedown");
         DEFAULT_LIST.add("action.downloadview.movetobottom");
         DEFAULT_LIST.add("toolbar.separator");
+        DEFAULT_LIST.add("action.settings");
+        DEFAULT_LIST.add("toolbar.separator");
         DEFAULT_LIST.add("toolbar.quickconfig.clipboardoberserver");
         DEFAULT_LIST.add("toolbar.quickconfig.reconnecttoggle");
         DEFAULT_LIST.add("toolbar.control.stopmark");
         DEFAULT_LIST.add("toolbar.separator");
         DEFAULT_LIST.add("toolbar.interaction.reconnect");
         DEFAULT_LIST.add("toolbar.interaction.update");
-
     }
 
     private String[] current = null;
@@ -77,7 +78,6 @@ public class ToolBar extends JToolBar {
 
         ActionController.initActions();
 
-        // this.updateToolbar();
         current = DEFAULT_LIST.toArray(new String[] {});
     }
 
@@ -113,7 +113,6 @@ public class ToolBar extends JToolBar {
      */
     public void registerAccelerators(SwingGui jdGui) {
         rootpane = jdGui.getMainFrame().getRootPane();
-
     }
 
     private void initToolbar(String[] list) {
@@ -122,7 +121,7 @@ public class ToolBar extends JToolBar {
             SwingGui.checkEDT();
             setLayout(new MigLayout("ins 0, gap 0", getColConstraints(list)));
             AbstractButton ab;
-            boolean lastseperator = false;
+            boolean lastseparator = false;
             for (int i = 0; i < list.length; i++) {
                 String key = list[i];
                 ToolBarAction action = ActionController.getToolBarAction(key);
@@ -137,19 +136,19 @@ public class ToolBar extends JToolBar {
                 ab = null;
 
                 if (action instanceof CustomToolbarAction) {
-                    ((CustomToolbarAction)action).addTo(this);
+                    ((CustomToolbarAction) action).addTo(this);
+                    lastseparator = false;
                     continue;
                 }
                 switch (action.getType()) {
-
                 case NORMAL:
                     ab = add(action);
-                    lastseperator = false;
+                    lastseparator = false;
                     break;
                 case SEPARATOR:
-                    if (!lastseperator) {
+                    if (!lastseparator) {
                         add(new JSeparator(JSeparator.VERTICAL), "height 32,gapleft 10,gapright 10");
-                        lastseperator = true;
+                        lastseparator = true;
                     }
                     break;
                 case TOGGLE:
@@ -187,7 +186,7 @@ public class ToolBar extends JToolBar {
                     if ((action.getValue(Action.SMALL_ICON) != null || action.getValue(Action.LARGE_ICON_KEY) != null)) {
                         ab.setText("");
                     }
-                    lastseperator = false;
+                    lastseparator = false;
                     break;
                 }
 

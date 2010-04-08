@@ -49,17 +49,15 @@ import org.jdesktop.swingx.renderer.JRendererLabel;
 public class ToolbarController extends ConfigPanel {
     private static final ArrayList<String> WHITELIST = new ArrayList<String>();
     static {
-
-        
         // controlls
         WHITELIST.add("toolbar.control.start");
         WHITELIST.add("toolbar.control.pause");
         WHITELIST.add("toolbar.control.stop");
 
-        //Awesomebar at the beginning (because of the fadeout)
+        // Awesomebar at the beginning (because of the fadeout)
         WHITELIST.add("separator");
         WHITELIST.add("addons.awesomebar");
-        
+
         // move
         WHITELIST.add("separator");
         WHITELIST.add("action.downloadview.movetotop");
@@ -68,6 +66,10 @@ public class ToolbarController extends ConfigPanel {
         WHITELIST.add("action.downloadview.movetobottom");
 
         // config
+        WHITELIST.add("separator");
+        WHITELIST.add("action.settings");
+
+        // quickconfig
         WHITELIST.add("separator");
         WHITELIST.add("toolbar.quickconfig.clipboardoberserver");
         WHITELIST.add("toolbar.quickconfig.reconnecttoggle");
@@ -180,7 +182,7 @@ public class ToolbarController extends ConfigPanel {
                 }
                 GUIUtils.getConfig().setProperty("TOOLBAR", list);
                 GUIUtils.getConfig().save();
-                list=resort(list);
+                list = resort(list);
                 MainToolBar.getInstance().setList(list.toArray(new String[] {}));
             }
         }
@@ -204,7 +206,7 @@ public class ToolbarController extends ConfigPanel {
     @Override
     public void onShow() {
         super.onShow();
-        list=setActions(actions = ActionController.getActions());
+        list = setActions(actions = ActionController.getActions());
 
         new GuiRunnable<Object>() {
 
@@ -259,8 +261,8 @@ public class ToolbarController extends ConfigPanel {
         MainToolBar.getInstance().setList(list.toArray(new String[] {}));
         return list;
     }
-    
-    public static ArrayList<String> resort(ArrayList<String> list){
+
+    public static ArrayList<String> resort(ArrayList<String> list) {
         Collections.sort(list, new Comparator<String>() {
             public int compare(String o1, String o2) {
                 int ia = WHITELIST.indexOf(o1);

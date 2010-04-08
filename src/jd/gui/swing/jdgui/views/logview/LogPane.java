@@ -103,13 +103,10 @@ public class LogPane extends SwitchPanel implements ActionListener, ControlListe
             }
             if (content == null || content.length() == 0) return;
 
-            String name = UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN, JDL.L("userio.input.title", "Please enter!"), JDL.L("gui.askName", "Your name?"), null, null, null, null);
-            if (name == null) name = "";
-
             String question = UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN, JDL.L("userio.input.title", "Please enter!"), JDL.L("gui.logger.askQuestion", "Please describe your Problem/Bug/Question!"), null, null, null, null);
             if (question == null) question = "";
             append("\r\n\r\n-------------------------------------------------------------\r\n\r\n");
-            String url = Upload.toJDownloader(content, name + "\r\n\r\n" + question);
+            String url = Upload.toJDownloader(content, question);
             if (url != null) {
                 try {
                     JLink.openURL(url);
