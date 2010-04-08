@@ -20,15 +20,16 @@ import javax.swing.JTabbedPane;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.config.Configuration;
 import jd.controlling.PasswordListController;
 import jd.gui.swing.jdgui.settings.ConfigPanel;
 import jd.gui.swing.jdgui.settings.GUIConfigEntry;
 import jd.utils.locale.JDL;
 
 public class PasswordList extends ConfigPanel {
+
     private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.PasswordList.";
 
+    @Override
     public String getBreadcrum() {
         return JDL.L(this.getClass().getName() + ".breadcrum", this.getClass().getSimpleName());
     }
@@ -39,7 +40,7 @@ public class PasswordList extends ConfigPanel {
 
     private static final long serialVersionUID = 3383448498625377495L;
 
-    public PasswordList(Configuration configuration) {
+    public PasswordList() {
         super();
 
         initPanel();

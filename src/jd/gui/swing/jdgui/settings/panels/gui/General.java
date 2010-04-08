@@ -25,7 +25,6 @@ import javax.swing.JTabbedPane;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
-import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.config.ConfigEntry.PropertyType;
 import jd.gui.UserIO;
@@ -47,13 +46,14 @@ public class General extends ConfigPanel {
 
     private SubConfiguration subConfig;
 
-    public General(Configuration configuration) {
+    public General() {
         super();
         subConfig = GUIUtils.getConfig();
         initPanel();
         load();
     }
 
+    @Override
     public String getBreadcrum() {
         return JDL.L(this.getClass().getName() + ".breadcrum", this.getClass().getSimpleName());
     }

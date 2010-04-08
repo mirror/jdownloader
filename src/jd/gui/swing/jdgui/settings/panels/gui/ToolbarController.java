@@ -30,7 +30,6 @@ import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 
-import jd.config.Configuration;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.jdgui.actions.ActionController;
@@ -125,69 +124,6 @@ public class ToolbarController extends ConfigPanel {
         return JDL.L(JDL_PREFIX + ".toolbarController.title", "Toolbar Manager");
     }
 
-    private class InternalTableModel extends AbstractTableModel {
-
-        private static final long serialVersionUID = 1155282457354673850L;
-
-        @Override
-        public Class<?> getColumnClass(int columnIndex) {
-            if (columnIndex == 0) return Boolean.class;
-            return ToolBarAction.class;
-        }
-
-        public int getColumnCount() {
-            return 4;
-        }
-
-        @Override
-        public String getColumnName(int column) {
-            switch (column) {
-            case 0:
-                return JDL.L(JDL_PREFIX + ".column.use", "Use");
-            case 1:
-                return JDL.L(JDL_PREFIX + ".column.name", "Name");
-            case 2:
-                return JDL.L(JDL_PREFIX + ".column.desc", "Description");
-            case 3:
-                return JDL.L(JDL_PREFIX + ".column.hotkey", "Hotkey");
-            }
-            return super.getColumnName(column);
-        }
-
-        public int getRowCount() {
-            return actions.size();
-        }
-
-        public Object getValueAt(final int rowIndex, final int columnIndex) {
-            if (columnIndex == 0) {
-                if (actions.get(rowIndex).force()) return true;
-                return list.contains(actions.get(rowIndex).getID());
-            }
-            return actions.get(rowIndex);
-        }
-
-        @Override
-        public boolean isCellEditable(int rowIndex, int columnIndex) {
-            return columnIndex == 0 && !actions.get(rowIndex).force();
-        }
-
-        @Override
-        public void setValueAt(Object value, int row, int col) {
-            if (col == 0) {
-                if ((Boolean) value) {
-                    if (!list.contains(actions.get(row).getID())) list.add(actions.get(row).getID());
-                } else {
-                    while (list.remove(actions.get(row).getID())) {
-                    }
-                }
-                GUIUtils.getConfig().setProperty("TOOLBAR", list);
-                GUIUtils.getConfig().save();
-                list = resort(list);
-                MainToolBar.getInstance().setList(list.toArray(new String[] {}));
-            }
-        }
-    }
-
     private JXTable table;
 
     private InternalTableModel tableModel;
@@ -196,7 +132,7 @@ public class ToolbarController extends ConfigPanel {
 
     private ArrayList<String> list;
 
-    public ToolbarController(Configuration configuration) {
+    public ToolbarController() {
         super();
         actions = new ArrayList<ToolBarAction>();
         initPanel();
@@ -318,6 +254,69 @@ public class ToolbarController extends ConfigPanel {
         tabbed.add(getBreadcrum(), panel);
 
         this.add(tabbed);
+    }
+
+    private class InternalTableModel extends AbstractTableModel {
+
+        private static final long serialVersionUID = 1155282457354673850L;
+
+        @Override
+        public Class<?> getColumnClass(int columnIndex) {
+            if (columnIndex == 0) return Boolean.class;
+            return ToolBarAction.class;
+        }
+
+        public int getColumnCount() {
+            return 4;
+        }
+
+        @Override
+        public String getColumnName(int column) {
+            switch (column) {
+            case 0:
+                return JDL.L(JDL_PREFIX + ".column.use", "Use");
+            case 1:
+                return JDL.L(JDL_PREFIX + ".column.name", "Name");
+            case 2:
+                return JDL.L(JDL_PREFIX + ".column.desc", "Description");
+            case 3:
+                return JDL.L(JDL_PREFIX + ".column.hotkey", "Hotkey");
+            }
+            return super.getColumnName(column);
+        }
+
+        public int getRowCount() {
+            return actions.size();
+        }
+
+        public Object getValueAt(final int rowIndex, final int columnIndex) {
+            if (columnIndex == 0) {
+                if (actions.get(rowIndex).force()) return true;
+                return list.contains(actions.get(rowIndex).getID());
+            }
+            return actions.get(rowIndex);
+        }
+
+        @Override
+        public boolean isCellEditable(int rowIndex, int columnIndex) {
+            return columnIndex == 0 && !actions.get(rowIndex).force();
+        }
+
+        @Override
+        public void setValueAt(Object value, int row, int col) {
+            if (col == 0) {
+                if ((Boolean) value) {
+                    if (!list.contains(actions.get(row).getID())) list.add(actions.get(row).getID());
+                } else {
+                    while (list.remove(actions.get(row).getID())) {
+                    }
+                }
+                GUIUtils.getConfig().setProperty("TOOLBAR", list);
+                GUIUtils.getConfig().save();
+                list = resort(list);
+                MainToolBar.getInstance().setList(list.toArray(new String[] {}));
+            }
+        }
     }
 
     private class TableRenderer extends DefaultTableRenderer {

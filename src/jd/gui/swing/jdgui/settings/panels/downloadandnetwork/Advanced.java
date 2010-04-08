@@ -35,6 +35,7 @@ public class Advanced extends ConfigPanel {
     private static final long serialVersionUID = -8421603124342250902L;
     private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.downloadandnetwork.Advanced.";
 
+    @Override
     public String getBreadcrum() {
         return JDL.L(this.getClass().getName() + ".breadcrum", this.getClass().getSimpleName());
     }
@@ -45,9 +46,8 @@ public class Advanced extends ConfigPanel {
 
     private SubConfiguration config;
 
-    public Advanced(Configuration configuration) {
+    public Advanced() {
         super();
-
         config = SubConfiguration.getConfig("DOWNLOAD");
         initPanel();
         load();

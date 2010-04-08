@@ -32,11 +32,13 @@ import jd.gui.swing.jdgui.settings.ConfigPanel;
 import jd.gui.swing.jdgui.settings.GUIConfigEntry;
 import jd.update.WebUpdater;
 import jd.utils.JDTheme;
+import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 public class ConfigPanelGeneral extends ConfigPanel {
     private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.ConfigPanelGeneral.";
 
+    @Override
     public String getBreadcrum() {
         return JDL.L(this.getClass().getName() + ".breadcrum", this.getClass().getSimpleName());
     }
@@ -49,9 +51,9 @@ public class ConfigPanelGeneral extends ConfigPanel {
 
     private Configuration configuration;
 
-    public ConfigPanelGeneral(Configuration configuration) {
+    public ConfigPanelGeneral() {
         super();
-        this.configuration = configuration;
+        this.configuration = JDUtilities.getConfiguration();
         initPanel();
         load();
     }

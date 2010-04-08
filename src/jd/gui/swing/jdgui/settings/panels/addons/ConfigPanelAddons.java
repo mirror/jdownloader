@@ -24,7 +24,6 @@ import javax.swing.JTabbedPane;
 import javax.swing.ListSelectionModel;
 
 import jd.OptionalPluginWrapper;
-import jd.config.Configuration;
 import jd.gui.swing.components.table.JDTable;
 import jd.gui.swing.components.table.JDTableModel;
 import jd.gui.swing.jdgui.settings.ConfigPanel;
@@ -53,7 +52,7 @@ public class ConfigPanelAddons extends ConfigPanel {
     }
 
     private class InternalTableModel extends JDTableModel {
-        
+
         private static final long serialVersionUID = 5847076032639053531L;
 
         public InternalTableModel() {
@@ -84,7 +83,7 @@ public class ConfigPanelAddons extends ConfigPanel {
 
     private JDTable table;
 
-    public ConfigPanelAddons(Configuration configuration) {
+    public ConfigPanelAddons() {
         super();
         pluginsOptional = new ArrayList<OptionalPluginWrapper>(OptionalPluginWrapper.getOptionalWrapper());
         Collections.sort(pluginsOptional);

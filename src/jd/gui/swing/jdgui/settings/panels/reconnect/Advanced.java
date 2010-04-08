@@ -21,7 +21,6 @@ import javax.swing.JTabbedPane;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
-import jd.config.Configuration;
 import jd.controlling.reconnect.ReconnectMethod;
 import jd.gui.swing.jdgui.settings.ConfigPanel;
 import jd.gui.swing.jdgui.settings.GUIConfigEntry;
@@ -33,6 +32,7 @@ public class Advanced extends ConfigPanel {
     private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.reconnect.Advanced.";
     private static final long serialVersionUID = 3383448498625377495L;
 
+    @Override
     public String getBreadcrum() {
         return JDL.L(this.getClass().getName() + ".breadcrum", this.getClass().getSimpleName());
     }
@@ -41,7 +41,7 @@ public class Advanced extends ConfigPanel {
         return JDL.L(JDL_PREFIX + "reconnect.advanced.title", "Advanced");
     }
 
-    public Advanced(Configuration configuration) {
+    public Advanced() {
         super();
         initPanel();
         load();

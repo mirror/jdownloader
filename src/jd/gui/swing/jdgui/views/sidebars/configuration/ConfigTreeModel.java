@@ -31,7 +31,6 @@ import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.SingletonPanel;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.utils.JDTheme;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 public class ConfigTreeModel implements TreeModel {
@@ -188,7 +187,7 @@ public class ConfigTreeModel implements TreeModel {
 
             this.clazz = clazz;
             if (clazz != null) {
-                panel = new SingletonPanel(clazz, JDUtilities.getConfiguration());
+                panel = new SingletonPanel(clazz);
                 // init this panel in an extra thread..
                 new GuiRunnable<Object>() {
                     @Override

@@ -35,14 +35,14 @@ public class InternetAndNetwork extends ConfigPanel {
     private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.downloadandnetwork.InternetAndNetwork.";
     private SubConfiguration config;
 
-    public InternetAndNetwork(Configuration configuration) {
+    public InternetAndNetwork() {
         super();
-
         config = SubConfiguration.getConfig("DOWNLOAD");
         initPanel();
         load();
     }
 
+    @Override
     public String getBreadcrum() {
         return JDL.L(this.getClass().getName() + ".breadcrum", this.getClass().getSimpleName());
     }

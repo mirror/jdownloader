@@ -39,13 +39,14 @@ public class Advanced extends ConfigPanel {
 
     private SubConfiguration subConfig;
 
-    public Advanced(Configuration configuration) {
+    public Advanced() {
         super();
         subConfig = GUIUtils.getConfig();
         initPanel();
         load();
     }
 
+    @Override
     public String getBreadcrum() {
         return JDL.L(this.getClass().getName() + ".breadcrum", this.getClass().getSimpleName());
     }

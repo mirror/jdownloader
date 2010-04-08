@@ -30,7 +30,6 @@ import javax.swing.JTabbedPane;
 import javax.swing.Timer;
 
 import jd.HostPluginWrapper;
-import jd.config.Configuration;
 import jd.config.ConfigEntry.PropertyType;
 import jd.controlling.AccountController;
 import jd.controlling.AccountControllerEvent;
@@ -62,7 +61,7 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
     private Timer Update_Async;
     protected Logger logger = JDLogger.getLogger();
 
-    public Premium(Configuration configuration) {
+    public Premium() {
         super();
         initPanel();
         load();

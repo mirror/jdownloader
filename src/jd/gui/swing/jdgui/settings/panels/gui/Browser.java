@@ -24,7 +24,6 @@ import javax.swing.JTabbedPane;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 import jd.gui.UserIO;
@@ -56,7 +55,7 @@ public class Browser extends ConfigPanel {
 
     private SubConfiguration subConfig;
 
-    public Browser(Configuration configuration) {
+    public Browser() {
         super();
         subConfig = GUIUtils.getConfig();
         initPanel();

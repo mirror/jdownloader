@@ -21,7 +21,6 @@ import javax.swing.JTabbedPane;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
-import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.config.ConfigEntry.PropertyType;
 import jd.controlling.LinkGrabberController;
@@ -33,6 +32,7 @@ import jd.utils.locale.JDL;
 public class Linkgrabber extends ConfigPanel {
     private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.gui.Linkgrabber.";
 
+    @Override
     public String getBreadcrum() {
         return JDL.L(this.getClass().getName() + ".breadcrum", this.getClass().getSimpleName());
     }
@@ -43,7 +43,7 @@ public class Linkgrabber extends ConfigPanel {
 
     private static final long serialVersionUID = 3383448498625377495L;
 
-    public Linkgrabber(Configuration configuration) {
+    public Linkgrabber() {
         super();
         initPanel();
         load();

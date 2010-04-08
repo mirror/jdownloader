@@ -32,7 +32,6 @@ import javax.swing.event.ListSelectionListener;
 
 import jd.HostPluginWrapper;
 import jd.config.ConfigGroup;
-import jd.config.Configuration;
 import jd.gui.UserIF;
 import jd.gui.swing.components.table.JDTable;
 import jd.gui.swing.components.table.JDTableModel;
@@ -97,7 +96,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
 
     private JDTable table;
 
-    public ConfigPanelPluginForHost(Configuration configuration) {
+    public ConfigPanelPluginForHost() {
         super();
         pluginsForHost = new ArrayList<HostPluginWrapper>(HostPluginWrapper.getHostWrapper());
         Collections.sort(pluginsForHost);

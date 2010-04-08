@@ -80,6 +80,7 @@ public class MethodSelection extends ConfigPanel implements ActionListener {
 
     private JPanel method;
 
+    @Override
     public String getBreadcrum() {
         return JDL.L(this.getClass().getName() + ".breadcrum", this.getClass().getSimpleName());
     }
@@ -87,9 +88,10 @@ public class MethodSelection extends ConfigPanel implements ActionListener {
     public static String getTitle() {
         return JDL.L(JDL_PREFIX + "reconnect.title", "Reconnection");
     }
-    public MethodSelection(Configuration configuration) {
+
+    public MethodSelection() {
         super();
-        this.configuration = configuration;
+        this.configuration = JDUtilities.getConfiguration();
         initPanel();
         load();
     }
@@ -208,12 +210,11 @@ public class MethodSelection extends ConfigPanel implements ActionListener {
         // tabbed.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
         tabbed.setTabPlacement(SwingConstants.TOP);
 
-        addLiveheader();
-        addExtern();
-        addBatch();
-        addCLR();
-        // tabbed.setSelectedIndex(CONFIGURATION.getIntegerProperty(
-        // ReconnectMethod.PARAM_RECONNECT_TYPE, ReconnectMethod.LIVEHEADER));
+        tabbed.addTab(JDL.L("modules.reconnect.types.liveheader", "LiveHeader/Curl"), new SubPanelLiveHeaderReconnect(configuration));
+        tabbed.addTab(JDL.L("modules.reconnect.types.extern", "Extern"), getPanelFor(new ExternReconnect()));
+        tabbed.addTab(JDL.L("modules.reconnect.types.batch", "Batch"), getPanelFor(new BatchReconnect()));
+        tabbed.addTab(JDL.L("modules.reconnect.types.clr", "CLR Script"), new SubPanelCLRReconnect(configuration));
+
         method.add(Factory.createHeader(new ConfigGroup(JDL.L("gui.config.reconnect.test", "Showcase"), JDTheme.II("gui.images.config.network_local", 32, 32))), "spanx,gaptop 15,gapleft 20,gapright 15");
         JPanel p = new JPanel(new MigLayout(" ins 0,wrap 7", "[]5[fill]5[align right]20[align right]20[align right]20[align right]20[align right]", "[][]"));
         method.add(p, "spanx,gapright 20,gapleft 54");
@@ -221,7 +222,6 @@ public class MethodSelection extends ConfigPanel implements ActionListener {
         btn.addActionListener(this);
         p.add(btn, "spany, aligny top");
         p.add(new JPanel(), "height 32!,spany,alignx left,pushx");
-
         p.add(timeLabel = new JLabel(JDL.L("gui.config.reconnect.showcase.time", "Reconnect duration")));
         p.add(time = new JLabel("---"));
 
@@ -256,101 +256,11 @@ public class MethodSelection extends ConfigPanel implements ActionListener {
             }.start();
         }
 
-        // maintabbed.addTab(JDL.L("gui.config.reconnect.methodtab",
-        // "Reconnect method"), JDTheme.II("gui.images.config.network_local",
-        // 16, 16), method);
-        // maintabbed.addTab(JDL.L("gui.config.reconnect.settingstab",
-        // "Premium Settings"), JDTheme.II("gui.images.reconnect_settings", 16,
-        // 16), cep = new ConfigEntriesPanel(container));
         setLayout(new MigLayout("ins 0,wrap 1", "[fill,grow 10]", "[fill,grow]"));
-        // panel.add();
         JTabbedPane tabbed = new JTabbedPane();
         tabbed.setOpaque(false);
         tabbed.add(getBreadcrum(), method);
-        // this.tabbed.addChangeListener(new ChangeListener() {
-        //
-        // private ConfigPanel selection;
-        //
-        // public void stateChanged(ChangeEvent e) {
-        //
-        // try {
-        // if(selection!=null)selection.save();
-        // ConfigPanel comp = (ConfigPanel)
-        // MethodSelection.this.tabbed.getSelectedComponent();
-        // comp.load();
-        // this.selection=comp;
-        // } catch (Exception e2) {
-        // e2.printStackTrace();
-        // }
-        //
-        // }
-        //
-        // });
         this.add(tabbed);
-
-    }
-
-    private void addCLR() {
-        String name = JDL.L("modules.reconnect.types.clr", "CLR Script");
-
-        tabbed.addTab(name, new SubPanelCLRReconnect(configuration));
-
-    }
-
-    private void addBatch() {
-        String name = JDL.L("modules.reconnect.types.batch", "Batch");
-
-        ConfigPanel cp;
-        tabbed.addTab(name, cp = new ConfigPanel() {
-
-            private static final long serialVersionUID = -6178073263504701330L;
-
-            @Override
-            public void initPanel() {
-                ConfigContainer container = new BatchReconnect().getConfig();
-
-                for (ConfigEntry cfgEntry : container.getEntries()) {
-                    GUIConfigEntry ce = new GUIConfigEntry(cfgEntry);
-                    if (ce != null) addGUIConfigEntry(ce);
-                }
-
-                add(panel);
-            }
-
-        });
-        cp.initPanel();
-
-    }
-
-    private void addExtern() {
-        String name = JDL.L("modules.reconnect.types.extern", "Extern");
-
-        ConfigPanel cp;
-        tabbed.addTab(name, cp = new ConfigPanel() {
-
-            private static final long serialVersionUID = 1086423194283483561L;
-
-            @Override
-            public void initPanel() {
-                ConfigContainer container = new ExternReconnect().getConfig();
-
-                for (ConfigEntry cfgEntry : container.getEntries()) {
-                    GUIConfigEntry ce = new GUIConfigEntry(cfgEntry);
-                    if (ce != null) addGUIConfigEntry(ce);
-                }
-
-                add(panel);
-            }
-
-        });
-        cp.initPanel();
-        // cp.load();
-
-    }
-
-    private void addLiveheader() {
-        String name = JDL.L("modules.reconnect.types.liveheader", "LiveHeader/Curl");
-        tabbed.addTab(name, new SubPanelLiveHeaderReconnect(configuration));
     }
 
     @Override
@@ -374,6 +284,28 @@ public class MethodSelection extends ConfigPanel implements ActionListener {
     public void saveSpecial() {
         configuration.setProperty(ReconnectMethod.PARAM_RECONNECT_TYPE, tabbed.getSelectedIndex());
         ((ConfigPanel) tabbed.getSelectedComponent()).save();
+    }
+
+    private static final ConfigPanel getPanelFor(final ReconnectMethod method) {
+        ConfigPanel cp = new ConfigPanel() {
+
+            private static final long serialVersionUID = 1086423194283483561L;
+
+            @Override
+            public void initPanel() {
+                ConfigContainer container = method.getConfig();
+
+                for (ConfigEntry cfgEntry : container.getEntries()) {
+                    GUIConfigEntry ce = new GUIConfigEntry(cfgEntry);
+                    if (ce != null) addGUIConfigEntry(ce);
+                }
+
+                add(panel);
+            }
+
+        };
+        cp.initPanel();
+        return cp;
     }
 
 }

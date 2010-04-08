@@ -34,6 +34,7 @@ import jd.utils.locale.JDL;
 public class General extends ConfigPanel {
     private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.downloadandnetwork.General.";
 
+    @Override
     public String getBreadcrum() {
         return JDL.L(this.getClass().getName() + ".breadcrum", this.getClass().getSimpleName());
     }
@@ -46,7 +47,7 @@ public class General extends ConfigPanel {
 
     private SubConfiguration config;
 
-    public General(Configuration configuration) {
+    public General() {
         super();
         config = SubConfiguration.getConfig("DOWNLOAD");
         initPanel();
