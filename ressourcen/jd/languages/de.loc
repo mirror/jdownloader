@@ -25,6 +25,7 @@ controller.packages.defaultname = various
 controller.status.agb_tos = AGB nicht akzeptiert
 controller.status.connectionproblems = Verbindung verloren
 controller.status.containererror = Container Fehler
+controller.status.fileexists.othersource = Datei von anderem Host {0} geladen
 controller.status.fileexists.overwritefailed = Überschreiben fehlgeschlagen
 controller.status.fileexists.skip = Datei schon vorhanden
 controller.status.pluindefekt = Plugin defekt

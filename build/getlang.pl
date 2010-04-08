@@ -55,9 +55,9 @@ sub check
 {
   my ($o, $v, $res, $file) = @_;
 
-  if($o =~ /"/ && $debug >= 3)
+  if($o =~ /"/)
   {
-    print STDERR "Can't parse following expression in $file: $o = $v\n";
+    print STDERR "Can't parse following expression in $file: $o = $v\n" if $debug >= 3;
     return;
   }
 
@@ -83,6 +83,8 @@ sub main
   {
     my $prefix;
     my $toolbar;
+    my $menu;
+    my $istrd;
     my $lastline = "";
     open FILE,"<",$file or die;
     my $name = $file; $name =~ s/.*?src\///; $name =~ s/\//./g; $name =~ s/\.java$//;
@@ -97,7 +99,14 @@ sub main
       $line =~ s/this\.getClass\(\)\.getName\(\) \+ "/"$name/g;
       $line =~ s/this\.getClass\(\)\.getSimpleName\(\)/"$sname"/g;
       $prefix = $1 if($line =~ s/[A-Z]+_PREFIX\s*=\s*"(.*?)"//);
-      $toolbar = 1 if($line =~ /extends\s+(ToolBar|Threaded)Action/);
+      $istrd = $1 if($line =~ s/INFO_STRING_DEFAULT\s*=\s*(".*?")//);
+      $toolbar = 1 if($line =~ /extends\s+(ToolBar|Threaded|Menu)Action/);
+      $menu = 1 if($line =~ /extends\s+JStartMenu/);
+      $line =~ s/INFO_STRING_DEFAULT/$istrd/g;
+      if($line =~ /extends\s+PluginOptional/)
+      {
+        check($name, $sname, \%res, $file);
+      }
 
       while($line =~ s/JDL\.LF?\("(.*?)",\s*"(.*?)"//)
       {
@@ -111,7 +120,11 @@ sub main
       {
         checktb($1, \%res, $file);
       }
-      while($line =~ s/(?:new\s+|\.get)(?:ToolBar|Threaded)Action\("(.*?)",\s*"(.*?)"//)
+      while($menu && $line =~ s/super\("(.*?)",\s*"(.*?)"//)
+      {
+        check($1, "", \%res, $file);
+      }
+      while($line =~ s/(?:new\s+|\.get)(?:ToolBar|Threaded|Menu)Action\("(.*?)",\s*(?:\d+|"(.*?)")//)
       {
         checktb($1, \%res, $file);
       }
