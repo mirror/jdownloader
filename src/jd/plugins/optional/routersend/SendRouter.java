@@ -95,7 +95,7 @@ public class SendRouter extends PluginOptional implements ControlListener {
     }
 
     private void executeSend() {
-        int ret = UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN, JDL.L(JDL_PREFIX + "info.topic", "Help to Improve JD"), JDL.L(JDL_PREFIX + "info.msg", "THIS IS A BETATEST! JD have detected that you hade 5 successfull reconnects \r\n You now can send the script to our server so we can include it permanently in JD"), UserIO.getInstance().getIcon(UserIO.ICON_INFO), null, null);
+        int ret = UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN, JDL.L(JDL_PREFIX + "info.topic", "Help to Improve JD"), JDL.L(JDL_PREFIX + "info.msg", "THIS IS A BETATEST! JD has detected that you had 5 successfull reconnects.\r\nYou now can send the script to our server so we can include it permanently in JD"), UserIO.getInstance().getIcon(UserIO.ICON_INFO), null, null);
         if (!UserIO.isOK(ret)) {
             JDUtilities.getController().removeControlListener(this);
             return;
@@ -135,12 +135,12 @@ public class SendRouter extends PluginOptional implements ControlListener {
         Form data = new Form();
         data.setMethod(Form.MethodType.POST);
         data.setAction(scripturl);
-        String[] manufactorList;
+        String[] manufacturerList;
         ArrayList<String> man = new ArrayList<String>();
         String other;
         try {
-            manufactorList = br.getPage(manufactururl).split(",");
-            for (String m : manufactorList)
+            manufacturerList = br.getPage(manufactururl).split(",");
+            for (String m : manufacturerList)
                 man.add(m);
 
             Collections.sort(man);
@@ -151,14 +151,14 @@ public class SendRouter extends PluginOptional implements ControlListener {
             return false;
         }
         // Collect data
-        int selection = UserIO.getInstance().requestComboDialog(UserIO.NO_COUNTDOWN | UserIO.NO_CANCEL_OPTION, JDL.L(JDL_PREFIX + "manufactor.list", "Manufactor"), JDL.L(JDL_PREFIX + "manufactor.message", "Which manufactor ?"), man.toArray(new String[] {}), 0, null, JDL.L(JDL_PREFIX + "ok", "OK"), null, new DefaultListCellRenderer());
-        String manufactor = man.get(selection);
-        if (manufactor.equals(other)) {
-            manufactor = UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN | UserIO.NO_CANCEL_OPTION, JDL.L(JDL_PREFIX + "manufactor.routermanufactor", "Your router's Manufactor?"), "");
+        int selection = UserIO.getInstance().requestComboDialog(UserIO.NO_COUNTDOWN | UserIO.NO_CANCEL_OPTION, JDL.L(JDL_PREFIX + "manufacturer.list", "Manufacturer"), JDL.L(JDL_PREFIX + "manufacturer.message", "Which manufacturer?"), man.toArray(new String[] {}), 0, null, JDL.L(JDL_PREFIX + "ok", "OK"), null, new DefaultListCellRenderer());
+        String manufacturer = man.get(selection);
+        if (manufacturer.equals(other)) {
+            manufacturer = UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN | UserIO.NO_CANCEL_OPTION, JDL.L(JDL_PREFIX + "manufacturer.routermanufacturer", "Your router's manufacturer?"), "");
             // TODO: ask google
         }
 
-        String routerName = UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN | UserIO.NO_CANCEL_OPTION, JDL.L(JDL_PREFIX + "manufactor.name", "Routername?"), "");
+        String routerName = UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN | UserIO.NO_CANCEL_OPTION, JDL.L(JDL_PREFIX + "manufacturer.name", "Router name?"), "");
         // TODO: ask google
 
         // TODO: prepare script
@@ -169,13 +169,13 @@ public class SendRouter extends PluginOptional implements ControlListener {
         // %%%routerip%%%
 
         // TODO: perhaps the user has not entered his routerpassword...ask him
-        String routerlogins = UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN | UserIO.NO_CANCEL_OPTION, JDL.L(JDL_PREFIX + "password.name", "Router's Username? \r\nIt will NOT be uploaded. We need it to remove it from the script."), "");
-        String routerpassword = UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN | UserIO.NO_CANCEL_OPTION, JDL.L(JDL_PREFIX + "password.password", "Router's Password? \r\nIT will NOT be uploaded. We need it to remove it from the script."), "");
+        String routerlogins = UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN | UserIO.NO_CANCEL_OPTION, JDL.L(JDL_PREFIX + "password.name", "Router's Username?\r\nIt will NOT be uploaded. We need it to remove it from the script."), "");
+        String routerpassword = UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN | UserIO.NO_CANCEL_OPTION, JDL.L(JDL_PREFIX + "password.password", "Router's Password?\r\nIt will NOT be uploaded. We need it to remove it from the script."), "");
 
         if (routerlogins != null) currentScript = currentScript.replace(routerlogins, "%%%username%%%");
         if (routerpassword != null) currentScript = currentScript.replace(routerpassword, "%%%password%%%");
         // Send
-        InputField hersteller = new InputField("hersteller", Encoding.urlEncode(manufactor));
+        InputField hersteller = new InputField("hersteller", Encoding.urlEncode(manufacturer));
         InputField name = new InputField("name", Encoding.urlEncode(routerName));
         InputField script = new InputField("script", Encoding.urlEncode(currentScript));
         data.addInputField(hersteller);

@@ -123,7 +123,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
                 ret = new File(ret.getAbsolutePath() + ".xml");
             }
             ArrayList<String> save = new ArrayList<String>();
-            String manu = UserIO.getInstance().requestInputDialog(0, JDL.L("plugins.optional.httpliveheaderscripter.gui.save.manufactur", "Manufactur? (e.g. Siemens)"), null);
+            String manu = UserIO.getInstance().requestInputDialog(0, JDL.L("plugins.optional.httpliveheaderscripter.gui.save.manufacturer", "Manufacturer? (e.g. Siemens)"), null);
             String model = UserIO.getInstance().requestInputDialog(0, JDL.L("plugins.optional.httpliveheaderscripter.gui.save.model", "Model? (e.g. Gigaset 555 (fw 3.01.05)"), null);
             if (manu == null || model == null) { return; }
             save.add(manu);

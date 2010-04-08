@@ -46,7 +46,7 @@ public class SGdNt extends PluginForDecrypt {
             boolean okay = true;
             for (int i = 0; i < 4; i++) {
 
-                String pass = getUserInput(JDL.L("plugins.hoster.general.passwordProtectedInput", "Die Links sind mit einem Passwort geschützt. Bitte geben Sie das Passwort ein:"), param.getDecrypterPassword(), param);
+                String pass = getUserInput(JDL.L("plugins.hoster.general.passwordprotectedinput", "The links are protected by a password. Please enter the password:"), param.getDecrypterPassword(), param);
                 String postData = "pass=" + Encoding.urlEncode(pass);
                 br.postPage(parameter, postData);
                 if (br.containsHTML("Wrong password!")) {

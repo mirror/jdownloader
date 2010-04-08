@@ -62,11 +62,11 @@ public class JACController {
 
         String chooserText = "";
         if (isTrain) {
-            chooserText = JDL.L("train.choose.folder", "Wählen sie einen Ordner aus");
+            chooserText = JDL.L("train.choose.folder", "Select a folder");
         } else {
-            chooserText = JDL.L("showcaptcha.choose.file", "Wählen sie eine Bilddatei aus");
+            chooserText = JDL.L("showcaptcha.choose.file", "Select an Imagefile");
         }
-        frame.add(new JLabel(JDL.L("train.method", "Wählen sie eine Methode aus:")));
+        frame.add(new JLabel(JDL.L("train.method", "Select a CAPTCHA method:")));
         frame.add(methods, "growx, spanx");
         frame.add(new JLabel(chooserText));
         frame.add(chooser, "growx, spanx");

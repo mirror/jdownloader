@@ -49,7 +49,7 @@ public class ProgressDialog extends JDialog implements ActionListener {
         setModal(true);
         setLayout(new MigLayout("wrap 1", "[center]"));
         setAlwaysOnTop(true);
-        setTitle(JDL.L("gui.dialogs.progress.title", "Fortschritt...bitte warten"));
+        setTitle(JDL.L("gui.dialogs.progress.title", "In progress... please wait"));
         setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
 
         thread = ob;

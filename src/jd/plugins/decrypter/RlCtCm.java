@@ -46,7 +46,7 @@ public class RlCtCm extends PluginForDecrypt {
             for (int i = 0; i < 5; i++) {
                 br.getPage(page);
                 String linkid = br.getRegex("name=u value=\"(.*?)\"").getMatch(0);
-                String passwordstring = getUserInput(JDL.L("plugins.hoster.general.passwordProtectedInput", "Die Links sind mit einem Passwort geschützt. Bitte geben Sie das Passwort ein:"), param.getDecrypterPassword(), param);
+                String passwordstring = getUserInput(JDL.L("plugins.hoster.general.passwordprotectedinput", "The links are protected by a password. Please enter the password:"), param.getDecrypterPassword(), param);
                 br.postPage("http://urlcut.com/password.cgi", "u=" + linkid + "&p=" + Encoding.urlEncode(passwordstring));
                 page = null;
                 page = br.getRedirectLocation();

@@ -248,7 +248,7 @@ public class JDRouterEditor extends PluginOptional implements ControlListener {
         editPanel.add(newrouterbutton, "span 2, split 3, sizegroup edit");
         editPanel.add(saverouterbutton, "sizegroup edit");
         editPanel.add(delrouterbutton, "sizegroup edit");
-        editPanel.add(new JLabel(JDL.L(JDL_PREFIX + "routeredit.routermanufactor", "Router Manufactor:")));
+        editPanel.add(new JLabel(JDL.L(JDL_PREFIX + "routeredit.routermanufacturer", "Router manufacturer:")));
         editPanel.add(routerhersteller);
         editPanel.add(new JLabel(JDL.L(JDL_PREFIX + "routeredit.routername", "Router Name:")));
         editPanel.add(routername);

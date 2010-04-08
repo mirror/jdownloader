@@ -65,7 +65,7 @@ public class ImportRouterDialog extends AbstractDialog {
     private JList list;
 
     private ImportRouterDialog() {
-        super(UserIO.NO_COUNTDOWN, JDL.L("gui.config.liveHeader.dialog.importRouter", "Router importieren"), JDTheme.II("gui.images.search", 32, 32), null, null);
+        super(UserIO.NO_COUNTDOWN, JDL.L("gui.config.liveheader.dialog.importrouter", "Import Router"), JDTheme.II("gui.images.search", 32, 32), null, null);
 
         scripts = HTTPLiveHeader.getLHScripts();
         Collections.sort(scripts, new Comparator<String[]>() {

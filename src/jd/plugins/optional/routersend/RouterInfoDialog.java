@@ -31,7 +31,7 @@ public class RouterInfoDialog extends AbstractDialog {
 
     private static final String JDL_PREFIX = "jd.plugins.optional.routersend.RouterInfoDialog.";
 
-    private ComboTextPanel manufactor, name, firmware;
+    private ComboTextPanel manufacturer, name, firmware;
     private JTextField username, password;
 
     private RouterInfoDialog() {
@@ -41,14 +41,14 @@ public class RouterInfoDialog extends AbstractDialog {
     }
 
     public String[] getResult() {
-        return new String[] { manufactor.getValue(), name.getValue(), firmware.getValue(), username.getText(), password.getText() };
+        return new String[] { manufacturer.getValue(), name.getValue(), firmware.getValue(), username.getText(), password.getText() };
     }
 
     @Override
     public JComponent contentInit() {
         JPanel content = new JPanel(new MigLayout("ins 0, wrap 2", "[][grow,fill]"));
 
-        manufactor = new ComboTextPanel(content, JDL.L(JDL_PREFIX + "manufactor", "Manufactor:"), new String[] { "Manufactor A", "Manufactor B", "Manufactor C" });
+        manufacturer = new ComboTextPanel(content, JDL.L(JDL_PREFIX + "manufacturer", "Manufacturer:"), new String[] { "Manufacturer A", "Manufacturer B", "Manufacturer C" });
 
         name = new ComboTextPanel(content, JDL.L(JDL_PREFIX + "name", "Router Name:"), new String[] { "Name A", "Name B", "Name C" });
 

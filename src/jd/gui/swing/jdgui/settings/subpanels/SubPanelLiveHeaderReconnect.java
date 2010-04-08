@@ -73,7 +73,7 @@ public class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionLi
             new FindRouterIP(ip);
         } else if (e.getSource() == this.btnRouterRecorder) {
             if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
-                UserIO.getInstance().requestMessageDialog(UserIO.ICON_WARNING, JDL.L("jd.gui.swing.jdgui.settings.panels.downloadandnetwork.Advanced.ipcheckdisable.warning.title", "Ip Check disabled!"), JDL.L("jd.gui.swing.jdgui.settings.panels.downloadandnetwork.Advanced.ipcheckdisable.warning.message", "You disabled the IPCheck. This will increase the reconnection times dramatically!\r\n\r\nSeveral further modules like Reconnect Recorder are disabled."));
+                UserIO.getInstance().requestMessageDialog(UserIO.ICON_WARNING, JDL.L("jd.gui.swing.jdgui.settings.panels.downloadandnetwork.advanced.ipcheckdisable.warning.title", "Ip Check disabled!"), JDL.L("jd.gui.swing.jdgui.settings.panels.downloadandnetwork.advanced.ipcheckdisable.warning.message", "You disabled the IPCheck. This will increase the reconnection times dramatically!\r\n\r\nSeveral further modules like Reconnect Recorder are disabled."));
             } else {
                 new Thread() {
                     @Override
@@ -140,25 +140,25 @@ public class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionLi
     public void initPanel() {
 
         this.setLayout(new MigLayout("ins 0 20 0 20, wrap 2", "[grow 20,fill][grow,fill]", "[]5[]5[]"));
-        btnSelectRouter = new JButton(JDL.L("gui.config.liveHeader.selectRouter", "Routerauswahl"));
+        btnSelectRouter = new JButton(JDL.L("gui.config.liveheader.selectrouter", "Select Router"));
         btnSelectRouter.addActionListener(this);
         add(btnSelectRouter, "gaptop 10");
         add(panel, "spany 3,gapbottom 20");
 
-        btnFindIP = new JButton(JDL.L("gui.config.liveHeader.btnFindIP", "Router IP ermitteln"));
+        btnFindIP = new JButton(JDL.L("gui.config.liveheader.btnfindip", "Fetch Router IP"));
         btnFindIP.addActionListener(this);
         add(btnFindIP);
         // JDUtilities.addToGridBag(panel, btnFindIP, 1, 0, 1, 1, 0, 1, insets,
         // GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-        btnAutoConfig = new JButton(JDL.L("gui.config.liveHeader.autoConfig", "Router automatisch setzten"));
+        btnAutoConfig = new JButton(JDL.L("gui.config.liveheader.autoconfig", "Config router automatically"));
         btnAutoConfig.addActionListener(this);
 
         // add(btnAutoConfig,"aligny top");
         // JDUtilities.addToGridBag(panel, btnAutoConfig, 2, 0,
         // GridBagConstraints.REMAINDER, 1, 0, 1, insets,
         // GridBagConstraints.NONE, GridBagConstraints.WEST);
-        btnRouterRecorder = new JButton(JDL.L("gui.config.liveHeader.recorder", "Create Reconnect Script"));
+        btnRouterRecorder = new JButton(JDL.L("gui.config.liveheader.recorder", "Create Reconnect Script"));
         btnRouterRecorder.addActionListener(this);
         add(btnRouterRecorder, "aligny top");
         panel.setLayout(new MigLayout("ins 10 10 10 0,wrap 2", "[fill,grow 10]10[fill,grow]"));
@@ -166,10 +166,10 @@ public class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionLi
         addGUIConfigEntry(user);
         pass = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, configuration, Configuration.PARAM_HTTPSEND_PASS, JDL.L("gui.config.httpliveheader.password", "Password")));
         addGUIConfigEntry(pass);
-        ip = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, configuration, Configuration.PARAM_HTTPSEND_IP, JDL.L("gui.config.httpliveheader.routerIP", "Router's ip")));
+        ip = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, configuration, Configuration.PARAM_HTTPSEND_IP, JDL.L("gui.config.httpliveheader.routerip", "Router's ip")));
         addGUIConfigEntry(ip);
 
-        add(new JScrollPane((script = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, configuration, Configuration.PARAM_HTTPSEND_REQUESTS, JDL.L("gui.config.httpliveheader.script", "Reconnect Script")))).getInput()[0]), "gaptop 10,spanx,gapright 20,pushy, growy");
+        add(new JScrollPane((script = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, configuration, Configuration.PARAM_HTTPSEND_REQUESTS, JDL.L("gui.config.httpliveheader.script", "Reconnection Script")))).getInput()[0]), "gaptop 10,spanx,gapright 20,pushy, growy");
 
         script.setData(configuration.getStringProperty(Configuration.PARAM_HTTPSEND_REQUESTS));
         // sp.setBorder(null);

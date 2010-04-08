@@ -137,7 +137,7 @@ public class LinkGrabberTableTransferHandler extends TransferHandler {
                 if (current instanceof LinkGrabberFilePackage) {
                     /* Links in Package */
                     String Name = ((LinkGrabberFilePackage) current).getName();
-                    popup.add(m = new JMenuItem(JDL.LF("gui.table.draganddrop.insertinpackagestart", "In Paket '%s' am Anfang einfügen", Name)));
+                    popup.add(m = new JMenuItem(JDL.LF("gui.table.draganddrop.insertinpackagestart", "Insert at the beginning of Package '%s'", Name)));
                     m.setIcon(JDTheme.II("gui.images.go_top", 16, 16));
                     m.addActionListener(new ActionListener() {
                         public void actionPerformed(ActionEvent e) {
@@ -145,7 +145,7 @@ public class LinkGrabberTableTransferHandler extends TransferHandler {
                         }
                     });
 
-                    popup.add(m = new JMenuItem(JDL.LF("gui.table.draganddrop.insertinpackageend", "In Paket '%s' am Ende einfügen", Name)));
+                    popup.add(m = new JMenuItem(JDL.LF("gui.table.draganddrop.insertinpackageend", "Insert at the end of Package '%s'", Name)));
                     m.setIcon(JDTheme.II("gui.images.go_bottom", 16, 16));
                     m.addActionListener(new ActionListener() {
                         public void actionPerformed(ActionEvent e) {
@@ -156,7 +156,7 @@ public class LinkGrabberTableTransferHandler extends TransferHandler {
                 } else if (current instanceof DownloadLink) {
                     /* Links in Links */
                     String name = ((DownloadLink) current).getName();
-                    popup.add(m = new JMenuItem(JDL.LF("gui.table.draganddrop.before", "Vor '%s' ablegen", name)));
+                    popup.add(m = new JMenuItem(JDL.LF("gui.table.draganddrop.before", "Drop before '%s'", name)));
                     m.setIcon(JDTheme.II("gui.images.go_top", 16, 16));
                     m.addActionListener(new ActionListener() {
                         public void actionPerformed(ActionEvent e) {
@@ -164,7 +164,7 @@ public class LinkGrabberTableTransferHandler extends TransferHandler {
                         }
                     });
 
-                    popup.add(m = new JMenuItem(JDL.LF("gui.table.draganddrop.after", "Nach '%s' ablegen", name)));
+                    popup.add(m = new JMenuItem(JDL.LF("gui.table.draganddrop.after", "Drop after '%s'", name)));
                     m.setIcon(JDTheme.II("gui.images.go_bottom", 16, 16));
                     m.addActionListener(new ActionListener() {
                         public void actionPerformed(ActionEvent e) {
@@ -182,7 +182,7 @@ public class LinkGrabberTableTransferHandler extends TransferHandler {
                 } else
                     return false;
 
-                popup.add(m = new JMenuItem(JDL.LF("gui.table.draganddrop.movepackagebefore", "Vor Paket '%s' einfügen", name)));
+                popup.add(m = new JMenuItem(JDL.LF("gui.table.draganddrop.movepackagebefore", "Insert before '%s'", name)));
                 m.setIcon(JDTheme.II("gui.images.go_top", 16, 16));
                 m.addActionListener(new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
@@ -191,7 +191,7 @@ public class LinkGrabberTableTransferHandler extends TransferHandler {
 
                 });
 
-                popup.add(m = new JMenuItem(JDL.LF("gui.table.draganddrop.movepackageend", "Nach Paket '%s' einfügen", name)));
+                popup.add(m = new JMenuItem(JDL.LF("gui.table.draganddrop.movepackageend", "Insert after '%s'", name)));
                 m.setIcon(JDTheme.II("gui.images.go_bottom", 16, 16));
                 m.addActionListener(new ActionListener() {
                     public void actionPerformed(ActionEvent e) {

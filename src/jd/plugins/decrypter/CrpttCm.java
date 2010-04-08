@@ -62,7 +62,7 @@ public class CrpttCm extends PluginForDecrypt {
         if (con.getContentType().indexOf("text/html") >= 0) {
             logger.info(br.loadConnection(con));
             if (br.containsHTML(PATTERN_PW)) {
-                String pass = getUserInput(JDL.L("plugins.hoster.general.passwordProtectedInput", "Die Links sind mit einem Passwort geschützt. Bitte geben Sie das Passwort ein:"), param.getDecrypterPassword(), param);
+                String pass = getUserInput(JDL.L("plugins.hoster.general.passwordprotectedinput", "The links are protected by a password. Please enter the password:"), param.getDecrypterPassword(), param);
                 String postData = "a=pw&pw=" + Encoding.urlEncode(pass);
                 br.postPage(parameter, postData);
                 if (br.containsHTML(PATTERN_PW)) {
@@ -142,7 +142,7 @@ public class CrpttCm extends PluginForDecrypt {
                 pass = param.getDecrypterPassword();
                 for (int retrycounter = 1; retrycounter <= 5; retrycounter++) {
                     if (pass == null) {
-                        pass = getUserInput(JDL.L("plugins.decrypt.cryptitcom.password", "Ordner ist Passwortgeschützt. Passwort angeben:"), param.getDecrypterPassword(), param);
+                        pass = getUserInput(JDL.L("plugins.decrypt.cryptitcom.password", "Folder is password protected. Enter password:"), param.getDecrypterPassword(), param);
                     }
                     String post = "a=pw&pw=" + Encoding.urlEncode(pass);
                     br.setFollowRedirects(true);
