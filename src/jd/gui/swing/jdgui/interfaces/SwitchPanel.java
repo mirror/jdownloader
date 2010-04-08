@@ -84,13 +84,22 @@ public abstract class SwitchPanel extends JPanel {
         if (currentlyVisible) return;
         this.currentlyVisible = true;
         onShow();
-        // System.err.println("Shown "+this);
         broadcaster.fireEvent(new SwitchPanelEvent(this, SwitchPanelEvent.ON_SHOW));
         distributeView(this);
     }
 
-    private void distributeView(JComponent switchPanel) {
+    /**
+     * invokes the view chain of this panel. all nestes views get informed, too
+     */
+    public void setHidden() {
+        if (!currentlyVisible) return;
+        this.currentlyVisible = false;
+        onHide();
+        broadcaster.fireEvent(new SwitchPanelEvent(this, SwitchPanelEvent.ON_HIDE));
+        distributeHide(this);
+    }
 
+    protected void distributeView(JComponent switchPanel) {
         for (Component comp : switchPanel.getComponents()) {
             if (!(comp instanceof JComponent)) continue;
             if (comp == switchPanel) continue;
@@ -102,7 +111,7 @@ public abstract class SwitchPanel extends JPanel {
         }
     }
 
-    private void distributeHide(JComponent switchPanel) {
+    protected void distributeHide(JComponent switchPanel) {
         for (Component comp : switchPanel.getComponents()) {
             if (!(comp instanceof JComponent)) continue;
             if (comp == switchPanel) continue;
@@ -112,18 +121,6 @@ public abstract class SwitchPanel extends JPanel {
                 distributeHide((JComponent) comp);
             }
         }
-    }
-
-    /**
-     * invokes the view chain of this panel. all nestes views get informed, too
-     */
-    public void setHidden() {
-        if (!currentlyVisible) return;
-        this.currentlyVisible = false;
-        onHide();
-        // System.err.println("Hidden "+this);
-        broadcaster.fireEvent(new SwitchPanelEvent(this, SwitchPanelEvent.ON_HIDE));
-        distributeHide(this);
     }
 
     /**

@@ -28,6 +28,7 @@ import javax.swing.tree.TreePath;
 
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.GUIUtils;
+import jd.gui.swing.jdgui.SingletonPanel;
 import jd.gui.swing.jdgui.interfaces.SideBarPanel;
 import jd.gui.swing.jdgui.views.ConfigurationView;
 import jd.gui.swing.jdgui.views.sidebars.configuration.ConfigTreeModel.TreeEntry;
@@ -83,7 +84,7 @@ public class ConfigSidebar extends SideBarPanel {
         tree.setRowHeight(24);
         tree.setExpandsSelectedPaths(true);
         tree.setBackground(null);
-        //        
+
         // It seems that people do not dint configentries like
         // "Languageselection" because it is hidden in a expandable treentry.
         // No this entry gets selected if the tree expands. This should help
@@ -162,9 +163,9 @@ public class ConfigSidebar extends SideBarPanel {
     @Override
     protected void onHide() {
         /* getPanel is null in case the user selected a rootnode */
-        if (((TreeEntry) tree.getLastSelectedPathComponent()).getPanel() == null) return;
-        if (((TreeEntry) tree.getLastSelectedPathComponent()).getPanel().getPanel() == null) return;
-        GUIUtils.getConfig().setProperty(PROPERTY_LAST_PANEL, ((TreeEntry) tree.getLastSelectedPathComponent()).getPanel().getPanel().getClass().getName());
+        SingletonPanel panel = ((TreeEntry) tree.getLastSelectedPathComponent()).getPanel();
+        if (panel == null || panel.getPanel() == null) return;
+        GUIUtils.getConfig().setProperty(PROPERTY_LAST_PANEL, panel.getPanel().getClass().getName());
         GUIUtils.getConfig().save();
     }
 

@@ -98,7 +98,7 @@ public class ConfigTreeModel implements TreeModel {
     /**
      * Adds a listener for the TreeModelEvent posted after the tree changes.
      * 
-     * @see #removeTreeModelListener
+     * @see #removeTreeModelListener(TreeModelListener)
      * @param l
      *            the listener to add
      */
@@ -107,9 +107,10 @@ public class ConfigTreeModel implements TreeModel {
     }
 
     /**
-     * Removes a listener previously added with <B>addTreeModelListener()</B>.
+     * Removes a listener previously added with
+     * {@link #addTreeModelListener(TreeModelListener)}.
      * 
-     * @see #addTreeModelListener
+     * @see #addTreeModelListener(TreeModelListener)
      * @param l
      *            the listener to remove
      */
@@ -118,27 +119,22 @@ public class ConfigTreeModel implements TreeModel {
     }
 
     public Object getChild(Object parent, int index) {
-
         return ((TreeEntry) parent).get(index);
     }
 
     public int getChildCount(Object parent) {
-
         return ((TreeEntry) parent).size();
     }
 
     public int getIndexOfChild(Object parent, Object child) {
-
         return ((TreeEntry) parent).indexOf(child);
     }
 
     public Object getRoot() {
-
         return root;
     }
 
     public boolean isLeaf(Object node) {
-
         return ((TreeEntry) node).size() == 0;
     }
 
@@ -147,107 +143,86 @@ public class ConfigTreeModel implements TreeModel {
 
     static class TreeEntry {
 
+        private static final HashMap<Class<? extends SwitchPanel>, TreeEntry> PANELS = new HashMap<Class<? extends SwitchPanel>, TreeEntry>();
+
+        /**
+         * Returns the TreeEntry to a class if it has been added using the
+         * {@link TreeEntry#TreeEntry(Class, String)} constructor
+         * 
+         * @param clazz
+         * @return
+         */
+        public static TreeEntry getTreeByClass(Class<?> clazz) {
+            return PANELS.get(clazz);
+        }
+
         private Class<? extends SwitchPanel> clazz;
+        private SingletonPanel panel;
+
         private String title;
         private ImageIcon icon;
-        private String iconKey;
+        private ImageIcon iconSmall;
+        private ArrayList<TreeEntry> entries;
+
+        public TreeEntry(String l) {
+            this((Class<? extends SwitchPanel>) null, l);
+        }
+
+        /**
+         * Adds a configpanel
+         * 
+         * @param panel
+         * @param title
+         */
+        public TreeEntry(ConfigPanel panel, String title) {
+            this.panel = new SingletonPanel(panel);
+            this.title = title;
+            this.entries = new ArrayList<TreeEntry>();
+        }
+
+        public TreeEntry(final Class<? extends SwitchPanel> clazz, String title) {
+            this.clazz = clazz;
+
+            if (clazz != null) {
+                panel = new SingletonPanel(clazz, JDUtilities.getConfiguration());
+                // init this panel in an extra thread..
+                new GuiRunnable<Object>() {
+                    @Override
+                    public Object runSave() {
+                        panel.getPanel();
+                        return null;
+                    }
+                }.start();
+            }
+            this.title = title;
+            this.entries = new ArrayList<TreeEntry>();
+            PANELS.put(clazz, this);
+        }
 
         public Class<? extends SwitchPanel> getClazz() {
             return clazz;
         }
 
         public TreeEntry setIcon(String string) {
-            iconKey = string;
             icon = JDTheme.II(string, 20, 20);
+            iconSmall = JDTheme.II(string, 16, 16);
             return this;
-        }
-
-        public String getIconKey() {
-            return iconKey;
-        }
-
-        public void setIconKey(String iconKey) {
-            this.iconKey = iconKey;
-        }
-
-        public void setClazz(Class<? extends SwitchPanel> clazz) {
-            this.clazz = clazz;
         }
 
         public String getTitle() {
             return title;
         }
 
-        public void setTitle(String title) {
-            this.title = title;
-        }
-
         public ImageIcon getIcon() {
             return icon;
         }
 
-        public TreeEntry setIcon(ImageIcon icon) {
-            this.icon = icon;
-            return this;
-        }
-
-        public String getTooltip() {
-            return tooltip;
-        }
-
-        public void setTooltip(String tooltip) {
-            this.tooltip = tooltip;
-        }
-
-        private String tooltip;
-        private ArrayList<TreeEntry> entries;
-        private SingletonPanel panel;
-        private static final HashMap<Class<? extends SwitchPanel>, TreeEntry> PANELS = new HashMap<Class<? extends SwitchPanel>, TreeEntry>();
-
-        /**
-         * Returns the TreeEntry to a class if it has been added using the
-         * public static TreeEntry getTreeByClass(Class<? extends SwitchPanel>
-         * cl) constructor
-         * 
-         * @param cl
-         * @return
-         */
-        public static TreeEntry getTreeByClass(Class<?> cl) {
-            return PANELS.get(cl);
-        }
-
-        public TreeEntry(final Class<? extends SwitchPanel> class1, String l) {
-            this.clazz = class1;
-
-            if (class1 != null) {
-                panel = new SingletonPanel(class1, JDUtilities.getConfiguration());
-                // init this panel in an extra thread..
-                new Thread() {
-                    @Override
-                    public void run() {
-                        new GuiRunnable<Object>() {
-                            @Override
-                            public Object runSave() {
-                                panel.getPanel();
-                                return null;
-                            }
-
-                        }.start();
-
-                    }
-                }.start();
-            }
-            this.title = l;
-            this.entries = new ArrayList<TreeEntry>();
-            PANELS.put(class1, this);
+        public ImageIcon getIconSmall() {
+            return iconSmall;
         }
 
         public SingletonPanel getPanel() {
             return panel;
-        }
-
-        public void setPanel(SingletonPanel panel) {
-            this.panel = panel;
         }
 
         public ArrayList<TreeEntry> getEntries() {
@@ -263,7 +238,6 @@ public class ConfigTreeModel implements TreeModel {
         }
 
         public Object get(int index) {
-
             return entries.get(index);
         }
 
@@ -271,21 +245,6 @@ public class ConfigTreeModel implements TreeModel {
             entries.add(treeEntry);
         }
 
-        public TreeEntry(String l) {
-            this((Class<? extends SwitchPanel>) null, l);
-        }
-
-        /**
-         * Adds a configpanel
-         * 
-         * @param panel
-         * @param host
-         */
-        public TreeEntry(ConfigPanel panel, String host) {
-            this.panel = new SingletonPanel(panel);
-            this.title = host;
-            this.entries = new ArrayList<TreeEntry>();
-        }
     }
 
     private void fireTreeStructureChanged(TreePath path) {

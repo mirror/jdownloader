@@ -104,19 +104,20 @@ public class AddonConfig extends ConfigPanel {
     }
 
     /**
-     * Caches panels...
+     * Caches {@link AddonConfig} panels...
      * 
-     * @param container2
-     * @param name2
+     * @param container
+     * @param name
+     * @param ext
      * @return
      */
-    public synchronized static AddonConfig getInstance(ConfigContainer container2, String name2, String ext) {
+    public synchronized static AddonConfig getInstance(ConfigContainer container, String name, String ext) {
         if (MAP == null) MAP = new HashMap<String, AddonConfig>();
 
-        AddonConfig p = MAP.get(container2 + "_" + name2 + ext);
+        AddonConfig p = MAP.get(container + "_" + name + ext);
         if (p != null) return p;
 
-        MAP.put(container2 + "_" + name2 + ext, p = new AddonConfig(container2, name2));
+        MAP.put(container + "_" + name + ext, p = new AddonConfig(container, name));
         return p;
     }
 

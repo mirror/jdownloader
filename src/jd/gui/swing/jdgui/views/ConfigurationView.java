@@ -17,7 +17,10 @@
 package jd.gui.swing.jdgui.views;
 
 import javax.swing.Icon;
+import javax.swing.JComponent;
 
+import jd.gui.swing.jdgui.interfaces.SwitchPanel;
+import jd.gui.swing.jdgui.settings.ConfigPanel;
 import jd.gui.swing.jdgui.views.sidebars.configuration.ConfigSidebar;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
@@ -69,6 +72,18 @@ public class ConfigurationView extends ClosableView {
 
     @Override
     protected void onShow() {
+        SwitchPanel panel = this.getContent();
+        if (panel != null) panel.setShown();
+    }
+
+    /**
+     * Overwritten, because the ConfigurationView has its own mechanism for
+     * distributing the {@link SwitchPanel#setShown()} event. Otherwise
+     * <b>all</b> {@link ConfigPanel}s would be noticed when opening the
+     * {@link ConfigurationView}.
+     */
+    @Override
+    protected void distributeView(JComponent switchPanel) {
     }
 
 }
