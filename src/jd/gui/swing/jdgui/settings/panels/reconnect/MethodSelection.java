@@ -44,8 +44,6 @@ import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
 import jd.gui.swing.jdgui.settings.ConfigPanel;
 import jd.gui.swing.jdgui.settings.GUIConfigEntry;
-import jd.gui.swing.jdgui.settings.subpanels.SubPanelCLRReconnect;
-import jd.gui.swing.jdgui.settings.subpanels.SubPanelLiveHeaderReconnect;
 import jd.nrouter.IPCheck;
 import jd.nutils.Formatter;
 import jd.utils.JDTheme;
