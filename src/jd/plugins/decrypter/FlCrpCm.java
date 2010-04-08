@@ -20,10 +20,13 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
@@ -34,11 +37,31 @@ public class FlCrpCm extends PluginForDecrypt {
         super(wrapper);
     }
 
+    public static final Object LOCK = new Object();
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        br.getPage(parameter);
-        if (br.containsHTML("<title>404 Not Found</title>")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        // Every IP only has to type in a captcha ONCE so the decrypter modules
+        // shouldn't do this step simultan
+        synchronized (LOCK) {
+            br.getPage(parameter);
+            if (br.containsHTML("<title>404 Not Found</title>")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+            String captchaurl = br.getRegex("\"(/captcha\\.php\\?id=[a-z0-9]+)\"").getMatch(0);
+            if (captchaurl != null) {
+                for (int i = 0; i <= 3; i++) {
+                    captchaurl = br.getRegex("\"(/captcha\\.php\\?id=[a-z0-9]+)\"").getMatch(0);
+                    Form captchaForm = br.getForm(0);
+                    if (captchaForm == null || captchaurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    String code = getCaptchaCode("http://www.filecrop.com" + captchaurl, param);
+                    captchaForm.put("captcha", code);
+                    br.submitForm(captchaForm);
+                    if (br.containsHTML("(captcha.php?|red>Invalid access code)")) continue;
+                    break;
+                }
+                if (br.containsHTML("captcha.php?")) throw new DecrypterException(DecrypterException.CAPTCHA);
+            }
+        }
         String finallink = br.getRegex("color=red>Downloading(.*?)\\(file hosted").getMatch(0);
         if (finallink == null) {
             finallink = br.getRegex("<center><a rel=nofollow href=\"(.*?)\"").getMatch(0);

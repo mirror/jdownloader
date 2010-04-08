@@ -26,7 +26,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "adf.ly", "download.su", "wowebook.com", "link.songs.pk + songspk.info", "imageto.net", "clubteam.eu", "jforum.uni.cc", "linksole.com", "deurl.me" }, urls = { "http://[\\w\\.]*?adf\\.ly/[A-Za-z0-9]+", "http://[\\w\\.]*?download\\.su/go/\\?id=.*?=/files/\\d+/.+", "http://[\\w\\.]*?wowebook\\.com/(e-|non-e-)book/.*?/.*?\\.html", "http://[\\w\\.]*?(link\\.songs\\.pk/(popsong|song1|bhangra)\\.php\\?songid=|songspk\\.info/ghazals/download/ghazals\\.php\\?id=)[0-9]+", "http://[\\w\\.]*?imageto\\.net/(\\?v=|images/)[0-9a-z]+\\..{2,4}", "http://[\\w\\.]*?clubteam\\.eu/dl\\.php\\?id=\\d+\\&c=[a-zA-z0-9=]+", "http://[\\w\\.]*?jforum\\.uni\\.cc/protect/\\?r=[a-z0-9]+", "http://[\\w\\.]*?linksole\\.com/[0-9a-z]+", "http://[\\w\\.]*?deurl\\.me/[0-9A-Z]+" }, flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "adf.ly", "musicloud.fm", "wowebook.com", "link.songs.pk + songspk.info", "imageto.net", "clubteam.eu", "jforum.uni.cc", "linksole.com", "deurl.me", "megauploadforum.net/decryptor" }, urls = { "http://[\\w\\.]*?adf\\.ly/[A-Za-z0-9]+", "http://[\\w\\.]*?musicloud\\.fm/dl/[A-Za-z0-9]+", "http://[\\w\\.]*?wowebook\\.com/(e-|non-e-)book/.*?/.*?\\.html", "http://[\\w\\.]*?(link\\.songs\\.pk/(popsong|song1|bhangra)\\.php\\?songid=|songspk\\.info/ghazals/download/ghazals\\.php\\?id=)[0-9]+", "http://[\\w\\.]*?imageto\\.net/(\\?v=|images/)[0-9a-z]+\\..{2,4}", "http://[\\w\\.]*?clubteam\\.eu/dl\\.php\\?id=\\d+\\&c=[a-zA-z0-9=]+", "http://[\\w\\.]*?jforum\\.uni\\.cc/protect/\\?r=[a-z0-9]+", "http://[\\w\\.]*?linksole\\.com/[0-9a-z]+", "http://[\\w\\.]*?deurl\\.me/[0-9A-Z]+",
+        "http://[\\w\\.]*?megaupload\\.com/\\?d=///[a-zA-Z0-9]+=" }, flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
 public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginForDecrypt {
 
     public DecrypterForRedirectServicesWithoutDirectRedirects(PluginWrapper wrapper) {
@@ -38,13 +39,16 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
         String parameter = param.toString();
         br.setFollowRedirects(false);
         String finallink = null;
-        if (!parameter.contains("imageto.net/")) br.getPage(parameter);
+        if (!parameter.contains("imageto.net/") && !parameter.contains("musicloud.fm/dl") && !parameter.contains("megaupload.com/")) br.getPage(parameter);
         if (parameter.contains("adf.ly"))
             finallink = br.getRegex("var target_url = '(http.*?)'").getMatch(0);
-        else if (parameter.contains("download.su")) {
-            String rspart = new Regex(parameter + "\"", "(/files.*?)\"").getMatch(0);
-            finallink = "http://rapidshare.com" + rspart;
-        } else if (parameter.contains("link.songs.pk/") || parameter.contains("songspk.info/ghazals/download/ghazals.php?id=")) {
+        else if (parameter.contains("link.songs.pk/") || parameter.contains("songspk.info/ghazals/download/ghazals.php?id=")) {
+            finallink = br.getRedirectLocation();
+            if (finallink != null) finallink = "directhttp://" + finallink;
+        } else if (parameter.contains("musicloud.fm/")) {
+            String theId = new Regex(parameter, "musicloud\\.fm/dl/(.+)").getMatch(0);
+            if (theId == null) return null;
+            br.getPage("http://musicloud.fm/dl.php?id=" + theId);
             finallink = br.getRedirectLocation();
             if (finallink != null) finallink = "directhttp://" + finallink;
         } else if (parameter.contains("imageto")) {
@@ -69,6 +73,10 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
         } else if (parameter.contains("deurl.me/")) {
             finallink = br.getRegex("<i><small>(http://.*?)</small></i>").getMatch(0);
             if (finallink == null) finallink = br.getRegex("- <a href=\"(http://.*?)\">Click here to visit this").getMatch(0);
+        } else if (parameter.contains("megaupload.com/")) {
+            br.getPage("http://www.megauploadforum.net/decryptor.php/" + parameter);
+            finallink = br.getRegex("window\\.location = '(h.*?)</script>").getMatch(0);
+            if (finallink != null) finallink = finallink.replaceAll("(\\+|')", "");
         }
         if (finallink == null) {
             logger.info("DecrypterForRedirectServicesWithoutDirectRedirects says \"Out of date\" for link: " + parameter);
