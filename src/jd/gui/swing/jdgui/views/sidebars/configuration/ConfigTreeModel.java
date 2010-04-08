@@ -30,7 +30,6 @@ import jd.OptionalPluginWrapper;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.SingletonPanel;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
-import jd.gui.swing.jdgui.settings.ConfigPanel;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
@@ -46,53 +45,51 @@ public class ConfigTreeModel implements TreeModel {
     private TreeEntry plugins;
 
     public ConfigTreeModel() {
-        this.root = new TreeEntry(JDL.L(JDL_PREFIX + "CONFIGURATION.title", "Settings"));
+        root = new TreeEntry("_ROOT_", null);
 
-        TreeEntry basics, modules, hoster, dl;
+        TreeEntry teTop, teLeaf;
+        root.add(teTop = new TreeEntry(JDL.L(JDL_PREFIX + "basics.title", "Basics"), "gui.images.config.home"));
 
-        root.add(basics = new TreeEntry(JDL.L(JDL_PREFIX + "basics.title", "Basics")).setIcon("gui.images.config.home"));
+        teTop.add(new TreeEntry(jd.gui.swing.jdgui.settings.panels.ConfigPanelGeneral.class, jd.gui.swing.jdgui.settings.panels.ConfigPanelGeneral.getTitle(), "gui.images.config.home"));
 
-        basics.add(new TreeEntry(jd.gui.swing.jdgui.settings.panels.ConfigPanelGeneral.class, jd.gui.swing.jdgui.settings.panels.ConfigPanelGeneral.getTitle()).setIcon("gui.images.config.home"));
+        teTop.add(teLeaf = new TreeEntry(jd.gui.swing.jdgui.settings.panels.downloadandnetwork.General.class, jd.gui.swing.jdgui.settings.panels.downloadandnetwork.General.getTitle(), "gui.images.config.network_local"));
+        teLeaf.add(new TreeEntry(jd.gui.swing.jdgui.settings.panels.downloadandnetwork.InternetAndNetwork.class, jd.gui.swing.jdgui.settings.panels.downloadandnetwork.InternetAndNetwork.getTitle(), "gui.images.networkerror"));
+        teLeaf.add(new TreeEntry(jd.gui.swing.jdgui.settings.panels.downloadandnetwork.Advanced.class, jd.gui.swing.jdgui.settings.panels.downloadandnetwork.Advanced.getTitle(), "gui.images.network"));
 
-        basics.add(dl = new TreeEntry(jd.gui.swing.jdgui.settings.panels.downloadandnetwork.General.class, jd.gui.swing.jdgui.settings.panels.downloadandnetwork.General.getTitle()).setIcon("gui.images.config.network_local"));
-        dl.add(new TreeEntry(jd.gui.swing.jdgui.settings.panels.downloadandnetwork.InternetAndNetwork.class, jd.gui.swing.jdgui.settings.panels.downloadandnetwork.InternetAndNetwork.getTitle()).setIcon("gui.images.networkerror"));
-        dl.add(new TreeEntry(jd.gui.swing.jdgui.settings.panels.downloadandnetwork.Advanced.class, jd.gui.swing.jdgui.settings.panels.downloadandnetwork.Advanced.getTitle()).setIcon("gui.images.network"));
+        teTop.add(teLeaf = new TreeEntry(jd.gui.swing.jdgui.settings.panels.gui.General.class, jd.gui.swing.jdgui.settings.panels.gui.General.getTitle(), "gui.images.config.gui"));
+        teLeaf.add(new TreeEntry(jd.gui.swing.jdgui.settings.panels.gui.ToolbarController.class, jd.gui.swing.jdgui.settings.panels.gui.ToolbarController.getTitle(), "gui.images.toolbar"));
+        teLeaf.add(new TreeEntry(jd.gui.swing.jdgui.settings.panels.gui.Linkgrabber.class, jd.gui.swing.jdgui.settings.panels.gui.Linkgrabber.getTitle(), "gui.images.taskpanes.linkgrabber"));
+        teLeaf.add(new TreeEntry(jd.gui.swing.jdgui.settings.panels.gui.Browser.class, jd.gui.swing.jdgui.settings.panels.gui.Browser.getTitle(), "gui.images.config.host"));
+        teLeaf.add(new TreeEntry(jd.gui.swing.jdgui.settings.panels.gui.Advanced.class, jd.gui.swing.jdgui.settings.panels.gui.Advanced.getTitle(), "gui.images.container"));
 
-        basics.add(dl = new TreeEntry(jd.gui.swing.jdgui.settings.panels.gui.General.class, jd.gui.swing.jdgui.settings.panels.gui.General.getTitle()).setIcon("gui.images.config.gui"));
-        dl.add(new TreeEntry(jd.gui.swing.jdgui.settings.panels.gui.ToolbarController.class, jd.gui.swing.jdgui.settings.panels.gui.ToolbarController.getTitle()).setIcon("gui.images.toolbar"));
-        dl.add(new TreeEntry(jd.gui.swing.jdgui.settings.panels.gui.Linkgrabber.class, jd.gui.swing.jdgui.settings.panels.gui.Linkgrabber.getTitle()).setIcon("gui.images.taskpanes.linkgrabber"));
-        dl.add(new TreeEntry(jd.gui.swing.jdgui.settings.panels.gui.Browser.class, jd.gui.swing.jdgui.settings.panels.gui.Browser.getTitle()).setIcon("gui.images.config.host"));
-        dl.add(new TreeEntry(jd.gui.swing.jdgui.settings.panels.gui.Advanced.class, jd.gui.swing.jdgui.settings.panels.gui.Advanced.getTitle()).setIcon("gui.images.container"));
+        root.add(teTop = new TreeEntry(JDL.L(JDL_PREFIX + "modules.title", "Modules"), "gui.images.config.home"));
 
-        root.add(modules = new TreeEntry(JDL.L(JDL_PREFIX + "modules.title", "Modules")).setIcon("gui.images.config.home"));
+        teTop.add(new TreeEntry(jd.gui.swing.jdgui.settings.panels.ConfigPanelCaptcha.class, jd.gui.swing.jdgui.settings.panels.ConfigPanelCaptcha.getTitle(), "gui.images.config.ocr"));
 
-        modules.add(dl = new TreeEntry(jd.gui.swing.jdgui.settings.panels.ConfigPanelCaptcha.class, jd.gui.swing.jdgui.settings.panels.ConfigPanelCaptcha.getTitle()).setIcon("gui.images.config.ocr"));
+        teTop.add(teLeaf = new TreeEntry(jd.gui.swing.jdgui.settings.panels.reconnect.MethodSelection.class, jd.gui.swing.jdgui.settings.panels.reconnect.MethodSelection.getTitle(), "gui.images.config.reconnect"));
+        teLeaf.add(new TreeEntry(jd.gui.swing.jdgui.settings.panels.reconnect.Advanced.class, jd.gui.swing.jdgui.settings.panels.reconnect.Advanced.getTitle(), "gui.images.reconnect_settings"));
 
-        modules.add(dl = new TreeEntry(jd.gui.swing.jdgui.settings.panels.reconnect.MethodSelection.class, jd.gui.swing.jdgui.settings.panels.reconnect.MethodSelection.getTitle()).setIcon("gui.images.config.reconnect"));
-        dl.add(new TreeEntry(jd.gui.swing.jdgui.settings.panels.reconnect.Advanced.class, jd.gui.swing.jdgui.settings.panels.reconnect.Advanced.getTitle()).setIcon("gui.images.reconnect_settings"));
+        teTop.add(teLeaf = new TreeEntry(JDL.L(JDL_PREFIX + "passwordsAndLogins", "Passwords & Logins"), "gui.images.list"));
+        teLeaf.add(new TreeEntry(jd.gui.swing.jdgui.settings.panels.passwords.PasswordList.class, jd.gui.swing.jdgui.settings.panels.passwords.PasswordList.getTitle(), "gui.images.addons.unrar"));
+        teLeaf.add(new TreeEntry(jd.gui.swing.jdgui.settings.panels.passwords.PasswordListHTAccess.class, jd.gui.swing.jdgui.settings.panels.passwords.PasswordListHTAccess.getTitle(), "gui.images.htaccess"));
 
-        modules.add(dl = new TreeEntry(JDL.L(JDL_PREFIX + "passwordsANdLogins", "Passwords & Logins")).setIcon("gui.images.list"));
-        dl.add(new TreeEntry(jd.gui.swing.jdgui.settings.panels.passwords.PasswordList.class, jd.gui.swing.jdgui.settings.panels.passwords.PasswordList.getTitle()).setIcon("gui.images.addons.unrar"));
-        dl.add(new TreeEntry(jd.gui.swing.jdgui.settings.panels.passwords.PasswordListHTAccess.class, jd.gui.swing.jdgui.settings.panels.passwords.PasswordListHTAccess.getTitle()).setIcon("gui.images.htaccess"));
+        root.add(plugins = new TreeEntry(JDL.L(JDL_PREFIX + "plugins.title", "Plugins & Add-ons"), "gui.images.config.packagemanager"));
 
-        root.add(plugins = new TreeEntry(JDL.L(JDL_PREFIX + "plugins.title", "Plugins & Add-ons")).setIcon("gui.images.config.packagemanager"));
+        plugins.add(teLeaf = new TreeEntry(jd.gui.swing.jdgui.settings.panels.hoster.ConfigPanelPluginForHost.class, jd.gui.swing.jdgui.settings.panels.hoster.ConfigPanelPluginForHost.getTitle(), "gui.images.config.host"));
 
-        plugins.add(hoster = new TreeEntry(jd.gui.swing.jdgui.settings.panels.hoster.ConfigPanelPluginForHost.class, jd.gui.swing.jdgui.settings.panels.hoster.ConfigPanelPluginForHost.getTitle()).setIcon("gui.images.config.host"));
+        teLeaf.add(new TreeEntry(jd.gui.swing.jdgui.settings.panels.premium.Premium.class, jd.gui.swing.jdgui.settings.panels.premium.Premium.getTitle(), "gui.images.premium"));
 
-        hoster.add(new TreeEntry(jd.gui.swing.jdgui.settings.panels.premium.Premium.class, jd.gui.swing.jdgui.settings.panels.premium.Premium.getTitle()).setIcon("gui.images.premium"));
-
-        plugins.add(addons = new TreeEntry(jd.gui.swing.jdgui.settings.panels.addons.ConfigPanelAddons.class, jd.gui.swing.jdgui.settings.panels.addons.ConfigPanelAddons.getTitle()).setIcon("gui.images.config.packagemanager"));
+        plugins.add(addons = new TreeEntry(jd.gui.swing.jdgui.settings.panels.addons.ConfigPanelAddons.class, jd.gui.swing.jdgui.settings.panels.addons.ConfigPanelAddons.getTitle(), "gui.images.config.packagemanager"));
 
         initExtensions(addons);
     }
 
-    private void initExtensions(TreeEntry addons2) {
+    private void initExtensions(TreeEntry addons) {
         for (final OptionalPluginWrapper plg : OptionalPluginWrapper.getOptionalWrapper()) {
-            if (!plg.isLoaded() || !plg.isEnabled() || plg.getPlugin().getConfig().getEntries().size() == 0) continue;
+            if (!plg.isLoaded() || !plg.isEnabled() || !plg.hasConfig()) continue;
 
-            addons2.add(new TreeEntry(AddonConfig.getInstance(plg.getPlugin().getConfig(), plg.getHost(), ""), plg.getHost()).setIcon(plg.getPlugin().getIconKey()));
+            addons.add(new TreeEntry(AddonConfig.getInstance(plg.getPlugin().getConfig(), plg.getHost(), ""), plg.getHost(), plg.getPlugin().getIconKey()));
         }
-
     }
 
     /**
@@ -160,12 +157,17 @@ public class ConfigTreeModel implements TreeModel {
         private SingletonPanel panel;
 
         private String title;
-        private ImageIcon icon;
         private ImageIcon iconSmall;
+        private ImageIcon icon;
         private ArrayList<TreeEntry> entries;
 
-        public TreeEntry(String l) {
-            this((Class<? extends SwitchPanel>) null, l);
+        public TreeEntry(String title, String iconKey) {
+            this.title = title;
+            if (iconKey != null) {
+                this.iconSmall = JDTheme.II(iconKey, 16, 16);
+                this.icon = JDTheme.II(iconKey, 20, 20);
+            }
+            this.entries = new ArrayList<TreeEntry>();
         }
 
         /**
@@ -173,16 +175,18 @@ public class ConfigTreeModel implements TreeModel {
          * 
          * @param panel
          * @param title
+         * @param iconKey
          */
-        public TreeEntry(ConfigPanel panel, String title) {
+        public TreeEntry(SwitchPanel panel, String title, String iconKey) {
+            this(title, iconKey);
+
             this.panel = new SingletonPanel(panel);
-            this.title = title;
-            this.entries = new ArrayList<TreeEntry>();
         }
 
-        public TreeEntry(final Class<? extends SwitchPanel> clazz, String title) {
-            this.clazz = clazz;
+        public TreeEntry(final Class<? extends SwitchPanel> clazz, String title, String iconKey) {
+            this(title, iconKey);
 
+            this.clazz = clazz;
             if (clazz != null) {
                 panel = new SingletonPanel(clazz, JDUtilities.getConfiguration());
                 // init this panel in an extra thread..
@@ -194,19 +198,12 @@ public class ConfigTreeModel implements TreeModel {
                     }
                 }.start();
             }
-            this.title = title;
-            this.entries = new ArrayList<TreeEntry>();
+
             PANELS.put(clazz, this);
         }
 
         public Class<? extends SwitchPanel> getClazz() {
             return clazz;
-        }
-
-        public TreeEntry setIcon(String string) {
-            icon = JDTheme.II(string, 20, 20);
-            iconSmall = JDTheme.II(string, 16, 16);
-            return this;
         }
 
         public String getTitle() {

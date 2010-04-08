@@ -41,7 +41,6 @@ public class OptionalPluginWrapper extends PluginWrapper {
     private OptionalPlugin annotation;
 
     public OptionalPluginWrapper(Class<?> c, OptionalPlugin help) {
-
         super(c.getName(), null, c.getName(), null, 0);
         this.id = help.id();
         revision = Formatter.getRevision(help.rev());
@@ -88,7 +87,6 @@ public class OptionalPluginWrapper extends PluginWrapper {
      */
     @Override
     public String getVersion() {
-        // TODO
         return revision;
     }
 
@@ -151,7 +149,9 @@ public class OptionalPluginWrapper extends PluginWrapper {
         return getHost().toLowerCase().compareTo(plg.getHost().toLowerCase());
     }
 
+    @Override
     public boolean isEnabled() {
         return JDUtilities.getConfiguration().getBooleanProperty(getConfigParamKey(), annotation.defaultEnabled());
     }
+
 }

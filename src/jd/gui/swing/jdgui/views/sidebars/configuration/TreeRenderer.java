@@ -49,12 +49,12 @@ public class TreeRenderer extends DefaultTreeCellRenderer {
         te = (TreeEntry) value;
 
         label.setText(te.getTitle());
-        if (!sel && te.getIcon() != null) {
-            label.setFont(orgFont);
-            label.setIcon(te.getIconSmall());
-        } else {
+        if (sel) {
             label.setFont(boldFont);
             label.setIcon(te.getIcon());
+        } else {
+            label.setFont(orgFont);
+            label.setIcon(te.getIconSmall());
         }
         label.setPreferredSize(new Dimension(200, 20));
         return label;
