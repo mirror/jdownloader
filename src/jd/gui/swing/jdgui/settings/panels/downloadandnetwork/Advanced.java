@@ -62,7 +62,7 @@ public class Advanced extends ConfigPanel {
 
         ConfigContainer extended = new ConfigContainer();
 
-        extended.setGroup(new ConfigGroup(JDL.L("gui.config.download.ipcheck", "Reconnect IP-Check"), JDTheme.II("gui.images.network", 32, 32)));
+        extended.setGroup(new ConfigGroup(JDL.L("gui.config.download.ipcheck", "Reconnection IP-Check"), JDTheme.II("gui.images.network", 32, 32)));
 
         extended.addEntry(conditionEntry2 = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, Configuration.PARAM_GLOBAL_IP_DISABLE, JDL.L("gui.config.download.ipcheck.disable", "Disable IP-Check")) {
             private static final long serialVersionUID = 1L;
@@ -79,7 +79,7 @@ public class Advanced extends ConfigPanel {
                 // database stored one
                 if (newValue == Boolean.TRUE && !warned) {
                     warned = true;
-                    UserIO.getInstance().requestMessageDialog(UserIO.ICON_WARNING, JDL.L("jd.gui.swing.jdgui.settings.panels.downloadandnetwork.Advanced.ipcheckdisable.warning.title", "Ip Check disabled!"), JDL.L("jd.gui.swing.jdgui.settings.panels.downloadandnetwork.Advanced.ipcheckdisable.warning.message", "You disabled the IPCheck. This will increase the reconnection times dramatically!\r\n\r\nSeveral further modules like Reconnect Recorder are disabled."));
+                    UserIO.getInstance().requestMessageDialog(UserIO.ICON_WARNING, JDL.L("jd.gui.swing.jdgui.settings.panels.downloadandnetwork.advanced.ipcheckdisable.warning.title", "IP-Check disabled!"), JDL.L("jd.gui.swing.jdgui.settings.panels.downloadandnetwork.advanced.ipcheckdisable.warning.message", "You disabled the IP-Check. This will increase the reconnection times dramatically!\r\n\r\nSeveral further modules like Reconnect Recorder are disabled."));
                 } else if (newValue == Boolean.FALSE) {
                     warned = false;
                 }
@@ -90,15 +90,15 @@ public class Advanced extends ConfigPanel {
         extended.addEntry(conditionEntry2 = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, Configuration.PARAM_GLOBAL_IP_BALANCE, JDL.L("gui.config.download.ipcheck.balance", "Use balanced IP-Check")));
         conditionEntry2.setDefaultValue(true);
 
-        extended.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, Configuration.PARAM_GLOBAL_IP_CHECK_SITE, JDL.L("gui.config.download.ipcheck.website", "IP prüfen über (Website)")));
-        ce.setDefaultValue("Please enter Website for IPCheck here");
+        extended.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, Configuration.PARAM_GLOBAL_IP_CHECK_SITE, JDL.L("gui.config.download.ipcheck.website", "Check IP online")));
+        ce.setDefaultValue(JDL.L("gui.config.download.ipcheck.website.default", "Please enter Website for IPCheck here"));
         ce.setEnabledCondidtion(conditionEntry2, false);
 
-        extended.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, Configuration.PARAM_GLOBAL_IP_PATTERN, JDL.L("gui.config.download.ipcheck.regex", "RegEx zum filtern der IP")));
-        ce.setDefaultValue("Please enter Regex for IPCheck here");
+        extended.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, Configuration.PARAM_GLOBAL_IP_PATTERN, JDL.L("gui.config.download.ipcheck.regex", "IP Filter RegEx")));
+        ce.setDefaultValue(JDL.L("gui.config.download.ipcheck.regex.default", "Please enter Regex for IPCheck here"));
         ce.setEnabledCondidtion(conditionEntry2, false);
 
-        extended.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, Configuration.PARAM_GLOBAL_IP_MASK, JDL.L("gui.config.download.ipcheck.mask", "Erlaubte IPs")));
+        extended.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, Configuration.PARAM_GLOBAL_IP_MASK, JDL.L("gui.config.download.ipcheck.mask", "Allowed IPs")));
         ce.setDefaultValue("\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).)" + "{3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b");
         ce.setEnabledCondidtion(conditionEntry2, false);
 
@@ -108,7 +108,7 @@ public class Advanced extends ConfigPanel {
 
         extended.setGroup(new ConfigGroup(JDL.L("gui.config.download.write", "File writing"), JDTheme.II("gui.images.save", 32, 32)));
 
-        extended.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, Configuration.PARAM_DO_CRC, JDL.L("gui.config.download.crc", "SFV/CRC Check wenn möglich durchführen")));
+        extended.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, Configuration.PARAM_DO_CRC, JDL.L("gui.config.download.crc", "SFV/CRC check when possible")));
 
         ce.setDefaultValue(true);
 

@@ -75,7 +75,7 @@ public class AgbDialog extends AbstractDialog {
     private PluginForHost plugin;
 
     private AgbDialog(PluginForHost plugin) {
-        super(0, JDL.L("gui.dialogs.agb_tos.title", "Allgemeine Geschäftsbedingungen nicht akzeptiert"), UserIO.getInstance().getIcon(UserIO.ICON_QUESTION), null, null);
+        super(0, JDL.L("gui.dialogs.agb_tos.title", "Terms of Service are not accepted"), UserIO.getInstance().getIcon(UserIO.ICON_QUESTION), null, null);
         this.plugin = plugin;
         init();
     }
@@ -93,13 +93,13 @@ public class AgbDialog extends AbstractDialog {
     public JComponent contentInit() {
         JPanel panel = new JPanel(new MigLayout("wrap 1", "[center]"));
 
-        JLabel labelInfo = new JLabel(JDL.LF("gui.dialogs.agb_tos.description", "Die Allgemeinen Geschäftsbedingungen (AGB) von %s wurden nicht gelesen und akzeptiert.", plugin.getHost()));
+        JLabel labelInfo = new JLabel(JDL.LF("gui.dialogs.agb_tos.description", "The TOSs of %s have not been read and accepted.", plugin.getHost()));
 
-        linkAgb = new JLink(JDL.LF("gui.dialogs.agb_tos.readAgb", "%s AGB lesen", plugin.getHost()), plugin.getAGBLink());
+        linkAgb = new JLink(JDL.LF("gui.dialogs.agb_tos.readagb", "Read %s's TOSs", plugin.getHost()), plugin.getAGBLink());
         linkAgb.getBroadcaster().addListener(this);
         linkAgb.setFocusable(false);
 
-        checkAgbAccepted = new JCheckBox(JDL.L("gui.dialogs.agb_tos.agbAccepted", "Ich bin mit den Allgemeinen Geschäftsbedingungen einverstanden"));
+        checkAgbAccepted = new JCheckBox(JDL.L("gui.dialogs.agb_tos.agbaccepted", "I accept the terms of service"));
         checkAgbAccepted.addActionListener(this);
         checkAgbAccepted.setFocusable(false);
 

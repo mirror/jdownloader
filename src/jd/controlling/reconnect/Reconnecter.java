@@ -81,7 +81,8 @@ public final class Reconnecter {
         configuration.setProperty(Configuration.PARAM_ALLOW_RECONNECT, newState);
         configuration.save();
         if (!newState) {
-            UserIF.getInstance().displayMiniWarning(JDL.L("gui.warning.reconnect.hasbeendisabled", "Reconnect deaktiviert!"), JDL.L("gui.warning.reconnect.hasbeendisabled.tooltip", "Um erfolgreich einen Reconnect durchführen zu können muss diese Funktion wieder aktiviert werden."));
+            UserIF.getInstance().displayMiniWarning(JDL.L("gui.warning.reconnect.hasbeendisabled", "Reconnection is disabled!"),
+            JDL.L("gui.warning.reconnect.hasbeendisabled.tooltip", "To allow JDownloader to perform automated reconnections, you should enable this feature!"));
         }
     }
 

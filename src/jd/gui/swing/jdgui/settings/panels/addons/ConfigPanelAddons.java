@@ -64,10 +64,10 @@ public class ConfigPanelAddons extends ConfigPanel {
 
         @Override
         protected void initColumns() {
-            this.addColumn(new ActivateColumn(JDL.L("gui.column_status", "Aktivieren"), this));
+            this.addColumn(new ActivateColumn(JDL.L("gui.column_status", "Activate"), this));
             this.addColumn(new PluginColumn(JDL.L("gui.column_plugin", "Plugin"), this));
             this.addColumn(new VersionColumn(JDL.L("gui.column_version", "Version"), this));
-            this.addColumn(new AuthorColumn(JDL.L("gui.column_coder", "Ersteller"), this));
+            this.addColumn(new AuthorColumn(JDL.L("gui.column_coder", "Coder"), this));
             this.addColumn(new NeedsColumn(JDL.L("gui.column_needs", "Needs"), this));
         }
 

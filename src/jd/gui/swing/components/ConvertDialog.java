@@ -154,7 +154,7 @@ public class ConvertDialog extends AbstractDialog {
     private JComboBox cmbModes;
 
     private ConvertDialog(ArrayList<ConversionMode> modes, String name) {
-        super(UserIO.NO_COUNTDOWN, JDL.L("convert.dialog.chooseformat", "Wähle das Dateiformat:") + " [" + name + "]", UserIO.getInstance().getIcon(UserIO.ICON_QUESTION), null, null);
+        super(UserIO.NO_COUNTDOWN, JDL.L("convert.dialog.chooseformat", "Select a format:") + " [" + name + "]", UserIO.getInstance().getIcon(UserIO.ICON_QUESTION), null, null);
 
         this.modes = modes;
 
@@ -162,13 +162,13 @@ public class ConvertDialog extends AbstractDialog {
     }
 
     public JComponent contentInit() {
-        chkKeepFormat = new JCheckBox(ConvertDialog.hasKeeped() ? JDL.L("convert.dialog.staykeepingformat", "Formate weiterhin beibehalten") : JDL.L("convert.dialog.keepformat", "Format für diese Sitzung beibehalten"));
+        chkKeepFormat = new JCheckBox(ConvertDialog.hasKeeped() ? JDL.L("convert.dialog.staykeepingformat", "Try to get preferred format") : JDL.L("convert.dialog.keepformat", "Use this format for this session"));
         chkKeepFormat.setSelected(ConvertDialog.hasKeeped());
 
-        chkForceKeep = new JCheckBox(JDL.L("convert.dialog.forcekeep", "Beibehalten erzwingen"));
+        chkForceKeep = new JCheckBox(JDL.L("convert.dialog.forcekeep", "Keep force"));
         chkForceKeep.setSelected(ConvertDialog.forcekeep);
 
-        chkTopPriority = new JCheckBox(JDL.L("convert.dialog.toppriority", "Diese Auswahl vorherigen immer vorziehen"));
+        chkTopPriority = new JCheckBox(JDL.L("convert.dialog.toppriority", "This format has highest priority"));
 
         cmbModes = new JComboBox(modes.toArray(new ConversionMode[modes.size()]));
         cmbModes.setSelectedIndex(0);

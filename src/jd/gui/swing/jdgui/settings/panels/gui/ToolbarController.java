@@ -121,7 +121,7 @@ public class ToolbarController extends ConfigPanel {
     }
 
     public static String getTitle() {
-        return JDL.L(JDL_PREFIX + ".toolbarController.title", "Toolbar Manager");
+        return JDL.L(JDL_PREFIX + "toolbarController.title", "Toolbar Manager");
     }
 
     private JXTable table;
@@ -274,13 +274,13 @@ public class ToolbarController extends ConfigPanel {
         public String getColumnName(int column) {
             switch (column) {
             case 0:
-                return JDL.L(JDL_PREFIX + ".column.use", "Use");
+                return JDL.L(JDL_PREFIX + "column.use", "Use");
             case 1:
-                return JDL.L(JDL_PREFIX + ".column.name", "Name");
+                return JDL.L(JDL_PREFIX + "column.name", "Name");
             case 2:
-                return JDL.L(JDL_PREFIX + ".column.desc", "Description");
+                return JDL.L(JDL_PREFIX + "column.desc", "Description");
             case 3:
-                return JDL.L(JDL_PREFIX + ".column.hotkey", "Hotkey");
+                return JDL.L(JDL_PREFIX + "column.hotkey", "Hotkey");
             }
             return super.getColumnName(column);
         }
