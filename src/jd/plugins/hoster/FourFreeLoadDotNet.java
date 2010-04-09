@@ -49,6 +49,8 @@ public class FourFreeLoadDotNet extends PluginForHost {
         return "http://4freeload.net/rules.php";
     }
 
+    public boolean nopremium = false;
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -67,12 +69,15 @@ public class FourFreeLoadDotNet extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
         requestFileInformation(downloadLink);
+    }
+
+    public void doFree(DownloadLink downloadLink) throws Exception {
 
         /* CaptchaCode holen */
         String captchaCode = getCaptchaCode("http://4freeload.net/captcha.php", downloadLink);
         Form form = br.getFormbyProperty("name", "myform");
         if (form == null) form = br.getForm(1);
-        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (form == null || !br.containsHTML("captcha.php")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         form.setMethod(MethodType.POST);
         String passCode = null;
         if (form.containsHTML("name=downloadpw")) {
@@ -120,14 +125,18 @@ public class FourFreeLoadDotNet extends PluginForHost {
     public void handlePremium(DownloadLink parameter, Account account) throws Exception {
         requestFileInformation(parameter);
         login(account);
-        isPremium();
         br.getPage(parameter.getDownloadURL());
-        dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, br.getRedirectLocation(), false, 1);
-        dl.startDownload();
+        if (nopremium)
+            doFree(parameter);
+        else {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, br.getRedirectLocation(), false, 1);
+            dl.startDownload();
+        }
     }
 
     public void login(Account account) throws Exception {
         setBrowserExclusive();
+        br.setFollowRedirects(false);
         br.setCookie("http://www.4freeload.net", "yab_mylang", "de");
         br.getPage("http://4freeload.net/login.php");
         Form form = br.getFormbyProperty("name", "lOGIN");
@@ -136,7 +145,13 @@ public class FourFreeLoadDotNet extends PluginForHost {
         form.put("pass", Encoding.urlEncode(account.getPass()));
         form.put("autologin", "0");
         br.submitForm(form);
-
+        br.getPage("http://4freeload.net/members.php");
+        String accType = br.getRegex("'package_info'\\)\"><b>(.*?)</b>").getMatch(0);
+        if (accType == null) {
+            logger.warning("accType Regex failed!");
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
+        if (accType.equals("Registered")) nopremium = true;
         if (br.getCookie("http://www.4freeload.net", "yab_passhash") == null || br.getCookie("http://www.4freeload.net", "yab_uid").equals("0")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
@@ -149,28 +164,20 @@ public class FourFreeLoadDotNet extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        try {
-            isPremium();
-        } catch (PluginException e) {
-            ai.setStatus("Not a premium membership");
-            account.setValid(false);
-            return ai;
-        }
-
         String expired = br.getRegex("Paket abgelaufen\\?.+?left\">(.*?)<a").getMatch(0).trim();
         if (expired != null) {
             if (expired.equalsIgnoreCase("Nein"))
                 ai.setExpired(false);
             else if (expired.equalsIgnoreCase("Ja")) ai.setExpired(true);
         }
-
-        String expires = br.getRegex("Paket läuft ab am.+?left\">(.*?)</td>").getMatch(0).trim();
-        if (expires != null) {
-            String[] e = expires.split("/");
-            Calendar cal = new GregorianCalendar(Integer.parseInt("20" + e[2]), Integer.parseInt(e[0]) - 1, Integer.parseInt(e[1]));
-            ai.setValidUntil(cal.getTimeInMillis());
+        if (!nopremium) {
+            String expires = br.getRegex("Paket läuft ab am.+?left\">(.*?)</td>").getMatch(0).trim();
+            if (expires != null) {
+                String[] e = expires.split("/");
+                Calendar cal = new GregorianCalendar(Integer.parseInt("20" + e[2]), Integer.parseInt(e[0]) - 1, Integer.parseInt(e[1]));
+                ai.setValidUntil(cal.getTimeInMillis());
+            }
         }
-
         String create = br.getRegex("Registriert am.+?left\">(.*?)</td>").getMatch(0).trim();
         if (create != null) {
             String[] c = create.split("/");
@@ -190,18 +197,13 @@ public class FourFreeLoadDotNet extends PluginForHost {
             ai.setPremiumPoints(Integer.parseInt(points));
         }
 
-        ai.setStatus("Account OK");
+        if (nopremium)
+            ai.setStatus("Registered (free) User");
+        else
+            ai.setStatus("Premium User");
         account.setValid(true);
 
         return ai;
-    }
-
-    public boolean isPremium() throws PluginException, IOException {
-        br.getPage("http://4freeload.net/members.php");
-        if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("login.php")) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        } else if (br.containsHTML("Du bist eingeloggt")) return true;
-        return false;
     }
 
     @Override
