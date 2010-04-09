@@ -49,7 +49,7 @@ import jd.gui.UserIO;
 import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.jdgui.JDGuiConstants;
 import jd.gui.swing.jdgui.menu.MenuAction;
-import jd.gui.swing.jdgui.views.linkgrabberview.LinkGrabberPanel;
+import jd.gui.swing.jdgui.views.linkgrabber.LinkGrabberPanel;
 import jd.http.Browser;
 import jd.nrouter.IPCheck;
 import jd.nutils.Formatter;

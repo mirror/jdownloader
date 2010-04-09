@@ -32,7 +32,7 @@ import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.swing.components.JDTextArea;
 import jd.gui.swing.jdgui.menu.MenuAction;
-import jd.gui.swing.jdgui.settings.GUIConfigEntry;
+import jd.gui.swing.jdgui.views.settings.GUIConfigEntry;
 import jd.nutils.io.JDIO;
 import jd.plugins.DownloadLink;
 import jd.plugins.OptionalPlugin;

@@ -37,7 +37,7 @@ import jd.controlling.reconnect.Reconnecter;
 import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.dialog.ProgressDialog;
-import jd.gui.swing.jdgui.settings.GUIConfigEntry;
+import jd.gui.swing.jdgui.views.settings.GUIConfigEntry;
 import jd.gui.userio.DummyFrame;
 import jd.http.Browser;
 import jd.nutils.JDFlags;

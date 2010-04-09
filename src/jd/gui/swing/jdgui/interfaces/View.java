@@ -25,7 +25,7 @@ import javax.swing.ScrollPaneConstants;
 
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.views.toolbar.ViewToolbar;
+import jd.gui.swing.jdgui.views.ViewToolbar;
 import net.miginfocom.swing.MigLayout;
 
 /**

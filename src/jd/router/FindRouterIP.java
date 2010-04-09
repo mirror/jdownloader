@@ -20,7 +20,7 @@ import java.awt.Color;
 import java.net.InetAddress;
 
 import jd.controlling.ProgressController;
-import jd.gui.swing.jdgui.settings.GUIConfigEntry;
+import jd.gui.swing.jdgui.views.settings.GUIConfigEntry;
 import jd.nrouter.RouterUtils;
 import jd.utils.locale.JDL;
 

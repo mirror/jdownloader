@@ -35,7 +35,7 @@ import jd.gui.swing.components.table.JDRowHighlighter;
 import jd.gui.swing.jdgui.actions.ThreadedAction;
 import jd.gui.swing.jdgui.interfaces.DroppedPanel;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
-import jd.gui.swing.jdgui.views.toolbar.ViewToolbar;
+import jd.gui.swing.jdgui.views.ViewToolbar;
 import jd.nutils.JDFlags;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;

@@ -38,8 +38,8 @@ import jd.event.ControlIDListener;
 import jd.gui.UserIF;
 import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
-import jd.gui.swing.jdgui.views.downloadview.DownloadLinksPanel;
-import jd.gui.swing.jdgui.views.linkgrabberview.LinkGrabberPanel;
+import jd.gui.swing.jdgui.views.downloads.DownloadLinksPanel;
+import jd.gui.swing.jdgui.views.linkgrabber.LinkGrabberPanel;
 import jd.nutils.JDFlags;
 import jd.plugins.LinkGrabberFilePackage;
 import jd.utils.JDUtilities;
@@ -64,13 +64,15 @@ public class ActionController {
             TOOLBAR_ACTION_LIST.add(action);
         }
     }
+
     public static void unRegister(ToolBarAction action) {
         synchronized (TOOLBAR_ACTION_LIST) {
             if (!TOOLBAR_ACTION_LIST.contains(action)) return;
-        
+
             TOOLBAR_ACTION_LIST.remove(action);
         }
     }
+
     /**
      * Defines all possible actions
      */

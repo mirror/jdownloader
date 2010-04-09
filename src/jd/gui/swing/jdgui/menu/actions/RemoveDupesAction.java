@@ -23,7 +23,7 @@ import java.util.Vector;
 import jd.controlling.DownloadController;
 import jd.controlling.LinkGrabberController;
 import jd.gui.swing.jdgui.actions.ThreadedAction;
-import jd.gui.swing.jdgui.views.linkgrabberview.LinkGrabberPanel;
+import jd.gui.swing.jdgui.views.linkgrabber.LinkGrabberPanel;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkGrabberFilePackage;

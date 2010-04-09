@@ -44,7 +44,7 @@ import jd.captcha.easy.load.LoadCaptchas;
 import jd.config.SubConfiguration;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.events.EDTEventQueue;
-import jd.gui.swing.jdgui.settings.JDLabelListRenderer;
+import jd.gui.swing.jdgui.views.settings.JDLabelListRenderer;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.gui.userio.DummyFrame;
 import jd.nutils.Screen;

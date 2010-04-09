@@ -31,7 +31,7 @@ import jd.controlling.JDLogger;
 import jd.controlling.LinkGrabberController;
 import jd.controlling.PasswordListController;
 import jd.controlling.reconnect.Reconnecter;
-import jd.gui.swing.jdgui.views.linkgrabberview.LinkGrabberPanel;
+import jd.gui.swing.jdgui.views.linkgrabber.LinkGrabberPanel;
 import jd.nutils.Formatter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;

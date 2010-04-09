@@ -2,7 +2,7 @@ package jd.plugins.optional.langfileeditor;
 
 import jd.gui.swing.components.pieapi.ChartAPIEntity;
 import jd.gui.swing.components.pieapi.PieChartAPI;
-import jd.gui.swing.jdgui.views.info.InfoPanel;
+import jd.gui.swing.jdgui.views.InfoPanel;
 import jd.utils.locale.JDL;
 
 public class LFEInfoPanel extends InfoPanel {

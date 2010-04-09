@@ -4,7 +4,7 @@ import java.awt.event.ActionEvent;
 
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
-import jd.gui.swing.jdgui.views.ConfigurationView;
+import jd.gui.swing.jdgui.views.settings.ConfigurationView;
 
 public class SettingsAction extends ToolBarAction {
 

@@ -22,7 +22,7 @@ import javax.swing.JComboBox;
 
 import jd.gui.swing.components.table.JDTableColumn;
 import jd.gui.swing.components.table.JDTableModel;
-import jd.gui.swing.jdgui.views.downloadview.DownloadTable;
+import jd.gui.swing.jdgui.views.downloads.DownloadTable;
 import jd.plugins.optional.customizer.CustomizeSetting;
 
 import org.jdesktop.swingx.renderer.JRendererLabel;

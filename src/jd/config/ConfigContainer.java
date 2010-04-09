@@ -69,7 +69,8 @@ public class ConfigContainer implements Serializable {
      */
     public static final int TYPE_LABEL = 4;
     /**
-     * ConfigElement ist ein Radiobutton
+     * ConfigElement ist ein Radiobutton <br>
+     * <b>TODO:</b> Unused for now!
      * 
      * @see ConfigEntry#ConfigEntry(int, Property, String, Object[], String)
      */
@@ -110,7 +111,12 @@ public class ConfigContainer implements Serializable {
      * @see ConfigEntry#ConfigEntry(int, Property, String, String)
      */
     public static final int TYPE_PASSWORDFIELD = 11;
+
+    /**
+     * <b>TODO:</b> Unused for now!
+     */
     public static final int TYPE_LINK = 12;
+
     public static final int TYPE_CONTAINER = 13;
 
     /**
