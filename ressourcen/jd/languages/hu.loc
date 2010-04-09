@@ -1399,7 +1399,6 @@ plugins.optional.httpliveheaderscripter.gui.validate.error = Érvénytelen szkri
 plugins.optional.httpliveheaderscripter.gui.validate.error2 = Érvénytelen szkript
 plugins.optional.httpliveheaderscripter.gui.validate.ok = Érvényes szkript.
 plugins.optional.infofilewriter.content = Tartalom:
-plugins.optional.infofilewriter.contentdefault = %LAST_FINISHED_PACKAGE.COMMENT%\r\nJelszó: %LAST_FINISHED_PACKAGE.PASSWORD%\r\nAuto-jelszó: %LAST_FINISHED_PACKAGE.AUTO_PASSWORD%\r\n%LAST_FINISHED_PACKAGE.FILELIST%\r\nBefejezve %SYSTEM.DATE% időpont %SYSTEM.TIME% órakor
 plugins.optional.infofilewriter.filename = Fájlnév:
 plugins.optional.infofilewriter.insertkey = Kiválasztott kulcs beillesztése a tartalomba
 plugins.optional.infofilewriter.insertkey.short = Beillesztés
