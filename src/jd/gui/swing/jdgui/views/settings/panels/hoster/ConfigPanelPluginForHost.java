@@ -77,9 +77,9 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
             this.addColumn(new VersionColumn(JDL.L("gui.column_version", "Version"), this));
             this.addColumn(new PremiumColumn(JDL.L("gui.column_premium", "Premium"), this));
             this.addColumn(new SettingsColumn(JDL.L("gui.column_settings", "Settings"), this));
-            this.addColumn(new AcceptColumn(JDL.L("gui.column_agbChecked", "akzeptieren"), this));
+            this.addColumn(new AcceptColumn(JDL.L("gui.column_agbchecked", "Accepted"), this));
             this.addColumn(new TosColumn(JDL.L("gui.column_tos", "TOS"), this));
-            this.addColumn(new UseColumn(JDL.L("gui.column_usePlugin", "verwenden"), this));
+            this.addColumn(new UseColumn(JDL.L("gui.column_useplugin", "Use Plugin"), this));
         }
 
         @Override
@@ -129,7 +129,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
             }
         });
 
-        btnEdit = new JButton(JDL.L("gui.btn_settings", "Einstellungen"));
+        btnEdit = new JButton(JDL.L("gui.btn_settings", "Settings"));
         btnEdit.setEnabled(false);
         btnEdit.addActionListener(this);
 
