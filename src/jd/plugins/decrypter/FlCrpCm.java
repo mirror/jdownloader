@@ -59,7 +59,7 @@ public class FlCrpCm extends PluginForDecrypt {
                     if (br.containsHTML("(captcha.php?|red>Invalid access code)")) continue;
                     break;
                 }
-                if (br.containsHTML("captcha.php?")) throw new DecrypterException(DecrypterException.CAPTCHA);
+                if (br.containsHTML("(captcha.php?|red>Invalid access code)")) throw new DecrypterException(DecrypterException.CAPTCHA);
             }
         }
         String finallink = br.getRegex("color=red>Downloading(.*?)\\(file hosted").getMatch(0);
@@ -71,5 +71,4 @@ public class FlCrpCm extends PluginForDecrypt {
 
         return decryptedLinks;
     }
-
 }
