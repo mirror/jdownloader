@@ -69,9 +69,9 @@ public class MhfScriptBasic extends PluginForHost {
         if (filename == null) {
             filename = br.getRegex("\"Click this to report for(.*?)\"").getMatch(0);
             if (filename == null) {
-                filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
+                filename = br.getRegex("content=\"(.*?), The best file hosting service").getMatch(0);
                 if (filename == null) {
-                    filename = br.getRegex("content=\"(.*?), The best file hosting service").getMatch(0);
+                    filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
                 }
             }
         }

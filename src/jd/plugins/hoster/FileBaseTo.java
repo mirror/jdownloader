@@ -161,7 +161,7 @@ public class FileBaseTo extends PluginForHost {
         sleep(tt * 1001, downloadLink);
         br.postPage(br.getURL(), "uid=" + uidValue);
         Form forms = null;
-        String directLink = br.getRegex("<param value=\"(http://[0-9]+\\..*?/download/ticket.*?)\"").getMatch(0);
+        String directLink = br.getRegex("=\"(http://[0-9]+\\..*?/download/ticket.*?)\"").getMatch(0);
         if (directLink != null) {
             dl = BrowserAdapter.openDownload(br, downloadLink, directLink);
         } else {

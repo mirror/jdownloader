@@ -64,8 +64,9 @@ public class FlStbCm extends PluginForDecrypt {
                     }
                 }
             }
-            String pagePiece = br.getRegex(Pattern.compile("overflow: auto\">(.*?)</pre>", Pattern.DOTALL)).getMatch(0);
-            String temp[] = pagePiece.split("<br />");
+            String pagePiece = br.getRegex(Pattern.compile("id=\"copy_paste_links\" style=\".*?\">(.*?)</pre>", Pattern.DOTALL)).getMatch(0);
+            if (pagePiece == null) return null;
+            String temp[] = pagePiece.split("\r\n");
             if (temp == null) return null;
             if (temp == null || temp.length == 0) return null;
             for (String data : temp)
