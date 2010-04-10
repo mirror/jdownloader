@@ -47,11 +47,16 @@ public class YouPornCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.postPage(parameter.getDownloadURL(), "user_choice=Enter");
         String matches = br.getRegex("flashvars\\.file = encodeURIComponent\\('(http://.*?)'\\)").getMatch(0);
-        if (matches == null) matches = br.getRegex("'(http://download\\.youporn\\.com/download/\\d+/flv/.*?\\.flv\\?ll=1\\&xml=1)'").getMatch(0);
+        if (matches == null) {
+            matches = br.getRegex("'(http://download\\.youporn\\.com/download/\\d+/flv/.*?\\.flv\\?ll=1\\&xml=1)'").getMatch(0);
+            if (matches == null) dlLink = br.getRegex("\"(http://download\\.youporn\\.com/download/\\d+/\\?download=.*?)\"").getMatch(0);
+        }
         String filename = br.getRegex("<title>(.*?)- Free Porn Videos - YouPorn.com Lite \\(BETA\\)</title>").getMatch(0);
-        if (matches == null || filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        br.getPage(matches);
-        dlLink = br.getRegex("location>(http://.*?)<").getMatch(0);
+        if ((matches == null && dlLink == null) || filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (matches != null && dlLink == null) {
+            br.getPage(matches);
+            dlLink = br.getRegex("location>(http://.*?)<").getMatch(0);
+        }
         if (dlLink == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         dlLink = dlLink.trim().replace("amp;", "");
         parameter.setFinalFileName(Encoding.htmlDecode(filename).trim().replaceAll(" ", "-") + ".flv");

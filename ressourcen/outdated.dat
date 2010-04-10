@@ -225,3 +225,10 @@ jd/plugins/hoster/FileHostMecom.class
 jd/plugins/hoster/SuborySk.class
 jd/plugins/hoster/EzyFileNet.class
 jd/plugins/hoster/EditAndShareCom.class
+jd/plugins/hoster/FlyFileUs.class
+jd/plugins/hoster/ExtraShareUs.class
+jd/plugins/decrypter/ExtrashareUsFolder.class
+jd/plugins/hoster/FileGuRu.class
+jd/plugins/hoster/FreeFolderNet.class
+jd/plugins/hoster/InsertShareCom.class
+jd/plugins/hoster/IPAUploaderCom.class

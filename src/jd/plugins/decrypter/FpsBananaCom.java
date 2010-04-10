@@ -28,8 +28,8 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fpsbanana.com" }, urls = { "http://[\\w\\.]*?fpsbanana\\.com/((/download)?maps/(download/)?\\d+|maps/games/\\d+(\\?page=\\d+\\&mn=\\d+_body)?)" }, flags = { 0 })
-public class FpsBananaCom extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fpsbanana.com" }, urls = { "http://[\\w\\.]*?fpsbanana\\.com/((/download)?maps/(download/)?\\d+|maps/games/\\d+((\\?mn=\\d+_body\\&)?(\\?)?page=\\d+\\&mn=\\d+_body)?)" }, flags = { 0 })
+public class FpsBananaCom extends PluginForDecrypt { // http://www.fpsbanana.com/maps/games/2?mn=1_body&page=13&mn=1_body
 
     public FpsBananaCom(PluginWrapper wrapper) {
         super(wrapper);
