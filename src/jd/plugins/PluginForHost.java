@@ -673,7 +673,9 @@ public abstract class PluginForHost extends Plugin {
         return hosterIcon;
     }
 
-    /* this function mayb be overriden by plugin for e.g. customized Favicon */
+    /**
+     * this function may be overwritten by plugin for e.g. customized Favicon
+     */
     public ImageIcon getFavIcon() {
         return downloadFavIcon("http://" + getHost() + "/favicon.ico");
     }

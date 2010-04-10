@@ -60,5 +60,8 @@
 		</attributes>
 	</classpathentry>
 	<classpathentry combineaccessrules="false" kind="src" path="/AppWorkUtils"/>
+	<classpathentry kind="lib" path="ressourcen/libs/laf/syntheticaBlackEye.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/laf/syntheticaGreenDream.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/image4j.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

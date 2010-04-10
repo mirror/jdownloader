@@ -25,6 +25,7 @@ public class TreeEntry {
     }
 
     private Class<? extends SwitchPanel> clazz;
+    private SingletonPanel singleton;
     private SwitchPanel panel;
 
     private String title;
@@ -60,7 +61,7 @@ public class TreeEntry {
         PANELS.put(clazz, this);
 
         this.clazz = clazz;
-        this.panel = new SingletonPanel(clazz).getPanel();
+        this.singleton = new SingletonPanel(clazz);
     }
 
     public Class<? extends SwitchPanel> getClazz() {
@@ -80,6 +81,9 @@ public class TreeEntry {
     }
 
     public SwitchPanel getPanel() {
+        if (panel == null && singleton != null) {
+            panel = singleton.getPanel();
+        }
         return panel;
     }
 
