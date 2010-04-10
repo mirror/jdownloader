@@ -32,7 +32,7 @@ controller.status.connectionproblems = Verbinding verbroken
 controller.status.containererror = Container Foutmelding
 controller.status.fileexists.overwritefailed = Oveschrijven mislukt
 controller.status.fileexists.skip = Bestand reeds aanwezig
-controller.status.pluindefekt = Plugin defekt
+controller.status.pugindefective = Plugin defekt
 controller.status.tempunavailable = Tijdelijk niet beschikbaar
 convert.dialog.chooseformat = selecteer het dataformaat:
 convert.dialog.forcekeep = Van kracht blijven
@@ -255,7 +255,7 @@ gui.config.httpliveheader.script = Herconnectiescript
 gui.config.httpliveheader.user = Gebruiker
 gui.config.jac.column.author = Ontwikkelaar
 gui.config.jac.extern = Externe methode
-gui.config.jdrr.infolable = <span color="#4682B4">Controleer het IP-Adres van de Router en druk op Start
+gui.config.jdrr.infolabel = <span color="#4682B4">Controleer het IP-Adres van de Router en druk op Start
 gui.config.jdrr.popup.title = JDRRPopup
 gui.config.jdrr.reconnectfaild = Herconnecteren is mislukt
 gui.config.jdrr.savereconnect = De Herconnectie was geslaagd Wilt U nu opslaan?

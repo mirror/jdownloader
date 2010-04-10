@@ -85,7 +85,7 @@ public class General extends ConfigPanel {
         }
 
         if (LookAndFeelController.getSupportedLookAndFeels().length > 1) {
-            look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, LookAndFeelController.PARAM_PLAF, LookAndFeelController.getSupportedLookAndFeels(), JDL.L("gui.config.gui.plaf", "Style(benötigt JD-Neustart)")));
+            look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, LookAndFeelController.PARAM_PLAF, LookAndFeelController.getSupportedLookAndFeels(), JDL.L("gui.config.gui.plaf", "Style (Restart required)")));
             ce.setDefaultValue(LookAndFeelController.getPlaf());
             ce.setPropertyType(PropertyType.NEEDS_RESTART);
         }
@@ -93,7 +93,7 @@ public class General extends ConfigPanel {
         look.setGroup(new ConfigGroup(JDL.L("gui.config.gui.feel", "Feel"), JDTheme.II("gui.images.configuration", 32, 32)));
         look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, JDGuiConstants.PARAM_INPUTTIMEOUT, JDL.L("gui.config.gui.inputtimeout", "Timeout for InputWindows"), 0, 600));
         ce.setDefaultValue(20);
-        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDGuiConstants.PARAM_SHOW_SPLASH, JDL.L("gui.config.gui.showSplash", "Splashscreen beim starten zeigen")));
+        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDGuiConstants.PARAM_SHOW_SPLASH, JDL.L("gui.config.gui.showsplash", "Show splash screen on program startup")));
         ce.setDefaultValue(true);
         look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDGuiConstants.PARAM_SHOW_BALLOON, JDL.L("gui.config.gui.showBalloon", "Show Balloon infos")));
         ce.setDefaultValue(false);

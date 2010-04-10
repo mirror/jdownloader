@@ -28,7 +28,7 @@ controller.status.connectionproblems = Соединение потеряно
 controller.status.containererror = Ошибка контейнера
 controller.status.fileexists.overwritefailed = Не удалось перезаписать 
 controller.status.fileexists.skip = Файл уже существует
-controller.status.pluindefekt = Плагин просрочен
+controller.status.pugindefective = Плагин просрочен
 controller.status.tempunavailable = Временно недоступен
 convert.dialog.chooseformat = Выберите формат данных
 convert.dialog.forcekeep = Keep force
@@ -250,7 +250,7 @@ gui.config.httpliveheader.routerip = IP маршрутизатора
 gui.config.httpliveheader.script = Скрипт повторного соединения
 gui.config.httpliveheader.user = Имя пользователя
 gui.config.jac.column.author = Автор
-gui.config.jdrr.infolable = <span color="#4682B4"> Проверьте имя маршрутизатора и нажмите кнопку Запуск <br> В вашем браузере откроется окно с домашней страницей <br> Повторное соединение после нажатия будет остановлено и сохранено. <br> Более подробную информацию можно прочитать </span> <a href="http://jdownloader.org/knowledge/wiki/reconnect/reconnect-recorder"> здесь</a>
+gui.config.jdrr.infolabel = <span color="#4682B4"> Проверьте имя маршрутизатора и нажмите кнопку Запуск <br> В вашем браузере откроется окно с домашней страницей <br> Повторное соединение после нажатия будет остановлено и сохранено. <br> Более подробную информацию можно прочитать </span> <a href="http://jdownloader.org/knowledge/wiki/reconnect/reconnect-recorder"> здесь</a>
 gui.config.jdrr.popup.title = Всплывающие окна JDownloader
 gui.config.jdrr.reconnectfaild = Повторное подключение не удалось!
 gui.config.jdrr.savereconnect = Повторное подключение было успешно, сохранить?

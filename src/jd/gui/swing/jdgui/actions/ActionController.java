@@ -299,7 +299,7 @@ public class ActionController {
                 new GuiRunnable<Object>() {
                     @Override
                     public Object runSave() {
-                        if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(0, JDL.L("gui.reconnect.confirm", "Wollen Sie sicher eine neue Verbindung aufbauen?")), UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
+                        if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(0, JDL.L("gui.reconnect.confirm", "Do you want to reconnect your internet connection?")), UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
                             new Thread(new Runnable() {
                                 public void run() {
                                     Reconnecter.doManualReconnect();

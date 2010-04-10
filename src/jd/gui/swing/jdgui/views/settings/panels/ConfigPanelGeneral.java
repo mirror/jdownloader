@@ -68,7 +68,7 @@ public class ConfigPanelGeneral extends ConfigPanel {
 
         look.setGroup(new ConfigGroup(JDL.L("gui.config.general.update", "Update"), JDTheme.II("gui.splash.update", 32, 32)));
         look.addEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, SubConfiguration.getConfig("WEBUPDATE"), Configuration.PARAM_WEBUPDATE_DISABLE, JDL.L("gui.config.general.webupdate.disable2", "Do not inform me about important updates")).setDefaultValue(false));
-        look.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_WEBUPDATE_AUTO_RESTART, JDL.L("gui.config.general.webupdate.auto", "automatisch, ohne Nachfrage ausführen")).setDefaultValue(false).setEnabledCondidtion(conditionEntry, false));
+        look.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_WEBUPDATE_AUTO_RESTART, JDL.L("gui.config.general.webupdate.auto", "Webupdate: start automatically!")).setDefaultValue(false).setEnabledCondidtion(conditionEntry, false));
         look.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_WEBUPDATE_AUTO_SHOW_CHANGELOG, JDL.L("gui.config.general.changelog.auto", "Open Changelog after update")).setDefaultValue(true));
 
         look.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));

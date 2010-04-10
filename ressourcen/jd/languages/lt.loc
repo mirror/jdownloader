@@ -33,7 +33,7 @@ controller.status.connectionproblems = Connection lost
 controller.status.containererror = Container Error
 controller.status.fileexists.overwritefailed = Failed to overwrite
 controller.status.fileexists.skip = File already exists
-controller.status.pluindefekt = Plugin error (out of date)
+controller.status.pugindefective = Plugin error (out of date)
 controller.status.tempunavailable = Temporarily unavailable
 convert.dialog.chooseformat = Select a dateformat
 convert.dialog.forcekeep = Keep force
@@ -256,7 +256,7 @@ gui.config.jac.column.use = Use
 gui.config.jac.column.usedmethod = Used method
 gui.config.jac.extern = External Method
 gui.config.jdrr.close = Close
-gui.config.jdrr.infolable = <span color="#4682B4"> Check the IP address of the router and press the Start <br> Web browser window with the home page of the router opens <br> Reconnection after you hit to stop and save. <br> More information is available </span> <a href="http://jdownloader.org/knowledge/wiki/reconnect/reconnect-recorder"> here</a>
+gui.config.jdrr.infolabel = <span color="#4682B4"> Check the IP address of the router and press the Start <br> Web browser window with the home page of the router opens <br> Reconnection after you hit to stop and save. <br> More information is available </span> <a href="http://jdownloader.org/knowledge/wiki/reconnect/reconnect-recorder"> here</a>
 gui.config.jdrr.popup.title = JDRRPopup
 gui.config.jdrr.reconnectfaild = Reconnection failed
 gui.config.jdrr.savereconnect = Reconnection was successful. Save now?

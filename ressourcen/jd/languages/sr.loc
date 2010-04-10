@@ -27,7 +27,7 @@ controller.status.connectionproblems = Веза је прекинута.
 controller.status.containererror = Грешка у контејнеру
 controller.status.fileexists.overwritefailed = Уписивање није могуће
 controller.status.fileexists.skip = Датотека већ постоји.
-controller.status.pluindefekt = Прикључак је застарео
+controller.status.pugindefective = Прикључак је застарео
 controller.status.tempunavailable = Привремено није доступно
 convert.dialog.chooseformat = Изаберите формат датотеке:
 convert.dialog.forcekeep = Задржи
@@ -248,7 +248,7 @@ gui.config.httpliveheader.routerip = IP рутера
 gui.config.httpliveheader.script = Скрипта поновног успостављања везе
 gui.config.httpliveheader.user = Корисник
 gui.config.jac.column.author = Аутор
-gui.config.jdrr.infolable = <span color="#4682B4"> Проверите IP адресу рутера и притисните старт <br>Матична страница рутера се отвара у прегледачу <br> Поновно успостављање везе након притиска на заустави и сачувај. <br> Више информација можете добити </span> <a href="http://jdownloader.org/knowledge/wiki/reconnect/reconnect-recorder"> овде</a>
+gui.config.jdrr.infolabel = <span color="#4682B4"> Проверите IP адресу рутера и притисните старт <br>Матична страница рутера се отвара у прегледачу <br> Поновно успостављање везе након притиска на заустави и сачувај. <br> Више информација можете добити </span> <a href="http://jdownloader.org/knowledge/wiki/reconnect/reconnect-recorder"> овде</a>
 gui.config.jdrr.popup.title = JDRRPopup
 gui.config.jdrr.reconnectfaild = Поновно успостављање везе није успело
 gui.config.jdrr.savereconnect = Веза је поново успостављена. Сачувати сада?

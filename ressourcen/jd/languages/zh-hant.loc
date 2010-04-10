@@ -27,7 +27,7 @@ controller.status.connectionproblems = 斷線
 controller.status.containererror = 視窗開啟錯誤
 controller.status.fileexists.overwritefailed = 覆寫失敗
 controller.status.fileexists.skip = 檔案已存在
-controller.status.pluindefekt = 外掛錯誤 (已過期)
+controller.status.pugindefective = 外掛錯誤 (已過期)
 controller.status.tempunavailable = 暫時無法使用
 convert.dialog.chooseformat = 選擇時間格式
 convert.dialog.forcekeep = 保持
@@ -248,7 +248,7 @@ gui.config.httpliveheader.routerip = 路由器IP
 gui.config.httpliveheader.script = 重新連線語法
 gui.config.httpliveheader.user = 使用者
 gui.config.jac.column.author = 作者
-gui.config.jdrr.infolable = <span color="#4682B4">您可以按開啟瀏覽器視窗來確認路由器的IP位置<br>當路由器重新連接後，您可以擊點停止並儲存。< br>更多的詳細資訊您可以在</span><a href="http://jdownloader.org/knowledge/wiki/reconnect/reconnect-recorder">這裡</a>找到。
+gui.config.jdrr.infolabel = <span color="#4682B4">您可以按開啟瀏覽器視窗來確認路由器的IP位置<br>當路由器重新連接後，您可以擊點停止並儲存。< br>更多的詳細資訊您可以在</span><a href="http://jdownloader.org/knowledge/wiki/reconnect/reconnect-recorder">這裡</a>找到。
 gui.config.jdrr.popup.title = JDRR彈出視窗
 gui.config.jdrr.reconnectfaild = 重新連線失敗
 gui.config.jdrr.savereconnect = 成功重新連線. 現在儲存？

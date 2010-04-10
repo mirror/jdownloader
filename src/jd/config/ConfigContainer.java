@@ -143,7 +143,7 @@ public class ConfigContainer implements Serializable {
     private ImageIcon icon;
 
     public ConfigContainer() {
-        this(JDL.L("config.container.defaultname", "Allgemein"));
+        this(JDL.L("config.container.defaultname", "General"));
     }
 
     public ConfigContainer(String title) {

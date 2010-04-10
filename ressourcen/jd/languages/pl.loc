@@ -27,7 +27,7 @@ controller.status.connectionproblems = Połączenie utracone
 controller.status.containererror = Błąd pojemnika
 controller.status.fileexists.overwritefailed = Błąd przy nadpisywaniu.
 controller.status.fileexists.skip = Plik już istnieje
-controller.status.pluindefekt = Wtyczka przestarzała
+controller.status.pugindefective = Wtyczka przestarzała
 controller.status.tempunavailable = tymczasowo niedostepne
 convert.dialog.chooseformat = Wybierz format:
 convert.dialog.forcekeep = Wymuszaj
@@ -248,7 +248,7 @@ gui.config.httpliveheader.routerip = IP Routera
 gui.config.httpliveheader.script = Skrypt ponownego połączenia
 gui.config.httpliveheader.user = Użytkownik
 gui.config.jac.column.author = Autor
-gui.config.jdrr.infolable = <span color="#4682B4">Sprawdź adres IP routera, a następnie kliknij Start.<br>W przeglądarce otworzy się strona domowa konfiguracji routera<br>po naciśnięciu przycisku ponownego połączenia.<br>Więcej informacji </span><a href="http://jdownloader.org/knowledge/wiki/reconnect/reconnect-recorder">tutaj</a>.
+gui.config.jdrr.infolabel = <span color="#4682B4">Sprawdź adres IP routera, a następnie kliknij Start.<br>W przeglądarce otworzy się strona domowa konfiguracji routera<br>po naciśnięciu przycisku ponownego połączenia.<br>Więcej informacji </span><a href="http://jdownloader.org/knowledge/wiki/reconnect/reconnect-recorder">tutaj</a>.
 gui.config.jdrr.popup.title = Nagrywanie akcji ponownego naw. poł.
 gui.config.jdrr.reconnectfaild = Próba ponownego połączenia nieudana
 gui.config.jdrr.savereconnect = Ponowne nawiązanie połączenia powiodło się. Czy chcesz zapisać akcję?

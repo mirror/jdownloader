@@ -44,11 +44,11 @@ public class DownloadJTableModel extends JDTableModel {
         this.addColumn(new PartColumn(JDL.L("gui.treetable.part", "Part"), this));
         this.addColumn(new SizeColumn(JDL.L("gui.treetable.size", "FileSize"), this));
         this.addColumn(new LoadedColumn(JDL.L("gui.treetable.loaded", "Loaded"), this));
-        this.addColumn(new HosterColumn(JDL.L("gui.treetable.hoster", "Anbieter"), this));
+        this.addColumn(new HosterColumn(JDL.L("gui.treetable.hoster", "Host"), this));
         this.addColumn(new DateAddedColumn(JDL.L("gui.treetable.added", "Added date"), this));
         this.addColumn(new DateFinishedColumn(JDL.L("gui.treetable.finished", "Finished date"), this));
         this.addColumn(new StatusColumn(JDL.L("gui.treetable.status", "Status"), this));
-        this.addColumn(new ProgressColumn(JDL.L("gui.treetable.progress", "Fortschritt"), this));
+        this.addColumn(new ProgressColumn(JDL.L("gui.treetable.progress", "Progress"), this));
     }
 
     public void refreshModel() {

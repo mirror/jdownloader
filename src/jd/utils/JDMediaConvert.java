@@ -43,8 +43,8 @@ public class JDMediaConvert {
             return true;
         }
 
-        final ProgressController progress = new ProgressController(JDL.L("convert.progress.convertingto", "Konvertiere zu") + " " + OutType.toString(), 3, null);
-        downloadlink.getLinkStatus().setStatusText(JDL.L("convert.progress.convertingto", "Konvertiere zu") + " " + OutType.toString());
+        final ProgressController progress = new ProgressController(JDL.L("convert.progress.convertingto", "convert to") + " " + OutType.toString(), 3, null);
+        downloadlink.getLinkStatus().setStatusText(JDL.L("convert.progress.convertingto", "convert to") + " " + OutType.toString());
         progress.increase(1);
         switch (InType) {
         case VIDEOFLV:
@@ -78,13 +78,13 @@ public class JDMediaConvert {
                 return true;
             default:
                 LOG.warning("Don't know how to convert " + InType.getText() + " to " + OutType.getText());
-                downloadlink.getLinkStatus().setErrorMessage(JDL.L("convert.progress.unknownintype", "Unbekanntes Format"));
+                downloadlink.getLinkStatus().setErrorMessage(JDL.L("convert.progress.unknownintype", "Unknown format"));
                 progress.doFinalize();
                 return false;
             }
         default:
             LOG.warning("Don't know how to convert " + InType.getText() + " to " + OutType.getText());
-            downloadlink.getLinkStatus().setErrorMessage(JDL.L("convert.progress.unknownintype", "Unbekanntes Format"));
+            downloadlink.getLinkStatus().setErrorMessage(JDL.L("convert.progress.unknownintype", "Unknown format"));
             progress.doFinalize();
             return false;
         }

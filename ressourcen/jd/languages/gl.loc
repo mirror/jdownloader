@@ -32,7 +32,7 @@ controller.status.connectionproblems = Conexión perdida
 controller.status.containererror = Erro no contedor
 controller.status.fileexists.overwritefailed = Fallou ó sobrescribir
 controller.status.fileexists.skip = Xa existe o arquivo
-controller.status.pluindefekt = Complemento desactualizado
+controller.status.pugindefective = Complemento desactualizado
 controller.status.tempunavailable = Indispoñible temporalmente
 convert.dialog.chooseformat = Elixe un formato de datos
 convert.dialog.forcekeep = Manter forza
@@ -255,7 +255,7 @@ gui.config.httpliveheader.script = Script de reconexión
 gui.config.httpliveheader.user = Usuario
 gui.config.jac.column.author = Autor
 gui.config.jac.extern = Método externo [%s]
-gui.config.jdrr.infolable = <span color=\"#4682B4\"> Comproba a dirección IP do router e presiona Iniciar <br> A fiestra do navegador se abrirá coa páxina de inicio do router <br> Reconecta despois de que presiones deter e gardar. <br> Mais información dispoñible </span> <a href=\"http://jdownloader.org/knowledge/wiki/reconnect/reconnect-recorder\"> aquí</a>
+gui.config.jdrr.infolabel = <span color=\"#4682B4\"> Comproba a dirección IP do router e presiona Iniciar <br> A fiestra do navegador se abrirá coa páxina de inicio do router <br> Reconecta despois de que presiones deter e gardar. <br> Mais información dispoñible </span> <a href=\"http://jdownloader.org/knowledge/wiki/reconnect/reconnect-recorder\"> aquí</a>
 gui.config.jdrr.popup.title = JDRRPopup
 gui.config.jdrr.reconnectfaild = Reconexión fallida
 gui.config.jdrr.savereconnect = Reconexión satisfactoria. ¿Gardar agora?

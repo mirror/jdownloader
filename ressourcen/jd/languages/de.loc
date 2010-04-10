@@ -29,7 +29,7 @@ controller.status.containererror = Container Fehler
 controller.status.fileexists.othersource = Datei von anderem Host {0} geladen
 controller.status.fileexists.overwritefailed = Überschreiben fehlgeschlagen
 controller.status.fileexists.skip = Datei schon vorhanden
-controller.status.pluindefekt = Plugin defekt
+controller.status.pugindefective = Plugin defekt
 controller.status.tempunavailable = kurzzeitig nicht verfügbar
 convert.dialog.chooseformat = Wähle das Dateiformat:
 convert.dialog.forcekeep = Beibehalten erzwingen
@@ -250,7 +250,7 @@ gui.config.httpliveheader.routerip = Router IP
 gui.config.httpliveheader.script = Reconnect Script
 gui.config.httpliveheader.user = Benutzer
 gui.config.jac.column.author = Autor
-gui.config.jdrr.infolable = <span color="#4682B4">Überprüfe die IP-Adresse des Routers und drück auf Start,<br>ein Browserfenster mit der Startseite des Routers öffnet sich,<br>nach dem Reconnect drückst du auf Stop und speicherst.<br>Mehr Informationen gibt es </span><a href="http://jdownloader.org/knowledge/wiki/reconnect/reconnect-recorder">hier</a>
+gui.config.jdrr.infolabel = <span color="#4682B4">Überprüfe die IP-Adresse des Routers und Start drücken.<br>Ein Browserfenster mit der Startseite des Routers öffnet sich.<br>Nach dem Reconnect auf Stop drücken und speichen.<br>Mehr Informationen gibt es </span><a href="http://jdownloader.org/knowledge/wiki/reconnect/reconnect-recorder">hier</a>
 gui.config.jdrr.popup.title = JDRRPopup
 gui.config.jdrr.reconnectfaild = Reconnect fehlgeschlagen
 gui.config.jdrr.savereconnect = Der Reconnect war erfolgreich möchten sie jetzt speichern?

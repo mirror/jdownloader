@@ -27,7 +27,7 @@ controller.status.connectionproblems = Connexió perduda
 controller.status.containererror = Error en el llistat
 controller.status.fileexists.overwritefailed = Error en sobreescriure
 controller.status.fileexists.skip = Ja existeix l’arxiu
-controller.status.pluindefekt = Error en el plugin (desestatitzat)
+controller.status.pugindefective = Error en el plugin (desestatitzat)
 controller.status.tempunavailable = No disponible temporalment
 convert.dialog.chooseformat = Escolliu un format de data
 convert.dialog.forcekeep = Mantenir força
@@ -249,7 +249,7 @@ gui.config.httpliveheader.routerip = IP del Router
 gui.config.httpliveheader.script = Script de reconnexió
 gui.config.httpliveheader.user = Usuari
 gui.config.jac.column.author = Autor
-gui.config.jdrr.infolable = <span color="#4682B4"> Comprova la direcció IP del router i prem Iniciar <br> W finestra del navegador s’obra amb la pàgina d’inici del router <br> Reconnecta després de que prems aturar i guardar. <br> Més informació disponible </span> <a href="http://jdownloader.org/knowledge/wiki/reconnect/reconnect-recorder"> aquí</a>
+gui.config.jdrr.infolabel = <span color="#4682B4"> Comprova la direcció IP del router i prem Iniciar <br> W finestra del navegador s’obra amb la pàgina d’inici del router <br> Reconnecta després de que prems aturar i guardar. <br> Més informació disponible </span> <a href="http://jdownloader.org/knowledge/wiki/reconnect/reconnect-recorder"> aquí</a>
 gui.config.jdrr.popup.title = JDRRPopup
 gui.config.jdrr.reconnectfaild = Reconnexió fallida
 gui.config.jdrr.savereconnect = Reconnexió satisfactòria. Guardar ara?

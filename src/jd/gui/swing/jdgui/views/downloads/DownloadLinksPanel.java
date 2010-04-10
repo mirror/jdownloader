@@ -398,7 +398,7 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
                     }.start();
                     break;
                 case TableAction.EDIT_NAME:
-                    String name = UserIO.getInstance().requestInputDialog(0, JDL.L("gui.linklist.editpackagename.message", "Neuer Paketname"), selectedPackages.get(0).getName());
+                    String name = UserIO.getInstance().requestInputDialog(0, JDL.L("gui.linklist.editpackagename.message", "New Package Name"), selectedPackages.get(0).getName());
                     if (name != null) {
                         for (int i = 0; i < selectedPackages.size(); i++) {
                             selectedPackages.get(i).setName(name);
@@ -409,7 +409,7 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
                     for (int i = 0; i < selectedLinks.size(); i++) {
                         selectedLinks.get(i).getLinkStatus().setStatus(LinkStatus.TODO);
                         selectedLinks.get(i).getLinkStatus().resetWaitTime();
-                        selectedLinks.get(i).getLinkStatus().setStatusText(JDL.L("gui.linklist.status.doresume", "Warte auf Fortsetzung"));
+                        selectedLinks.get(i).getLinkStatus().setStatusText(JDL.L("gui.linklist.status.doresume", "Wait to resume"));
                     }
                     Set<String> hosts = DownloadLink.getHosterList(selectedLinks);
                     for (String host : hosts) {
@@ -539,7 +539,7 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
                     }
                     break;
                 case TableAction.DELETE: {
-                    if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, JDL.L("gui.downloadlist.delete", "Ausgewählte Links wirklich entfernen?") + " (" + JDL.LF("gui.downloadlist.delete.size_packagev2", "%s links", selectedLinks.size()) + ")"), UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
+                    if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, JDL.L("gui.downloadlist.delete", "Delete selected links?") + " (" + JDL.LF("gui.downloadlist.delete.size_packagev2", "%s links", selectedLinks.size()) + ")"), UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
                         for (int i = 0; i < selectedLinks.size(); i++) {
                             selectedLinks.get(i).setEnabled(false);
                         }

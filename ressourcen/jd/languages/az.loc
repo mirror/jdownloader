@@ -36,7 +36,7 @@ controller.status.connectionproblems = Əlaqə kəsildi
 controller.status.containererror = Daşıyıcı Xətası
 controller.status.fileexists.overwritefailed = Üstündən yazma alınmadı
 controller.status.fileexists.skip = Fayl artıq mövcuddur
-controller.status.pluindefekt = Əlavə xətası (köhnə)
+controller.status.pugindefective = Əlavə xətası (köhnə)
 controller.status.tempunavailable = Müvəqqəti istifadəsi mümkün deyil
 convert.dialog.chooseformat = Tarix formatın seç
 convert.dialog.forcekeep = Məcbur et
@@ -262,7 +262,7 @@ gui.config.httpliveheader.script = Yenidən Bağlanma Kodu
 gui.config.httpliveheader.user = İstifadəçi
 gui.config.jac.column.author = Müəllif
 gui.config.jac.extern = Xarici Üsul
-gui.config.jdrr.infolable = <span color="#4682B4"> Yönləndiricinin IP ünvanına baxın və Başlanı tıqqıldadın <br> Veb bələdçi pəncərəsi yönləndiricinin ana səhifəsini açır <br> Dayan və qeydə ala basdıqdan sonra yenidən bağlanma. <br> Daha ətraflı məlumatı </span> <a href="http://jdownloader.org/knowledge/wiki/reconnect/reconnect-recorder"> burdan</a> əldə edə bilərsiniz.
+gui.config.jdrr.infolabel = <span color="#4682B4"> Yönləndiricinin IP ünvanına baxın və Başlanı tıqqıldadın <br> Veb bələdçi pəncərəsi yönləndiricinin ana səhifəsini açır <br> Dayan və qeydə ala basdıqdan sonra yenidən bağlanma. <br> Daha ətraflı məlumatı </span> <a href="http://jdownloader.org/knowledge/wiki/reconnect/reconnect-recorder"> burdan</a> əldə edə bilərsiniz.
 gui.config.jdrr.popup.title = JDRRQəfil pəncərə
 gui.config.jdrr.reconnectfaild = Yenidən bağlanma alınmadı
 gui.config.jdrr.savereconnect = Yenidan bağlanma uğurlu oldu. Saxlanılsın?

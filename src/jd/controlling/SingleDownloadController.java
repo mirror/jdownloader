@@ -271,7 +271,7 @@ public class SingleDownloadController extends Thread {
         } catch (Exception e) {
             JDLogger.exception(e);
         }
-        downloadLink2.getLinkStatus().setErrorMessage(JDL.L("controller.status.pluindefekt", "Plugin out of date"));
+        downloadLink2.getLinkStatus().setErrorMessage(JDL.L("controller.status.plugindefective", "Plugin out of date"));
         downloadLink.requestGuiUpdate();
     }
 
@@ -461,7 +461,7 @@ public class SingleDownloadController extends Thread {
                 status.reset();
             } else {
                 status.addStatus(LinkStatus.ERROR_FATAL);
-                status.setErrorMessage(JDL.L("controller.status.fileexists.overwritefailed", "Überschreiben fehlgeschlagen ") + downloadLink.getFileOutput());
+                status.setErrorMessage(JDL.L("controller.status.fileexists.overwritefailed", "Failed to overwrite") + downloadLink.getFileOutput());
             }
         }
         DownloadController.getInstance().fireDownloadLinkUpdate(downloadLink);
@@ -527,9 +527,9 @@ public class SingleDownloadController extends Thread {
      * @param step
      */
     private void onErrorDownloadTemporarilyUnavailable(DownloadLink downloadLink, PluginForHost plugin) {
-        logger.warning("Error occurred: Temporarily unavailable: PLlease wait " + downloadLink.getLinkStatus().getValue() + " ms for a retry");
+        logger.warning("Error occurred: Temporarily unavailable: Please wait " + downloadLink.getLinkStatus().getValue() + " ms for a retry");
         LinkStatus status = downloadLink.getLinkStatus();
-        if (status.getErrorMessage() == null) status.setErrorMessage(JDL.L("controller.status.tempUnavailable", "kurzzeitig nicht verfügbar"));
+        if (status.getErrorMessage() == null) status.setErrorMessage(JDL.L("controller.status.tempunavailable", "Temporarily unavailable"));
 
         /*
          * Value<0 bedeutet das der link dauerhauft deaktiviert bleiben soll.

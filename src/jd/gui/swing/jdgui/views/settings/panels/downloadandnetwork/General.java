@@ -32,7 +32,7 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 public class General extends ConfigPanel {
-    private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.downloadandnetwork.General.";
+    private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.downloadandnetwork.general.";
 
     @Override
     public String getBreadcrum() {
@@ -60,15 +60,15 @@ public class General extends ConfigPanel {
         ConfigEntry conditionEntry;
 
         /* DESTINATION PATH */
-        container.setGroup(new ConfigGroup(JDL.L("gui.config.general.downloadDirectory", "Download directory"), JDTheme.II("gui.images.package_opened", 32, 32)));
+        container.setGroup(new ConfigGroup(JDL.L("gui.config.general.downloaddirectory", "Download directory"), JDTheme.II("gui.images.package_opened", 32, 32)));
         container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, JDUtilities.getConfiguration(), Configuration.PARAM_DOWNLOAD_DIRECTORY, ""));
 
         ce.setDefaultValue(JDUtilities.getResourceFile("downloads").getAbsolutePath());
 
-        container.addEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JDUtilities.getConfiguration(), Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, JDL.L("gui.config.general.createSubFolders", "Wenn möglich Unterordner mit Paketname erstellen")));
+        container.addEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JDUtilities.getConfiguration(), Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, JDL.L("gui.config.general.createsubfolders", "Create Subfolder with packagename if possible")));
         ce.setDefaultValue(false);
 
-        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JDUtilities.getConfiguration(), Configuration.PARAM_CREATE_SUBFOLDER_BEFORE_DOWNLOAD, JDL.L("gui.config.general.createSubFoldersbefore", "Create sub-folders after adding links")));
+        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JDUtilities.getConfiguration(), Configuration.PARAM_CREATE_SUBFOLDER_BEFORE_DOWNLOAD, JDL.L("gui.config.general.createsubfoldersbefore", "Create sub-folders after adding links")));
         ce.setDefaultValue(false);
         ce.setEnabledCondidtion(conditionEntry, true);
 
@@ -81,15 +81,15 @@ public class General extends ConfigPanel {
         ce.setDefaultValue(0);
         ce.setStep(1);
 
-        String[] removeDownloads = new String[] { JDL.L("gui.config.general.toDoWithDownloads.immediate", "immediately"), JDL.L("gui.config.general.toDoWithDownloads.atStart", "at startup"), JDL.L("gui.config.general.toDoWithDownloads.packageReady", "when package is ready"), JDL.L("gui.config.general.toDoWithDownloads.never", "never") };
-        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, JDUtilities.getConfiguration(), Configuration.PARAM_FINISHED_DOWNLOADS_ACTION, removeDownloads, JDL.L("gui.config.general.toDoWithDownloads", "Remove finished downloads ...")));
+        String[] removeDownloads = new String[] { JDL.L("gui.config.general.toDoWithDownloads.immediate", "immediately"), JDL.L("gui.config.general.toDoWithDownloads.atstart", "at startup"), JDL.L("gui.config.general.toDoWithDownloads.packageready", "when package is ready"), JDL.L("gui.config.general.toDoWithDownloads.never", "never") };
+        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, JDUtilities.getConfiguration(), Configuration.PARAM_FINISHED_DOWNLOADS_ACTION, removeDownloads, JDL.L("gui.config.general.todowithdownloads", "Remove finished downloads ...")));
         ce.setDefaultValue(3);
 
         String[] fileExists = new String[] { JDL.L("system.download.triggerfileexists.overwrite", "Overwrite"), JDL.L("system.download.triggerfileexists.skip", "Skip Link"), JDL.L("system.download.triggerfileexists.rename", "Auto rename"), JDL.L("system.download.triggerfileexists.askpackage", "Ask for each package"), JDL.L("system.download.triggerfileexists.ask", "Ask for each file") };
         container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, config, Configuration.PARAM_FILE_EXISTS, fileExists, JDL.L("system.download.triggerfileexists", "If the file already exists:")));
         ce.setDefaultValue(1);
 
-        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, GUIUtils.getConfig(), JDGuiConstants.PARAM_START_DOWNLOADS_AFTER_START, JDL.L("gui.config.download.startDownloadsOnStartUp", "Start Downloads on Startup")));
+        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, GUIUtils.getConfig(), JDGuiConstants.PARAM_START_DOWNLOADS_AFTER_START, JDL.L("gui.config.download.startdownloadsonstartUp", "Start Downloads on Startup")));
         ce.setDefaultValue(false);
 
         container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, SubConfiguration.getConfig("DOWNLOAD"), "PARAM_DOWNLOAD_AUTORESUME_ON_RECONNECT", JDL.L("gui.config.download.autoresume", "Let Reconnects interrupt resumeable downloads")).setDefaultValue(true));

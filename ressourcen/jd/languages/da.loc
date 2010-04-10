@@ -36,7 +36,7 @@ controller.status.connectionproblems = Forbindelse afbrudt
 controller.status.containererror = Container Fejl
 controller.status.fileexists.overwritefailed = Overskrivelse mislykket
 controller.status.fileexists.skip = Fil eksisterer allerede
-controller.status.pluindefekt = Plugin fejl (forældet)
+controller.status.pugindefective = Plugin fejl (forældet)
 controller.status.tempunavailable = Midlertidig ikke tilgængelig
 convert.dialog.chooseformat = Vælg et datoformat
 convert.dialog.forcekeep = Behold force
@@ -260,7 +260,7 @@ gui.config.httpliveheader.script = Reconnect script
 gui.config.httpliveheader.user = Bruger
 gui.config.jac.column.author = Forfatter
 gui.config.jac.extern = Ekstern metode
-gui.config.jdrr.infolable = <span color="#4682B4"> Check IP addressen på the routeren og tryk Start <br> W browser vinduet med hjemmesiden med routeren åbner <br> Reconnect efter du trykker stop og gem. <br> Mere information er tilgængelig </span> <a href=\"http://jdownloader.org/knowledge/wiki/reconnect/reconnect-recorder\"> her</a>
+gui.config.jdrr.infolabel = <span color="#4682B4"> Check IP addressen på the routeren og tryk Start <br> W browser vinduet med hjemmesiden med routeren åbner <br> Reconnect efter du trykker stop og gem. <br> Mere information er tilgængelig </span> <a href=\"http://jdownloader.org/knowledge/wiki/reconnect/reconnect-recorder\"> her</a>
 gui.config.jdrr.popup.title = JDRRPopup
 gui.config.jdrr.reconnectfaild = Reconnect mislykket
 gui.config.jdrr.savereconnect = Reconnect var vellykkede. Gem nu?

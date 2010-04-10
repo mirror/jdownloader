@@ -228,11 +228,11 @@ abstract public class DownloadInterface {
             String end = (endByte > 0 ? endByte + 1 : "") + "";
 
             if (start == 0) {
-                logger.finer("Übernehme 0 Verbindung");
+                logger.finer("Takeover 0 Connection");
                 return connection;
             }
             if (connection.getRange() != null && connection.getRange()[0] == (start)) {
-                logger.finer("Übernehme Verbindung bei " + connection.getRange()[0]);
+                logger.finer("Takeover connection at " + connection.getRange()[0]);
                 return connection;
             }
             // connection.disconnect();
@@ -370,7 +370,7 @@ abstract public class DownloadInterface {
                     inputStream.close();
 
                     logger.warning("Download not finished. Loaded until now: " + getCurrentBytesPosition() + "/" + endByte);
-                    error(LinkStatus.ERROR_DOWNLOAD_FAILED, JDL.L("download.error.message.incomplete", "Download unvollständig"));
+                    error(LinkStatus.ERROR_DOWNLOAD_FAILED, JDL.L("download.error.message.incomplete", "Download incomplete"));
                 }
                 inputStream.close();
 
@@ -1339,12 +1339,12 @@ abstract public class DownloadInterface {
                 return true;
             }
             logger.severe("DOWNLOAD INCOMPLETE DUE TO FILESIZECHECK");
-            error(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, JDL.L("download.error.message.incomplete", "Download unvollständig"));
+            error(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, JDL.L("download.error.message.incomplete", "Download incomplete"));
             return false;
         }
 
         if (getExceptions() != null && getExceptions().size() > 0) {
-            error(LinkStatus.ERROR_RETRY, JDL.L("download.error.message.incomplete", "Download unvollständig"));
+            error(LinkStatus.ERROR_RETRY, JDL.L("download.error.message.incomplete", "Download incomplete"));
             return false;
         }
         if (!linkStatus.isFailed()) {

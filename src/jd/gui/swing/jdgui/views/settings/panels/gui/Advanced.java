@@ -35,7 +35,7 @@ public class Advanced extends ConfigPanel {
 
     private static final long serialVersionUID = 3383448498625377495L;
 
-    private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.gui.Advanced.";
+    private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.gui.advanced.";
 
     private SubConfiguration subConfig;
 
@@ -62,10 +62,10 @@ public class Advanced extends ConfigPanel {
 
         container.setGroup(new ConfigGroup(JDL.L("gui.config.gui.container", "Container (RSDF,DLC,CCF,..)"), JDTheme.II("gui.images.container", 32, 32)));
 
-        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JDUtilities.getConfiguration(), Configuration.PARAM_RELOADCONTAINER, JDL.L("gui.config.reloadContainer", "Heruntergeladene Container einlesen")));
+        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JDUtilities.getConfiguration(), Configuration.PARAM_RELOADCONTAINER, JDL.L("gui.config.reloadcontainer", "Reload Download Container")));
         ce.setDefaultValue(true);
 
-        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, SubConfiguration.getConfig("GUI"), Configuration.PARAM_SHOW_CONTAINER_ONLOAD_OVERVIEW, JDL.L("gui.config.showContainerOnLoadInfo", "Detailierte Containerinformationen beim Öffnen anzeigen")));
+        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, SubConfiguration.getConfig("GUI"), Configuration.PARAM_SHOW_CONTAINER_ONLOAD_OVERVIEW, JDL.L("gui.config.showContainerOnLoadInfo", "Show detailed container information on load")));
         ce.setDefaultValue(false);
 
         /* Speedmeter */

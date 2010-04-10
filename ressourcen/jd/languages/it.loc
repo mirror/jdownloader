@@ -29,7 +29,7 @@ controller.status.containererror = Errore nel contenitore
 controller.status.fileexists.othersource = File caricato da altra sorgente
 controller.status.fileexists.overwritefailed = Impossibile sovrascrivere
 controller.status.fileexists.skip = File già esistente
-controller.status.pluindefekt = Errore plugin (obsoleto)
+controller.status.pugindefective = Errore plugin (obsoleto)
 controller.status.tempunavailable = Temporaneamente non disponibile
 convert.dialog.chooseformat = Selezionare un formato data
 convert.dialog.forcekeep = Mantieni comunque
@@ -252,7 +252,7 @@ gui.config.httpliveheader.routerip = IP del router
 gui.config.httpliveheader.script = Script di riconnessione
 gui.config.httpliveheader.user = Utente
 gui.config.jac.column.author = Autore
-gui.config.jdrr.infolable = <span color="#4682B4"> Verifica indirizzo IP del router e premi Start <br> W si aprirà il browser con la homepage del router <br> Riconnetti premi stop e salva. <br> Maggiori informazioni sono disponibili </span> <a href="http://jdownloader.org/knowledge/wiki/reconnect/reconnect-recorder"> qui</a>
+gui.config.jdrr.infolabel = <span color="#4682B4"> Verifica indirizzo IP del router e premi Start <br> W si aprirà il browser con la homepage del router <br> Riconnetti premi stop e salva. <br> Maggiori informazioni sono disponibili </span> <a href="http://jdownloader.org/knowledge/wiki/reconnect/reconnect-recorder"> qui</a>
 gui.config.jdrr.popup.title = Popup riconnessione
 gui.config.jdrr.reconnectfaild = Riconnessione fallita
 gui.config.jdrr.savereconnect = Riconnessione avvenuta. Salvare?

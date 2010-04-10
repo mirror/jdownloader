@@ -702,7 +702,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
                             confirmPackages(selected_packages);
                             break;
                         case LinkGrabberTableAction.DELETE:
-                            if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, JDL.L("gui.downloadlist.delete", "Ausgewählte Links wirklich entfernen?") + " (" + JDL.LF("gui.downloadlist.delete.size_packagev2", "%s links", selected_links.size()) + ")"), UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
+                            if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, JDL.L("gui.downloadlist.delete", "Delete selected links?") + " (" + JDL.LF("gui.downloadlist.delete.size_packagev2", "%s links", selected_links.size()) + ")"), UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
                                 for (DownloadLink dlink : selected_links) {
                                     dlink.setProperty("removed", true);
                                     fp = LGINSTANCE.getFPwithLink(dlink);

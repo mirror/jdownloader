@@ -37,10 +37,10 @@ public class LinkGrabberJTableModel extends JDTableModel {
     }
 
     protected void initColumns() {
-        this.addColumn(new FileColumn(JDL.L("gui.linkgrabber.header.packagesfiles", "Pakete/Dateien"), this));
+        this.addColumn(new FileColumn(JDL.L("gui.linkgrabber.header.packagesfiles", "Package / Filename"), this));
         this.addColumn(new PartColumn(JDL.L("gui.treetable.header.part", "Part"), this));
-        this.addColumn(new SizeColumn(JDL.L("gui.treetable.header.size", "Größe"), this));
-        this.addColumn(new HosterColumn(JDL.L("gui.treetable.hoster", "Anbieter"), this));
+        this.addColumn(new SizeColumn(JDL.L("gui.treetable.header.size", "Size"), this));
+        this.addColumn(new HosterColumn(JDL.L("gui.treetable.hoster", "Host"), this));
         this.addColumn(new StatusColumn(JDL.L("gui.treetable.status", "Status"), this));
         this.addColumn(new RequestTimeColumn(JDL.L("gui.treetable.requesttime", "RequestTime"), this));
     }

@@ -36,7 +36,7 @@ controller.status.connectionproblems = girêdan têkçû
 controller.status.containererror = Çewtiya konteynirê
 controller.status.fileexists.overwritefailed = Nekarî ser de binivîe
 controller.status.fileexists.skip = Pel jixwe heye
-controller.status.pluindefekt = Çewtiya plugin (kevin e)
+controller.status.pugindefective = Çewtiya plugin (kevin e)
 controller.status.tempunavailable = Temporarily unavailable
 convert.dialog.chooseformat = Teşeyek hilbijêre
 convert.dialog.forcekeep = Keep force
@@ -263,7 +263,7 @@ gui.config.httpliveheader.script = Skrîpta Dîsgirêdanê
 gui.config.httpliveheader.user = Bikarhêner
 gui.config.jac.column.author = Nivîskar
 gui.config.jac.extern = Metoda derveyî
-gui.config.jdrr.infolable = <span color="#4682B4"> Navnîşana IPya routherê venêre û pêl Destpêke bike <br> Web browser window with the home page of the router opens <br> Reconnection after you hit to stop and save. <br> More information is available </span> <a href="http://jdownloader.org/knowledge/wiki/reconnect/reconnect-recorder"> here</a>
+gui.config.jdrr.infolabel = <span color="#4682B4"> Navnîşana IPya routherê venêre û pêl Destpêke bike <br> Web browser window with the home page of the router opens <br> Reconnection after you hit to stop and save. <br> More information is available </span> <a href="http://jdownloader.org/knowledge/wiki/reconnect/reconnect-recorder"> here</a>
 gui.config.jdrr.popup.title = JDRRPopup
 gui.config.jdrr.reconnectfaild = Dîsgirêdan têk çû
 gui.config.jdrr.savereconnect = Dîsgirêdan serkeftî ye. Niha tomarke?

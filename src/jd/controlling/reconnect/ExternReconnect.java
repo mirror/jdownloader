@@ -53,8 +53,8 @@ public class ExternReconnect extends ReconnectMethod {
     }
 
     protected void initConfig() {
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFILE, configuration, PROPERTY_RECONNECT_COMMAND, JDL.L("interaction.externreconnect.command", "Befehl (absolute Pfade verwenden)")));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, configuration, PROPERTY_RECONNECT_PARAMETER, JDL.L("interaction.externreconnect.parameter", "Parameter (1 Parameter/Zeile)")));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFILE, configuration, PROPERTY_RECONNECT_COMMAND, JDL.L("interaction.externreconnect.command", "Command (use absolute directory paths)")));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, configuration, PROPERTY_RECONNECT_PARAMETER, JDL.L("interaction.externreconnect.parameter", "Parameter (1 parameter every line)")));
         if (OSDetector.isWindows()) {
             config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, PROPERTY_RECONNECT_DUMMYBAT, JDL.L("interaction.externreconnect.dummybat", "Use special executer for windows")).setDefaultValue(true));
         }

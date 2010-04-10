@@ -28,7 +28,7 @@ controller.status.connectionproblems = 连接丢失
 controller.status.containererror = 清单错误
 controller.status.fileexists.overwritefailed = 覆盖失败
 controller.status.fileexists.skip = 文件已存在
-controller.status.pluindefekt = 插件错误(过期)
+controller.status.pugindefective = 插件错误(过期)
 controller.status.tempunavailable = 暂时无法使用
 convert.dialog.chooseformat = 选择格式
 convert.dialog.forcekeep = 强制保留
@@ -249,7 +249,7 @@ gui.config.httpliveheader.routerip = 路由器IP
 gui.config.httpliveheader.script = 重连脚本
 gui.config.httpliveheader.user = 用户
 gui.config.jac.column.author = 创建者
-gui.config.jdrr.infolable = <span color="#4682B4"> 检查路由器的IP地址并点击开始Check the IP address of the router and press the Start <br> 路由器设置首页在将在您的浏览器中打开 <br> 在您停正并保存后重新连接。<br></span>在<a href="http://jdownloader.org/knowledge/wiki/reconnect/reconnect-recorder">这里</a>可以找到详细信息
+gui.config.jdrr.infolabel = <span color="#4682B4"> 检查路由器的IP地址并点击开始Check the IP address of the router and press the Start <br> 路由器设置首页在将在您的浏览器中打开 <br> 在您停正并保存后重新连接。<br></span>在<a href="http://jdownloader.org/knowledge/wiki/reconnect/reconnect-recorder">这里</a>可以找到详细信息
 gui.config.jdrr.popup.title = JDRRPopup
 gui.config.jdrr.reconnectfaild = 重连失败
 gui.config.jdrr.savereconnect = 重连成功. 立即保存?

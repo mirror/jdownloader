@@ -34,7 +34,7 @@ controller.status.connectionproblems = Mất kết nối
 controller.status.containererror = Lỗi Tập tin chứa liên kết tải về
 controller.status.fileexists.overwritefailed = Không ghi đè được
 controller.status.fileexists.skip = Tập tin đang tồn tại.
-controller.status.pluindefekt = Plugin đã quá cũ
+controller.status.pugindefective = Plugin đã quá cũ
 controller.status.tempunavailable = tạm thời không có sẵn
 convert.dialog.chooseformat = Chọn 1 định dạng ngày:
 convert.dialog.forcekeep = Duy trì bắt buộc
@@ -267,7 +267,7 @@ gui.config.httpliveheader.script = Mã Tái kết nối Modem
 gui.config.httpliveheader.user = User
 gui.config.jac.column.author = Tác giả
 gui.config.jac.extern = Phương thức dùng trình bên ngoài
-gui.config.jdrr.infolable = <span color=\"#4682B4\">Kiểm tra địa chỉ IP của router ở hàng trên (Router-IP) xem dã hiện ra chưa và nhấn nút "Bắt đầu" <br> Hộp thoai Tình trạng Ghi" hiện ra đồng thời Cửa sổ trình duyệt với trang truy cập cấu hình router của bạn sẽ mở lên <br> Nhập Tên & Mật khẩu truy nhập để vào trang chủ router của bạn (vào Google tìm hoặc xem/hỏi hợp đồng với ISP của bạn) <br> Tìm và nhấn nút Reset (hoăc: reconnect, disconnect, connect hay restart, ...) rồi chờ Tái kết nối hoàn tất <br> Khoảng 5-30" (tùy Modem) hộp "Tình trạng Ghi" sẽ thay bằng hộp thoại đếm lùi thông báo Tái kết nối (thành công / hỏng) <br> Nếu thành công nhấn "Yes" để lưu lại dùng vào việc tái kết nối tự động hay bằng tay về sau, nếu thất bại làm lại các bước trên. <br> Nhấn nút "Hủy bỏ" để đóng lại hộp thoại mà bạn đang đọc này và trở về cửa sổ Thiết đặt Cấu hình <br> Chi tiết hướng dẫn bằng tiếng Việt xin </span> <a href="http://www.tomveo.com/thanh/index.php?option=com_sobi2&sobi2Task=sobi2Details&sobi2Id=20&Itemid=4"> Vào đây</a>
+gui.config.jdrr.infolabel = <span color=\"#4682B4\">Kiểm tra địa chỉ IP của router ở hàng trên (Router-IP) xem dã hiện ra chưa và nhấn nút "Bắt đầu" <br> Hộp thoai Tình trạng Ghi" hiện ra đồng thời Cửa sổ trình duyệt với trang truy cập cấu hình router của bạn sẽ mở lên <br> Nhập Tên & Mật khẩu truy nhập để vào trang chủ router của bạn (vào Google tìm hoặc xem/hỏi hợp đồng với ISP của bạn) <br> Tìm và nhấn nút Reset (hoăc: reconnect, disconnect, connect hay restart, ...) rồi chờ Tái kết nối hoàn tất <br> Khoảng 5-30" (tùy Modem) hộp "Tình trạng Ghi" sẽ thay bằng hộp thoại đếm lùi thông báo Tái kết nối (thành công / hỏng) <br> Nếu thành công nhấn "Yes" để lưu lại dùng vào việc tái kết nối tự động hay bằng tay về sau, nếu thất bại làm lại các bước trên. <br> Nhấn nút "Hủy bỏ" để đóng lại hộp thoại mà bạn đang đọc này và trở về cửa sổ Thiết đặt Cấu hình <br> Chi tiết hướng dẫn bằng tiếng Việt xin </span> <a href="http://www.tomveo.com/thanh/index.php?option=com_sobi2&sobi2Task=sobi2Details&sobi2Id=20&Itemid=4"> Vào đây</a>
 gui.config.jdrr.popup.title = JDRRPopup
 gui.config.jdrr.reconnectfaild = Tái kết nối modem bất thành!
 gui.config.jdrr.savereconnect = Tái kết nối modem thành công. Lưu lại ngay?

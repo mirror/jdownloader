@@ -68,14 +68,14 @@ public class Gui extends AbstractDialog implements ActionListener {
     public JComponent contentInit() {
         routerip = new JTextField(ip);
 
-        rawmode = new JCheckBox("RawMode?");
+        rawmode = new JCheckBox(JDL.L("gui.config.jdrr.rawmode", "RawMode?"));
         rawmode.setSelected(false);
 
         final JTextPane infolable = new JTextPane();
         infolable.setEditable(false);
         infolable.setContentType("text/html");
         infolable.addHyperlinkListener(JLink.getHyperlinkListener());
-        infolable.setText(JDL.L("gui.config.jdrr.infolable", "<span color=\"#4682B4\">Überprüfe die IP-Adresse des Routers und drück auf Start,<br>ein Browserfenster mit der Startseite des Routers öffnet sich,<br>nach dem Reconnect drückst du auf Stop und speicherst.<br>Mehr Informationen gibt es </span><a href=\"http://wiki.jdownloader.org/index.php?title=Recorder\">hier</a>"));
+        infolable.setText(JDL.L("gui.config.jdrr.infolabel", "<span color=\"#4682B4\"> Check the IP address of the router and press the Start <br> Web browser window with the home page of the router opens <br> Reconnection after you hit to stop and save. <br> More information is available </span> <a href=\"http://jdownloader.org/knowledge/wiki/reconnect/reconnect-recorder\"> here</a>"));
 
         final JPanel panel = new JPanel(new MigLayout("wrap 1", "[center]"));
         panel.add(new JLabel(JDL.L("gui.fengshuiconfig.routerip", "RouterIP") + ":"), "split 3");
@@ -86,7 +86,7 @@ public class Gui extends AbstractDialog implements ActionListener {
     }
 
     private void save() {
-        final int ret = UserIO.getInstance().requestConfirmDialog(0, JDL.L("gui.config.jdrr.success", "Success!"), JDL.L("gui.config.jdrr.savereconnect", "Der Reconnect war erfolgreich möchten sie jetzt speichern?"), UserIO.getInstance().getIcon(UserIO.ICON_QUESTION), JDL.L("gui.btn_yes", "Yes"), JDL.L("gui.btn_no", "No"));
+        final int ret = UserIO.getInstance().requestConfirmDialog(0, JDL.L("gui.config.jdrr.success", "Success!"), JDL.L("gui.config.jdrr.savereconnect", "Reconnection was successful. Save now?"), UserIO.getInstance().getIcon(UserIO.ICON_QUESTION), JDL.L("gui.btn_yes", "Yes"), JDL.L("gui.btn_no", "No"));
         if (JDFlags.hasSomeFlags(ret, UserIO.RETURN_OK, UserIO.RETURN_COUNTDOWN_TIMEOUT)) {
 
             final Configuration configuration = JDUtilities.getConfiguration();
@@ -106,7 +106,7 @@ public class Gui extends AbstractDialog implements ActionListener {
             btnCancel.setText(JDL.L("gui.btn_close", "Close"));
             configuration.setProperty(Configuration.PARAM_HTTPSEND_IP, routerip.getText().trim());
             configuration.setProperty(Configuration.PARAM_HTTPSEND_REQUESTS, methode);
-            configuration.setProperty(Configuration.PARAM_HTTPSEND_ROUTERNAME, "Reconnect Recorder Methode");
+            configuration.setProperty(Configuration.PARAM_HTTPSEND_ROUTERNAME, "Reconnect Recorder Method");
             configuration.setProperty(ReconnectMethod.PARAM_RECONNECT_TYPE, ReconnectMethod.LIVEHEADER);
             if (reconnect_duration <= 2000) {
                 reconnect_duration = 2000;
@@ -164,7 +164,7 @@ public class Gui extends AbstractDialog implements ActionListener {
         private RRStatus statusicon;
 
         public JDRRInfoPopup() {
-            super(UserIO.NO_COUNTDOWN | UserIO.NO_ICON | UserIO.NO_OK_OPTION, JDL.L("gui.config.jdrr.status.title", "RRStatus"), null, null, JDL.L("gui.btn_abort", "Abort"));
+            super(UserIO.NO_COUNTDOWN | UserIO.NO_ICON | UserIO.NO_OK_OPTION, JDL.L("gui.config.jdrr.status.title", "Recording Status"), null, null, JDL.L("gui.btn_abort", "Abort"));
 
             init();
         }

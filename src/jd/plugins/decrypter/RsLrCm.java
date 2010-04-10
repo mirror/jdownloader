@@ -107,11 +107,11 @@ public class RsLrCm extends PluginForDecrypt {
                     br.submitForm(captchaForm);
 
                     if (br.containsHTML("Sicherheitscode<br />war nicht korrekt")) {
-                        logger.info(JDL.L("plugins.decrypt.general.captchaCodeWrong", "Captcha Code falsch"));
+                        logger.info(JDL.L("plugins.decrypt.general.captchacodewrong", "Wrong CAPTCHA code"));
                         continue;
                     }
                     if (br.containsHTML("Gültigkeit für den<br> Sicherheitscode<br>ist abgelaufen")) {
-                        logger.info(JDL.L("plugins.decrypt.rslayer.captchaExpired", "Sicherheitscode abgelaufen"));
+                        logger.info(JDL.L("plugins.decrypt.rslayer.captchaexpired", "CAPTCHA code is too old"));
                         continue;
                     }
                 } else {

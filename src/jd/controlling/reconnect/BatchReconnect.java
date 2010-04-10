@@ -50,7 +50,7 @@ public class BatchReconnect extends ReconnectMethod {
             cfg.setDefaultValue("/bin/bash");
         }
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, configuration, PROPERTY_BATCHTEXT, JDL.L("interaction.batchreconnect.batch", "Batch Script")));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, configuration, PROPERTY_RECONNECT_EXECUTE_FOLDER, JDL.L("interaction.batchreconnect.executeIn", "Ausführen in (Ordner der Anwendung)")));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, configuration, PROPERTY_RECONNECT_EXECUTE_FOLDER, JDL.L("interaction.batchreconnect.executein", "Start in (application folder)")));
     }
 
     protected boolean runCommands(final ProgressController progress) {

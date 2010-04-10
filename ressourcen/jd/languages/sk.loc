@@ -27,7 +27,7 @@ controller.status.connectionproblems = Spojenie bolo prerušené
 controller.status.containererror = Chyba Balíčka
 controller.status.fileexists.overwritefailed = Chyba pri prepisovaní
 controller.status.fileexists.skip = Súbor už existuje
-controller.status.pluindefekt = Chybný Plugin (zastaralý)
+controller.status.pugindefective = Chybný Plugin (zastaralý)
 controller.status.tempunavailable = Dočasne Nedostupný
 convert.dialog.chooseformat = Zvoľte formát dátumu
 convert.dialog.forcekeep = Podržať Nasilu
@@ -248,7 +248,7 @@ gui.config.httpliveheader.routerip = IP Routeru
 gui.config.httpliveheader.script = Skript pre Znovupripojenie
 gui.config.httpliveheader.user = Meno
 gui.config.jac.column.author = Autor
-gui.config.jdrr.infolable = <span color=\"#4682B4\"> Skontrolujte IP adresu routra a kliknite na Štart <br> Otvorí sa okno prehliadača s domovskou adresou routra <br> Po kliknutí na "Zastaviť a uložiť" sa znovu pripojte. <br> Viac informácii nájdete </span> <a href=\"http://jdownloader.org/knowledge/wiki/reconnect/reconnect-recorder\"> tu </ a>
+gui.config.jdrr.infolabel = <span color=\"#4682B4\"> Skontrolujte IP adresu routra a kliknite na Štart <br> Otvorí sa okno prehliadača s domovskou adresou routra <br> Po kliknutí na "Zastaviť a uložiť" sa znovu pripojte. <br> Viac informácii nájdete </span> <a href=\"http://jdownloader.org/knowledge/wiki/reconnect/reconnect-recorder\"> tu </ a>
 gui.config.jdrr.popup.title = JDRRPopup
 gui.config.jdrr.reconnectfaild = Znovupripojenie zlyhalo
 gui.config.jdrr.savereconnect = Znovupripojenie bolo úspešné. Uložiť teraz?

@@ -247,7 +247,7 @@ public class GetRouterInfo {
                         if (isalv.meths == null) {
 
                             UserIO.setCountdownTime(600);
-                            int ret = UserIO.getInstance().requestConfirmDialog(0, null, JDL.LF("gui.config.liveHeader.warning.upnpinactive", "Bitte aktivieren sie fals vorhanden Upnp in den Netzwerkeinstellungen ihres Routers <br><a href=\"http://%s\">zum Router</a><br><a href=\"http://wiki.jdownloader.org/index.php?title=Router_Upnp\">Wikiartikel: Upnp Routern</a><br>drücken sie Ok wenn sie Upnp aktiviert haben oder abbrechen wenn sie fortfahren wollen!", infos.getRouterHost()), UserIO.getInstance().getIcon(UserIO.ICON_WARNING), null, null);
+                            int ret = UserIO.getInstance().requestConfirmDialog(0, null, JDL.LF("gui.config.liveheader.warning.upnpinactive", "Please activate UPnP support in your router's network configuration. <br><a href=\"http://%s\">Go to Router</a><br><a href=\"http://jdownloader.org/knowledge/wiki/reconnect/upnp\">Wiki article: Upnp in Router</a><br>Click OK when you activate UPnP support in router or Cancel to skip.", infos.getRouterHost()), UserIO.getInstance().getIcon(UserIO.ICON_WARNING), null, null);
                             UserIO.setCountdownTime(-1);
                             if (JDFlags.hasAllFlags(ret, UserIO.RETURN_OK)) {
                                 try {
@@ -336,7 +336,7 @@ public class GetRouterInfo {
 
     public static void autoConfig(final Object pass, final Object user, final Object ip, final Object routerScript) {
 
-        final ProgressDialog progress = new ProgressDialog(DummyFrame.getDialogParent(), JDL.L("gui.config.liveHeader.progress.message", "jDownloader sucht nach Ihren Routereinstellungen"), null, false, true);
+        final ProgressDialog progress = new ProgressDialog(DummyFrame.getDialogParent(), JDL.L("gui.config.liveheader.progress.message", "JDownloader will search for your router settings"), null, false, true);
         final GetRouterInfo routerInfo = new GetRouterInfo(progress);
         final Thread th = new Thread() {
             // @Override
@@ -364,7 +364,7 @@ public class GetRouterInfo {
                 if (data == null) {
                     progress.setVisible(false);
                     progress.dispose();
-                    UserIO.getInstance().requestMessageDialog(JDL.L("gui.config.liveHeader.warning.notFound", "jDownloader konnte ihre Routereinstellung nicht automatisch ermitteln."));
+                    UserIO.getInstance().requestMessageDialog(JDL.L("gui.config.liveheader.warning.notfound", "JDownloader can't detect your router settings."));
                     return;
                 }
                 if (routerScript != null && routerScript instanceof GUIConfigEntry) {
@@ -375,7 +375,7 @@ public class GetRouterInfo {
                 JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_ROUTERNAME, data.getRouterName());
                 progress.setVisible(false);
                 progress.dispose();
-                UserIO.getInstance().requestMessageDialog(JDL.L("gui.config.liveHeader.warning.yourRouter", "Sie haben einen") + " " + data.getRouterName());
+                UserIO.getInstance().requestMessageDialog(JDL.LF("gui.config.liveheader.warning.routertype", "You have a %s", data.getRouterName()));
 
             }
         };

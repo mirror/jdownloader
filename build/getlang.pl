@@ -55,6 +55,7 @@ sub check
 {
   my ($o, $v, $res, $file) = @_;
 
+  $v =~ s/#####/"/g;
   if($o =~ /"/)
   {
     print STDERR "Can't parse following expression in $file: $o = $v\n" if $debug >= 3;
@@ -84,7 +85,6 @@ sub main
     my $prefix;
     my $toolbar;
     my $menu;
-    my $istrd;
     my $lastline = "";
     open FILE,"<",$file or die;
     my $name = $file; $name =~ s/.*?src\///; $name =~ s/\//./g; $name =~ s/\.java$//;
@@ -95,14 +95,13 @@ sub main
       $line = "$line$lastline"; $lastline = "";
       $line =~ s/^\s*\/\/.*$//; # remove comments
       $line =~ s/^\s*\*.*$//; # remove comments
+      $line =~ s/\\"/#####/g; # handle escaped text
       $line =~ s/JDL.LOCALE_PARAM//; # prevent false warning in code below
       $line =~ s/this\.getClass\(\)\.getName\(\) \+ "/"$name/g;
       $line =~ s/this\.getClass\(\)\.getSimpleName\(\)/"$sname"/g;
       $prefix = $1 if($line =~ s/[A-Z]+_PREFIX\s*=\s*"(.*?)"//);
-      $istrd = $1 if($line =~ s/INFO_STRING_DEFAULT\s*=\s*(".*?")//);
       $toolbar = 1 if($line =~ /extends\s+(ToolBar|Threaded|Menu)Action/);
       $menu = 1 if($line =~ /extends\s+JStartMenu/);
-      $line =~ s/INFO_STRING_DEFAULT/$istrd/g;
       if($line =~ /extends\s+PluginOptional/)
       {
         check($name, $sname, \%res, $file);
@@ -150,10 +149,10 @@ sub main
     if($refen && $res{$k} eq $refen)
     {
     }
-    elsif(!($k =~ /\.(accel|mnem)/) && $refde && $res{$k} eq $refde)
-    {
-      print STDERR "German reference: $k = $refde".($refen?" ($refen) ":"")."\n";
-    }
+    #elsif(!($k =~ /\.(accel|mnem)/) && $refde && $res{$k} eq $refde)
+    #{
+    #  print STDERR "German reference: $k = $refde".($refen?" ($refen) ":"")."\n";
+    #}
     elsif($refen)
     {
       print STDERR "Mismatch in langfile for $k: '$refen' != '$res{$k}'\n";

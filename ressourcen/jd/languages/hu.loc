@@ -29,7 +29,7 @@ controller.status.containererror = Doboz hiba
 controller.status.fileexists.othersource = Fájl másik forrásból betöltve
 controller.status.fileexists.overwritefailed = Felülírási hiba
 controller.status.fileexists.skip = A fájl már létezik
-controller.status.pluindefekt = Plugin hiba (dátum)
+controller.status.pugindefective = Plugin hiba (dátum)
 controller.status.tempunavailable = Jelenleg nem elérhető
 convert.dialog.chooseformat = Válassz dátum formátumot
 convert.dialog.forcekeep = Kényszerített folytatás
@@ -252,7 +252,7 @@ gui.config.httpliveheader.routerip = Router IP
 gui.config.httpliveheader.script = Újrakapcsolódási parancs
 gui.config.httpliveheader.user = Felhasználó
 gui.config.jac.column.author = Szerző
-gui.config.jdrr.infolable = <span color="#4682B4"> Ellenőrizze routere IP címét, majd nyomja meg a Start/indítás-t <br> Böngészőablak nyílik a router eléréséhez <br> Újrakapcsolódás megállítás és mentés után. <br> Bővebb információkat </span> <a href="http://jdownloader.org/knowledge/wiki/reconnect/reconnect-recorder"> ide kattintva talál</a>
+gui.config.jdrr.infolabel = <span color="#4682B4"> Ellenőrizze routere IP címét, majd nyomja meg a Start/indítás-t <br> Böngészőablak nyílik a router eléréséhez <br> Újrakapcsolódás megállítás és mentés után. <br> Bővebb információkat </span> <a href="http://jdownloader.org/knowledge/wiki/reconnect/reconnect-recorder"> ide kattintva talál</a>
 gui.config.jdrr.popup.title = JDRR felugró ablak
 gui.config.jdrr.reconnectfaild = Újracsatlakozási hiba
 gui.config.jdrr.savereconnect = Újracsatlakozás sikeres. Mentés most?

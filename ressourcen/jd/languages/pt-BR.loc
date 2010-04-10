@@ -27,7 +27,7 @@ controller.status.connectionproblems = Conexão perdida
 controller.status.containererror = Erro no Container
 controller.status.fileexists.overwritefailed = Não foi possivel substituir
 controller.status.fileexists.skip = O arquivo já existe
-controller.status.pluindefekt = Erro no plugin (Desatualizado)
+controller.status.pugindefective = Erro no plugin (Desatualizado)
 controller.status.tempunavailable = Temporariamente indisponível
 convert.dialog.chooseformat = Selecione o formato:
 convert.dialog.forcekeep = Manter
@@ -248,7 +248,7 @@ gui.config.httpliveheader.routerip = IP do Roteador
 gui.config.httpliveheader.script = Script de Reconexão
 gui.config.httpliveheader.user = Usuário
 gui.config.jac.column.author = Autor
-gui.config.jdrr.infolable = <span color="#4682B4">Verifique o IP do Roteador e clique em Iniciar<br>o navegador irá abrir com a página do Roteador<br>Reconecte depois que você clicar para Parar e Salvar.<br>Mais informação estão disponíveis</span> <a href="http://jdownloader.org/knowledge/wiki/reconnect/reconnect-recorder">aqui</a>.
+gui.config.jdrr.infolabel = <span color="#4682B4">Verifique o IP do Roteador e clique em Iniciar<br>o navegador irá abrir com a página do Roteador<br>Reconecte depois que você clicar para Parar e Salvar.<br>Mais informação estão disponíveis</span> <a href="http://jdownloader.org/knowledge/wiki/reconnect/reconnect-recorder">aqui</a>.
 gui.config.jdrr.popup.title = JDRRPopup
 gui.config.jdrr.reconnectfaild = Falha na reconexão
 gui.config.jdrr.savereconnect = Sucesso na reconexão, salvar agora?

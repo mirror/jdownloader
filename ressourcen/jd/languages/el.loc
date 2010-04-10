@@ -27,7 +27,7 @@ controller.status.connectionproblems = Η σύνδεση χάθηκε
 controller.status.containererror = Σφάλμα στο Container
 controller.status.fileexists.overwritefailed = Αποτυχία αντικατάστασης
 controller.status.fileexists.skip = Το αρχείο υπάρχει ήδη
-controller.status.pluindefekt = Σφάλμα στο Plugin (έχει λήξει)
+controller.status.pugindefective = Σφάλμα στο Plugin (έχει λήξει)
 controller.status.tempunavailable = Προσωρινά μη διαθέσιμο
 convert.dialog.chooseformat = Επιλέξτε μια μορφή
 convert.dialog.forcekeep = Διατήρηση
@@ -248,7 +248,7 @@ gui.config.httpliveheader.routerip = IP του router
 gui.config.httpliveheader.script = Αρχείο επανασύνδεσης
 gui.config.httpliveheader.user = Χρήστης
 gui.config.jac.column.author = Εκδότης
-gui.config.jdrr.infolable = <span color="#4682B4"> Ελέγξτε τη διεύθυνση IP του router σας και πατήστε Εκκίνηση. <br> Θα ανοίξει ένα παράθυρο στον Περιηγητή με τη σελίδα ρυθμίσεων του router σας.<br> Πατήστε Διακοπή και Αποθήκευση, όταν ολοκληρώσετε την Επανασύνδεση. <br> Περισσότερες πληροφορίες διαθέσιμες </span> <a href="http://jdownloader.org/knowledge/wiki/reconnect/reconnect-recorder"> εδώ.</a>
+gui.config.jdrr.infolabel = <span color="#4682B4"> Ελέγξτε τη διεύθυνση IP του router σας και πατήστε Εκκίνηση. <br> Θα ανοίξει ένα παράθυρο στον Περιηγητή με τη σελίδα ρυθμίσεων του router σας.<br> Πατήστε Διακοπή και Αποθήκευση, όταν ολοκληρώσετε την Επανασύνδεση. <br> Περισσότερες πληροφορίες διαθέσιμες </span> <a href="http://jdownloader.org/knowledge/wiki/reconnect/reconnect-recorder"> εδώ.</a>
 gui.config.jdrr.popup.title = JDRRPopup
 gui.config.jdrr.reconnectfaild = Η επανασύνδεση απέτυχε
 gui.config.jdrr.savereconnect = Επανασύνδεση επιτυχής. Αποθήκευση;

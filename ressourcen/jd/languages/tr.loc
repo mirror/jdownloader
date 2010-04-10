@@ -28,7 +28,7 @@ controller.status.connectionproblems = Bağlantı koptu
 controller.status.containererror = Konteyner Hatası
 controller.status.fileexists.overwritefailed = Üstüne yazdırılamadı
 controller.status.fileexists.skip = Dosya zaten mevcut
-controller.status.pluindefekt = Takmabirim eski
+controller.status.pugindefective = Takmabirim eski
 controller.status.tempunavailable = Geçici olarak mevcut değil
 convert.dialog.chooseformat = Bir biçim seçin:
 convert.dialog.forcekeep = Formatı tutmaya zorla
@@ -247,7 +247,7 @@ gui.config.httpliveheader.routerip = Yönlendirici'nin IP'si
 gui.config.httpliveheader.script = Tekrar Bağlan betiği
 gui.config.httpliveheader.user = Kullanıcı adı
 gui.config.jac.column.author = Hazırlayan
-gui.config.jdrr.infolable = <span color="#4682B4">Router'ın IP adresini girin ve başlata basın. Router'ın ana sayfası (ayarları) tarayıcınızda açılacak sonra<br> bu sayfadan internete Tekrar Bağlanın. Daha fazla bilgi için </span><a href="http://jdownloader.org/knowledge/wiki/reconnect/reconnect-recorder">bakınız</a>
+gui.config.jdrr.infolabel = <span color="#4682B4">Router'ın IP adresini girin ve başlata basın. Router'ın ana sayfası (ayarları) tarayıcınızda açılacak sonra<br> bu sayfadan internete Tekrar Bağlanın. Daha fazla bilgi için </span><a href="http://jdownloader.org/knowledge/wiki/reconnect/reconnect-recorder">bakınız</a>
 gui.config.jdrr.popup.title = JD TBK Popup
 gui.config.jdrr.reconnectfaild = Tekrar Bağlan Başarısız?
 gui.config.jdrr.savereconnect = Tekrar Bağlan Başarılı! Şimdi kaydedilsin mi ?
