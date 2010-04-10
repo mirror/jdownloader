@@ -96,6 +96,7 @@ public class FileBaseTo extends PluginForHost {
         if (daysleft != null) {
             ai.setValidUntil(System.currentTimeMillis() + (Long.parseLong(daysleft) * 24 * 60 * 60 * 1000));
             account.setValid(true);
+            ai.setStatus("Premium User");
             return ai;
         }
         account.setValid(false);

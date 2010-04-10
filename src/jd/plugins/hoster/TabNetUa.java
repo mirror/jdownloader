@@ -17,7 +17,10 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -27,11 +30,12 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tab.net.ua" }, urls = { "http://[\\w\\.]*?tab\\.net\\.ua/sites/files/site_name\\..*?/id\\.\\d+/" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tab.net.ua" }, urls = { "http://[\\w\\.]*?tab\\.net\\.ua/sites/files/site_name\\..*?/id\\.\\d+/" }, flags = { 2 })
 public class TabNetUa extends PluginForHost {
 
     public TabNetUa(PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium("http://tab.net.ua/registration/");
     }
 
     @Override
@@ -76,6 +80,10 @@ public class TabNetUa extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        doFree(downloadLink);
+    }
+
+    public void doFree(DownloadLink downloadLink) throws Exception, PluginException {
         if (br.containsHTML("name=\"password\\[files_")) {
             handlePassword(downloadLink.getStringProperty("pass", null), downloadLink);
         } else if (br.containsHTML(">Тільки зареєстровані користувачі можуть скачати цей файл<")) { throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.TabNetUa.only4resteredusers", "This file is only downloadable for registered users!")); }
@@ -92,7 +100,7 @@ public class TabNetUa extends PluginForHost {
         String dllink = br.getRegex("; background-repeat:no-repeat;\">.*?<a href=\"(http://.*?)\" class=\"file_download\"").getMatch(0);
         if (dllink == null) dllink = br.getRegex("\"(http://d\\d+\\.tab\\.net\\.ua:\\d+/\\d+/.*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML("<title>404 Not Found</title>")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
@@ -127,6 +135,40 @@ public class TabNetUa extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_RETRY);
         }
         if (passCode != null) downloadLink.setProperty("pass", passCode);
+    }
+
+    public void login(Account account) throws Exception {
+        setBrowserExclusive();
+        br.setFollowRedirects(false);
+        br.postPage("http://tab.net.ua/", "r%5Blog%5D=" + Encoding.urlEncode(account.getUser()) + "&r%5Bpass%5D=" + Encoding.urlEncode(account.getPass()));
+        if (br.getCookie("http://tab.net.ua", "sid") == null || br.getCookie("http://tab.net.ua", "password") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        ai.setStatus("Registered (Free) User");
+        account.setValid(true);
+
+        return ai;
+    }
+
+    public void handlePremium(DownloadLink parameter, Account account) throws Exception {
+        requestFileInformation(parameter);
+        login(account);
+        br.getPage(parameter.getDownloadURL());
+        doFree(parameter);
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return 2;
     }
 
     @Override
