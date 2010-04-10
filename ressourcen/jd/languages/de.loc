@@ -282,6 +282,7 @@ gui.config.liveheader.selectrouter = Router auswählen
 gui.config.liveheader.user = Benutzername (->%%%user%%%)
 gui.config.liveheader.warning.nocurlconvert = JDownloader konnte dieses CURL Script nicht konvertieren.
 gui.config.liveheader.warning.notfound = JDownloader konnte ihre Routereinstellung nicht automatisch ermitteln.
+gui.config.liveheader.warning.routertype = Sie haben eine %s
 gui.config.liveheader.warning.upnpinactive = Bitte aktivieren sie falls vorhanden UPnP in den Netzwerkeinstellungen ihres Routers <br><a href=\"http://%s\">zum Router</a><br><a href=\"http://wiki.jdownloader.org/index.php?title=Router_Upnp\">Wikiartikel: UPnP Routern</a><br>drücken sie Ok wenn sie UPnP aktiviert haben oder abbrechen wenn sie fortfahren wollen!
 gui.config.liveheader.warning.yourrouter = Sie haben eine
 gui.config.reconnect.selectrouter = Router Modell suchen
