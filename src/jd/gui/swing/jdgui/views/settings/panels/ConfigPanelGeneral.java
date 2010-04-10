@@ -20,8 +20,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.logging.Level;
 
-import javax.swing.JTabbedPane;
-
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
@@ -29,18 +27,18 @@ import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.gui.UserIO;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
-import jd.gui.swing.jdgui.views.settings.GUIConfigEntry;
 import jd.update.WebUpdater;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 public class ConfigPanelGeneral extends ConfigPanel {
+
     private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.ConfigPanelGeneral.";
 
     @Override
-    public String getBreadcrum() {
-        return JDL.L(this.getClass().getName() + ".breadcrum", this.getClass().getSimpleName());
+    public String getBreadcrumb() {
+        return JDL.L(JDL_PREFIX + "breadcrum", "Basics - General");
     }
 
     public static String getTitle() {
@@ -92,17 +90,7 @@ public class ConfigPanelGeneral extends ConfigPanel {
 
     @Override
     public void initPanel() {
-        ConfigContainer container = setupContainer();
-
-        for (ConfigEntry cfgEntry : container.getEntries()) {
-            GUIConfigEntry ce = new GUIConfigEntry(cfgEntry);
-            if (ce != null) addGUIConfigEntry(ce);
-        }
-
-        JTabbedPane tabbed = new JTabbedPane();
-        tabbed.setOpaque(false);
-        tabbed.add(getBreadcrum(), panel);
-        this.add(tabbed);
+        add(createTabbedPane(setupContainer()));
     }
 
     @Override

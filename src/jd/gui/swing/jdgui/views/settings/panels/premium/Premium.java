@@ -21,7 +21,6 @@ import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.logging.Logger;
 
 import javax.swing.JCheckBox;
 import javax.swing.JPanel;
@@ -34,7 +33,6 @@ import jd.config.ConfigEntry.PropertyType;
 import jd.controlling.AccountController;
 import jd.controlling.AccountControllerEvent;
 import jd.controlling.AccountControllerListener;
-import jd.controlling.JDLogger;
 import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.components.linkbutton.JLink;
@@ -59,7 +57,15 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
     private JScrollPane scrollPane;
     private JCheckBox checkBox;
     private Timer Update_Async;
-    protected Logger logger = JDLogger.getLogger();
+
+    @Override
+    public String getBreadcrumb() {
+        return JDL.L(JDL_PREFIX + "breadcrum", "Plugins & Addons - Host - Premium");
+    }
+
+    public static String getTitle() {
+        return JDL.L(JDL_PREFIX + "title", "Premium");
+    }
 
     public Premium() {
         super();
@@ -68,21 +74,14 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
     }
 
     @Override
-    public String getBreadcrum() {
-        return JDL.L(this.getClass().getName() + ".breadcrum", this.getClass().getSimpleName());
-    }
-
-    public static String getTitle() {
-        return JDL.L(JDL_PREFIX + "title", "Premium");
-    }
-
-    @Override
     public void initPanel() {
         panel.setLayout(new MigLayout("ins 5,wrap 1", "[fill,grow]", "[][fill,grow]"));
         initPanel(panel);
+
         JTabbedPane tabbed = new JTabbedPane();
         tabbed.setOpaque(false);
-        tabbed.add(getBreadcrum(), panel);
+        tabbed.add(getBreadcrumb(), panel);
+
         this.add(tabbed);
     }
 

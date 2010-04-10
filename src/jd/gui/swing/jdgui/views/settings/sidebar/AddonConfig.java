@@ -32,6 +32,7 @@ import jd.utils.locale.JDL;
 public class AddonConfig extends ConfigPanel {
 
     private static final long serialVersionUID = 5561326475681668634L;
+    private static final String JDL_PREFIX = "jd.gui.swing.jdgui.views.settings.sidebar.AddonConfig.";
 
     private static HashMap<String, AddonConfig> MAP;
 
@@ -39,17 +40,17 @@ public class AddonConfig extends ConfigPanel {
 
     private String name;
 
+    @Override
+    public String getBreadcrumb() {
+        return JDL.L(JDL_PREFIX + "breadcrum", "Plugins & Addons - Addons - " + name);
+    }
+
     private AddonConfig(ConfigContainer container, String name) {
         super();
         this.container = container;
         this.name = name;
         initPanel();
         load();
-    }
-
-    @Override
-    public String getBreadcrum() {
-        return JDL.L(this.getClass().getName() + ".breadcrum", this.getClass().getSimpleName()) + " - " + name;
     }
 
     public JPanel getPanel() {
@@ -92,7 +93,7 @@ public class AddonConfig extends ConfigPanel {
         });
 
         tabbed.setOpaque(false);
-        tabbed.add(getBreadcrum(), panel);
+        tabbed.add(getBreadcrumb(), panel);
         for (ConfigEntry c : cont) {
             ConfigPanel p = new ConfigPanel(c.getContainer());
             tabbed.add(c.getContainer().getTitle(), p);
@@ -100,7 +101,6 @@ public class AddonConfig extends ConfigPanel {
         }
 
         this.add(tabbed);
-
     }
 
     /**

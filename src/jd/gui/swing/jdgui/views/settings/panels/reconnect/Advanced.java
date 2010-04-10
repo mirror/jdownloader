@@ -16,25 +16,23 @@
 
 package jd.gui.swing.jdgui.views.settings.panels.reconnect;
 
-import javax.swing.JTabbedPane;
-
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
 import jd.controlling.reconnect.ReconnectMethod;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
-import jd.gui.swing.jdgui.views.settings.GUIConfigEntry;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 public class Advanced extends ConfigPanel {
+
     private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.reconnect.Advanced.";
     private static final long serialVersionUID = 3383448498625377495L;
 
     @Override
-    public String getBreadcrum() {
-        return JDL.L(this.getClass().getName() + ".breadcrum", this.getClass().getSimpleName());
+    public String getBreadcrumb() {
+        return JDL.L(JDL_PREFIX + "breadcrum", "Modules - Reconnection - Advanced");
     }
 
     public static String getTitle() {
@@ -60,18 +58,7 @@ public class Advanced extends ConfigPanel {
 
     @Override
     public void initPanel() {
-        ConfigContainer container = setupContainer();
-
-        for (ConfigEntry cfgEntry : container.getEntries()) {
-            GUIConfigEntry ce = new GUIConfigEntry(cfgEntry);
-            if (ce != null) addGUIConfigEntry(ce);
-        }
-
-        JTabbedPane tabbed = new JTabbedPane();
-        tabbed.setOpaque(false);
-        tabbed.add(getBreadcrum(), panel);
-
-        this.add(tabbed);
+        add(createTabbedPane(setupContainer()));
     }
 
 }

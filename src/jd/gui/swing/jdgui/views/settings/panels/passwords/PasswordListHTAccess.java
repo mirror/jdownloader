@@ -30,8 +30,8 @@ public class PasswordListHTAccess extends ConfigPanel {
     private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.passwords.PasswordListHTAccess.";
 
     @Override
-    public String getBreadcrum() {
-        return JDL.L(this.getClass().getName() + ".breadcrum", this.getClass().getSimpleName());
+    public String getBreadcrumb() {
+        return JDL.L(JDL_PREFIX + "breadcrum", "Modules - Passwords & Logins - HTAccess");
     }
 
     public static String getTitle() {
@@ -44,8 +44,6 @@ public class PasswordListHTAccess extends ConfigPanel {
         super();
 
         initPanel();
-        // TODO: Warum hier kein load() ?
-        // load();
     }
 
     @Override
@@ -54,7 +52,7 @@ public class PasswordListHTAccess extends ConfigPanel {
 
         JTabbedPane tabbed = new JTabbedPane();
         tabbed.setOpaque(false);
-        tabbed.add(getBreadcrum(), panel);
+        tabbed.add(getBreadcrumb(), panel);
 
         this.add(tabbed);
     }

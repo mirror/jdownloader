@@ -20,8 +20,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 
-import javax.swing.JTabbedPane;
-
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
@@ -32,7 +30,6 @@ import jd.gui.swing.dialog.AbstractDialog;
 import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.jdgui.JDGuiConstants;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
-import jd.gui.swing.jdgui.views.settings.GUIConfigEntry;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
@@ -46,20 +43,20 @@ public class General extends ConfigPanel {
 
     private SubConfiguration subConfig;
 
+    @Override
+    public String getBreadcrumb() {
+        return JDL.L(JDL_PREFIX + "breadcrum", "Basics - User Interface - General");
+    }
+
+    public static String getTitle() {
+        return JDL.L(JDL_PREFIX + "gui.title", "User Interface");
+    }
+
     public General() {
         super();
         subConfig = GUIUtils.getConfig();
         initPanel();
         load();
-    }
-
-    @Override
-    public String getBreadcrum() {
-        return JDL.L(this.getClass().getName() + ".breadcrum", this.getClass().getSimpleName());
-    }
-
-    public static String getTitle() {
-        return JDL.L(JDL_PREFIX + "gui.title", "User Interface");
     }
 
     private ConfigContainer setupContainer() {
@@ -121,18 +118,7 @@ public class General extends ConfigPanel {
 
     @Override
     public void initPanel() {
-        ConfigContainer container = setupContainer();
-
-        for (ConfigEntry cfgEntry : container.getEntries()) {
-            GUIConfigEntry ce = new GUIConfigEntry(cfgEntry);
-            if (ce != null) addGUIConfigEntry(ce);
-        }
-
-        JTabbedPane tabbed = new JTabbedPane();
-        tabbed.setOpaque(false);
-        tabbed.add(getBreadcrum(), panel);
-
-        this.add(tabbed);
+        add(createTabbedPane(setupContainer()));
     }
 
 }

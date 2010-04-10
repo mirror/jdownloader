@@ -28,8 +28,8 @@ import javax.swing.tree.TreePath;
 
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.GUIUtils;
-import jd.gui.swing.jdgui.SingletonPanel;
 import jd.gui.swing.jdgui.interfaces.SideBarPanel;
+import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.views.settings.ConfigurationView;
 import jd.gui.swing.laf.LookAndFeelController;
 import net.miginfocom.swing.MigLayout;
@@ -97,7 +97,7 @@ public class ConfigSidebar extends SideBarPanel {
                 if (tree.getSelectionPath() == null) return;
                 TreeEntry entry = (TreeEntry) event.getPath().getLastPathComponent();
                 tree.setSelectionPath(event.getPath());
-                if (entry.getPanel() != null) view.setContent(entry.getPanel().getPanel());
+                if (entry.getPanel() != null) view.setContent(entry.getPanel());
 
             }
         });
@@ -112,7 +112,7 @@ public class ConfigSidebar extends SideBarPanel {
                         if (tree.getSelectionPath() == null) return null;
                         entry = (TreeEntry) tree.getSelectionPath().getLastPathComponent();
                         tree.expandPath(tree.getSelectionPath());
-                        if (entry.getPanel() != null) view.setContent(entry.getPanel().getPanel());
+                        if (entry.getPanel() != null) view.setContent(entry.getPanel());
                         return null;
                     }
                 }.start();
@@ -161,9 +161,9 @@ public class ConfigSidebar extends SideBarPanel {
     @Override
     protected void onHide() {
         /* getPanel is null in case the user selected a rootnode */
-        SingletonPanel panel = ((TreeEntry) tree.getLastSelectedPathComponent()).getPanel();
-        if (panel == null || panel.getPanel() == null) return;
-        GUIUtils.getConfig().setProperty(PROPERTY_LAST_PANEL, panel.getPanel().getClass().getName());
+        SwitchPanel panel = ((TreeEntry) tree.getLastSelectedPathComponent()).getPanel();
+        if (panel == null) return;
+        GUIUtils.getConfig().setProperty(PROPERTY_LAST_PANEL, panel.getClass().getName());
         GUIUtils.getConfig().save();
     }
 
@@ -172,17 +172,17 @@ public class ConfigSidebar extends SideBarPanel {
     }
 
     public void setSelectedTreeEntry(Class<?> class1) {
-        TreeEntry root = (TreeEntry) tree.getModel().getRoot();
+        TreePath root = new TreePath(tree.getModel().getRoot());
         TreeEntry child = TreeEntry.getTreeByClass(class1);
         if (child == null) return;
-        TreePath path = getEntry(new TreePath(root), child);
+        TreePath path = getEntry(root, child);
         if (path != null) {
             tree.setSelectionPath(path);
             tree.setSelectionPath(path);
         }
     }
 
-    private TreePath getEntry(TreePath parent, TreeEntry treeEntry) {
+    private static TreePath getEntry(TreePath parent, TreeEntry treeEntry) {
         TreeEntry node = (TreeEntry) parent.getLastPathComponent();
         if (node == treeEntry) return parent;
         if (node.size() >= 0) {

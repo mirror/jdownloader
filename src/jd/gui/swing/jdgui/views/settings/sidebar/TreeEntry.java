@@ -5,7 +5,6 @@ import java.util.HashMap;
 
 import javax.swing.ImageIcon;
 
-import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.SingletonPanel;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.utils.JDTheme;
@@ -26,7 +25,7 @@ public class TreeEntry {
     }
 
     private Class<? extends SwitchPanel> clazz;
-    private SingletonPanel panel;
+    private SwitchPanel panel;
 
     private String title;
     private ImageIcon iconSmall;
@@ -52,26 +51,16 @@ public class TreeEntry {
     public TreeEntry(SwitchPanel panel, String title, String iconKey) {
         this(title, iconKey);
 
-        this.panel = new SingletonPanel(panel);
+        this.panel = panel;
     }
 
     public TreeEntry(final Class<? extends SwitchPanel> clazz, String title, String iconKey) {
         this(title, iconKey);
 
-        this.clazz = clazz;
-        if (clazz != null) {
-            panel = new SingletonPanel(clazz);
-            // init this panel in an extra thread..
-            new GuiRunnable<Object>() {
-                @Override
-                public Object runSave() {
-                    panel.getPanel();
-                    return null;
-                }
-            }.start();
-        }
-
         PANELS.put(clazz, this);
+
+        this.clazz = clazz;
+        this.panel = new SingletonPanel(clazz).getPanel();
     }
 
     public Class<? extends SwitchPanel> getClazz() {
@@ -90,7 +79,7 @@ public class TreeEntry {
         return iconSmall;
     }
 
-    public SingletonPanel getPanel() {
+    public SwitchPanel getPanel() {
         return panel;
     }
 

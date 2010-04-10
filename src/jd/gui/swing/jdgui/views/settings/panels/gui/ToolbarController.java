@@ -116,8 +116,8 @@ public class ToolbarController extends ConfigPanel {
     private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.gui.ToolbarController.";
 
     @Override
-    public String getBreadcrum() {
-        return JDL.L(this.getClass().getName() + ".breadcrum", this.getClass().getSimpleName());
+    public String getBreadcrumb() {
+        return JDL.L(JDL_PREFIX + "breadcrum", "Basics - User Interface - Toolbar Manager");
     }
 
     public static String getTitle() {
@@ -251,7 +251,7 @@ public class ToolbarController extends ConfigPanel {
 
         JTabbedPane tabbed = new JTabbedPane();
         tabbed.setOpaque(false);
-        tabbed.add(getBreadcrum(), panel);
+        tabbed.add(getBreadcrumb(), panel);
 
         this.add(tabbed);
     }

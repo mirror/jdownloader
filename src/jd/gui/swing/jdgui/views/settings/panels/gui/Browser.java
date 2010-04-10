@@ -20,8 +20,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 
-import javax.swing.JTabbedPane;
-
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.SubConfiguration;
@@ -31,7 +29,6 @@ import jd.gui.swing.components.linkbutton.JLink;
 import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.jdgui.JDGuiConstants;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
-import jd.gui.swing.jdgui.views.settings.GUIConfigEntry;
 import jd.nutils.JDFlags;
 import jd.nutils.OSDetector;
 import jd.nutils.nativeintegration.LocalBrowser;
@@ -45,8 +42,8 @@ public class Browser extends ConfigPanel {
     private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.gui.Browser.";
 
     @Override
-    public String getBreadcrum() {
-        return JDL.L(this.getClass().getName() + ".breadcrum", this.getClass().getSimpleName());
+    public String getBreadcrumb() {
+        return JDL.L(JDL_PREFIX + "breadcrum", "Basics - User Interface - Browser");
     }
 
     public static String getTitle() {
@@ -62,11 +59,12 @@ public class Browser extends ConfigPanel {
         load();
     }
 
-    @Override
-    public void initPanel() {
+    private ConfigContainer setupContainer() {
+        ConfigContainer container = new ConfigContainer();
+
         ConfigEntry ce;
 
-        addGUIConfigEntry(new GUIConfigEntry(ce = new ConfigEntry(ConfigContainer.TYPE_BUTTON, new ActionListener() {
+        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_BUTTON, new ActionListener() {
 
             public void actionPerformed(ActionEvent arg0) {
                 if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN, JDL.L("gui.config.gui.testcontainer.message", "JDownloader now tries to open http://jdownloader.org in your container.")), UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
@@ -80,18 +78,18 @@ public class Browser extends ConfigPanel {
                 }
 
             }
-        }, JDL.L("gui.config.gui.testcontainer.short", "Start browser"), JDL.L("gui.config.gui.testcontainer.long", "Test starting your browser"), JDTheme.II("gui.images.config.host", 16, 16))));
+        }, JDL.L("gui.config.gui.testcontainer.short", "Start browser"), JDL.L("gui.config.gui.testcontainer.long", "Test starting your browser"), JDTheme.II("gui.images.config.host", 16, 16)));
 
         ConfigEntry conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDGuiConstants.PARAM_CUSTOM_BROWSER_USE, JDL.L("gui.config.gui.use_custom_browser", "Use custom browser"));
         conditionEntry.setDefaultValue(false);
 
         LocalBrowser[] lb = LocalBrowser.getBrowserList();
-        addGUIConfigEntry(new GUIConfigEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, JDGuiConstants.PARAM_BROWSER, lb, JDL.L("gui.config.gui.Browser", "Browser")).setDefaultValue(lb[0])));
+        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, JDGuiConstants.PARAM_BROWSER, lb, JDL.L("gui.config.gui.Browser", "Browser")).setDefaultValue(lb[0]));
         ce.setEnabledCondidtion(conditionEntry, false);
 
-        addGUIConfigEntry(new GUIConfigEntry(conditionEntry));
+        container.addEntry(conditionEntry);
 
-        addGUIConfigEntry(new GUIConfigEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, JDGuiConstants.PARAM_CUSTOM_BROWSER, JDL.L("gui.config.gui.custom_browser", "Browserpath"))));
+        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, JDGuiConstants.PARAM_CUSTOM_BROWSER, JDL.L("gui.config.gui.custom_browser", "Browserpath")));
 
         String parameter = null;
         String path = null;
@@ -130,16 +128,16 @@ public class Browser extends ConfigPanel {
         ce.setDefaultValue(path);
         ce.setEnabledCondidtion(conditionEntry, true);
 
-        addGUIConfigEntry(new GUIConfigEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, subConfig, JDGuiConstants.PARAM_CUSTOM_BROWSER_PARAM, JDL.L("gui.config.gui.custom_browser_param", "Parameter %url (one parameter per line)"))));
+        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, subConfig, JDGuiConstants.PARAM_CUSTOM_BROWSER_PARAM, JDL.L("gui.config.gui.custom_browser_param", "Parameter %url (one parameter per line)")));
         ce.setDefaultValue(parameter);
         ce.setEnabledCondidtion(conditionEntry, true);
 
-        JTabbedPane tabbed = new JTabbedPane();
+        return container;
+    }
 
-        tabbed.setOpaque(false);
-        tabbed.add(getBreadcrum(), panel);
-
-        this.add(tabbed);
+    @Override
+    public void initPanel() {
+        add(createTabbedPane(setupContainer()));
     }
 
 }

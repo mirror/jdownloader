@@ -79,8 +79,8 @@ public class MethodSelection extends ConfigPanel implements ActionListener {
     private JPanel method;
 
     @Override
-    public String getBreadcrum() {
-        return JDL.L(this.getClass().getName() + ".breadcrum", this.getClass().getSimpleName());
+    public String getBreadcrumb() {
+        return JDL.L(JDL_PREFIX + "breadcrum", "Modules - Reconnection - Methods");
     }
 
     public static String getTitle() {
@@ -255,9 +255,11 @@ public class MethodSelection extends ConfigPanel implements ActionListener {
         }
 
         setLayout(new MigLayout("ins 0,wrap 1", "[fill,grow 10]", "[fill,grow]"));
+
         JTabbedPane tabbed = new JTabbedPane();
         tabbed.setOpaque(false);
-        tabbed.add(getBreadcrum(), method);
+        tabbed.add(getBreadcrumb(), method);
+
         this.add(tabbed);
     }
 

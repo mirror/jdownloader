@@ -16,8 +16,6 @@
 
 package jd.gui.swing.jdgui.views.settings.panels.downloadandnetwork;
 
-import javax.swing.JTabbedPane;
-
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
@@ -26,7 +24,6 @@ import jd.config.SubConfiguration;
 import jd.controlling.ByteBufferController;
 import jd.gui.UserIO;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
-import jd.gui.swing.jdgui.views.settings.GUIConfigEntry;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 
@@ -36,8 +33,8 @@ public class Advanced extends ConfigPanel {
     private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.downloadandnetwork.Advanced.";
 
     @Override
-    public String getBreadcrum() {
-        return JDL.L(this.getClass().getName() + ".breadcrum", this.getClass().getSimpleName());
+    public String getBreadcrumb() {
+        return JDL.L(JDL_PREFIX + "breadcrum", "Basics - Download & Connections - Advanced");
     }
 
     public static String getTitle() {
@@ -120,14 +117,6 @@ public class Advanced extends ConfigPanel {
 
     @Override
     public void initPanel() {
-        ConfigContainer container = setupContainer();
-
-        for (ConfigEntry cfgEntry : container.getEntries()) {
-            GUIConfigEntry ce = new GUIConfigEntry(cfgEntry);
-            if (ce != null) addGUIConfigEntry(ce);
-        }
-        JTabbedPane tabbed = new JTabbedPane();
-        tabbed.addTab(getBreadcrum(), panel);
-        add(tabbed);
+        add(createTabbedPane(setupContainer()));
     }
 }

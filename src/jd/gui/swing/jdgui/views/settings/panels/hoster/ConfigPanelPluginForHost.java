@@ -52,8 +52,8 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
     private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.ConfigPanelPluginForHost.";
 
     @Override
-    public String getBreadcrum() {
-        return JDL.L(this.getClass().getName() + ".breadcrum", this.getClass().getSimpleName());
+    public String getBreadcrumb() {
+        return JDL.L(JDL_PREFIX + "breadcrum", "Plugins & Addons - Host");
     }
 
     public static String getTitle() {
@@ -139,7 +139,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
 
         JTabbedPane tabbed = new JTabbedPane();
         tabbed.setOpaque(false);
-        tabbed.add(getBreadcrum(), panel);
+        tabbed.add(getBreadcrumb(), panel);
 
         this.add(tabbed);
     }

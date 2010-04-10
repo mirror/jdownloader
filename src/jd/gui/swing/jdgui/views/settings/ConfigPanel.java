@@ -23,6 +23,7 @@ import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
+import javax.swing.JTabbedPane;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -75,7 +76,7 @@ public class ConfigPanel extends SwitchPanel {
         this.add(panel);
     }
 
-    public String getBreadcrum() {
+    public String getBreadcrumb() {
         return "";
     }
 
@@ -274,6 +275,17 @@ public class ConfigPanel extends SwitchPanel {
         for (SubConfiguration subConfiguration : subs) {
             subConfiguration.save();
         }
+    }
+
+    protected final JComponent createTabbedPane(ConfigContainer config) {
+        for (ConfigEntry cfgEntry : config.getEntries()) {
+            GUIConfigEntry ce = new GUIConfigEntry(cfgEntry);
+            if (ce != null) addGUIConfigEntry(ce);
+        }
+
+        JTabbedPane tabbed = new JTabbedPane();
+        tabbed.addTab(getBreadcrumb(), panel);
+        return tabbed;
     }
 
 }

@@ -16,8 +16,6 @@
 
 package jd.gui.swing.jdgui.views.settings.panels.downloadandnetwork;
 
-import javax.swing.JTabbedPane;
-
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
@@ -25,7 +23,6 @@ import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.config.ConfigEntry.PropertyType;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
-import jd.gui.swing.jdgui.views.settings.GUIConfigEntry;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 
@@ -35,20 +32,20 @@ public class InternetAndNetwork extends ConfigPanel {
     private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.downloadandnetwork.internetandnetwork.";
     private SubConfiguration config;
 
+    @Override
+    public String getBreadcrumb() {
+        return JDL.L(JDL_PREFIX + "breadcrum", "Basics - Download & Connections - Internet & Network");
+    }
+
+    public static String getTitle() {
+        return JDL.L(JDL_PREFIX + "download.internetandnetwork.title", "Internet & Network");
+    }
+
     public InternetAndNetwork() {
         super();
         config = SubConfiguration.getConfig("DOWNLOAD");
         initPanel();
         load();
-    }
-
-    @Override
-    public String getBreadcrum() {
-        return JDL.L(this.getClass().getName() + ".breadcrum", this.getClass().getSimpleName());
-    }
-
-    public static String getTitle() {
-        return JDL.L(JDL_PREFIX + "download.internetandnetwork.title", "Internet & Network");
     }
 
     private ConfigContainer setupContainer() {
@@ -126,18 +123,7 @@ public class InternetAndNetwork extends ConfigPanel {
 
     @Override
     public void initPanel() {
-        ConfigContainer container = setupContainer();
-
-        for (ConfigEntry cfgEntry : container.getEntries()) {
-            GUIConfigEntry ce = new GUIConfigEntry(cfgEntry);
-            if (ce != null) addGUIConfigEntry(ce);
-        }
-
-        JTabbedPane tabbed = new JTabbedPane();
-        tabbed.setOpaque(false);
-        tabbed.add(getBreadcrum(), panel);
-
-        this.add(tabbed);
+        add(createTabbedPane(setupContainer()));
     }
 
 }

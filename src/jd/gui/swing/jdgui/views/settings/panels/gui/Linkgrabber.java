@@ -16,8 +16,6 @@
 
 package jd.gui.swing.jdgui.views.settings.panels.gui;
 
-import javax.swing.JTabbedPane;
-
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
@@ -25,16 +23,16 @@ import jd.config.SubConfiguration;
 import jd.config.ConfigEntry.PropertyType;
 import jd.controlling.LinkGrabberController;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
-import jd.gui.swing.jdgui.views.settings.GUIConfigEntry;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 
 public class Linkgrabber extends ConfigPanel {
+
     private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.gui.Linkgrabber.";
 
     @Override
-    public String getBreadcrum() {
-        return JDL.L(this.getClass().getName() + ".breadcrum", this.getClass().getSimpleName());
+    public String getBreadcrumb() {
+        return JDL.L(JDL_PREFIX + "breadcrum", "Basics - User Interface - Linkgrabber");
     }
 
     public static String getTitle() {
@@ -65,10 +63,10 @@ public class Linkgrabber extends ConfigPanel {
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
         container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, SubConfiguration.getConfig(LinkGrabberController.CONFIG), LinkGrabberController.PARAM_INFOPANEL_ONLINKGRAB, JDL.L("gui.config.linkgrabber.infopanel.onlinkgrab", "Show infopanel on linkgrab")));
         ce.setDefaultValue(false);
-        //
+
         container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, SubConfiguration.getConfig(LinkGrabberController.CONFIG), LinkGrabberController.PARAM_USE_CNL2, JDL.L("gui.config.linkgrabber.cnl2", "Enable Click'n'Load Support")));
         ce.setDefaultValue(true);
-        //
+
         container.setGroup(new ConfigGroup(JDL.L("gui.config.gui.linggrabber.ignorelist", "Linkfilter"), JDTheme.II("gui.images.filter", 32, 32)));
 
         container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, SubConfiguration.getConfig(LinkGrabberController.CONFIG), LinkGrabberController.IGNORE_LIST, JDL.L("gui.config.linkgrabber.iognorelist", "The linkfilter is used to filter links based on regular expressions.")));
@@ -79,18 +77,7 @@ public class Linkgrabber extends ConfigPanel {
 
     @Override
     public void initPanel() {
-        ConfigContainer container = setupContainer();
-
-        for (ConfigEntry cfgEntry : container.getEntries()) {
-            GUIConfigEntry ce = new GUIConfigEntry(cfgEntry);
-            if (ce != null) addGUIConfigEntry(ce);
-        }
-
-        JTabbedPane tabbed = new JTabbedPane();
-        tabbed.setOpaque(false);
-        tabbed.add(getBreadcrum(), panel);
-
-        this.add(tabbed);
+        add(createTabbedPane(setupContainer()));
     }
 
 }
