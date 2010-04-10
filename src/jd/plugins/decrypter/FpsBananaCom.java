@@ -39,6 +39,7 @@ public class FpsBananaCom extends PluginForDecrypt { // http://www.fpsbanana.com
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.setFollowRedirects(false);
+        br.setReadTimeout(120 * 1000);
         if (parameter.contains("/games/")) {
             // To decrypt whole categories
             br.getPage(parameter);

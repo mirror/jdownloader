@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -53,6 +54,7 @@ public class UploadBoxCom extends PluginForHost {
     public void login(Account account) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setDebug(true);
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.getPage("http://uploadbox.com/?ac=lang&lang_new=en");
         br.getPage("http://uploadbox.com/en");
         br.postPage("http://uploadbox.com/en", "login=" + Encoding.urlEncode(account.getUser()) + "&passwd=" + Encoding.urlEncode(account.getPass()) + "&ac=auth&back=");
@@ -82,6 +84,7 @@ public class UploadBoxCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.getPage(parameter.getDownloadURL());
         if (br.containsHTML("class=\"not_found\">") || br.containsHTML("File deleted from service")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("id=\"error\">")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -107,6 +110,7 @@ public class UploadBoxCom extends PluginForHost {
         requestFileInformation(parameter);
         login(account);
         br.setFollowRedirects(false);
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.getPage(parameter.getDownloadURL());
         String dlUrl = br.getRegex("title=\"Direct link\">(http://.*?)</a>").getMatch(0);
         if (dlUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
