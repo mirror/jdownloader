@@ -227,9 +227,9 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
                 addEntry(JDL.L("gui.linkinfo.saveto", "Save to"), downloadLink.getFileOutput());
             }
             if (DownloadWatchDog.getInstance().getRemainingTempUnavailWaittime(downloadLink.getHost()) > 0) {
-                addEntry(JDL.L("gui.linkinfo.waittime", "Wait time"), JDL.LF("gui.linkinfo.secs", "{0} sec", DownloadWatchDog.getInstance().getRemainingTempUnavailWaittime(downloadLink.getHost()) / 1000));
+                addEntry(JDL.L("gui.linkinfo.waittime", "Wait time"), JDL.LF("gui.linkinfo.secs", "%s sec", DownloadWatchDog.getInstance().getRemainingTempUnavailWaittime(downloadLink.getHost()) / 1000));
             } else if (DownloadWatchDog.getInstance().getRemainingIPBlockWaittime(downloadLink.getHost()) > 0) {
-                addEntry(JDL.L("gui.linkinfo.waittime", "Wait time"), JDL.LF("gui.linkinfo.secs", "{0} sec", DownloadWatchDog.getInstance().getRemainingIPBlockWaittime(downloadLink.getHost()) / 1000));
+                addEntry(JDL.L("gui.linkinfo.waittime", "Wait time"), JDL.LF("gui.linkinfo.secs", "%s sec", DownloadWatchDog.getInstance().getRemainingIPBlockWaittime(downloadLink.getHost()) / 1000));
             }
             if (downloadLink.getLinkStatus().isPluginActive()) {
                 addEntry(JDL.L("gui.linkinfo.download", "Download"), JDL.L("gui.linkinfo.download.underway", "is in process"));
