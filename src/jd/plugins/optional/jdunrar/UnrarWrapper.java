@@ -551,11 +551,17 @@ public class UnrarWrapper extends Thread implements JDRunnable {
                 exec.setRunin(this.file.getParentFile().getAbsolutePath());
                 exec.setWaitTimeout(-1);
                 exec.addProcessListener(new PasswordListener(pass), Executer.LISTENER_ERRORSTREAM);
-
+                final int abortAfter;
+                if (new Regex(biggestFile.getFilepath(), ".+\\.iso").matches()) {
+                    /* for iso images we need more data */
+                    abortAfter = 37000;
+                } else {
+                    abortAfter = 50;
+                }
                 exec.addProcessListener(new ProcessListener() {
 
                     public void onBufferChanged(final Executer exec, DynByteBuffer buffer, int latestNum) {
-                        if (buffer.position() >= 50) {
+                        if (buffer.position() >= abortAfter) {
                             System.out.println("loaded enough.... interrupt");
                             exec.interrupt();
 

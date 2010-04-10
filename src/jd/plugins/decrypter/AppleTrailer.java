@@ -22,17 +22,20 @@ public class AppleTrailer extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.getPage(parameter.toString());
+        String title = br.getRegex("var trailerTitle = '(.*?)';").getMatch(0);
         String[] hits = br.getRegex("class=\"hd\".*?href=\"((http://.*?apple[^<>]*?|/[^<>]*?)_h?\\d+p\\.mov)\"").getColumn(0);
         if (hits.length == 0) {
             /* custom trailer page */
-            br.getPage(parameter.toString() + "/hd/");
+            // br.getPage(parameter.toString() + "/hd/");
+            // apple changed layout again
+            br.getPage(parameter.toString() + "includes/playlists/web.inc");
+            if (title == null) title = br.getRegex("var trailerTitle = '(.*?)';").getMatch(0);
         }
         String customAgent[] = new String[] { "User-Agent", "QuickTime/7.6.2 (qtver=7.6.2;cpu=IA32;os=Mac 10.5.8)" };
         ArrayList<String[]> customHeaders = new ArrayList<String[]>();
         customHeaders.add(customAgent);
         hits = br.getRegex("class=\"hd\".*?href=\"((http://.*?apple[^<>]*?|/[^<>]*?)_h?\\d+p\\.mov)\"").getColumn(0);
         if (hits.length == 0) return decryptedLinks;
-        String title = br.getRegex("var trailerTitle = '(.*?)';").getMatch(0);
         FilePackage fp = FilePackage.getInstance();
         if (title != null) fp.setName(title.trim() + " Trailers");
         for (String hit : hits) {

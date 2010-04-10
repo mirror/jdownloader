@@ -30,6 +30,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
@@ -59,6 +60,7 @@ import jd.plugins.download.DownloadInterface;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+import net.sf.image4j.codec.ico.ICODecoder;
 
 /**
  * Dies ist die Oberklasse für alle Plugins, die von einem Anbieter Dateien
@@ -671,9 +673,38 @@ public abstract class PluginForHost extends Plugin {
         return hosterIcon;
     }
 
-    public ImageIcon initHosterIcon() {
-        // Image image = JDImage.getImage("hosterlogos/" + getHost());
+    /* this function mayb be overriden by plugin for e.g. customized Favicon */
+    public ImageIcon getFavIcon() {
+        return downloadFavIcon("http://" + getHost() + "/favicon.ico");
+    }
 
+    /**
+     * function to download FavIcon from given url
+     * 
+     * @param url
+     * @return
+     */
+    public static ImageIcon downloadFavIcon(String url) {
+        Browser favBr = new Browser();
+        try {
+            favBr.openGetConnection(url);
+            if (favBr.getHttpConnection().isOK()) {
+                List<BufferedImage> ret = ICODecoder.read(favBr.getHttpConnection().getInputStream());
+                if (ret.size() > 0) return new ImageIcon(ret.get(0));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                favBr.getHttpConnection().disconnect();
+            } catch (Exception e) {
+            }
+        }
+        return null;
+    }
+
+    private synchronized ImageIcon initHosterIcon() {
+        // Image image = JDImage.getImage("hosterlogos/" + getHost());
         Image image = JDTheme.getImage("hosterlogos/" + getHost(), 16, 16);
 
         if (image == null) {

@@ -192,7 +192,6 @@ public class JDImage {
         }
         BUFFERED_IMAGE_CACHE.put(file.getAbsolutePath(), ret);
         return ret;
-
     }
 
     public static ImageIcon getImageIcon(String string) {
