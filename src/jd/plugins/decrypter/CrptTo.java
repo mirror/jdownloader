@@ -93,32 +93,26 @@ public class CrptTo extends PluginForDecrypt {
             if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
         }
-        // "waittime"-check
-
-        Form checkform = br.getForm(0);
-        if (checkform != null) {
-            br.submitForm(checkform);
-        }
 
         // container handling (if no containers found, use webprotection)
 
         if (br.containsHTML("Links im dlc-Format herunterladen")) {
-            decryptedLinks = loadcontainer(br, 0);
+            decryptedLinks = loadcontainer(br, 0, param);
             if (decryptedLinks != null && decryptedLinks.size() > 0) return decryptedLinks;
         }
         if (br.containsHTML("Links im rsdf-Format herunterladen")) {
-            decryptedLinks = loadcontainer(br, 1);
+            decryptedLinks = loadcontainer(br, 1, param);
             if (decryptedLinks != null && decryptedLinks.size() > 0) return decryptedLinks;
         }
         if (br.containsHTML("Links im ccf-Format herunterladen")) {
-            decryptedLinks = loadcontainer(br, 2);
+            decryptedLinks = loadcontainer(br, 2, param);
             if (decryptedLinks != null && decryptedLinks.size() > 0) return decryptedLinks;
         }
 
         // Webprotection decryption
         String linkid = br.getRegex("window\\.setTimeout\\('out\\(\\\\'(.*?)\\\\'").getMatch(0);
         String[] links = br.getRegex("window\\.setTimeout\\('out\\(\\\\'[0-9a-z]+\\\\', \\\\'(\\d+)\\\\'").getColumn(0);
-        if (links == null || links.length == 0) return null;
+        if (links == null || links.length == 0 || linkid == null) return null;
         progress.setRange(links.length);
         decryptedLinks = new ArrayList<DownloadLink>();
         for (String link : links) {
@@ -142,28 +136,27 @@ public class CrptTo extends PluginForDecrypt {
     /**
      * 0 = dlc 1 = rsdf 2 = ccf
      */
-    private ArrayList<DownloadLink> loadcontainer(Browser br, int format) throws IOException, PluginException {
+    private ArrayList<DownloadLink> loadcontainer(Browser br, int format, CryptedLink param) throws IOException, PluginException {
         Browser brc = br.cloneBrowser();
-        String[] dlclinks = brc.getRegex("(dlc://crypt.to/container\\,[0-9a-zA-Z]+\\," + format + ".*?)\"").getColumn(0);
-        if (dlclinks == null || dlclinks.length == 0) return null;
-        for (String link : dlclinks) {
-            String test0 = Encoding.htmlDecode(link);
-            String test = test0.replaceFirst("dlc", "http");
-            File file = null;
-            URLConnectionAdapter con = brc.openGetConnection(test);
-            if (con.getResponseCode() == 200) {
-                file = JDUtilities.getResourceFile("tmp/cryptto/" + test.replace("http://crypt.to/", "") + "." + (format == 0 ? "dlc" : format == 1 ? "rsdf" : "ccf"));
-                if (file == null) return null;
-                file.deleteOnExit();
-                brc.downloadConnection(file, con);
-            } else {
-                con.disconnect();
-            }
+        String dlclink = param.toString().replace("/fid,", "/container,") + "," + format;
+        logger.info("Containerlink = " + dlclink);
+        if (dlclink == null) return null;
+        String test0 = Encoding.htmlDecode(dlclink);
+        String test = test0.replaceFirst("dlc", "http");
+        File file = null;
+        URLConnectionAdapter con = brc.openGetConnection(test);
+        if (con.getResponseCode() == 200) {
+            file = JDUtilities.getResourceFile("tmp/cryptto/" + test.replace("http://crypt.to/", "") + "." + (format == 0 ? "dlc" : format == 1 ? "rsdf" : "ccf"));
+            if (file == null) return null;
+            file.deleteOnExit();
+            brc.downloadConnection(file, con);
+        } else {
+            con.disconnect();
+        }
 
-            if (file != null && file.exists() && file.length() > 100) {
-                ArrayList<DownloadLink> decryptedLinks = JDUtilities.getController().getContainerLinks(file);
-                if (decryptedLinks.size() > 0) return decryptedLinks;
-            }
+        if (file != null && file.exists() && file.length() > 100) {
+            ArrayList<DownloadLink> decryptedLinks = JDUtilities.getController().getContainerLinks(file);
+            if (decryptedLinks.size() > 0) return decryptedLinks;
         }
         return null;
     }

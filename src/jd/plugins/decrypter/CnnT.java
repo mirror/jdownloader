@@ -57,11 +57,13 @@ public class CnnT extends PluginForDecrypt {
                 br.getPage(parameter);
             } else {
                 valid = true;
-                decryptedLinks.add(createDownloadlink(br.getRegex("URL=(.*?)\"").getMatch(0)));
+                String finallink = br.getRegex("URL=(.*?)\"").getMatch(0);
+                decryptedLinks.add(createDownloadlink(finallink));
                 String links[] = br.getRegex("<a target=\"_blank\" href=\"(.*?)\">").getColumn(0);
-                if (links == null || links.length == 0) return null;
-                for (String link : links) {
-                    decryptedLinks.add(createDownloadlink(link));
+                if (links != null && links.length == 0) {
+                    for (String link : links) {
+                        decryptedLinks.add(createDownloadlink(link));
+                    }
                 }
                 break;
             }
