@@ -33,7 +33,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4shared.com" }, urls = { "http://[\\w\\.]*?(4shared|4shared-china)\\.com/(file|get)/\\d+?/.*" }, flags = { 2 })
+//http://www.4shared.com/file/<FILEID[a-70-9]>/<FILENAME>.html
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4shared.com" }, urls = { "http://[\\w\\.]*?(4shared|4shared\\-china)\\.com/(file|get)/.+?/.*" }, flags = { 2 })
 public class FourSharedCom extends PluginForHost {
 
     public FourSharedCom(PluginWrapper wrapper) {
