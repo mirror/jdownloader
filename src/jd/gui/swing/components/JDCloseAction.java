@@ -5,6 +5,7 @@ import java.awt.event.ActionListener;
 
 import javax.swing.AbstractAction;
 import javax.swing.Icon;
+import javax.swing.UIManager;
 
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
@@ -21,6 +22,12 @@ public class JDCloseAction extends AbstractAction {
      * Returns the default close icon.
      */
     public static Icon getCloseIcon() {
+        Icon ic = UIManager.getIcon("InternalFrame.closeIcon");
+        if (ic != null) return ic;
+
+        /*
+         * If UIManager returns null, use fallback icon.
+         */
         return JDTheme.II("gui.images.cancel", 16, 16);
     }
 
