@@ -1,4 +1,4 @@
 <jDownloader>
-<method name="filecruz.com" author="DwD"  services="filecruz.com" ></method> 
+<method name="filecruz.com" author="DwD"  services="filecruz.com;dll.bz" ></method> 
 <format type="gif" letterNum="3" />
 </jDownloader>

@@ -34,7 +34,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "Only4Devs2Test.com" }, urls = { "http://[\\w\\.]*?Only4Devs2Test\\.com/((\\?d|download\\.php\\?id)=[A-Z0-9]+|(en|ru|fr|es)/file/[0-9]+/)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "Only4Devs2Test.com" }, urls = { "http://[\\w\\.]*?Only4Devs2Test\\.com/((\\?d|download\\.php\\?id)=[A-Z0-9]+|((en|ru|fr|es)/)?file/[0-9]+/)" }, flags = { 0 })
 public class MhfScriptBasic extends PluginForHost {
 
     public MhfScriptBasic(PluginWrapper wrapper) {
@@ -95,7 +95,7 @@ public class MhfScriptBasic extends PluginForHost {
                 captchaform = br.getFormbyProperty("name", "valideform");
             }
         }
-        if (br.containsHTML("(captcha.php|downloadpw)")) {
+        if (br.containsHTML("(captcha.php|class=textinput name=downloadpw)")) {
             if (captchaform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             for (int i = 0; i <= 3; i++) {
                 if (br.containsHTML("captcha.php")) {
@@ -103,17 +103,15 @@ public class MhfScriptBasic extends PluginForHost {
                     String code = getCaptchaCode(captchaurl, link);
                     captchaform.put("captchacode", code);
                 }
-                if (br.containsHTML("downloadpw")) {
-                    if (br.containsHTML("downloadpw")) {
-                        if (link.getStringProperty("pass", null) == null) {
-                            passCode = Plugin.getUserInput("Password?", link);
+                if (br.containsHTML("class=textinput name=downloadpw")) {
+                    if (link.getStringProperty("pass", null) == null) {
+                        passCode = Plugin.getUserInput("Password?", link);
 
-                        } else {
-                            /* gespeicherten PassCode holen */
-                            passCode = link.getStringProperty("pass", null);
-                        }
-                        captchaform.put("downloadpw", passCode);
+                    } else {
+                        /* gespeicherten PassCode holen */
+                        passCode = link.getStringProperty("pass", null);
                     }
+                    captchaform.put("downloadpw", passCode);
                 }
                 br.submitForm(captchaform);
                 if (br.containsHTML("Password Error")) {

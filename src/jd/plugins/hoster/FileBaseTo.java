@@ -146,23 +146,26 @@ public class FileBaseTo extends PluginForHost {
 
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        String uidValue = br.getRegex("id=\"uid\" value=\"(.*?)\"").getMatch(0);
-        if (uidValue == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        Browser br2 = br.cloneBrowser();
-        br2.getPage("http://filebase.to/js/dl_s_code.js");
-        // Ticket Time
-        String ttt = br2.getRegex("var secs =.*?(\\d+);").getMatch(0);
-        int tt = 10;
-        if (ttt != null) {
-            logger.info("Waittime detected, waiting " + ttt.trim() + " seconds from now on...");
-            tt = Integer.parseInt(ttt);
-        }
-        // Add some waittime to prevent errors
-        tt = tt + 10;
-        sleep(tt * 1001, downloadLink);
-        br.postPage(br.getURL(), "uid=" + uidValue);
         Form forms = null;
         String directLink = br.getRegex("=\"(http://[0-9]+\\..*?/download/ticket.*?)\"").getMatch(0);
+        if (directLink == null) {
+            String uidValue = br.getRegex("id=\"uid\" value=\"(.*?)\"").getMatch(0);
+            if (uidValue == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            Browser br2 = br.cloneBrowser();
+            br2.getPage("http://filebase.to/js/dl_s_code.js");
+            // Ticket Time
+            String ttt = br2.getRegex("var secs =.*?(\\d+);").getMatch(0);
+            int tt = 10;
+            if (ttt != null) {
+                logger.info("Waittime detected, waiting " + ttt.trim() + " seconds from now on...");
+                tt = Integer.parseInt(ttt);
+            }
+            // Add some waittime to prevent errors
+            tt = tt + 10;
+            sleep(tt * 1001, downloadLink);
+            br.postPage(br.getURL(), "uid=" + uidValue);
+            directLink = br.getRegex("=\"(http://[0-9]+\\..*?/download/ticket.*?)\"").getMatch(0);
+        }
         if (directLink != null) {
             dl = BrowserAdapter.openDownload(br, downloadLink, directLink);
         } else {

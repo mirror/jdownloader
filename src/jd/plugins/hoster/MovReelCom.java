@@ -229,9 +229,9 @@ public class MovReelCom extends PluginForHost {
             if (dllink == null) {
                 checkErrors(downloadLink, true, passCode);
                 if (dllink == null) {
-                    dllink = br.getRegex("name=\"src\" value=\"(http://.*?)\"").getMatch(0);
+                    dllink = br.getRegex("<big><a href=\"(http://.*?)\">http").getMatch(0);
                     if (dllink == null) {
-                        dllink = br.getRegex("\"(http://www\\d+\\.movreel\\.com/files/.*?/.*?)\"").getMatch(1);
+                        dllink = br.getRegex("\"(http://www\\d+\\.movreel\\.com/files/.*?/.*?)\"").getMatch(0);
                     }
                 }
             }

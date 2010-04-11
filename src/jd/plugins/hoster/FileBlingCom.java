@@ -80,6 +80,7 @@ public class FileBlingCom extends PluginForHost {
             break;
         }
         if (br.containsHTML("check if you have entered the image verification code correctly")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        if (br.containsHTML("the file you have requested does not exist or may have been deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String continu = br.getRegex("href='(.*?)'>Proceed to Download</a>").getMatch(0);
         if (continu == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String wait = br.getRegex("var countdownfrom=(\\d+)").getMatch(0);
@@ -99,6 +100,7 @@ public class FileBlingCom extends PluginForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        downloadLink.setFinalFileName(getFileNameFromHeader(dl.getConnection()));
         dl.startDownload();
     }
 

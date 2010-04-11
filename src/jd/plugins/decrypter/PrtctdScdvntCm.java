@@ -26,24 +26,38 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "protected.socadvnet.com" }, urls = { "http://[\\w\\.]*?protected\\.socadvnet\\.com/\\?[0-9-]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "protected.socadvnet.com" }, urls = { "http://[\\w\\.]*?protected\\.socadvnet\\.com/\\?[a-z0-9-]+" }, flags = { 0 })
 public class PrtctdScdvntCm extends PluginForDecrypt {
 
     public PrtctdScdvntCm(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    // @Override
+    // At the moment this decrypter only decrypts turbobit.net links as
+    // "protected.socadvnet.com" only allows crypting links of this host!
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
-        String postvar = new Regex(parameter, "\\?([0-9-]+)").getMatch(0);
-        br.postPage("http://protected.socadvnet.com/links.php", "LinkName=" + postvar);
-        decryptedLinks.add(createDownloadlink(br.toString()));
+        String postvar = new Regex(parameter, "protected\\.socadvnet\\.com/\\?(.+)").getMatch(0);
+        if (postvar == null) return null;
+        br.postPage("http://protected.socadvnet.com/allink.php", "LinkName=" + postvar);
+        String[] linksCount = br.getRegex("(ten\\.tibobrut/)").getColumn(0);
+        if (linksCount == null || linksCount.length == 0) return null;
+        logger.info("Found " + linksCount.length + " links, decrypting now...");
+        progress.setRange(linksCount.length);
+        for (int i = 0; i <= linksCount.length - 1; i++) {
+            String actualPage = "http://protected.socadvnet.com/allink.php?out_name=" + postvar + "&&link_id=" + i;
+            br.getPage(actualPage);
+            String turboId = br.getRegex("\"http://turbobit\\.net/download/free/(.*?)\"").getMatch(0);
+            if (turboId == null) {
+                logger.warning("There is a problem with the link: " + actualPage);
+                return null;
+            }
+            decryptedLinks.add(createDownloadlink("http://turbobit.net/" + turboId + ".html"));
+            progress.increase(1);
+        }
         return decryptedLinks;
     }
-
-    // @Override
 
 }

@@ -64,6 +64,7 @@ public class QshareCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        br.setReadTimeout(120 * 1000);
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         br.setDebug(false);
