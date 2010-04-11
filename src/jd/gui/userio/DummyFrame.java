@@ -44,6 +44,7 @@ public class DummyFrame extends JFrame {
 
     private DummyFrame() {
         super();
+
         if (JDUtilities.getJavaVersion() >= 1.6) {
             ArrayList<Image> list = new ArrayList<Image>();
             list.add(JDImage.getImage("logo/logo_14_14"));
@@ -58,7 +59,6 @@ public class DummyFrame extends JFrame {
         } else {
             this.setIconImage(JDImage.getImage("logo/logo_17_17"));
         }
-
     }
 
 }

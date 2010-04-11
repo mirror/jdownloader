@@ -29,16 +29,14 @@ import jd.nutils.Screen;
 
 public class GUIUtils {
 
-    public static Dimension getLastDimension(Component child, String key) {
-        if (key == null) key = child.getName();
+    public static Dimension getLastDimension(Component child) {
+        String key = child.getName();
 
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
         int width = screenSize.width;
         int height = screenSize.height;
-        SubConfiguration cfg = getConfig();
-        Object loc = cfg.getProperty("DIMENSION_OF_" + key);
-        if (loc != null && loc instanceof Dimension) {
-            Dimension dim = (Dimension) loc;
+        Dimension dim = getConfig().getGenericProperty("DIMENSION_OF_" + key, (Dimension) null);
+        if (dim != null) {
             if (dim.width > width) dim.width = width;
             if (dim.height > height) dim.height = height;
 
@@ -54,19 +52,17 @@ public class GUIUtils {
      * @return
      */
     public static SubConfiguration getConfig() {
-
         return SubConfiguration.getConfig(JDGuiConstants.CONFIG_PARAMETER);
     }
 
-    public static Point getLastLocation(Component parent, String key, Component child) {
-        if (key == null) key = child.getName();
+    public static Point getLastLocation(Component parent, Component child) {
+        String key = child.getName();
 
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
         int width = screenSize.width;
         int height = screenSize.height;
-        Object loc = getConfig().getProperty("LOCATION_OF_" + key);
-        if (loc != null && loc instanceof Point) {
-            Point point = (Point) loc;
+        Point point = getConfig().getGenericProperty("LOCATION_OF_" + key, (Point) null);
+        if (point != null) {
             if (point.x < 0) point.x = 0;
             if (point.y < 0) point.y = 0;
             if (point.x > width) point.x = width;
@@ -81,8 +77,8 @@ public class GUIUtils {
     public static void restoreWindow(JFrame parent, Component component) {
         if (parent == null) parent = SwingGui.getInstance().getMainFrame();
 
-        component.setLocation(getLastLocation(parent, null, component));
-        Dimension dim = getLastDimension(component, null);
+        component.setLocation(getLastLocation(parent, component));
+        Dimension dim = getLastDimension(component);
         if (dim != null) {
             Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
 
@@ -96,9 +92,8 @@ public class GUIUtils {
 
     }
 
-    public static void saveLastDimension(Component child, String key) {
-        if (getConfig() == null) return;
-        if (key == null) key = child.getName();
+    public static void saveLastDimension(Component child) {
+        String key = child.getName();
 
         boolean max = false;
         if (child instanceof JFrame) {
@@ -112,16 +107,15 @@ public class GUIUtils {
         getConfig().save();
     }
 
-    public static void saveLastLocation(Component parent, String key) {
-        if (getConfig() == null) return;
-        if (key == null) key = parent.getName();
-        // don not save location if frame is not in normal state
+    public static void saveLastLocation(Component parent) {
+        String key = parent.getName();
+
+        // do not save location if frame is not in normal state
         if (parent instanceof JFrame && ((JFrame) parent).getExtendedState() != JFrame.NORMAL) return;
         if (parent.isShowing()) {
             getConfig().setProperty("LOCATION_OF_" + key, parent.getLocationOnScreen());
             getConfig().save();
         }
-
     }
 
 }

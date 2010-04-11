@@ -134,12 +134,12 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
      * restores the dimension and location to the window
      */
     private void initLocationAndDimension() {
-        Dimension dim = GUIUtils.getLastDimension(mainFrame, null);
+        Dimension dim = GUIUtils.getLastDimension(mainFrame);
         if (dim == null) dim = new Dimension(800, 600);
         mainFrame.setPreferredSize(dim);
         mainFrame.setSize(dim);
         mainFrame.setMinimumSize(new Dimension(400, 100));
-        mainFrame.setLocation(GUIUtils.getLastLocation(null, null, mainFrame));
+        mainFrame.setLocation(GUIUtils.getLastLocation(null, mainFrame));
         mainFrame.setExtendedState(GUIUtils.getConfig().getIntegerProperty("MAXIMIZED_STATE_OF_" + mainFrame.getName(), JFrame.NORMAL));
 
         if (mainFrame.getRootPane().getUI().toString().contains("SyntheticaRootPaneUI")) {
@@ -307,8 +307,8 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
                 @Override
                 public Object runSave() {
                     mainTabbedPane.onClose();
-                    GUIUtils.saveLastLocation(getMainFrame(), null);
-                    GUIUtils.saveLastDimension(getMainFrame(), null);
+                    GUIUtils.saveLastLocation(getMainFrame());
+                    GUIUtils.saveLastDimension(getMainFrame());
                     GUIUtils.getConfig().save();
                     JDController.releaseDelayExit(id);
                     getMainFrame().setVisible(false);
