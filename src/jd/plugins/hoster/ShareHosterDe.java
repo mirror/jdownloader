@@ -52,6 +52,8 @@ public class ShareHosterDe extends PluginForHost {
         // No filename or size is on the page so just check if there is an
         // error, if not, the file should be online!
         if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("download_failed") || br.getRedirectLocation().contains("downloadfailed")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
+        if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("download_failed") || br.getRedirectLocation().contains("downloadfailed")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         return AvailableStatus.TRUE;
     }
 
