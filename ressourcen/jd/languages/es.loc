@@ -1182,8 +1182,8 @@ jd.utils.webupdate.dopluginupdate = Los complementos podrian tener errores
 jd.utils.webupdate.dopluginupdate.message = Se actualizaron algunos Complementos. Debería reiniciar JDownloader.
 jd.utils.webupdate.dopluginupdate.title = Se recomienda reiniciar
 jd.utils.webupdate.doupdatecheck.noupdates = No hay actualizaciones disponibles.
-jd.utils.webupdate.message = <font size="2" face="Verdana, Arial, Helvetica, sans-serif">%s actualizaciones disponibles. Instalar ahora?</font>
-jd.utils.webupdate.message2 = <font size="2" face="Verdana, Arial, Helvetica, sans-serif">%s actualizaciones disponibles. Instalar ahora?</font>
+jd.utils.webupdate.message = <font face="Verdana, Arial, Helvetica, sans-serif">%s actualizaciones disponibles. Instalar ahora?</font>
+jd.utils.webupdate.message2 = <font face="Verdana, Arial, Helvetica, sans-serif">%s actualizaciones disponibles. Instalar ahora?</font>
 jd.utils.webupdate.progresscontroller.text = Actualizacion ejecutandose...
 jd.utils.webupdate.whatchangedlink = <hr/><a href='http://jdownloader.org/latestchanges'>Novedades</a>
 linkgrabber.onlinestatus.offline = Fuera de línea
