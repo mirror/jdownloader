@@ -232,3 +232,4 @@ jd/plugins/hoster/FileGuRu.class
 jd/plugins/hoster/FreeFolderNet.class
 jd/plugins/hoster/InsertShareCom.class
 jd/plugins/hoster/IPAUploaderCom.class
+jd/plugins/hoster/HetrixLoadCom.class
