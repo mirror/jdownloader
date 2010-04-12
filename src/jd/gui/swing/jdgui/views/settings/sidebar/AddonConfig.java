@@ -42,7 +42,7 @@ public class AddonConfig extends ConfigPanel {
 
     @Override
     public String getBreadcrumb() {
-        return JDL.L(JDL_PREFIX + "breadcrum", "Plugins & Addons - Addons - " + name);
+        return JDL.L(JDL_PREFIX + "breadcrum", "Plugins & Addons - Addons - ") + name;
     }
 
     private AddonConfig(ConfigContainer container, String name) {
