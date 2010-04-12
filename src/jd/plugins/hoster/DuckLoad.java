@@ -53,56 +53,54 @@ public class DuckLoad extends PluginForHost {
         requestFileInformation(link);
         br.setDebug(true);
         haveFun();
-        // waittime check
-        if (aBrowser.contains("Your downloadticket was booked")) {
-            sleep(10 * 1000l, link);
-        }
         Form form = br.getForm(0);
-        String capurl = br.getRegex("src=\"/design/Captcha\\d?(.*?\\.php\\?.*?=.*?)\"").getMatch(0);
-        if (capurl == null) capurl = br.getRegex("src='/design/Captcha\\d?(.*?\\.php\\?.*?=.*?)'").getMatch(0);
-        if (capurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        capurl = "/design/Captcha2" + capurl;
-        String code = getCaptchaCode(capurl, link);
-        // Check this part first if the plugin is defect!
-        String applcode = null;
-        applcode = br.getRegex("src=\"/design/Captcha.*?php\\?.*?\".*?<input name=\"(.*?)\"").getMatch(0);
-        String[] matches = br.getRegex("<input( id=\".*?\" |.*?)name=\"(.*?)\"").getColumn(1);
-        if (matches == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        ArrayList<String> matchList = new ArrayList<String>();
-        for (String match : matches) {
-            if (!matchList.contains(match)) matchList.add(match);
-        }
-        if (applcode == null) {
-            logger.warning("regex for applcode is defect!");
-            if (form.containsHTML("a_code")) {
-                applcode = "a_code";
-            } else if (form.containsHTML("b_code")) {
-                applcode = "b_code";
-            } else if (form.containsHTML("appl_code")) {
-                applcode = "appl_code";
-            } else if (applcode == null) {
-                logger.warning("No standard captcha inputname found, using humpf!");
-                applcode = "humpf";
-            }
-        }
         if (aBrowser.contains("Your downloadticket was booked")) {
+            String capurl = br.getRegex("src=\"/design/Captcha\\d?(.*?\\.php\\?.*?=.*?)\"").getMatch(0);
+            if (capurl == null) capurl = br.getRegex("src='/design/Captcha\\d?(.*?\\.php\\?.*?=.*?)'").getMatch(0);
+            if (capurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            sleep(10 * 1000l, link);
+            capurl = "/design/Captcha2" + capurl;
+            String code = getCaptchaCode(capurl, link);
+            // Check this part first if the plugin is defect!
+            String applcode = null;
+            applcode = br.getRegex("src=\"/design/Captcha.*?php\\?.*?\".*?<input name=\"(.*?)\"").getMatch(0);
+            String[] matches = br.getRegex("<input( id=\".*?\" |.*?)name=\"(.*?)\"").getColumn(1);
+            if (matches == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            ArrayList<String> matchList = new ArrayList<String>();
+            for (String match : matches) {
+                if (!matchList.contains(match)) matchList.add(match);
+            }
+            if (applcode == null) {
+                logger.warning("regex for applcode is defect!");
+                if (form.containsHTML("a_code")) {
+                    applcode = "a_code";
+                } else if (form.containsHTML("b_code")) {
+                    applcode = "b_code";
+                } else if (form.containsHTML("appl_code")) {
+                    applcode = "appl_code";
+                } else if (applcode == null) {
+                    logger.warning("No standard captcha inputname found, using humpf!");
+                    applcode = "humpf";
+                }
+            }
             String fileid = new Regex(link.getDownloadURL(), "duckload\\.com/download/(\\d+)/").getMatch(0);
             String filenamefromlink = new Regex(link.getDownloadURL(), "duckload\\.com/download/.*?/(.+)").getMatch(0);
             String postlink = "http://duckload.com/index.php?Modul=download&id=" + fileid + "&name=" + filenamefromlink + "&Ajax=true";
             form = new Form();
             form.setAction(postlink);
             form.setMethod(MethodType.POST);
+            for (String omg : matchList) {
+                form.put(omg, code);
+            }
         } else {
             form = new Form();
             form.setAction(br.getURL());
             form.setMethod(MethodType.POST);
             form.put("server", "1");
+            form.put("sn", "Stream+Starten");
             stream = true;
         }
         // form.put(applcode, code);
-        for (String omg : matchList) {
-            form.put(omg, code);
-        }
         br.submitForm(form);
         String url = null;
         if (!stream) {
@@ -149,20 +147,30 @@ public class DuckLoad extends PluginForHost {
         }
         String filename = br.getRegex("You want to download the file \"(.*?)\".*?!<br>").getMatch(0);
         String filesize = br.getRegex("You want to download the file \".*?\" \\((.*?)\\) !<br>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filesize == null) filesize = br.getRegex("Server \\(#\\d+\\) <span style=\"font-style:italic;\"( id=\".*?\")?>\\[(.*?)\\]</spa").getMatch(1);
+        if (filename == null && filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filename == null) filename = "VideoStream.avi";
         parameter.setName(filename.trim());
-        parameter.setDownloadSize(Regex.getSize(filesize.trim()));
+        if (filesize != null) parameter.setDownloadSize(Regex.getSize(filesize.trim()));
         return AvailableStatus.TRUE;
     }
 
     public void haveFun() throws Exception {
-        aBrowser = br.toString();
-        String replaces[] = br.getRegex("<!--(.*?)-->").getColumn(0);
-        if (replaces != null) {
-            for (String dingdang : replaces) {
-                dingdang = dingdang.trim();
-                aBrowser = aBrowser.replace(dingdang, "");
+        ArrayList<String> someStuff = new ArrayList<String>();
+        ArrayList<String> regexStuff = new ArrayList<String>();
+        regexStuff.add("(<!--.*?-->)");
+        regexStuff.add("type=\"hidden\" name=\".*?\"( value=\".*?\")");
+        for (String aRegex : regexStuff) {
+            aBrowser = br.toString();
+            String replaces[] = br.getRegex(aRegex).getColumn(0);
+            if (replaces != null && replaces.length != 0) {
+                for (String dingdang : replaces) {
+                    someStuff.add(dingdang);
+                }
             }
+        }
+        for (String gaMing : someStuff) {
+            aBrowser = aBrowser.replace(gaMing, "");
         }
     }
 

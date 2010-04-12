@@ -136,8 +136,11 @@ public class UploadBoxCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waittime * 60 * 1000l);
         }
         form = br.getFormbyProperty("id", "free");
-        String captchaUrl = br.getRegex("id=\"captcha\" src=\"(.*?)\"").getMatch(0);
-        if (form == null || captchaUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String captchaUrl = br.getRegex("\"(/\\?ac=captcha_img\\&code=.*?)\"").getMatch(0);
+        if (form == null || captchaUrl == null) {
+            logger.warning("Form or captchaurl is not found!");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         if (!captchaUrl.startsWith("http")) captchaUrl = "http://www.uploadbox.com" + captchaUrl;
         captchaUrl = captchaUrl.replace("amp;", "");
         String code = getCaptchaCode(captchaUrl, link);
@@ -154,6 +157,10 @@ public class UploadBoxCom extends PluginForHost {
         br.setDebug(true);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl.startDownload();
     }
 
