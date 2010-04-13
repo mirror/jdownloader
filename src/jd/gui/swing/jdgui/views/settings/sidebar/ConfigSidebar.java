@@ -43,15 +43,22 @@ public class ConfigSidebar extends SideBarPanel {
     private ConfigurationView view;
 
     /**
-     * CReate a singlton instance of the config sidebar
+     * Creates a singleton instance of the config sidebar
      * 
      * @param configurationView
-     * @return
+     * @return singleton instance
      */
     public static ConfigSidebar getInstance(ConfigurationView configurationView) {
         if (INSTANCE == null && configurationView != null) INSTANCE = new ConfigSidebar(configurationView);
-        if (configurationView != null && INSTANCE.view != configurationView) INSTANCE = new ConfigSidebar(configurationView);
         return INSTANCE;
+    }
+
+    /**
+     * Removes the singleton instance
+     */
+    public static void removeInstance() {
+        if (INSTANCE != null) INSTANCE.saveCurrentState();
+        INSTANCE = null;
     }
 
     private ConfigSidebar(ConfigurationView configurationView) {
@@ -161,11 +168,7 @@ public class ConfigSidebar extends SideBarPanel {
 
     @Override
     protected void onHide() {
-        /* getPanel is null in case the user selected a rootnode */
-        SwitchPanel panel = ((TreeEntry) tree.getLastSelectedPathComponent()).getPanel();
-        if (panel == null) return;
-        GUIUtils.getConfig().setProperty(PROPERTY_LAST_PANEL, panel.getClass().getName());
-        GUIUtils.getConfig().save();
+        saveCurrentState();
     }
 
     @Override
@@ -196,6 +199,17 @@ public class ConfigSidebar extends SideBarPanel {
         }
 
         return null;
+    }
+
+    /**
+     * Saves the selected ConfigPanel
+     */
+    private void saveCurrentState() {
+        /* getPanel is null in case the user selected a rootnode */
+        SwitchPanel panel = ((TreeEntry) tree.getLastSelectedPathComponent()).getPanel();
+        if (panel == null) return;
+        GUIUtils.getConfig().setProperty(PROPERTY_LAST_PANEL, panel.getClass().getName());
+        GUIUtils.getConfig().save();
     }
 
     /**

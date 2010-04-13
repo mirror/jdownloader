@@ -55,6 +55,7 @@ public class ConfigurationView extends ClosableView {
                     getBroadcaster().removeListener(this);
                     synchronized (ConfigurationView.this) {
                         INSTANCE = null;
+                        ConfigSidebar.removeInstance();
                         GarbageController.requestGC();
                     }
                 }
