@@ -16,10 +16,13 @@
 
 package jd.plugins.decrypter;
 
+import java.awt.Color;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.controlling.ProgressControllerEvent;
+import jd.controlling.ProgressControllerListener;
 import jd.http.RandomUserAgent;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -27,8 +30,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "iload.to" }, urls = { "http://(beta\\.iload|iload)\\.to/((go/\\d+/merged|go/\\d+)(streaming/.+)?|(view|title|release)/.*?/)" }, flags = { 0 })
-public class LdT extends PluginForDecrypt {
-
+public class LdT extends PluginForDecrypt implements ProgressControllerListener {
+    private boolean abort = false;
     private String patternSupported_Info = ".*?(beta\\.iload|iload)\\.to/(view|title|release)/.*?/";
 
     public LdT(PluginWrapper wrapper) {
@@ -36,6 +39,7 @@ public class LdT extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+        progress.getBroadcaster().addListener(this);
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         this.setBrowserExclusive();
@@ -43,38 +47,26 @@ public class LdT extends PluginForDecrypt {
         if (parameter.matches(patternSupported_Info)) {
             br.getPage(parameter);
             if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
-            String links_page[] = br.getRegex("href=\"(/go/[0-9]+)/\"").getColumn(0);
-            String streamlinks[] = br.getRegex("href=\"(/go/[0-9]+/streaming/.*?/)\"").getColumn(0);
-            if (links_page == null && streamlinks == null) return null;
-
-            if (links_page != null) {
-                progress.setRange(links_page.length);
-
-                for (String link : links_page) {
-                    String golink = "http://iload.to/" + link;
-                    br.getPage(golink);
-                    String finallink = br.getRedirectLocation();
-                    if (finallink == null) return null;
-                    DownloadLink dl_link = createDownloadlink(finallink);
-                    dl_link.addSourcePluginPassword("iload.to");
-                    decryptedLinks.add(dl_link);
-                    progress.increase(1);
+            String links_page[] = br.getRegex("href=\"(/go/[0-9]+)-").getColumn(0);
+            if (links_page == null || links_page.length == 0) return null;
+            logger.info("Found links to " + links_page.length + ". Decrypting now...");
+            progress.setRange(links_page.length);
+            for (String link : links_page) {
+                if (abort) {
+                    logger.info("Decrypt aborted by user.");
+                    progress.setColor(Color.RED);
+                    progress.setStatusText(progress.getStatusText() + ": Aborted");
+                    progress.doFinalize(5000l);
+                    return new ArrayList<DownloadLink>();
                 }
-
-                if (streamlinks != null) {
-                    progress.setRange(streamlinks.length);
-
-                    for (String link : streamlinks) {
-                        String golink = "http://iload.to/" + link;
-                        br.getPage(golink);
-                        String finallink = br.getRedirectLocation();
-                        if (finallink == null) return null;
-                        DownloadLink dl_link = createDownloadlink(finallink);
-                        dl_link.addSourcePluginPassword("iload.to");
-                        decryptedLinks.add(dl_link);
-                        progress.increase(1);
-                    }
-                }
+                String golink = "http://iload.to/" + link;
+                br.getPage(golink);
+                String finallink = br.getRedirectLocation();
+                if (finallink == null) return null;
+                DownloadLink dl_link = createDownloadlink(finallink);
+                dl_link.addSourcePluginPassword("iload.to");
+                decryptedLinks.add(dl_link);
+                progress.increase(1);
             }
         } else {
             br.getPage(parameter);
@@ -87,6 +79,12 @@ public class LdT extends PluginForDecrypt {
             dl.setUrlDownload(url);
         }
         return decryptedLinks;
+    }
+
+    public void onProgressControllerEvent(ProgressControllerEvent event) {
+        if (event.getID() == ProgressControllerEvent.CANCEL) {
+            abort = true;
+        }
     }
 
 }
