@@ -42,7 +42,7 @@ public class FpsBananaCom extends PluginForDecrypt { // http://www.fpsbanana.com
         br.setReadTimeout(120 * 1000);
         if (parameter.contains("/games/")) {
             // To decrypt whole categories
-            br.getPage(parameter);
+            getPageAndHandleErrors(parameter);
             ArrayList<String> someLinks = new ArrayList<String>();
             String alLinks[] = br.getRegex("valign=\"middle\"><td align=\"center\" nowrap><a href=\"(.*?)\"").getColumn(0);
             if (alLinks == null || alLinks.length == 0) alLinks = br.getRegex("</td><td align=\"center\" width=\"100%\"><b><a href=\"(.*?)\"").getColumn(0);
@@ -55,14 +55,14 @@ public class FpsBananaCom extends PluginForDecrypt { // http://www.fpsbanana.com
             }
         } else {
             if (!parameter.contains("/download/")) parameter = parameter.replace("/maps/", "/maps/download/");
-            br.getPage(parameter);
+            getPageAndHandleErrors(parameter);
             if (br.containsHTML("This Map doesn't have a file")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
             String fpName = br.getRegex("class=\"bold tbig\">(.*?)</span").getMatch(0);
             String[] links = br.getRegex("path=(http.*?)\"").getColumn(0);
             if (links == null || links.length == 0) return null;
             progress.setRange(links.length);
             for (String alink : links) {
-                br.getPage("http://www.fpsbanana.com/mirrors/startdl/?path=" + alink);
+                getPageAndHandleErrors("http://www.fpsbanana.com/mirrors/startdl/?path=" + alink);
                 String finallink = br.getRedirectLocation();
                 if (finallink == null)
                     logger.info("Mirror " + br.getHost() + " for link " + parameter + " doesn't seem to work, decrypt goes on.");
@@ -79,4 +79,13 @@ public class FpsBananaCom extends PluginForDecrypt { // http://www.fpsbanana.com
         return decryptedLinks;
     }
 
+    public void getPageAndHandleErrors(String aPage) throws Exception {
+        try {
+            br.getPage(aPage);
+        } catch (Exception e) {
+            logger.warning("Received a timeout for link: " + aPage);
+            logger.info("Retrying one last time...");
+            br.getPage(aPage);
+        }
+    }
 }

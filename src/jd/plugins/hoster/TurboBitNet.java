@@ -57,19 +57,17 @@ public class TurboBitNet extends PluginForHost {
         // us to our link again!
         br.getPage("http://turbobit.net/en");
         // Little errorhandling in case there we're on the wrong page!
-        if (!br.getURL().matches(downloadLink.getDownloadURL())) br.getPage(downloadLink.getDownloadURL());
+        if (!br.getURL().equals(downloadLink.getDownloadURL())) br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("<div class=\"code-404\">404</div>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String fileName = br.getRegex("Download it!(.*?)\\. Free download without registration from").getMatch(0);
+        String fileName = br.getRegex("Скачать файл(.*?)\\. Скачать бесплатно").getMatch(0);
         if (fileName == null) {
-            fileName = br.getRegex("<span class='file-icon.*?'></span><b><br>(.*?)</b>").getMatch(0);
-            if (fileName == null) {
-                fileName = br.getRegex("name=\"keywords\" content=\"(.*?),  , download file").getMatch(0);
-            }
+            fileName = br.getRegex("<span class='file-icon.*?'>(.*?)</span>").getMatch(0);
         }
-        String fileSize = br.getRegex("<b>File size:</b>(.*?)</div>").getMatch(0);
+        String fileSize = br.getRegex("<b>(File size|Размер файла):</b>(.*?)</div>").getMatch(1);
         if (fileName == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        fileSize = fileSize.replaceAll("М", "M");
-        fileSize = fileSize.replaceAll("к", "k");
+        fileSize = fileSize.replace("М", "M");
+        fileSize = fileSize.replace("к", "k");
+        fileSize = fileSize.replace("б", "");
         if (!fileSize.endsWith("b")) fileSize = fileSize + "b";
         downloadLink.setName(fileName.trim());
         if (fileSize != null) downloadLink.setDownloadSize(Regex.getSize(fileSize.replace(",", ".")));

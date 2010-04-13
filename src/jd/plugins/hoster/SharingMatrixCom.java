@@ -202,17 +202,14 @@ public class SharingMatrixCom extends PluginForHost {
         br.getPage(parameter.getDownloadURL());
         if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
         if (br.containsHTML("File not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("Filename:.*?<td>(.*?)</td>").getMatch(0);
+        String filename = br.getRegex(">Filename: <strong>(.*?)</strong>").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("\"fname\">(.*?)</div>").getMatch(0);
+            filename = br.getRegex("link_name = '(.*?)';").getMatch(0);
         }
-        Regex reg = br.getRegex("<th>Size:.*?<td>(.*?)&nbsp;(.*?)</td>");
-        String filesize = reg.getMatch(0) + reg.getMatch(1);
-        if (filesize.contains("null")) {
-            reg = br.getRegex("\"fsize_div\">(.*?)&nbsp;(.*?)</div>");
-            filesize = reg.getMatch(0) + reg.getMatch(1);
-        }
+        String filesize = br.getRegex(">File size: <strong>(.*?)</strong>").getMatch(0);
+        if (filesize == null) filesize = br.getRegex("fsize = '(.*?)';").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        filesize = filesize.replace("&nbsp;", "");
         if (br.containsHTML("Only premium users are entitled to download files larger than")) parameter.getLinkStatus().setStatusText(JDL.L("plugins.hoster.sharingmatrixcom.only4premium", "This file is only downloadable for premium users!"));
         parameter.setName(filename.trim());
         parameter.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
@@ -264,7 +261,8 @@ public class SharingMatrixCom extends PluginForHost {
             if (Integer.parseInt(br2.toString().trim()) != 1) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
 
         }
-        /* we will wait up to 10 mins */
+        String x = "";
+        /* we will wait up to 15 mins */
         if (ctjvv > 80) {
             if (waitReconnecttime && ctjvv < 910)
                 sleep(ctjvv * 1001l, downloadLink);
