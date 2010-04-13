@@ -18,10 +18,10 @@ package jd.plugins;
 
 import java.io.Serializable;
 import java.lang.reflect.Field;
+import java.util.HashMap;
+import java.util.Map.Entry;
 
 import javax.swing.ImageIcon;
-
-
 
 import jd.controlling.DownloadWatchDog;
 import jd.controlling.JDLogger;
@@ -168,18 +168,27 @@ public class LinkStatus implements Serializable {
      * ein Hosting Service handelt für das es noch kein Plugin gibt.
      */
     public static final int ERROR_PLUGIN_NEEDED = 1 << 30;
-    
+
     public static final int NOT_ENOUGH_HARDDISK_SPACE = 1 << 31;
+
+    private static HashMap<Integer, String> toStringHelper = new HashMap<Integer, String>();
+    static {
+        final Field[] fields = LinkStatus.class.getDeclaredFields();
+        for (final Field field : fields) {
+            if (field.getModifiers() == 25) {
+                try {
+                    toStringHelper.put(field.getInt(LinkStatus.class), field.getName());
+                } catch (Exception e) {
+                    JDLogger.exception(e);
+                }
+            }
+        }
+    }
 
     private static final long serialVersionUID = 3885661829491436448L;
 
-
-
-
-
     private final DownloadLink downloadLink;
     private String errorMessage;
-
     private int lastestStatus = TODO;
     private int status = TODO;
     private String statusText = null;
@@ -477,43 +486,19 @@ public class LinkStatus implements Serializable {
     }
 
     public static String toString(final int status) {
-        final Field[] fields = LinkStatus.class.getDeclaredFields();
-        for (final Field field : fields) {
-            if (field.getModifiers() == 25) {
-                int value;
-                try {
-                    value = field.getInt(null);
-                    if (value == status) return field.getName();
-                } catch (IllegalArgumentException e) {
-                    JDLogger.exception(e);
-                } catch (IllegalAccessException e) {
-                    JDLogger.exception(e);
-                }
-            }
-        }
-        return null;
+        return toStringHelper.get(status);
     }
 
     @Override
     public String toString() {
-        final Field[] fields = this.getClass().getDeclaredFields();
         final StringBuilder sb = new StringBuilder();
-        sb.append(Formatter.fillString(Integer.toBinaryString(status), "0", "", 32) + " <Statuscode\r\n");
+        sb.append(Formatter.fillString(Integer.toBinaryString(status), "0", "", 32) + " < Statuscode\r\n");
         String latest = "";
-        for (final Field field : fields) {
-            if (field.getModifiers() == 25) {
-                int value;
-                try {
-                    value = field.getInt(this);
-                    if (hasStatus(value)) {
-                        if (value == lastestStatus) latest = "latest: " + field.getName() + "\r\n";
-                        sb.append(Formatter.fillString(Integer.toBinaryString(value), "0", "", 32) + " |" + field.getName() + "\r\n");
-                    }
-                } catch (IllegalArgumentException e) {
-                    JDLogger.exception(e);
-                } catch (IllegalAccessException e) {
-                    JDLogger.exception(e);
-                }
+        for (Entry<Integer, String> entry : toStringHelper.entrySet()) {
+            int value = entry.getKey();
+            if (hasStatus(value)) {
+                if (value == lastestStatus) latest = "Latest: " + entry.getValue() + "\r\n";
+                sb.append(Formatter.fillString(Integer.toBinaryString(value), "0", "", 32)).append(" | ").append(entry.getValue()).append("\r\n");
             }
         }
 
@@ -549,8 +534,8 @@ public class LinkStatus implements Serializable {
         return status;
     }
 
-    public void setStatusIcon(ImageIcon scaledImageIcon) {
-        statusIcon = scaledImageIcon;
+    public void setStatusIcon(ImageIcon statusIcon) {
+        this.statusIcon = statusIcon;
     }
 
     public ImageIcon getStatusIcon() {
@@ -562,20 +547,21 @@ public class LinkStatus implements Serializable {
     }
 
     /**
-     * use this function to reset linkstatus to TODO, if no notResetifFlag match
+     * Use this function to reset linkstatus to {@link #TODO}, if no
+     * notResetIfFlag match.
      */
-    public void resetStatus(int... notResetifFlag) {
+    public void resetStatus(int... notResetIfFlag) {
         if (this.downloadLink != null) {
             int curState = LinkStatus.TODO;
             int curLState = LinkStatus.TODO;
             String tmp2 = null;
             String tmp3 = null;
             int resetFlag = 0;
-            for (final int flag : notResetifFlag) {
+            for (final int flag : notResetIfFlag) {
                 resetFlag = resetFlag | flag;
             }
             final LinkStatus linkStatus = downloadLink.getLinkStatus();
-            for (final int flag : notResetifFlag) {
+            for (final int flag : notResetIfFlag) {
                 if (linkStatus.hasStatus(flag)) {
                     curState = linkStatus.getStatus();
                     curLState = linkStatus.getLatestStatus();
