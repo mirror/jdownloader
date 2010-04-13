@@ -39,6 +39,7 @@ public class FilefrogTo extends PluginForHost {
 
     public FilefrogTo(PluginWrapper wrapper) {
         super(wrapper);
+        this.setStartIntervall(1000);
         enablePremium("http://www.filefrog.to/premium");
     }
 
@@ -64,7 +65,6 @@ public class FilefrogTo extends PluginForHost {
 
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         requestFileInformation(downloadLink);
-        fetchSession();
         login(account);
 
         br.forceDebug(true);
@@ -83,7 +83,11 @@ public class FilefrogTo extends PluginForHost {
         dl = BrowserAdapter.openDownload(br, downloadLink, br.getRedirectLocation(), false, -1);
 
         URLConnectionAdapter con = dl.getConnection();
-        if (!con.isContentDisposition()) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (!con.isContentDisposition()) {
+            br.loadConnection(con);
+            if (con.getContentLength() == 0) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 15 * 60000); }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl.startDownload();
     }
 
@@ -97,8 +101,9 @@ public class FilefrogTo extends PluginForHost {
     }
 
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        br.setCookiesExclusive(true);
-        br.clearCookies(getHost());
+
+        this.setBrowserExclusive();
+        this.fetchSession();
         br.getPage("http://www.filefrog.to/api/status/url/" + Encoding.urlEncode(downloadLink.getDownloadURL()));
         String[] data = br.getRegex("(.*?);(.*?);(\\d+)").getRow(0);
         if (data[0].equalsIgnoreCase("offline")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
@@ -111,7 +116,6 @@ public class FilefrogTo extends PluginForHost {
 
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        fetchSession();
         br.forceDebug(true);
         br.getPage(downloadLink.getDownloadURL());
 
@@ -125,7 +129,7 @@ public class FilefrogTo extends PluginForHost {
         URLConnectionAdapter con = dl.getConnection();
         if (!con.isContentDisposition()) {
             if (br.getURL().equals("http://www.filefrog.to/error/traffic-exhausted")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 15 * 60000); }
-
+            if (con.getContentLength() == 0) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 15 * 60000); }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
