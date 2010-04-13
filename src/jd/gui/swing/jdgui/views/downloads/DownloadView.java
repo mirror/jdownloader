@@ -73,4 +73,9 @@ public class DownloadView extends View {
         ActionController.getToolBarAction("action.downloadview.movetobottom").setEnabled(true);
     }
 
+    @Override
+    public String getID() {
+        return "downloadview";
+    }
+
 }

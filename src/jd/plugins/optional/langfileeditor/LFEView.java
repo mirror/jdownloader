@@ -66,4 +66,9 @@ public class LFEView extends ClosableView {
     protected void onShow() {
     }
 
+    @Override
+    public String getID() {
+        return "lfeview";
+    }
+
 }

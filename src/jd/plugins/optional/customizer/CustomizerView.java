@@ -56,4 +56,9 @@ public class CustomizerView extends ClosableView {
     protected void onShow() {
     }
 
+    @Override
+    public String getID() {
+        return "customizerview";
+    }
+
 }

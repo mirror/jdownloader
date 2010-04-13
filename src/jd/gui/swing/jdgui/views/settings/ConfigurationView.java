@@ -19,7 +19,12 @@ package jd.gui.swing.jdgui.views.settings;
 import javax.swing.Icon;
 import javax.swing.JComponent;
 
+import jd.controlling.GarbageController;
+import jd.gui.swing.jdgui.GUIUtils;
+import jd.gui.swing.jdgui.JDGuiConstants;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
+import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
+import jd.gui.swing.jdgui.interfaces.SwitchPanelListener;
 import jd.gui.swing.jdgui.views.ClosableView;
 import jd.gui.swing.jdgui.views.settings.sidebar.ConfigSidebar;
 import jd.utils.JDTheme;
@@ -40,9 +45,21 @@ public class ConfigurationView extends ClosableView {
 
     private ConfigurationView() {
         super();
-
         setSideBar(ConfigSidebar.getInstance(ConfigurationView.this));
-
+        getBroadcaster().addListener(new SwitchPanelListener() {
+            @Override
+            public void onPanelEvent(SwitchPanelEvent event) {
+                if (event.getID() == SwitchPanelEvent.ON_REMOVE) {
+                    GUIUtils.getConfig().setProperty(JDGuiConstants.PARAM_CONFIG_SHOWN, false);
+                    GUIUtils.getConfig().save();
+                    getBroadcaster().removeListener(this);
+                    synchronized (ConfigurationView.this) {
+                        INSTANCE = null;
+                        GarbageController.requestGC();
+                    }
+                }
+            }
+        });
         init();
     }
 
@@ -72,6 +89,8 @@ public class ConfigurationView extends ClosableView {
 
     @Override
     protected void onShow() {
+        GUIUtils.getConfig().setProperty(JDGuiConstants.PARAM_CONFIG_SHOWN, true);
+        GUIUtils.getConfig().save();
         SwitchPanel panel = this.getContent();
         if (panel != null) panel.setShown();
     }
@@ -84,6 +103,11 @@ public class ConfigurationView extends ClosableView {
      */
     @Override
     protected void distributeView(JComponent switchPanel) {
+    }
+
+    @Override
+    public String getID() {
+        return "configview";
     }
 
 }

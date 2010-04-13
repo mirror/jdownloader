@@ -378,6 +378,11 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
 
             }
 
+            @Override
+            public String getID() {
+                return "livescripter";
+            }
+
         };
 
         tabbedPanel.getBroadcaster().addListener(new SwitchPanelListener() {

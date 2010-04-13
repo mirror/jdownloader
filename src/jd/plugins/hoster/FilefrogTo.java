@@ -39,8 +39,10 @@ public class FilefrogTo extends PluginForHost {
 
     public FilefrogTo(PluginWrapper wrapper) {
         super(wrapper);
-        // server error. without this, paralell downloads result in 0 byte
-        // text/html files.
+        /*
+         * server error. without this, paralell downloads result in 0 byte
+         * text/html files.
+         */
         this.setStartIntervall(1000);
         enablePremium("http://www.filefrog.to/premium");
     }
@@ -72,10 +74,8 @@ public class FilefrogTo extends PluginForHost {
         br.forceDebug(true);
 
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("Sorry your Premium traffic is exhausted")) {
-            account.getAccountInfo().setTrafficLeft(0);
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-        }
+        if (br.containsHTML("Sorry your Premium traffic is exhausted")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+
         if (br.getRedirectLocation() == null) {
             // indirect download
             Form form = br.getForms()[0];
@@ -84,21 +84,19 @@ public class FilefrogTo extends PluginForHost {
             form.setAction(downloadLink.getDownloadURL());
             br.submitForm(form);
         }
-
-        dl = BrowserAdapter.openDownload(br, downloadLink, br.getRedirectLocation(), false, -1);
-
+        dl = BrowserAdapter.openDownload(br, downloadLink, br.getRedirectLocation(), false, 1);
         URLConnectionAdapter con = dl.getConnection();
         if (!con.isContentDisposition()) {
-            br.loadConnection(con);
+            br.followConnection();
+            if (br.containsHTML("Sorry your Premium traffic is exhausted")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             // server error. for some files it returns 0 byte text files.
-            if (con.getContentLength() == 0) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 15 * 60000); }
+            if (con.getContentLength() == 0) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 15 * 60000);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
 
     private void login(Account account) throws Exception {
-
         br.getPage("http://www.filefrog.to/user/login");
         Form form = br.getForms()[0];
         form.getInputField("pwd").setValue(account.getPass());
@@ -107,7 +105,6 @@ public class FilefrogTo extends PluginForHost {
     }
 
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-
         this.setBrowserExclusive();
         this.fetchSession();
         br.getPage("http://www.filefrog.to/api/status/url/" + Encoding.urlEncode(downloadLink.getDownloadURL()));
@@ -115,9 +112,7 @@ public class FilefrogTo extends PluginForHost {
         if (data[0].equalsIgnoreCase("offline")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         downloadLink.setName(data[1]);
         downloadLink.setDownloadSize(Long.parseLong(data[2]));
-
         return AvailableStatus.TRUE;
-
     }
 
     public void handleFree(DownloadLink downloadLink) throws Exception {
@@ -131,22 +126,20 @@ public class FilefrogTo extends PluginForHost {
         // not required
         // this.sleep(30000, downloadLink);
         br.submitForm(form);
-        if (br.getRedirectLocation().equals("http://www.filefrog.to/error/traffic-exhausted")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 15 * 60000); }
+        if (br.getRedirectLocation().equals("http://www.filefrog.to/error/traffic-exhausted")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 15 * 60000);
         dl = BrowserAdapter.openDownload(br, downloadLink, br.getRedirectLocation());
 
         URLConnectionAdapter con = dl.getConnection();
         if (!con.isContentDisposition()) {
-            if (br.getURL().equals("http://www.filefrog.to/error/traffic-exhausted")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 15 * 60000); }
+            if (br.getURL().equals("http://www.filefrog.to/error/traffic-exhausted")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 15 * 60000);
             // server error. for some files it returns 0 byte text files.
-            if (con.getContentLength() == 0) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 15 * 60000); }
+            if (con.getContentLength() == 0) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 15 * 60000);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
-
     }
 
     private void fetchSession() throws IOException {
-
         br.getPage("http://www.filefrog.to/index/locale/set/en_US");
     }
 

@@ -37,6 +37,7 @@ import jd.config.SubConfiguration;
 import jd.controlling.ByteArray;
 import jd.controlling.ByteBufferController;
 import jd.controlling.DownloadWatchDog;
+import jd.controlling.GarbageController;
 import jd.controlling.JDLogger;
 import jd.http.Browser;
 import jd.http.Request;
@@ -1372,8 +1373,8 @@ abstract public class DownloadInterface {
                 waitFlag = false;
                 notify();
             }
-
         }
+        GarbageController.requestGC();
     }
 
     /**

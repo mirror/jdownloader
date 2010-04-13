@@ -193,4 +193,18 @@ public abstract class View extends SwitchPanel {
      */
     abstract public Icon getIcon();
 
+    /**
+     * returns ID for the View/Tab
+     * 
+     * @return
+     */
+    abstract public String getID();
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof View)) return false;
+        if (this.getID().equalsIgnoreCase(((View) o).getID())) return true;
+        return false;
+    }
 }

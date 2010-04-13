@@ -387,6 +387,7 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
 
     public void throwFinished() {
         broadcaster.fireEvent(new LinkGrabberControllerEvent(this, LinkGrabberControllerEvent.FINISHED));
+        GarbageController.requestGC();
     }
 
     public void filterPackages() {

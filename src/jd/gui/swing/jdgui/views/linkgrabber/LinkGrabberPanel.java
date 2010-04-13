@@ -37,6 +37,7 @@ import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.controlling.ClipboardHandler;
 import jd.controlling.DownloadWatchDog;
+import jd.controlling.GarbageController;
 import jd.controlling.JDLogger;
 import jd.controlling.LinkCheck;
 import jd.controlling.LinkCheckEvent;
@@ -822,6 +823,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
                 JDUtilities.getDownloadController().addPackage(fp);
             }
         }
+        GarbageController.requestGC();
     }
 
     public void checkAlreadyinList(DownloadLink link) {

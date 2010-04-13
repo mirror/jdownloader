@@ -158,15 +158,14 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         toolBar.registerAccelerators(this);
         downloadView = DownloadView.getInstance();
         linkgrabberView = LinkgrabberView.getInstance();
-        // configurationView = new ConfigurationView();
 
         mainTabbedPane.addTab(downloadView);
         mainTabbedPane.addTab(linkgrabberView);
-        // mainTabbedPane.addTab(configurationView);
-        if (GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_LOGVIEW_SHOWN, false)) mainTabbedPane.addTab(LogView.getLogView());
+
+        if (GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_CONFIG_SHOWN, false)) mainTabbedPane.addTab(ConfigurationView.getInstance());
+        if (GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_LOGVIEW_SHOWN, false)) mainTabbedPane.addTab(LogView.getInstance());
         mainTabbedPane.setSelectedComponent(downloadView);
         toolBar.setList(GUIUtils.getConfig().getGenericProperty("TOOLBAR", ToolBar.DEFAULT_LIST).toArray(new String[] {}));
-
     }
 
     private void layoutComponents() {

@@ -54,4 +54,9 @@ public class SchedulerView extends ClosableView {
     @Override
     protected void onShow() {
     }
+
+    @Override
+    public String getID() {
+        return "schedulerview";
+    }
 }

@@ -31,6 +31,7 @@ import jd.config.Configuration;
 import jd.config.DatabaseConnector;
 import jd.config.SubConfiguration;
 import jd.controlling.DownloadController;
+import jd.controlling.GarbageController;
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.event.ControlEvent;
@@ -188,6 +189,7 @@ public class JDInit {
     }
 
     public void initControllers() {
+        GarbageController.getInstance();
         DownloadController.getInstance();
         /* add ShutdownHook so we have chance to save database properly */
         Runtime.getRuntime().addShutdownHook(new Thread() {

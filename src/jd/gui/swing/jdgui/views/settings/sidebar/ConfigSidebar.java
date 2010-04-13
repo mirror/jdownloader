@@ -50,6 +50,7 @@ public class ConfigSidebar extends SideBarPanel {
      */
     public static ConfigSidebar getInstance(ConfigurationView configurationView) {
         if (INSTANCE == null && configurationView != null) INSTANCE = new ConfigSidebar(configurationView);
+        if (configurationView != null && INSTANCE.view != configurationView) INSTANCE = new ConfigSidebar(configurationView);
         return INSTANCE;
     }
 

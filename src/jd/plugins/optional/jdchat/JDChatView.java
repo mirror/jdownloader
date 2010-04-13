@@ -59,4 +59,9 @@ public class JDChatView extends ClosableView {
 
     }
 
+    @Override
+    public String getID() {
+        return "jdchatview";
+    }
+
 }

@@ -18,6 +18,7 @@ package jd.gui.swing.jdgui.views.log;
 
 import javax.swing.Icon;
 
+import jd.controlling.GarbageController;
 import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.jdgui.JDGuiConstants;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
@@ -41,7 +42,7 @@ public class LogView extends ClosableView {
      * 
      * @return
      */
-    public static LogView getLogView() {
+    public synchronized static LogView getInstance() {
         if (INSTANCE == null) INSTANCE = new LogView();
         return INSTANCE;
     }
@@ -56,15 +57,18 @@ public class LogView extends ClosableView {
         this.setDefaultInfoPanel(lip = new LogInfoPanel());
         lip.addActionListener(lp);
         getBroadcaster().addListener(new SwitchPanelListener() {
-
             @Override
             public void onPanelEvent(SwitchPanelEvent event) {
                 if (event.getID() == SwitchPanelEvent.ON_REMOVE) {
                     GUIUtils.getConfig().setProperty(JDGuiConstants.PARAM_LOGVIEW_SHOWN, false);
                     GUIUtils.getConfig().save();
+                    getBroadcaster().removeListener(this);
+                    synchronized (LogView.this) {
+                        INSTANCE = null;
+                        GarbageController.requestGC();
+                    }
                 }
             }
-
         });
         init();
     }
@@ -90,6 +94,13 @@ public class LogView extends ClosableView {
 
     @Override
     protected void onShow() {
+        GUIUtils.getConfig().setProperty(JDGuiConstants.PARAM_LOGVIEW_SHOWN, true);
+        GUIUtils.getConfig().save();
+    }
+
+    @Override
+    public String getID() {
+        return "logview";
     }
 
 }

@@ -56,4 +56,9 @@ public class JDRouterEditorView extends ClosableView {
     protected void onShow() {
     }
 
+    @Override
+    public String getID() {
+        return "jdroutereditview";
+    }
+
 }

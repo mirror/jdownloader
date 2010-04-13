@@ -89,4 +89,9 @@ public class LinkgrabberView extends View {
         ActionController.getToolBarAction("action.downloadview.movetobottom").setEnabled(true);
     }
 
+    @Override
+    public String getID() {
+        return "linkgrabberview";
+    }
+
 }

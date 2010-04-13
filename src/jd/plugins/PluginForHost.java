@@ -509,6 +509,7 @@ public abstract class PluginForHost extends Plugin {
                 if (downloadLink.getLinkStatus().getValue() == PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE) {
                     logger.severe("Premium Account " + account.getUser() + ": Traffic Limit reached");
                     account.setTempDisabled(true);
+                    account.getAccountInfo().setTrafficLeft(0);
                     if (accountInfo != null) {
                         accountInfo.setStatus(downloadLink.getLinkStatus().getErrorMessage());
                     }

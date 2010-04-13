@@ -28,7 +28,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision", interfaceVersion = 2, names = { "host.hackerbox.org" }, urls = { "http://[\\w\\.]*?host\\.hackerbox\\.org/download\\.php\\?file=[a-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "host.hackerbox.org" }, urls = { "http://[\\w\\.]*?host\\.hackerbox\\.org/download\\.php\\?file=[a-z0-9]+" }, flags = { 0 })
 public class HostHackerboxOrg extends PluginForHost {
 
     public HostHackerboxOrg(PluginWrapper wrapper) {
