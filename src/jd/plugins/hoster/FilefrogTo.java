@@ -39,6 +39,8 @@ public class FilefrogTo extends PluginForHost {
 
     public FilefrogTo(PluginWrapper wrapper) {
         super(wrapper);
+        // server error. without this, paralell downloads result in 0 byte
+        // text/html files.
         this.setStartIntervall(1000);
         enablePremium("http://www.filefrog.to/premium");
     }
@@ -77,6 +79,9 @@ public class FilefrogTo extends PluginForHost {
         if (br.getRedirectLocation() == null) {
             // indirect download
             Form form = br.getForms()[0];
+            // workaround a base. Not required in browser versions above Rev
+            // 11067
+            form.setAction(downloadLink.getDownloadURL());
             br.submitForm(form);
         }
 
@@ -85,6 +90,7 @@ public class FilefrogTo extends PluginForHost {
         URLConnectionAdapter con = dl.getConnection();
         if (!con.isContentDisposition()) {
             br.loadConnection(con);
+            // server error. for some files it returns 0 byte text files.
             if (con.getContentLength() == 0) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 15 * 60000); }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -120,6 +126,8 @@ public class FilefrogTo extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
 
         Form form = br.getForms()[0];
+        // workaround a base. Not required in browser versions above Rev 11067
+        form.setAction(downloadLink.getDownloadURL());
         // not required
         // this.sleep(30000, downloadLink);
         br.submitForm(form);
@@ -129,6 +137,7 @@ public class FilefrogTo extends PluginForHost {
         URLConnectionAdapter con = dl.getConnection();
         if (!con.isContentDisposition()) {
             if (br.getURL().equals("http://www.filefrog.to/error/traffic-exhausted")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 15 * 60000); }
+            // server error. for some files it returns 0 byte text files.
             if (con.getContentLength() == 0) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 15 * 60000); }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
