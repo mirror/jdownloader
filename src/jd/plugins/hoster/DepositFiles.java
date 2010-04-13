@@ -89,7 +89,7 @@ public class DepositFiles extends PluginForHost {
             }
             dl.startDownload();
         } else {
-            Form form = br.getFormBySubmitvalue("Kostenlosen+download");
+            Form form = br.getFormBySubmitvalue("Kostenloser+download");
             if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             br.submitForm(form);
             checkErrors();
