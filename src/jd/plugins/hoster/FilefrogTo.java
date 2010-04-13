@@ -84,7 +84,7 @@ public class FilefrogTo extends PluginForHost {
             form.setAction(downloadLink.getDownloadURL());
             br.submitForm(form);
         }
-        dl = BrowserAdapter.openDownload(br, downloadLink, br.getRedirectLocation(), false, 1);
+        dl = BrowserAdapter.openDownload(br, downloadLink, br.getRedirectLocation(), false, 0);
         URLConnectionAdapter con = dl.getConnection();
         if (!con.isContentDisposition()) {
             br.followConnection();

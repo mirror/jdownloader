@@ -69,12 +69,13 @@ public class PrzeklejPl extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         String passCode = null;
+        boolean resumable = true;
         if (!br.containsHTML("<span class=\"unbold\">Wprowad")) {
             String linkurl = br.getRegex("class=\"download\" href=\"(.*?)\"").getMatch(0);
             if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             linkurl = "http://www.przeklej.pl" + linkurl;
             br.setFollowRedirects(true);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, false, 1);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, resumable, 1);
             dl.startDownload();
         } else {
             if (downloadLink.getStringProperty("pass", null) == null) {
@@ -97,7 +98,7 @@ public class PrzeklejPl extends PluginForHost {
             } else {
                 con.disconnect();
                 downloadLink.setProperty("pass", passCode);
-                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, false, 1);
+                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, resumable, 1);
                 dl.startDownload();
             }
         }

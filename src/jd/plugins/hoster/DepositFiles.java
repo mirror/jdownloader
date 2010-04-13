@@ -94,7 +94,7 @@ public class DepositFiles extends PluginForHost {
             br.submitForm(form);
             checkErrors();
             if (br.getRedirectLocation() != null && br.getRedirectLocation().indexOf("error") > 0) { throw new PluginException(LinkStatus.ERROR_RETRY); }
-            dllink = br.getRegex("<div id=\"download_url\" style=\"display:none;\">.*?<form action=\"(.*?)\" method=\"get").getMatch(0);
+            dllink = br.getRegex("download_url\".*?<form action=\"(.*?)\"").getMatch(0);
             String icid = br.getRegex("get_download_img_code\\.php\\?icid=(.*?)\"").getMatch(0);
             /* check for captcha */
             if (dllink == null && icid != null) {
