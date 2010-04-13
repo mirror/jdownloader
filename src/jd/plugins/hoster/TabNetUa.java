@@ -16,7 +16,10 @@
 
 package jd.plugins.hoster;
 
+import javax.swing.ImageIcon;
+
 import jd.PluginWrapper;
+import jd.controlling.FavIconController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -41,6 +44,16 @@ public class TabNetUa extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://tab.net.ua/";
+    }
+
+    @Override
+    public synchronized ImageIcon getFavIcon() {
+        /* try to load from disk */
+        ImageIcon image = FavIconController.getFavIcon("www.net.ua", this, true);
+        if (image != null) return image;
+
+        /* use fallback icon */
+        return new ImageIcon(createDefaultFavIcon());
     }
 
     @Override

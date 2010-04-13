@@ -22,7 +22,6 @@ import java.awt.Graphics2D;
 import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
-import java.awt.Image;
 import java.awt.Transparency;
 import java.awt.event.ActionEvent;
 import java.awt.image.BufferedImage;
@@ -30,7 +29,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
@@ -42,6 +40,7 @@ import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.controlling.CaptchaController;
 import jd.controlling.DownloadController;
+import jd.controlling.FavIconController;
 import jd.controlling.JDLogger;
 import jd.controlling.SingleDownloadController;
 import jd.gui.UserIF;
@@ -57,10 +56,8 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.DownloadInterface;
-import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-import net.sf.image4j.codec.ico.ICODecoder;
 
 /**
  * Dies ist die Oberklasse für alle Plugins, die von einem Anbieter Dateien
@@ -72,7 +69,6 @@ public abstract class PluginForHost extends Plugin {
 
     public PluginForHost(final PluginWrapper wrapper) {
         super(wrapper);
-        config.setIcon(getHosterIcon());
     }
 
     protected String getCaptchaCode(final String captchaAddress, final DownloadLink downloadLink) throws IOException, PluginException {
@@ -143,6 +139,7 @@ public abstract class PluginForHost extends Plugin {
 
     private static final HashMap<String, Long> LAST_CONNECTION_TIME = new HashMap<String, Long>();
     private static final HashMap<String, Long> LAST_STARTED_TIME = new HashMap<String, Long>();
+
     private Long WAIT_BETWEEN_STARTS = 0L;
 
     private boolean enablePremium = false;
@@ -670,47 +667,28 @@ public abstract class PluginForHost extends Plugin {
     }
 
     public ImageIcon getHosterIcon() {
-        if (hosterIcon == null) hosterIcon = initHosterIcon();
+        if (hosterIcon == null) hosterIcon = getFavIcon();
         return hosterIcon;
     }
 
-    /**
-     * this function may be overwritten by plugin for e.g. customized Favicon
-     */
-    public ImageIcon getFavIcon() {
-        return downloadFavIcon("http://" + getHost() + "/favicon.ico");
+    public void setHosterIcon(ImageIcon icon) {
+        this.hosterIcon = icon;
+        this.config.setIcon(this.hosterIcon);
     }
 
     /**
-     * function to download FavIcon from given url
+     * override this function if you want customized icons and NOT load from
+     * disk
      * 
-     * @param url
      * @return
      */
-    public static ImageIcon downloadFavIcon(String url) {
-        Browser favBr = new Browser();
-        try {
-            favBr.openGetConnection(url);
-            if (favBr.getHttpConnection().isOK()) {
-                List<BufferedImage> ret = ICODecoder.read(favBr.getHttpConnection().getInputStream());
-                if (ret.size() > 0) return new ImageIcon(ret.get(0));
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                favBr.getHttpConnection().disconnect();
-            } catch (Exception e) {
-            }
-        }
-        return null;
-    }
 
-    private synchronized ImageIcon initHosterIcon() {
-        Image image = JDTheme.getImage("hosterlogos/" + getHost(), 16, 16);
-        if (image == null) image = createDefaultIcon();
-        if (image != null) return new ImageIcon(image);
-        return null;
+    public synchronized ImageIcon getFavIcon() {
+        /* try to load from disk */
+        ImageIcon image = FavIconController.getFavIcon(getHost(), this, true);
+        if (image != null) return image;
+        /* use fallback icon */
+        return new ImageIcon(createDefaultFavIcon());
     }
 
     private final String cleanString(String host) {
@@ -720,7 +698,7 @@ public abstract class PluginForHost extends Plugin {
     /**
      * Creates a dummyHosterIcon
      */
-    public Image createDefaultIcon() {
+    public BufferedImage createDefaultFavIcon() {
         int w = 16;
         int h = 16;
         int size = 9;
@@ -736,19 +714,11 @@ public abstract class PluginForHost extends Plugin {
         if (dummy.length() > 2) dummy = dummy.substring(0, 2);
         g.setFont(new Font("Arial", Font.BOLD, size));
         int ww = g.getFontMetrics().stringWidth(dummy);
-
         g.setColor(Color.WHITE);
         g.fillRect(1, 1, w - 2, h - 2);
         g.setColor(Color.BLACK);
         g.drawString(dummy, (w - ww) / 2, 2 + size);
-
         g.dispose();
-        try {
-            File imageFile = JDUtilities.getResourceFile("jd/img/hosterlogos/" + getHost() + ".png", true);
-            ImageIO.write(image, "png", imageFile);
-        } catch (Exception e) {
-            JDLogger.exception(e);
-        }
         return image;
     }
 

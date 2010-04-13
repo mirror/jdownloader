@@ -756,7 +756,7 @@ public class Browser {
     private String getBase(final String string) {
         if (string == null) { return ""; }
 
-        final String base = getRegex("<base\\s*href=\"(.*?)\">").getMatch(0);
+        final String base = getRegex("<base\\s*href=\"(.*?)\"").getMatch(0);
         if (base != null) { return base; }
 
         final URL url = request.getHttpConnection().getURL();

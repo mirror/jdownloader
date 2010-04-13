@@ -28,6 +28,9 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.swing.ImageIcon;
+
+import jd.HostPluginWrapper;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.SubConfiguration;
@@ -117,10 +120,22 @@ public abstract class Plugin implements ActionListener {
 
     protected Browser br;
 
-    public Plugin(PluginWrapper wrapper) {
+    public Plugin(final PluginWrapper wrapper) {
         this.br = new Browser();
         this.wrapper = wrapper;
-        config = new ConfigContainer(getHost());
+        config = new ConfigContainer(getHost()) {
+            /**
+             * 
+             */
+            private static final long serialVersionUID = -30947319320765343L;
+
+            @Override
+            public ImageIcon getIcon() {
+                /* we dont have to catch icon until it is really needed */
+                if (wrapper instanceof HostPluginWrapper) return ((HostPluginWrapper) wrapper).getIcon();
+                return null;
+            }
+        };
     }
 
     public PluginWrapper getWrapper() {
