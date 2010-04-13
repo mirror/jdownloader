@@ -28,6 +28,7 @@ import java.util.regex.Pattern;
 import jd.config.SubConfiguration;
 import jd.controlling.DownloadController;
 import jd.controlling.JDLogger;
+import jd.nutils.Formatter;
 import jd.nutils.JDFlags;
 import jd.plugins.Plugin;
 import jd.utils.JDUtilities;
@@ -111,6 +112,8 @@ public abstract class PluginWrapper implements Comparable<PluginWrapper> {
      */
     private final int flags;
 
+    private final String revision;
+
     /**
      * Static classloader. gets created when the first plugin should be
      * initiated.
@@ -140,13 +143,16 @@ public abstract class PluginWrapper implements Comparable<PluginWrapper> {
      *            {@link PluginWrapper#DEBUG_ONLY} <br>
      *            {@link PluginWrapper#LOAD_ON_INIT} <br>
      *            {@link PluginWrapper#PATTERN_ACCEPTS_INVALID_URI}
+     * @param revision
+     *            String that contains the revision of the plugin
      */
-    public PluginWrapper(final String host, final String classNamePrefix, final String className, final String pattern, final int flags) {
+    public PluginWrapper(final String host, final String classNamePrefix, final String className, final String pattern, final int flags, final String revision) {
         this.pattern = (pattern != null) ? Pattern.compile(pattern, Pattern.CASE_INSENSITIVE) : null;
         this.host = host.toLowerCase(Locale.getDefault());
         final String classn = (classNamePrefix == null ? "" : classNamePrefix) + className;
         this.className = classn;
         this.flags = flags;
+        this.revision = Formatter.getRevision(revision);
         if (JDFlags.hasSomeFlags(flags, LOAD_ON_INIT)) {
             this.getPlugin();
         }
@@ -222,7 +228,9 @@ public abstract class PluginWrapper implements Comparable<PluginWrapper> {
      * 
      * @return
      */
-    abstract public String getVersion();
+    public String getVersion() {
+        return revision;
+    }
 
     /**
      * 
@@ -353,12 +361,6 @@ public abstract class PluginWrapper implements Comparable<PluginWrapper> {
      * @return
      */
     public static Plugin getNewInstance(final String className) {
-        // if (!WRAPPER.containsKey(className)) {
-        // JDLogger.exception(new Exception("plugin " + className +
-        // " could not be found"));
-        // return null;
-        // }
-        // return WRAPPER.get(className).getNewPluginInstance();
         final PluginWrapper wrapper = WRAPPER.get(className);
         if (wrapper == null) {
             JDLogger.exception(new Exception("plugin " + className + " could not be found"));

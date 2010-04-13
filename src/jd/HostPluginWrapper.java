@@ -25,7 +25,6 @@ import javax.swing.ImageIcon;
 
 import jd.config.container.JDLabelContainer;
 import jd.controlling.JDLogger;
-import jd.nutils.Formatter;
 import jd.nutils.JDFlags;
 import jd.plugins.PluginForHost;
 
@@ -51,13 +50,17 @@ public class HostPluginWrapper extends PluginWrapper implements JDLabelContainer
         return HOST_WRAPPER;
     }
 
+    public static boolean hasPlugin(final String data) {
+        for (HostPluginWrapper w : getHostWrapper()) {
+            if (w.canHandle(data)) return true;
+        }
+        return false;
+    }
+
     private static final String AGB_CHECKED = "AGB_CHECKED";
-    // private String revision = "idle";
-    private final String revision;
 
     public HostPluginWrapper(final String host, final String classNamePrefix, final String className, final String patternSupported, final int flags, final String revision) {
-        super(host, classNamePrefix, className, patternSupported, flags);
-        this.revision = Formatter.getRevision(revision);
+        super(host, classNamePrefix, className, patternSupported, flags, revision);
         try {
             writeLock.lock();
             for (HostPluginWrapper plugin : HOST_WRAPPER) {
@@ -76,11 +79,6 @@ public class HostPluginWrapper extends PluginWrapper implements JDLabelContainer
 
     public HostPluginWrapper(final String host, final String simpleName, final String pattern, final int flags, final String revision) {
         this(host, "jd.plugins.hoster.", simpleName, pattern, flags, revision);
-    }
-
-    @Override
-    public String getVersion() {
-        return revision;
     }
 
     @Override
@@ -125,19 +123,22 @@ public class HostPluginWrapper extends PluginWrapper implements JDLabelContainer
         return getHost();
     }
 
-    public static boolean hasPlugin(final String data) {
-        for (HostPluginWrapper w : getHostWrapper()) {
-            if (w.canHandle(data)) return true;
-        }
-        return false;
-    }
-
+    /**
+     * FIXME: Getting the icon loads the plugin... Maybe move the HosterIcon
+     * functions to this wrapper?
+     */
     public ImageIcon getIcon() {
         return getPlugin().getHosterIcon();
     }
 
     public String getLabel() {
         return toString();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null || !(obj instanceof HostPluginWrapper)) return false;
+        return this.getID().equalsIgnoreCase(((HostPluginWrapper) obj).getID());
     }
 
 }

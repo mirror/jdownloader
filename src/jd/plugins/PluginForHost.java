@@ -707,13 +707,8 @@ public abstract class PluginForHost extends Plugin {
     }
 
     private synchronized ImageIcon initHosterIcon() {
-        // Image image = JDImage.getImage("hosterlogos/" + getHost());
         Image image = JDTheme.getImage("hosterlogos/" + getHost(), 16, 16);
-
-        if (image == null) {
-            image = createDefaultIcon();
-        }
-
+        if (image == null) image = createDefaultIcon();
         if (image != null) return new ImageIcon(image);
         return null;
     }

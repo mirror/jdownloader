@@ -20,7 +20,6 @@ import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 
 import jd.controlling.JDLogger;
-import jd.nutils.Formatter;
 import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
 import jd.utils.JDUtilities;
@@ -37,13 +36,11 @@ public class OptionalPluginWrapper extends PluginWrapper {
     private double version;
     private String id;
     private String name;
-    private String revision;
     private OptionalPlugin annotation;
 
     public OptionalPluginWrapper(Class<?> c, OptionalPlugin help) {
-        super(c.getName(), null, c.getName(), null, 0);
+        super(c.getName(), null, c.getName(), null, 0, help.rev());
         this.id = help.id();
-        revision = Formatter.getRevision(help.rev());
         this.version = help.minJVM();
         this.name = JDL.L(c.getName(), c.getSimpleName());
         this.annotation = help;
@@ -80,14 +77,6 @@ public class OptionalPluginWrapper extends PluginWrapper {
     @Override
     public String getHost() {
         return name;
-    }
-
-    /**
-     * returns the addon's version (revision)
-     */
-    @Override
-    public String getVersion() {
-        return revision;
     }
 
     @Override

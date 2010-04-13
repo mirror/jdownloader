@@ -32,7 +32,7 @@ public class CPluginWrapper extends PluginWrapper {
     }
 
     public CPluginWrapper(String name, String host, String classNamePrefix, String className, String patternSupported, int flags) {
-        super(host, classNamePrefix, className, patternSupported, flags);
+        super(host, classNamePrefix, className, patternSupported, flags, null);
         if (loadPlugin() != null) {
             for (CPluginWrapper plugin : C_WRAPPER) {
                 if (plugin.getID().equalsIgnoreCase(this.getID()) && plugin.getPattern().equals(this.getPattern())) {
@@ -50,6 +50,7 @@ public class CPluginWrapper extends PluginWrapper {
         this(host, host, "jd.plugins.a.", className, patternSupported, 0);
     }
 
+    @Override
     public PluginsC getPlugin() {
         return (PluginsC) loadedPlugin;
     }
@@ -79,16 +80,11 @@ public class CPluginWrapper extends PluginWrapper {
         return null;
     }
 
-    // @Override
+    @Override
     public boolean canHandle(String data) {
         return getPlugin().canHandle(data);
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see jd.PluginWrapper#getVersion()
-     */
     @Override
     public String getVersion() {
         return this.isLoaded() ? this.getPlugin().getVersion() : "idle";

@@ -181,6 +181,7 @@ public class Formatter {
      * @return
      */
     public static String getRevision(String rev) {
+        if (rev == null) return null;
         try {
             int start = rev.indexOf("Revision: ") + 10;
             return rev.substring(start, rev.indexOf(" ", start + 1));
