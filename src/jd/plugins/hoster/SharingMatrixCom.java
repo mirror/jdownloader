@@ -261,7 +261,6 @@ public class SharingMatrixCom extends PluginForHost {
             if (Integer.parseInt(br2.toString().trim()) != 1) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
 
         }
-        String x = "";
         /* we will wait up to 15 mins */
         if (ctjvv > 80) {
             if (waitReconnecttime && ctjvv < 910)
