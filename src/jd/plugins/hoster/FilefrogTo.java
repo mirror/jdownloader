@@ -70,6 +70,10 @@ public class FilefrogTo extends PluginForHost {
         br.forceDebug(true);
 
         br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML("Sorry your Premium traffic is exhausted")) {
+            account.getAccountInfo().setTrafficLeft(0);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+        }
         if (br.getRedirectLocation() == null) {
             // indirect download
             Form form = br.getForms()[0];
