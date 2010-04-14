@@ -682,7 +682,6 @@ public abstract class PluginForHost extends Plugin {
      * 
      * @return
      */
-
     public synchronized ImageIcon getFavIcon() {
         /* try to load from disk */
         ImageIcon image = FavIconController.getFavIcon(getHost(), this, true);

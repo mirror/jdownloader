@@ -179,7 +179,7 @@ public class FavIconController extends Thread {
                 }
             }
         } catch (Throwable e) {
-            JDLogger.exception(e);
+            // JDLogger.exception(e);
         } finally {
             try {
                 favBr.getHttpConnection().disconnect();
