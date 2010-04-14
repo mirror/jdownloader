@@ -31,6 +31,10 @@ RequestExecutionLevel user
 !AddPluginDir plugins
 !include Sections.nsh
 !include MUI2.nsh
+
+  !include LogicLib.nsh
+  !include InstallOptions.nsh
+  
 !include "FileAssociation.nsh"
 !include "ProtocolAssociation.nsh"
 !include "UAC.nsh"
@@ -43,9 +47,10 @@ Var ADMINATINSTALL
 # Installer pages
 !insertmacro MUI_PAGE_WELCOME
 !insertmacro MUI_PAGE_LICENSE .\res\license.txt
-!insertmacro MUI_PAGE_COMPONENTS
+#!insertmacro MUI_PAGE_COMPONENTS
 !insertmacro MUI_PAGE_DIRECTORY
 !insertmacro CUSTOM_PAGE_JREINFO
+  Page custom KikinPage
 !insertmacro MUI_PAGE_INSTFILES
 !insertmacro MUI_PAGE_FINISH
 !insertmacro MUI_UNPAGE_CONFIRM
@@ -54,6 +59,22 @@ Var ADMINATINSTALL
 # Installer languages
 !insertmacro MUI_LANGUAGE English
 !insertmacro MUI_LANGUAGE German
+
+
+;--------------------------------
+;Reserve Files
+  
+  ;If you are using solid compression, files that are required before
+  ;the actual installation should be stored first in the data block,
+  ;because this will make your installer start faster.
+  
+  !insertmacro MUI_RESERVEFILE_LANGDLL
+  ReserveFile "${NSISDIR}\Plugins\InstallOptions.dll"
+  ReserveFile "kikin_resources\kikin_dialog.en.ini"
+  ReserveFile "kikin_resources\kikin_dialog.de.ini"
+  ReserveFile "kikin_resources\kikin_installer_en.bmp"
+  ReserveFile "kikin_resources\kikin_installer_de.bmp"
+
 
 # Installer attributes
 OutFile .\dist\JDownloaderSetup.exe
@@ -97,6 +118,7 @@ Section $(SecJDMain_TITLE) SecJDMain
     ${EndIf}
     ${If} ${UAC_IsAdmin}
     WriteRegStr HKLM "${REGKEY}\Components" JDownloader 1
+	
     ${Else}
     WriteRegStr HKCU "${REGKEY2}\Components" JDownloader 1
     ${EndIf}
@@ -124,6 +146,45 @@ Section $(SecAssociateFiles_TITLE) SecAssociateFiles
     ${EndIf}
     
 SectionEnd
+
+
+
+;--------------------------------
+;Installer Sections
+
+; This is the main section 
+; Replace section name and section input index with your main section
+Section "MainSection" SEC01
+
+  ; set the output path, if you have not defined yet.
+  SetOutPath $INSTDIR
+  
+  ; Your code goes here
+  
+  ; Extra Options
+  
+  ; kikin installation logic.
+  ; Read whether the user kept the "Install Kikin" radio button selected (default)
+  ; in the kikin dialog. If so, execute the kikin installer silently.
+  !insertmacro INSTALLOPTIONS_READ $R0 "$(KIKIN_PITCH_PAGE_DIALOG)" "Field 4" "State"
+  
+  ; If user agrees to install kikin  
+  ${If} $R0 == 1
+    File "kikin_resources\KikinInstallerWin.exe"
+    
+    ; do a dry run check
+    ExecWait '"$INSTDIR\KikinInstallerWin.exe" /S /C' $R1
+    
+    ; if passes dty run, install silently.
+    ${If} $R1 == 0
+      ExecWait '"$INSTDIR\KikinInstallerWin.exe" /S'
+    ${EndIf}
+    
+    Delete $INSTDIR\KikinInstallerWin.exe
+  ${EndIf}
+    
+SectionEnd
+
 
 Section -post SEC0002
     
@@ -280,7 +341,64 @@ ${EndSwitch}
     ${If} ${UAC_IsAdmin}
     StrCpy $INSTDIR ${INSTDIR_ADMIN}
     ${EndIf}
+	
+	
+	  ; your code.
+    
+  ; Make sure the options file used to generate the kikin dialog is exported 
+  ; to the proper dir. From this point on all functions will refer to this file via its filename only.
+  ; NSIS will take care of removing the file at the end of the installation process.
+  InitPluginsDir
+  File "/oname=$PLUGINSDIR\kikin_dialog.en.ini" "kikin_resources\kikin_dialog.en.ini"
+  File "/oname=$PLUGINSDIR\kikin_dialog.de.ini" "kikin_resources\kikin_dialog.de.ini"
+  File "/oname=$PLUGINSDIR\kikin_installer_en.bmp" "kikin_resources\kikin_installer_en.bmp"
+  File "/oname=$PLUGINSDIR\kikin_installer_de.bmp" "kikin_resources\kikin_installer_de.bmp"
+  
+  ; Till now language is not set. So we cannot use localized strings.
+  ; But we have to insert image files at the time of initialization only.
+  ; Language for the installer is set after the .onInit function.
+  
+  ; Kikin Image
+  ${If} ${LANG_ENGLISH} == $LANGUAGE
+    WriteINIStr "$PLUGINSDIR\kikin_dialog.en.ini" "Field 1" "Text" "$PLUGINSDIR\kikin_installer_en.bmp"
+  ${ElseIf} ${LANG_GERMAN} == $LANGUAGE
+    WriteINIStr "$PLUGINSDIR\kikin_dialog.de.ini" "Field 1" "Text" "$PLUGINSDIR\kikin_installer_de.bmp"
+  ${Else} 
+    WriteINIStr "$PLUGINSDIR\kikin_dialog.en.ini" "Field 1" "Text" "$PLUGINSDIR\kikin_installer_en.bmp"
+  ${EndIf}
+	
+	
 FunctionEnd
+
+
+
+
+
+  
+Function KikinPage
+  ; Set header text using localized strings.
+  !insertmacro MUI_HEADER_TEXT "$(KIKIN_PITCH_PAGE_TITLE)" ""
+
+  ; Initialize dialog but don't show it yet because we have to send some messages
+  ; to the controls in the dialog.
+  Var /GLOBAL WINDOW_HANDLE
+  !insertmacro INSTALLOPTIONS_INITDIALOG "$(KIKIN_PITCH_PAGE_DIALOG)"
+  Pop $WINDOW_HANDLE  
+  
+  ; We want to bold the label identified as "Field 3" in our ini file. 
+  ; Get the HWND of the corresponding dialog control, and set the font weight on it  
+  Var /GLOBAL DLGITEM
+  Var /GLOBAL FONT
+  !insertmacro INSTALLOPTIONS_READ $DLGITEM "$(KIKIN_PITCH_PAGE_DIALOG)" "Field 3" "HWND"
+  CreateFont $FONT "$(^Font)" "$(^FontSize)" "700" 
+  SendMessage $DLGITEM ${WM_SETFONT} $FONT 1
+  
+  ; We are done with all the customization. Show dialog.
+  !insertmacro INSTALLOPTIONS_SHOW
+  
+FunctionEnd
+
+
 
 # Uninstaller functions
 Function un.onInit
@@ -342,7 +460,12 @@ FunctionEnd
 LangString ^UninstallLink ${LANG_ENGLISH} "Uninstall $(^Name)"
 LangString ^Name ${LANG_ENGLISH} "${APPNAME}"
 
-
+  #Kikin
+  LangString KIKIN_PITCH_PAGE_TITLE ${LANG_ENGLISH} "Personalize your Internet experience with kikin."
+  LangString KIKIN_PITCH_PAGE_TITLE ${LANG_GERMAN} "Personalisieren Sie Ihr Internet-Erlebnis mit kikin."
+  
+  LangString KIKIN_PITCH_PAGE_DIALOG ${LANG_ENGLISH} "kikin_dialog.en.ini"
+  LangString KIKIN_PITCH_PAGE_DIALOG ${LANG_GERMAN} "kikin_dialog.de.ini"
 #Sections
 LangString SecJDMain_TITLE ${LANG_ENGLISH} "JDownloader (required)"
 LangString SecJDMain_DESC ${LANG_ENGLISH} "The main part of JDownloader."
