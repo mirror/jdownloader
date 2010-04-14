@@ -29,7 +29,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fpsbanana.com" }, urls = { "http://[\\w\\.]*?fpsbanana\\.com/((/download)?maps/(download/)?\\d+|maps/games/\\d+((\\?mn=\\d+_body\\&)?(\\?)?page=\\d+\\&mn=\\d+_body)?)" }, flags = { 0 })
-public class FpsBananaCom extends PluginForDecrypt { // http://www.fpsbanana.com/maps/games/2?mn=1_body&page=13&mn=1_body
+public class FpsBananaCom extends PluginForDecrypt {
 
     public FpsBananaCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -38,6 +38,7 @@ public class FpsBananaCom extends PluginForDecrypt { // http://www.fpsbanana.com
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        logger.info("Added link = " + parameter);
         br.setFollowRedirects(false);
         br.setReadTimeout(120 * 1000);
         if (parameter.contains("/games/")) {
