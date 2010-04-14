@@ -278,7 +278,8 @@ public class Main {
 
     private static void heapCheck() {
         // heapcheck disable by adding a
-        JDInitFlags.ENOUGH_MEMORY = !(Runtime.getRuntime().maxMemory() < 1000000000);
+        JDInitFlags.ENOUGH_MEMORY = true;
+        // !(Runtime.getRuntime().maxMemory() < 100000000);
         if (!JDInitFlags.ENOUGH_MEMORY) {
             JDInitFlags.SHOW_SPLASH = false;
             LOG.warning("Heapcheck: Not enough heap. use: java -Xmx512m -jar JDownloader.jar");
