@@ -52,8 +52,9 @@ public class MegaPornCom extends PluginForHost {
     private static final String MU_PARAM_PORT = "MU_PARAM_PORT";
     private static final String CAPTCHA_MODE = "CAPTCHAMODE";
     private static String PASSWORD = null;
-    private static int FREE = 30;
-    // private static int FREE = 1;
+    // private static int FREE = 30;
+    private static int FREE = 1;
+    private static int FREE_DEF_WAIT = 46;
 
     private static int simultanpremium = 1;
     private static final Object PREMLOCK = new Object();
@@ -443,6 +444,18 @@ public class MegaPornCom extends PluginForHost {
         link.getLinkStatus().setStatusText(JDL.L("plugins.host.megaupload.waitforstart", "Waiting for start..."));
         link.requestGuiUpdate();
 
+        /* wait for download */
+        String ticketTime = br.getRegex("count=(\\d*);").getMatch(0);
+        if (ticketTime != null && ticketTime.equals("0")) {
+            ticketTime = null;
+        }
+        long pendingTime = FREE_DEF_WAIT;
+        if (ticketTime != null) {
+            pendingTime = Long.parseLong(ticketTime);
+        }
+        pendingTime *= 1000;
+        sleep(pendingTime, link);
+
         String url = br.getRegex("id=\"downloadlink\">.*?<a href=\"(.*?)\"").getMatch(0);
         synchronized (DL) {
             if (Thread.currentThread().isInterrupted()) {
@@ -514,6 +527,18 @@ public class MegaPornCom extends PluginForHost {
 
         link.getLinkStatus().setStatusText("Wait for start");
         link.requestGuiUpdate();
+
+        /* wait for download */
+        String ticketTime = br.getRegex("count=(\\d*);").getMatch(0);
+        if (ticketTime != null && ticketTime.equals("0")) {
+            ticketTime = null;
+        }
+        long pendingTime = FREE_DEF_WAIT;
+        if (ticketTime != null) {
+            pendingTime = Long.parseLong(ticketTime);
+        }
+        pendingTime *= 1000;
+        sleep(pendingTime, link);
 
         String url = br.getRedirectLocation();
 
