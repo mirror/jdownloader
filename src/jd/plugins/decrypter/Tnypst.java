@@ -27,7 +27,6 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tinypaste.com" }, urls = { "http://[\\w\\.]*?tinypaste\\.com/([0-9a-z]+|.*?id=[0-9a-z]+)" }, flags = { 0 })
@@ -45,20 +44,31 @@ public class Tnypst extends PluginForDecrypt {
         br.setFollowRedirects(true);
         String link = parameter.toString();
         br.getPage(link);
+        boolean crypted = false;
         if (br.containsHTML("(Enter the correct password|has been password protected)")) {
             for (int i = 0; i <= 3; i++) {
                 String id = new Regex(link, "tinypaste\\.com/.*?id=([0-9a-z]+)").getMatch(0);
                 if (id == null) id = new Regex(link, "tinypaste\\.com/([0-9a-z]+)").getMatch(0);
                 Form pwform = br.getForm(0);
                 if (pwform == null || id == null) return null;
-                String pw = Plugin.getUserInput("Password?", parameter);
+                // String pw = Plugin.getUserInput("Password?", parameter);
+                String pw = "anon";
                 pwform.put("password_" + id, pw);
                 br.submitForm(pwform);
                 if (br.containsHTML("(Enter the correct password|has been password protected)")) continue;
                 break;
             }
+            if (br.containsHTML("(Enter the correct password|has been password protected)")) throw new DecrypterException(DecrypterException.PASSWORD);
+            crypted = true;
         }
-        if (br.containsHTML("(Enter the correct password|has been password protected)")) throw new DecrypterException(DecrypterException.PASSWORD);
+        System.out.print(br.toString());
+        if (crypted) {
+            logger.info("Link " + link + " is password protected, trying to find the links now...");
+            String hash = br.getRegex("hash=([a-z0-9]+)(\"|')").getMatch(0);
+            if (hash == null) return null;
+            String linkPage = link + "/fullscreen.php?hash=" + hash;
+            br.getPage(linkPage);
+        }
         String[] links = HTMLParser.getHttpLinks(br.toString(), null);
         ArrayList<String> pws = HTMLParser.findPasswords(br.toString());
         for (String element : links) {

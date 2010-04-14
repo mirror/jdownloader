@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
@@ -29,7 +30,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "milledrive.com" }, urls = { "http://[\\w\\.]*?milledrive\\.com/(music|files|videos|files/video|files/music)/\\d+/.*" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "milledrive.com" }, urls = { "http://[\\w\\.]*?milledrive\\.com/(music|files|videos(/.*?)?|files/video|files/music)/\\d+/.*" }, flags = { 0 })
 public class MilleDriveCom extends PluginForHost {
 
     public MilleDriveCom(PluginWrapper wrapper) {
@@ -67,10 +68,12 @@ public class MilleDriveCom extends PluginForHost {
             filesize = br.getRegex("\\|\\s+<span style=[^>]*>(.*?)</span>").getMatch(0);
         }
         // System.out.println(filename+" "+filesize);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        filesize = filesize.replaceFirst("bytes", "B");
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
-        downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
+        if (filesize != null) {
+            filesize = filesize.replaceFirst("bytes", "B");
+            downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -102,11 +105,17 @@ public class MilleDriveCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
             }
         } else {
+            directlink = Encoding.htmlDecode(directlink);
             String finalfilename = downloadLink.getName();
             br.setFollowRedirects(true);
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, directlink, true, 1);
-            if (dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getContentType().contains("text/xml")) {
                 br.followConnection();
+                if (br.containsHTML("File not found")) {
+                    logger.info("The following link is eigher down or is an RTMP stream: " + downloadLink.getDownloadURL());
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                if (br.containsHTML("rtmp://")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugin.hoster.milledrive.com.rtmpVideo", "JD cannot download RTMP streams at the moment!"));
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
             }
             downloadLink.setFinalFileName(finalfilename);
@@ -116,7 +125,7 @@ public class MilleDriveCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return -1;
     }
 
     @Override

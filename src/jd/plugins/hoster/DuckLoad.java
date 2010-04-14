@@ -148,7 +148,7 @@ public class DuckLoad extends PluginForHost {
         }
         String filename = br.getRegex("You want to download the file \"(.*?)\".*?!<br>").getMatch(0);
         String filesize = br.getRegex("You want to download the file \".*?\" \\((.*?)\\) !<br>").getMatch(0);
-        if (filesize == null) filesize = br.getRegex(">Server \\(#\\d+\\) (<i)?(<span style=\"font-style:italic;\")?(id=\".*?\")?>\\[(.*?)\\](</spa|</i>)").getMatch(3);
+        if (filesize == null) filesize = br.getRegex(">Server \\(#\\d+\\) (<i)?(<span style=\"font-style:italic;\")?(id=\".*?\")?(>)?\\[(.*?)\\](</spa|</i>)?").getMatch(4);
         if (filename == null && filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (filename == null) filename = "VideoStream.avi";
         parameter.setName(filename.trim());
