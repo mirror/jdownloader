@@ -37,6 +37,7 @@ import jd.event.ControlEvent;
 import jd.gui.UserIO;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.gui.swing.jdgui.menu.MenuAction;
+import jd.nutils.Executer;
 import jd.nutils.JDFlags;
 import jd.nutils.OSDetector;
 import jd.plugins.OptionalPlugin;
@@ -426,18 +427,24 @@ public class JDShutdown extends PluginOptional {
 
     private void initConfig() {
         SubConfiguration subConfig = getPluginConfig();
+
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, CONFIG_ENABLEDONSTART, JDL.L("gui.config.jdshutdown.enabledOnStart", "Enabled on Start")).setDefaultValue(false));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, subConfig, CONFIG_MODE, MODES_AVAIL, JDL.L("gui.config.jdshutdown.mode", "Mode:")).setDefaultValue(0));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, CONFIG_FORCESHUTDOWN, JDL.L("gui.config.jdshutdown.forceshutdown", "Force Shutdown (Not for all OS)")).setDefaultValue(false));
+
+        /* enable force shutdown for Mac OSX */
         if (OSDetector.isMac()) {
             config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, new ActionListener() {
 
                 public void actionPerformed(ActionEvent e) {
-                    // HIER BEFEHLE DIE AUSGEFÜHRT WERDEN SOLLEN (INSTALLATION)
+                    Executer exec = new Executer("/usr/bin/osascript");
+                    exec.addParameter(JDUtilities.getResourceFile("tools/mac/osxnopasswordforshutdown.scpt").getAbsolutePath());
+                    exec.setWaitTimeout(0);
+                    exec.start();
                 }
 
-            }, "HIER_TEXT_FÜR_LABEL", "HIER_TEXT_FÜR_BUTTON", null));
+            }, JDL.L("gui.config.jdshutdown.osx.force.short", "Install"), JDL.L("gui.config.jdshutdown.osx.force.long", "Install Force Shutdown (only Mac OSX)"), null));
         }
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, CONFIG_ENABLEDONSTART, JDL.L("gui.config.jdshutdown.enabledOnStart", "Enabled on Start")).setDefaultValue(false));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, subConfig, CONFIG_MODE, MODES_AVAIL, JDL.L("gui.config.jdshutdown.mode", "Mode:")).setDefaultValue(0));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, CONFIG_FORCESHUTDOWN, JDL.L("gui.config.jdshutdown.forceshutdown", "Force Shutdown (Not for all OS)")).setDefaultValue(false));
     }
 
     @Override
