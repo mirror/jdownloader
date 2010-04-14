@@ -287,6 +287,7 @@ gui.dialog.addurl.title = اضافه كردن لينك (ها)
 gui.dialog.countdown.tooltip = اين كادر پس از زمان معيد بسته خواهد شد. براي توقف شمارش معكوس ، كليك كنيد
 gui.dialog.deepdecrypt.message = جي دانلودر هيچ چيزي در %s پيدا نكرد \r\n---------------------------------\r\nجي دانلودر  براي پيدا كردن لينك هاي كمكي اين صفحه را بررسي مي كند.
 gui.dialog.deepdecrypt.title = توضيح جامع ؟
+gui.dialogs.agb_tos.agbaccepted = شرايط سرويس را مي پذيرم
 gui.speedmeter.pause = وقفه
 gui.speedmeter.show = نمايش سرعت سنج
 gui.splash.progress.controller = اجراي كنترل كننده
