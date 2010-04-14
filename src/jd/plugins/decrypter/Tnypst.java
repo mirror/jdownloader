@@ -61,7 +61,6 @@ public class Tnypst extends PluginForDecrypt {
             if (br.containsHTML("(Enter the correct password|has been password protected)")) throw new DecrypterException(DecrypterException.PASSWORD);
             crypted = true;
         }
-        System.out.print(br.toString());
         if (crypted) {
             logger.info("Link " + link + " is password protected, trying to find the links now...");
             String hash = br.getRegex("hash=([a-z0-9]+)(\"|')").getMatch(0);
