@@ -160,7 +160,8 @@ public class DuckLoad extends PluginForHost {
         ArrayList<String> someStuff = new ArrayList<String>();
         ArrayList<String> regexStuff = new ArrayList<String>();
         regexStuff.add("(<!--.*?-->)");
-        regexStuff.add("type=\"hidden\" name=\".*?\"( value=\".*?\")");
+        regexStuff.add("(type=\"hidden\".*?(name=\".*?\")?.*?value=\".*?\")");
+        regexStuff.add("display:none;\">(.*?)</span>");
         for (String aRegex : regexStuff) {
             aBrowser = br.toString();
             String replaces[] = br.getRegex(aRegex).getColumn(0);

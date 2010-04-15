@@ -41,13 +41,36 @@ public class PrtctdScdvntCm extends PluginForDecrypt {
         br.getPage(parameter);
         String postvar = new Regex(parameter, "protected\\.socadvnet\\.com/\\?(.+)").getMatch(0);
         if (postvar == null) return null;
-        br.postPage("http://protected.socadvnet.com/allink.php", "LinkName=" + postvar);
+        String security = br.getRegex("<div id =\"cp\">.*?(.*?)= \\&nbsp;<input").getMatch(0);
+        br.postPage("http://protected.socadvnet.com/allinks.php", "LinkName=" + postvar);
         String[] linksCount = br.getRegex("(ten\\.tibobrut/)").getColumn(0);
         if (linksCount == null || linksCount.length == 0) return null;
+        if (security != null) {
+            security = security.trim();
+            Regex theNumbers = new Regex(security, "(\\d+) (-|\\+) (\\d+)");
+            String num1 = theNumbers.getMatch(0);
+            String num2 = theNumbers.getMatch(2);
+            String plusMinus = theNumbers.getMatch(1);
+            if (num1 == null || num2 == null || plusMinus == null) {
+                logger.warning("Error in doing the maths for link: " + parameter);
+                return null;
+            }
+            int equals = 0;
+            if (plusMinus.equals("+")) {
+                equals = Integer.parseInt(num1) + Integer.parseInt(num2);
+            } else {
+                equals = Integer.parseInt(num1) - Integer.parseInt(num2);
+            }
+            br.postPage("http://protected.socadvnet.com/cp_code.php", "res_code=" + equals);
+            if (!br.toString().trim().equals("1")) {
+                logger.warning("Error in doing the maths for link: " + parameter);
+                return null;
+            }
+        }
         logger.info("Found " + linksCount.length + " links, decrypting now...");
         progress.setRange(linksCount.length);
         for (int i = 0; i <= linksCount.length - 1; i++) {
-            String actualPage = "http://protected.socadvnet.com/allink.php?out_name=" + postvar + "&&link_id=" + i;
+            String actualPage = "http://protected.socadvnet.com/allinks.php?out_name=" + postvar + "&&link_id=" + i;
             br.getPage(actualPage);
             String turboId = br.getRegex("\"http://turbobit\\.net/download/free/(.*?)\"").getMatch(0);
             if (turboId == null) {
@@ -59,5 +82,4 @@ public class PrtctdScdvntCm extends PluginForDecrypt {
         }
         return decryptedLinks;
     }
-
 }

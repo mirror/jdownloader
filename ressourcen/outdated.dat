@@ -237,3 +237,6 @@ jd/plugins/hoster/DivxHostTo.class
 jd/plugins/hoster/HamsterShareCom.class
 jd/img/hosterlogos
 jd/plugins/hoster/MyShareAt.class
+jd/plugins/hoster/SelfLoadCom.class
+jd/plugins/hoster/MaxUploadEu.class
+jd/plugins/hoster/GetAppInfo.class
