@@ -218,7 +218,6 @@ public class SharingMatrixCom extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        boolean waitReconnecttime = getPluginConfig().getBooleanProperty(WAIT1, true);
         br.forceDebug(true);
         requestFileInformation(downloadLink);
         String passCode = null;
@@ -261,14 +260,7 @@ public class SharingMatrixCom extends PluginForHost {
             if (Integer.parseInt(br2.toString().trim()) != 1) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
 
         }
-        /* we will wait up to 15 mins */
-        if (ctjvv > 80) {
-            if (waitReconnecttime && ctjvv < 910)
-                sleep(ctjvv * 1001l, downloadLink);
-            else
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, ctjvv * 1001l);
-        } else
-            this.sleep(ctjvv * 1000, downloadLink);
+        handleWaittime(downloadLink, ctjvv);
         String dl_id = br2.getPage("/ajax_scripts/dl.php").trim();
         br2.getPage("/ajax_scripts/_get2.php?link_id=" + linkid + "&link_name=" + link_name + "&dl_id=" + dl_id + (passCode == null ? "" : "&password=" + Encoding.urlEncode(passCode)));
         if (br2.containsHTML("server_down")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.sharingmatrixcom.failure", "Serverfailure, Please try again later!"), 30 * 60 * 1000l);
@@ -293,6 +285,39 @@ public class SharingMatrixCom extends PluginForHost {
             downloadLink.setProperty("pass", passCode);
         }
         dl.startDownload();
+    }
+
+    public void handleWaittime(DownloadLink downloadLink, int ctjvv) throws Exception {
+        // Please leave this is, could be useful later...
+        // logger.info("Checking for the first waittime...");
+        // doWait2(downloadLink, ctjvv);
+        // See if we can find a long waittime, if so we HAVE TO reconnect as it
+        // is very big!
+        logger.info("Checking if a 2nd waittime does exist...");
+        Browser br3 = br.cloneBrowser();
+        br3.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br3.getPage("http://sharingmatrix.com/ajax_scripts/check_timer.php?tmp=" + Math.round(Math.random() * 1000) + 1);
+        String longwait = br3.getRegex(".*?(\\d+).*?").getMatch(0);
+        if (longwait != null && Integer.parseInt(longwait) > 0) {
+            logger.info("2nd waittime does exist, wait = " + longwait + " seconds.");
+            ctjvv = Integer.parseInt(longwait);
+            doWait2(downloadLink, ctjvv);
+        } else {
+            logger.info("No 2nd waittime found...");
+        }
+    }
+
+    public void doWait2(DownloadLink downloadLink, int ctjvv) throws Exception {
+        boolean waitReconnecttime = getPluginConfig().getBooleanProperty(WAIT1, true);
+        /* we will wait up to 15 mins */
+        if (ctjvv > 80) {
+            if (waitReconnecttime && ctjvv < 910)
+                sleep(ctjvv * 1001l, downloadLink);
+            else
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, ctjvv * 1001l);
+        } else {
+            this.sleep(ctjvv * 1000, downloadLink);
+        }
     }
 
     @Override

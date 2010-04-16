@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
@@ -56,6 +57,17 @@ public class FileServeCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
+        Browser br2 = br.cloneBrowser();
+        br2.getPage("http://www.fileserve.com/landing/DL12/download_captcha.js");
+        if (!br2.containsHTML("captica.php")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        for (int i = 0; i <= 3; i++) {
+            String captchaUrl = "http://www.fileserve.com/captica.php?x=" + System.currentTimeMillis();
+            String code = getCaptchaCode(captchaUrl, downloadLink);
+            br2.postPage("http://www.fileserve.com/checkCaptcha.php", "captchaValue=" + code);
+            if (!br2.toString().trim().equals("1")) continue;
+            break;
+        }
+        if (!br2.toString().trim().equals("1")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         br.postPage(downloadLink.getDownloadURL(), "downloadLink=wait");
         // Ticket Time
         String reconTime = br.getRegex("(\\d+)").getMatch(0);
