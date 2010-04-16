@@ -897,7 +897,7 @@ jd.gui.swing.jdgui.settings.configpanel.restartquestion.title = Reinicio requeri
 jd.gui.swing.jdgui.settings.panels.configpaneladdons.addons.title = Complementos
 jd.gui.swing.jdgui.settings.panels.configpaneladdons.askafterinit = Mostrar %s ahora?\r\nPuede abrirlo mas tarde usando el menu Complementos
 jd.gui.swing.jdgui.settings.panels.configpaneladdons.breadcrum = Complementos
-jd.gui.swing.jdgui.settings.panels.configpanelcaptcha.breadcrum = Captcha
+jd.gui.swing.jdgui.settings.panels.configpanelcaptcha.breadcrum = JD AntiCaptcha
 jd.gui.swing.jdgui.settings.panels.configpanelcaptcha.captcha.title = JD AntiCaptcha
 jd.gui.swing.jdgui.settings.panels.configpanelcaptcha.captchasize = Tamaño del Captcha (porcentaje):
 jd.gui.swing.jdgui.settings.panels.configpanelgeneral.breadcrum = General
@@ -929,7 +929,7 @@ jd.gui.swing.jdgui.settings.panels.gui.toolbarcontroller.toolbarcontroller.title
 jd.gui.swing.jdgui.settings.panels.hoster.columns.toscolumn.read = Leer TdS
 jd.gui.swing.jdgui.settings.panels.passwordlist.breadcrum = Contraseñas de Descargas
 jd.gui.swing.jdgui.settings.panels.passwordlist.general.title = Descargas
-jd.gui.swing.jdgui.settings.panels.passwords.passwordlisthtaccess.breadcrum = Listado de contraseñas de HTAccess
+jd.gui.swing.jdgui.settings.panels.passwords.passwordlisthtaccess.breadcrum = Credenciales de HTAccess
 jd.gui.swing.jdgui.settings.panels.passwords.passwordlisthtaccess.general.title = HTAccess
 jd.gui.swing.jdgui.settings.panels.premium.premium.accountselection = Seleccionar siempre la cuenta Premium con mas tráfico restante
 jd.gui.swing.jdgui.settings.panels.premium.premium.breadcrum = Cuentas Premium
