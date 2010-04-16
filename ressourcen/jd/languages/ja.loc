@@ -584,6 +584,7 @@ gui.menu.gui.jdshutdown.toggle.name = シャットダウン
 gui.menu.gui.jdshutdown.toggle.tooltip = JDShutdown の 有効/無効 を切り替えます。
 gui.menu.infobar.accel = -
 gui.menu.infobar.mnem = -
+gui.menu.infobar.name = 情報バー
 gui.menu.jdantistandby.accel = -
 gui.menu.jdantistandby.mnem = -
 gui.menu.jdantistandby.name = JDStandBy
