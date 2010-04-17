@@ -67,6 +67,7 @@ public class TurboBitNet extends PluginForHost {
         if (fileName == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         fileSize = fileSize.replace("М", "M");
         fileSize = fileSize.replace("к", "k");
+        fileSize = fileSize.replace("Г", "g");
         fileSize = fileSize.replace("б", "");
         if (!fileSize.endsWith("b")) fileSize = fileSize + "b";
         downloadLink.setName(fileName.trim());
