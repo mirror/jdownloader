@@ -68,7 +68,7 @@ public class SendspaceCom extends PluginForHost {
 
     public boolean isPremium() throws IOException {
         br.getPage("http://www.sendspace.com/mysendspace/myindex.html?l=1");
-        if (br.containsHTML("Your membership is valid for")) return true;
+        if (br.containsHTML("Your account needs to be renewed in")) return true;
         return false;
     }
 
@@ -82,12 +82,11 @@ public class SendspaceCom extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        String left = br.getRegex("You have downloaded (.*?)GB today").getMatch(0);
+        String left = br.getRegex(">You have(.*?)available bandwidth<").getMatch(0);
         if (left != null) {
-            int tleft = 800 - Integer.parseInt(left.replaceAll("\\.", ""));
-            ai.setTrafficLeft((long) (1024l * 1024l * 1024 * (tleft / 100.0)));
+            ai.setTrafficLeft(Regex.getSize(left));
         }
-        String days = br.getRegex("Your membership is valid for (\\d+) days").getMatch(0);
+        String days = br.getRegex("Your account needs to be renewed in[ ]+(\\d+)[ ]+days").getMatch(0);
         if (days != null && !days.equals("0")) {
             ai.setValidUntil(System.currentTimeMillis() + (Long.parseLong(days) * 24 * 50 * 50 * 1000));
         } else {
@@ -95,8 +94,6 @@ public class SendspaceCom extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        String points = br.getRegex(Pattern.compile("You have([\\d+, ]+)<a href=\"maxpoints", Pattern.CASE_INSENSITIVE)).getMatch(0);
-        if (points != null) ai.setPremiumPoints(Long.parseLong(points.trim().replaceAll(",|\\.", "")));
         account.setValid(true);
         return ai;
     }
@@ -109,7 +106,7 @@ public class SendspaceCom extends PluginForHost {
         String linkurl = br.getRegex("<a id=\"downlink\" class=\"mango\" href=\"(.*?)\"").getMatch(0);
         if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, linkurl, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, linkurl, true, 1);
         dl.startDownload();
     }
 
@@ -235,6 +232,11 @@ public class SendspaceCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
+        return 1;
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
         return 1;
     }
 
