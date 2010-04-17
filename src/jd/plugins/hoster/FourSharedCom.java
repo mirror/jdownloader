@@ -32,9 +32,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.utils.locale.JDL;
 
 //http://www.4shared.com/file/<FILEID[a-70-9]>/<FILENAME>.html
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4shared.com" }, urls = { "http://[\\w\\.]*?(4shared|4shared\\-china)\\.com/(file|get)/.+?/.*" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4shared.com" }, urls = { "http://[\\w\\.]*?(4shared|4shared\\-china)\\.com/(get|file|document|photo)/.+?/.*" }, flags = { 2 })
 public class FourSharedCom extends PluginForHost {
 
     public FourSharedCom(PluginWrapper wrapper) {
@@ -82,23 +83,34 @@ public class FourSharedCom extends PluginForHost {
             br.getHeaders().put("4langcookie", "en");
             br.setFollowRedirects(true);
             br.getPage(downloadLink.getDownloadURL());
+            // need password?
             if (br.containsHTML("enter a password to access")) {
                 Form form = br.getFormbyProperty("name", "theForm");
                 if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                if (downloadLink.getProperty("pass") != null) downloadLink.setDecrypterPassword(downloadLink.getProperty("pass").toString());
+                // set password before in decrypter?
+                if (downloadLink.getProperty("pass") != null) {
+                    downloadLink.setDecrypterPassword(downloadLink.getProperty("pass").toString());
+                    form.put("userPass2", downloadLink.getDecrypterPassword());
+                    br.submitForm(form);
+                    // password not correct?
+                    // some subfolder can have different password
+                    if (br.containsHTML("enter a password to access")) downloadLink.setDecrypterPassword(null);
+                }
                 if (downloadLink.getDecrypterPassword() == null) {
-                    for (int retry = 1; retry <= 5; retry++) {
-                        String pass = getUserInput("Password:", downloadLink);
+                    String text = JDL.L("plugins.hoster.general.enterpassword", "Enter password:");
+                    for (int retry = 5; retry > 0; retry--) {
+                        String pass = getUserInput(text, downloadLink);
                         form.put("userPass2", pass);
                         br.submitForm(form);
                         if (!br.containsHTML("enter a password to access")) {
+                            downloadLink.setProperty("pass", pass);
                             downloadLink.setDecrypterPassword(pass);
                             break;
-                        } else if (retry == 5) logger.severe("Wrong Password!");
+                        } else {
+                            text = "(" + (retry - 1) + ") " + JDL.L("plugins.hoster.general.reenterpassword", "Wrong password. Please re-enter:");
+                            if (retry == 1) logger.severe("Wrong Password!");
+                        }
                     }
-                } else {
-                    form.put("userPass2", downloadLink.getDecrypterPassword());
-                    br.submitForm(form);
                 }
             }
             String filename = br.getRegex(Pattern.compile("<title>4shared.com.*?download(.*?)</title>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0).trim();
