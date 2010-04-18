@@ -1301,6 +1301,7 @@ plugins.hoster.depositfilescom.accountok = Account OK
 plugins.hoster.depositfilescom.accountokfree = L'accaount è corretto (utente free)
 plugins.hoster.depositfilescom.errors.allslotsbusy = Tutti gli slot di download riservati alla tua nazione sono occupati
 plugins.hoster.depositfilescom.errors.limitreached = Limite download raggiunto
+plugins.hoster.extabitcom.errors.only4premium = Questo file è disponibile solo per gli utenti Premium 
 plugins.hoster.filebaseto.servererror = Errore del server
 plugins.hoster.filebaseto.unsupportederror = Errore sconosciuto
 plugins.hoster.filefactorycom.errors.nofreeslots = Nessuno slot gratuito disponibile
