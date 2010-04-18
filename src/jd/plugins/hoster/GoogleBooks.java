@@ -54,8 +54,17 @@ public class GoogleBooks extends PluginForHost {
         this.setBrowserExclusive();
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("http://sorry.google.com/sorry/\\?continue=.*")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1001l);
+        // logger.info(br.toString());
+        if (br.containsHTML("src=\"/googlebooks/restricted_logo.gif\"")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
         if (br.containsHTML("Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // mpage moved + capcha - secure for automatic downloads
+        if (br.containsHTML("http://sorry.google.com/sorry/\\?continue=.*")) {
+            String url = br.getRedirectLocation() != null ? br.getRedirectLocation() : br.getRegex("<A HREF=\"(http://sorry.google.com/sorry/\\?continue=http://books.google.com/books.*?)\">").getMatch(0);
+            if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1001l);
+            // TODO: can make redirect and capcha but this only for secure to
+            // continue connect not for download page
+        }
         String dllink = br.getRegex(";preloadImg.src = \\'(.*?)\\';window").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setDebug(true);
@@ -78,8 +87,10 @@ public class GoogleBooks extends PluginForHost {
         }
         // Get and set the correct ending of the file!
         String correctEnding = LoadImage.getFileType(dllink, dl.getConnection().getContentType());
-        String wrongEnding = link.getName().substring(link.getName().lastIndexOf('.'));
+        String wrongEnding = null;
+        if (link.getName().lastIndexOf('.') > 0) wrongEnding = link.getName().substring(link.getName().lastIndexOf('.'));
         if (correctEnding != null && wrongEnding != null) link.setFinalFileName(link.getName().replace(wrongEnding, correctEnding));
+        if (correctEnding != null && wrongEnding == null) link.setFinalFileName(link.getName() + correctEnding);
         dl.startDownload();
 
     }

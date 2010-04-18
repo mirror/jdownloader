@@ -43,8 +43,21 @@ public class GglBks extends PluginForDecrypt {
         String url = param;
         if (url.contains("&")) url = url.split("&")[0];
         String url2 = url.concat("&printsec=frontcover&jscmd=click3");
+        br.setFollowRedirects(true);
         br.getPage(url2);
-        if (br.containsHTML("http://sorry.google.com/sorry/\\?continue=.*")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000); }
+        // logger.info(br.toString());
+        // page moved + capcha - secure for automatic downloads
+        if (br.containsHTML("http://sorry.google.com/sorry/\\?continue=.*")) {
+            url = br.getRedirectLocation() != null ? br.getRedirectLocation() : br.getRegex("<A HREF=\"(http://sorry.google.com/sorry/\\?continue=http://books.google.com/books.*?)\">").getMatch(0);
+            if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1001l);
+            // TODO: can make redirect and capcha but this only for secure to
+            // continue connect not for download page
+        }
+
+        // if (br.containsHTML("http://sorry.google.com/sorry/\\?continue=.*"))
+        // { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 *
+        // 1000); }
         String[] links = br.getRegex("\\{\\\"pid\\\":\\\"(.*?)\\\"").getColumn(0);
         if (links == null || links.length == 0) return null;
         progress.setRange(links.length);
