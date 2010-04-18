@@ -58,7 +58,7 @@ public class CobraShareSk extends PluginForHost {
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("Poadovaný súbor sa na serveri nenachádza")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = Encoding.htmlDecode(br.getRegex("File name :&nbsp;</td>.*?<td class=\"data\">(.*?)</td>").getMatch(0));
-        Regex reg = br.getRegex("Size :&nbsp;</td>.*?<td class=\"data\">(.*?)&nbsp;(.*?)</td>");
+        Regex reg = br.getRegex("Size :\\&nbsp;</td>.*?<td class=\"data\">(.*?)\\&nbsp;(.*?)</td>");
         String filesize = reg.getMatch(0) + " " + reg.getMatch(1);
         if (filename == null || (filesize == null || filesize.contains("null"))) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         link.setName(filename);
@@ -119,8 +119,11 @@ public class CobraShareSk extends PluginForHost {
             return ai;
         }
         br.getPage("http://cobrashare.sk/index.php?sp=u");
-        String availableTraffic = br.getRegex(">Za posledné 7 dní ste stiahli spolu: </td>.*?<td style=\"color:.*?; font-weight:bold;\" align=\"right\">(.*?)</td>").getMatch(0);
-        if (availableTraffic != null) ai.setTrafficLeft(Regex.getSize(availableTraffic.replace("&nbsp;", "")));
+        String availableTraffic = br.getRegex(">Do vyèerpania 7 dòového limitu Vám ete ostáva: </td>.*?<td style=\".*?\" align=\"right\">(.*?)</td>").getMatch(0);
+        if (availableTraffic != null) {
+            availableTraffic = availableTraffic.replace("&nbsp;", "");
+            ai.setTrafficLeft(Regex.getSize(availableTraffic.replace("&nbsp;", "")));
+        }
         String validUntil = br.getRegex(">Vá premium account je platný do:</td>.*?<td style=\"color:.*?; font-weight:bold;\" align=\"right\">(.*?)</td>").getMatch(0);
         String points = br.getRegex(">Premium points:</td>.*?<td style=\"color:.*?; font-weight:bold;\" align=\"right\">(\\d+)</td>").getMatch(0);
         if (points == null) points = br.getRegex(">Premium points: </td>.*?<td valign=\"top\"><b>(\\d+)</b></td></tr>").getMatch(0);
