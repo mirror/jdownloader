@@ -1302,6 +1302,7 @@ plugins.hoster.depositfilescom.accountok = Ο λογαριασμός είναι 
 plugins.hoster.depositfilescom.accountokfree = Ο λογαριασμός είναι ΟΚ. (Δωρεάν χρήστης)
 plugins.hoster.depositfilescom.errors.allslotsbusy = Όλες οι θέσεις λήψεων για τη χώρα σας είναι απασχολημένες
 plugins.hoster.depositfilescom.errors.limitreached = Επήλθε το όριο λήψεων
+plugins.hoster.extabitcom.errors.only4premium = Αυτό το αρχείο είναι διαθέσιμο μόνο στους premium χρήστες
 plugins.hoster.filebaseto.servererror = Σφάλμα Εξυπηρετητή
 plugins.hoster.filebaseto.unsupportederror = Σφάλμα που δεν υποστηρίζεται
 plugins.hoster.filefactorycom.errors.nofreeslots = Δεν υπάρχουν διαθέσιμες θέσεις
