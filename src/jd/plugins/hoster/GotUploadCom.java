@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
@@ -47,6 +48,7 @@ public class GotUploadCom extends PluginForHost {
         return "http://www.gotupload.com/tos.html";
     }
 
+    public String brbefore = "";
     private static final String COOKIE_HOST = "http://gotupload.com";
 
     @Override
@@ -54,35 +56,36 @@ public class GotUploadCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setCookie(COOKIE_HOST, "lang", "english");
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("You have reached the download-limit")) {
+        doSomething();
+        if (brbefore.contains("You have reached the download-limit")) {
             logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
             return AvailableStatus.UNCHECKABLE;
         }
-        if (br.containsHTML("(No such file|No such user exist|File not found)")) {
+        if (brbefore.contains("(No such file|No such user exist|File not found)")) {
             logger.warning("file is 99,99% offline, throwing \"file not found\" now...");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("You have requested.*?http://.*?[a-z0-9]{12}/(.*?)</font>").getMatch(0);
+        String filename = new Regex(brbefore, "You have requested.*?http://.*?[a-z0-9]{12}/(.*?)</font>").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("fname\" value=\"(.*?)\"").getMatch(0);
+            filename = new Regex(brbefore, "fname\" value=\"(.*?)\"").getMatch(0);
             if (filename == null) {
-                filename = br.getRegex("<h2>Download File(.*?)</h2>").getMatch(0);
+                filename = new Regex(brbefore, "<h2>Download File(.*?)</h2>").getMatch(0);
                 if (filename == null) {
-                    filename = br.getRegex("Filename:</b></td><td[ ]{0,2}>(.*?)</td>").getMatch(0);
+                    filename = new Regex(brbefore, "Filename:</b></td><td[ ]{0,2}>(.*?)</td>").getMatch(0);
                     if (filename == null) {
-                        filename = br.getRegex("Filename.*?nowrap.*?>(.*?)</td").getMatch(0);
+                        filename = new Regex(brbefore, "Filename.*?nowrap.*?>(.*?)</td").getMatch(0);
                         if (filename == null) {
-                            filename = br.getRegex("File Name.*?nowrap>(.*?)</td").getMatch(0);
+                            filename = new Regex(brbefore, "File Name.*?nowrap>(.*?)</td").getMatch(0);
                         }
                     }
                 }
             }
         }
-        String filesize = br.getRegex("<small>\\((.*?)\\)</small>").getMatch(0);
+        String filesize = new Regex(brbefore, "<small>\\((.*?)\\)</small>").getMatch(0);
         if (filesize == null) {
-            filesize = br.getRegex("\\(([0-9]+ bytes)\\)").getMatch(0);
+            filesize = new Regex(brbefore, "\\(([0-9]+ bytes)\\)").getMatch(0);
             if (filesize == null) {
-                filesize = br.getRegex("</font>[ ]+\\((.*?)\\)(.*?)</font>").getMatch(0);
+                filesize = new Regex(brbefore, "</font>[ ]+\\((.*?)\\)(.*?)</font>").getMatch(0);
             }
         }
         if (filename == null) {
@@ -113,9 +116,10 @@ public class GotUploadCom extends PluginForHost {
         if (freeform != null) {
             freeform.remove("method_premium");
             br.submitForm(freeform);
+            doSomething();
         }
         checkErrors(downloadLink);
-        String md5hash = br.getRegex("<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
+        String md5hash = new Regex(brbefore, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
         if (md5hash != null) {
             md5hash = md5hash.trim();
             logger.info("Found md5hash: " + md5hash);
@@ -125,7 +129,7 @@ public class GotUploadCom extends PluginForHost {
         Form DLForm = br.getFormbyProperty("name", "F1");
         if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // Ticket Time
-        String ttt = br.getRegex("countdown\">.*?(\\d+).*?</span>").getMatch(0);
+        String ttt = new Regex(brbefore, "countdown\">.*?(\\d+).*?</span>").getMatch(0);
         if (ttt != null) {
             logger.info("Waittime detected, waiting " + ttt.trim() + " seconds from now on...");
             int tt = Integer.parseInt(ttt);
@@ -134,13 +138,13 @@ public class GotUploadCom extends PluginForHost {
         String passCode = null;
         boolean password = false;
         boolean recaptcha = false;
-        if (br.containsHTML("(<br><b>Passwort:</b>|<br><b>Password:</b>)")) {
+        if (brbefore.contains("(<br><b>Passwort:</b>|<br><b>Password:</b>)")) {
             password = true;
             logger.info("The downloadlink seems to be password protected.");
         }
 
         /* Captcha START */
-        if (br.containsHTML("background:#ccc;text-align")) {
+        if (brbefore.contains("background:#ccc;text-align")) {
             logger.info("Detected captcha method \"plaintext captchas\" for this host");
             // Captcha method by ManiacMansion
             String[][] letters = new Regex(Encoding.htmlDecode(br.toString()), "<span style='position:absolute;padding-left:(\\d+)px;padding-top:\\d+px;'>(\\d)</span>").getMatches();
@@ -158,7 +162,7 @@ public class GotUploadCom extends PluginForHost {
             }
             DLForm.put("code", code.toString());
             logger.info("Put captchacode " + code.toString() + " obtained by captcha metod \"plaintext captchas\" in the form.");
-        } else if (br.containsHTML("/captchas/")) {
+        } else if (brbefore.contains("/captchas/")) {
             logger.info("Detected captcha method \"Standard captcha\" for this host");
             String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
             String captchaurl = null;
@@ -179,7 +183,7 @@ public class GotUploadCom extends PluginForHost {
             String code = getCaptchaCode(captchaurl, downloadLink);
             DLForm.put("code", code);
             logger.info("Put captchacode " + code + " obtained by captcha metod \"Standard captcha\" in the form.");
-        } else if (br.containsHTML("api.recaptcha.net") && !br.containsHTML("api\\.recaptcha\\.net.*?<Textarea.*?<input type=\"submit\" value.*?</Form>")) {
+        } else if (brbefore.contains("api.recaptcha.net") && !brbefore.contains("api\\.recaptcha\\.net.*?<Textarea.*?<input type=\"submit\" value.*?</Form>")) {
             // Some hosters also got commentfields with captchas, therefore is
             // the !br.contains...check Exampleplugin:
             // FileGigaCom
@@ -236,25 +240,26 @@ public class GotUploadCom extends PluginForHost {
             logger.info("followed connection...");
             String dllink = br.getRedirectLocation();
             if (dllink == null) {
+                doSomething();
                 checkErrors(downloadLink);
-                if (br.containsHTML("You're using all download slots for IP")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
-                if (br.containsHTML("(<br><b>Passwort:</b>|<br><b>Password:</b>|Wrong password)")) {
+                if (brbefore.contains("You're using all download slots for IP")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
+                if (brbefore.contains("(<br><b>Passwort:</b>|<br><b>Password:</b>|Wrong password)")) {
                     logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
                     downloadLink.setProperty("pass", null);
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
-                if (br.containsHTML("Wrong captcha")) {
+                if (brbefore.contains("Wrong captcha")) {
                     logger.warning("Wrong captcha or wrong password!");
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 }
                 if (dllink == null) {
-                    dllink = br.getRegex("dotted #bbb;padding.*?<a href=\"(.*?)\"").getMatch(0);
+                    dllink = new Regex(brbefore, "dotted #bbb;padding.*?<a href=\"(.*?)\"").getMatch(0);
                     if (dllink == null) {
-                        dllink = br.getRegex("This direct link will be available for your IP.*?href=\"(http.*?)\"").getMatch(0);
+                        dllink = new Regex(brbefore, "This direct link will be available for your IP.*?href=\"(http.*?)\"").getMatch(0);
                         if (dllink == null) {
                             // This was for fileop.com, maybe also works for
                             // others!
-                            dllink = br.getRegex("Download: <a href=\"(.*?)\"").getMatch(0);
+                            dllink = new Regex(brbefore, "Download: <a href=\"(.*?)\"").getMatch(0);
                         }
                     }
                 }
@@ -280,7 +285,7 @@ public class GotUploadCom extends PluginForHost {
         if (error2 == true) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
-            if (br.containsHTML("File Not Found")) {
+            if (brbefore.contains("File Not Found")) {
                 logger.warning("Server says link offline, please recheck that!");
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -306,23 +311,23 @@ public class GotUploadCom extends PluginForHost {
 
     public void checkErrors(DownloadLink theLink) throws NumberFormatException, PluginException {
         // Some waittimes...
-        if (br.containsHTML("You have to wait")) {
+        if (brbefore.contains("You have to wait")) {
             int minutes = 0, seconds = 0, hours = 0;
-            String tmphrs = br.getRegex("\\s+(\\d+)\\s+hours?").getMatch(0);
+            String tmphrs = new Regex(brbefore, "\\s+(\\d+)\\s+hours?").getMatch(0);
             if (tmphrs != null) hours = Integer.parseInt(tmphrs);
-            String tmpmin = br.getRegex("\\s+(\\d+)\\s+minutes?").getMatch(0);
+            String tmpmin = new Regex(brbefore, "\\s+(\\d+)\\s+minutes?").getMatch(0);
             if (tmpmin != null) minutes = Integer.parseInt(tmpmin);
-            String tmpsec = br.getRegex("\\s+(\\d+)\\s+seconds?").getMatch(0);
+            String tmpsec = new Regex(brbefore, "\\s+(\\d+)\\s+seconds?").getMatch(0);
             if (tmpsec != null) seconds = Integer.parseInt(tmpsec);
             int waittime = ((3600 * hours) + (60 * minutes) + seconds + 1) * 1000;
             logger.info("Detected waittime #1, waiting " + waittime + "milliseconds");
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
         }
-        if (br.containsHTML("You have reached the download-limit")) {
-            String tmphrs = br.getRegex("\\s+(\\d+)\\s+hours?").getMatch(0);
-            String tmpmin = br.getRegex("\\s+(\\d+)\\s+minutes?").getMatch(0);
-            String tmpsec = br.getRegex("\\s+(\\d+)\\s+seconds?").getMatch(0);
-            String tmpdays = br.getRegex("\\s+(\\d+)\\s+days?").getMatch(0);
+        if (brbefore.contains("You have reached the download-limit")) {
+            String tmphrs = new Regex(brbefore, "\\s+(\\d+)\\s+hours?").getMatch(0);
+            String tmpmin = new Regex(brbefore, "\\s+(\\d+)\\s+minutes?").getMatch(0);
+            String tmpsec = new Regex(brbefore, "\\s+(\\d+)\\s+seconds?").getMatch(0);
+            String tmpdays = new Regex(brbefore, "\\s+(\\d+)\\s+days?").getMatch(0);
             if (tmphrs == null && tmpmin == null && tmpsec == null && tmpdays == null) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 60 * 60 * 1000l);
             } else {
@@ -337,8 +342,8 @@ public class GotUploadCom extends PluginForHost {
             }
         }
         // Errorhandling for only-premium links
-        if (br.containsHTML("(You can download files up to.*?only|Upgrade your account to download bigger files|This file reached max downloads)")) {
-            String filesizelimit = br.getRegex("You can download files up to(.*?)only").getMatch(0);
+        if (brbefore.contains("(You can download files up to.*?only|Upgrade your account to download bigger files|This file reached max downloads)")) {
+            String filesizelimit = new Regex(brbefore, "You can download files up to(.*?)only").getMatch(0);
             if (filesizelimit != null) {
                 filesizelimit = filesizelimit.trim();
                 logger.warning("As free user you can download files up to " + filesizelimit + " only");
@@ -347,6 +352,26 @@ public class GotUploadCom extends PluginForHost {
                 logger.warning("Only downloadable via premium");
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium");
             }
+        }
+    }
+
+    public void doSomething() throws NumberFormatException, PluginException {
+        brbefore = br.toString();
+        ArrayList<String> someStuff = new ArrayList<String>();
+        ArrayList<String> regexStuff = new ArrayList<String>();
+        regexStuff.add("<!(--.*?--)>");
+        regexStuff.add("(display: none;\">.*?</div>)");
+        regexStuff.add("(visibility:hidden>.*?<)");
+        for (String aRegex : regexStuff) {
+            String lolz[] = br.getRegex(aRegex).getColumn(0);
+            if (lolz != null) {
+                for (String dingdang : lolz) {
+                    someStuff.add(dingdang);
+                }
+            }
+        }
+        for (String fun : someStuff) {
+            brbefore = brbefore.replace(fun, "");
         }
     }
 

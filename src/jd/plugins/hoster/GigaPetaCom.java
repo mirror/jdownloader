@@ -65,6 +65,7 @@ public class GigaPetaCom extends PluginForHost {
 
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        doFree(downloadLink);
     }
 
     public void doFree(DownloadLink downloadLink) throws Exception {
