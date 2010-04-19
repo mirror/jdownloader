@@ -1,4 +1,4 @@
-action.customize.addsetting.ask = Tambah konfigurasi
+action.customize.addsetting.ask = Sila masukkan nama bagi tetapan baru:
 action.customize.removesetting.ask = Hapus konfigurasi pilihan? (%s Account(s))
 action.premiumview.removeacc.accs = %s Akaun
 action.premiumview.removeacc.ask = Hapus pilihan
@@ -108,3 +108,7 @@ easycaptcha.tool.continuelastsession = Sambung sesi terakhir
 easycaptcha.tool.createmethode = Cipta kaedah
 easycaptcha.tool.loadmethode = Muat kaedah
 easycaptcha.tool.maxletternum = Had maksima bilangan aksara
+jd.gui.swing.jdgui.settings.panels.premium.premium.buy.title = Beli Akaun Premium
+jd.gui.swing.jdgui.settings.panels.premium.premium.continue = Teruskan
+jd.gui.swing.jdgui.settings.panels.premium.premium.title = Premium
+jd.gui.swing.jdgui.settings.panels.premium.premiumjtablemodel.cash = Tunai
