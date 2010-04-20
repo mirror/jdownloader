@@ -404,7 +404,11 @@ public class EasyCaptchaTool {
     }
 
     public static void main(String[] args) {
-        new JDInit().loadConfiguration();
+        try {
+            new JDInit().loadConfiguration();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         LookAndFeelController.setUIManager();
 
         new GuiRunnable<Object>() {
