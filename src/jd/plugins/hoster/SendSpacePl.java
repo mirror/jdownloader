@@ -17,7 +17,6 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.parser.Regex;
@@ -27,6 +26,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sendspace.pl" }, urls = { "http://[\\w\\.]*?sendspace.pl/file/[\\w]+/?" }, flags = { 0 })
 public class SendSpacePl extends PluginForHost {
@@ -44,9 +44,10 @@ public class SendSpacePl extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
-        String filename = br.getRegex("<div class=\"info\"><a href=\"http://www.sendspace.pl/download/.*?\" class=\"black\"><b>(.*?)</b></a></div>").getMatch(0);
-        String filesize = br.getRegex(Pattern.compile("<div class=\"text\"><span class=\"black3\">Rozmiar pliku:</span></div>.*?<div class=\"info\"><span class=\"blue4\">(.*?)</span></div>", Pattern.DOTALL)).getMatch(0);
-        if (filename == null || filesize == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (br.containsHTML(">Podany plik nie istnieje lub został usunięty.<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("style=\"font-size: 12px;\"><b>(.*?)</b>").getMatch(0);
+        String filesize = br.getRegex("\">Rozmiar pliku:</span></div>.*?<div class=\"info\"><span class=\"blue4\">(.*?)</span></div>").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename);
         downloadLink.setDownloadSize(Regex.getSize(filesize));
         return AvailableStatus.TRUE;
@@ -56,23 +57,20 @@ public class SendSpacePl extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
         requestFileInformation(downloadLink);
-        String dlLink = br.getRegex("<div class=\"info\"><a href=\"(http://www.sendspace.pl/download/.*?)\" class=\"black\"><b>.*?</b></a></div>").getMatch(0);
-        if (dlLink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        String dlLink = br.getRegex("\"(http://www\\.sendspace\\.pl/download/.*?)\"").getMatch(0);
+        if (dlLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setFollowRedirects(true);
         /* Datei herunterladen */
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlLink, false, 1);
-        if (!dl.getConnection().isContentDisposition()) {
-            dl.getConnection().disconnect();
-
-            br.getPage(dlLink);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            if (br.getURL().contains("/busy/")) { throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.SendSpacePl.only4premium", "This file is only downloadable for premium users!")); }
             if (br.containsHTML("id\\=\"countdown\"")) {
                 Regex time = br.getRegex("<b id=\"countdown\">(.*?) godziny (.*?) minut (.*?) sekund</b>");
                 int hours = Integer.parseInt(time.getMatch(0));
                 int minutes = Integer.parseInt(time.getMatch(1));
                 int seconds = Integer.parseInt(time.getMatch(2));
-
                 long waitTime = 1000l * (seconds + (minutes * 60) + (hours * 3600));
-
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, waitTime);
             }
 
@@ -83,7 +81,7 @@ public class SendSpacePl extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return -1;
     }
 
     @Override
