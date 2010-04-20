@@ -28,8 +28,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 @HostPlugin(revision = "$Revision: 10393 $", interfaceVersion = 2, names = { "videolectures.net" }, urls = { "http://[\\w\\.]*?videolectures\\.net/.+" }, flags = { 0 })
 public class VideolecturesNet extends PluginForHost {
 
-    private String rtmpLink;
-
     public VideolecturesNet(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -43,9 +41,10 @@ public class VideolecturesNet extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         br.getPage(downloadLink.getDownloadURL());
 
-        String[] data = br.getRegex("streamer: \"(.+?)/([^/]+?)\",.*?file: \"(.+?)\"").getRow(0);
+        // String[] data =
+        // br.getRegex("streamer: \"(.+?)/([^/]+?)\",.*?file: \"(.+?)\"").getRow(0);
         downloadLink.setFinalFileName(br.getRegex("<title>(.+?)</title>").getMatch(0).trim() + ".flv");
-        rtmpLink = data[0] + "/" + data[1] + "" + data[2];
+        // rtmpLink = data[0] + "/" + data[1] + "" + data[2];
         return AvailableStatus.TRUE;
     }
 
