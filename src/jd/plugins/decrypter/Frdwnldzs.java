@@ -25,36 +25,36 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision", interfaceVersion = 2, names = { "freedownloadz.us" }, urls = { "http://[\\w\\.]*?v2\\.freedownloadz\\.us/download\\.php\\?id=\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision", interfaceVersion = 2, names = { "freedownloadz.us" }, urls = { "http://[\\w\\.]*?(v2\\.)?freedownloadz\\.us/download\\.php\\?id=\\d+" }, flags = { 0 })
 public class Frdwnldzs extends PluginForDecrypt {
 
-public Frdwnldzs(PluginWrapper wrapper) {
-  super(wrapper);
-}
+    public Frdwnldzs(PluginWrapper wrapper) {
+        super(wrapper);
+    }
 
-// @Override
-public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-  ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-  String parameter = param.toString();
-  br.getPage(parameter);
-  String[] links = br.getRegex("<a href=\"(http://.*?)\" target=\"_blank\" title=\".*?\"><font color=\"#ff9966\">Link \\d+</font></a>").getColumn(0);
-  if (links.length == 0) return null;
-  String pass = br.getRegex("Passwort:</font>.*?<font color=\"red\">(.*?)</font>").getMatch(0);
-  ArrayList<String> passwords = new ArrayList<String>();
-  /* default password */
-  passwords.add("www.freedownloadz.us");
-  /* add additional password */
-  if ((pass != null) && !pass.equals(passwords.get(0))) {
-      passwords.add(pass);
-  }
-  
-  for (String dl : links) {
-      decryptedLinks.add(createDownloadlink(dl).setSourcePluginPasswordList(passwords));
-  }
-      
-  return decryptedLinks;
-}
+    // @Override
+    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        String parameter = param.toString();
+        br.getPage(parameter);
+        String[] links = br.getRegex("<a href=\"(http://.*?)\" target=\"_blank\" title=\".*?\"><font color=\"#ff9966\">Link \\d+</font></a>").getColumn(0);
+        if (links.length == 0) return null;
+        String pass = br.getRegex("Passwort:</font>.*?<font color=\"red\">(.*?)</font>").getMatch(0);
+        ArrayList<String> passwords = new ArrayList<String>();
+        /* default password */
+        passwords.add("www.freedownloadz.us");
+        /* add additional password */
+        if ((pass != null) && !pass.equals(passwords.get(0))) {
+            passwords.add(pass);
+        }
 
-// @Override
+        for (String dl : links) {
+            decryptedLinks.add(createDownloadlink(dl).setSourcePluginPasswordList(passwords));
+        }
+
+        return decryptedLinks;
+    }
+
+    // @Override
 
 }

@@ -241,3 +241,4 @@ jd/plugins/hoster/SelfLoadCom.class
 jd/plugins/hoster/MaxUploadEu.class
 jd/plugins/hoster/GetAppInfo.class
 jd/plugins/hoster/BigShareEu.class
+jd/plugins/decrypter/FrznRmsn.class

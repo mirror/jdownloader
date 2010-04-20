@@ -23,33 +23,39 @@ import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "audiobeats.net" }, urls = { "http://[\\w\\.]*?audiobeats\\.net/app/(parties|livesets|artists)/show/[0-9a-zA-Z]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "audiobeats.net" }, urls = { "http://[\\w\\.]*?audiobeats\\.net/liveset\\?id=\\d+" }, flags = { 0 })
 public class DBtsNt extends PluginForDecrypt {
 
     public DBtsNt(PluginWrapper wrapper) {
         super(wrapper);
-        // TODO Auto-generated constructor stub
     }
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.getPage(parameter.toString());
-        String[] linksa = br.getRegex("<b><a href=\"(/app/livesets/.*?)\">.*?</a></b><br>").getColumn(0);
-        String[] linksb = br.getRegex("<a href=\"(/app/links/.*?)\" target=\"_blank\">.*?</a>").getColumn(0);
-        progress.setRange(linksa.length + linksb.length);
-        for (String data : linksa) {
-            decryptedLinks.add(createDownloadlink("http://www.audiobeats.net" + data));
-            progress.increase(1);
-        }
-        for (String data : linksb) {
+        String fpName = br.getRegex("<title>AudioBeats\\.net - (.*?)</title>").getMatch(0);
+        if (fpName == null) fpName = br.getRegex("rel=\"alternate\" type=\".*?\" title=\"(.*?)\"").getMatch(0);
+        String[] allLinks = br.getRegex("\"(/link\\?id=\\d+)\"").getColumn(0);
+        if (allLinks == null || allLinks.length == 0) return null;
+        progress.setRange(allLinks.length);
+        for (String aLink : allLinks) {
             br.setFollowRedirects(false);
-            br.getPage("http://www.audiobeats.net" + data);
+            br.getPage("http://www.audiobeats.net" + aLink);
+            if (br.getRedirectLocation() == null) {
+                logger.warning("Decrypter must be defect, link = " + parameter.toString());
+                return null;
+            }
             decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
             progress.increase(1);
-
+        }
+        if (fpName != null) {
+            FilePackage fp = FilePackage.getInstance();
+            fp.setName(fpName.trim());
+            fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
     }

@@ -25,7 +25,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "firsturl.de", "firsturl.net" }, urls = { "http://[\\w\\.]*?firsturl\\.de/[0-9a-zA-Z]{7}", "http://[\\w\\.]*?firsturl\\.net/[0-9a-zA-Z]{7}" }, flags = { 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "firsturl.de" }, urls = { "http://[\\w\\.]*?firsturl\\.de/[0-9a-zA-Z]{7}" }, flags = { 0 })
 public class FrstrlD extends PluginForDecrypt {
 
     public FrstrlD(PluginWrapper wrapper) {
@@ -36,7 +36,7 @@ public class FrstrlD extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
-        br.getPage(parameter.toString());
+        br.getPage(parameter.toString().replace("firsturl.net", "firsturl.de"));
         String redirect = br.getRegex("<p>The document has moved <a href=\"(.*?)\">here</a>.</p>").getMatch(0);
 
         if (redirect != null) {
