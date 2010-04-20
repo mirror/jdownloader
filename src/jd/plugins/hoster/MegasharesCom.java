@@ -145,8 +145,8 @@ public class MegasharesCom extends PluginForHost {
 
         // Captchacheck
         if (br.containsHTML("Your Passport needs to be reactivated.")) {
-            String captchaAddress = br.getRegex("<dt>Enter the passport reactivation code in the graphic, then hit the \"Reactivate Passport\" button.</dt>.*?<dd><img src=\"(.*?)\" alt=\"Security Code\" style=.*?>").getMatch(0);
-
+            String captchaAddress = br.getRegex("then hit the \"Reactivate Passport\" button\\.</dt>.*?<dd><img src=\"(.*?)\"").getMatch(0);
+            if (captchaAddress == null) if (captchaAddress == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             HashMap<String, String> input = HTMLParser.getInputHiddenFields(br + "");
 
             String code = getCaptchaCode(captchaAddress, downloadLink);
