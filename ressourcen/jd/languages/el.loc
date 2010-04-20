@@ -1292,6 +1292,7 @@ plugins.host.rapidshare.errors.bcfe246b0634299062224a73ae50f17e = Το αρχε�
 plugins.host.rapidshare.errors.d11f499020a3607ffdf987ce3968c692 = Επήλθε το όριο των 10GB
 plugins.host.rapidshare.loadedvia = Φορτώθηκε μέσω %s
 plugins.host.shareswiftcom.uncheckableduewaittime = Πρέπει να περιμένετε ή να πραγματοποιήσετε Επανασύνδεση για να ελέγξετε την κατάσταση διαθεσιμότητας
+plugins.host.u115com.servers = Χρήση αυτού του εξυπηρετητή:
 plugins.hoster.2sharedcom.errors.sessionlimit = Επήλθε το όριο του τομέα
 plugins.hoster.2sharedcom.errors.wrongcaptcha = Λάθος CAPTCHA
 plugins.hoster.adrivecom.errors.toomanyconnections = Πάρα πολλές συνδέσεις
