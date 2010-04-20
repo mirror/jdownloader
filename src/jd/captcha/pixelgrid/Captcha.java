@@ -70,11 +70,10 @@ public class Captcha extends PixelGrid {
      *            Parameter Dump JAntiCaptcha
      * @return Captcha neuer captcha
      */
-    public static Captcha getCaptcha(File file, JAntiCaptcha owner) {
-        Image img = Utilities.loadImage(file);
-        Captcha ret = Captcha.getCaptcha(img, owner);
+    public static Captcha getCaptcha(final File file, final JAntiCaptcha owner) {
+        final Image img = Utilities.loadImage(file);
+        final Captcha ret = Captcha.getCaptcha(img, owner);
         return ret;
-
     }
 
     /**
@@ -84,17 +83,17 @@ public class Captcha extends PixelGrid {
      * @param owner
      * @return neuer Captcha
      */
-    public static Captcha getCaptcha(Image image, JAntiCaptcha owner) {
+    public static Captcha getCaptcha(final Image image, final JAntiCaptcha owner) {
 
-        int width = image.getWidth(null);
-        int height = image.getHeight(null);
+        final int width = image.getWidth(null);
+        final int height = image.getHeight(null);
         if (width <= 0 || height <= 0) { return null; }
         if (width <= 0 || height <= 0) {
             if (Utilities.isLoggerActive()) {
                 logger.severe("ERROR: Image nicht korrekt. Kein Inhalt. Pfad URl angaben Korrigieren");
             }
         }
-        PixelGrabber pg = new PixelGrabber(image, 0, 0, width, height, false);
+        final PixelGrabber pg = new PixelGrabber(image, 0, 0, width, height, false);
 
         try {
             pg.grabPixels();
@@ -103,14 +102,14 @@ public class Captcha extends PixelGrid {
             return null;
         }
 
-        Captcha ret = new Captcha(width, height);
+        final Captcha ret = new Captcha(width, height);
         ret.setOwner(owner);
         if (Utilities.isLoggerActive()) {
             logger.fine(width + "/" + height);
         }
 
         ret.setColorModel(pg.getColorModel());
-        ColorModel cm = pg.getColorModel();
+        final ColorModel cm = pg.getColorModel();
 
         if (!(cm instanceof IndexColorModel)) {
             // not an indexed file (ie: not a gif file)
@@ -128,25 +127,25 @@ public class Captcha extends PixelGrid {
         return ret;
 
     }
+
     /**
      * Resize auf newHeight. die proportionen bleiben erhalten
      * 
      * @param newHeight
      */
-    public void resizetoHeight(int newHeight) {
-        double faktor = (double) newHeight / (double) getHeight();
-        int newWidth = (int) Math.ceil(getWidth() * faktor);
-        int[][] newGrid = new int[newWidth][newHeight];
+    public void resizetoHeight(final int newHeight) {
+        final double faktor = (double) newHeight / (double) getHeight();
+        final int newWidth = (int) Math.ceil(getWidth() * faktor);
+        final int[][] newGrid = new int[newWidth][newHeight];
         for (int x = 0; x < newWidth; x++) {
             for (int y = 0; y < newHeight; y++) {
-                int v = grid[(int) Math.floor(x / faktor)][(int) Math.floor(y / faktor)];
+                final int v = grid[(int) Math.floor(x / faktor)][(int) Math.floor(y / faktor)];
                 newGrid[x][y] = v;
-
             }
         }
         setGrid(newGrid);
     }
-    
+
     /**
      * Captcha.getCaptcha(Letter a, Letter b) Gibt einen captcha zurück der aus
      * a +6pxTrennlinie +b besteht. (Addiert 2 Letter)
@@ -311,7 +310,7 @@ public class Captcha extends PixelGrid {
     public void cleanWithDetailMask(Captcha mask, int dif) {
 
         int[][] newgrid = new int[getWidth()][getHeight()];
-//        int[][] test = new int[getWidth()][getHeight()];
+        // int[][] test = new int[getWidth()][getHeight()];
         if (mask.getWidth() != getWidth() || mask.getHeight() != getHeight()) {
             if (Utilities.isLoggerActive()) {
                 logger.info("ERROR Maske und Bild passen nicht zusammmen");
@@ -323,7 +322,8 @@ public class Captcha extends PixelGrid {
         }
         for (int x = 0; x < getWidth(); x++) {
             for (int y = 0; y < getHeight(); y++) {
-//                test[x][y] = Math.abs(mask.getPixelValue(x, y) - getPixelValue(x, y));
+                // test[x][y] = Math.abs(mask.getPixelValue(x, y) -
+                // getPixelValue(x, y));
 
                 if (Colors.getColorDifference(mask.getPixelValue(x, y), getPixelValue(x, y)) < dif) {
                     // if (Math.abs(mask.getPixelValue(x, y) - getPixelValue(x,
@@ -1195,56 +1195,61 @@ public class Captcha extends PixelGrid {
 
         return ret;
     }
+
     public void setContrast(float contrast) {
         setContrast(contrast, 0);
     }
-    public void setContrast(float contrast,float brightness ) {
+
+    public void setContrast(float contrast, float brightness) {
         BufferedImage image = (BufferedImage) getImage();
         ContrastFilter cf = new ContrastFilter();
         cf.setContrast(contrast);
-        if(brightness!=0)
-        cf.setBrightness(brightness);
+        if (brightness != 0) cf.setBrightness(brightness);
         BufferedImage dest = cf.createCompatibleDestImage(image, null);
         cf.filter(image, dest);
         Captcha cap2 = owner.createCaptcha(dest);
-        grid=cap2.grid;
+        grid = cap2.grid;
     }
+
     public void blur(int hRadius, int vRadius, int iteration) {
         BufferedImage image = (BufferedImage) getImage();
         BoxBlurFilter blur = new BoxBlurFilter(hRadius, vRadius, iteration);
         BufferedImage dest = blur.createCompatibleDestImage(image, null);
         blur.filter(image, dest);
         Captcha cap2 = owner.createCaptcha(dest);
-        grid=cap2.grid;
+        grid = cap2.grid;
     }
+
     /**
      * reduziert ein bild auf eine gewisse farbanzahl
+     * 
      * @param colorNums
      */
-    public void reduceColors(int colorNums)
-    {
+    public void reduceColors(int colorNums) {
         BufferedImage image = (BufferedImage) getImage();
         QuantizeFilter reduceFilter = new QuantizeFilter();
         BufferedImage dest = reduceFilter.createCompatibleDestImage(image, null);
         reduceFilter.setNumColors(colorNums);
         reduceFilter.filter(image, dest);
         Captcha cap2 = owner.createCaptcha(dest);
-        grid=cap2.grid;
+        grid = cap2.grid;
     }
+
     /**
      * reduziert ein bild auf eine gewisse farbanzahl
+     * 
      * @param colorNums
      */
-    public void reduceColorsPosterizeFilter(int numLevels)
-    {
+    public void reduceColorsPosterizeFilter(int numLevels) {
         BufferedImage image = (BufferedImage) getImage();
         PosterizeFilter reduceFilter = new PosterizeFilter();
         BufferedImage dest = reduceFilter.createCompatibleDestImage(image, null);
         reduceFilter.setNumLevels(numLevels);
         reduceFilter.filter(image, dest);
         Captcha cap2 = owner.createCaptcha(dest);
-        grid=cap2.grid;
+        grid = cap2.grid;
     }
+
     /**
      * Sucht angefangen bei der aktullen Positiond en ncähsten letter und gibt
      * ihn zurück
@@ -1636,9 +1641,11 @@ public class Captcha extends PixelGrid {
             return true;
         }
     }
+
     public int[][] getOrgGridCopy() {
         return PixelGrid.getGridCopy(tmpGrid);
     }
+
     /**
      * Setztd as interne Grid auf den ausgangszustand zurück. Funktioniert nur
      * wenn dieser gespeichert ist. Im fehlerfall wird fals zurückgegegen
@@ -1902,30 +1909,26 @@ public class Captcha extends PixelGrid {
                     } else {
                         newgrid[x][y] = grid[x][y];
                     }
-
                 } else {
                     if (v < tollerance) {
                         PixelGrid.setPixelValue(x, y, newgrid, getMaxPixelValue());
                     } else {
                         newgrid[x][y] = grid[x][y];
                     }
-
                 }
-
             }
         }
         grid = newgrid;
-
     }
 
     public void addAt(int xx, int yy, Captcha tmp) {
         for (int x = 0; x < tmp.getWidth(); x++) {
             for (int y = 0; y < tmp.getHeight(); y++) {
-                if (this.getWidth() > x + xx && this.getHeight() > y + yy) this.setPixelValue(x + xx, y + yy, tmp.getPixelValue(x, y));
+                if (this.getWidth() > x + xx && this.getHeight() > y + yy) {
+                    this.setPixelValue(x + xx, y + yy, tmp.getPixelValue(x, y));
+                }
             }
-
         }
-
     }
 
 }
