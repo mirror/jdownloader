@@ -276,6 +276,11 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
                     isbusy = false;
 
                 response.addContent(isbusy);
+            } else if (request.getRequestUrl().equals("/get/grabber/isset/startafteradding")) {
+                // Get whether start after adding option is set or not
+
+                boolean value = GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_START_AFTER_ADDING_LINKS, true);
+                response.addContent(value);
             } else if (request.getRequestUrl().equals("/action/start")) {
                 // Do Start downloads
 
@@ -357,6 +362,18 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
                 SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, newsimdl.toString());
                 SubConfiguration.getConfig("DOWNLOAD").save();
                 response.addContent("newmax=" + newsimdl);
+            } else if (request.getRequestUrl().matches("(?is).*/action/set/grabber/startafteradding/(true|false)")) {
+                boolean value = Boolean.parseBoolean(new Regex(request.getRequestUrl(), ".*/action/set/grabber/startafteradding/(true|false)").getMatch(0));
+                logger.fine("RemoteControl - Set PARAM_START_AFTER_ADDING_LINKS: " + value);
+
+                if (value != GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_START_AFTER_ADDING_LINKS, true)) {
+                    GUIUtils.getConfig().setProperty(JDGuiConstants.PARAM_START_AFTER_ADDING_LINKS, value);
+                    JDUtilities.getConfiguration().save();
+                    response.addContent("PARAM_START_AFTER_ADDING_LINKS =" + value + " (CHANGED=true)");
+                } else {
+                    response.addContent("PARAM_START_AFTER_ADDING_LINKS =" + value + " (CHANGED=false)");
+                }
+
             } else if (request.getRequestUrl().matches("(?is).*/action/add(/auto)?/links/.+")) {
                 // Add link(s)
 

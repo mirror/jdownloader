@@ -55,6 +55,9 @@ public class HelpPage {
         t.setCommand("/get/grabber/isbusy");
         t.setInfo("Get whether linkgrabber is busy or not");
 
+        t.setCommand("/get/grabber/isset/startafteradding");
+        t.setInfo("Get whether downloads should start or not start after they were added to the download queue");
+
         t.setCommand("/get/downloads/all/count");
         t.setInfo("Get amount of all downloads");
 
@@ -112,11 +115,14 @@ public class HelpPage {
         t.setCommand("/action/set/premium/(true|false)");
         t.setInfo("Set premium usage enabled or not");
 
+        t.setCommand("/action/set/grabber/startafteradding/(true|false)");
+        t.setInfo("Set whether downloads should start or not start after they were added to the download queue");
+
         t.setCommand("/action/add(/auto)/links/%X%");
-        t.setInfo("Add links %X% to grabber<br/>" + "e.g. /action/add/links/http://tinyurl.com/6o73eq" + "<p>auto parameter: Downloads will be automatically added to download queue and will start afterwards</p>" + "Note: Links must be URLEncoded. Use NEWLINE between links!");
+        t.setInfo("Add links %X% to grabber<br/>" + "e.g. /action/add/links/http://tinyurl.com/6o73eq" + "<p>auto parameter: Downloads will be automatically added to download queue after the linkcheck is done</p>" + "Note: Links must be URLEncoded. Use NEWLINE between links!");
 
         t.setCommand("/action/add(/auto)/container/%X%");
-        t.setInfo("Add (remote or local) container %X%<br/>" + "e.g. /action/add/container/C:\\container.dlc" + "<p>auto parameter: Downloads will be automatically added to download queue and will start afterwards</p>" + "Note: Address (remote or local) must be URLEncoded!");
+        t.setInfo("Add (remote or local) container %X%<br/>" + "e.g. /action/add/container/C:\\container.dlc" + "<p>auto parameter: Downloads will be automatically added to download queue after the linkcheck is done</p>" + "Note: Address (remote or local) must be URLEncoded!");
 
         t.setCommand("/action/save/container(/fromgrabber)/%X%");
         t.setInfo("Save DLC-container with all links to %X%<br/>" + "e.g. /action/add/container/%X%" + "<p>fromgrabber: save DLC-container from grabber list instead from download list</p>");
