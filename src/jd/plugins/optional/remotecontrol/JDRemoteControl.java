@@ -81,16 +81,14 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
     private static final String PARAM_ENABLED = "ENABLED";
     private final SubConfiguration subConfig;
 
-    private boolean grabberIsBusy = false;
-
     private static final String LINK_TYPE_OFFLINE = "offline";
     private static final String LINK_TYPE_AVAIL = "available";
 
     private static final String ERROR_MALFORMED_REQUEST = "JDRemoteControl - Malformed request. Use /help";
     private static final String ERROR_LINK_GRABBER_RUNNING = "ERROR: Link grabber is currently running. Please try again in a few seconds.";
 
-    // private static final String ERROR_TOO_FEW_PARAMETERS =
-    // "ERROR: Too few request parametes: check /help for instructions.";
+    @SuppressWarnings("unused")
+    private boolean grabberIsBusy;
 
     public JDRemoteControl(PluginWrapper wrapper) {
         super(wrapper);
@@ -114,9 +112,11 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
 
             if (request.getRequestUrl().equals("/help")) {
                 // Get help page
+
                 response.addContent(HelpPage.getHTML());
             } else if (request.getRequestUrl().equals("/get/ip")) {
                 // Get IP
+
                 if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
                     response.addContent("IPCheck disabled");
                 } else {
@@ -124,10 +124,12 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
                 }
             } else if (request.getRequestUrl().equals("/get/randomip")) {
                 // Get random-IP
+
                 Random r = new Random();
                 response.addContent(r.nextInt(255) + "." + r.nextInt(255) + "." + r.nextInt(255) + "." + r.nextInt(255));
             } else if (request.getRequestUrl().equals("/get/config")) {
                 // Get config
+
                 Property config = JDUtilities.getConfiguration();
                 response.addContent("<pre>");
 
@@ -141,15 +143,19 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
                 response.addContent("</pre>");
             } else if (request.getRequestUrl().equals("/get/version")) {
                 // Get version
+
                 response.addContent(JDUtilities.getJDTitle());
             } else if (request.getRequestUrl().equals("/get/rcversion")) {
                 // Get JDRemoteControl version
+
                 response.addContent(getVersion());
             } else if (request.getRequestUrl().equals("/get/speedlimit")) {
                 // Get speed limit
+
                 response.addContent(SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0));
             } else if (request.getRequestUrl().equals("/get/downloads/current/count")) {
                 // Get amount of current DLs COUNT
+
                 int counter = 0;
 
                 for (FilePackage fp : JDUtilities.getController().getPackages()) {
@@ -163,6 +169,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
                 response.addContent(counter);
             } else if (request.getRequestUrl().equals("/get/downloads/current/list")) {
                 // Get current DLs
+
                 for (FilePackage fp : JDUtilities.getController().getPackages()) {
                     Element fp_xml = addFilePackage(xml, fp);
 
@@ -176,6 +183,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
                 response.addContent(JDUtilities.createXmlString(xml));
             } else if (request.getRequestUrl().equals("/get/downloads/all/count")) {
                 // Get DLList COUNT
+
                 int counter = 0;
 
                 for (FilePackage fp : JDUtilities.getController().getPackages()) {
@@ -185,6 +193,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
                 response.addContent(counter);
             } else if (request.getRequestUrl().equals("/get/downloads/all/list")) {
                 // Get DLList
+
                 for (FilePackage fp : JDUtilities.getController().getPackages()) {
                     Element fp_xml = addFilePackage(xml, fp);
 
@@ -196,6 +205,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
                 response.addContent(JDUtilities.createXmlString(xml));
             } else if (request.getRequestUrl().equals("/get/downloads/finished/count")) {
                 // Get finished DLs COUNT
+
                 int counter = 0;
 
                 for (FilePackage fp : JDUtilities.getController().getPackages()) {
@@ -209,6 +219,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
                 response.addContent(counter);
             } else if (request.getRequestUrl().equals("/get/downloads/finished/list")) {
                 // Get finished DLs
+
                 for (FilePackage fp : JDUtilities.getController().getPackages()) {
                     Element fp_xml = addFilePackage(xml, fp);
 
@@ -222,15 +233,19 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
                 response.addContent(JDUtilities.createXmlString(xml));
             } else if (request.getRequestUrl().equals("/get/speed")) {
                 // Get current speed
+
                 response.addContent(DownloadWatchDog.getInstance().getConnectionManager().getIncommingBandwidthUsage() / 1000);
             } else if (request.getRequestUrl().equals("/get/isreconnect")) {
                 // Get isReconnect
+
                 response.addContent(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true));
             } else if (request.getRequestUrl().equals("/get/downloadstatus")) {
                 // Get download status
+
                 response.addContent(DownloadWatchDog.getInstance().getDownloadStatus().toString());
             } else if (request.getRequestUrl().matches("/get/grabber/list")) {
                 // Get grabber content as xml
+
                 for (LinkGrabberFilePackage fp : LinkGrabberController.getInstance().getPackages()) {
                     Element fp_xml = addGrabberPackage(xml, fp);
 
@@ -241,6 +256,8 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
 
                 response.addContent(JDUtilities.createXmlString(xml));
             } else if (request.getRequestUrl().matches("/get/grabber/count")) {
+                // Get amount of links in grabber
+
                 int counter = 0;
 
                 for (LinkGrabberFilePackage fp : LinkGrabberController.getInstance().getPackages()) {
@@ -249,7 +266,8 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
 
                 response.addContent(counter);
             } else if (request.getRequestUrl().equals("/get/grabber/isbusy")) {
-                // Get if grabber is busy
+                // Get whether grabber is busy or not
+
                 boolean isbusy = false;
 
                 if (LinkGrabberPanel.getLinkGrabber().isRunning())
@@ -258,27 +276,29 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
                     isbusy = false;
 
                 response.addContent(isbusy);
-            } else if (request.getRequestUrl().equals("/get/grabber/isset/startafteradding")) {
-                boolean value = GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_START_AFTER_ADDING_LINKS, true);
-                response.addContent(value);
             } else if (request.getRequestUrl().equals("/action/start")) {
                 // Do Start downloads
+
                 DownloadWatchDog.getInstance().startDownloads();
                 response.addContent("Downloads started");
             } else if (request.getRequestUrl().equals("/action/pause")) {
                 // Do Pause downloads
+
                 DownloadWatchDog.getInstance().pauseDownloads(!DownloadWatchDog.getInstance().isPaused());
                 response.addContent("Downloads paused");
             } else if (request.getRequestUrl().equals("/action/stop")) {
                 // Do Stop downloads
+
                 DownloadWatchDog.getInstance().stopDownloads();
                 response.addContent("Downloads stopped");
             } else if (request.getRequestUrl().equals("/action/toggle")) {
                 // Do Toggle downloads
+
                 DownloadWatchDog.getInstance().toggleStartStop();
                 response.addContent("Downloads toggled");
             } else if (request.getRequestUrl().matches(".*?/action/(force)?update")) {
                 // Do Perform webupdate
+
                 if (request.getRequestUrl().matches(".+/action/forceupdate")) {
                     JDUtilities.getConfiguration().setProperty(Configuration.PARAM_WEBUPDATE_AUTO_RESTART, true);
                     SubConfiguration.getConfig("WEBUPDATE").setProperty(Configuration.PARAM_WEBUPDATE_DISABLE, false);
@@ -288,10 +308,12 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
                 response.addContent("Do Webupdate...");
             } else if (request.getRequestUrl().equals("/action/reconnect")) {
                 // Do Reconnect
+
                 response.addContent("Do Reconnect...");
                 Reconnecter.doManualReconnect();
             } else if (request.getRequestUrl().equals("/action/restart")) {
                 // Do Restart JD
+
                 response.addContent("Restarting...");
 
                 new Thread(new Runnable() {
@@ -306,6 +328,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
                 }).start();
             } else if (request.getRequestUrl().equals("/action/shutdown")) {
                 // Do Shutdown JD
+
                 response.addContent("Shutting down...");
 
                 new Thread(new Runnable() {
@@ -320,6 +343,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
                 }).start();
             } else if (request.getRequestUrl().matches("(?is).*/action/set/download/limit/[0-9]+")) {
                 // Set download limit
+
                 Integer newdllimit = Integer.parseInt(new Regex(request.getRequestUrl(), ".*/action/set/download/limit/([0-9]+)").getMatch(0));
                 logger.fine("RemoteControl - Set max. Downloadspeed: " + newdllimit.toString());
                 SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, newdllimit.toString());
@@ -327,28 +351,27 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
                 response.addContent("newlimit=" + newdllimit);
             } else if (request.getRequestUrl().matches("(?is).*/action/set/download/max/[0-9]+")) {
                 // Set max. sim. downloads
+
                 Integer newsimdl = Integer.parseInt(new Regex(request.getRequestUrl(), ".*/action/set/download/max/([0-9]+)").getMatch(0));
                 logger.fine("RemoteControl - Set max. sim. Downloads: " + newsimdl.toString());
                 SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, newsimdl.toString());
                 SubConfiguration.getConfig("DOWNLOAD").save();
                 response.addContent("newmax=" + newsimdl);
-            } else if (request.getRequestUrl().matches("(?is).*/action/set/grabber/startafteradding/(true|false)")) {
-                boolean value = Boolean.parseBoolean(new Regex(request.getRequestUrl(), ".*/action/set/grabber/startafteradding/(true|false)").getMatch(0));
-                logger.fine("RemoteControl - Set property 'Start after adding links': " + value);
-
-                if (value != GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_START_AFTER_ADDING_LINKS, true)) {
-                    GUIUtils.getConfig().setProperty(JDGuiConstants.PARAM_START_AFTER_ADDING_LINKS, value);
-                    JDUtilities.getConfiguration().save();
-                    response.addContent("start_after_adding_links=" + value + " (CHANGED=true)");
-                } else {
-                    response.addContent("start_after_adding_links=" + value + " (CHANGED=false)");
-                }
-
-            } else if (request.getRequestUrl().matches("(?is).*/action/add(/confirm)?/links/.+")) {
+            } else if (request.getRequestUrl().matches("(?is).*/action/add(/auto)?/links/.+")) {
                 // Add link(s)
+
+                boolean issetAuto = false;
                 ArrayList<String> links = new ArrayList<String>();
 
-                String link = new Regex(request.getRequestUrl(), ".*/action/add(/confirm)?/links/(.+)").getMatch(1);
+                if (request.getRequestUrl().matches(".+/auto/.+")) {
+                    issetAuto = true;
+                }
+
+                // set PARAM_START_AFTER_ADDING_LINKS_AUTO
+                GUIUtils.getConfig().setProperty(JDGuiConstants.PARAM_START_AFTER_ADDING_LINKS_AUTO, issetAuto);
+                JDUtilities.getConfiguration().save();
+
+                String link = new Regex(request.getRequestUrl(), ".*/action/add(/auto)?/links/(.+)").getMatch(1);
 
                 for (String tlink : HTMLParser.getHttpLinks(Encoding.urlDecode(link, false), null)) {
                     links.add(tlink);
@@ -378,54 +401,22 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
                 link = ret.toString();
                 new DistributeData(link, false).start();
 
-                // confirm parameter - passes just added links to the download
-                // queue
-
-                if (request.getRequestUrl().matches(".+/confirm/.+")) {
-                    try {
-                        Thread.sleep(3000);
-                    } catch (InterruptedException e) {
-                        logger.warning(e.toString());
-                    }
-
-                    while (grabberIsBusy) {
-                        try {
-                            Thread.sleep(1000);
-                        } catch (InterruptedException e) {
-                            logger.warning(e.toString());
-                        }
-                    }
-
-                    ArrayList<LinkGrabberFilePackage> lgPackages = new ArrayList<LinkGrabberFilePackage>();
-
-                    synchronized (LinkGrabberController.ControllerLock) {
-                        lgPackages.addAll(LinkGrabberController.getInstance().getPackages());
-
-                        for (int i = 0; i < lgPackages.size(); i++) {
-                            for (String linkurl : links) {
-                                for (DownloadLink dll : lgPackages.get(i).getDownloadLinks()) {
-                                    if (linkurl.equals(dll.getBrowserUrl())) {
-                                        LinkGrabberPanel.getLinkGrabber().confirmPackage(lgPackages.get(i), null, i);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
                 response.addContent("Link(s) added. (" + link + ")");
-            } else if (request.getRequestUrl().matches("(?is).*/action/add(/confirm)?/container/.+")) {
+            } else if (request.getRequestUrl().matches("(?is).*/action/add(/auto)?/container/.+")) {
                 // Open a local or remote DLC-container
-                String dlcfilestr = new Regex(request.getRequestUrl(), ".*/action/add(/confirm)?/container/(.+)").getMatch(1);
-                dlcfilestr = Encoding.htmlDecode(dlcfilestr);
-                ArrayList<LinkGrabberFilePackage> packagesBefore = null;
-                ArrayList<LinkGrabberFilePackage> packages = null;
 
-                // get packages from linkgrabber list before dlc import
-                if (request.getRequestUrl().matches(".+/confirm/.+")) {
-                    packagesBefore = new ArrayList<LinkGrabberFilePackage>();
-                    packagesBefore.addAll(LinkGrabberController.getInstance().getPackages());
+                boolean issetAuto = false;
+
+                if (request.getRequestUrl().matches(".+/auto/.+")) {
+                    issetAuto = true;
                 }
+
+                // set PARAM_START_AFTER_ADDING_LINKS_AUTO
+                GUIUtils.getConfig().setProperty(JDGuiConstants.PARAM_START_AFTER_ADDING_LINKS_AUTO, issetAuto);
+                JDUtilities.getConfiguration().save();
+
+                String dlcfilestr = new Regex(request.getRequestUrl(), ".*/action/add(/auto)?/container/(.+)").getMatch(1);
+                dlcfilestr = Encoding.htmlDecode(dlcfilestr);
 
                 // import dlc
                 if (dlcfilestr.matches("http://.*?\\.(dlc|ccf|rsdf)")) {
@@ -452,44 +443,10 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
                     JDUtilities.getController().loadContainerFile(new File(dlcfilestr), false, false);
                 }
 
-                // compare links in grabber before and after adding dlc, then
-                // confirm only new links
-                if (request.getRequestUrl().matches(".+/confirm/.+")) {
-                    try {
-                        Thread.sleep(3000);
-                    } catch (InterruptedException e) {
-                        logger.warning(e.toString());
-                    }
-
-                    while (grabberIsBusy) {
-                        try {
-                            Thread.sleep(1000);
-                        } catch (InterruptedException e) {
-                            logger.warning(e.toString());
-                        }
-                    }
-
-                    synchronized (LinkGrabberController.ControllerLock) {
-                        packages = new ArrayList<LinkGrabberFilePackage>();
-                        packages.addAll(LinkGrabberController.getInstance().getPackages());
-
-                        for (LinkGrabberFilePackage packa : packages) {
-                            for (LinkGrabberFilePackage packb : packagesBefore) {
-                                if (packa.equals(packb)) {
-                                    packages.remove(packa);
-                                }
-                            }
-                        }
-
-                        for (int i = 0; i < packages.size(); i++) {
-                            LinkGrabberPanel.getLinkGrabber().confirmPackage(packages.get(i), null, i);
-                        }
-                    }
-                }
-
                 response.addContent("Container opened. (" + dlcfilestr + ")");
             } else if (request.getRequestUrl().matches("(?is).*/action/save/container(/fromgrabber)?/.+")) {
                 // Save linklist as DLC-container
+
                 ArrayList<DownloadLink> dllinks = new ArrayList<DownloadLink>();
 
                 String dlcfilestr = new Regex(request.getRequestUrl(), ".*/action/save/container(/fromgrabber)/?(.+)").getMatch(1);
@@ -537,6 +494,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
                 response.addContent("Container saved. (" + dlcfilestr + ")");
             } else if (request.getRequestUrl().matches("(?is).*/action/set/reconnect/(true|false)")) {
                 // Set Reconnect enabled
+
                 boolean newrc = Boolean.parseBoolean(new Regex(request.getRequestUrl(), ".*/action/set/reconnect/(true|false)").getMatch(0));
                 logger.fine("RemoteControl - Set ReConnect: " + newrc);
 
@@ -549,6 +507,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
                 }
             } else if (request.getRequestUrl().matches("(?is).*/action/set/premium/(true|false)")) {
                 // Set Use premium
+
                 boolean newuseprem = Boolean.parseBoolean(new Regex(request.getRequestUrl(), ".*/action/set/premium/(true|false)").getMatch(0));
                 logger.fine("RemoteControl - Set Premium: " + newuseprem);
 
@@ -561,6 +520,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
                 }
             } else if (request.getRequestUrl().matches("(?is).*/action/grabber/join/.+")) {
                 // Join link grabber packages
+
                 if (LinkGrabberPanel.getLinkGrabber().isRunning()) {
                     response.addContent(ERROR_LINK_GRABBER_RUNNING);
                 } else {
@@ -609,6 +569,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
                 }
             } else if (request.getRequestUrl().matches("(?is).*/action/grabber/rename/.+")) {
                 // rename link grabber package
+
                 if (LinkGrabberPanel.getLinkGrabber().isRunning()) {
                     response.addContent(ERROR_LINK_GRABBER_RUNNING);
                 } else {
@@ -628,6 +589,8 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
                 }
 
             } else if (request.getRequestUrl().matches("(?is).*/action/grabber/confirmall")) {
+                // add all links in linkgrabber list to download list
+
                 if (LinkGrabberPanel.getLinkGrabber().isRunning()) {
                     response.addContent(ERROR_LINK_GRABBER_RUNNING);
                 } else {
@@ -645,6 +608,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
                 }
             } else if (request.getRequestUrl().matches("(?is).*/action/grabber/confirm/.+")) {
                 // add denoted links in linkgrabber list to download list
+
                 if (LinkGrabberPanel.getLinkGrabber().isRunning()) {
                     response.addContent(ERROR_LINK_GRABBER_RUNNING);
                 } else {
@@ -678,6 +642,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
             } else if (request.getRequestUrl().matches("(?is).*/action/grabber/removetype/.+")) {
                 // remove denoted links from grabber that matches the type
                 // 'offline', 'available' (in grabber and download list)
+
                 if (LinkGrabberPanel.getLinkGrabber().isRunning()) {
                     response.addContent(ERROR_LINK_GRABBER_RUNNING);
                 } else {
@@ -723,6 +688,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
                 }
             } else if (request.getRequestUrl().matches("(?is).*/action/grabber/removeall")) {
                 // remove all links from grabber
+
                 if (LinkGrabberPanel.getLinkGrabber().isRunning()) {
                     response.addContent(ERROR_LINK_GRABBER_RUNNING);
                 } else {
@@ -740,6 +706,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
                 }
             } else if (request.getRequestUrl().matches("(?is).*/action/grabber/remove/.+")) {
                 // remove denoted packages from grabber
+
                 String[] packagenames = getHTMLDecoded(new Regex(request.getRequestUrl(), ".*/action/grabber/remove/(.+)").getMatch(0).split("/"));
 
                 if (LinkGrabberPanel.getLinkGrabber().isRunning()) {
@@ -852,6 +819,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
                 }
             } else if (request.getRequestUrl().matches("(?is).*/action/downloads/removeall")) {
                 // remove all packages in download list
+
                 ArrayList<FilePackage> packages = new ArrayList<FilePackage>();
                 packages.addAll(DownloadController.getInstance().getPackages());
 
@@ -862,6 +830,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
                 response.addContent("All scheduled packages removed.");
             } else if (request.getRequestUrl().matches("(?is).*/action/downloads/remove/.+")) {
                 // remove denoted packages from download list
+
                 ArrayList<FilePackage> packages = new ArrayList<FilePackage>();
                 ArrayList<FilePackage> removelist = new ArrayList<FilePackage>();
                 String[] packagenames = getHTMLDecoded(new Regex(request.getRequestUrl(), ".*/action/downloads/remove/(.+)").getMatch(0).split("/"));

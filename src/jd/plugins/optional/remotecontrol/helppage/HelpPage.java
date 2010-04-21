@@ -55,9 +55,6 @@ public class HelpPage {
         t.setCommand("/get/grabber/isbusy");
         t.setInfo("Get whether linkgrabber is busy or not");
 
-        t.setCommand("/get/grabber/isset/startafteradding");
-        t.setInfo("Get whether downloads should start or not start after adding the links to the download queue");
-
         t.setCommand("/get/downloads/all/count");
         t.setInfo("Get amount of all downloads");
 
@@ -115,14 +112,11 @@ public class HelpPage {
         t.setCommand("/action/set/premium/(true|false)");
         t.setInfo("Set premium usage enabled or not");
 
-        t.setCommand("/action/set/grabber/startafteradding/(true|false)");
-        t.setInfo("Set whether downloads should start or not start after adding the links to the download queue");
+        t.setCommand("/action/add(/auto)/links/%X%");
+        t.setInfo("Add links %X% to grabber<br/>" + "e.g. /action/add/links/http://tinyurl.com/6o73eq" + "<p>auto parameter: Downloads will be automatically added to download queue and will start afterwards</p>" + "Note: Links must be URLEncoded. Use NEWLINE between links!");
 
-        t.setCommand("/action/add(/confirm)/links/%X%");
-        t.setInfo("Add links %X% to grabber<br/>" + "e.g. /action/add/links/http://tinyurl.com/6o73eq" + "<p>the confirm parameter will send the links to download queue afterwards</p>" + "Note: Links must be URLEncoded. Use NEWLINE between links!");
-
-        t.setCommand("/action/add(/confirm)/container/%X%");
-        t.setInfo("Add (remote or local) container %X%<br/>" + "e.g. /action/add/container/C:\\container.dlc" + "<p>the confirm parameter will send the links to download queue afterwards</p>" + "Note: Address (remote or local) must be URLEncoded!");
+        t.setCommand("/action/add(/auto)/container/%X%");
+        t.setInfo("Add (remote or local) container %X%<br/>" + "e.g. /action/add/container/C:\\container.dlc" + "<p>auto parameter: Downloads will be automatically added to download queue and will start afterwards</p>" + "Note: Address (remote or local) must be URLEncoded!");
 
         t.setCommand("/action/save/container(/fromgrabber)/%X%");
         t.setInfo("Save DLC-container with all links to %X%<br/>" + "e.g. /action/add/container/%X%" + "<p>fromgrabber: save DLC-container from grabber list instead from download list</p>");
@@ -163,11 +157,14 @@ public class HelpPage {
         t.setCommand("/special/check/%X%");
         t.setInfo("Check links in %X% without adding them to the linkgrabber or the download list. %X% may be a list of urls. Note: Links must be URLEncoded. Use NEWLINE between links!");
 
-        // JDScriptLaucher table
-        t = create(new Table("[addon] JDScriptLauncher"));
-
-        t.setCommand("/addon/scriptlauncher/launch/%X%");
-        t.setInfo("Launches a script on the remote machine via JDScriptLauncher addon");
+        // TODO:
+        // JDScriptLaucher table - will accessing JDScriptLaucher addon's
+        // functionality
+        //
+        // t = create(new Table("[addon] JDScriptLauncher"));
+        //
+        // t.setCommand("/addon/scriptlauncher/launch/%X%");
+        // t.setInfo("Launches a script on the remote machine via JDScriptLauncher addon");
     }
 
     public static String getHTML() {
