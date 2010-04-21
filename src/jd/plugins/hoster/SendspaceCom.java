@@ -68,7 +68,7 @@ public class SendspaceCom extends PluginForHost {
 
     public boolean isPremium() throws IOException {
         br.getPage("http://www.sendspace.com/mysendspace/myindex.html?l=1");
-        if (br.containsHTML("Your account needs to be renewed in")) return true;
+        if (br.containsHTML("Your membership is valid for")) return true;
         return false;
     }
 
@@ -82,11 +82,11 @@ public class SendspaceCom extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        String left = br.getRegex(">You have(.*?)available bandwidth<").getMatch(0);
+        String left = br.getRegex("You have downloaded (.*?) today").getMatch(0);
         if (left != null) {
-            ai.setTrafficLeft(Regex.getSize(left));
+            ai.setTrafficLeft(8l * 1024l * 1024l * 1024l - Regex.getSize(left));
         }
-        String days = br.getRegex("Your account needs to be renewed in[ ]+(\\d+)[ ]+days").getMatch(0);
+        String days = br.getRegex("Your membership is valid for[ ]+(\\d+)[ ]+days").getMatch(0);
         if (days != null && !days.equals("0")) {
             ai.setValidUntil(System.currentTimeMillis() + (Long.parseLong(days) * 24 * 50 * 50 * 1000));
         } else {
