@@ -35,7 +35,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 //http://www.4shared.com/file/<FILEID[a-70-9]>/<FILENAME>.html
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4shared.com" }, urls = { "http://[\\w\\.]*?(4shared|4shared\\-china)\\.com/(get|file|document|photo)/.+?/.*" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4shared.com" }, urls = { "http://[\\w\\.]*?(4shared|4shared\\-china)\\.com/(get|file|document|photo|video|audio)/.+?/.*" }, flags = { 2 })
 public class FourSharedCom extends PluginForHost {
 
     public FourSharedCom(PluginWrapper wrapper) {
@@ -200,7 +200,7 @@ public class FourSharedCom extends PluginForHost {
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceAll("red.com/get", "red.com/file"));
+        link.setUrlDownload(link.getDownloadURL().replaceAll("red.com/(get|audio|video)", "red.com/file"));
     }
 
 }
