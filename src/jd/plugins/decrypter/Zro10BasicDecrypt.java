@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zero10.info" }, urls = { "http://[\\w\\.]*?((zero10\\.info|save-link\\.info|share-link\\.info|h-link\\.us|zero10\\.us|(darkhorse|brg8)\\.fi5\\.us|arbforce\\.com/short|(pp9p|2utop)\\.com|arb4h\\.net|(get\\.(el3lam|al9daqa|sirtggp))\\.com|get\\.(i44i|city-way)\\.net|tanzel\\.eb2a\\.com/short)/[0-9]+|url-2\\.com/[A-Z]+/)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zero10.info" }, urls = { "http://[\\w\\.]*?((zero10\\.info|save-link\\.info|share-link\\.info|h-link\\.us|zero10\\.us|(darkhorse|brg8)\\.fi5\\.us|arbforce\\.com/short|(pp9p|2utop)\\.com|arb4h\\.net|(get\\.(el3lam|al9daqa|sirtggp))\\.com|get\\.(i44i|city-way)\\.net|tanzel\\.eb2a\\.com/short|go4down\\.(com|net)/short)/[0-9]+|url-2\\.com/[A-Z]+/|h-url\\.in/[A-Z0-9]+)" }, flags = { 0 })
 public class Zro10BasicDecrypt extends PluginForDecrypt {
 
     public Zro10BasicDecrypt(PluginWrapper wrapper) {
@@ -64,21 +64,23 @@ public class Zro10BasicDecrypt extends PluginForDecrypt {
             if (br.getRedirectLocation() == null) {
                 logger.warning("The requested document was not found on this server.");
                 logger.warning(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-                return new ArrayList<DownloadLink>();
+                throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
             }
         } else {
-            String Domain = new Regex(parameter, "((zero10\\.us|save-link\\.info|share-link\\.info|h-link\\.us|zero10\\.info|(darkhorse|brg8)\\.fi5\\.us|get\\.el3lam\\.com)|tanzel\\.eb2a\\.com/short)/").getMatch(0);
-            String ID = new Regex(parameter, "[0-9a-z.]+/([0-9]+)").getMatch(0);
-            String m1link = "http://www." + Domain + "/m1.php?id=" + ID;
+            String ID = new Regex(parameter, "/([0-9A-Z]+)$").getMatch(0);
+            String domain = new Regex(parameter.replaceAll("(www\\.|http://)", ""), "(.+)/" + ID).getMatch(0);
+            String m1link = "http://" + domain + "/m1.php?id=" + ID;
             br.getPage(m1link);
             // little errorhandling
-            if (br.getRedirectLocation() != null) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+            if (br.getRedirectLocation() != null && !br.getRedirectLocation().contains(ID)) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+            if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
             finallink = br.getRegex("onclick=\"NewWindow\\('(.*?)','name'").getMatch(0);
         }
         if (finallink == null) {
             finallink = finallink2;
         }
         if (finallink == null) return null;
+        if (finallink.equals("")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         decryptedLinks.add(createDownloadlink(finallink));
 
         return decryptedLinks;

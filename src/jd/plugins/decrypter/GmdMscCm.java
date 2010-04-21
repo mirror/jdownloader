@@ -38,25 +38,17 @@ public class GmdMscCm extends PluginForDecrypt {
         super(wrapper);
     }
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
-        String[] redirectLinks = br.getRegex("onclick='self.window.location = \"(redirect/\\d+_[\\w-]+/)\";").getColumn(0);
-
-        if (redirectLinks.length == 0) return null;
-
+        String[] redirectLinks = br.getRegex("window\\.open\\(\"(redirect/\\d+.*?)\"\\)").getColumn(0);
+        if (redirectLinks == null || redirectLinks.length == 0) return null;
         String pass = br.getRegex("Passwort:.*?<td align='left' width='50%'>(.*?)</td>").getMatch(0);
         ArrayList<String> passwords = new ArrayList<String>();
         passwords.add("gmd.6x.to");
         passwords.add("gmd-music.com");
-
-        if ((pass != null) && !pass.equals("-") && !pass.equals("kein Passwort")) {
-            passwords.clear();
-            passwords.add(pass);
-        }
-
+        if ((pass != null) && !pass.equals("-") && !pass.equals("kein Passwort")) passwords.add(pass);
         for (String redlnk : redirectLinks) {
             br.getPage(this.domain + redlnk);
             handleCaptcha();
