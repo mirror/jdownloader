@@ -46,6 +46,7 @@ public class BiggeruploadCom extends PluginForHost {
         this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
+    private static final String passwordText = "(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)";
     private static final String COOKIE_HOST = "http://biggerupload.com";
     public boolean nopremium = false;
 
@@ -86,6 +87,7 @@ public class BiggeruploadCom extends PluginForHost {
             if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             // Ticket Time
             String ttt = br.getRegex("countdown\">.*?(\\d+).*?</span>").getMatch(0);
+            if (ttt == null) ttt = br.getRegex("id=\"countdown_str\".*?<span id=\".*?\">.*?(\\d+).*?</span").getMatch(0);
             if (ttt != null) {
                 logger.info("Waittime detected, waiting " + ttt.trim() + " seconds from now on...");
                 int tt = Integer.parseInt(ttt);
@@ -94,7 +96,7 @@ public class BiggeruploadCom extends PluginForHost {
             String passCode = null;
             boolean password = false;
             boolean recaptcha = false;
-            if (br.containsHTML("(<br><b>Passwort:</b>|<br><b>Password:</b>)")) {
+            if (br.containsHTML(passwordText)) {
                 password = true;
                 logger.info("The downloadlink seems to be password protected.");
             }
@@ -354,7 +356,7 @@ public class BiggeruploadCom extends PluginForHost {
             if (dllink == null) {
                 Form DLForm = br.getFormbyProperty("name", "F1");
                 if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                if (br.containsHTML("(<br><b>Passwort:</b>|<br><b>Password:</b>)")) {
+                if (br.containsHTML(passwordText)) {
                     if (link.getStringProperty("pass", null) == null) {
                         passCode = Plugin.getUserInput("Password?", link);
                     } else {
