@@ -52,12 +52,13 @@ public class WebCamsCom extends PluginForHost {
         if (!br.containsHTML("swfobject.js")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String model = new Regex(downloadLink.getDownloadURL(), "model_id=(\\d+)").getMatch(0);
         String mediaid = new Regex(downloadLink.getDownloadURL(), "media_id=(\\d+)").getMatch(0);
-        if (model == null || mediaid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String modelName = br.getRegex("<h3 class=\"status\">(.*?) is <span").getMatch(0);
+        if (model == null || mediaid == null || modelName == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dllink = br.getRegex("name=\"flashvars\" value=\"file=(http.*?\\.flv).*?\"").getMatch(0);
         if (dllink == null) dllink = new Regex(Encoding.urlDecode(br.toString(), false), "(http://static\\d+\\.webcams\\.com/images/models/.*?\\.flv)").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         dllink = Encoding.urlDecode(dllink, true);
-        downloadLink.setFinalFileName("Model " + model + " movie " + mediaid + ".flv");
+        downloadLink.setFinalFileName(modelName + " - " + model + " movie " + mediaid + ".flv");
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
