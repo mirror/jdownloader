@@ -263,7 +263,7 @@ public class LinkCheck implements ActionListener, ProgressControllerListener {
         if (checkThread != null && checkThread.isAlive()) {
             EventQueue.invokeLater(new Runnable() {
                 public void run() {
-                    pc.setStatusText(pc.getStatusText() + ": Aborted");
+                    pc.setStatusText(pc.getStatusText() + ": " + JDL.L("gui.linkgrabber.aborted", "Aborted"));
                     pc.doFinalize(5000l);
                 }
             });

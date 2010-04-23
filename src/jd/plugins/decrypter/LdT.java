@@ -28,6 +28,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "iload.to" }, urls = { "http://(beta\\.iload|iload)\\.to/((go/\\d+/merged|go/\\d+)(streaming/.+)?|(view|title|release)/.*?/)" }, flags = { 0 })
 public class LdT extends PluginForDecrypt implements ProgressControllerListener {
@@ -55,7 +56,7 @@ public class LdT extends PluginForDecrypt implements ProgressControllerListener 
                 if (abort) {
                     logger.info("Decrypt aborted by user.");
                     progress.setColor(Color.RED);
-                    progress.setStatusText(progress.getStatusText() + ": Aborted");
+                    progress.setStatusText(progress.getStatusText() + ": " + JDL.L("gui.linkgrabber.aborted", "Aborted"));
                     progress.doFinalize(5000l);
                     return new ArrayList<DownloadLink>();
                 }

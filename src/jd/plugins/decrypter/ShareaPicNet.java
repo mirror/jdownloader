@@ -85,7 +85,7 @@ public class ShareaPicNet extends PluginForDecrypt implements ProgressController
         for (String link : links) {
             if (abort) {
                 progress.setColor(Color.RED);
-                progress.setStatusText(progress.getStatusText() + ": Aborted");
+                progress.setStatusText(progress.getStatusText() + ": " + JDL.L("gui.linkgrabber.aborted", "Aborted"));
                 progress.doFinalize(5000l);
                 return new ArrayList<DownloadLink>();
             }

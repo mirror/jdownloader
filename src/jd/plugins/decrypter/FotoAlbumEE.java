@@ -30,6 +30,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fotoalbum.ee" }, urls = { "http://[\\w\\.]*?(pseudaholic\\.|nastazzy\\.)?fotoalbum\\.ee/photos/.+(/sets|/[0-9]+)?(/[0-9]+)?" }, flags = { 0 })
 public class FotoAlbumEE extends PluginForDecrypt implements ProgressControllerListener {
@@ -95,7 +96,7 @@ public class FotoAlbumEE extends PluginForDecrypt implements ProgressControllerL
         for (String picLink : picLinks) {
             if (abort) {
                 progress.setColor(Color.RED);
-                progress.setStatusText(progress.getStatusText() + ": Aborted");
+                progress.setStatusText(progress.getStatusText() + ": " + JDL.L("gui.linkgrabber.aborted", "Aborted"));
                 progress.doFinalize(5000l);
                 return new ArrayList<DownloadLink>();
             }

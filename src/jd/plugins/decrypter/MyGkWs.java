@@ -27,6 +27,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mygeek.ws" }, urls = { "http://[\\w\\.]*?mygeek\\.ws/go/folder/id/[a-z0-9]+" }, flags = { 0 })
 public class MyGkWs extends PluginForDecrypt implements ProgressControllerListener {
@@ -49,7 +50,7 @@ public class MyGkWs extends PluginForDecrypt implements ProgressControllerListen
         for (String dl : links) {
             if (abort) {
                 progress.setColor(Color.RED);
-                progress.setStatusText(progress.getStatusText() + ": Aborted");
+                progress.setStatusText(progress.getStatusText() + ": " + JDL.L("gui.linkgrabber.aborted", "Aborted"));
                 progress.doFinalize(5000l);
                 return new ArrayList<DownloadLink>();
             }
