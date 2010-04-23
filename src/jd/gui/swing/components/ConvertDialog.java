@@ -32,7 +32,7 @@ import net.miginfocom.swing.MigLayout;
 /**
  * Diese Klasse zeigt dem Nutzer Auswahldialoge beim Konvertieren von FLVs an <br>
  * TODO: Use {@link jd.gui.swing.dialog.ConvertDialog} instead. Just remaining
- * for backward compatibility
+ * for backward compatibility. FIXME: Remove with next Major Update!
  */
 public class ConvertDialog extends AbstractDialog {
 

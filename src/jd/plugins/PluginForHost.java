@@ -690,14 +690,14 @@ public abstract class PluginForHost extends Plugin {
         return new ImageIcon(createDefaultFavIcon());
     }
 
-    private final String cleanString(String host) {
+    private static final String cleanString(String host) {
         return host.replaceAll("[a-z0-9\\-\\.]", "");
     }
 
     /**
      * Creates a dummyHosterIcon
      */
-    public BufferedImage createDefaultFavIcon() {
+    public final BufferedImage createDefaultFavIcon() {
         int w = 16;
         int h = 16;
         int size = 9;

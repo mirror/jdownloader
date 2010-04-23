@@ -43,7 +43,7 @@ public class TabNetUa extends PluginForHost {
         return "http://tab.net.ua/";
     }
 
-    /* after next major update */
+    /** TODO: after next major update */
     // @Override
     // public synchronized ImageIcon getFavIcon() {
     // /* try to load from disk */

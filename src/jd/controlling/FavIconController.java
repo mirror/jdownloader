@@ -26,8 +26,8 @@ public class FavIconController extends Thread {
     private final static HashMap<String, ArrayList<PluginForHost>> queue = new HashMap<String, ArrayList<PluginForHost>>();
     private final static ArrayList<String> failed = new ArrayList<String>();
 
-    public static ImageIcon getFavIcon(String FavIconhost, PluginForHost plugin, boolean useOriginalHost) {
-        String host = useOriginalHost == false ? Browser.getHost(FavIconhost) : FavIconhost;
+    public static ImageIcon getFavIcon(String favIconhost, PluginForHost plugin, boolean useOriginalHost) {
+        String host = useOriginalHost == false ? Browser.getHost(favIconhost) : favIconhost;
         if (host == null || plugin == null) return null;
         synchronized (LOCK) {
             /* check if we already have a favicon? */
@@ -77,6 +77,7 @@ public class FavIconController extends Thread {
     private boolean waitFlag;
     private Thread thread;
 
+    @Override
     public void run() {
         if (thread != null) return;
         thread = this;
@@ -135,7 +136,9 @@ public class FavIconController extends Thread {
         }
     }
 
-    /* downloads a favicon from the given host */
+    /**
+     * downloads a favicon from the given host
+     */
     public BufferedImage downloadFavIcon(String host) {
         String url = "http://" + host + "/favicon.ico";
         final Browser favBr = new Browser();

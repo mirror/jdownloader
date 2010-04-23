@@ -163,7 +163,9 @@ public class HelpPage {
         t.setCommand("/special/check/%X%");
         t.setInfo("Check links in %X% without adding them to the linkgrabber or the download list. %X% may be a list of urls. Note: Links must be URLEncoded. Use NEWLINE between links!");
 
-        // TODO:
+        /*
+         * TODO: do with with JDUtilities.getOptionalPlugin(id)
+         */
         // JDScriptLaucher table - will accessing JDScriptLaucher addon's
         // functionality
         //
@@ -173,6 +175,9 @@ public class HelpPage {
         // t.setInfo("Launches a script on the remote machine via JDScriptLauncher addon");
     }
 
+    /**
+     * TODO: Rewrite to use StringBuilder
+     */
     public static String getHTML() {
         createTables();
 
