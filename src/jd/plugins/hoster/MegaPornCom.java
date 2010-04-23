@@ -46,7 +46,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megaporn.com" }, urls = { "http://[\\w\\.]*?(megaporn)\\.com/.*?(\\?|&)d=[\\w]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megaporn.com" }, urls = { "http://[\\w\\.]*?(megaporn|megarotic|sexuploader)\\.com/.*?(\\?|&)d=[\\w]+" }, flags = { 2 })
 public class MegaPornCom extends PluginForHost {
 
     private static final String MU_PARAM_PORT = "MU_PARAM_PORT";
@@ -62,6 +62,11 @@ public class MegaPornCom extends PluginForHost {
     private String user;
 
     private static Object DL = new Object();
+
+    @Override
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replaceAll("(megarotic|sexuploader)\\.com", "megaporn.com"));
+    }
 
     public MegaPornCom(PluginWrapper wrapper) {
         super(wrapper);

@@ -25,8 +25,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-// new DecryptPluginWrapper("animea.net", "NmNt",
-// PluginPattern.DECRYPTER_ANIMEANET_PLUGIN);
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "animea.net" }, urls = { "http://[\\w\\.]*?animea\\.net/download/[\\d]+/(.*?)\\.html|http://[\\w\\.]*?animea\\.net/download/[\\d]+-[\\d]+/(.*?)\\.html" }, flags = { 0 })
 public class NmNt extends PluginForDecrypt {
 
@@ -36,7 +34,6 @@ public class NmNt extends PluginForDecrypt {
         super(wrapper);
     }
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -51,7 +48,8 @@ public class NmNt extends PluginForDecrypt {
                 progress.increase(1);
             }
         } else {
-            String[] links = br.getRegex("/><a href=\"(.*?)\" rel=\"nofollow\"").getColumn(0);
+            String[] links = br.getRegex("<td><a href=\"(.*?)\"").getColumn(0);
+            if (links == null || links.length == 0) return null;
             progress.setRange(links.length);
             for (String element : links) {
                 decryptedLinks.add(createDownloadlink(element));
@@ -60,7 +58,4 @@ public class NmNt extends PluginForDecrypt {
         }
         return decryptedLinks;
     }
-
-    // @Override
-
 }

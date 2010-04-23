@@ -50,31 +50,37 @@ public class DropIo extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("Guest or Admin Password")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<h3 class=\"first show_modal\"><a class=\"show_modal accent\" href=\"#\" onclick=.*?>(.*?)</a>").getMatch(0);
+        String filename = br.getRegex("\"title\":\"(.*?)\"").getMatch(0);
         if (filename == null) {
-            // Handling for video links
-            filename = br.getRegex("media_view_order=\".*?title=\"(.*?)\"").getMatch(0);
+            filename = br.getRegex("\"filename\":\"(.*?)\"").getMatch(0);
+            if (filename == null) filename = br.getRegex("media_view_order=\".*?title=\"(.*?)\"").getMatch(0);
         }
-        String filesize = br.getRegex("filesize=\"(.*?)\"").getMatch(0);
+        String filesize = br.getRegex("\"filesize\":(\\d+),\"").getMatch(0);
         // the filesize of videolinks is null so we only check if the filename
         // is null
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         link.setName(filename);
-        link.setDownloadSize(Regex.getSize(filesize));
+        if (filesize != null) link.setDownloadSize(Regex.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        String IamAHuman = br.getRegex("save_url=\"(.*?)\"").getMatch(0);
+        br.setFollowRedirects(true);
+        String id = br.getRegex("id\":(\\d+),\"").getMatch(0);
+        if (id == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String playerUrl = downloadLink.getDownloadURL() + "/asset/" + id + "/player";
+        br.postPage(playerUrl, "");
+        String IamAHuman = br.getRegex("class=\"downloadButton\" style=\"width: 150px; margin: 0pt auto; height: 40px; position: relative; top: 23px; font-size: 11px;\"><a href=\"(http://.*?)\"").getMatch(0);
+        if (IamAHuman == null) IamAHuman = br.getRegex("\"(http://drop\\.io/download/[a-z0-9]+/[a-z0-9]+/Asset/\\d+/v3/original_content)\"").getMatch(0);
         if (IamAHuman == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // check if the download starts instantly or if there is a need to type
         // in captchas
         URLConnectionAdapter con = br.openGetConnection(IamAHuman);
-        if (!con.isContentDisposition()) {
+        if (con.getContentType().contains("html")) {
             // Captcha handling
-            br.getPage(IamAHuman);
+            br.followConnection();
             String k = br.getRegex("Recaptcha\\.create\\(\"(.*?)\",").getMatch(0);
             if (k != null) {
                 /* recaptcha */

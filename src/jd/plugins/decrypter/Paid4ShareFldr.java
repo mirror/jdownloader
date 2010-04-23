@@ -32,8 +32,6 @@ public class Paid4ShareFldr extends PluginForDecrypt {
         super(wrapper);
     }
 
-    // paid4share.net folder decrypter by pspzockerscene
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -45,7 +43,5 @@ public class Paid4ShareFldr extends PluginForDecrypt {
 
         return decryptedLinks;
     }
-
-    // @Override
 
 }

@@ -30,7 +30,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.pluginUtils.Recaptcha;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "" }, urls = { "http://[\\w\\.]*?music-pirates\\.org/show\\.php\\?id=\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "music-pirates.org" }, urls = { "http://[\\w\\.]*?music-pirates\\.org/show\\.php\\?id=\\d+" }, flags = { 0 })
 public class MscPrtsOrg extends PluginForDecrypt {
 
     public MscPrtsOrg(PluginWrapper wrapper) {
