@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.config.ConfigEntry.PropertyType;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.plugins.OptionalPlugin;
@@ -19,6 +20,8 @@ import com.sun.awt.AWTUtilities;
 public class JDInfoBar extends PluginOptional {
 
     private static final String PROPERTY_OPACITY = "PROPERTY_OPACITY";
+
+    private static final String PROPERTY_DROPLOCATION = "PROPERTY_DROPLOCATION";
 
     private MenuAction activateAction;
 
@@ -45,6 +48,8 @@ public class JDInfoBar extends PluginOptional {
             ce.setStep(10);
             config.addEntry(ce);
         }
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), JDInfoBar.PROPERTY_DROPLOCATION, JDL.L("jd.plugins.optional.infobar.JDInfoBar.dropLocation", "Enable Drop Location (Restart required)")).setDefaultValue(true).setPropertyType(PropertyType.NEEDS_RESTART));
     }
 
     private void updateOpacity(Object value) {
@@ -77,7 +82,7 @@ public class JDInfoBar extends PluginOptional {
     public void setGuiEnable(boolean b) {
         if (b) {
             if (infoDialog == null) {
-                infoDialog = InfoDialog.getInstance(activateAction);
+                infoDialog = InfoDialog.getInstance(activateAction, getPluginConfig().getBooleanProperty(JDInfoBar.PROPERTY_DROPLOCATION, true));
                 updateOpacity(null);
             }
             infoDialog.showDialog();

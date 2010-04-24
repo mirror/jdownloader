@@ -66,7 +66,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
     private static MenuAction menuAction = null;
 
     /**
-     * Wird als reihe für anstehende extracthjobs verwendet
+     * Wird als reihe für anstehende extractjobs verwendet
      */
     private Jobber queue;
 
@@ -120,16 +120,8 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
                             processed.add(archiveStartFile.toString());
                             continue;
                         }
-                        link = JDUtilities.getController().getDownloadLinkByFileOutput(archiveStartFile, LinkStatus.FINISHED);
-                        if (link == null) {
-                            /* link no longer in list */
-                            link = new DownloadLink(null, archiveStartFile.getName(), DUMMY_HOSTER, "", true);
-                            link.setDownloadSize(archiveStartFile.length());
-                            FilePackage fp = FilePackage.getInstance();
-                            fp.setDownloadDirectory(archiveStartFile.getParent());
-                            link.setFilePackage(fp);
-                        }
-                        link = this.findStartLink(link);
+
+                        link = findStartLink(archiveStartFile);
                         if (link == null || processed.contains(link.getFileOutput0())) continue;
                         /* find/add all files that belongs to the queued archive */
                         processed.add(link.getFileOutput0());
@@ -242,7 +234,20 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         return JDUnrarConstants.NO_START_PART;
     }
 
-    private DownloadLink findStartLink(DownloadLink link) {
+    public static DownloadLink findStartLink(File file) {
+        DownloadLink link = JDUtilities.getController().getDownloadLinkByFileOutput(file, LinkStatus.FINISHED);
+        if (link == null) {
+            /* link no longer in list */
+            link = new DownloadLink(null, file.getName(), DUMMY_HOSTER, "", true);
+            link.setDownloadSize(file.length());
+            FilePackage fp = FilePackage.getInstance();
+            fp.setDownloadDirectory(file.getParent());
+            link.setFilePackage(fp);
+        }
+        return findStartLink(link);
+    }
+
+    public static DownloadLink findStartLink(DownloadLink link) {
         int type = getArchivePartType(link);
         switch (type) {
         case JDUnrarConstants.MULTIPART_START_PART:
@@ -442,7 +447,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
             cfg.save();
             break;
         case 1000:
-            link = this.findStartLink((DownloadLink) source.getProperty("LINK"));
+            link = findStartLink((DownloadLink) source.getProperty("LINK"));
             if (link == null) return;
             final DownloadLink finalLink = link;
             System.out.print("queued to extract: " + link);
@@ -464,8 +469,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
             if (links.size() <= 0) return;
             ArrayList<String> added = new ArrayList<String>();
             for (DownloadLink link0 : links) {
-                link = link0;
-                link = this.findStartLink(link);
+                link = findStartLink(link0);
                 if (link == null) continue;
                 final DownloadLink finalLink0 = link;
                 if (added.contains(link.getFileOutput0())) {
@@ -575,16 +579,8 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
                     if (list == null) return;
                     DownloadLink link;
                     for (File archiveStartFile : list) {
-                        link = JDUtilities.getController().getDownloadLinkByFileOutput(archiveStartFile, LinkStatus.FINISHED);
 
-                        if (link == null) {
-                            link = new DownloadLink(null, archiveStartFile.getName(), DUMMY_HOSTER, "", true);
-                            link.setDownloadSize(archiveStartFile.length());
-                            FilePackage fp = FilePackage.getInstance();
-                            fp.setDownloadDirectory(archiveStartFile.getParent());
-                            link.setFilePackage(fp);
-                        }
-                        link = findStartLink(link);
+                        link = findStartLink(archiveStartFile);
                         if (link == null) {
                             continue;
                         }

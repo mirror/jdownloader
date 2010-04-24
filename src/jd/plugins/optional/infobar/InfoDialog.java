@@ -30,8 +30,8 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
 
     private static InfoDialog INSTANCE = null;
 
-    public static InfoDialog getInstance(final MenuAction action) {
-        if (INSTANCE == null) INSTANCE = new InfoDialog(action);
+    public static InfoDialog getInstance(final MenuAction action, final boolean enableDropLocation) {
+        if (INSTANCE == null) INSTANCE = new InfoDialog(action, enableDropLocation);
         return INSTANCE;
     }
 
@@ -47,7 +47,7 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
     private JLabel lblProgress;
     private JLabel lblETA;
 
-    private InfoDialog(MenuAction action) {
+    private InfoDialog(MenuAction action, boolean enableDropLocation) {
         super();
 
         this.ds = new DownloadInformations();
@@ -60,7 +60,7 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
         this.addMouseListener(this);
         this.addMouseMotionListener(this);
 
-        this.setTransferHandler(new DragDropHandler());
+        if (enableDropLocation) this.setTransferHandler(new DragDropHandler());
 
         initGui();
     }

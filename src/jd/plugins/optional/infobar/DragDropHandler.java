@@ -8,8 +8,11 @@ import java.util.List;
 import javax.swing.JComponent;
 import javax.swing.TransferHandler;
 
+import jd.OptionalPluginWrapper;
 import jd.controlling.JDController;
+import jd.event.ControlEvent;
 import jd.parser.Regex;
+import jd.utils.JDUtilities;
 
 public class DragDropHandler extends TransferHandler {
 
@@ -50,7 +53,6 @@ public class DragDropHandler extends TransferHandler {
             if (t.isDataFlavorSupported(DataFlavor.stringFlavor)) {
                 String files = (String) t.getTransferData(DataFlavor.stringFlavor);
 
-                System.out.println(files);
                 String linuxfiles[] = new Regex(files, "file://(.*?)(\r\n|\r|\n)").getColumn(0);
                 if (linuxfiles != null && linuxfiles.length > 0) {
                     for (String file : linuxfiles) {
@@ -64,8 +66,11 @@ public class DragDropHandler extends TransferHandler {
             } else if (t.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
                 List<File> files = (List<File>) t.getTransferData(DataFlavor.javaFileListFlavor);
 
+                OptionalPluginWrapper unrar = JDUtilities.getOptionalPlugin("unrar");
+                boolean extract = (unrar != null && unrar.isEnabled());
+                if (extract) JDController.getInstance().fireControlEvent(ControlEvent.CONTROL_ON_FILEOUTPUT, files.toArray(new File[] {}));
+
                 for (File file : files) {
-                    System.out.println(file);
                     JDController.loadContainerFile(file);
                 }
 
