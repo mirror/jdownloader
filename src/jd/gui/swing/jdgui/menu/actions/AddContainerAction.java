@@ -19,11 +19,11 @@ package jd.gui.swing.jdgui.menu.actions;
 import java.awt.event.ActionEvent;
 import java.io.File;
 
+import jd.controlling.JDController;
 import jd.gui.UserIO;
 import jd.gui.swing.components.JDFileChooser;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.nutils.io.JDFileFilter;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 public class AddContainerAction extends ToolBarAction {
@@ -39,7 +39,7 @@ public class AddContainerAction extends ToolBarAction {
         File[] ret = UserIO.getInstance().requestFileChooser("_LOADSAVEDLC", JDL.L("gui.filechooser.loaddlc", "Load DLC file"), JDFileChooser.FILES_ONLY, new JDFileFilter(null, ".jdc|.dlc|.rsdf|.ccf|.metalink", true), true);
         if (ret == null) return;
         for (File r : ret) {
-            JDUtilities.getController().loadContainerFile(r);
+            JDController.loadContainerFile(r);
         }
     }
 

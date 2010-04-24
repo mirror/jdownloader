@@ -14,10 +14,6 @@
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-//
-//Alle Ausgaben sollten lediglich eine Zeile lang sein, um die kompatibilität zu erhöhen.
-//
-
 package jd.plugins.optional.remotecontrol;
 
 import java.awt.event.ActionEvent;
@@ -38,6 +34,7 @@ import jd.config.SubConfiguration;
 import jd.controlling.DistributeData;
 import jd.controlling.DownloadController;
 import jd.controlling.DownloadWatchDog;
+import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.controlling.LinkGrabberController;
 import jd.controlling.LinkGrabberControllerEvent;
@@ -74,6 +71,10 @@ import jd.utils.locale.JDL;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+/**
+ * Alle Ausgaben sollten lediglich eine Zeile lang sein, um die kompatibilität
+ * zu erhöhen.
+ */
 @OptionalPlugin(rev = "$Revision$", id = "remotecontrol", interfaceversion = 5)
 public class JDRemoteControl extends PluginOptional implements ControlListener, LinkGrabberControllerListener {
 
@@ -443,7 +444,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
 
                     try {
                         Browser.download(container, dlcfilestr);
-                        JDUtilities.getController().loadContainerFile(container, false, false);
+                        JDController.loadContainerFile(container, false, false);
 
                         try {
                             Thread.sleep(3000);
@@ -457,7 +458,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
                     }
                 } else {
                     // local container file
-                    JDUtilities.getController().loadContainerFile(new File(dlcfilestr), false, false);
+                    JDController.loadContainerFile(new File(dlcfilestr), false, false);
                 }
 
                 response.addContent("Container opened. (" + dlcfilestr + ")");

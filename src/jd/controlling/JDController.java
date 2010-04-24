@@ -170,7 +170,7 @@ public class JDController implements ControlListener {
     /**
      * Der Logger
      */
-    private Logger logger = JDLogger.getLogger();
+    private static final Logger logger = JDLogger.getLogger();
 
     private boolean alreadyAutostart = false;
 
@@ -497,7 +497,7 @@ public class JDController implements ControlListener {
         return JDUtilities.getDownloadController().getPackages();
     }
 
-    public boolean isContainerFile(File file) {
+    public static boolean isContainerFile(File file) {
         ArrayList<CPluginWrapper> pluginsForContainer = CPluginWrapper.getCWrapper();
         CPluginWrapper pContainer;
         for (int i = 0; i < pluginsForContainer.size(); i++) {
@@ -554,7 +554,7 @@ public class JDController implements ControlListener {
         }
     }
 
-    public void loadContainerFile(final File file) {
+    public static void loadContainerFile(final File file) {
         loadContainerFile(file, false, false);
     }
 
@@ -565,7 +565,7 @@ public class JDController implements ControlListener {
      * @param file
      *            Die Containerdatei
      */
-    public void loadContainerFile(final File file, final boolean hideGrabber, final boolean autostart) {
+    public static void loadContainerFile(final File file, final boolean hideGrabber, final boolean autostart) {
         System.out.println("load container");
         new Thread() {
             @Override

@@ -110,32 +110,28 @@ public class DownloadController implements FilePackageListener, DownloadControll
 
     private Logger logger = null;
 
-    private JDController controller;
-
-    // private Optimizer optimizer;
-
     private transient DownloadControllerBroadcaster broadcaster = new DownloadControllerBroadcaster();
 
-    private Timer asyncSaveIntervalTimer; /*
-                                           * Async-Save, Linkliste wird
-                                           * verzögert gespeichert
-                                           */
+    /**
+     * Async-Save, Linkliste wird verzögert gespeichert
+     */
+    private Timer asyncSaveIntervalTimer;
 
     private boolean saveinprogress;
 
+    /**
+     * darf erst nachdem der JDController init wurde, aufgerufen werden
+     */
     public static DownloadController getInstance() {
-        /* darf erst nachdem der JDController init wurde, aufgerufen werden */
         return INSTANCE;
     }
 
     private DownloadController() {
-        logger = jd.controlling.JDLogger.getLogger();
-        controller = JDUtilities.getController();
+        logger = JDLogger.getLogger();
         initDownloadLinks();
         asyncSaveIntervalTimer = new Timer(2000, this);
         asyncSaveIntervalTimer.setInitialDelay(2000);
         asyncSaveIntervalTimer.setRepeats(false);
-        // optimizer = Optimizer.getINSTANCE(this);
         broadcaster.addListener(this);
     }
 
@@ -163,14 +159,14 @@ public class DownloadController implements FilePackageListener, DownloadControll
             final File file = JDUtilities.getResourceFile("backup/links.linkbackup");
             if (file.exists()) {
                 logger.warning("Strange: No Linklist,Try to restore from backup file");
-                controller.loadContainerFile(file);
+                JDController.loadContainerFile(file);
             }
             return;
         } else if (packages.size() == 0 && Main.returnedfromUpdate()) {
             final File file = JDUtilities.getResourceFile("backup/links.linkbackup");
             if (file.exists() && file.lastModified() >= System.currentTimeMillis() - 10 * 60 * 1000l) {
                 logger.warning("Strange: Empty Linklist,Try to restore from backup file");
-                controller.loadContainerFile(file);
+                JDController.loadContainerFile(file);
             }
             return;
         }
@@ -452,13 +448,6 @@ public class DownloadController implements FilePackageListener, DownloadControll
             }
         }
     }
-
-    // Den Optimizer muss ich noch fertig machen
-    // public boolean hasDownloadLinkwithURL(String url) {
-    // if (optimizer.getLinkswithURL(url) != null ||
-    // optimizer.getLinkswithURL(url).size() == 0) { return true; }
-    // return false;
-    // }
 
     public boolean hasDownloadLinkwithURL(final String url) {
         if (url != null) {

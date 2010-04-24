@@ -66,13 +66,9 @@ public class SingleDownloadController extends Thread {
     private LinkStatus linkStatus;
 
     /**
-     * Wurde der Download abgebrochen?
-     */
-    // private boolean aborted = false;
-    /**
      * Der Logger
      */
-    private Logger logger = jd.controlling.JDLogger.getLogger();
+    private Logger logger = JDLogger.getLogger();
 
     private long startTime;
 
@@ -304,9 +300,9 @@ public class SingleDownloadController extends Thread {
         }
 
         DownloadController.getInstance().fireDownloadLinkUpdate(downloadLink);
-        if (JDUtilities.getController().isContainerFile(new File(downloadLink.getFileOutput()))) {
+        if (JDController.isContainerFile(new File(downloadLink.getFileOutput()))) {
             if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_RELOADCONTAINER, true)) {
-                JDUtilities.getController().loadContainerFile(new File(downloadLink.getFileOutput()));
+                JDController.loadContainerFile(new File(downloadLink.getFileOutput()));
             }
         }
 

@@ -55,8 +55,6 @@ public class ParameterManager {
 
         boolean hideGrabber = false;
 
-        JDController controller = JDUtilities.getController();
-
         for (String currentArg : input) {
 
             if (currentArg.equals("--help") || currentArg.equals("-h")) {
@@ -208,7 +206,7 @@ public class ParameterManager {
 
         final int size = containersToAdd.size();
         for (int i = 0; i < size; i++) {
-            controller.loadContainerFile(new File(containersToAdd.get(i)), hideGrabber, startDownload);
+            JDController.loadContainerFile(new File(containersToAdd.get(i)), hideGrabber, startDownload);
         }
         final StringBuilder adder = new StringBuilder();
         for (String string : linksToAdd) {

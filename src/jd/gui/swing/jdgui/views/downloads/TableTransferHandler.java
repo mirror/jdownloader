@@ -226,16 +226,16 @@ public class TableTransferHandler extends TransferHandler {
                 int row = ((JTable.DropLocation) info.getDropLocation()).getRow();
                 return drop(row, p);
             } else if (tr.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
-                List list = (List) tr.getTransferData(DataFlavor.javaFileListFlavor);
-                for (int t = 0; t < list.size(); t++) {
-                    JDController.getInstance().loadContainerFile((File) list.get(t));
+                List<File> list = (List<File>) tr.getTransferData(DataFlavor.javaFileListFlavor);
+                for (File file : list) {
+                    JDController.loadContainerFile(file);
                 }
             } else if (tr.isDataFlavorSupported(DataFlavor.stringFlavor)) {
                 String files = (String) tr.getTransferData(DataFlavor.stringFlavor);
                 String linuxfiles[] = new Regex(files, "file://(.*?)(\r\n|\r|\n)").getColumn(0);
                 if (linuxfiles != null && linuxfiles.length > 0) {
                     for (String file : linuxfiles) {
-                        JDController.getInstance().loadContainerFile(new File(file.trim()));
+                        JDController.loadContainerFile(new File(file.trim()));
                     }
                 } else {
                     JDController.distributeLinks(files);

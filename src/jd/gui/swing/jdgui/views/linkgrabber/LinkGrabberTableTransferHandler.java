@@ -61,7 +61,7 @@ public class LinkGrabberTableTransferHandler extends TransferHandler {
     }
 
     @SuppressWarnings("unchecked")
-    // @Override
+    @Override
     public boolean canImport(TransferSupport info) {
         if (isDragging) {
             if (draggingObjects == null) return false;
@@ -93,7 +93,7 @@ public class LinkGrabberTableTransferHandler extends TransferHandler {
         }
     }
 
-    // @Override
+    @Override
     protected Transferable createTransferable(JComponent c) {
         isDragging = true;
         String url = "http://www.jdownloader.org";
@@ -119,7 +119,7 @@ public class LinkGrabberTableTransferHandler extends TransferHandler {
         return new StringSelection(url);
     }
 
-    // @Override
+    @Override
     protected void exportDone(JComponent source, Transferable data, int action) {
         isDragging = false;
     }
@@ -210,13 +210,13 @@ public class LinkGrabberTableTransferHandler extends TransferHandler {
         return true;
     }
 
-    // @Override
+    @Override
     public int getSourceActions(JComponent c) {
         return MOVE;
     }
 
     @SuppressWarnings("unchecked")
-    // @Override
+    @Override
     public boolean importData(TransferSupport info) {
         try {
             Transferable tr = info.getTransferable();
@@ -225,16 +225,16 @@ public class LinkGrabberTableTransferHandler extends TransferHandler {
                 int row = ((JTable.DropLocation) info.getDropLocation()).getRow();
                 return drop(row, p);
             } else if (tr.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
-                List list = (List) tr.getTransferData(DataFlavor.javaFileListFlavor);
-                for (int t = 0; t < list.size(); t++) {
-                    JDController.getInstance().loadContainerFile((File) list.get(t));
+                List<File> list = (List<File>) tr.getTransferData(DataFlavor.javaFileListFlavor);
+                for (File file : list) {
+                    JDController.loadContainerFile(file);
                 }
             } else if (tr.isDataFlavorSupported(DataFlavor.stringFlavor)) {
                 String files = (String) tr.getTransferData(DataFlavor.stringFlavor);
                 String linuxfiles[] = new Regex(files, "file://(.*?)(\r\n|\r|\n)").getColumn(0);
                 if (linuxfiles != null && linuxfiles.length > 0) {
                     for (String file : linuxfiles) {
-                        JDController.getInstance().loadContainerFile(new File(file.trim()));
+                        JDController.loadContainerFile(new File(file.trim()));
                     }
                 } else {
                     JDController.distributeLinks(files);

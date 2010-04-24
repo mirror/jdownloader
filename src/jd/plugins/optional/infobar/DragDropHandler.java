@@ -8,6 +8,9 @@ import java.util.List;
 import javax.swing.JComponent;
 import javax.swing.TransferHandler;
 
+import jd.controlling.JDController;
+import jd.parser.Regex;
+
 public class DragDropHandler extends TransferHandler {
 
     private static final long serialVersionUID = 2254473504071024802L;
@@ -43,21 +46,29 @@ public class DragDropHandler extends TransferHandler {
     @SuppressWarnings("unchecked")
     private static final boolean importTransferable(Transferable t) {
         try {
+
             if (t.isDataFlavorSupported(DataFlavor.stringFlavor)) {
                 String files = (String) t.getTransferData(DataFlavor.stringFlavor);
-                /*
-                 * TODO: Analyze String here!
-                 */
+
                 System.out.println(files);
+                String linuxfiles[] = new Regex(files, "file://(.*?)(\r\n|\r|\n)").getColumn(0);
+                if (linuxfiles != null && linuxfiles.length > 0) {
+                    for (String file : linuxfiles) {
+                        JDController.loadContainerFile(new File(file.trim()));
+                    }
+                } else {
+                    JDController.distributeLinks(files);
+                }
+
                 return true;
             } else if (t.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
                 List<File> files = (List<File>) t.getTransferData(DataFlavor.javaFileListFlavor);
+
                 for (File file : files) {
-                    /*
-                     * TODO: Analyze File here!
-                     */
                     System.out.println(file);
+                    JDController.loadContainerFile(file);
                 }
+
                 return true;
             }
         } catch (Exception e) {

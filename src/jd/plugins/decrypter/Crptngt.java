@@ -20,6 +20,7 @@ import java.io.File;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
+import jd.controlling.JDController;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.parser.html.Form;
@@ -51,6 +52,7 @@ public class Crptngt extends PluginForDecrypt {
     }
 
     // @Override
+    @SuppressWarnings("static-access")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -105,7 +107,10 @@ public class Crptngt extends PluginForDecrypt {
                 File containerFile = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + container[1]);
                 br3.getHeaders().put("Referer", "http://www.crypting.it/greybox/loader_frame.html?s=0");
                 br3.getDownload(containerFile, container[0]);
-                if (!JDUtilities.getController().isContainerFile(containerFile)) {
+                /*
+                 * TODO: Change to static method call after next major update!
+                 */
+                if (!JDController.getInstance().isContainerFile(containerFile)) {
                     containerFile.delete();
                     continue;
                 }

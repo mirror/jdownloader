@@ -185,7 +185,7 @@ public class ClipboardHandler extends Thread implements ControlListener {
                                     final File f = new File(fi.getPath());
                                     if (f.exists()) {
                                         if (DistributeData.hasContainerPluginFor(fi.getPath())) {
-                                            JDController.getInstance().loadContainerFile(f);
+                                            JDController.loadContainerFile(f);
                                         }
                                     } else if (what == uriListFlavor) {
                                         sb.append(fi.getPath());
