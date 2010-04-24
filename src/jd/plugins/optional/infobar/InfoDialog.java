@@ -60,6 +60,8 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
         this.addMouseListener(this);
         this.addMouseMotionListener(this);
 
+        this.setTransferHandler(new DragDropHandler());
+
         initGui();
     }
 
