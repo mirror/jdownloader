@@ -2,18 +2,22 @@ package jd.plugins.optional.remotecontrol.helppage;
 
 import java.util.ArrayList;
 
+import jd.OptionalPluginWrapper;
+import jd.utils.JDUtilities;
+
 public class HelpPage {
 
     private static final long serialVersionUID = -7554703678938558791L;
 
     private static ArrayList<Table> tables = new ArrayList<Table>();
+    private static OptionalPluginWrapper rc = JDUtilities.getOptionalPlugin("remotecontrol");
 
     private static Table create(Table table) {
         tables.add(table);
         return table;
     }
 
-    private static void createTables() {
+    private static void initTables() {
         Table t = null;
 
         // Values table
@@ -118,6 +122,9 @@ public class HelpPage {
         t.setCommand("/action/set/grabber/startafteradding/(true|false)");
         t.setInfo("Set whether downloads should start or not start after they were added to the download queue");
 
+        t.setCommand("/action/add/archivepassword/%X%/%Y%");
+        t.setInfo("Add an archive password %Y% to one or more packages with packagename %X% hold by the linkgrabber, each packagename seperated by a slash)");
+
         t.setCommand("/action/add(/auto)/links/%X%");
         t.setInfo("Add links %X% to grabber<br/>" + "e.g. /action/add/links/http://tinyurl.com/6o73eq" + "<p>auto parameter: Downloads will be automatically added to download queue after the linkcheck is done</p>" + "Note: Links must be URLEncoded. Use NEWLINE between links!");
 
@@ -163,40 +170,68 @@ public class HelpPage {
         t.setCommand("/special/check/%X%");
         t.setInfo("Check links in %X% without adding them to the linkgrabber or the download list. %X% may be a list of urls. Note: Links must be URLEncoded. Use NEWLINE between links!");
 
-        /*
-         * TODO: do with with JDUtilities.getOptionalPlugin(id)
-         */
-        // JDScriptLaucher table - will accessing JDScriptLaucher addon's
-        // functionality
-        //
-        // t = create(new Table("[addon] JDScriptLauncher"));
-        //
-        // t.setCommand("/addon/scriptlauncher/launch/%X%");
-        // t.setInfo("Launches a script on the remote machine via JDScriptLauncher addon");
+        // JDScriptLaucher table
+        OptionalPluginWrapper sl = JDUtilities.getOptionalPlugin("scriptlauncher");
+
+        if (sl != null && sl.isLoaded() && sl.isEnabled()) {
+            t = create(new Table("[addon] JDScriptLauncher"));
+
+            t.setCommand("/addon/scriptlauncher/getlist");
+            t.setInfo("Get list of all available scripts");
+
+            t.setCommand("/addon/scriptlauncher/launch/%X%");
+            t.setInfo("Launches a script on the remote machine via JDScriptLauncher addon");
+        }
     }
 
-    /**
-     * TODO: Rewrite to use StringBuilder
-     */
     public static String getHTML() {
-        createTables();
+        initTables();
 
-        String html = "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">" + "<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" lang=\"en\"><head><title>JDRemoteControl Help</title><style type=\"text/css\">" + "a {text-decoration:none; color:#5f5f5f}" + "a:hover {text-decoration:underline; color_#5f5f5f;}" + "body {margin:0% 10% 20% 10%; font-size:12px; color:#5f5f5f; background-color:#ffffff; font-family:Verdana, Arial, Helvetica, sans-serif;}" + "table {width:100%; padding:none; border:1px solid #5f5f5f; border-collapse:collapse; background-color:#ffffff;}" + "td {width:50%; padding:5px; border-top:1px solid #5f5f5f; border-bottom:1px solid #5f5f5f; vertical-align:top;}" + "th {color:#ffffff; background-color:#5f5f5f; font-size:13px; font-weight:normal; text-align:left; padding:5px;}"
-                + "tr:hover {background-color:#E3F3B8;}" + "h1 {font-size:25px; font-weight:normal; color:#5f5f5f;}" + "</style></head><body><h1>JDRemoteControl " + "&lt;Versions-Nr.&gt;" + "</h1><p>&nbsp;</p>" + "<p>Replace %X% and %Y% with specific values e.g. /action/save/container/C:\\backup.dlc<br/>Replace (true|false) with true or false<br/>Replace (value) with value => optional parameter<p/>";
+        StringBuilder html = new StringBuilder();
+
+        html.append("<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">");
+        html.append("<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" lang=\"en\">");
+
+        html.append("<head>");
+        html.append("<title>JDRemoteControl Help</title>");
+
+        // stylesheet
+        html.append("<style type=\"text/css\">");
+        html.append("a {text-decoration:none; color:#5f5f5f}");
+        html.append("a:hover {text-decoration:underline; color_#5f5f5f;}");
+        html.append("body {margin:0% 10% 20% 10%; font-size:12px; color:#5f5f5f; background-color:#ffffff; font-family:Verdana, Arial, Helvetica, sans-serif;}");
+        html.append("table {width:100%; padding:none; border:1px solid #5f5f5f; border-collapse:collapse; background-color:#ffffff;}");
+        html.append("td {width:50%; padding:5px; border-top:1px solid #5f5f5f; border-bottom:1px solid #5f5f5f; vertical-align:top;}");
+        html.append("th {color:#ffffff; background-color:#5f5f5f; font-size:13px; font-weight:normal; text-align:left; padding:5px;}");
+        html.append("tr:hover {background-color:#E3F3B8;}");
+        html.append("h1 {font-size:25px; font-weight:normal; color:#5f5f5f;}");
+        html.append("</style>");
+
+        html.append("</head>");
+
+        // begin of body
+        html.append("<body>");
+        html.append("<h1>JDRemoteControl " + rc.getVersion() + "</h1>");
+        html.append("<p>&nbsp;</p>");
+        html.append("<p>Replace %X% and %Y% with specific values e.g. /action/save/container/C:\\backup.dlc<br/>Replace (true|false) with true or false<br/>Replace (value) with value => optional parameter<p/>");
 
         for (Table table : tables) {
-            html += "<table>";
-            html += "<tr><th colspan=\"2\">" + table.getName() + "</th></tr>";
+            html.append("<table>");
+            html.append("<tr><th colspan=\"2\">" + table.getName() + "</th></tr>");
 
             for (Entry entry : table.getEntries()) {
-                html += "<tr><td><a href=\"" + entry.getCommand() + "\" target=\"_blank\">" + entry.getCommand() + "</a></td><td>" + entry.getInfo() + "</td></tr>";
+                html.append("<tr>");
+                html.append("<td><a href=\"" + entry.getCommand() + "\" target=\"_blank\">" + entry.getCommand() + "</a></td>");
+                html.append("<td>" + entry.getInfo() + "</td>");
+                html.append("</tr>");
             }
 
-            html += "</table><br/><br/>";
+            html.append("</table>");
+            html.append("<p>&nbsp;</p>");
         }
 
-        html += "</html>";
+        html.append("</html>");
 
-        return html;
+        return html.toString();
     }
 }
