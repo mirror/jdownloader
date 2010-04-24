@@ -48,13 +48,13 @@ public class MpUzhgrdNme extends PluginForDecrypt {
             fpName = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
             if (fpName == null) fpName = br.getRegex("title='(.*?)'").getMatch(0);
         }
-        String pagepiece = br.getRegex("<!--dle_leech_begin-->(.*?)<!--dle_leech_end--><br /></div>").getMatch(0);
+        String pagepiece = br.getRegex("</strong><br /><\\!--dle_leech_begin--><a href=\"(.*?)</a><\\!--dle_leech_end--></div>").getMatch(0);
         if (pagepiece == null) pagepiece = br.getRegex("<span><strong></strong></span></div>(.*?)</div></div></div>.*?<div class=\"clr\"></div>").getMatch(0);
         String[] links = null;
         if (pagepiece != null) {
             links = HTMLParser.getHttpLinks(pagepiece, "");
         } else {
-            links = br.getRegex("<br /><a href=\"(.*?)\"").getColumn(0);
+            links = br.getRegex("<!--dle_leech_begin--><a href=\"(.*?)\"").getColumn(0);
         }
         if (links == null || links.length == 0) return null;
         progress.setRange(links.length);
