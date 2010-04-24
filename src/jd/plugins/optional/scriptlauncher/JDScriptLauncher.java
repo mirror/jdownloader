@@ -36,11 +36,13 @@ import org.appwork.utils.Regex;
 @OptionalPlugin(rev = "$Revision$", id = "scriptlauncher", interfaceversion = 5)
 public class JDScriptLauncher extends PluginOptional implements ControlListener {
 
-    private String scriptdir = "./scripts/";
-    private ArrayList<File> scripts = new ArrayList<File>();
+    private static final String scriptdir = "./scripts/";
+
+    private ArrayList<File> scripts;
+    private static HashMap<Integer, Process> processlist = new HashMap<Integer, Process>();
+
     private ArrayList<MenuAction> menuitems = new ArrayList<MenuAction>();
-    private HashMap<Integer, Process> processlist = new HashMap<Integer, Process>();
-    private ArrayList<String> launcherprops = new ArrayList<String>();
+    private ArrayList<String> scriptconfig = new ArrayList<String>();
 
     private static final String LINUX_INFINITE_LOOP = "LINUX_INFINITE_LOOP";
     private static final String ADD_CHECKBOX = "ADD_CHECKBOX";
@@ -51,13 +53,16 @@ public class JDScriptLauncher extends PluginOptional implements ControlListener 
 
     @Override
     public boolean initAddon() {
-        initScripts();
+        this.scripts = JDScriptLauncher.getScripts();
+
         try {
             initMenuActions();
         } catch (IOException e) {
             logger.warning(e.toString());
         }
+
         logger.info("Script Launcher OK");
+
         return true;
     }
 
@@ -66,24 +71,60 @@ public class JDScriptLauncher extends PluginOptional implements ControlListener 
         if (event.getID() >= 1000) {
             int index = event.getID() - 1000;
 
-            if (this.processlist.get(index) == null) {
-                try {
-                    Process p = Runtime.getRuntime().exec(this.scripts.get(index).getPath());
-                    this.processlist.put(index, p);
-                } catch (IOException eio) {
-                    logger.warning(eio.toString());
-                }
-            } else if (launcherprops.contains(LINUX_INFINITE_LOOP)) {
-                /* unix only */
-                String[] cmd = { "/bin/sh", "-c", "killall " + this.scripts.get(index).getName() };
-
-                try {
-                    Runtime.getRuntime().exec(cmd);
-                } catch (IOException e) {
-                    logger.warning(e.toString());
-                }
+            if (JDScriptLauncher.processlist.get(index) == null) {
+                launch(index);
+            } else if (scriptconfig.contains(LINUX_INFINITE_LOOP)) {
+                kill(index);
             }
         }
+    }
+
+    private static void launch(int index) {
+        ArrayList<File> scripts = JDScriptLauncher.getScripts();
+
+        try {
+            Process p = Runtime.getRuntime().exec(scripts.get(index).getPath());
+            JDScriptLauncher.processlist.put(index, p);
+        } catch (IOException eio) {
+            logger.warning(eio.toString());
+        }
+    }
+
+    public static void launch(String name) {
+        JDScriptLauncher.launch(JDScriptLauncher.getScriptIndexByName(name));
+    }
+
+    /**
+     * UNIX-only method (killing processes)
+     */
+    private static void kill(int index) {
+        String[] cmd = { "/bin/sh", "-c", "killall " + JDScriptLauncher.getScripts().get(index).getName() };
+
+        try {
+            Runtime.getRuntime().exec(cmd);
+        } catch (IOException e) {
+            logger.warning(e.toString());
+        }
+    }
+
+    public static void kill(String name) {
+        JDScriptLauncher.kill(JDScriptLauncher.getScriptIndexByName(name));
+    }
+
+    private static int getScriptIndexByName(String name) {
+        int index = 0;
+
+        for (File script : JDScriptLauncher.getScripts()) {
+            String scriptname = script.getName().split("\\.")[0];
+
+            if (scriptname.equals(name)) {
+                break;
+            }
+
+            index++;
+        }
+
+        return index;
     }
 
     @Override
@@ -107,28 +148,28 @@ public class JDScriptLauncher extends PluginOptional implements ControlListener 
         return menu;
     }
 
-    private ArrayList<String> readLauncherProps(int index) throws IOException {
+    private ArrayList<String> readScriptConfiguration(int index) throws IOException {
         FileReader fr = new FileReader(this.scripts.get(index));
         BufferedReader in = new BufferedReader(fr);
         String line = "";
 
         while ((line = in.readLine()) != null) {
             if (line.matches(".*?__LAUNCHER__:[A-Z_]+")) {
-                launcherprops.add(new Regex(line, ".*?__LAUNCHER__:([A-Z_]+)").getMatch(0));
+                scriptconfig.add(new Regex(line, ".*?__LAUNCHER__:([A-Z_]+)").getMatch(0));
             }
         }
 
         in.close();
         fr.close();
 
-        return launcherprops;
+        return scriptconfig;
     }
 
     private void initMenuActions() throws IOException {
         MenuAction ma = null;
 
         for (int i = 0; i < this.scripts.size(); i++) {
-            ArrayList<String> launcherprops = readLauncherProps(i);
+            ArrayList<String> launcherprops = readScriptConfiguration(i);
             String scriptname = this.scripts.get(i).getName().split("\\.")[0];
             ma = new MenuAction(scriptname, i + 1000);
 
@@ -141,19 +182,23 @@ public class JDScriptLauncher extends PluginOptional implements ControlListener 
         }
     }
 
-    private void initScripts() {
-        File dir = new File(this.scriptdir);
+    public static ArrayList<File> getScripts() {
+        ArrayList<File> scripts = new ArrayList<File>();
+        File dir = new File(scriptdir);
+
         if (dir.isDirectory()) {
             File[] filelist = dir.listFiles();
             for (int i = 0; i < filelist.length; i++) {
                 File file = filelist[i];
                 if (file.isFile() && file.canExecute()) {
                     logger.info("JDScriptLauncher: Loaded script \"" + file.getName() + "\"");
-                    this.scripts.add(file);
+                    scripts.add(file);
                 }
             }
         } else {
             dir.mkdir();
         }
+
+        return scripts;
     }
 }
