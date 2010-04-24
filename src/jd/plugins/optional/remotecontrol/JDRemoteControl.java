@@ -24,9 +24,6 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
-import jd.controlling.LinkGrabberController;
-import jd.controlling.LinkGrabberControllerEvent;
-import jd.controlling.LinkGrabberControllerListener;
 import jd.event.ControlListener;
 import jd.gui.UserIO;
 import jd.gui.swing.jdgui.menu.MenuAction;
@@ -41,7 +38,7 @@ import jd.utils.locale.JDL;
  * zu erhöhen.
  */
 @OptionalPlugin(rev = "$Revision$", id = "remotecontrol", interfaceversion = 5)
-public class JDRemoteControl extends PluginOptional implements ControlListener, LinkGrabberControllerListener {
+public class JDRemoteControl extends PluginOptional implements ControlListener {
 
     private static final String PARAM_PORT = "PORT";
     private static final String PARAM_ENABLED = "ENABLED";
@@ -54,7 +51,6 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
         super(wrapper);
         subConfig = getPluginConfig();
         initConfig();
-        LinkGrabberController.getInstance().addListener(this);
     }
 
     @Override
@@ -126,11 +122,5 @@ public class JDRemoteControl extends PluginOptional implements ControlListener, 
 
     @Override
     public void onExit() {
-    }
-
-    public void onLinkGrabberControllerEvent(LinkGrabberControllerEvent event) {
-        if (event.getID() == LinkGrabberControllerEvent.FINISHED) {
-            grabberIsBusy = false;
-        }
     }
 }
