@@ -51,7 +51,8 @@ public class CraMitIn extends PluginForHost {
 
     private static final String passwordText = "(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)";
 
-    // XfileSharingProBasic Version 1.6, modified handleFree & useragent
+    // XfileSharingProBasic Version 1.6, modified handleFree & useragent,
+    // modified all
     @Override
     public String getAGBLink() {
         return COOKIE_HOST + "/tos.html";
@@ -276,11 +277,9 @@ public class CraMitIn extends PluginForHost {
                     if (dllink == null) {
                         dllink = br.getRegex("dotted #bbb;padding.*?<a href=\"(.*?)\"").getMatch(0);
                         if (dllink == null) {
-                            dllink = br.getRegex("This (direct link|download link) will be available for your IP.*?href=\"(http.*?)\"").getMatch(1);
+                            dllink = br.getRegex("This [ a-zA-Z]+ link will be available for your IP.*?href=\"(http.*?)\"").getMatch(1);
                             if (dllink == null) {
-                                // This was for fileop.com, maybe also works for
-                                // others!
-                                dllink = br.getRegex("Download: <a href=\"(.*?)\"").getMatch(0);
+                                dllink = br.getRegex("(http://ns\\d+\\.ovh\\.net:\\d+/d/[a-z0-9]+/.*?)\"").getMatch(0);
                             }
                         }
                     }

@@ -81,7 +81,14 @@ public class DumpRu extends PluginForHost {
         if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.submitForm(DLForm);
         String link = br.getRegex(Pattern.compile("<a href=\"(http://.*?dump\\.ru/file_download/.*?)\">")).getMatch(0);
+        if (link == null) link = br.getRegex("\"(http://s\\d+\\.dump\\.ru/file_download/.*?)\"").getMatch(0);
+        if (link == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, link, true, -3);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            if (br.containsHTML("Запрошенный файл не обнаружен")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Server error or file offline!");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl.startDownload();
     }
 
