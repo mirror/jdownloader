@@ -107,9 +107,15 @@ public class FilefrogTo extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         this.fetchSession();
-        br.getPage("http://www.filefrog.to/api/status/url/" + Encoding.urlEncode(downloadLink.getDownloadURL()));
+        String[] ids = new Regex(downloadLink.getDownloadURL(), "filefrog\\.to/download/(\\d{1,})/(.*)").getRow(0);
+        br.getPage("http://www.filefrog.to/api/status/" + ids[0] + "/" + ids[1]);
         String[] data = br.getRegex("(.*?);(.*?);(\\d+)").getRow(0);
         if (data[0].equalsIgnoreCase("offline")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (data[0].equalsIgnoreCase("only premium")) {
+            downloadLink.getLinkStatus().setErrorMessage("Download only with premium account");
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+        }
+
         downloadLink.setName(data[1]);
         downloadLink.setDownloadSize(Long.parseLong(data[2]));
         return AvailableStatus.TRUE;
