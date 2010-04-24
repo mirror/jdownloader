@@ -272,6 +272,7 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
                         trayIconPopup.dispose();
                         trayIconPopup = null;
                     } else if (SwingUtilities.isRightMouseButton(e)) {
+                        if (!checkPassword()) return;
                         trayIconPopup = new TrayIconPopup();
                         calcLocation(trayIconPopup, e.getPoint());
                         trayIconPopup.setVisible(true);
@@ -287,6 +288,7 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
                             trayIconPopup.dispose();
                             trayIconPopup = null;
                         } else if (SwingUtilities.isLeftMouseButton(e)) {
+                            if (!checkPassword()) return;
                             trayIconPopup = new TrayIconPopup();
                             Point pointOnScreen = e.getLocationOnScreen();
                             if (e.getX() > 0) pointOnScreen.x -= e.getPoint().x;
@@ -298,6 +300,21 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
                 }
             }
         }
+    }
+
+    private boolean checkPassword() {
+        // TODO Auto-generated method stub
+        if (subConfig.getBooleanProperty(PROPERTY_PASSWORD_REQUIRED, false) && !subConfig.getStringProperty(PROPERTY_PASSWORD, "").equals("")) {
+            String password = UserIO.getInstance().requestInputDialog(JDL.L("plugins.optional.JDLightTray.enterPassword", "Enter the Password to open JD:"));
+            if (password == null || !password.equals(subConfig.getStringProperty(PROPERTY_PASSWORD, ""))) {
+                UserIO.getInstance().requestMessageDialog(JDL.L("plugins.optional.JDLightTray.enterPassword.wrong", "The entered Password was wrong!"));
+                return false;
+            } else {
+                return true;
+            }
+
+        } else
+            return true;
     }
 
     public void mouseReleased(MouseEvent e) {
@@ -360,12 +377,9 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
     }
 
     private void miniIt(final boolean minimize) {
-        if (!minimize && subConfig.getBooleanProperty(PROPERTY_PASSWORD_REQUIRED, false) && !subConfig.getStringProperty(PROPERTY_PASSWORD, "").equals("")) {
-            String password = UserIO.getInstance().requestInputDialog(JDL.L("plugins.optional.JDLightTray.enterPassword", "Enter the Password to open JD:"));
-            if (password == null || !password.equals(subConfig.getStringProperty(PROPERTY_PASSWORD, ""))) {
-                UserIO.getInstance().requestMessageDialog(JDL.L("plugins.optional.JDLightTray.enterPassword.wrong", "The entered Password was wrong!"));
-                return;
-            }
+        if (!minimize) {
+            if (!checkPassword()) return;
+
         }
         new GuiRunnable<Object>() {
             @Override
