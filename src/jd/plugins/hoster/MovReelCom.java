@@ -35,7 +35,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.pluginUtils.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "movreel.com" }, urls = { "http://[\\w\\.]*?movreel\\.com/video/[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "movreel.com" }, urls = { "http://[\\w\\.]*?movreel\\.com/(video/)?[a-z0-9]{12}" }, flags = { 0 })
 public class MovReelCom extends PluginForHost {
 
     public MovReelCom(PluginWrapper wrapper) {
@@ -47,6 +47,12 @@ public class MovReelCom extends PluginForHost {
     @Override
     public String getAGBLink() {
         return COOKIE_HOST + "/tos.html";
+    }
+
+    @Override
+    public void correctDownloadLink(DownloadLink link) {
+        // Lets only use 1 link format
+        link.setUrlDownload(link.getDownloadURL().replace("video/", ""));
     }
 
     private static final String passwordText = "(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)";
@@ -211,6 +217,7 @@ public class MovReelCom extends PluginForHost {
             if (password) {
                 passCode = handlePassword(passCode, DLForm, downloadLink);
             }
+            sleep(2000l, downloadLink);
             jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLForm, resumable, maxchunks);
             logger.info("Submitted DLForm");
         }
@@ -229,9 +236,9 @@ public class MovReelCom extends PluginForHost {
             if (dllink == null) {
                 checkErrors(downloadLink, true, passCode);
                 if (dllink == null) {
-                    dllink = br.getRegex("<big><a href=\"(http://.*?)\">http").getMatch(0);
+                    dllink = br.getRegex("class=\"t_download\"></div></a> -->.*?<a href=\"(http://.*?)\"").getMatch(0);
                     if (dllink == null) {
-                        dllink = br.getRegex("\"(http://www\\d+\\.movreel\\.com/files/.*?/.*?)\"").getMatch(0);
+                        dllink = br.getRegex("\"(http://\\d+\\.\\d+\\.\\d+\\.\\d+/d/[a-z0-9]+/.*?)\"").getMatch(0);
                     }
                 }
             }

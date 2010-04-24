@@ -63,18 +63,6 @@ public class FoFlyCom extends PluginForHost {
             logger.warning("file is 99,99% offline, throwing \"file not found\" now...");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        Form[] forms = br.getForms();
-        Form freeform = null;
-        for (Form singleForm : forms) {
-            if (singleForm.containsHTML("download1")) {
-                freeform = singleForm;
-                break;
-            }
-        }
-        if (freeform != null) {
-            freeform.remove("method_premium");
-            br.submitForm(freeform);
-        }
         String filename = br.getRegex("You have requested.*?http://.*?[a-z0-9]{12}/(.*?)</font>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("fname\" value=\"(.*?)\"").getMatch(0);
@@ -112,6 +100,18 @@ public class FoFlyCom extends PluginForHost {
     }
 
     public void doFree(DownloadLink downloadLink) throws Exception, PluginException {
+        Form[] forms = br.getForms();
+        Form freeform = null;
+        for (Form singleForm : forms) {
+            if (singleForm.containsHTML("download1")) {
+                freeform = singleForm;
+                break;
+            }
+        }
+        if (freeform != null) {
+            freeform.remove("method_premium");
+            br.submitForm(freeform);
+        }
         boolean resumable = true;
         int maxchunks = 0;
         checkErrors(downloadLink);
