@@ -147,6 +147,7 @@ public class ShareBaseTo extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.getRedirectLocation(), false, 1);
         if (dl.getConnection() == null || dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            if (br.containsHTML("Gegen Netz-Zensur")) throw new PluginException(LinkStatus.ERROR_FATAL, "Service/Link not available (at the moment)");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
