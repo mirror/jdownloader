@@ -44,8 +44,8 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
     private static final String PARAM_ENABLED = "ENABLED";
     private final SubConfiguration subConfig;
 
-    @SuppressWarnings("unused")
-    private boolean grabberIsBusy;
+    private HttpServer server;
+    private MenuAction activate;
 
     public JDRemoteControl(PluginWrapper wrapper) {
         super(wrapper);
@@ -57,9 +57,6 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
     public String getIconKey() {
         return "gui.images.network";
     }
-
-    private HttpServer server;
-    private MenuAction activate;
 
     @Override
     public void actionPerformed(ActionEvent e) {
@@ -84,33 +81,22 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
     public ArrayList<MenuAction> createMenuitems() {
         ArrayList<MenuAction> menu = new ArrayList<MenuAction>();
 
-        if (activate == null) {
-            activate = new MenuAction("remotecontrol", 0);
-            activate.setActionListener(this);
-            activate.setSelected(subConfig.getBooleanProperty(PARAM_ENABLED, true));
-            activate.setTitle(getHost());
-        }
-
         menu.add(activate);
+
         return menu;
     }
 
     @Override
     public boolean initAddon() {
-        logger.info("RemoteControl OK");
-        initRemoteControl();
-        JDUtilities.getController().addControlListener(this);
-        return true;
-    }
+        boolean enabled = subConfig.getBooleanProperty(PARAM_ENABLED, true);
 
-    private void initConfig() {
-        ConfigEntry cfg;
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, PARAM_PORT, JDL.L("plugins.optional.RemoteControl.port", "Port:"), 1000, 65500));
-        cfg.setDefaultValue(10025);
-    }
+        activate = new MenuAction("remotecontrol", 0);
+        activate.setTitle(getHost());
+        activate.setActionListener(this);
+        activate.setIcon(this.getIconKey());
+        activate.setSelected(enabled);
 
-    private void initRemoteControl() {
-        if (subConfig.getBooleanProperty(PARAM_ENABLED, true)) {
+        if (enabled) {
             try {
                 server = new HttpServer(subConfig.getIntegerProperty(PARAM_PORT, 10025), new Serverhandler());
                 server.start();
@@ -118,6 +104,17 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                 JDLogger.exception(e);
             }
         }
+
+        JDUtilities.getController().addControlListener(this);
+
+        logger.info("RemoteControl OK");
+        return true;
+    }
+
+    private void initConfig() {
+        ConfigEntry cfg;
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, PARAM_PORT, JDL.L("plugins.optional.RemoteControl.port", "Port:"), 1000, 65500));
+        cfg.setDefaultValue(10025);
     }
 
     @Override

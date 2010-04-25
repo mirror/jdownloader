@@ -64,7 +64,7 @@ import org.w3c.dom.Element;
 public class Serverhandler implements Handler {
 
     private OptionalPluginWrapper rc = JDUtilities.getOptionalPlugin("remotecontrol");
-    private static Logger logger = jd.controlling.JDLogger.getLogger();
+    private static Logger logger = JDLogger.getLogger();
 
     private static final String LINK_TYPE_OFFLINE = "offline";
     private static final String LINK_TYPE_AVAIL = "available";

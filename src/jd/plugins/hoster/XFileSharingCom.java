@@ -34,7 +34,6 @@ public class XFileSharingCom extends PluginForHost {
 
     public XFileSharingCom(PluginWrapper wrapper) {
         super(wrapper);
-        ;
     }
 
     // MhfScriptBasic 1.0
