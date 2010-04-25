@@ -84,6 +84,8 @@ public class ControlEvent extends AWTEvent {
 
     public static final int CONTROL_JDPROPERTY_CHANGED = 27;
 
+    public static final int CONTROL_INTERACTION_CALL = 28;
+
     public static final int CONTROL_LOG_OCCURED = 29;
 
     public static final int CONTROL_INIT_COMPLETE = 30;
@@ -95,6 +97,11 @@ public class ControlEvent extends AWTEvent {
      * werden als File[] parameter übergeben
      */
     public static final int CONTROL_ON_FILEOUTPUT = 33;
+
+    /**
+     * Sammelt über DataBox.java daten ein
+     */
+    public static final int CONTROL_COLLECT_DATA = 34;
 
     /**
      * prepareShutDown is complete
