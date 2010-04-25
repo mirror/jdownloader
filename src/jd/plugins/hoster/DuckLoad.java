@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.Form.MethodType;
@@ -116,6 +117,11 @@ public class DuckLoad extends PluginForHost {
             if (url == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
         if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String md5 = br.getRegex("<strong>MD5 Hash:</strong></td><td width=\"\\d+%\">(.*-?)\\(Upper Case\\)").getMatch(0);
+        if (md5 != null) {
+            md5 = Encoding.htmlDecode(md5);
+            link.setMD5Hash(md5.trim());
+        }
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, true, -8);
         if (dl.getConnection().getContentType().contains("html")) {
