@@ -249,3 +249,5 @@ jd/plugins/decrypter/Hx.class
 jd/plugins/decrypter/MgRtcCm.class
 jd/plugins/decrypter/PixHostOrg.class
 jd/plugins/decrypter/SpilAtoIn.class
+jd/plugins/decrypter/RFlPlcCm.class
+jd/plugins/decrypter/RnB4n.class

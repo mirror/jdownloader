@@ -33,18 +33,14 @@ public class RmHstlrNt extends PluginForDecrypt {
         super(wrapper);
     }
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
         String file[] = new Regex(parameter, "/rom/(.*?)/(\\d+)/.+").getRow(0);
-        if (file.length != 2) return null;
+        if (file == null || file.length != 2) return null;
         decryptedLinks.add(createDownloadlink("http://romhustler.net/download/" + file[0] + "/" + file[1]));
 
         return decryptedLinks;
     }
-
-    // @Override
-
 }

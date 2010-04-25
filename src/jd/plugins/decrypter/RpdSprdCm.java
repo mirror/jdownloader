@@ -32,20 +32,17 @@ public class RpdSprdCm extends PluginForDecrypt {
         super(wrapper);
     }
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
         br.getPage(parameter);
         String[] links = br.getRegex("<a href=\"/redirect\\?(link=\\d+&hash=\\w+)\"").getColumn(0);
+        if (links == null || links.length == 0) return null;
         for (String element : links) {
             br.getPage("http://www.rapidspread.com/redirect?" + element);
             decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
         }
         return decryptedLinks;
     }
-
-    // @Override
-
 }

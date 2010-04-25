@@ -39,7 +39,7 @@ public class Rpdsfnt extends PluginForDecrypt {
 
         br.getPage(parameter);
         if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
-        String link = br.getRegex("&nbsp;<FORM ACTION=\"(.*?)\" METHOD=\"post\" ID=\"postit\"").getMatch(0);
+        String link = br.getRegex("\\&nbsp;<FORM ACTION=\"(.*?)\" METHOD=\"post\" ID=\"postit\"").getMatch(0);
         if (link == null) link = br.getRegex("<FORM ACTION=\"(.*?)\"").getMatch(0);
         if (link == null) return null;
         decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(link)));

@@ -34,16 +34,13 @@ public class RlnkNt extends PluginForDecrypt {
         super(wrapper);
     }
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-
         br.getPage(parameter);
-
         String links[] = br.getRegex("<a href=\"http://relinka.net\\/out\\/[a-z0-9]{8}-[a-z0-9]{4}\\/(.*?)\" class=").getColumn(0);
         String folderId = new Regex(parameter, "http://relinka.net\\/folder\\/([a-z0-9]{8}-[a-z0-9]{4})").getMatch(0);
-
+        if (links == null || links.length == 0) return null;
         progress.setRange(links.length);
         for (String element : links) {
             String encodedLink = Encoding.htmlDecode(new Regex(br.getPage("http://relinka.net/out/" + folderId + "/" + element), "<iframe src=\"(.*)\" marginhe").getMatch(0));
@@ -51,10 +48,7 @@ public class RlnkNt extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink(encodedLink));
             progress.increase(1);
         }
-
         return decryptedLinks;
     }
-
-    // @Override
 
 }

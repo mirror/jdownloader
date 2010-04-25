@@ -32,7 +32,6 @@ public class RmxShrCmFldr extends PluginForDecrypt {
         super(wrapper);
     }
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -40,6 +39,7 @@ public class RmxShrCmFldr extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.getPage(parameter);
         String links[] = br.getRegex("href='(http://remixshare\\.com/get\\.php\\?file=.*?)'").getColumn(0);
+        if (links == null || links.length == 0) return null;
         progress.setRange(links.length);
         for (String link : links) {
             decryptedLinks.add(createDownloadlink(link));
@@ -48,7 +48,4 @@ public class RmxShrCmFldr extends PluginForDecrypt {
 
         return decryptedLinks;
     }
-
-    // @Override
-
 }

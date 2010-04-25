@@ -25,14 +25,13 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yourfiles.biz" }, urls = { "http://[\\w\\.]*?yourfiles\\.biz/.*/folders/[0-9]+/.+\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yourfiles.biz" }, urls = { "http://[\\w\\.]*?yourfiles\\.(biz|to)/.*/folders/[0-9]+/.+\\.html" }, flags = { 0 })
 public class RFlsBzFldr extends PluginForDecrypt {
 
     public RFlsBzFldr(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -43,8 +42,8 @@ public class RFlsBzFldr extends PluginForDecrypt {
             String password = getUserInput(null, param);
             br.postPage(parameter, "act=login&password=" + password + "&login=Einloggen");
         }
-
         String links[] = br.getRegex("href='(http://yourfiles\\.biz/\\?d=.*?)'").getColumn(0);
+        if (links == null || links.length == 0) return null;
         progress.setRange(links.length);
         for (String link : links) {
             decryptedLinks.add(createDownloadlink(link));
@@ -53,7 +52,5 @@ public class RFlsBzFldr extends PluginForDecrypt {
 
         return decryptedLinks;
     }
-
-    // @Override
 
 }

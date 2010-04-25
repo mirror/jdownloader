@@ -20,7 +20,6 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -33,7 +32,6 @@ public class Rpdshrknt extends PluginForDecrypt {
         super(wrapper);
     }
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -41,13 +39,11 @@ public class Rpdshrknt extends PluginForDecrypt {
         if (parameter.indexOf("safe.php?") < 0) {
             parameter = "http://rapidshark.net/safe.php?id=" + parameter.substring(parameter.lastIndexOf("/") + 1);
         }
-
         br.getPage(parameter);
-        decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(br.getRegex("src=\"(.*)\"></iframe>").getMatch(0))));
+        String finallink = br.getRegex("src=\"(.*)\"></iframe>").getMatch(0);
+        if (finallink == null) return null;
+        decryptedLinks.add(createDownloadlink(finallink));
 
         return decryptedLinks;
     }
-
-    // @Override
-
 }
