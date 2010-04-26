@@ -322,7 +322,7 @@ public class Serverhandler implements Handler {
             logger.fine("RemoteControl - Set max. Downloadspeed: " + newdllimit.toString());
             SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, newdllimit.toString());
             SubConfiguration.getConfig("DOWNLOAD").save();
-            response.addContent("newlimit=" + newdllimit);
+            response.addContent("PARAM_DOWNLOAD_MAX_SPEED=" + newdllimit);
         } else if (request.getRequestUrl().matches("(?is).*/action/set/download/max/[0-9]+")) {
             // Set max. sim. downloads
 
@@ -330,7 +330,7 @@ public class Serverhandler implements Handler {
             logger.fine("RemoteControl - Set max. sim. Downloads: " + newsimdl.toString());
             SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, newsimdl.toString());
             SubConfiguration.getConfig("DOWNLOAD").save();
-            response.addContent("newmax=" + newsimdl);
+            response.addContent("PARAM_DOWNLOAD_MAX_SIMULTAN=" + newsimdl);
         } else if (request.getRequestUrl().matches("(?is).*/action/set/grabber/startafteradding/(true|false)")) {
             boolean value = Boolean.parseBoolean(new Regex(request.getRequestUrl(), ".*/action/set/grabber/startafteradding/(true|false)").getMatch(0));
             logger.fine("RemoteControl - Set PARAM_START_AFTER_ADDING_LINKS: " + value);
@@ -338,9 +338,9 @@ public class Serverhandler implements Handler {
             if (value != GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_START_AFTER_ADDING_LINKS, true)) {
                 GUIUtils.getConfig().setProperty(JDGuiConstants.PARAM_START_AFTER_ADDING_LINKS, value);
                 JDUtilities.getConfiguration().save();
-                response.addContent("PARAM_START_AFTER_ADDING_LINKS =" + value + " (CHANGED=true)");
+                response.addContent("PARAM_START_AFTER_ADDING_LINKS=" + value);
             } else {
-                response.addContent("PARAM_START_AFTER_ADDING_LINKS =" + value + " (CHANGED=false)");
+                response.addContent("PARAM_START_AFTER_ADDING_LINKS=" + value);
             }
 
         } else if (request.getRequestUrl().matches("(?is).*/action/add/archivepassword/.+/.+")) {
@@ -509,9 +509,9 @@ public class Serverhandler implements Handler {
             if (newrc != JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true)) {
                 JDUtilities.getConfiguration().setProperty(Configuration.PARAM_ALLOW_RECONNECT, newrc);
                 JDUtilities.getConfiguration().save();
-                response.addContent("PARAM_ALLOW_RECONNECT =" + newrc + " (CHANGED=true)");
+                response.addContent("PARAM_ALLOW_RECONNECT=" + newrc);
             } else {
-                response.addContent("PARAM_ALLOW_RECONNECT =" + newrc + " (CHANGED=false)");
+                response.addContent("PARAM_ALLOW_RECONNECT=" + newrc);
             }
         } else if (request.getRequestUrl().matches("(?is).*/action/set/premium/(true|false)")) {
             // Set Use premium
@@ -522,9 +522,9 @@ public class Serverhandler implements Handler {
             if (newuseprem != JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)) {
                 JDUtilities.getConfiguration().setProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, newuseprem);
                 JDUtilities.getConfiguration().save();
-                response.addContent("PARAM_USE_GLOBAL_PREMIUM =" + newuseprem + " (CHANGED=true)");
+                response.addContent("PARAM_USE_GLOBAL_PREMIUM=" + newuseprem);
             } else {
-                response.addContent("PARAM_USE_GLOBAL_PREMIUM =" + newuseprem + " (CHANGED=false)");
+                response.addContent("PARAM_USE_GLOBAL_PREMIUM=" + newuseprem);
             }
         } else if (request.getRequestUrl().matches("(?is).*/action/grabber/join/.+")) {
             // Join link grabber packages
