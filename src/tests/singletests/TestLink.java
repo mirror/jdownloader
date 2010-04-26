@@ -31,7 +31,6 @@ import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -78,7 +77,7 @@ public class TestLink {
 
                             if (pw.canHandle(l)) {
                                 // TestUtils.log(Encoding.urlDecode(l, true));
-                                DownloadLink dl = new DownloadLink((PluginForHost) pw.getNewPluginInstance(), null, pw.getHost(), Encoding.urlDecode(l, true), true);
+                                DownloadLink dl = new DownloadLink(pw.getNewPluginInstance(), null, pw.getHost(), Encoding.urlDecode(l, true), true);
                                 dl.isAvailable();
                                 if (dl.isAvailable()) {
                                     System.out.println("Hoster: " + dl.getDownloadURL() + " : " + new File(dl.getFileOutput()).getName() + " : " + dl.getDownloadSize() + " Bytes");
@@ -90,7 +89,7 @@ public class TestLink {
                         for (DecryptPluginWrapper pw : DecryptPluginWrapper.getDecryptWrapper()) {
 
                             if (pw.canHandle(l)) {
-                                PluginForDecrypt plg = (PluginForDecrypt) pw.getNewPluginInstance();
+                                PluginForDecrypt plg = pw.getNewPluginInstance();
 
                                 CryptedLink[] dd = plg.getDecryptableLinks(l);
 

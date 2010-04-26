@@ -86,6 +86,11 @@ public class HostPluginWrapper extends PluginWrapper implements JDLabelContainer
         return (PluginForHost) super.getPlugin();
     }
 
+    @Override
+    public PluginForHost getNewPluginInstance() {
+        return (PluginForHost) super.getNewPluginInstance();
+    }
+
     public boolean isAGBChecked() {
         return super.getPluginConfig().getBooleanProperty(AGB_CHECKED, false);
     }

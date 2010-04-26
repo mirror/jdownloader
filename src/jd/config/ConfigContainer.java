@@ -60,6 +60,8 @@ public class ConfigContainer implements Serializable {
     public static final int TYPE_BUTTON = 2;
     /**
      * ConfigElement ist eine Checkbox
+     * 
+     * @see ConfigEntry#ConfigEntry(int, Property, String, String)
      */
     public static final int TYPE_CHECKBOX = 3;
     /**

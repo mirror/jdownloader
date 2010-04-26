@@ -89,7 +89,7 @@ public class SingleDecrypter {
         for (DecryptPluginWrapper pd : DecryptPluginWrapper.getDecryptWrapper()) {
             if (pd.canHandle(url)) {
                 found = true;
-                PluginForDecrypt plg = (PluginForDecrypt) pd.getNewPluginInstance();
+                PluginForDecrypt plg = pd.getNewPluginInstance();
 
                 CryptedLink[] d = plg.getDecryptableLinks(url);
 
@@ -121,7 +121,7 @@ public class SingleDecrypter {
         for (DecryptPluginWrapper pd : DecryptPluginWrapper.getDecryptWrapper()) {
             if (pd.canHandle(url)) {
                 found = true;
-                PluginForDecrypt plg = (PluginForDecrypt) pd.getNewPluginInstance();
+                PluginForDecrypt plg = pd.getNewPluginInstance();
 
                 CryptedLink[] d = plg.getDecryptableLinks(url);
 

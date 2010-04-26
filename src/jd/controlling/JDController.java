@@ -330,7 +330,7 @@ public class JDController implements ControlListener {
             }
             logger.info("Shutdown Database");
             JDUtilities.getDatabaseConnector().shutdownDatabase();
-            logger.info("Release JUnique Lock");
+            logger.info("Release Single Instance Lock");
             try {
                 /*
                  * try catch errors in case when lock has not been aquired (eg

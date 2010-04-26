@@ -33,6 +33,7 @@ import java.util.HashMap;
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 
+import jd.HostPluginWrapper;
 import jd.PluginWrapper;
 import jd.config.ConfigGroup;
 import jd.config.Configuration;
@@ -153,6 +154,11 @@ public abstract class PluginForHost extends Plugin {
 
     public boolean checkLinks(final DownloadLink[] urls) {
         return false;
+    }
+
+    @Override
+    public HostPluginWrapper getWrapper() {
+        return (HostPluginWrapper) super.getWrapper();
     }
 
     @Override
@@ -338,7 +344,7 @@ public abstract class PluginForHost extends Plugin {
                 try {
                     // Zwecks Multidownload braucht jeder Link seine eigene
                     // Plugininstanz
-                    final PluginForHost plg = (PluginForHost) wrapper.getNewPluginInstance();
+                    final PluginForHost plg = getWrapper().getNewPluginInstance();
                     final DownloadLink link = new DownloadLink(plg, file.substring(file.lastIndexOf("/") + 1, file.length()), getHost(), file, true);
                     links.add(link);
                     if (fp != null) {

@@ -69,4 +69,9 @@ public class DecryptPluginWrapper extends PluginWrapper {
         return (PluginForDecrypt) super.getPlugin();
     }
 
+    @Override
+    public PluginForDecrypt getNewPluginInstance() {
+        return (PluginForDecrypt) super.getNewPluginInstance();
+    }
+
 }

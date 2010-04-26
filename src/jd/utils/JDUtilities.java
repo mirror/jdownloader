@@ -457,7 +457,7 @@ public class JDUtilities {
 
     public static PluginForHost getNewPluginForHostInstance(final String host) {
         PluginForHost plugin = getPluginForHost(host);
-        if (plugin != null) return (PluginForHost) plugin.getWrapper().getNewPluginInstance();
+        if (plugin != null) return plugin.getWrapper().getNewPluginInstance();
         return null;
     }
 

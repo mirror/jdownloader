@@ -194,7 +194,7 @@ public class DistributeData extends Thread {
                     for (final DecryptPluginWrapper pDecrypt : DecryptPluginWrapper.getDecryptWrapper()) {
                         if (pDecrypt.isEnabled() && pDecrypt.canHandle(url)) {
                             try {
-                                final PluginForDecrypt plg = (PluginForDecrypt) pDecrypt.getNewPluginInstance();
+                                final PluginForDecrypt plg = pDecrypt.getNewPluginInstance();
 
                                 final CryptedLink[] decryptableLinks = plg.getDecryptableLinks(url);
                                 url = plg.cutMatches(url);
@@ -316,7 +316,7 @@ public class DistributeData extends Thread {
             if (lowercasedata.contains(pw.getHost().toLowerCase())) {
                 final String match = new Regex(data, pattern).getMatch(-1);
                 if (match != null && (match.equals(data) || (match.length() > 10 + pw.getHost().length() && data.startsWith(match) && (match.length() * 2) > data.length()))) {
-                    final DownloadLink dl = new DownloadLink((PluginForHost) pw.getNewPluginInstance(), null, pw.getHost(), Encoding.urlDecode(match, true), true);
+                    final DownloadLink dl = new DownloadLink(pw.getNewPluginInstance(), null, pw.getHost(), Encoding.urlDecode(match, true), true);
                     final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
                     ret.add(dl);
                     return ret;
@@ -448,7 +448,7 @@ public class DistributeData extends Thread {
         for (final DecryptPluginWrapper pDecrypt : DecryptPluginWrapper.getDecryptWrapper()) {
             if (pDecrypt.isEnabled() && pDecrypt.canHandle(pDecrypt.isAcceptOnlyURIs() ? data : orgData)) {
                 try {
-                    final PluginForDecrypt plg = (PluginForDecrypt) pDecrypt.getNewPluginInstance();
+                    final PluginForDecrypt plg = pDecrypt.getNewPluginInstance();
 
                     final CryptedLink[] decryptableLinks = plg.getDecryptableLinks(plg.isAcceptOnlyURIs() ? data : orgData);
                     if (plg.isAcceptOnlyURIs()) {

@@ -25,6 +25,7 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import jd.DecryptPluginWrapper;
 import jd.PluginWrapper;
 import jd.captcha.easy.load.LoadImage;
 import jd.controlling.CaptchaController;
@@ -72,6 +73,11 @@ public abstract class PluginForDecrypt extends Plugin {
     }
 
     @Override
+    public DecryptPluginWrapper getWrapper() {
+        return (DecryptPluginWrapper) super.getWrapper();
+    }
+
+    @Override
     public String getVersion() {
         return this.getWrapper().getVersion();
     }
@@ -116,8 +122,7 @@ public abstract class PluginForDecrypt extends Plugin {
      */
 
     protected DownloadLink createDownloadlink(String link) {
-        DownloadLink dl = new DownloadLink(null, null, getHost(), Encoding.urlDecode(link, true), true);
-        return dl;
+        return new DownloadLink(null, null, getHost(), Encoding.urlDecode(link, true), true);
     }
 
     @Override
@@ -291,7 +296,7 @@ public abstract class PluginForDecrypt extends Plugin {
         }
 
         for (int b = cryptedLinks.length - 1; b >= 0; b--) {
-            DThread dthread = new DThread(cryptedLinks[b], (PluginForDecrypt) wrapper.getNewPluginInstance());
+            DThread dthread = new DThread(cryptedLinks[b], getWrapper().getNewPluginInstance());
             decryptJobbers.add(dthread);
         }
         int todo = decryptJobbers.getJobsAdded();

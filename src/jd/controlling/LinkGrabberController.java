@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
@@ -39,7 +38,7 @@ import jd.utils.locale.JDL;
 
 class LinkGrabberControllerBroadcaster extends JDBroadcaster<LinkGrabberControllerListener, LinkGrabberControllerEvent> {
 
-    // @Override
+    @Override
     protected void fireEvent(LinkGrabberControllerListener listener, LinkGrabberControllerEvent event) {
         listener.onLinkGrabberControllerEvent(event);
     }
@@ -153,7 +152,7 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
         filter = getLinkFilterPattern();
         JDController.getInstance().addControlListener(this.cpl = new ConfigPropertyListener(IGNORE_LIST) {
 
-            // @Override
+            @Override
             public void onPropertyChanged(Property source, String propertyName) {
                 filter = getLinkFilterPattern();
             }
@@ -294,12 +293,8 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
         synchronized (packages) {
             if (link == null) return false;
             if (link.getBooleanProperty("ALLOW_DUPE", false)) return false;
-            LinkGrabberFilePackage fp = null;
-            DownloadLink dl = null;
-            for (Iterator<LinkGrabberFilePackage> it = packages.iterator(); it.hasNext();) {
-                fp = it.next();
-                for (Iterator<DownloadLink> it2 = fp.getDownloadLinks().iterator(); it2.hasNext();) {
-                    dl = it2.next();
+            for (LinkGrabberFilePackage fp : packages) {
+                for (DownloadLink dl : fp.getDownloadLinks()) {
                     if (dl.compareTo(link) == 0) return true;
                 }
             }

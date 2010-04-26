@@ -35,7 +35,6 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
-import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.junit.After;
@@ -86,7 +85,7 @@ public class SingleHoster {
 
                                 if (pw.canHandle(l)) {
 
-                                    DownloadLink dl = new DownloadLink((PluginForHost) pw.getNewPluginInstance(), null, pw.getHost(), Encoding.urlDecode(l, true), true);
+                                    DownloadLink dl = new DownloadLink(pw.getNewPluginInstance(), null, pw.getHost(), Encoding.urlDecode(l, true), true);
                                     dl.isAvailable();
                                     if (dl.isAvailable()) {
                                         System.out.println(dl.getDownloadURL());
