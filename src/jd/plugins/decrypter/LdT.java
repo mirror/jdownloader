@@ -42,17 +42,31 @@ public class LdT extends PluginForDecrypt implements ProgressControllerListener 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         progress.getBroadcaster().addListener(this);
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        ArrayList<String> alllinks = new ArrayList<String>();
         String parameter = param.toString();
         this.setBrowserExclusive();
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         if (parameter.matches(patternSupported_Info)) {
             br.getPage(parameter);
             if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
-            String links_page[] = br.getRegex("href=\"(/go/[0-9]+)-").getColumn(0);
-            if (links_page == null || links_page.length == 0) return null;
-            logger.info("Found links to " + links_page.length + ". Decrypting now...");
-            progress.setRange(links_page.length);
-            for (String link : links_page) {
+            String hosterlinks[] = br.getRegex("<a rel=\"nofollow\" href=\"(/go/\\d+-.*?/)\"").getColumn(0);
+            String streamlinks[] = br.getRegex("class=\"stream_link\" href=\"(/go/\\d+.*?)\"").getColumn(0);
+            if ((hosterlinks == null || hosterlinks.length == 0) && (streamlinks == null || streamlinks.length == 0)) return null;
+            if (hosterlinks != null && hosterlinks.length != 0) {
+                logger.info("Found " + hosterlinks.length + " hosterlinks, decrypting now...");
+                for (String hosterlink : hosterlinks) {
+                    alllinks.add(hosterlink);
+                }
+            }
+            if (streamlinks != null && streamlinks.length != 0) {
+                logger.info("Found " + streamlinks.length + " streamlinks, decrypting now...");
+                for (String streamlink : streamlinks) {
+                    alllinks.add(streamlink);
+                }
+            }
+            logger.info("Found links to " + alllinks.size() + ". Decrypting now...");
+            progress.setRange(alllinks.size());
+            for (String link : alllinks) {
                 if (abort) {
                     logger.info("Decrypt aborted by user.");
                     progress.setColor(Color.RED);

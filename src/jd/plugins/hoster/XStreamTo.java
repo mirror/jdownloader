@@ -19,6 +19,8 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -38,6 +40,8 @@ public class XStreamTo extends PluginForHost {
         return "http://www.xtream.to/contact";
     }
 
+    public String dllink = null;
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -55,27 +59,39 @@ public class XStreamTo extends PluginForHost {
         }
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename);
-        return AvailableStatus.TRUE;
-    }
-
-    @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        String dllink = br.getRegex("video/divx\" src=\"(.*?)\"").getMatch(0);
+        dllink = br.getRegex("video/divx\" src=\"(.*?)\"").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("src\" value=\"(.*?)\"").getMatch(0);
             if (dllink == null) {
                 dllink = br.getRegex("name=\"flashvars\" value=\"file=(.*?)\"").getMatch(0);
             }
         }
-        if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // Finding the size takes time so once we got it we don't need to do it
+        // again!
+        if (downloadLink.getDownloadSize() == 0) {
+            Browser br2 = br.cloneBrowser();
+            // In case the link redirects to the finallink
+            br2.setFollowRedirects(true);
+            URLConnectionAdapter con = br2.openGetConnection(dllink);
+            if (!con.getContentType().contains("html"))
+                downloadLink.setDownloadSize(con.getLongContentLength());
+            else
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         dl.startDownload();
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return -1;
     }
 
     @Override

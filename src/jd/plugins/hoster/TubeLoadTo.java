@@ -19,6 +19,8 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -38,21 +40,18 @@ public class TubeLoadTo extends PluginForHost {
         return "http://www.tubeload.to/contact";
     }
 
+    public String dllink = null;
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.setReadTimeout(120 * 1000);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("(File kann nicht abgespielt werden|Sie werden weitergeleitet in )")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("Sie schauen:(.*?)</h2>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename);
-        return AvailableStatus.TRUE;
-    }
-
-    @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        String dllink = br.getRegex("video/divx\" src=\"(.*?)\"").getMatch(0);
+        dllink = br.getRegex("video/divx\" src=\"(.*?)\"").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("src\" value=\"(http.*?)\"").getMatch(0);
             if (dllink == null) {
@@ -63,6 +62,24 @@ public class TubeLoadTo extends PluginForHost {
             }
         }
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // Finding the size takes time so once we got it we don't need to do it
+        // again!
+        if (downloadLink.getDownloadSize() == 0) {
+            Browser br2 = br.cloneBrowser();
+            // In case the link redirects to the finallink
+            br2.setFollowRedirects(true);
+            URLConnectionAdapter con = br2.openGetConnection(dllink);
+            if (!con.getContentType().contains("html"))
+                downloadLink.setDownloadSize(con.getLongContentLength());
+            else
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         dl.startDownload();
     }

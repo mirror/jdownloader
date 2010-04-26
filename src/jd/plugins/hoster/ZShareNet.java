@@ -146,8 +146,8 @@ public class ZShareNet extends PluginForHost {
         if (br.containsHTML("File Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("File Name:.*?<font color=\"#666666\".*?>(.*?)</font>").getMatch(0);
         String filesize = br.getRegex("File Size:.*?<font color=\"#666666\".*?>(.*?)</font>").getMatch(0);
-        if (filename != null && filesize == null) filesize = br.getRegex("Image Size:.*?<font color=\"#666666\".*?>(.*?)</font>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filesize == null) filesize = br.getRegex("Image Size:.*?<font color=\"#666666\".*?>(.*?)</font>").getMatch(0);
+        if (filename == null || filesize == null || filename.trim().equals("")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename);
         downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "")));
 
