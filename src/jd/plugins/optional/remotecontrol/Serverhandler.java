@@ -351,7 +351,6 @@ public class Serverhandler implements Handler {
 
             ArrayList<LinkGrabberFilePackage> packages = LinkGrabberController.getInstance().getPackages();
             ArrayList<LinkGrabberFilePackage> packagesWithPW = new ArrayList<LinkGrabberFilePackage>();
-
             boolean isErrorMsg = false;
 
             // TODO: Password will not be set for a package whose info panel is
