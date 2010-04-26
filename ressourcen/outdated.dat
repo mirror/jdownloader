@@ -251,3 +251,6 @@ jd/plugins/decrypter/PixHostOrg.class
 jd/plugins/decrypter/SpilAtoIn.class
 jd/plugins/decrypter/RFlPlcCm.class
 jd/plugins/decrypter/RnB4n.class
+jd/plugins/hoster/FileBoxCom.class
+jd/plugins/hoster/My2ShareCom.class
+jd/plugins/hoster/SolidFileCom.class
