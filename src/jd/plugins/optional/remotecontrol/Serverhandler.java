@@ -919,11 +919,15 @@ public class Serverhandler implements Handler {
             }
         } else if (request.getRequestUrl().matches("(?is).*/addon/scriptlauncher/launch/.+")) {
             OptionalPluginWrapper plg = JDUtilities.getOptionalPlugin("scriptlauncher");
-            String scriptname = new Regex(request.getRequestUrl(), "(?is).*/addon/scriptlauncher/launch/(.+)").getMatch(0);
+            String scriptname = null;
+            scriptname = new Regex(request.getRequestUrl(), "(?is).*/addon/scriptlauncher/launch/(.+)").getMatch(0);
 
             if (plg != null && plg.isLoaded() && plg.isEnabled()) {
-                JDScriptLauncher.launch(scriptname);
-                response.addContent("Script " + scriptname + " has been launched.");
+                if (JDScriptLauncher.launch(scriptname)) {
+                    response.addContent("Script " + scriptname + " has been launched.");
+                } else {
+                    response.addContent("Script " + scriptname + " doesn't exist.");
+                }
             } else {
                 response.addContent("Addon 'JDScriptLauncher' isn't loaded and/or enabled");
             }

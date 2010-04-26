@@ -90,8 +90,15 @@ public class JDScriptLauncher extends PluginOptional implements ControlListener 
         }
     }
 
-    public static void launch(String name) {
-        JDScriptLauncher.launch(JDScriptLauncher.getScriptIndexByName(name));
+    public static boolean launch(String name) {
+        Integer index = JDScriptLauncher.getScriptIndexByName(name);
+
+        if (index != null) {
+            JDScriptLauncher.launch(index);
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -107,21 +114,30 @@ public class JDScriptLauncher extends PluginOptional implements ControlListener 
         }
     }
 
-    public static void kill(String name) {
-        JDScriptLauncher.kill(JDScriptLauncher.getScriptIndexByName(name));
+    public static boolean kill(String name) {
+        Integer index = JDScriptLauncher.getScriptIndexByName(name);
+
+        if (index != null) {
+            JDScriptLauncher.kill(index);
+            return true;
+        }
+
+        return false;
     }
 
-    private static int getScriptIndexByName(String name) {
-        int index = 0;
+    private static Integer getScriptIndexByName(String name) {
+        Integer index = null;
 
+        int i = 0;
         for (File script : JDScriptLauncher.getScripts()) {
             String scriptname = script.getName().split("\\.")[0];
 
             if (scriptname.equals(name)) {
+                index = i;
                 break;
             }
 
-            index++;
+            i++;
         }
 
         return index;
