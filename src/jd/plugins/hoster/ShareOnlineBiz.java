@@ -239,6 +239,12 @@ public class ShareOnlineBiz extends PluginForHost {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
+        // Sometimes the API is wrong so a file is marked as online but it's
+        // offline so here we chack that
+        if (br.containsHTML("(strong>Your desired download could not be found|/>There isn't any usable file behind the URL)")) {
+            logger.info("The following link was marked as online by the API but is offline: " + downloadLink.getDownloadURL());
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (br.containsHTML("Probleme mit einem Fileserver")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.shareonlinebiz.errors.servernotavailable", "Server temporarily down"), 15 * 60 * 1000l);
 
         if (br.containsHTML("Server Info: no slots available")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.shareonlinebiz.errors.servernotavailable3", "No free Free-User Slots! Get PremiumAccount or wait!"), 15 * 60 * 1000l);

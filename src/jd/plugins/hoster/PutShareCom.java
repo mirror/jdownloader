@@ -277,11 +277,15 @@ public class PutShareCom extends PluginForHost {
         } catch (Exception e) {
             error = true;
         }
-        if (br.getRedirectLocation() != null || error == true) {
-            br.followConnection();
-            logger.info("followed connection...");
-            String dllink = br.getRedirectLocation();
+        String dllink = br.getRedirectLocation();
+        if (dllink == null || error == true) {
             if (dllink == null) {
+                br.followConnection();
+                logger.info("followed connection...");
+                if (br.containsHTML("Link expired")) {
+                    logger.warning("Hoster says \"Link expired\"!");
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
+                }
                 checkErrors(downloadLink);
                 if (br.containsHTML("You're using all download slots for IP")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
                 if (br.containsHTML("(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input|Wrong password)")) {

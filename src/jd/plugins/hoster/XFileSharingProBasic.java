@@ -232,11 +232,11 @@ public class XFileSharingProBasic extends PluginForHost {
         } catch (Exception e) {
             error = true;
         }
-        if (br.getRedirectLocation() != null || error) {
-            br.followConnection();
-            logger.info("followed connection...");
-            String dllink = br.getRedirectLocation();
+        String dllink = br.getRedirectLocation();
+        if (dllink == null || error) {
             if (dllink == null) {
+                br.followConnection();
+                logger.info("followed connection...");
                 doSomething();
                 checkErrors(downloadLink, true, passCode);
                 if (dllink == null) {
