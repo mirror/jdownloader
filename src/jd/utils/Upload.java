@@ -32,9 +32,8 @@ public class Upload {
     public static String toJDownloader(String str, String desc) {
         try {
             Browser br = new Browser();
-            br.postPage("http://jdownloader.org/pastebin", "upload=1&desc=" + Encoding.urlEncode(desc) + "&log=" + Encoding.urlEncode(str));
-            String path = br.getRegex("window.location = \"(.*?)\"").getMatch(0);
-            return "http://jdownloader.org" + path;
+            br.postPage("http://jdownloader.org/pastebin", "version=2&upload=1&desc=" + Encoding.urlEncode(desc) + "&log=" + Encoding.urlEncode(str));
+            return br.getRegex("<pastebinurl>(.*?)</pastebinurl>").getMatch(0);
         } catch (IOException e) {
             JDLogger.exception(e);
         }
