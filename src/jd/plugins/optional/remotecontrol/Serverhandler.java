@@ -350,20 +350,36 @@ public class Serverhandler implements Handler {
             String password = new Regex(request.getRequestUrl(), ".*/action/add/archivepassword/.+/(.+)").getMatch(0);
 
             ArrayList<LinkGrabberFilePackage> packages = LinkGrabberController.getInstance().getPackages();
+            ArrayList<LinkGrabberFilePackage> packagesWithPW = new ArrayList<LinkGrabberFilePackage>();
 
-            for (String packagename : packagenames) {
-                for (LinkGrabberFilePackage pack : packages) {
-                    if (packagename.equals(pack.getName())) {
-                        pack.setPassword(password);
+            boolean isErrorMsg = false;
+
+            // TODO: Password will not be set for a package whose info panel is
+            // opened. I don't know any workaround here!
+            synchronized (LinkGrabberController.ControllerLock) {
+                outer: for (String packagename : packagenames) {
+                    for (LinkGrabberFilePackage pack : packages) {
+                        if (packagename.equals(pack.getName())) {
+                            pack.setPassword(password);
+                            packagesWithPW.add(pack);
+                            continue outer;
+                        }
+                    }
+
+                    if (!isErrorMsg) {
+                        response.addContent("Package '" + packagename + "' doesn't exist! ");
+                        isErrorMsg = true;
                     }
                 }
             }
 
-            response.addContent("Added Password '" + password + "' to packages: ");
+            if (packagesWithPW.size() > 0) {
+                response.addContent("Added Password '" + password + "' to packages: ");
 
-            for (int i = 0; i < packagenames.length; i++) {
-                if (i != 0) response.addContent(", ");
-                response.addContent("'" + packagenames[i] + "'");
+                for (int i = 0; i < packagesWithPW.size(); i++) {
+                    if (i != 0) response.addContent(", ");
+                    response.addContent("'" + packagesWithPW.get(i).getName() + "'");
+                }
             }
         } else if (request.getRequestUrl().matches("(?is).*/action/add(/auto)?/links/.+")) {
             // Add link(s)
