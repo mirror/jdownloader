@@ -254,3 +254,5 @@ jd/plugins/decrypter/RnB4n.class
 jd/plugins/hoster/FileBoxCom.class
 jd/plugins/hoster/My2ShareCom.class
 jd/plugins/hoster/SolidFileCom.class
+jd/plugins/decrypter/ShrtRdrctm.class
+jd/plugins/decrypter/ShrPrtct.class

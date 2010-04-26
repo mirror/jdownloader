@@ -30,22 +30,17 @@ public class ZmgpldCm extends PluginForDecrypt {
 
     public ZmgpldCm(PluginWrapper wrapper) {
         super(wrapper);
-        // TODO Auto-generated constructor stub
     }
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.getPage(parameter.toString());
         String[] links = br.getRegex("<TR><TD><a href=\"(.*?)\" target=\"_blank\">.*?</a></TD>").getColumn(0);
-        progress.setRange(links.length);
-        for (String data : links) {
+        if (links == null || links.length == 0) return null;
+        for (String data : links)
             decryptedLinks.add(createDownloadlink(data));
-            progress.increase(1);
-        }
+
         return decryptedLinks;
     }
-
-    // @Override
 
 }

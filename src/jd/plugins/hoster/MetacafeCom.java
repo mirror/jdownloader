@@ -14,7 +14,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 @HostPlugin(revision = "$Revision: 10609 $", interfaceVersion = 2, names = { "metacafe.com" }, urls = { "http://[\\w\\.]*?metacafe\\.com/watch/\\d+.*" }, flags = { 0 })
 public class MetacafeCom extends PluginForHost {
     private String dlink = null;
-    
+
     public MetacafeCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -42,16 +42,16 @@ public class MetacafeCom extends PluginForHost {
         br.setAcceptLanguage("en-us,en;q=0.5");
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.getPage(link.getDownloadURL());
-        
+        if (br.containsHTML("20mature%20")) {
+            br.getPage("http://www.metacafe.com/f/index.php?inputType=filter&controllerGroup=user&filters=0");
+            br.getPage(link.getDownloadURL());
+        }
         String fileName = br.getRegex("name=\"title\" content=\"(.*?) - Video\"").getMatch(0);
-        if (fileName == null)
-            fileName = br.getRegex("<h1 id=\"ItemTitle\" >(.*?)</h1>").getMatch(0);
-        if (fileName != null)
-            link.setName(fileName.trim() + ".flv");
-        
+        if (fileName == null) fileName = br.getRegex("<h1 id=\"ItemTitle\" >(.*?)</h1>").getMatch(0);
+        if (fileName != null) link.setName(fileName.trim() + ".flv");
         dlink = br.getRegex("mediaURL=(.*?\\.flv)&").getMatch(0);
         dlink = URLDecoder.decode(dlink, "utf-8");
-
+        if (dlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         try {
             if (!br.openGetConnection(dlink).getContentType().contains("html")) {
                 link.setDownloadSize(br.getHttpConnection().getLongContentLength());
@@ -59,8 +59,7 @@ public class MetacafeCom extends PluginForHost {
                 return AvailableStatus.TRUE;
             }
         } finally {
-            if (br.getHttpConnection() != null)
-                br.getHttpConnection().disconnect();
+            if (br.getHttpConnection() != null) br.getHttpConnection().disconnect();
         }
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }

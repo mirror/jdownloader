@@ -29,7 +29,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ex.ua" }, urls = { "http://[\\w\\.]*?(ex\\.ua|luxport\\.eu)/((view|get|load)/[0-9]+|(view/[0-9]+\\?r=[0-9]+|view/[0-9]+\\?r=[0-9,]+))" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "luxport.eu" }, urls = { "http://[\\w\\.]*?(ex\\.ua|luxport\\.eu)/((view|get|load)/[0-9]+|(view/[0-9]+\\?r=[0-9]+|view/[0-9]+\\?r=[0-9,]+))" }, flags = { 0 })
 public class Xa extends PluginForDecrypt {
 
     public Xa(PluginWrapper wrapper) {
