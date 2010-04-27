@@ -15,9 +15,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.PluginOptional;
 import jd.utils.JDUtilities;
 
-/**
- * http://www.sra.uni-hannover.de/vorlesung_online/bs/SS09/T16/
- */
 @OptionalPlugin(rev = "$Revision$", id = "lecturnity", interfaceversion = 5)
 public class LecturnityDownloader extends PluginOptional {
 
@@ -88,7 +85,7 @@ public class LecturnityDownloader extends PluginOptional {
 
     @Override
     public boolean initAddon() {
-        hpw = new HostPluginWrapper("lecturnity-loader", "jd.plugins.optional.lecturnity.", "LecturnityLoader", "http_in_jd://www\\.sra\\.uni-hannover\\.de/vorlesung_online/((.*?)/)*(.*)", HostPluginWrapper.DEBUG_ONLY, "$Revision$");
+        hpw = new HostPluginWrapper("lecturnity-loader", "jd.plugins.optional.lecturnity.", "LecturnityLoader", "http://www.i-am-invisible.com/", 0, "$Revision$");
         logger.finer("Lecturnity: Loaded Host-Plugin!");
 
         inputAction = new MenuAction("lecturnity", 0);
@@ -97,7 +94,7 @@ public class LecturnityDownloader extends PluginOptional {
         inputAction.setIcon(this.getIconKey());
 
         logger.info("Lecturnity: OK!");
-        return false;
+        return true;
     }
 
     @Override

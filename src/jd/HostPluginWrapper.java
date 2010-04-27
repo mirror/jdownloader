@@ -66,7 +66,7 @@ public class HostPluginWrapper extends PluginWrapper implements JDLabelContainer
             for (HostPluginWrapper plugin : HOST_WRAPPER) {
                 if (plugin.getID().equalsIgnoreCase(this.getID()) && plugin.getPattern().equals(this.getPattern())) {
                     if (JDFlags.hasNoFlags(flags, ALLOW_DUPLICATE)) {
-                        logger.severe("Cannot add HostPlugin!HostPluginID " + getID() + " already exists!");
+                        logger.severe("Cannot add HostPlugin! HostPluginID " + getID() + " already exists!");
                         return;
                     }
                 }
