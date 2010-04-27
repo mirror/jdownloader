@@ -27,7 +27,7 @@ import jd.utils.JDUtilities;
 
 public class JDUpdateUtils {
 
-    public static boolean backupDataBase() {
+    public static File backupDataBase() {
         synchronized (DatabaseConnector.LOCK) {
             String[] filenames = new String[] { "JDU.cfg", "WEBUPDATE.cfg", "database.properties", "database.script" };
             byte[] buf = new byte[8192];
@@ -60,9 +60,9 @@ public class JDUpdateUtils {
                 }
                 out.close();
             } catch (Exception e) {
-                return false;
+                return null;
             }
-            return true;
+            return file;
         }
     }
 

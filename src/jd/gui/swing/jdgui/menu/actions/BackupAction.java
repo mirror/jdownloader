@@ -17,6 +17,7 @@
 package jd.gui.swing.jdgui.menu.actions;
 
 import java.awt.event.ActionEvent;
+import java.io.File;
 
 import jd.controlling.JDController;
 import jd.gui.swing.components.Balloon;
@@ -44,7 +45,7 @@ public class BackupAction extends ThreadedAction {
     @Override
     public void threadedActionPerformed(ActionEvent e) {
         JDController.getInstance().syncDatabase();
-        JDUpdateUtils.backupDataBase();
-        Balloon.show(JDL.L("gui.balloon.backup.title", "Backup"), JDTheme.II("gui.images.save", 32, 32), JDL.LF("gui.backup.finished", "Linklist successfully backuped!"));
+        File backupFile = JDUpdateUtils.backupDataBase();
+        Balloon.show(JDL.L("gui.balloon.backup.title", "Backup"), JDTheme.II("gui.images.save", 32, 32), JDL.LF("gui.backup.finished2", "Linklist successfully backuped! (%s)", backupFile.getAbsolutePath()));
     }
 }

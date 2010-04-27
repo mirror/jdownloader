@@ -85,7 +85,7 @@ public class LecturnityDownloader extends PluginOptional {
 
     @Override
     public boolean initAddon() {
-        hpw = new HostPluginWrapper("lecturnity-loader", "jd.plugins.optional.lecturnity.", "LecturnityLoader", "http://www.i-am-invisible.com/", 0, "$Revision$");
+        hpw = new HostPluginWrapper("lecturnity-loader", "jd.plugins.optional.lecturnity.", "LecturnityLoader", "HIDE_ME", 0, "$Revision$");
         logger.finer("Lecturnity: Loaded Host-Plugin!");
 
         inputAction = new MenuAction("lecturnity", 0);
