@@ -24,6 +24,7 @@ import jd.gui.swing.components.Balloon;
 import jd.gui.swing.jdgui.actions.ThreadedAction;
 import jd.update.JDUpdateUtils;
 import jd.utils.JDTheme;
+import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 public class BackupAction extends ThreadedAction {
@@ -46,6 +47,11 @@ public class BackupAction extends ThreadedAction {
     public void threadedActionPerformed(ActionEvent e) {
         JDController.getInstance().syncDatabase();
         File backupFile = JDUpdateUtils.backupDataBase();
-        Balloon.show(JDL.L("gui.balloon.backup.title", "Backup"), JDTheme.II("gui.images.save", 32, 32), JDL.LF("gui.backup.finished2", "Linklist successfully backuped! (%s)", backupFile.getAbsolutePath()));
+        if (backupFile == null) {
+            Balloon.show(JDL.L("gui.balloon.backup.title", "Backup"), JDTheme.II("gui.images.save", 32, 32), JDL.LF("gui.backup.finished.failed", "Linklist Backup failed! Check %s for rights!", JDUtilities.getResourceFile("backup/")));
+        } else {
+            Balloon.show(JDL.L("gui.balloon.backup.title", "Backup"), JDTheme.II("gui.images.save", 32, 32), JDL.LF("gui.backup.finished.success", "Linklist Backup successful! (%s)", backupFile.getAbsolutePath()));
+        }
     }
+
 }
