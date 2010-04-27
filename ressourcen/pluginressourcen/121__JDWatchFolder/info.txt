@@ -1,9 +1,0 @@
-category=Addon
-name=JD-FolderWatch
-version=$Revision$
-url=http://update2.jdownloader.org/addons/jdwatchfolder.jdu?.zip
-light-url=http://update2.jdownloader.org/addons/jdwatchfolder.jdu?.zip
-filename=JDFolderWatch.jdu
-infourl=http://jdownloader.org/knowledge/wiki/addons
-preselected=false
-id=121

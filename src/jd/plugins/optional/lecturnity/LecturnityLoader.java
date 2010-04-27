@@ -28,7 +28,7 @@ public class LecturnityLoader extends PluginForHost {
     @Override
     public void handleFree(DownloadLink link) throws Exception {
         /*
-         * Check filestatus again. (Time can have passed ...)
+         * Check file status again. (Time can have passed ...)
          */
         requestFileInformation(link);
 
@@ -45,7 +45,7 @@ public class LecturnityLoader extends PluginForHost {
         dl.startDownload();
 
         /*
-         * If the file ends with RAM, we have to manipulate the content to
+         * If the file ends with .ram, we have to manipulate the content to
          * enable offline-viewing.
          */
         String fileName = link.getFileOutput();

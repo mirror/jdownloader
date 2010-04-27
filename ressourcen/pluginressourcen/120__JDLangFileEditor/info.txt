@@ -1,9 +1,0 @@
-category=Addon
-name=JD-Language Editor
-version=$Revision$
-url=http://update2.jdownloader.org/addons/jdlanguagefileeditor.jdu?.zip
-light-url=http://update2.jdownloader.org/addons/jdlanguagefileeditor.jdu?.zip
-filename=JDLanguagFileEditor.jdu
-infourl=http://jdownloader.org/knowledge/wiki/addons
-preselected=false
-id=120

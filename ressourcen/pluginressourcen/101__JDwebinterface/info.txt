@@ -1,9 +1,0 @@
-category=Addon
-name=JD-Webinterface
-version=$Revision$
-url=http://update2.jdownloader.org/addons/....jdu?.zip
-light-url=http://update2.jdownloader.org/addons/....jdu?.zip
-filename=JDWebinterface.jdu
-infourl=http://jdownloader.org/knowledge/wiki/addons
-preselected=false
-id=101

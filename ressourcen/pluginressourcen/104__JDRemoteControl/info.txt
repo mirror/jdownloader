@@ -1,9 +1,0 @@
-category=Addon
-name=JD-RemoteControl
-version=22
-url=http://update2.jdownloader.org/addons/jdremotecontrol.jdu?.zip
-light-url=http://update2.jdownloader.org/addons/jdremotecontrol.jdu?.zip
-filename=JDRemoteControl.jdu
-infourl=http://jdownloader.org/knowledge/wiki/addons
-preselected=false
-id=104

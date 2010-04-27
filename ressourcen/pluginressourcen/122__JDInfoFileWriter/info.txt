@@ -1,9 +1,0 @@
-category=Addon
-name=JD-InfoFileWriter
-version=$Revision$
-url=http://update2.jdownloader.org/addons/jdinfofilewriter.jdu?.zip
-light-url=http://update2.jdownloader.org/addons/jdinfofilewriter.jdu?.zip
-filename=JDInfoFileWriter.jdu
-infourl=http://jdownloader.org/knowledge/wiki/addons
-preselected=false
-id=122
