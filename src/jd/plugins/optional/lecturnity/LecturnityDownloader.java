@@ -8,10 +8,10 @@ import jd.PluginWrapper;
 import jd.controlling.LinkGrabberController;
 import jd.gui.UserIO;
 import jd.gui.swing.jdgui.menu.MenuAction;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.OptionalPlugin;
-import jd.plugins.PluginForHost;
 import jd.plugins.PluginOptional;
 import jd.utils.JDUtilities;
 
@@ -47,12 +47,15 @@ public class LecturnityDownloader extends PluginOptional {
     }
 
     private ArrayList<DownloadLink> listFiles(String name, String subDir, String source) throws Exception {
-        br.getPage(source);
+        String page = br.getPage(source);
 
         String[] links = br.getRegex("<a href=\"(.*?)\">").getColumn(0);
 
         String downloadDir = this.downloadDir + subDir;
 
+        /*
+         * Create a new FilePackage for each folder.
+         */
         FilePackage fp = FilePackage.getInstance();
         fp.setName(name);
         fp.setDownloadDirectory(downloadDir);
@@ -68,10 +71,21 @@ public class LecturnityDownloader extends PluginOptional {
                 String newSubDir = subDir + temp + "/";
                 String newSource = source + link;
 
+                /*
+                 * Recursively call this method again to analyze the subfolders.
+                 */
                 result.addAll(listFiles(newName, newSubDir, newSource));
             } else {
-                dLink = new DownloadLink((PluginForHost) hpw.getNewPluginInstance(), link, hpw.getHost(), source + link, true);
+                /*
+                 * Create new DownloadLink with all information, we know at this
+                 * time! We know the filename and the filesize and so it is
+                 * currently available.
+                 */
+                dLink = new DownloadLink(hpw.getNewPluginInstance(), link, hpw.getHost(), source + link, true);
+                dLink.setFinalFileName(link);
+                dLink.setDownloadSize(getSize(new Regex(page, link + "</a>[ ]+.*?[ ].*?[ ]+(\\d+\\.?\\d?[K|M|G]?)").getMatch(0)));
                 dLink.setBrowserUrl(source);
+                dLink.setAvailable(true);
                 dLink.setProperty(PROPERTY_DOWNLOADDIR, downloadDir);
 
                 fp.add(dLink);
@@ -83,10 +97,24 @@ public class LecturnityDownloader extends PluginOptional {
         return result;
     }
 
+    private static final long getSize(String string) {
+        double res = Double.parseDouble(string.replaceAll("[K|M|G]", ""));
+
+        if (string.contains("K")) {
+            res *= 1024;
+        } else if (string.contains("M")) {
+            res *= 1024 * 1024;
+        } else if (string.contains("G")) {
+            res *= 1024 * 1024 * 1024;
+        }
+
+        return Math.round(res);
+    }
+
     @Override
     public boolean initAddon() {
         hpw = new HostPluginWrapper("lecturnity-loader", "jd.plugins.optional.lecturnity.", "LecturnityLoader", "HIDE_ME", 0, "$Revision$");
-        logger.finer("Lecturnity: Loaded Host-Plugin!");
+        logger.finest("Lecturnity: Loaded Host-Plugin!");
 
         inputAction = new MenuAction("lecturnity", 0);
         inputAction.setTitle(getHost());
@@ -103,7 +131,7 @@ public class LecturnityDownloader extends PluginOptional {
         HostPluginWrapper.getHostWrapper().remove(hpw);
         HostPluginWrapper.writeLock.unlock();
         hpw = null;
-        logger.finer("Lecturnity: Unloaded Host-Plugin!");
+        logger.finest("Lecturnity: Unloaded Host-Plugin!");
     }
 
     @Override
