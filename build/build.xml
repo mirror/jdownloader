@@ -278,6 +278,7 @@
 		<buildAddon number="136" package="proxyrot" />
 		<buildAddon number="137" package="scriptlauncher" />
 		<buildAddon number="102" package="infobar" />
+		<buildAddon number="103" package="lecturnity" />
 
 	</target>
 
