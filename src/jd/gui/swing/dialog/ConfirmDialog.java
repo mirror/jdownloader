@@ -56,6 +56,7 @@ public class ConfirmDialog extends AbstractDialog {
         textField.setBackground(null);
         textField.setOpaque(false);
         textField.putClientProperty("Synthetica.opaque", Boolean.FALSE);
+        textField.setCaretPosition(0);
 
         if (JDFlags.hasAllFlags(this.flag, UserIO.STYLE_LARGE)) {
             JScrollPane sp = new JScrollPane(textField);

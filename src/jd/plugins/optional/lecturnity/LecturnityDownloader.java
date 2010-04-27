@@ -39,7 +39,7 @@ public class LecturnityDownloader extends PluginOptional {
                 url = url.trim();
                 String name = url.substring(url.substring(0, url.length() - 1).lastIndexOf('/') + 1, url.length() - 1);
 
-                LinkGrabberController.getInstance().addLinks(listFiles(name, name + "/", url), false, false);
+                LinkGrabberController.getInstance().addLinks(listFiles(name, name + "/", url), true, false);
             } catch (Exception e1) {
                 UserIO.getInstance().requestMessageDialog("An error occured while parsing the site!\r\n(" + url + ")");
             }
@@ -66,15 +66,10 @@ public class LecturnityDownloader extends PluginOptional {
             if (link.startsWith("?") || link.startsWith("/")) continue;
 
             if (link.endsWith("/")) {
-                String temp = link.substring(0, link.length() - 1);
-                String newName = name + "-" + temp;
-                String newSubDir = subDir + temp + "/";
-                String newSource = source + link;
-
                 /*
                  * Recursively call this method again to analyze the subfolders.
                  */
-                result.addAll(listFiles(newName, newSubDir, newSource));
+                result.addAll(listFiles(name + "-" + link.substring(0, link.length() - 1), subDir + link, source + link));
             } else {
                 /*
                  * Create new DownloadLink with all information, we know at this
@@ -98,17 +93,22 @@ public class LecturnityDownloader extends PluginOptional {
     }
 
     private static final long getSize(String string) {
-        double res = Double.parseDouble(string.replaceAll("[K|M|G]", ""));
+        if (string == null) return 0;
+        try {
+            double res = Double.parseDouble(string.replaceAll("[K|M|G]", ""));
 
-        if (string.contains("K")) {
-            res *= 1024;
-        } else if (string.contains("M")) {
-            res *= 1024 * 1024;
-        } else if (string.contains("G")) {
-            res *= 1024 * 1024 * 1024;
+            if (string.contains("K")) {
+                res *= 1024;
+            } else if (string.contains("M")) {
+                res *= 1024 * 1024;
+            } else if (string.contains("G")) {
+                res *= 1024 * 1024 * 1024;
+            }
+
+            return Math.round(res);
+        } catch (Exception e) {
+            return 0;
         }
-
-        return Math.round(res);
     }
 
     @Override
