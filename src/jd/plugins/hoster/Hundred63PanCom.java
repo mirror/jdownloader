@@ -66,7 +66,7 @@ public class Hundred63PanCom extends PluginForHost {
         String dllink = br.getRegex("oncontextmenu='Flashget_SetHref_js\\(.*?\\);'></a> -->.*?<a href=\"(.*?)\"").getMatch(0);
         if (dllink == null) dllink = br.getRegex("\"(http://www\\.163pan\\.com/download/index/id=[a-z0-9]+\\&hash=[a-z0-9]+\\&tt=\\d+/www\\.163pan\\.com.*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
