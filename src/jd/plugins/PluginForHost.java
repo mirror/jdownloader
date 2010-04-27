@@ -344,7 +344,7 @@ public abstract class PluginForHost extends Plugin {
                 try {
                     // Zwecks Multidownload braucht jeder Link seine eigene
                     // Plugininstanz
-                    final PluginForHost plg = getWrapper().getNewPluginInstance();
+                    final PluginForHost plg = (PluginForHost) wrapper.getNewPluginInstance();
                     final DownloadLink link = new DownloadLink(plg, file.substring(file.lastIndexOf("/") + 1, file.length()), getHost(), file, true);
                     links.add(link);
                     if (fp != null) {
