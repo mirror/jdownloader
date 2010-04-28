@@ -78,7 +78,7 @@ public class JDInfoFileWriter extends PluginOptional implements ControlListener 
             // Nur Hostpluginevents auswerten
             DownloadLink lastDownloadFinished = ((SingleDownloadController) event.getParameter()).getDownloadLink();
             if (lastDownloadFinished.getFilePackage().getRemainingLinks() == 0) {
-                writeInfoFile();
+                writeInfoFile(lastDownloadFinished);
             }
         }
     }
@@ -114,9 +114,9 @@ public class JDInfoFileWriter extends PluginOptional implements ControlListener 
         JDUtilities.getController().removeControlListener(this);
     }
 
-    private void writeInfoFile() {
-        String content = Replacer.insertVariables(subConfig.getStringProperty(PARAM_INFO_STRING, INFO_STRING_DEFAULT));
-        String filename = Replacer.insertVariables(subConfig.getStringProperty(PARAM_FILENAME, FILENAME_DEFAULT));
+    private void writeInfoFile(DownloadLink lastDownloadFinished) {
+        String content = Replacer.insertVariables(subConfig.getStringProperty(PARAM_INFO_STRING, INFO_STRING_DEFAULT), lastDownloadFinished);
+        String filename = Replacer.insertVariables(subConfig.getStringProperty(PARAM_FILENAME, FILENAME_DEFAULT), lastDownloadFinished);
 
         File dest = new File(filename);
 

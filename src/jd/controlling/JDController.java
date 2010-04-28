@@ -165,8 +165,6 @@ public class JDController implements ControlListener {
 
     private EventSender eventSender = null;
 
-    private DownloadLink lastDownloadFinished;
-
     /**
      * Der Logger
      */
@@ -245,6 +243,7 @@ public class JDController implements ControlListener {
         case ControlEvent.CONTROL_PLUGIN_INACTIVE:
             // Nur Hostpluginevents auswerten
             if (!(event.getSource() instanceof PluginForHost)) return;
+            DownloadLink lastDownloadFinished;
             lastDownloadFinished = ((SingleDownloadController) event.getParameter()).getDownloadLink();
 
             // Prüfen ob das Paket fertig ist und entfernt werden soll
@@ -482,14 +481,6 @@ public class JDController implements ControlListener {
             }
         }
         return ret;
-    }
-
-    /**
-     * 
-     * @return Die zuletzte fertiggestellte datei
-     */
-    public DownloadLink getLastFinishedDownloadLink() {
-        return lastDownloadFinished;
     }
 
     /**

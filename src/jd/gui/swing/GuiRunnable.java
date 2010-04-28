@@ -95,6 +95,11 @@ public abstract class GuiRunnable<T> implements Runnable {
 
     public abstract T runSave();
 
+    public void invokeLater() {
+        setStarted(true);
+        SwingUtilities.invokeLater(this);
+    }
+
     /**
      * Starts the Runnable and adds it to the ETD
      */

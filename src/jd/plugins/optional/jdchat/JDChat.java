@@ -672,25 +672,23 @@ public class JDChat extends PluginOptional implements ControlListener {
         // sb = new StringBuilder();
         // sb.append(tmp);
         // }
-        changed = true;
+
         new GuiRunnable<Object>() {
 
             @Override
             public Object runSave() {
-                if (changed) {
 
-                    if (!SwingGui.getInstance().getMainFrame().isActive() && conn != null && msg2.contains(conn.getNick())) {
-                        // JDSounds.PT("sound.gui.selectPackage");
-                        SwingGui.getInstance().getMainFrame().toFront();
-                    }
-
-                    targetpane.setText(STYLE + "<ul>" + sb.toString() + "</ul>");
-
-                    int max = scrollPane.getVerticalScrollBar().getMaximum();
-
-                    scrollPane.getVerticalScrollBar().setValue(max);
-                    changed = false;
+                if (!SwingGui.getInstance().getMainFrame().isActive() && conn != null && msg2.contains(conn.getNick())) {
+                    // JDSounds.PT("sound.gui.selectPackage");
+                    SwingGui.getInstance().getMainFrame().toFront();
                 }
+
+                targetpane.setText(STYLE + "<ul>" + sb.toString() + "</ul>");
+
+                int max = scrollPane.getVerticalScrollBar().getMaximum();
+
+                scrollPane.getVerticalScrollBar().setValue(max);
+
                 return null;
             }
 
@@ -762,20 +760,38 @@ public class JDChat extends PluginOptional implements ControlListener {
 
             return;
         }
-        User usr = getUser(name);
+        final User usr = getUser(name);
         if (textField.getText().length() == 0) {
             if (!pms.containsKey(usr.name.toLowerCase())) addPMS(usr.name);
             for (int x = 0; x < tabbedPane.getTabCount(); x++) {
                 if (tabbedPane.getTitleAt(x).equals(usr.name)) {
-                    tabbedPane.setSelectedIndex(x);
+                    final int t = x;
+                    new GuiRunnable<Object>() {
+                        @Override
+                        public Object runSave() {
+                            tabbedPane.setSelectedIndex(t);
+                            return null;
+                        }
+                    }.invokeLater();
                     break;
                 }
             }
         } else {
-            textField.setText(textField.getText().trim() + " " + usr.name + " ");
+            new GuiRunnable<Object>() {
+                @Override
+                public Object runSave() {
+                    textField.setText(textField.getText().trim() + " " + usr.name + " ");
+                    return null;
+                }
+            }.invokeLater();
         }
-
-        textField.requestFocus();
+        new GuiRunnable<Object>() {
+            @Override
+            public Object runSave() {
+                textField.requestFocus();
+                return null;
+            }
+        }.invokeLater();
     }
 
     public String getNick() {
@@ -1219,44 +1235,73 @@ public class JDChat extends PluginOptional implements ControlListener {
         }
     }
 
-    public void notifyPMS(String user, String text) {
-        for (int x = 0; x < tabbedPane.getComponentCount(); x++) {
-            if (tabbedPane.getTitleAt(x).equals(user)) {
-                tabbedPane.setForegroundAt(x, Color.RED);
-                if (text.length() > 40) text = text.substring(0, 40).concat("...");
-                if (!tabbedPane.getTitleAt(tabbedPane.getSelectedIndex()).equals(user)) Balloon.show("JD Chat", null, JDL.LF("jd.plugins.optional.jdchat.newmessage", "New Message from %s:<hr> %s", user, text));
-                break;
+    public void notifyPMS(final String user, final String text2) {
+        new GuiRunnable<Object>() {
+            @Override
+            public Object runSave() {
+                for (int x = 0; x < tabbedPane.getTabCount(); x++) {
+                    if (tabbedPane.getTitleAt(x).equals(user)) {
+                        final int t = x;
+
+                        String text = text2;
+                        tabbedPane.setForegroundAt(t, Color.RED);
+                        if (text.length() > 40) text = text.substring(0, 40).concat("...");
+                        if (!tabbedPane.getTitleAt(tabbedPane.getSelectedIndex()).equals(user)) Balloon.show("JD Chat", null, JDL.LF("jd.plugins.optional.jdchat.newmessage", "New Message from %s:<hr> %s", user, text));
+                        return null;
+                    }
+                }
+                return null;
             }
-        }
+        }.invokeLater();
     }
 
-    public void addPMS(String user) {
-        user = user.trim();
+    public void addPMS(String user2) {
+        final String user = user2.trim();
         if (user.equals(conn.getNick().trim())) return;
         pms.put(user.toLowerCase(), new JDChatPMS(user));
-        tabbedPane.add(user, pms.get(user.toLowerCase()).getScrollPane());
+        new GuiRunnable<Object>() {
+            @Override
+            public Object runSave() {
+                tabbedPane.add(user, pms.get(user.toLowerCase()).getScrollPane());
+                return null;
+            }
+        }.invokeLater();
     }
 
-    public void renamePMS(String userOld, String userNew) {
-        pms.put(userNew.trim().toLowerCase(), pms.get(userOld.trim().toLowerCase()));
-        for (int x = 0; x < tabbedPane.getComponentCount(); x++) {
-            if (tabbedPane.getTitleAt(x).equalsIgnoreCase(userOld)) {
-                tabbedPane.remove(x);
-                break;
+    public void renamePMS(final String userOld, final String userNew) {
+        new GuiRunnable<Object>() {
+
+            @Override
+            public Object runSave() {
+                pms.put(userNew.trim().toLowerCase(), pms.get(userOld.trim().toLowerCase()));
+                for (int x = 0; x < tabbedPane.getComponentCount(); x++) {
+                    if (tabbedPane.getTitleAt(x).equalsIgnoreCase(userOld)) {
+                        tabbedPane.remove(x);
+                        break;
+                    }
+                }
+                pms.remove(userOld);
+                tabbedPane.add(userNew.trim(), pms.get(userNew.trim().toLowerCase()).getScrollPane());
+                return null;
             }
-        }
-        pms.remove(userOld);
-        tabbedPane.add(userNew.trim(), pms.get(userNew.trim().toLowerCase()).getScrollPane());
+        }.invokeLater();
     }
 
-    public void delPMS(String user) {
-        pms.remove(user.toLowerCase());
-        for (int x = 0; x < tabbedPane.getComponentCount(); x++) {
-            if (tabbedPane.getTitleAt(x).toLowerCase().equals(user.toLowerCase())) {
-                tabbedPane.remove(x);
-                return;
+    public void delPMS(final String user) {
+        new GuiRunnable<Object>() {
+
+            @Override
+            public Object runSave() {
+                pms.remove(user.toLowerCase());
+                for (int x = 0; x < tabbedPane.getComponentCount(); x++) {
+                    if (tabbedPane.getTitleAt(x).toLowerCase().equals(user.toLowerCase())) {
+                        tabbedPane.remove(x);
+                        return null;
+                    }
+                }
+                return null;
             }
-        }
+        }.invokeLater();
 
     }
 
@@ -1271,7 +1316,14 @@ public class JDChat extends PluginOptional implements ControlListener {
             String cmd = text.substring(1, end).trim();
             String rest = text.substring(end).trim();
             if (Regex.matches(cmd, CMD_PM)) {
-                textField.setText("");
+                new GuiRunnable<Object>() {
+
+                    @Override
+                    public Object runSave() {
+                        textField.setText("");
+                        return null;
+                    }
+                }.invokeLater();
                 end = rest.indexOf(" ");
                 if (end < 0) {
                     end = rest.length();
@@ -1314,10 +1366,17 @@ public class JDChat extends PluginOptional implements ControlListener {
                     addToText(null, STYLE_ERROR, "Command /translate " + rest.substring(0, end).trim() + " is not available");
                     return;
                 }
-                String t;
+                final String t;
                 t = JDL.translate(tofrom[0], tofrom[1], Utils.prepareMsg(rest.substring(end).trim())).getTranslated();
                 lastCommand = "/translate " + rest.substring(0, end).trim() + " ";
-                textField.setText(t);
+                new GuiRunnable<Object>() {
+
+                    @Override
+                    public Object runSave() {
+                        textField.setText(t);
+                        return null;
+                    }
+                }.invokeLater();
             } else if (Regex.matches(cmd, CMD_TOPIC)) {
                 conn.doTopic(CHANNEL, prepareToSend(rest));
                 lastCommand = "/topic ";
@@ -1355,8 +1414,15 @@ public class JDChat extends PluginOptional implements ControlListener {
             conn.doPrivmsg(channel2, prepareToSend(text));
             addToText(getUser(conn.getNick()), STYLE_SELF, Utils.prepareMsg(text));
         }
-        textField.setText("");
-        textField.requestFocus();
+        new GuiRunnable<Object>() {
+
+            @Override
+            public Object runSave() {
+                textField.setText("");
+                textField.requestFocus();
+                return null;
+            }
+        }.invokeLater();
     }
 
     @Override

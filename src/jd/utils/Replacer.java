@@ -21,7 +21,6 @@ import java.util.Calendar;
 
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
-import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.nrouter.IPCheck;
 import jd.nutils.Formatter;
@@ -84,8 +83,7 @@ public final class Replacer {
         KEYS.add(new String[] { "JD.HOME_DIR", JDL.L("replacer.jdhomedirectory", "jDownloader: Homedirectory/Installdirectory") });
     }
 
-    public static String getReplacement(final String key) {
-        final DownloadLink dLink = JDController.getInstance().getLastFinishedDownloadLink();
+    public static String getReplacement(final String key, DownloadLink dLink) {
 
         if (key.equalsIgnoreCase("LAST_FINISHED_PACKAGE.PASSWORD")) { return (dLink == null) ? "" : dLink.getFilePackage().getPassword(); }
 
@@ -150,7 +148,7 @@ public final class Replacer {
 
     }
 
-    public static String insertVariables(final String str) {
+    public static String insertVariables(final String str, DownloadLink dLink) {
         String ret = "";
         if (str != null) {
             ret = str;
@@ -160,7 +158,7 @@ public final class Replacer {
             for (String[] element : KEYS) {
                 if (str.indexOf("%" + element[0] + "%") >= 0) {
                     JDLogger.getLogger().finer("%" + element[0] + "%" + " --> *****");
-                    ret = Replacer.replace(ret, "%" + element[0] + "%", Replacer.getReplacement(element[0]));
+                    ret = Replacer.replace(ret, "%" + element[0] + "%", Replacer.getReplacement(element[0], dLink));
                 }
             }
         }

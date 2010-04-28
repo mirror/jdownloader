@@ -78,7 +78,7 @@ public class FavIconController extends SubConfiguration implements Runnable {
         thread.setName("FavIconLoader");
         failed = getGenericProperty("failedList", new ArrayList<String>());
         Long lastRefresh = getGenericProperty("lastRefresh", new Long(0));
-        if ((System.currentTimeMillis() - lastRefresh) > 1000l * 60 * 60 * 24 * 3) {
+        if ((System.currentTimeMillis() - lastRefresh) > (1000l * 60 * 60 * 24 * 3)) {
             JDLogger.getLogger().info("FavIcon Refresh Timeout");
             failed.clear();
         }

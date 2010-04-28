@@ -70,13 +70,16 @@ public class SubConfiguration extends Property implements Serializable {
 
     @SuppressWarnings("unchecked")
     public SubConfiguration(String name) {
+        valid = true;
         this.name = name;
         Object props = JDUtilities.getDatabaseConnector().getData(name);
         if (props != null && props instanceof HashMap) {
             this.setProperties((HashMap<String, Object>) props);
-            valid = true;
         } else {
-            if (props != null) JDLogger.getLogger().severe("Invalid Config Entry for " + name);
+            if (props != null) {
+                valid = false;
+                JDLogger.getLogger().severe("Invalid Config Entry for " + name);
+            }
         }
     }
 
