@@ -45,7 +45,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.hoster.Youtube;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youtube.com" }, urls = { "http://[\\w\\.]*?youtube\\.com/(watch.{1,2}v=[a-z-_A-Z0-9]+|view_play_list\\?p=[a-z-_A-Z0-9]+(.*?page=\\d+)?)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youtube.com" }, urls = { "http://[\\w\\.]*?youtube\\.com/(watch.*?v=[a-z-_A-Z0-9]+|view_play_list\\?p=[a-z-_A-Z0-9]+(.*?page=\\d+)?)" }, flags = { 0 })
 public class TbCm extends PluginForDecrypt {
 
     static private String host = "youtube.com";
@@ -108,6 +108,9 @@ public class TbCm extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.setCookiesExclusive(true);
         br.clearCookies("youtube.com");
+        if (parameter.contains("watch#")) {
+            parameter = parameter.replace("watch#", "watch?");
+        }
         if (parameter.contains("view_play_list")) {
             br.getPage(parameter);
             addVideosCurrentPage(decryptedLinks);
