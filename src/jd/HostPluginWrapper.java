@@ -16,6 +16,14 @@
 
 package jd;
 
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.Graphics2D;
+import java.awt.GraphicsConfiguration;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
+import java.awt.Transparency;
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
@@ -24,11 +32,13 @@ import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 import javax.swing.ImageIcon;
 
 import jd.config.container.JDLabelContainer;
+import jd.controlling.FavIconController;
+import jd.controlling.FavIconRequestor;
 import jd.controlling.JDLogger;
 import jd.nutils.JDFlags;
 import jd.plugins.PluginForHost;
 
-public class HostPluginWrapper extends PluginWrapper implements JDLabelContainer {
+public class HostPluginWrapper extends PluginWrapper implements JDLabelContainer, FavIconRequestor {
     private static final ArrayList<HostPluginWrapper> HOST_WRAPPER = new ArrayList<HostPluginWrapper>();
 
     private static final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
@@ -58,6 +68,8 @@ public class HostPluginWrapper extends PluginWrapper implements JDLabelContainer
     }
 
     private static final String AGB_CHECKED = "AGB_CHECKED";
+
+    private ImageIcon icon = null;
 
     public HostPluginWrapper(final String host, final String classNamePrefix, final String className, final String patternSupported, final int flags, final String revision) {
         super(host, classNamePrefix, className, patternSupported, flags, revision);
@@ -128,12 +140,14 @@ public class HostPluginWrapper extends PluginWrapper implements JDLabelContainer
         return getHost();
     }
 
-    /**
-     * FIXME: Getting the icon loads the plugin... Maybe move the HosterIcon
-     * functions to this wrapper?
-     */
     public ImageIcon getIcon() {
-        return getPlugin().getHosterIcon();
+        if (icon != null) return icon;
+        /* try to load from disk */
+        ImageIcon image = FavIconController.getFavIcon(getHost(), this, true);
+        if (image != null) icon = image;
+        /* use fallback icon */
+        if (icon == null) icon = new ImageIcon(createDefaultFavIcon());
+        return icon;
     }
 
     public String getLabel() {
@@ -144,6 +158,39 @@ public class HostPluginWrapper extends PluginWrapper implements JDLabelContainer
     public boolean equals(Object obj) {
         if (obj == null || !(obj instanceof HostPluginWrapper)) return false;
         return this.getID().equalsIgnoreCase(((HostPluginWrapper) obj).getID());
+    }
+
+    /**
+     * Creates a dummyHosterIcon
+     */
+    public BufferedImage createDefaultFavIcon() {
+        int w = 16;
+        int h = 16;
+        int size = 9;
+        GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+        GraphicsDevice gd = ge.getDefaultScreenDevice();
+        GraphicsConfiguration gc = gd.getDefaultConfiguration();
+        final BufferedImage image = gc.createCompatibleImage(w, h, Transparency.BITMASK);
+        Graphics2D g = image.createGraphics();
+        String dummy = getHost();
+        if (dummy.length() < 2) dummy = getClassName().toUpperCase();
+        if (dummy.length() > 2) dummy = dummy.substring(0, 2);
+        g.setFont(new Font("Arial", Font.BOLD, size));
+        int ww = g.getFontMetrics().stringWidth(dummy);
+        g.setColor(Color.WHITE);
+        g.fillRect(1, 1, w - 2, h - 2);
+        g.setColor(Color.BLACK);
+        g.drawString(dummy, (w - ww) / 2, 2 + size);
+        g.dispose();
+        return image;
+    }
+
+    public String cleanString(String host) {
+        return host.replaceAll("[\\-\\.]", "");
+    }
+
+    public void setFavIcon(ImageIcon icon) {
+        this.icon = icon;
     }
 
 }

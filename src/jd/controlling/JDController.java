@@ -320,6 +320,8 @@ public class JDController implements ControlListener {
             JDUtilities.getDownloadController().saveDownloadLinksSyncnonThread();
             logger.info("Save Accountlist");
             AccountController.getInstance().saveSyncnonThread();
+            logger.info("Sync FavIconController");
+            FavIconController.getInstance().saveSyncnonThread();
             logger.info("Save Passwordlist");
             PasswordListController.getInstance().saveSync();
             logger.info("Save HTACCESSlist");
@@ -350,6 +352,8 @@ public class JDController implements ControlListener {
         JDUtilities.getDownloadController().saveDownloadLinksSyncnonThread();
         logger.info("Sync Accountlist");
         AccountController.getInstance().saveSyncnonThread();
+        logger.info("Sync FavIconController");
+        FavIconController.getInstance().saveSyncnonThread();
         logger.info("Sync Passwordlist");
         PasswordListController.getInstance().saveSync();
         logger.info("Sync HTACCESSlist");

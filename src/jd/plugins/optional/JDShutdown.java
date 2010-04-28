@@ -198,7 +198,7 @@ public class JDShutdown extends PluginOptional {
             if (getPluginConfig().getBooleanProperty(CONFIG_FORCESHUTDOWN, false)) {
                 /* force shutdown */
                 try {
-                    JDUtilities.runCommand("sudo", new String[] { "shutdown", "-h", "now" }, null, 0);
+                    JDUtilities.runCommand("sudo", new String[] { "shutdown", "-p", "now" }, null, 0);
                 } catch (Exception e) {
                 }
             } else {
@@ -220,7 +220,7 @@ public class JDShutdown extends PluginOptional {
             } catch (Exception e) {
             }
             try {
-                JDUtilities.runCommand("sudo", new String[] { "shutdown", "-h", "now" }, null, 0);
+                JDUtilities.runCommand("sudo", new String[] { "shutdown", "-p", "now" }, null, 0);
             } catch (Exception e) {
             }
         }

@@ -28,14 +28,17 @@ public class LinkGrabberPackager {
     public static final Pattern pat3 = Pattern.compile("(.*)\\.rar$", Pattern.CASE_INSENSITIVE);
     public static final Pattern pat4 = Pattern.compile("(.*)\\.r\\d+$", Pattern.CASE_INSENSITIVE);
     public static final Pattern pat5 = Pattern.compile("(.*)(\\.|_|-)\\d+$", Pattern.CASE_INSENSITIVE);
+    public static final Pattern[] rarPats = new Pattern[] { pat0, pat1, pat3, pat4, pat5 };
 
     public static final Pattern pat6 = Pattern.compile("(.*)\\.zip$", Pattern.CASE_INSENSITIVE);
     public static final Pattern pat7 = Pattern.compile("(.*)\\.z\\d+$", Pattern.CASE_INSENSITIVE);
     public static final Pattern pat8 = Pattern.compile("(?is).*\\.7z\\.[\\d]+$", Pattern.CASE_INSENSITIVE);
     public static final Pattern pat9 = Pattern.compile("(.*)\\.a.$", Pattern.CASE_INSENSITIVE);
+    public static final Pattern[] zipPats = new Pattern[] { pat6, pat7, pat8, pat9 };
 
     public static final Pattern pat10 = Pattern.compile("(.*)\\._((_[a-z]{1})|([a-z]{2}))(\\.|$)");
-    public static final Pattern pat11 = Pattern.compile("(.*)(\\.|_|-)[\\d]+($|" + DirectHTTP.ENDINGS + "$)", Pattern.CASE_INSENSITIVE);
+    public static final Pattern pat11 = Pattern.compile("(.*)(\\.|_|-)[\\d]+(" + DirectHTTP.ENDINGS + "$)", Pattern.CASE_INSENSITIVE);
+    public static final Pattern[] ffsjPats = new Pattern[] { pat10, pat11 };
 
     public static final Pattern pat12 = Pattern.compile("(CD\\d+)", Pattern.CASE_INSENSITIVE);
     public static final Pattern pat13 = Pattern.compile("(part\\d+)", Pattern.CASE_INSENSITIVE);
@@ -48,19 +51,19 @@ public class LinkGrabberPackager {
 
     public static String cleanFileName(String name) {
         /** remove rar extensions */
-        name = getNameMatch(name, pat0);
-        name = getNameMatch(name, pat1);
-        name = getNameMatch(name, pat3);
-        name = getNameMatch(name, pat4);
-        name = getNameMatch(name, pat5);
-
+        String before = name;
+        for (Pattern Pat : rarPats) {
+            name = getNameMatch(name, Pat);
+            if (!before.equalsIgnoreCase(name)) break;
+        }
         /**
          * remove 7zip/zip and hjmerge extensions
          */
-        name = getNameMatch(name, pat6);
-        name = getNameMatch(name, pat7);
-        name = getNameMatch(name, pat8);
-        name = getNameMatch(name, pat9);
+        before = name;
+        for (Pattern Pat : zipPats) {
+            name = getNameMatch(name, Pat);
+            if (!before.equalsIgnoreCase(name)) break;
+        }
         /* xtremsplit */
         name = getNameMatch(name, pat17);
 
@@ -68,8 +71,11 @@ public class LinkGrabberPackager {
          * FFSJ splitted files
          * 
          * */
-        name = getNameMatch(name, pat10);
-        name = getNameMatch(name, pat11);
+        before = name;
+        for (Pattern Pat : ffsjPats) {
+            name = getNameMatch(name, Pat);
+            if (!before.equalsIgnoreCase(name)) break;
+        }
 
         /**
          * remove CDx,Partx

@@ -54,17 +54,17 @@ public class JDInfoBar extends PluginOptional {
 
     private void updateOpacity(Object value) {
         if (infoDialog == null) return;
-        final Float newValue;
+        final int newValue;
         if (value == null) {
-            newValue = getPluginConfig().getDoubleProperty(JDInfoBar.PROPERTY_OPACITY, 100.0).floatValue();
+            newValue = getPluginConfig().getIntegerProperty(JDInfoBar.PROPERTY_OPACITY, 100);
         } else {
-            newValue = Float.parseFloat(value.toString());
+            newValue = Integer.parseInt(value.toString());
         }
         new GuiRunnable<Object>() {
 
             @Override
             public Object runSave() {
-                AWTUtilities.setWindowOpacity(infoDialog, newValue / 100);
+                AWTUtilities.setWindowOpacity(infoDialog, (float) (newValue / 100.0));
                 return null;
             }
 

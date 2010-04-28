@@ -16,13 +16,6 @@
 
 package jd.plugins;
 
-import java.awt.Color;
-import java.awt.Font;
-import java.awt.Graphics2D;
-import java.awt.GraphicsConfiguration;
-import java.awt.GraphicsDevice;
-import java.awt.GraphicsEnvironment;
-import java.awt.Transparency;
 import java.awt.event.ActionEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -41,7 +34,7 @@ import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.controlling.CaptchaController;
 import jd.controlling.DownloadController;
-import jd.controlling.FavIconController;
+import jd.controlling.FavIconRequestor;
 import jd.controlling.JDLogger;
 import jd.controlling.SingleDownloadController;
 import jd.gui.UserIF;
@@ -66,7 +59,7 @@ import jd.utils.locale.JDL;
  * 
  * @author astaldo
  */
-public abstract class PluginForHost extends Plugin {
+public abstract class PluginForHost extends Plugin implements FavIconRequestor {
 
     public PluginForHost(final PluginWrapper wrapper) {
         super(wrapper);
@@ -673,58 +666,11 @@ public abstract class PluginForHost extends Plugin {
     }
 
     public ImageIcon getHosterIcon() {
-        if (hosterIcon == null) hosterIcon = getFavIcon();
-        return hosterIcon;
+        return getWrapper().getIcon();
     }
 
-    public void setHosterIcon(ImageIcon icon) {
-        this.hosterIcon = icon;
-        this.config.setIcon(this.hosterIcon);
-    }
-
-    /**
-     * override this function if you want customized icons and NOT load from
-     * disk
-     * 
-     * @return
-     */
-    public synchronized ImageIcon getFavIcon() {
-        /* try to load from disk */
-        ImageIcon image = FavIconController.getFavIcon(getHost(), this, true);
-        if (image != null) return image;
-        /* use fallback icon */
-        return new ImageIcon(createDefaultFavIcon());
-    }
-
-    private static final String cleanString(String host) {
-        return host.replaceAll("[a-z0-9\\-\\.]", "");
-    }
-
-    /**
-     * Creates a dummyHosterIcon
-     */
-    public final BufferedImage createDefaultFavIcon() {
-        int w = 16;
-        int h = 16;
-        int size = 9;
-        GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-        GraphicsDevice gd = ge.getDefaultScreenDevice();
-        GraphicsConfiguration gc = gd.getDefaultConfiguration();
-        final BufferedImage image = gc.createCompatibleImage(w, h, Transparency.BITMASK);
-        Graphics2D g = image.createGraphics();
-        String host = getHost();
-        String dummy = cleanString(host);
-        if (dummy.length() < 2) dummy = cleanString(getClass().getSimpleName());
-        if (dummy.length() < 2) dummy = host.toUpperCase();
-        if (dummy.length() > 2) dummy = dummy.substring(0, 2);
-        g.setFont(new Font("Arial", Font.BOLD, size));
-        int ww = g.getFontMetrics().stringWidth(dummy);
-        g.setColor(Color.WHITE);
-        g.fillRect(1, 1, w - 2, h - 2);
-        g.setColor(Color.BLACK);
-        g.drawString(dummy, (w - ww) / 2, 2 + size);
-        g.dispose();
-        return image;
+    public void setFavIcon(ImageIcon icon) {
+        config.setIcon(icon);
     }
 
 }

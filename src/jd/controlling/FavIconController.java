@@ -14,43 +14,47 @@ import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 
 import jd.captcha.utils.GifDecoder;
+import jd.config.SubConfiguration;
 import jd.http.Browser;
 import jd.parser.Regex;
-import jd.plugins.PluginForHost;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import net.sf.image4j.codec.ico.ICODecoder;
 
-public class FavIconController extends Thread {
+public class FavIconController extends SubConfiguration implements Runnable {
+    /**
+     * 
+     */
+    private static final long serialVersionUID = -1455068138306163872L;
     public static final Object LOCK = new Object();
-    private final static HashMap<String, ArrayList<PluginForHost>> queue = new HashMap<String, ArrayList<PluginForHost>>();
-    private final static ArrayList<String> failed = new ArrayList<String>();
+    private final static HashMap<String, ArrayList<FavIconRequestor>> queue = new HashMap<String, ArrayList<FavIconRequestor>>();
+    private ArrayList<String> failed = new ArrayList<String>();
 
-    public static ImageIcon getFavIcon(String favIconhost, PluginForHost plugin, boolean useOriginalHost) {
+    public static ImageIcon getFavIcon(String favIconhost, FavIconRequestor requestor, boolean useOriginalHost) {
         String host = useOriginalHost == false ? Browser.getHost(favIconhost) : favIconhost;
-        if (host == null || plugin == null) return null;
+        if (host == null || requestor == null) return null;
         synchronized (LOCK) {
             /* check if we already have a favicon? */
             Image image = JDTheme.getImage("favicons/" + host, 16, 16);
             if (image != null) return new ImageIcon(image);
         }
         /* add to queue list */
-        getInstance().add(host, plugin);
+        getInstance().add(host, requestor);
         return null;
     }
 
-    private synchronized void add(String host, PluginForHost plugin) {
+    private synchronized void add(String host, FavIconRequestor requestor) {
         synchronized (LOCK) {
             /* dont try this host again? */
             if (failed.contains(host)) return;
             /* enqueu this host for favicon loading */
-            ArrayList<PluginForHost> ret = queue.get(host);
+            ArrayList<FavIconRequestor> ret = queue.get(host);
             if (ret == null) {
-                ret = new ArrayList<PluginForHost>();
+                ret = new ArrayList<FavIconRequestor>();
                 queue.put(host, ret);
             }
             /* add to queue */
-            ret.add(plugin);
+            ret.add(requestor);
         }
         /* notify our favicon loader */
         synchronized (this) {
@@ -68,19 +72,29 @@ public class FavIconController extends Thread {
     }
 
     private FavIconController() {
-        this.setDaemon(true);
-        this.setName("FavIconLoader");
-        start();
+        super("FavIconController");
+        thread = new Thread(this);
+        thread.setDaemon(true);
+        thread.setName("FavIconLoader");
+        failed = getGenericProperty("failedList", new ArrayList<String>());
+        Long lastRefresh = getGenericProperty("lastRefresh", new Long(0));
+        if ((System.currentTimeMillis() - lastRefresh) > 1000l * 60 * 60 * 24 * 3) {
+            JDLogger.getLogger().info("FavIcon Refresh Timeout");
+            failed.clear();
+        }
+        thread.start();
     }
 
     private String host;
     private boolean waitFlag;
     private Thread thread;
+    private boolean started = false;
 
-    @Override
     public void run() {
-        if (thread != null) return;
-        thread = this;
+        synchronized (this) {
+            if (started) return;
+            started = true;
+        }
         while (true) {
             synchronized (this) {
                 while (waitFlag) {
@@ -110,7 +124,7 @@ public class FavIconController extends Thread {
             BufferedImage favicon = downloadFavIcon(host);
             JDLogger.getLogger().severe("downloading favicon from: " + host + (favicon == null ? " failed!" : " ok!"));
             synchronized (LOCK) {
-                ArrayList<PluginForHost> plugins = queue.remove(host);
+                ArrayList<FavIconRequestor> requestors = queue.remove(host);
                 if (favicon == null) {
                     /* favicon loader failed, add to failed list */
                     if (!failed.contains(host)) failed.add(host);
@@ -123,9 +137,9 @@ public class FavIconController extends Thread {
                         Image image = JDTheme.getImage("favicons/" + host, 16, 16);
                         if (image != null) {
                             /* refresh icons for all queued plugins */
-                            ImageIcon icon = new ImageIcon(image);
-                            for (PluginForHost plugin : plugins) {
-                                plugin.setHosterIcon(icon);
+                            for (FavIconRequestor requestor : requestors) {
+                                ImageIcon icon = new ImageIcon(image);
+                                requestor.setFavIcon(icon);
                             }
                         }
                     } catch (Exception e) {
@@ -211,5 +225,14 @@ public class FavIconController extends Thread {
             // JDLogger.exception(e);
         }
         return null;
+    }
+
+    public void saveSyncnonThread() {
+        final String id = JDController.requestDelayExit("faviconcontroller");
+        synchronized (LOCK) {
+            setProperty("lastRefresh", new Long(System.currentTimeMillis()));
+            save();
+        }
+        JDController.releaseDelayExit(id);
     }
 }
