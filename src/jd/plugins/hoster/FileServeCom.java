@@ -44,7 +44,7 @@ public class FileServeCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(The file could not be found|Please check the download link|<p>File not available</p>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(The file could not be found|Please check the download link|<p>File not available</p>|File not available)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
         String filesize = br.getRegex("<span><strong>(.*?)</strong>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

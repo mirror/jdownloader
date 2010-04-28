@@ -105,20 +105,23 @@ public class U115Com extends PluginForHost {
     @Override
     public void handleFree(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
+        int maxchunks = 0;
+        int chosenServer = getConfiguredServer();
+        if (chosenServer == 0)
+            maxchunks = -2;
+        else if (chosenServer == 1) maxchunks = -3;
         requestFileInformation(link);
         String dllink = findLink();
-        if (dllink == null) dllink = findLink2();
+        if (dllink == null) {
+            maxchunks = -2;
+            dllink = findLink2();
+        }
         if (dllink == null) {
             logger.warning("dllink is null, seems like the regexes are defect!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dllink = Encoding.urlDecode(dllink, true);
         dllink = Encoding.htmlDecode(dllink);
-        int maxchunks = 0;
-        int chosenServer = getConfiguredServer();
-        if (chosenServer == 0)
-            maxchunks = -2;
-        else if (chosenServer == 1) maxchunks = -3;
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -128,10 +131,12 @@ public class U115Com extends PluginForHost {
         dl.startDownload();
     }
 
+    public String secondServerregexPart = "\\.[a-z0-9.]+\\.com(:\\d+)?/.*?\\?key=.*?\\&key1=.*?(\\&file=.*?)?\\&key2=[a-z0-9]+)";
+
     public String findLink() throws Exception {
         int chosenServer = getConfiguredServer();
         String serverext = U115_SERVERS[chosenServer];
-        String finalRegex = "(http://\\d+\\." + serverext + "\\.\\d+cdn\\.com(:\\d+)?/.*?\\?key=.*?\\&key1=.*?\\&file=.*?\\&key2=[a-z0-9]+)";
+        String finalRegex = "(http://\\d+\\." + serverext + secondServerregexPart;
         String dllink = br.getRegex(finalRegex).getMatch(0);
         if (dllink == null) logger.info("Dllink for chosen server " + U115_SERVERS[chosenServer] + " couldn't be found");
         return dllink;
@@ -141,7 +146,7 @@ public class U115Com extends PluginForHost {
         String dllink = null;
         for (int i = 0; i <= U115_SERVERS.length - 1; i++) {
             String serverext = U115_SERVERS[i];
-            String finalRegex = "(http://\\d+\\." + serverext + "\\.(\\d+cdn|s\\d+\\.115)\\.com(:\\d+)?/.*?\\?key=.*?\\&key1=.*?\\&file=.*?\\&key2=[a-z0-9]+)";
+            String finalRegex = "(http://\\d+\\." + serverext + secondServerregexPart;
             dllink = br.getRegex(finalRegex).getMatch(0);
             if (dllink != null) break;
         }
