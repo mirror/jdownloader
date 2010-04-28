@@ -225,7 +225,7 @@ public class TbCm extends PluginForDecrypt {
                 ConversionMode convertTo = Plugin.showDisplayDialog(new ArrayList<ConversionMode>(possibleconverts.keySet()), name, param);
 
                 for (Info info : possibleconverts.get(convertTo)) {
-                    DownloadLink thislink = createDownloadlink(info.link);
+                    DownloadLink thislink = createDownloadlink("INSIDEJD" + info.link);
                     thislink.setBrowserUrl(parameter);
                     thislink.setFinalFileName(name + info.desc + ".tmp");
                     thislink.setSourcePluginComment("Convert to " + convertTo.getText());

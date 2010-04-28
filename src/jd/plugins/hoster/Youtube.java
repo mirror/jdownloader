@@ -38,7 +38,7 @@ import jd.utils.JDMediaConvert;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youtube.com" }, urls = { "http://[\\w\\.]*?youtube\\.com/(videoplayback\\?.+|get_video\\?video_id=.+&t=.+(&fmt=\\d+)?)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youtube.com" }, urls = { "INSIDEJDhttp://[\\w\\.]*?youtube\\.com/(videoplayback\\?.+|get_video\\?video_id=.+&t=.+(&fmt=\\d+)?)" }, flags = { 2 })
 public class Youtube extends PluginForHost {
 
     private static final Object lock = new Object();
@@ -52,6 +52,11 @@ public class Youtube extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://youtube.com/t/terms";
+    }
+
+    @Override
+    public void correctDownloadLink(DownloadLink link) throws Exception {
+        link.setUrlDownload(link.getDownloadURL().replaceFirst("INSIDEJDhttp", "http"));
     }
 
     @Override
