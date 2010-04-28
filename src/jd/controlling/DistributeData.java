@@ -74,8 +74,6 @@ public class DistributeData extends Thread {
      */
     private boolean hideGrabber;
 
-    private ArrayList<DownloadLink> linkData;
-
     private String orgData;
 
     private boolean filterNormalHTTP = false;
@@ -172,14 +170,14 @@ public class DistributeData extends Thread {
         final ArrayList<DownloadLink> newdecryptedLinks = new ArrayList<DownloadLink>();
         final ArrayList<DownloadLink> notdecryptedLinks = new ArrayList<DownloadLink>();
         final PluginForHost directhttp = JDUtilities.getPluginForHost("DirectHTTP");
-        class DThread extends Thread implements JDRunnable {
+        class DThread implements JDRunnable {
             private final DownloadLink link;
 
             public DThread(final DownloadLink link) {
                 this.link = link;
             }
 
-            public void run() {
+            public void go() {
                 String url = link.getDownloadURL();
 
                 if (url != null) {
@@ -233,10 +231,6 @@ public class DistributeData extends Thread {
                         notdecryptedLinks.add(link);
                     }
                 }
-            }
-
-            public void go() throws Exception {
-                run();
             }
         }
 
@@ -415,16 +409,12 @@ public class DistributeData extends Thread {
         }
     }
 
-    public ArrayList<DownloadLink> getLinkData() {
-        return linkData;
-    }
-
     private ArrayList<DownloadLink> handleDecryptPlugins() {
 
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         if (DecryptPluginWrapper.getDecryptWrapper() == null) return decryptedLinks;
 
-        class DThread extends Thread implements JDRunnable {
+        class DThread implements JDRunnable {
             private final CryptedLink[] decryptableLinks;
             private final PluginForDecrypt plg;
 
@@ -433,15 +423,11 @@ public class DistributeData extends Thread {
                 this.plg = plg;
             }
 
-            public void run() {
+            public void go() {
                 final ArrayList<DownloadLink> tmp = plg.decryptLinks(decryptableLinks);
                 synchronized (decryptedLinks) {
                     decryptedLinks.addAll(tmp);
                 }
-            }
-
-            public void go() throws Exception {
-                run();
             }
         }
         final Jobber decryptJobbers = new Jobber(4);
@@ -522,10 +508,6 @@ public class DistributeData extends Thread {
         }
         Collections.sort(links);
         LinkGrabberController.getInstance().addLinks(links, hideGrabber, autostart);
-    }
-
-    public void setLinkData(final ArrayList<DownloadLink> linkData) {
-        this.linkData = linkData;
     }
 
     public String getRestData() {

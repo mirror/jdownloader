@@ -17,11 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.HashMap;
-import java.util.Locale;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -54,7 +50,7 @@ public class MegasharesCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage("http://d01.megashares.com/");
-        br.postPage("http://d01.megashares.com/", "lc_email=" + Encoding.urlEncode(account.getUser()) + "&lc_pin=" + Encoding.urlEncode(account.getPass()) + "&lc_signin=Sign-In");
+        br.postPage("http://d01.megashares.com/myms_login.php", "mymslogin_name=" + Encoding.urlEncode(account.getUser()) + "&mymspassword=" + Encoding.urlEncode(account.getPass()) + "&myms_login=Login");
         if (br.getCookie("http://megashares.com", "linkcard") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
@@ -67,17 +63,8 @@ public class MegasharesCom extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        String expires = br.getRegex("</font> Expires: <font.*?>(.*?)</font>").getMatch(0);
-        if (expires == null) {
-            account.setValid(false);
-            return ai;
-        }
-        SimpleDateFormat dateFormat = new SimpleDateFormat("MMM dd, yyyy", Locale.UK);
-        try {
-            Date date = dateFormat.parse(expires);
-            ai.setValidUntil(date.getTime());
-        } catch (ParseException e) {
-        }
+        account.setValid(true);
+        /* TODO: there can be many different kind of linkcards */
         return ai;
     }
 
@@ -110,6 +97,7 @@ public class MegasharesCom extends PluginForHost {
         if (!checkPassword(downloadLink)) { return; }
         if (br.containsHTML("All download slots for this link are currently filled")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
         String url = br.getRegex("<div>\\s*?<a href=\"(http://.*?megashares.*?)\">").getMatch(0);
+        if (url == null) url = br.getRegex("<div id=\"show_download_button(_\\d+)?\".*?>\\n*?\\s*?<a href=\"(http://.*?megashares.*?)\">").getMatch(1);
         if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, -6);
@@ -163,7 +151,7 @@ public class MegasharesCom extends PluginForHost {
         }
         // Downloadlink
         String url = br.getRegex("<div>\\s*?<a href=\"(http://.*?megashares.*?)\">").getMatch(0);
-        if (url == null) url = br.getRegex("<div id=\"show_download_button(_2)?\".*?>\\n*?\\s*?<a href=\"(http://.*?megashares.*?)\">").getMatch(1);
+        if (url == null) url = br.getRegex("<div id=\"show_download_button(_\\d+)?\".*?>\\n*?\\s*?<a href=\"(http://.*?megashares.*?)\">").getMatch(1);
         if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // Dateigröße holen
         br.setFollowRedirects(true);
