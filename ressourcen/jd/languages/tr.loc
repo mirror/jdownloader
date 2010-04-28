@@ -26,7 +26,7 @@ controller.packages.defaultname = Çeşitli
 controller.status.agb_tos = TOS(leri) imzalamadınız
 controller.status.connectionproblems = Bağlantı koptu
 controller.status.containererror = Konteyner Hatası
-controller.status.fileexists.othersource = Dosya başka bir kaynaktan indirildi
+controller.status.fileexists.othersource = Dosya diğer kaynak %s'dan indirildi
 controller.status.fileexists.overwritefailed = Üstüne yazdırılamadı
 controller.status.fileexists.skip = Dosya zaten mevcut
 controller.status.plugindefective = Takmabirim eski
@@ -593,7 +593,7 @@ gui.menu.livescripter.tooltip = HTTP Live Betik Oluştur/Düzenle
 gui.menu.optional.hjsplit.menu.extract.singlefils.accel = -
 gui.menu.optional.hjsplit.menu.extract.singlefils.mnem = A
 gui.menu.optional.hjsplit.menu.extract.singlefils.name = Arşiv(leri) Birleştir...
-gui.menu.optional.hjsplit.menu.extract.singlefils.tooltip = HJ Split arşivlerini Birleştir
+gui.menu.optional.hjsplit.menu.extract.singlefils.tooltip = HJ Split Arşiv(lerini) Birleştir
 gui.menu.optional.hjsplit.menu.toggle.accel = -
 gui.menu.optional.hjsplit.menu.toggle.mnem = -
 gui.menu.optional.hjsplit.menu.toggle.name = Etkin
@@ -843,7 +843,7 @@ interaction.batchreconnect.executein = Burada çalıştır (uygulamanın bulundu
 interaction.batchreconnect.terminal = Yorumlayıcı
 interaction.externreconnect.command = Komut (salt dizin yolları kullan)
 interaction.externreconnect.dummybat = Windows için özel yürütülebilir dosya kullan (örn .bat .exe)
-interaction.externreconnect.parameter = Parametre (her satır için 1 parametre)
+interaction.externreconnect.parameter = Parametre (her satır için tek parametre)
 interaction.shutdown.dialog.msg.closejd = <h2><font color="red">JDownloader Kapatılacak!</font></h2>
 interaction.shutdown.dialog.msg.hibernate = <h2><font color="red">Sisteminiz Hazırda Bekleme/Hibernasyon Moduna Geçirilecek!</font></h2>
 interaction.shutdown.dialog.msg.shutdown = <h2><font color="red">Sisteminiz kapatılacak!</font></h2>
@@ -1346,7 +1346,7 @@ plugins.hoster.rapidshare.com.increasetickettime = Bilet süresini arttır (0%-5
 plugins.hoster.rapidshare.com.preferedserver = Tercih edilen Sunucu
 plugins.hoster.rapidshare.com.preferedserver.random = Rasgele
 plugins.hoster.rapidshare.com.preselection = Rapidshare devralsın
-plugins.hoster.rapidshare.com.telekom = Mümkünse Telekom* sunucusunu kullan 
+plugins.hoster.rapidshare.com.telekom = Mümkünse Telekom sunucusunu kullan 
 plugins.hoster.rapidshare.com.waithosterfull = Ücretsiz indirme yuvaları dolu olduğunda bekle
 plugins.hoster.sendspacecom.errors.servererror = Bilinmeyen sunucu hatası
 plugins.hoster.sendspacecom.errors.serverfull = Ücretsiz hizmet kapasitesi dolmuş durumda
