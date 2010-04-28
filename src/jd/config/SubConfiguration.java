@@ -29,6 +29,7 @@ public class SubConfiguration extends Property implements Serializable {
     transient private static boolean SUBCONFIG_LOCK = false;
     protected String name;
     transient private ArrayList<ConfigurationListener> listener = null;
+    transient boolean valid = false;
     transient private static HashMap<String, SubConfiguration> SUB_CONFIGS = new HashMap<String, SubConfiguration>();
 
     /**
@@ -71,12 +72,16 @@ public class SubConfiguration extends Property implements Serializable {
     public SubConfiguration(String name) {
         this.name = name;
         Object props = JDUtilities.getDatabaseConnector().getData(name);
-        if (props != null) {
+        if (props != null && props instanceof HashMap) {
             this.setProperties((HashMap<String, Object>) props);
+            valid = true;
+        } else {
+            if (props != null) JDLogger.getLogger().severe("Invalid Config Entry for " + name);
         }
     }
 
     public void save() {
+        if (!valid) return;
         this.fireEventPreSave();
         JDUtilities.getDatabaseConnector().saveConfiguration(name, this.getProperties());
         this.fireEventPostSave();
