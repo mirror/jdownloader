@@ -1,0 +1,154 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>JDownloader - WebInterface v<tmpl_var webinterface_version></title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<meta http-equiv="Content-Script-Type" content="text/javascript">
+<link rel="shortcut icon" href="favicon.png" type="image/png"/><link rel="icon" href="favicon.png" type="image/png"/>
+<link rel="apple-touch-icon" href="/iphoneicon.png"/>
+<link href="jd.css" rel="stylesheet" type="text/css">
+<script type="text/javascript" src="filelist.js"></script>
+<script type="text/javascript" src="scripts.js"></script>
+<noscript><meta http-equiv="refresh" content="0;URL=nojs.tmpl"></noscript>
+</head>
+
+<body onload="pageLoaded(); allowChars('maxdls', '01234567890'); allowChars('speed', '01234567890');">
+<div id="main">
+	<div id="header">
+	<h2 class="title">WebInterface<br>(Version <tmpl_var webinterface_version>)</h2>
+	</div>
+
+	<div id="content">
+		<div id="tabs">
+			<ul id="tabmenu">
+				<li class="active"><a class="active" href="index.tmpl" name="Status Page" target="_self">Status Page</a></li>
+				<li class="<tmpl_var unrar_available>"><A href="passwd.tmpl" name="Edit Passwords" target="_self">Edit Password-List</A></li>
+				<li><A href="link_adder.tmpl" name="Link Adder" target="_self">Add Links</A></li>
+			</ul>
+		</div>
+
+		<div id="tabcontent">
+
+			<FORM action="index.tmpl" name="jd" id="jdForm" method="POST" target="_parent">
+
+				<div id="toolbar">
+					<div id="toolbarright">
+						<span class="toolbarButton" id="btnClose" title="Close JD" onclick="validateandsubmit('Close JD?','jdForm','bye.tmpl', 'close')"></span>
+						<span class="toolbarButton" id="btnRestart" title="Restart JD" onclick="validateandsubmit('Restart JD?','jdForm','restart.tmpl', 'restart')"></span>
+					</div>
+					<div id="toolbarleft">
+						<span class="toolbarButton" id="btnRefresh" title="Refresh Page" onclick="forwardto('index.tmpl')"></span>
+						<span class="toolbarButton" id="btnDL<tmpl_var config_startstopbutton escape>" title="Start/Stop Downloads" onclick="submitForm('jdForm','index.tmpl','do', '<tmpl_var config_startstopbutton escape>')"></span>
+						<span class="toolbarButton" id="btnReconnect" title="Reconnect" onclick="submitForm('jdForm','reconnect.tmpl','do','reconnect')"></span>
+						<span class="toolbarButton" id="btnAutoReconnect<tmpl_var config_autoreconnect escape>" title="Activate/Deactivate Auto-Reconnect" onclick="switchAutoReconnect('jdForm','index.tmpl','<tmpl_var config_autoreconnect escape>')"></span>
+						<div class="hide"><input type="checkbox" name="autoreconnect" id="autoreconnect" value="on" <tmpl_var config_autoreconnect>></div>
+					</div>
+					<div id="toolbarcenter">
+						<span id="deactivatedAutoReloadSpace">&nbsp;</span> <!--Um Spruenge im Design beim IE6 zu vermeiden-->
+						<span id="deactivatedAutoReload"><a href="index.tmpl">Auto-Reload<br>deactivated</a></span>
+					</div>
+					<br class="clear">
+				</div>
+
+				<div id="message_<tmpl_var message_status escape>"><tmpl_var message><div><a href="#" class="button" onclick="closeMessage();">Close Message</a></div></div>
+
+				<table class="tabledownload" id="packageContainer">
+					<tr>
+						<td style="width:2%;" class="tabletitle">
+							<input type="checkbox" name="checkallbox" onclick="if (this.checked==true) {checkall(document.jd.package_all_downloads,document.jd.package_single_download); } else {uncheckall(document.jd.package_all_downloads,document.jd.package_single_download);}">
+						</td>
+						<td class="tabletitle">File</td>
+						<td style="width:20%;" class="tabletitle">Hoster</td>
+						<td style="width:300px;" class="tabletitle">Progress</td>
+					</tr>
+
+
+				<tmpl_loop pakete>
+					<tr class="package<tmpl_var download_status escape>">
+						<td><INPUT type="checkbox" name="package_all_downloads" value="<tmpl_var package_id escape>" onclick="samecheckall(document.jd.package_single_download,this)"></td>
+						<td><A href="all_info.tmpl?all_info=<tmpl_var package_id escape>" name="PackageInfo" onclick="return popup(this,600,200)"><tmpl_var download_name></A></td>
+						<td><tmpl_var download_hoster></td>
+						<td class="ladebalken">
+							<div class="ladebalken">
+								<div class="ladebalkenWrapper">
+									<div name="ladebalken" class="running" style="width: <tmpl_var download_status_percent escape>%;" id="<tmpl_var package_id escape>">&nbsp;
+									</div>
+								</div>
+								<span class="ladestatus"><tmpl_var download_status_text></span>
+								<br class="clear">
+							</div>
+						</td>
+					</tr>
+
+					<tmpl_loop downloads>
+						<tr class="download<tmpl_var download_status escape>">
+							<td><INPUT type="checkbox" name="package_single_download" value="<tmpl_var package_id escape> <tmpl_var download_id escape>" onclick="areallsamechecked(this,document.jd.package_single_download,document.jd.package_all_downloads)"></TD>
+							<td><A href="single_info.tmpl?single_info=<tmpl_var package_id escape>+<tmpl_var download_id escape>" name="LinkInfo" onclick="return popup(this,600,200)" style="padding-left: 20px;"><tmpl_var download_name></A></TD>
+							<td><tmpl_var download_hoster></TD>
+							<td class="ladebalken">
+								<div class="ladebalken">
+									<div class="ladebalkenWrapper">
+										<div name="ladebalken" class="<tmpl_var download_status escape>" style="width: <tmpl_var download_status_percent escape>%;" id="<tmpl_var package_id escape>_<tmpl_var download_id escape>">&nbsp;
+										</div>
+									</div>
+									<span class="ladestatus"><tmpl_var download_status_text></span>
+									<br class="clear">
+								</div></td>
+						</tr>
+					</tmpl_loop>
+
+				</tmpl_loop>
+				</table>
+
+				<script type="text/javascript">
+					// This must be placed immediately after the filelists (packages/downloads).
+					initiate("statuslist");
+					startPageReload(<tmpl_var page_refresh>);
+					setProgressBarsColors('f5f502', '02CE02');
+				</script>
+
+				<div class="rightDLOptions">
+					Max. Downloads <INPUT type="text" name="maxdls" id="maxdls" value="<tmpl_var config_max_downloads escape>" maxlength="4" size="4" onkeydown="formElementChanged()"> , SpeedLimit <INPUT type="text" name="speed" id="speed" value="<tmpl_var config_max_speed escape>" maxlength="4" size="4" onkeydown="formElementChanged()"> KB/s (Current: <tmpl_var config_current_speed> KB/s)</TD>
+					<a href="#" class="button" onclick="submitForm('jdForm','index.tmpl','do','submit')">Go!</a>
+				</div>
+
+				<DIV class="leftDLOptions">
+					<SELECT onchange="formElementChanged()" name="selected_dowhat_index">
+					<option>activate</option>
+					<option>deactivate</option>
+					<option>reset</option>
+					<option>abort</option>
+					<option>remove</option>
+					</SELECT>
+					<a href="#" class="button" onclick="submitForm('jdForm','index.tmpl','do','submit')">Go!</a>
+				</DIV>
+				<br>
+			</FORM>
+
+			<h1>Add Links</h1>
+			<FORM name="add" id="addForm" action="link_adder.tmpl" target="_parent" method="POST">
+				<DIV class="linkAddBox">
+					<div style="float:right;">
+					<a href="#" onclick="submitForm('addForm','link_adder.tmpl','do','Add')" class="addButton">Add</a>
+					</div>
+
+					<div style="padding-right: 100px;">
+					<textarea name="addlinks" cols="90" rows="3" onfocus="formElementChanged(); clean(this);" style="width:100%; float:left;">Paste your Links here (Container URLs, Link URLs, SourceCode from Pages to parse)</textarea>
+					</div>
+					<br class="clear">
+				</DIV>
+			</FORM>
+
+			<h1>Upload container file</h1>
+			<form name="upload" id="uploadForm" action="link_adder.tmpl" method="post" enctype="multipart/form-data">
+				<div class="linkAddBox">
+					<span style="color: #000; font-weight:bold;">Container upload:</span> <input name="container" type="file" size="50" onclick="formElementChanged()"> <a href="#" class="button" onclick="submitForm('uploadForm','link_adder.tmpl','do','Upload')">Upload!</a>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+<div id="footer">PlugIn by jiaz, Design (HTML, CSS, JS) by Bo0nZ</div>
+</body>
+</html>
