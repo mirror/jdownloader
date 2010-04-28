@@ -49,8 +49,14 @@ public class MegasharesCom extends PluginForHost {
     private void login(Account account) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        String pw = account.getPass();
+        /*
+         * pw length is limited to 16 chars, more are ignored and login will
+         * fail
+         */
+        if (pw.length() > 16) pw = pw.substring(0, 16);
         br.getPage("http://d01.megashares.com/");
-        br.postPage("http://d01.megashares.com/myms_login.php", "mymslogin_name=" + Encoding.urlEncode(account.getUser()) + "&mymspassword=" + Encoding.urlEncode(account.getPass()) + "&myms_login=Login");
+        br.postPage("http://d01.megashares.com/myms_login.php", "mymslogin_name=" + Encoding.urlEncode(account.getUser()) + "&mymspassword=" + Encoding.urlEncode(pw) + "&myms_login=Login");
         if (br.getCookie("http://megashares.com", "linkcard") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
