@@ -142,6 +142,14 @@ public class Schedule extends PluginOptional {
         synchronized (LOCK) {
             this.getPluginConfig().setProperty("Scheduler_Actions", actions);
             this.getPluginConfig().save();
+
+            if (actions.size() == 0) {
+                running = false;
+            } else if (actions.size() > 0 && !sc.isAlive()) {
+                running = true;
+                sc = new Schedulercheck();
+                sc.start();
+            }
         }
     }
 
@@ -197,7 +205,11 @@ public class Schedule extends PluginOptional {
         logger.info("Schedule Init: OK");
         running = true;
         sc = new Schedulercheck();
-        sc.start();
+
+        if (actions.size() > 0) {
+            sc.start();
+        }
+
         return true;
     }
 
