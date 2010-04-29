@@ -27,6 +27,7 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.SubConfiguration;
+import jd.controlling.DownloadWatchDog;
 import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
 import jd.controlling.SingleDownloadController;
@@ -240,17 +241,52 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
         }
     }
 
+    /**
+     * Checks if the merged file(s) has enough space.
+     * 
+     * @param files
+     * @param extractTo
+     * @return
+     */
+    private boolean checkSize(ArrayList<File> files, DownloadLink extractTo) {
+        if (JDUtilities.getJavaVersion() < 1.6) return true;
+
+        long totalSize = 0;
+
+        for (File f : files) {
+            totalSize += f.length();
+        }
+
+        // Add 500MB extra Buffer
+        totalSize += 1024 * 1024 * 1024 * 500;
+
+        for (DownloadLink dlink : DownloadWatchDog.getInstance().getRunningDownloads()) {
+            totalSize += dlink.getDownloadSize() - dlink.getDownloadCurrent();
+        }
+
+        if (new File(extractTo.getFileOutput()).getUsableSpace() < totalSize) return false;
+
+        return true;
+    }
+
     /** Startet das Abwarbeiten der extractqueue */
     private void addToQueue(final DownloadLink link) {
 
         queue.add(new JDRunnable() {
 
             public void go() {
+                ArrayList<File> list = getFileList(new File(link.getFileOutput()));
+
+                if (!checkSize(list, link)) {
+                    JDLogger.getLogger().warning("Not enough available space for merging");
+                    return;
+                }
+
                 final File output = getOutputFile(new File(link.getFileOutput()));
                 if (output == null) return;
                 final ProgressController progress = new ProgressController("Default HJMerge", 100, "gui.images.addons.merge");
                 JAxeJoiner join = JoinerFactory.getJoiner(new File(link.getFileOutput()));
-                ArrayList<File> list = getFileList(new File(link.getFileOutput()));
+
                 if (list != null) {
                     String cutKillerExt = getCutkillerExtension(new File(link.getFileOutput()), list.size());
                     join.setCutKiller(cutKillerExt);
