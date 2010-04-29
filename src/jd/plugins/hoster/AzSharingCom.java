@@ -206,7 +206,7 @@ public class AzSharingCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             for (String link : sitelinks) {
-                if (link.matches(".*?/captchas/.*?\\.jpg") && !link.contains("clear")) {
+                if (link.matches(".*?/captchas/.*?\\.[a-z]{2,4}") && !link.contains("clear")) {
                     captchaurl = link;
                     break;
                 }
