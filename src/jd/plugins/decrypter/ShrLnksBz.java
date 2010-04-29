@@ -15,6 +15,7 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package jd.plugins.decrypter;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -50,6 +51,8 @@ public class ShrLnksBz extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+        Boolean decrypterBroken = true;
+        if (decrypterBroken) return null;
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         this.setBrowserExclusive();
@@ -94,7 +97,9 @@ public class ShrLnksBz extends PluginForDecrypt {
 
         if (br.containsHTML("(/captcha/|captcha_container|\"Captcha\"|id=\"captcha\")")) {
             for (int i = 0; i <= 5; i++) {
-                String Captchamap = br.getRegex("/><img src=\"(.*?)\" alt=\"Captcha\" id=\"captcha\" usemap=\"#captchamap\" />").getMatch(0);
+                String Captchamap = br.getRegex("\"(/captcha\\.gif\\?d=\\d+.*?PHPSESSID=.*?)\"").getMatch(0);
+                if (Captchamap == null) return null;
+                Captchamap = Captchamap.replaceAll("(\\&amp;|legend=1)", "");
                 File file = this.getLocalCaptchaFile();
                 Browser temp = br.cloneBrowser();
                 temp.getDownload(file, "http://share-links.biz" + Captchamap);
@@ -131,26 +136,13 @@ public class ShrLnksBz extends PluginForDecrypt {
         brc.getPage("http://share-links.biz/template/images/flags/en.gif");
         brc.getPage("http://share-links.biz/template/images/flags/de.gif");
 
-        // container handling
-        if (br.containsHTML("'dlc'")) {
-            decryptedLinks = loadcontainer(br, "dlc");
+        // container handling (DLC)
+        if (br.getRegex("get as dlc container\"  style=\".*?\" onclick=\"javascript:_get\\('(.*?)', 0, 'dlc'\\);\"").getMatch(0) != null) {
+            String dlclink = "http://share-links.biz/get/dlc/" + br.getRegex("get as dlc container\"  style=\".*?\" onclick=\"javascript:_get\\('(.*?)', 0, 'dlc'\\);\"").getMatch(0);
+            decryptedLinks = loadcontainer(br, dlclink);
             if (decryptedLinks != null && decryptedLinks.size() > 0) return decryptedLinks;
         }
 
-        if (br.containsHTML("'rsdf'")) {
-            decryptedLinks = loadcontainer(br, "rsdf");
-            if (decryptedLinks != null && decryptedLinks.size() > 0) return decryptedLinks;
-        }
-
-        if (br.containsHTML("'ccf'")) {
-            decryptedLinks = loadcontainer(br, "ccf");
-            if (decryptedLinks != null && decryptedLinks.size() > 0) return decryptedLinks;
-        }
-        if (br.containsHTML("'cnl'")) {
-            decryptedLinks = loadcontainer(br, "cnl");
-            if (decryptedLinks != null && decryptedLinks.size() > 0) return decryptedLinks;
-
-        }
         /* File package handling */
         int pages = 1;
         String pattern = parameter.substring(parameter.lastIndexOf("/"), parameter.length());
@@ -160,7 +152,8 @@ public class ShrLnksBz extends PluginForDecrypt {
         LinkedList<String> links = new LinkedList<String>();
         for (int i = 1; i <= pages; i++) {
             br.getPage(host + pattern + "?n=" + i);
-            String[] linki = br.getRegex("decrypt\\.gif\".*?_get\\('(.*?)'").getColumn(0);
+            String[] linki = br.getRegex("decrypt\\.gif\" onclick=\"javascript:_get\\('(.*?)'\\)").getColumn(0);
+            if (linki.length == 0) return null;
             links.addAll(Arrays.asList(linki));
         }
         if (links.size() == 0) return null;
@@ -207,24 +200,15 @@ public class ShrLnksBz extends PluginForDecrypt {
     }
 
     /** by jiaz */
-    private ArrayList<DownloadLink> loadcontainer(Browser br, String format) throws IOException, PluginException {
+    private ArrayList<DownloadLink> loadcontainer(Browser br, String dlclinks) throws IOException, PluginException {
         Browser brc = br.cloneBrowser();
-        String dlclinks = null;
-        if (format.matches("dlc")) {
-            dlclinks = br.getRegex("dlc container.*?onclick=\"javascript:_get\\('(.*?)'.*?'dlc'\\)").getMatch(0);
-        } else if (format.matches("ccf")) {
-            dlclinks = br.getRegex("ccf container.*?onclick=\"javascript:_get\\('(.*?)'.*?'ccf'\\)").getMatch(0);
-        } else if (format.matches("rsdf")) {
-            dlclinks = br.getRegex("rsdf container.*?onclick=\"javascript:_get\\('(.*?)'.*?'rsdf'\\)").getMatch(0);
-        }
 
         if (dlclinks == null) return new ArrayList<DownloadLink>();
-        dlclinks = "http://share-links.biz/get/" + format + "/" + dlclinks;
         String test = Encoding.htmlDecode(dlclinks);
         File file = null;
         URLConnectionAdapter con = brc.openGetConnection(dlclinks);
         if (con.getResponseCode() == 200) {
-            file = JDUtilities.getResourceFile("tmp/sharelinks/" + test.replaceAll("(http://share-links.biz/|/|\\?)", "") + "." + format);
+            file = JDUtilities.getResourceFile("tmp/sharelinks/" + test.replaceAll("(http://share-links\\.biz/|/|\\?)", "") + ".dlc");
             if (file == null) return new ArrayList<DownloadLink>();
             file.deleteOnExit();
             brc.downloadConnection(file, con);
