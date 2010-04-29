@@ -51,7 +51,7 @@ public class MoiDiskRu extends PluginForHost {
     private static final String COOKIE_HOST = "http://moidisk.ru";
 
     public void correctDownloadLink(DownloadLink link) {
-        String linkId = new Regex(link.getDownloadURL(), "([a-z0-9]{12}$").getMatch(0);
+        String linkId = new Regex(link.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
         logger.info("Regexed linkId = " + linkId);
         link.setUrlDownload(COOKIE_HOST + "/" + linkId);
     }
