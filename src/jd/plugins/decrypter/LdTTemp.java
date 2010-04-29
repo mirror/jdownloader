@@ -30,7 +30,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.pluginUtils.Recaptcha;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "iload.to", "lof.cc" }, urls = { "http://[\\w\\.]*?links\\.iload\\.to/links/\\?lid=.+", "http://[\\w\\.]*?lof\\.cc/[!a-zA-Z0-9_]+" }, flags = { 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "lof.cc" }, urls = { "http://[\\w\\.]*?(lof\\.cc|92\\.241\\.168\\.5)/[!a-zA-Z0-9_]+" }, flags = { 0 })
 public class LdTTemp extends PluginForDecrypt {
 
     public LdTTemp(PluginWrapper wrapper) {
