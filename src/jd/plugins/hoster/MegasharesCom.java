@@ -50,6 +50,9 @@ public class MegasharesCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         String pw = account.getPass();
+        if (pw.length() > 32) {
+            pw = pw.substring(0, 32);
+        }
         br.getPage("http://d01.megashares.com/");
         br.postPage("http://d01.megashares.com/myms_login.php", "mymslogin_name=" + Encoding.urlEncode(account.getUser()) + "&mymspassword=" + Encoding.urlEncode(pw) + "&myms_login=Login");
         if (br.getCookie("http://megashares.com", "myms") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -110,7 +113,7 @@ public class MegasharesCom extends PluginForHost {
         if (url == null) url = br.getRegex("<div id=\"show_download_button(_\\d+)?\".*?>\\n*?\\s*?<a href=\"(http://.*?megashares.*?)\">").getMatch(1);
         if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, -6);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, -10);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
