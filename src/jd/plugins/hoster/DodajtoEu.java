@@ -79,7 +79,7 @@ public class DodajtoEu extends PluginForHost {
     public void handleFree(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         requestFileInformation(link);
-        // br.postPage(link.getDownloadURL(), "Free=Free+Users");
+        if (br.containsHTML("value=\"Free Users\"")) br.postPage(link.getDownloadURL(), "Free=Free+Users");
         String passCode = null;
         Form captchaform = br.getFormbyProperty("name", "myform");
         if (captchaform == null) {

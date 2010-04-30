@@ -125,6 +125,7 @@ public class FilesMailRu extends PluginForHost {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
         if (iHaveToWait) {
+            logger.info("Waiting...");
             String ttt = br.getRegex("файлы через.*?(\\d+).*?сек").getMatch(0);
             if (ttt == null) ttt = br.getRegex("download files in.*?(\\d+).*?sec").getMatch(0);
             int tt = 10;
@@ -133,6 +134,8 @@ public class FilesMailRu extends PluginForHost {
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, 0);
         if ((dl.getConnection().getContentType().contains("html"))) {
+            logger.warning("The finallink doesn't seem to be a file, following connection...");
+            logger.warning("finallink = " + downloadLink.getDownloadURL());
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
