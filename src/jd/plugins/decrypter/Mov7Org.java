@@ -29,7 +29,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "movie7.org" }, urls = { "http://[\\w\\.]*?movie7\\.org/.*?/[0-9]+-.*?\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "movie7.org" }, urls = { "http://[\\w\\.]*?movie7\\.(org|me)/.*?/[0-9]+-.*?\\.html" }, flags = { 0 })
 public class Mov7Org extends PluginForDecrypt {
 
     public Mov7Org(PluginWrapper wrapper) {
@@ -39,6 +39,7 @@ public class Mov7Org extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        parameter = parameter.replace("movie7.org", "movie7.me");
         br.setFollowRedirects(false);
         br.getPage(parameter);
         if (br.getRedirectLocation() != null && br.getRedirectLocation().equals("http://movie7.org")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
@@ -62,7 +63,7 @@ public class Mov7Org extends PluginForDecrypt {
             }
             String finallink = new Regex(decrypted, "href=\"(.*?)\"").getMatch(0);
             if (finallink != null) {
-                if (!finallink.contains("firstload.de/affiliate")){
+                if (!finallink.contains("firstload.de/affiliate")) {
                     DownloadLink dlink = createDownloadlink(finallink.trim());
                     dlink.addSourcePluginPassword("movie7.org");
                     decryptedLinks.add(dlink);
