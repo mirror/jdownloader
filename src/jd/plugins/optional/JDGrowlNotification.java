@@ -48,7 +48,6 @@ public class JDGrowlNotification extends PluginOptional {
 
     @Override
     public boolean initAddon() {
-        JDUtilities.getController().addControlListener(this);
         /*
          * because something blocks file after first usage, we copy it to temp
          * one, so updater can update it if needed
@@ -82,7 +81,7 @@ public class JDGrowlNotification extends PluginOptional {
             if (lastLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
                 growlNotification(JDL.L(JDL_PREFIX + "finished", "Download stopped"), lastLink.getFinalFileName(), "Download complete");
             }
-            break; 
+            break;
         default:
             break;
         }
@@ -104,7 +103,6 @@ public class JDGrowlNotification extends PluginOptional {
 
     @Override
     public void onExit() {
-        JDUtilities.getController().removeControlListener(this);
     }
 
     private String getDateAndTime() {

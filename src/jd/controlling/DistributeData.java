@@ -94,25 +94,24 @@ public class DistributeData extends Thread {
         this.disableDeepEmergencyScan = true;
     }
 
+    public DistributeData(final String data, final boolean hideGrabber) {
+        this(data);
+        this.hideGrabber = hideGrabber;
+    }
+
     public DistributeData setDisableDeepEmergencyScan(final boolean b) {
         this.disableDeepEmergencyScan = b;
         return this;
     }
 
-    public DistributeData setHideGrabber(final boolean b) {
-        this.hideGrabber = b;
-        return this;
-    }
-
-    public DistributeData setAutostart(final boolean b) {
-        this.autostart = b;
-        return this;
-    }
-
-    public DistributeData(final String data, final boolean hideGrabber) {
-        this(data);
+    public DistributeData setHideGrabber(final boolean hideGrabber) {
         this.hideGrabber = hideGrabber;
-        this.disableDeepEmergencyScan = true;
+        return this;
+    }
+
+    public DistributeData setAutostart(final boolean autostart) {
+        this.autostart = autostart;
+        return this;
     }
 
     public DistributeData setFilterNormalHTTP(final boolean b) {

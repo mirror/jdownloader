@@ -1,5 +1,6 @@
 package jd.plugins.optional.infobar;
 
+import java.awt.DisplayMode;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -30,15 +31,19 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
 
     private static InfoDialog INSTANCE = null;
 
-    public static InfoDialog getInstance(final MenuAction action, final boolean enableDropLocation) {
-        if (INSTANCE == null) INSTANCE = new InfoDialog(action, enableDropLocation);
+    public static InfoDialog getInstance(MenuAction action) {
+        if (INSTANCE == null) INSTANCE = new InfoDialog(action);
         return INSTANCE;
     }
 
     private static final long serialVersionUID = 4715904261105562064L;
 
+    private static final int DOCKING_DISTANCE = 25;
+
     private final DownloadInformations ds;
     private final MenuAction action;
+    private final DragDropHandler ddh;
+    private boolean enableDocking;
 
     private InfoUpdater updater = null;
     private Point point;
@@ -47,11 +52,12 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
     private JLabel lblProgress;
     private JLabel lblETA;
 
-    private InfoDialog(MenuAction action, boolean enableDropLocation) {
+    private InfoDialog(MenuAction action) {
         super();
 
         this.ds = new DownloadInformations();
         this.action = action;
+        this.ddh = new DragDropHandler();
 
         this.setName("INFODIALOG");
         this.setAlwaysOnTop(true);
@@ -59,8 +65,6 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
 
         this.addMouseListener(this);
         this.addMouseMotionListener(this);
-
-        if (enableDropLocation) this.setTransferHandler(new DragDropHandler());
 
         initGui();
     }
@@ -98,6 +102,18 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
 
         GUIUtils.saveLastLocation(this);
         dispose();
+    }
+
+    public void setEnableDocking(boolean enableDocking) {
+        this.enableDocking = enableDocking;
+    }
+
+    public void setEnableDropLocation(boolean enableDropLocation) {
+        if (enableDropLocation) {
+            this.setTransferHandler(ddh);
+        } else {
+            this.setTransferHandler(null);
+        }
     }
 
     private void updateInfos() {
@@ -163,8 +179,51 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
     }
 
     public void mouseDragged(MouseEvent e) {
-        Point window = this.getLocation();
-        this.setLocation((int) (window.getX() + e.getX() - point.getX()), (int) (window.getY() + e.getY() - point.getY()));
+        if (enableDocking) {
+            Point drag = e.getPoint();
+
+            /*
+             * Convert coordinate of the component to the whole screen and
+             * translate to the dragging-start-point.
+             */
+            SwingUtilities.convertPointToScreen(drag, this);
+            drag.translate(-point.x, -point.y);
+
+            int x = drag.x;
+            int y = drag.y;
+            int w = getWidth();
+            int h = getHeight();
+
+            /*
+             * If distance to the upper and left screen border is less than
+             * DOCKING_DISTANCE, then dock the InfoDialog to the border.
+             */
+            if (x < DOCKING_DISTANCE) x = 0;
+            if (y < DOCKING_DISTANCE) y = 0;
+
+            DisplayMode dm = getGraphicsConfiguration().getDevice().getDisplayMode();
+            int xMax = dm.getWidth() - w;
+            int yMax = dm.getHeight() - h;
+
+            /*
+             * If distance to the lower and right screen border is less than
+             * DOCKING_DISTANCE, then dock the InfoDialog to the border.
+             */
+            if (x > xMax - DOCKING_DISTANCE) x = xMax;
+            if (y > yMax - DOCKING_DISTANCE) y = yMax;
+
+            /*
+             * Finally set the new location.
+             */
+            this.setLocation(x, y);
+        } else {
+            Point window = this.getLocation();
+
+            int x = window.x + e.getPoint().x - point.x;
+            int y = window.y + e.getPoint().y - point.y;
+
+            this.setLocation(x, y);
+        }
     }
 
     public void mouseMoved(MouseEvent e) {

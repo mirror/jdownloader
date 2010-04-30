@@ -115,14 +115,12 @@ public class JDShutdown extends PluginOptional {
 
         };
         menuAction.setSelected(shutdownEnabled);
-        JDUtilities.getController().addControlListener(this);
         logger.info("Shutdown OK");
         return true;
     }
 
     @Override
     public void onExit() {
-        JDUtilities.getController().removeControlListener(this);
     }
 
     private void closejd() {

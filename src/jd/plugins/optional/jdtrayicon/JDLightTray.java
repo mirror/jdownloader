@@ -139,7 +139,6 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
                     return false;
                 }
                 try {
-                    JDUtilities.getController().addControlListener(JDLightTray.this);
                     if (SwingGui.getInstance() != null) {
                         guiFrame = SwingGui.getInstance().getMainFrame();
                         if (guiFrame != null) {

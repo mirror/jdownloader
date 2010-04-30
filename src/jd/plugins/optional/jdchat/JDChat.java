@@ -111,11 +111,9 @@ public class JDChat extends PluginOptional implements ControlListener {
     public static final String STYLE_PM = "pm";
     public static final String STYLE_SELF = "self";
     public static final String STYLE_SYSTEM_MESSAGE = "system";
-    // private static final int TEXT_BUFFER = 1024 * 600;
     public static final String USERLIST_STYLE = JDIO.readFileToString(JDUtilities.getResourceFile("plugins/jdchat/userliststyles.css"));
     private static final String CHANNEL_LNG = "CHANNEL_LNG3";
     private JLabel top;
-    private boolean changed;
 
     private IRCConnection conn;
     private SwitchPanel frame;
@@ -665,13 +663,6 @@ public class JDChat extends PluginOptional implements ControlListener {
         } else {
             sb.append("<span>" + msg + "</span>");
         }
-
-        // if (sb.length() > TEXT_BUFFER) {
-        // String tmp = sb.toString();
-        // tmp = tmp.substring(tmp.indexOf("<!---->", sb.length() / 3)).trim();
-        // sb = new StringBuilder();
-        // sb.append(tmp);
-        // }
 
         new GuiRunnable<Object>() {
 
@@ -1517,7 +1508,6 @@ public class JDChat extends PluginOptional implements ControlListener {
             }
 
         }.start();
-
     }
 
     private void startAwayObserver() {
@@ -1548,7 +1538,6 @@ public class JDChat extends PluginOptional implements ControlListener {
         final StringBuilder sb = new StringBuilder();
         Collections.sort(NAMES);
         boolean color = subConfig.getBooleanProperty(PARAM_USERCOLOR, true);
-        // USERLIST_STYLE
         sb.append("<ul>");
         for (User name : NAMES) {
             sb.append("<li>");

@@ -53,6 +53,7 @@ public abstract class PluginOptional extends Plugin implements ControlListener {
         }
     }
 
+    @Override
     public String getHost() {
         return this.getWrapper().getHost();
     }
@@ -69,7 +70,7 @@ public abstract class PluginOptional extends Plugin implements ControlListener {
         return "gui.images.config.home";
     }
 
-    // @Override
+    @Override
     public Pattern getSupportedLinks() {
         return null;
     }
@@ -88,16 +89,25 @@ public abstract class PluginOptional extends Plugin implements ControlListener {
 
     public boolean startAddon() {
         if (isRunning()) return true;
-        if (initAddon()) {
-            running = true;
-        } else {
-            running = false;
-        }
+
+        running = initAddon();
+
+        /*
+         * if addon was inited successfully, add it as a ControlListener
+         */
+        if (running) JDController.getInstance().addControlListener(this);
         return running;
     }
 
     public void stopAddon() {
-        if (isRunning()) onExit();
+        if (!isRunning()) return;
+
+        onExit();
+
+        /*
+         * if addon is running, remove it from the ControlListener list
+         */
+        JDController.getInstance().removeControlListener(this);
     }
 
     @Override
