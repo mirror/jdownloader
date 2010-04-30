@@ -1,7 +1,7 @@
 action.customize.addsetting.ask = Ingrese el nombre de la configuración:
 action.customize.removesetting.ask = Remover configuraciones seleccionadas? (%s)
-action.premiumview.removeacc.accs = %s Cuenta(s)
-action.premiumview.removeacc.ask = Remover seleccionados
+action.premiumview.removeacc.accs = (%s)
+action.premiumview.removeacc.ask = Remover cuentas seleccionadas?
 addons.jdshutdown.statusmessage.disabled = JDownloader ya no apagara el equipo...
 addons.jdshutdown.statusmessage.enabled = JDownloader apagará el equipo al finalizar las descargas!
 ballon.download.connectionlost.message = <b>%s<b><hr>Conexión perdida
