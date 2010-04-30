@@ -1474,7 +1474,11 @@ abstract public class DownloadInterface {
         }
         if (fileOutput.isDirectory()) return false;
         if (!fileOutput.getParentFile().exists()) {
-            fileOutput.getParentFile().mkdirs();
+            if (!fileOutput.getParentFile().mkdirs()) {
+                linkstatus.addStatus(LinkStatus.ERROR_FATAL);
+                linkstatus.setErrorMessage(JDL.L("system.download.errors.invalidoutputfile", "Invalid Outputfile"));
+                return true;
+            }
         }
         if (fileOutput.exists()) {
             if (SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_FILE_EXISTS, 1) == 0) {

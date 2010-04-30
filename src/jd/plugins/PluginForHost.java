@@ -144,6 +144,7 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
 
     protected ImageIcon hosterIcon;
     private MenuAction premiumAction;
+    private DownloadLink link = null;
 
     public boolean checkLinks(final DownloadLink[] urls) {
         return false;
@@ -671,6 +672,14 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
 
     public void setFavIcon(ImageIcon icon) {
         config.setIcon(icon);
+    }
+
+    public void setDownloadLink(DownloadLink link) {
+        this.link = link;
+    }
+
+    public DownloadLink getDownloadLink() {
+        return link;
     }
 
 }

@@ -946,7 +946,10 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      */
     public void setLoadedPlugin(PluginForHost plugin) {
         this.plugin = plugin;
-        if (plugin != null) getTransferStatus().setPremiumSupport(plugin.isPremiumEnabled());
+        if (plugin != null) {
+            getTransferStatus().setPremiumSupport(plugin.isPremiumEnabled());
+            plugin.setDownloadLink(this);
+        }
     }
 
     public void setLoadedPluginForContainer(PluginsC pluginForContainer) {

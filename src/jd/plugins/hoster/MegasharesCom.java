@@ -50,14 +50,9 @@ public class MegasharesCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         String pw = account.getPass();
-        /*
-         * pw length is limited to 16 chars, more are ignored and login will
-         * fail
-         */
-        if (pw.length() > 16) pw = pw.substring(0, 16);
         br.getPage("http://d01.megashares.com/");
         br.postPage("http://d01.megashares.com/myms_login.php", "mymslogin_name=" + Encoding.urlEncode(account.getUser()) + "&mymspassword=" + Encoding.urlEncode(pw) + "&myms_login=Login");
-        if (br.getCookie("http://megashares.com", "linkcard") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (br.getCookie("http://megashares.com", "myms") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
     @Override
@@ -67,9 +62,18 @@ public class MegasharesCom extends PluginForHost {
             login(account);
         } catch (PluginException e) {
             account.setValid(false);
+            ai.setStatus("Please use *My Megashares* Account!Create one and link with your linkcard");
             return ai;
         }
         account.setValid(true);
+        String validUntil = br.getRegex("premium_info_box\">Period Ends:(.*?)<").getMatch(0);
+        if (validUntil == null) {
+            account.setValid(false);
+        } else {
+            account.setValid(true);
+            ai.setValidUntil(Regex.getMilliSeconds(validUntil.trim(), "MMM dd, yyyy", null));
+        }
+
         /* TODO: there can be many different kind of linkcards */
         return ai;
     }

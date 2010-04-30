@@ -19,6 +19,8 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import javax.swing.ImageIcon;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -42,6 +44,9 @@ import jd.utils.locale.JDL;
 public class DirectHTTP extends PluginForHost {
 
     private String contentType;
+
+    String host = null;
+    private ImageIcon icon = null;
 
     static public final String ENDINGS = "\\.(cbr|cbz|otrkey|ac3|3gp|7zip|7z|aiff|aif|aifc|au|avi|bin|bz2|ccf|cue|deb|divx|dlc|dmg|doc|docx|dot|exe|ff|flv|gif|gz|iwd|iso|java|jar|jpg|jpeg|jdeatme|m4v|mkv|mp2|mp3|mp4|mov|movie|mpeg|mpe|mpg|msi|msu|nfo|oga|ogg|ogv|pkg|png|pdf|ppt|pptx|pps|ppz|pot|psd|qt|rmvb|rar|r\\d+|rpm|run|rsdf|rtf|sh|srt|snd|sfv|tar|tif|tiff|viv|vivo|vob|wav|wmv|xla|xls|zip|z\\d+|ts|load|xpi|_[_a-z]{2}|djvu|\\d+)";
 
@@ -230,5 +235,27 @@ public class DirectHTTP extends PluginForHost {
 
     public void resetPluginGlobals() {
     }
+    // TODO: uncomment with next big update of core
+    // @Override
+    // public String getSessionInfo() {
+    // if (getDownloadLink() == null) return "";
+    // if (host != null) return host;
+    // host = ": " + Browser.getHost(getDownloadLink().getDownloadURL());
+    // return host;
+    // }
+    //
+    // @Override
+    // public ImageIcon getHosterIcon() {
+    // if (getDownloadLink() == null) return super.getHosterIcon();
+    // if (icon != null) return icon;
+    // icon = FavIconController.getFavIcon(getDownloadLink().getDownloadURL(),
+    // this, false);
+    // return icon;
+    // }
+    //
+    // @Override
+    // public void setFavIcon(ImageIcon icon) {
+    // this.icon = icon;
+    // }
 
 }
