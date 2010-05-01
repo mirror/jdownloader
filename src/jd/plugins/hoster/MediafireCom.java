@@ -228,8 +228,8 @@ public class MediafireCom extends PluginForHost {
      * @throws PluginException
      */
     private String[] getParameters() throws Exception {
-        String evalWhat = br.getRegex("var [a-zA-Z0-9]+=unes.*?eval\\((.*?)\\)").getMatch(0);
-        String eval = br.getRegex("(var " + evalWhat + "=.*?var [a-zA-Z0-9]+=unes.*?)eval\\(").getMatch(0);
+        String evalWhat = br.getRegex("var\\s.*?[a-zA-Z0-9]+=\\s.*?unes.*?eval\\((.*?)\\)").getMatch(0);
+        String eval = br.getRegex("(var\\s.?" + evalWhat + "=.*?var\\s.*?[a-zA-Z0-9]+=unes.*?;?)eval\\(").getMatch(0);
         eval = eval.replaceAll("\\\\'", "'");
         eval = eval.replaceAll("\\\\\"", "\"");
         String params = null;
@@ -312,13 +312,13 @@ public class MediafireCom extends PluginForHost {
         String[] ids = br.getRegex("function " + parameters[3] + "\\(.*?io=.*?ElementbyId\\('(.*?)'").getColumn(0);
         String[] ids2 = br.getRegex("<div class=\".*?\" style=\".*?\" id=\"(.*?)\"").getColumn(0);
         br.getPage("http://www.mediafire.com/dynamic/download.php?qk=" + qk + "&pk=" + pk + "&r=" + r);
-        String error = br.getRegex("var et=(.*?);").getMatch(0);
+        String error = br.getRegex("var\\s.*?et=(.*?);").getMatch(0);
         if (error != null && !error.trim().equalsIgnoreCase("15")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
         /* now we have to js the functions and find the right js parts */
         String evalsWhat[] = br.getRegex("eval\\((?!\")(.*?)\\)").getColumn(0);
         ArrayList<String> evals = new ArrayList<String>();
         for (String evalWhat : evalsWhat) {
-            String evalThis = br.getRegex("(var " + evalWhat + "=.*?var [a-zA-Z0-9]+=unes.*?)eval\\(").getMatch(0);
+            String evalThis = br.getRegex("(var\\s.*?" + evalWhat + "=.*?var\\s.*?[a-zA-Z0-9]+=unes.*?;?)eval\\(").getMatch(0);
             if (evalThis != null) evals.add(evalThis);
         }
         vars = br.getRegex("<!--(.*?)function").getMatch(0);

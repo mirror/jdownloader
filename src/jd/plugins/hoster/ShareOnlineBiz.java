@@ -203,7 +203,15 @@ public class ShareOnlineBiz extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (br.containsHTML("You have got max allowed threads from same download session")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 5 * 60 * 1000l);
+
         Form form = br.getForm(0);
+        if (form == null) {
+            if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("FileNotFound")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        }
         if (form.containsHTML("name=downloadpw")) {
             String passCode = null;
             if (parameter.getStringProperty("pass", null) == null) {
