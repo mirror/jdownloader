@@ -39,7 +39,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.pluginUtils.Recaptcha;
+import jd.utils.JDUtilities;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cramit.in" }, urls = { "http://[\\w\\.]*?cramit\\.in/[a-z0-9]{12}" }, flags = { 2 })
 public class CraMitIn extends PluginForHost {
@@ -201,7 +201,8 @@ public class CraMitIn extends PluginForHost {
                 logger.info("Put captchacode " + code + " obtained by captcha metod \"Standard captcha\" in the form.");
             } else if (br.containsHTML("api.recaptcha.net")) {
                 logger.info("Detected captcha method \"Re Captcha\" for this host");
-                Recaptcha rc = new Recaptcha(br);
+                PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
                 rc.parse();
                 rc.load();
                 File cf = rc.downloadCaptcha(getLocalCaptchaFile());

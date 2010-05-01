@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.pluginUtils.Recaptcha;
+import jd.utils.JDUtilities;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "free-share.ru" }, urls = { "http://[\\w\\.]*?free-share\\.ru/[0-9]+/[0-9]+/" }, flags = { 0 })
 public class FreeShareRu extends PluginForHost {
@@ -79,7 +79,8 @@ public class FreeShareRu extends PluginForHost {
         }
         freeform.put("sid", "2");
         br.submitForm(freeform);
-        Recaptcha rc = new Recaptcha(br);
+        PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+        jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
         rc.parse();
         rc.load();
         File cf = rc.downloadCaptcha(getLocalCaptchaFile());

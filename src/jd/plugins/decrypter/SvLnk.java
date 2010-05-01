@@ -36,8 +36,10 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.pluginUtils.Recaptcha;
+import jd.plugins.PluginForHost;
+import jd.plugins.hoster.DirectHTTP;
 import jd.utils.JDHexUtils;
+import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "savelink1", "savelink2" }, urls = { "http://.*?\\..*?/.*?/sl/.*", "http://.*?\\..*?/.*?[\\?\\&]sl=1.*" }, flags = { 0, 0 })
 public class SvLnk extends PluginForDecrypt {
@@ -142,7 +144,8 @@ public class SvLnk extends PluginForDecrypt {
 
     private ArrayList<DownloadLink> decryptRecaptcha(CryptedLink parameter, ProgressController progress) throws Exception {
 
-        Recaptcha rc = new Recaptcha(br);
+        PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+        jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
         rc.parse();
         rc.load();
         File captchaFile = this.getLocalCaptchaFile();

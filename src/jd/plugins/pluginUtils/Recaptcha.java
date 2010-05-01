@@ -19,6 +19,7 @@ package jd.plugins.pluginUtils;
 import java.io.File;
 import java.io.IOException;
 
+import jd.controlling.JDLogger;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
@@ -116,13 +117,20 @@ public class Recaptcha {
 
     public void load() throws IOException {
         rcBr = br.cloneBrowser();
+        /* follow redirect needed as google redirects to another domain */
+        rcBr.setFollowRedirects(true);
         rcBr.getPage("http://api.recaptcha.net/challenge?k=" + id);
         challenge = rcBr.getRegex("challenge : '(.*?)',").getMatch(0);
         server = rcBr.getRegex("server : '(.*?)',").getMatch(0);
+        if (challenge == null || server == null) {
+            JDLogger.getLogger().severe("Recaptcha Module fails: " + br.getHttpConnection());
+        }
         captchaAddress = server + "image?c=" + challenge;
     }
 
     public File downloadCaptcha(final File captchaFile) throws IOException {
+        /* follow redirect needed as google redirects to another domain */
+        rcBr.setFollowRedirects(true);
         Browser.download(captchaFile, rcBr.openGetConnection(captchaAddress));
         return captchaFile;
     }

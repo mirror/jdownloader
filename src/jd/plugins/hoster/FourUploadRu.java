@@ -27,7 +27,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.pluginUtils.Recaptcha;
+import jd.utils.JDUtilities;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4upload.ru" }, urls = { "http://[\\w\\.]*?(4upload\\.ru|box4upload\\.com)/(file|wait)/[0-9a-z]+/.*?\\.html" }, flags = { 0 })
 public class FourUploadRu extends PluginForHost {
@@ -79,7 +79,8 @@ public class FourUploadRu extends PluginForHost {
         // one download is already running in the browser and he starts a 2nd
         // download in jd
         if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("/file/")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
-        Recaptcha rc = new Recaptcha(br);
+        PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+        jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
         for (int i = 0; i <= 5; i++) {
             rc.parse();
             rc.load();

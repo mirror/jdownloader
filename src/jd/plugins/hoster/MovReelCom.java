@@ -33,7 +33,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.pluginUtils.Recaptcha;
+import jd.utils.JDUtilities;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "movreel.com" }, urls = { "http://[\\w\\.]*?movreel\\.com/(video/)?[a-z0-9]{12}" }, flags = { 0 })
 public class MovReelCom extends PluginForHost {
@@ -196,7 +196,8 @@ public class MovReelCom extends PluginForHost {
             // the !br.contains...check Exampleplugin:
             // FileGigaCom
             logger.info("Detected captcha method \"Re Captcha\" for this host");
-            Recaptcha rc = new Recaptcha(br);
+            PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+            jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
             rc.parse();
             rc.load();
             File cf = rc.downloadCaptcha(getLocalCaptchaFile());

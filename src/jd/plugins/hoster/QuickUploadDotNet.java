@@ -36,7 +36,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.pluginUtils.Recaptcha;
+import jd.utils.JDUtilities;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "quickupload.net" }, urls = { "http://[\\w\\.]*?(quickupload|ezyfile)\\.net/[a-z0-9]{12}" }, flags = { 2 })
 public class QuickUploadDotNet extends PluginForHost {
@@ -161,7 +161,8 @@ public class QuickUploadDotNet extends PluginForHost {
         } else if (br.containsHTML("api.recaptcha.net")) {
             // Manual Re Captcha handling
             logger.info("Detected captcha method \"Re Captcha\" for this host");
-            Recaptcha rc = new Recaptcha(br);
+            PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+            jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
             // rc.parse();
             String id = br.getRegex("challenge\\?k=(.*?)\"").getMatch(0);
             if (id == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

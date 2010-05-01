@@ -28,7 +28,9 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.pluginUtils.Recaptcha;
+import jd.plugins.PluginForHost;
+import jd.plugins.hoster.DirectHTTP;
+import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "lof.cc" }, urls = { "http://[\\w\\.]*?(lof\\.cc|92\\.241\\.168\\.5)/[!a-zA-Z0-9_]+" }, flags = { 0 })
 public class LdTTemp extends PluginForDecrypt {
@@ -42,7 +44,8 @@ public class LdTTemp extends PluginForDecrypt {
         String parameter = param.toString();
         br.getPage(parameter);
         for (int i = 0; i <= 5; i++) {
-            Recaptcha rc = new Recaptcha(br);
+            PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+            jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
             rc.parse();
             rc.load();
             File cf = rc.downloadCaptcha(getLocalCaptchaFile());

@@ -32,7 +32,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.pluginUtils.Recaptcha;
+import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesmonster.com" }, urls = { "http://[\\w\\.\\d]*?filesmonster\\.com/download.php\\?id=.+" }, flags = { 2 })
@@ -162,9 +162,7 @@ public class FilesMonsterCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.filesmonstercom.maintenance", "Maintenance"), 60 * 1000l);
             } else if (fmurl == null) { /* no filesmonsterpage, retry */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.filesmonstercom.invalidpage", "Invalid page"), 20 * 1000l);
-            } else if (br.containsHTML("File was deleted by")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
+            } else if (br.containsHTML("File was deleted by")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
 
             String isPay = br.getRegex("<input type=\"hidden\" name=\"showpayment\" value=\"(1)").getMatch(0);
             Boolean isFree = br.containsHTML("slowdownload");
@@ -179,7 +177,8 @@ public class FilesMonsterCom extends PluginForHost {
         br.postPage(fmurl + "get/free/", "t=" + fileID);
         /* now we have the data page, check for wait time and data id */
         // Captcha handling
-        Recaptcha rc = new Recaptcha(br);
+        PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+        jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
         rc.parse();
         rc.load();
         File cf = rc.downloadCaptcha(getLocalCaptchaFile());

@@ -37,7 +37,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.pluginUtils.Recaptcha;
+import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.mozilla.javascript.Context;
@@ -411,7 +411,8 @@ public class MediafireCom extends PluginForHost {
             if (url != null) break;
             requestFileInformation(downloadLink);
             try {
-                Recaptcha rc = new Recaptcha(br);
+                PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
                 Form form = br.getFormbyProperty("name", "form_captcha");
                 String id = br.getRegex("e\\?k=(.+?)\"").getMatch(0);
                 if (id != null) {

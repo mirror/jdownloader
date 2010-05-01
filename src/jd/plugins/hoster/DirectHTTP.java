@@ -16,6 +16,7 @@
 
 package jd.plugins.hoster;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 
@@ -31,6 +32,7 @@ import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -235,6 +237,7 @@ public class DirectHTTP extends PluginForHost {
 
     public void resetPluginGlobals() {
     }
+
     // TODO: uncomment with next big update of core
     // @Override
     // public String getSessionInfo() {
@@ -257,5 +260,111 @@ public class DirectHTTP extends PluginForHost {
     // public void setFavIcon(ImageIcon icon) {
     // this.icon = icon;
     // }
+
+    /** can be removed with next major update cause of recaptcha change */
+    public Recaptcha getReCaptcha(final Browser br) {
+        return new Recaptcha(br);
+    }
+
+    public static class Recaptcha {
+
+        private final Browser br;
+        private String challenge;
+        private String server;
+        private String captchaAddress;
+        private String id;
+        private Browser rcBr;
+        private Form form;
+
+        public Recaptcha(final Browser br) {
+            this.br = br;
+        }
+
+        public String getChallenge() {
+            return challenge;
+        }
+
+        public void setChallenge(final String challenge) {
+            this.challenge = challenge;
+        }
+
+        public String getServer() {
+            return server;
+        }
+
+        public void setServer(final String server) {
+            this.server = server;
+        }
+
+        public String getCaptchaAddress() {
+            return captchaAddress;
+        }
+
+        public void setCaptchaAddress(final String captchaAddress) {
+            this.captchaAddress = captchaAddress;
+        }
+
+        public String getId() {
+            return id;
+        }
+
+        public void setId(final String id) {
+            this.id = id;
+        }
+
+        public Form getForm() {
+            return form;
+        }
+
+        public void setForm(final Form form) {
+            this.form = form;
+        }
+
+        public void parse() throws IOException, PluginException {
+            final Form[] forms = br.getForms();
+            form = null;
+            for (final Form f : forms) {
+                if (f.getInputField("recaptcha_challenge_field") != null) {
+                    form = f;
+                    break;
+                }
+            }
+            if (form == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else {
+                id = form.getRegex("k=(.*?)\"").getMatch(0);
+            }
+        }
+
+        public void load() throws IOException {
+            rcBr = br.cloneBrowser();
+            /* follow redirect needed as google redirects to another domain */
+            rcBr.setFollowRedirects(true);
+            rcBr.getPage("http://api.recaptcha.net/challenge?k=" + id);
+            challenge = rcBr.getRegex("challenge.*?:.*?'(.*?)',").getMatch(0);
+            server = rcBr.getRegex("server.*?:.*?'(.*?)',").getMatch(0);
+            if (challenge == null || server == null) {
+                JDLogger.getLogger().severe("Recaptcha Module fails: " + br.getHttpConnection());
+            }
+            captchaAddress = server + "image?c=" + challenge;
+        }
+
+        public File downloadCaptcha(final File captchaFile) throws IOException {
+            /* follow redirect needed as google redirects to another domain */
+            rcBr.setFollowRedirects(true);
+            Browser.download(captchaFile, rcBr.openGetConnection(captchaAddress));
+            return captchaFile;
+        }
+
+        public Browser setCode(final String code) throws Exception {
+            // <textarea name="recaptcha_challenge_field" rows="3"
+            // cols="40"></textarea>\n <input type="hidden"
+            // name="recaptcha_response_field" value="manual_challenge"/>
+            form.put("recaptcha_challenge_field", challenge);
+            form.put("recaptcha_response_field", Encoding.urlEncode(code));
+            br.submitForm(form);
+            return br;
+        }
+    }
 
 }

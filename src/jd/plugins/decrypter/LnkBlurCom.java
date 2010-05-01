@@ -27,7 +27,9 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.pluginUtils.Recaptcha;
+import jd.plugins.PluginForHost;
+import jd.plugins.hoster.DirectHTTP;
+import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "linkblur.com" }, urls = { "http://[\\w\\.]*?linkblur\\.com/.*?/[a-zA-Z0-9=/]+" }, flags = { 0 })
 public class LnkBlurCom extends PluginForDecrypt {
@@ -53,7 +55,8 @@ public class LnkBlurCom extends PluginForDecrypt {
             if (finallink == null) finallink = br.getRegex(finallinkRegex2).getMatch(0);
         } else if (parameter.contains("-captcha") || parameter.contains("/captcha/")) {
             for (int i = 0; i <= 5; i++) {
-                Recaptcha rc = new Recaptcha(br);
+                PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
                 rc.parse();
                 rc.load();
                 File cf = rc.downloadCaptcha(getLocalCaptchaFile());

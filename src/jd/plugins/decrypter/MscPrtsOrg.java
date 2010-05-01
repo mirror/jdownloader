@@ -27,7 +27,9 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.pluginUtils.Recaptcha;
+import jd.plugins.PluginForHost;
+import jd.plugins.hoster.DirectHTTP;
+import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "music-pirates.org" }, urls = { "http://[\\w\\.]*?music-pirates\\.org/show\\.php\\?id=\\d+" }, flags = { 0 })
@@ -46,7 +48,8 @@ public class MscPrtsOrg extends PluginForDecrypt {
         String data2 = br.getRegex("<strong>Band</strong>:(.*?)</p>").getMatch(0);
 
         for (int i = 0; i <= 1; i++) {
-            Recaptcha rc = new Recaptcha(br);
+            PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+            jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
             rc.parse();
             rc.load();
             File cf = rc.downloadCaptcha(getLocalCaptchaFile());
