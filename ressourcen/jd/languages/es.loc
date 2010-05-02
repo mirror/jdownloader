@@ -599,6 +599,7 @@ gui.menu.langfileditor.tooltip = Abrir el Editor de Idiomas para modificar un id
 gui.menu.lecturnity.accel = -
 gui.menu.lecturnity.mnem = -
 gui.menu.lecturnity.name = Lecturnity
+gui.menu.lecturnity.tooltip = Lecturnity
 gui.menu.livescripter.accel = -
 gui.menu.livescripter.mnem = -
 gui.menu.livescripter.name = Live Scripter
