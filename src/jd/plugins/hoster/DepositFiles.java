@@ -71,10 +71,13 @@ public class DepositFiles extends PluginForHost {
         if (br.getRedirectLocation() != null) {
             link = br.getRedirectLocation().replaceAll("/\\w{2}/files/", "/de/files/");
             br.getPage(link);
+            // If we can't change the language lets just use the forced language
+            // (e.g. links change to "/es/" links)!
+            if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
         }
         checkErrors();
         String dllink = br.getRegex("download_url\".*?<form action=\"(.*?)\"").getMatch(0);
-        if (dllink != null) {
+        if (dllink != null && !dllink.equals("")) {
             // handling for txt file downloadlinks, dunno why they made a
             // completely different page for txt files
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
@@ -89,15 +92,19 @@ public class DepositFiles extends PluginForHost {
             }
             dl.startDownload();
         } else {
+            logger.info("dllink was null, going into captcha handling!");
             Form form = br.getFormBySubmitvalue("Kostenloser+download");
-            if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (form == null) {
+                logger.warning("Form by submitvalue Kostenloser+download is null!");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             br.submitForm(form);
             checkErrors();
             if (br.getRedirectLocation() != null && br.getRedirectLocation().indexOf("error") > 0) { throw new PluginException(LinkStatus.ERROR_RETRY); }
             dllink = br.getRegex("download_url\".*?<form action=\"(.*?)\"").getMatch(0);
             String icid = br.getRegex("get_download_img_code\\.php\\?icid=(.*?)\"").getMatch(0);
             /* check for captcha */
-            if (dllink == null && icid != null) {
+            if ((dllink == null || dllink.equals("")) && icid != null) {
                 Form cap = new Form();
                 cap.setAction(link);
                 cap.setMethod(Form.MethodType.POST);
@@ -114,7 +121,7 @@ public class DepositFiles extends PluginForHost {
                 }
 
             }
-            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (dllink == null || dllink.equals("")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
             URLConnectionAdapter con = dl.getConnection();
             if (Plugin.getFileNameFromHeader(con) == null || Plugin.getFileNameFromHeader(con).indexOf("?") >= 0) {
@@ -130,6 +137,7 @@ public class DepositFiles extends PluginForHost {
     }
 
     public void checkErrors() throws NumberFormatException, PluginException {
+        logger.info("Checking errors...");
         /* Server under maintenance */
         if (br.containsHTML("html_download_api-temporary_unavailable")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Under maintenance", 30 * 60 * 1000l);
         /* download not available at the moment */
