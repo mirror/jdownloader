@@ -30,6 +30,7 @@ import jd.gui.swing.jdgui.interfaces.SwitchPanelListener;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
+import jd.plugins.optional.schedule.modules.DisableClipboard;
 import jd.plugins.optional.schedule.modules.DisableHost;
 import jd.plugins.optional.schedule.modules.DisablePremium;
 import jd.plugins.optional.schedule.modules.DisablePremiumForHost;
@@ -38,6 +39,7 @@ import jd.plugins.optional.schedule.modules.DoHibernate;
 import jd.plugins.optional.schedule.modules.DoReconnect;
 import jd.plugins.optional.schedule.modules.DoShutdown;
 import jd.plugins.optional.schedule.modules.DoSleep;
+import jd.plugins.optional.schedule.modules.EnableClipboard;
 import jd.plugins.optional.schedule.modules.EnableHost;
 import jd.plugins.optional.schedule.modules.EnablePremium;
 import jd.plugins.optional.schedule.modules.EnablePremiumForHost;
@@ -87,6 +89,9 @@ public class Schedule extends PluginOptional {
         activateAction.setSelected(false);
     }
 
+    /**
+     * TODO: Maybe refactor to use Annotations?
+     */
     private void initModules() {
         modules = new ArrayList<SchedulerModuleInterface>();
         modules.add(new StartDownloads());
@@ -110,6 +115,8 @@ public class Schedule extends PluginOptional {
         modules.add(new DoHibernate());
         modules.add(new SetStopMark());
         modules.add(new UnSetStopMark());
+        modules.add(new EnableClipboard());
+        modules.add(new DisableClipboard());
 
     }
 
