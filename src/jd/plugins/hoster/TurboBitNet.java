@@ -123,19 +123,7 @@ public class TurboBitNet extends PluginForHost {
         br.setCookie("http://turbobit.net/", "lang", "english");
         br.setCustomCharset("UTF-8");
         br.getPage("http://turbobit.net/en");
-        Form loginform = null;
-        Form[] allforms = br.getForms();
-        for (Form sform : allforms) {
-            String form = Encoding.htmlDecode(sform.toString());
-            if (form.contains("user[login]")) {
-                loginform = sform;
-                break;
-            }
-        }
-        if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        loginform.put(Encoding.htmlDecode("user[login]"), Encoding.htmlDecode(account.getUser()));
-        loginform.put(Encoding.htmlDecode("user[pass]"), Encoding.htmlDecode(account.getPass()));
-        br.submitForm(loginform);
+        br.postPage("http://www.turbobit.net/user/login", "user%5Blogin%5D=" + Encoding.urlEncode(account.getUser()) + "&user%5Bpass%5D=" + Encoding.urlEncode(account.getPass()) + "&user%5Bmemory%5D=on&user%5Bsubmit%5D=Login");
         if (!br.containsHTML("yesturbo")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         if (br.getCookie("http://turbobit.net/", "sid") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
@@ -169,8 +157,9 @@ public class TurboBitNet extends PluginForHost {
         requestFileInformation(link);
         login(account);
         br.getPage(link.getDownloadURL());
-        String dllink = br.getRegex("<h1><a href='(.*?)'><b>Download it!</b>").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("('|\")(http://turbobit\\.net//download/redirect/.*?/.*?)('|\")").getMatch(1);
+        String dllink = br.getRegex("<h1><a href='(http://.*?)'><b>Download it").getMatch(0);
+        dllink = null;
+        if (dllink == null) dllink = br.getRegex("('|\")(http://www\\.turbobit\\.net//download/redirect/[a-z0-9]+/[a-z0-9]+)('|\")").getMatch(1);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         if (!dllink.contains("turbobit.net")) dllink = "http://turbobit.net" + dllink;
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);

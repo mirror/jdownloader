@@ -167,8 +167,8 @@ public class IFileIt extends PluginForHost {
                 String k = br.getRegex("recaptcha_public.*?=.*?'(.*?)'").getMatch(0);
                 if (k == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 br2.getPage("http://api.recaptcha.net/challenge?k=" + k);
-                String challenge = br2.getRegex("challenge : '(.*?)',").getMatch(0);
-                String server = br2.getRegex("server : '(.*?)',").getMatch(0);
+                String challenge = br2.getRegex("challenge:'(.*?)',").getMatch(0);
+                String server = br2.getRegex("server:'(.*?)'").getMatch(0);
                 if (challenge == null || server == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 String captchaAddress = server + "image?c=" + challenge;
                 String code = getCaptchaCode(captchaAddress, downloadLink);
