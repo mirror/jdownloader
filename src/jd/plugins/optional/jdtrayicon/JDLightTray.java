@@ -302,18 +302,14 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
     }
 
     private boolean checkPassword() {
-        // TODO Auto-generated method stub
         if (subConfig.getBooleanProperty(PROPERTY_PASSWORD_REQUIRED, false) && !subConfig.getStringProperty(PROPERTY_PASSWORD, "").equals("")) {
-            String password = UserIO.getInstance().requestInputDialog(JDL.L("plugins.optional.JDLightTray.enterPassword", "Enter the Password to open JD:"));
+            String password = UserIO.getInstance().requestInputDialog(UserIO.STYLE_PASSWORD, JDL.L("plugins.optional.JDLightTray.enterPassword", "Enter the Password to open JD:"), null);
             if (password == null || !password.equals(subConfig.getStringProperty(PROPERTY_PASSWORD, ""))) {
                 UserIO.getInstance().requestMessageDialog(JDL.L("plugins.optional.JDLightTray.enterPassword.wrong", "The entered Password was wrong!"));
                 return false;
-            } else {
-                return true;
             }
-
-        } else
-            return true;
+        }
+        return true;
     }
 
     public void mouseReleased(MouseEvent e) {

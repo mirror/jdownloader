@@ -64,13 +64,17 @@ public abstract class UserIO {
      */
     public static final int NO_ICON = 1 << 8;
     /**
-     * Cancle option ignores Don't show again checkbox
+     * Cancel option ignores Don't show again checkbox
      */
     public static final int DONT_SHOW_AGAIN_IGNORES_CANCEL = 1 << 9;
     /**
      * If user selects OK Option, the don't show again option is ignored
      */
     public static final int DONT_SHOW_AGAIN_IGNORES_OK = 1 << 10;
+    /**
+     * the textfield will be renderer as a passwordfield
+     */
+    public static final int STYLE_PASSWORD = 1 << 11;
 
     /**
      * pressed ok

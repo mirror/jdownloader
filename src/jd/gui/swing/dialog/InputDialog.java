@@ -25,6 +25,7 @@ import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
+import javax.swing.JPasswordField;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 import javax.swing.JTextPane;
@@ -69,6 +70,13 @@ public class InputDialog extends AbstractDialog implements KeyListener, MouseLis
             input.addKeyListener(this);
             input.addMouseListener(this);
             contentpane.add(new JScrollPane(input), "height 20:60:n,pushy,growy,w 450");
+        } else if (JDFlags.hasAllFlags(flag, UserIO.STYLE_PASSWORD)) {
+            input = new JPasswordField();
+            input.setBorder(BorderFactory.createEtchedBorder());
+            input.setText(this.defaultMessage);
+            input.addKeyListener(this);
+            input.addMouseListener(this);
+            contentpane.add(input, "pushy,growy,w 450");
         } else {
             input = new JTextField();
             input.setBorder(BorderFactory.createEtchedBorder());
