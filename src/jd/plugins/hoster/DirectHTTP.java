@@ -20,8 +20,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import javax.swing.ImageIcon;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -47,20 +45,23 @@ public class DirectHTTP extends PluginForHost {
 
     private String contentType;
 
-    String host = null;
-    private ImageIcon icon = null;
+    // TODO: uncomment with next big update of core
+    // private String host = null;
+    // private ImageIcon icon = null;
 
-    static public final String ENDINGS = "\\.(cbr|cbz|otrkey|ac3|3gp|7zip|7z|aiff|aif|aifc|au|avi|bin|bz2|ccf|cue|deb|divx|dlc|dmg|doc|docx|dot|exe|ff|flv|gif|gz|iwd|iso|java|jar|jpg|jpeg|jdeatme|m4v|mkv|mp2|mp3|mp4|mov|movie|mpeg|mpe|mpg|msi|msu|nfo|oga|ogg|ogv|pkg|png|pdf|ppt|pptx|pps|ppz|pot|psd|qt|rmvb|rar|r\\d+|rpm|run|rsdf|rtf|sh|srt|snd|sfv|tar|tif|tiff|viv|vivo|vob|wav|wmv|xla|xls|zip|z\\d+|ts|load|xpi|_[_a-z]{2}|djvu|\\d+)";
+    public static final String ENDINGS = "\\.(cbr|cbz|otrkey|ac3|3gp|7zip|7z|aiff|aif|aifc|au|avi|bin|bz2|ccf|cue|deb|divx|dlc|dmg|doc|docx|dot|exe|ff|flv|gif|gz|iwd|iso|java|jar|jpg|jpeg|jdeatme|m4v|mkv|mp2|mp3|mp4|mov|movie|mpeg|mpe|mpg|msi|msu|nfo|oga|ogg|ogv|pkg|png|pdf|ppt|pptx|pps|ppz|pot|psd|qt|rmvb|rar|r\\d+|rpm|run|rsdf|rtf|sh|srt|snd|sfv|tar|tif|tiff|viv|vivo|vob|wav|wmv|xla|xls|zip|z\\d+|ts|load|xpi|_[_a-z]{2}|djvu|\\d+)";
 
     public DirectHTTP(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
     }
 
+    @Override
     public String getAGBLink() {
         return "";
     }
 
+    @Override
     public String getFileInformationString(DownloadLink parameter) {
         return "(" + contentType + ")" + parameter.getName();
     }
@@ -121,6 +122,7 @@ public class DirectHTTP extends PluginForHost {
         return urlConnection;
     }
 
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException {
         this.setBrowserExclusive();
         /* disable gzip, because current downloadsystem cannot handle it correct */
@@ -174,6 +176,7 @@ public class DirectHTTP extends PluginForHost {
 
     }
 
+    @Override
     public void correctDownloadLink(DownloadLink link) {
         if (link.getDownloadURL().startsWith("directhttp")) {
             link.setUrlDownload(link.getDownloadURL().replaceAll("^directhttp://", ""));
@@ -185,6 +188,7 @@ public class DirectHTTP extends PluginForHost {
         BasicAuthfromURL(link);
     }
 
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
@@ -219,10 +223,12 @@ public class DirectHTTP extends PluginForHost {
         }
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
+    @Override
     public void reset() {
     }
 
@@ -230,11 +236,13 @@ public class DirectHTTP extends PluginForHost {
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_LISTCONTROLLED, HTACCESSController.getInstance(), JDL.L("plugins.http.htaccess", "List of all HTAccess passwords. Each line one password.")));
     }
 
+    @Override
     public void resetDownloadlink(DownloadLink link) {
         link.setProperty("nochunkload", false);
         link.setProperty("nochunk", false);
     }
 
+    @Override
     public void resetPluginGlobals() {
     }
 
@@ -261,7 +269,9 @@ public class DirectHTTP extends PluginForHost {
     // this.icon = icon;
     // }
 
-    /** can be removed with next major update cause of recaptcha change */
+    /**
+     * TODO: can be removed with next major update cause of recaptcha change
+     */
     public Recaptcha getReCaptcha(final Browser br) {
         return new Recaptcha(br);
     }
