@@ -8,22 +8,24 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 
+import javax.swing.BorderFactory;
 import javax.swing.JLabel;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JWindow;
 import javax.swing.SwingUtilities;
-import javax.swing.border.LineBorder;
 
 import jd.controlling.DownloadController;
 import jd.controlling.DownloadInformations;
+import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.components.JDCloseAction;
 import jd.gui.swing.components.SpeedMeterPanel;
 import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.jdgui.components.JDProgressBar;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.nutils.Formatter;
+import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
@@ -51,6 +53,7 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
     private JDProgressBar prgTotal;
     private JLabel lblProgress;
     private JLabel lblETA;
+    private JLabel lblHelp;
 
     private InfoDialog(MenuAction action) {
         super();
@@ -73,14 +76,16 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
         prgTotal = new JDProgressBar();
         prgTotal.setStringPainted(true);
 
-        JPanel panel = new JPanel(new MigLayout("ins 5, wrap 2", "[][grow,fill]"));
-        panel.setBorder(new LineBorder(getBackground().darker().darker()));
-        panel.add(new SpeedMeterPanel(false, true), "h 30!, w 300!, spanx");
+        JPanel panel = new JPanel(new MigLayout("ins 5, wrap 3", "[][grow,fill][right]"));
+        panel.setBorder(BorderFactory.createLineBorder(getBackground().darker().darker()));
+        panel.add(new SpeedMeterPanel(false, true), "h 30!, w 200!, spanx");
         panel.add(new JLabel(JDL.L("plugins.optional.trayIcon.progress", "Progress:")));
-        panel.add(lblProgress = new JLabel(""));
+        panel.add(lblProgress = new JLabel(""), "spanx");
         panel.add(prgTotal, "spanx, growx");
         panel.add(new JLabel(JDL.L("plugins.optional.trayIcon.eta", "ETA:")));
         panel.add(lblETA = new JLabel(""));
+        panel.add(lblHelp = new JLabel(JDTheme.II("gui.images.clipboard", 16, 16)), "hidemode 3");
+        lblHelp.setToolTipText(JDL.L("jd.plugins.optional.infobar.InfoDialog.help.tooltip", "Drop Files and Links here to let them getting analyzed!"));
 
         this.setLayout(new MigLayout("ins 0", "[grow,fill]"));
         this.add(panel);
@@ -108,12 +113,19 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
         this.enableDocking = enableDocking;
     }
 
-    public void setEnableDropLocation(boolean enableDropLocation) {
+    public void setEnableDropLocation(final boolean enableDropLocation) {
         if (enableDropLocation) {
             this.setTransferHandler(ddh);
         } else {
             this.setTransferHandler(null);
         }
+        new GuiRunnable<Object>() {
+            @Override
+            public Object runSave() {
+                lblHelp.setVisible(enableDropLocation);
+                return null;
+            }
+        }.start();
     }
 
     private void updateInfos() {
