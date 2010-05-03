@@ -40,16 +40,40 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "DirectHTTP", "http links" }, urls = { "directhttp://.+", "https?viajd://[\\d\\w\\.:\\-@]*/.*\\.(otrkey|ac3|3gp|7zip|7z|aiff|aif|aifc|au|avi|bin|bz2|ccf|cue|deb|divx|dlc|dmg|doc|docx|dot|exe|ff|flv|gif|gz|iwd|iso|java|jar|jpg|jpeg|jdeatme|m4v|mkv|mp2|mp3|mp4|mov|movie|mpeg|mpe|mpg|msi|msu|nfo|oga|ogg|ogv|pkg|png|pdf|ppt|pptx|pps|ppz|pot|psd|qt|rmvb|rar|r\\d+|rpm|run|rsdf|rtf|sh|srt|snd|sfv|tar|tif|tiff|viv|vivo|vob|wav|wmv|xla|xls|zip|z\\d+|ts|load|xpi|_[_a-z]{2}|djvu|\\d+)" }, flags = { 0, 0 })
+/**
+ * TODO: Remove after next big update of core to use the public static methods!
+ */
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "DirectHTTP", "http links" }, urls = { "directhttp://.+", "https?viajd://[\\d\\w\\.:\\-@]*/.*\\.(3gp|7zip|7z|abr|ac3|ai|aiff|aif|aifc|au|avi|bin|bz2|cbr|cbz|ccf|cue|deb|divx|djvu|dlc|dmg|doc|docx|dot|eps|exe|ff|flv|gif|gz|iwd|iso|java|jar|jpg|jpeg|jdeatme|load|m4v|mkv|mp2|mp3|mp4|mov|movie|mpeg|mpe|mpg|msi|msu|nfo|oga|ogg|ogv|otrkey|pkg|png|pdf|ppt|pptx|pps|ppz|pot|psd|qt|rmvb|rar|r\\d+|rpm|run|rsdf|rtf|sh|srt|snd|sfv|swf|tar|tif|tiff|ts|viv|vivo|vob|wav|wmv|xla|xls|xpi|zip|z\\d+|_[_a-z]{2}|\\d+)" }, flags = { 0, 0 })
 public class DirectHTTP extends PluginForHost {
+
+    public static final String ENDINGS = "\\.(3gp|7zip|7z|abr|ac3|ai|aiff|aif|aifc|au|avi|bin|bz2|cbr|cbz|ccf|cue|deb|divx|djvu|dlc|dmg|doc|docx|dot|eps|exe|ff|flv|gif|gz|iwd|iso|java|jar|jpg|jpeg|jdeatme|load|m4v|mkv|mp2|mp3|mp4|mov|movie|mpeg|mpe|mpg|msi|msu|nfo|oga|ogg|ogv|otrkey|pkg|png|pdf|ppt|pptx|pps|ppz|pot|psd|qt|rmvb|rar|r\\d+|rpm|run|rsdf|rtf|sh|srt|snd|sfv|swf|tar|tif|tiff|ts|viv|vivo|vob|wav|wmv|xla|xls|xpi|zip|z\\d+|_[_a-z]{2}|\\d+)";
+
+    /**
+     * Returns the annotations names array
+     */
+    public static String[] getAnnotationNames() {
+        return new String[] { "DirectHTTP", "http links" };
+    }
+
+    /**
+     * Returns the annotation pattern array
+     */
+    public static String[] getAnnotationUrls() {
+        return new String[] { "directhttp://.+", "https?viajd://[\\d\\w\\.:\\-@]*/.*" + ENDINGS };
+    }
+
+    /**
+     * Returns the annotations flags array
+     */
+    public static int[] getAnnotationFlags() {
+        return new int[] { 0, 0 };
+    }
 
     private String contentType;
 
     // TODO: uncomment with next big update of core
     // private String host = null;
     // private ImageIcon icon = null;
-
-    public static final String ENDINGS = "\\.(cbr|cbz|otrkey|ac3|3gp|7zip|7z|aiff|aif|aifc|au|avi|bin|bz2|ccf|cue|deb|divx|dlc|dmg|doc|docx|dot|exe|ff|flv|gif|gz|iwd|iso|java|jar|jpg|jpeg|jdeatme|m4v|mkv|mp2|mp3|mp4|mov|movie|mpeg|mpe|mpg|msi|msu|nfo|oga|ogg|ogv|pkg|png|pdf|ppt|pptx|pps|ppz|pot|psd|qt|rmvb|rar|r\\d+|rpm|run|rsdf|rtf|sh|srt|snd|sfv|tar|tif|tiff|viv|vivo|vob|wav|wmv|xla|xls|zip|z\\d+|ts|load|xpi|_[_a-z]{2}|djvu|\\d+)";
 
     public DirectHTTP(PluginWrapper wrapper) {
         super(wrapper);

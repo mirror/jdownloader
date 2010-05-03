@@ -420,14 +420,18 @@ public class JDInit {
                             LOG.warning("Outdated Plugin found: " + help);
                             continue;
                         }
+
+                        String simpleName = c.getSimpleName();
                         String[] names = help.names();
                         String[] patterns = help.urls();
                         int[] flags = help.flags();
                         final String revision = help.revision();
                         LOG.finest("Try to load " + c + " Revision: " + Formatter.getRevision(revision));
-                        // TODO: Change this String to test the changes from
-                        // Wordpress/CMS/Redirector/... Decrypters WITHOUT
-                        // commiting
+                        /*
+                         * TODO: Change this String to test the changes from
+                         * plugins with public static methods instead of
+                         * annotation, e.g. cms
+                         */
                         String dump = "";
                         // See if there are cached annotations
                         if (names.length == 0) {
@@ -438,26 +442,26 @@ public class JDInit {
                         }
                         // if not, try to load them from static functions
                         if (names.length == 0) {
-                            names = (String[]) c.getMethod("getAnnotationNames", new Class[] {}).invoke(null, new Object[] {});
-                            patterns = (String[]) c.getMethod("getAnnotationUrls", new Class[] {}).invoke(null, new Object[] {});
-                            flags = (int[]) c.getMethod("getAnnotationFlags", new Class[] {}).invoke(null, new Object[] {});
+                            names = (String[]) c.getMethod("getAnnotationNames").invoke(null);
+                            patterns = (String[]) c.getMethod("getAnnotationUrls").invoke(null);
+                            flags = (int[]) c.getMethod("getAnnotationFlags").invoke(null);
                             final SubConfiguration cfg = SubConfiguration.getConfig("jd.JDInit.loadPluginForDecrypt");
                             cfg.setProperty(c.getName() + "_names_" + revision, names);
                             cfg.setProperty(c.getName() + "_pattern_" + revision, patterns);
                             cfg.setProperty(c.getName() + "_flags_" + revision, flags);
                             cfg.save();
                         }
-                        final int length = names.length;
-                        for (int i = 0; i < length; i++) {
+
+                        for (int i = 0; i < names.length; i++) {
                             try {
-                                new DecryptPluginWrapper(names[i], c.getSimpleName(), patterns[i], flags[i], revision);
+                                new DecryptPluginWrapper(names[i], simpleName, patterns[i], flags[i], revision);
                             } catch (Throwable e) {
-                                LOG.severe("could not load " + c);
+                                LOG.severe("Could not load " + c);
                                 JDLogger.exception(e);
                             }
                         }
                     } else {
-                        LOG.finest("could not load " + c);
+                        LOG.finest("Could not load " + c);
                     }
                 } catch (Throwable e) {
                     JDLogger.exception(e);
@@ -502,27 +506,53 @@ public class JDInit {
                     final Annotation[] cAnnotations = (c == null) ? null : c.getAnnotations();
                     if (cAnnotations != null && cAnnotations.length > 0) {
                         final HostPlugin help = (HostPlugin) cAnnotations[0];
+
                         if (help.interfaceVersion() != HostPlugin.INTERFACE_VERSION) {
                             LOG.warning("Outdated Plugin found: " + help);
                             continue;
                         }
-                        final String cSimpleName = c.getSimpleName();
-                        final String[] names = help.names();
-                        final int length = names.length;
+
+                        String simpleName = c.getSimpleName();
+                        String[] names = help.names();
+                        String[] patterns = help.urls();
+                        int[] flags = help.flags();
                         final String revision = help.revision();
                         LOG.finest("Try to load " + c + " Revision: " + Formatter.getRevision(revision));
-                        final String[] urls = help.urls();
-                        final int[] flags = help.flags();
-                        for (int i = 0; i < length; i++) {
+                        /*
+                         * TODO: Change this String to test the changes from
+                         * plugins with public static methods instead of
+                         * annotation, e.g. cms
+                         */
+                        String dump = "";
+                        // See if there are cached annotations
+                        if (names.length == 0) {
+                            final SubConfiguration cfg = SubConfiguration.getConfig("jd.JDInit.loadPluginForHost");
+                            names = cfg.getGenericProperty(c.getName() + "_names_" + dump + revision, names);
+                            patterns = cfg.getGenericProperty(c.getName() + "_pattern_" + dump + revision, patterns);
+                            flags = cfg.getGenericProperty(c.getName() + "_flags_" + dump + revision, flags);
+                        }
+                        // if not, try to load them from static functions
+                        if (names.length == 0) {
+                            names = (String[]) c.getMethod("getAnnotationNames").invoke(null);
+                            patterns = (String[]) c.getMethod("getAnnotationUrls").invoke(null);
+                            flags = (int[]) c.getMethod("getAnnotationFlags").invoke(null);
+                            final SubConfiguration cfg = SubConfiguration.getConfig("jd.JDInit.loadPluginForHost");
+                            cfg.setProperty(c.getName() + "_names_" + revision, names);
+                            cfg.setProperty(c.getName() + "_pattern_" + revision, patterns);
+                            cfg.setProperty(c.getName() + "_flags_" + revision, flags);
+                            cfg.save();
+                        }
+
+                        for (int i = 0; i < names.length; i++) {
                             try {
-                                new HostPluginWrapper(names[i], cSimpleName, urls[i], flags[i], revision);
+                                new HostPluginWrapper(names[i], simpleName, patterns[i], flags[i], revision);
                             } catch (Throwable e) {
-                                LOG.severe("could not load " + c);
+                                LOG.severe("Could not load " + c);
                                 JDLogger.exception(e);
                             }
                         }
                     } else {
-                        LOG.severe("could not load " + c);
+                        LOG.severe("Could not load " + c);
                     }
                 } catch (Throwable e) {
                     JDLogger.exception(e);
