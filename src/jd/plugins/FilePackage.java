@@ -487,6 +487,10 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
         return totalBytesLoaded_v2;
     }
 
+    public long getRemainingKB() {
+        return getTotalEstimatedPackageSize() - getTotalKBLoaded();
+    }
+
     /**
      * @return True/false, je nach dem ob ein Downloadirectory festgelegt wurde
      */

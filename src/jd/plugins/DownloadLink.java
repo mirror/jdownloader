@@ -334,6 +334,10 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         return downloadCurrent;
     }
 
+    public long getRemainingKB() {
+        return getDownloadSize() - getDownloadCurrent();
+    }
+
     public DownloadInterface getDownloadInstance() {
         return downloadInstance;
     }
