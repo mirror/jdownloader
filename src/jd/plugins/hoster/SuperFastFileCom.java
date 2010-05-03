@@ -176,6 +176,7 @@ public class SuperFastFileCom extends PluginForHost {
     }
 
     public void checkErrors(DownloadLink theLink) throws NumberFormatException, PluginException {
+        if (br.containsHTML(">Error happened when generating Download Link")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
         if (br.containsHTML("You have to wait")) {
             int minutes = 0, seconds = 0, hours = 0;
             String tmphrs = br.getRegex("\\s+(\\d+)\\s+hours?").getMatch(0);

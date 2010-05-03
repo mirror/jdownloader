@@ -147,6 +147,8 @@ public class FilesMailRu extends PluginForHost {
             }
             downloadLink.setUrlDownload(finallink);
             con.disconnect();
+        } else {
+            logger.info("dllink seems to be okay (checked in handleFree)");
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, 0);
         if ((dl.getConnection().getContentType().contains("html"))) {
