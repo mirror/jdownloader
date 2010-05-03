@@ -202,11 +202,14 @@ public class EnteruploadCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 }
                 if (dllink == null) {
-                    dllink = br.getRegex("<br><br><br><br>.*?<a href=\"(http.*?)\"").getMatch(0);
+                    dllink = br.getRegex("This direct link will be available for your IP next 24 hours<br><br>.*?<a href=\"(http://.*?)\"").getMatch(0);
                     if (dllink == null) {
-                        dllink = br.getRegex("\"(http://serv[0-9]+\\.enterupload\\.com/.*?files/.*?)\"").getMatch(0);
+                        dllink = br.getRegex("\"(http://serv\\d+\\.enterupload\\.com/.*?files/.*?)\"").getMatch(0);
                         if (dllink == null) {
-                            dllink = br.getRegex("\"(http://server[0-9]+\\.enterupload\\.com.*?files/.*?)\"").getMatch(0);
+                            dllink = br.getRegex("\"(http://server\\d+\\.enterupload\\.com.*?files/.*?)\"").getMatch(0);
+                            if (dllink == null) {
+                                dllink = br.getRegex("\"(http://serv\\d+\\.enterupload\\.com:\\d+/d/[a-z0-9]+/.*?)\"").getMatch(0);
+                            }
                         }
                     }
                 }
@@ -232,10 +235,7 @@ public class EnteruploadCom extends PluginForHost {
         if (error2 == true) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
-            if (br.containsHTML("File Not Found")) {
-                logger.warning("Server says link offline, please recheck that!");
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
+            checkServerErrors();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -408,6 +408,14 @@ public class EnteruploadCom extends PluginForHost {
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(Regex.getSize(filesize));
         return AvailableStatus.TRUE;
+    }
+
+    public void checkServerErrors() throws NumberFormatException, PluginException {
+        if (br.containsHTML("No file")) throw new PluginException(LinkStatus.ERROR_FATAL, "Server error");
+        if (br.containsHTML("(File Not Found|<h1>404 Not Found</h1>)")) {
+            logger.warning("Server says link offline, please recheck that!");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
     }
 
     public void checkErrors(DownloadLink theLink) throws NumberFormatException, PluginException {
