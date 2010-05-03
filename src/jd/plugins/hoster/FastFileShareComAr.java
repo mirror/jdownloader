@@ -75,7 +75,7 @@ public class FastFileShareComAr extends PluginForHost {
                 logger.info("Captcharegex 1 failed!");
                 captchaurl = br.getRegex("\"(http://fastfileshare\\.com\\.ar/temp/[a-z0-9]+\\.jpg)\"").getMatch(0);
             }
-            logger.info("CaptchaRegex 2 = " + br.getRegex("\"(http://fastfileshare\\.com\\.ar/temp/[a-z0-9]+\\.jpg)\"").getMatch(0));
+            if (captchaurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             String code = getCaptchaCode(captchaurl, downloadLink);
             dlform.put("private_key", code);
             br.submitForm(dlform);
