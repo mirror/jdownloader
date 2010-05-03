@@ -39,45 +39,37 @@ import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {}, flags = {})
 public class CMS extends PluginForDecrypt {
-    public static final String[] ANNOTATION_NAMES = new String[] { "romhood.com", "turk-crew.com", "uwarez.ws", "oxygen-warez.com", "filefox.in", "pirate-loads.com", "fettrap.com", "omega-music.com", "hardcoremetal.biz", "flashload.org", "oneload.org", "1dl.in", "oneload.org", "saugking.net", "dark-load.net", "crimeland.de", "musik.am", "spreaded.net", "relfreaks.com", "xxx-4-free.net", "porn-traffic.net", "chili-warez.net", "game-freaks.net", "sceneload.to", "epicspeedload.in", "serienfreaks.to", "serienfreaks.in", "warez-load.com", "ddl-scene.com", "ddl-base.ws", "sauggirls.com", "pornfox.in", "xflat24.com", "gamegalaxy.ws", "ddl.byte.to", "jokermovie.org", "top-hitz.com", "sound-load.com", "toxic.to", "sound-load.com", "sfulc.exofire.net/cms", "dream-team.bz/cms", "titanload.to", "gate-warez.com", "hot-porn-ddl.com" };
+    public static final String[] ANNOTATION_NAMES = new String[] { "romhood.com", "turk-crew.com", "uwarez.ws", "oxygen-warez.com", "filefox.in", "pirate-loads.com", "fettrap.com", "omega-music.com", "hardcoremetal.biz", "flashload.org", "oneload.org", "1dl.in", "oneload.org", "saugking.net", "dark-load.net", "crimeland.de", "musik.am", "spreaded.net", "relfreaks.com", "xxx-4-free.net", "porn-traffic.net", "chili-warez.net", "game-freaks.net", "sceneload.to", "epicspeedload.in", "serienfreaks.to", "serienfreaks.in", "warez-load.com", "ddl-scene.com", "ddl-base.ws", "sauggirls.com", "pornfox.in", "xflat24.com", "gamegalaxy.ws", "ddl.byte.to", "jokermovie.org", "top-hitz.com", "sound-load.com", "toxic.to", "sound-load.com", "sfulc.exofire.net/cms", "dream-team.bz/cms", "titanload.to", "gate-warez.com", "hot-porn-ddl.com", "defrap.org" };
 
     /**
      * Returns the annotations names array
-     * 
-     * @return
      */
     public static String[] getAnnotationNames() {
         return ANNOTATION_NAMES;
     }
 
     /**
-     * returns the annotation pattern array
-     * 
-     * @return
+     * Returns the annotation pattern array
      */
     public static String[] getAnnotationUrls() {
         String[] names = getAnnotationNames();
-        String[] ret = new String[names.length];
 
+        String[] ret = new String[names.length];
         for (int i = 0; i < ret.length; i++) {
             ret[i] = "http://[\\w\\.]*?" + names[i].replaceAll("\\.", "\\\\.") + "/(\\?id=.+|[\\?]*?/.*?\\.html|category/.*?/.*?\\.html|download/.*?/.*?\\.html|.*?/.*?\\.html)";
-
         }
         return ret;
     }
 
     /**
      * Returns the annotations flags array
-     * 
-     * @return
      */
     public static int[] getAnnotationFlags() {
         String[] names = getAnnotationNames();
-        int[] ret = new int[names.length];
 
+        int[] ret = new int[names.length];
         for (int i = 0; i < ret.length; i++) {
             ret[i] = 0;
-
         }
         return ret;
     }
