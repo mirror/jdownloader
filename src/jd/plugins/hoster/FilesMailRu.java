@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
+import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
@@ -43,6 +44,7 @@ public class FilesMailRu extends PluginForHost {
     }
 
     public boolean iHaveToWait = false;
+    public String finalLinkRegex = "\"(http://.*?\\.files\\.mail\\.ru/.*?/.*?)\"";
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
@@ -87,7 +89,7 @@ public class FilesMailRu extends PluginForHost {
                 for (String info : linkinformation) {
                     if (info.contains(finalfilename)) {
                         // regex the new downloadlink and save it!
-                        String directlink = new Regex(info, "\"(http://.*?\\.files\\.mail\\.ru/.*?/.*?)\"").getMatch(0);
+                        String directlink = new Regex(info, finalLinkRegex).getMatch(0);
                         if (directlink == null) {
                             logger.warning("Critical error occured: The final downloadlink couldn't be found in the available check!");
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -131,6 +133,20 @@ public class FilesMailRu extends PluginForHost {
             int tt = 10;
             if (ttt != null) tt = Integer.parseInt(ttt);
             sleep(tt * 1001, downloadLink);
+        }
+        // Errorhandling, sometimes the link which is usually renewed by the
+        // linkgrabber doesn't work and needs to be refreshed again!
+        URLConnectionAdapter con = br.openGetConnection(downloadLink.getDownloadURL());
+        if (con.getContentType().contains("html")) {
+            logger.info("Renewing dllink, seems like we had a broken link here!");
+            br.followConnection();
+            String finallink = br.getRegex(finalLinkRegex).getMatch(0);
+            if (finallink == null) {
+                logger.warning("Critical error occured: The final downloadlink couldn't be found in handleFree!");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            downloadLink.setUrlDownload(finallink);
+            con.disconnect();
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, 0);
         if ((dl.getConnection().getContentType().contains("html"))) {

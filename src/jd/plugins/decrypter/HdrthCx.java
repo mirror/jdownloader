@@ -32,18 +32,14 @@ public class HdrthCx extends PluginForDecrypt {
         super(wrapper);
     }
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-
         br.getPage(parameter);
         String link = br.getRegex("src=\".*?(http://.*?)\"").getMatch(0);
+        if (link == null) return null;
         decryptedLinks.add(createDownloadlink(link));
-
         return decryptedLinks;
     }
-
-    // @Override
 
 }

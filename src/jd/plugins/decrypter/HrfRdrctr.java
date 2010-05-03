@@ -25,8 +25,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "forex-fileupload.co.cc", "r1one.co.cc", "crazytr.com", "qurlyq.com", "url.tr59.info", "umquetenha.org", "url.bilgiportal.com", "teklink.tk", "freakinghugeurl.com", "d-v.in", "1lik.net", "linkpayout.com" }, urls = { "http://[\\w\\.]*?forex-fileupload\\.co\\.cc/\\?\\w+", "http://[\\w\\.]*?r1one\\.co\\.cc/\\d+", "http://[\\w\\.]*?crazytr\\.com/url/\\d+", "http://[\\w\\.]*?qurlyq\\.com/[0-9a-z]+", "http://[\\w\\.]*?url\\.tr59\\.info/[0-9]+", "http://[\\w\\.]*?umquetenha\\.org/protecao/resolve\\.php\\?link=[a-zA-Z0-9% ]+", "http://[\\w\\.]*?url\\.bilgiportal\\.com/[0-9]+", "http://[\\w\\.]*?teklink\\.tk/[0-9]+", "http://[\\w\\.]*?freakinghugeurl\\.com/refer\\.php\\?count=[0-9]+\\&url=[a-zA-Z0-9]+", "http://[\\w\\.]*?d-v\\.in/[a-zA-Z0-9]+", "http://[\\w\\.]*?1lik\\.net/[0-9]+",
-        "http://[\\w\\.]*?linkpayout\\.com/[0-9a-z]+" }, flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "forex-fileupload.co.cc", "crazytr.com", "url.tr59.info", "url.bilgiportal.com", "freakinghugeurl.com", "1lik.net", "linkpayout.com" }, urls = { "http://[\\w\\.]*?forex-fileupload\\.co\\.cc/\\?\\w+", "http://[\\w\\.]*?crazytr\\.com/url/\\d+", "http://[\\w\\.]*?url\\.tr59\\.info/[0-9]+", "http://[\\w\\.]*?url\\.bilgiportal\\.com/[0-9]+", "http://[\\w\\.]*?freakinghugeurl\\.com/refer\\.php\\?count=[0-9]+\\&url=[a-zA-Z0-9]+", "http://[\\w\\.]*?1lik\\.net/[0-9]+", "http://[\\w\\.]*?linkpayout\\.com/[0-9a-z]+" }, flags = { 0, 0, 0, 0, 0, 0, 0 })
 public class HrfRdrctr extends PluginForDecrypt {
 
     /* Usage: {{regex, getMatch()-Index}, {..., ...}} */
@@ -41,12 +40,6 @@ public class HrfRdrctr extends PluginForDecrypt {
         String link = null;
         String parameter = param.toString();
         br.getPage(parameter);
-        // Workaround for teklink links
-        if (parameter.contains("teklink.tk")) {
-            String frame = br.getRegex("frameborder=.*?src=\"(.*?)\"").getMatch(0);
-            if (frame == null) return null;
-            br.getPage(frame);
-        }
         for (int i = 0; i < regxps.length; i++) {
             if (link == null) {
                 link = br.getRegex((String) regxps[i][0]).getMatch((Integer) regxps[i][1]);

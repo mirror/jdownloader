@@ -39,7 +39,7 @@ import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {}, flags = {})
 public class CMS extends PluginForDecrypt {
-    public static final String[] ANNOTATION_NAMES = new String[] { "romhood.com", "turk-crew.com", "uwarez.ws", "oxygen-warez.com", "filefox.in", "pirate-loads.com", "fettrap.com", "omega-music.com", "hardcoremetal.biz", "flashload.org", "oneload.org", "1dl.in", "oneload.org", "saugking.net", "dark-load.net", "crimeland.de", "musik.am", "spreaded.net", "relfreaks.com", "xxx-4-free.net", "porn-traffic.net", "chili-warez.net", "game-freaks.net", "mov-world.net", "sceneload.to", "epicspeedload.in", "serienfreaks.to", "serienfreaks.in", "warez-load.com", "ddl-scene.com", "ddl-base.ws", "sauggirls.com", "pornfox.in", "xflat24.com", "gamegalaxy.ws", "ddl.byte.to", "jokermovie.org", "top-hitz.com", "sound-load.com", "toxic.to", "sound-load.com", "sfulc.exofire.net/cms", "dream-team.bz/cms", "titanload.to", "gate-warez.com", "hot-porn-ddl.com" };
+    public static final String[] ANNOTATION_NAMES = new String[] { "romhood.com", "turk-crew.com", "uwarez.ws", "oxygen-warez.com", "filefox.in", "pirate-loads.com", "fettrap.com", "omega-music.com", "hardcoremetal.biz", "flashload.org", "oneload.org", "1dl.in", "oneload.org", "saugking.net", "dark-load.net", "crimeland.de", "musik.am", "spreaded.net", "relfreaks.com", "xxx-4-free.net", "porn-traffic.net", "chili-warez.net", "game-freaks.net", "sceneload.to", "epicspeedload.in", "serienfreaks.to", "serienfreaks.in", "warez-load.com", "ddl-scene.com", "ddl-base.ws", "sauggirls.com", "pornfox.in", "xflat24.com", "gamegalaxy.ws", "ddl.byte.to", "jokermovie.org", "top-hitz.com", "sound-load.com", "toxic.to", "sound-load.com", "sfulc.exofire.net/cms", "dream-team.bz/cms", "titanload.to", "gate-warez.com", "hot-porn-ddl.com" };
 
     /**
      * Returns the annotations names array
@@ -127,19 +127,7 @@ public class CMS extends PluginForDecrypt {
                             String captchaAdress = host + new Regex(element[2], Pattern.compile("<IMG SRC=\"(/.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
                             captchaFile = getLocalCaptchaFile();
                             br.cloneBrowser().getDownload(captchaFile, captchaAdress);
-                            if (host.toLowerCase().contains("mov-world.net")) {
-                                /*
-                                 * mov world does not change captcha, if first
-                                 * try fails, then ask user
-                                 */
-                                if (retry == 0) {
-                                    capTxt = getCaptchaCode("mov-world.net", captchaFile, param);
-                                } else {
-                                    capTxt = getCaptchaCode(null, captchaFile, param);
-                                }
-                            } else {
-                                capTxt = getCaptchaCode("ucms", captchaFile, param);
-                            }
+                            capTxt = getCaptchaCode("ucms", captchaFile, param);
                             captchaFile.renameTo(new File(captchaFile.getParentFile(), capTxt + ".gif"));
 
                             String posthelp = HTMLParser.getFormInputHidden(element[2]);
@@ -228,19 +216,7 @@ public class CMS extends PluginForDecrypt {
                             String captchaAdress = host + tform.getRegex(Pattern.compile("<img src=\"(/captcha/.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
                             captchaFile = getLocalCaptchaFile();
                             brc.getDownload(captchaFile, captchaAdress);
-                            if (host.toLowerCase().contains("mov-world.net")) {
-                                /*
-                                 * mov world does not change captcha, if first
-                                 * try fails, then ask user
-                                 */
-                                if (retry == 0) {
-                                    capTxt = getCaptchaCode("mov-world.net", captchaFile, param);
-                                } else {
-                                    capTxt = getCaptchaCode(null, captchaFile, param);
-                                }
-                            } else {
-                                capTxt = getCaptchaCode("ucms", captchaFile, param);
-                            }
+                            capTxt = getCaptchaCode("ucms", captchaFile, param);
                             captchaFile.renameTo(new File(captchaFile.getParentFile(), capTxt + ".gif"));
 
                             tform.put("code", capTxt);
