@@ -120,8 +120,8 @@ public class Serverhandler implements Handler {
             response.addContent(rc.getVersion());
         } else if (request.getRequestUrl().equals("/get/speedlimit")) {
             // Get speed limit
-
-            response.addContent(SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0));
+            int value = SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0);
+            response.addContent(value);
         } else if (request.getRequestUrl().equals("/get/downloads/current/count")) {
             // Get amount of current DLs COUNT
 
@@ -342,7 +342,14 @@ public class Serverhandler implements Handler {
             } else {
                 response.addContent("PARAM_START_AFTER_ADDING_LINKS=" + value);
             }
+        } else if (request.getRequestUrl().matches("(?is).*/action/set/downloaddir/general/.+")) {
+            String dir = new Regex(request.getRequestUrl(), ".*/action/set/downloaddir/general/(.+)").getMatch(0);
 
+            // Doesn't seem to work but I really don't know why :-/
+            SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY, dir);
+            SubConfiguration.getConfig("DOWNLOAD").save();
+
+            response.addContent("PARAM_DOWNLOAD_DIRECTORY=" + dir);
         } else if (request.getRequestUrl().matches("(?is).*/action/add/archivepassword/.+/.+")) {
             // Add an archive password to package
 

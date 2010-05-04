@@ -138,6 +138,9 @@ public class HelpPage {
         t.setCommand("/action/set/grabber/startafteradding/(true|false)");
         t.setInfo("Set whether downloads should start or not start after they were added to the download queue");
 
+        t.setCommand("/action/set/downloaddir/general/%X%");
+        t.setInfo("Set the general download directory %X%");
+
         t.setCommand("/action/add/archivepassword/%X%/%Y%");
         t.setInfo("Add an archive password %Y% to one or more packages with packagename %X% hold by the linkgrabber, each packagename seperated by a slash)");
 
