@@ -69,6 +69,7 @@ public class FourFreeLoadDotNet extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
         requestFileInformation(downloadLink);
+        doFree(downloadLink);
     }
 
     public void doFree(DownloadLink downloadLink) throws Exception {
