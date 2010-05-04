@@ -26,6 +26,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filehoster.ru" }, urls = { "http://[\\w\\.]*?filehoster\\.ru/files/[a-z0-9]+" }, flags = { 0 })
 public class FileHosterRu extends PluginForHost {
@@ -44,6 +45,10 @@ public class FileHosterRu extends PluginForHost {
         this.setBrowserExclusive();
         br.setCustomCharset("windows-1251");
         br.getPage(link.getDownloadURL());
+        if (br.containsHTML("Файлообменник временно не работает")) {
+            link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.FileHosterRu.errors.hostertemporaryunavailable", "This hoster is temporary not available!"));
+            return AvailableStatus.UNCHECKABLE;
+        }
         if (br.containsHTML("(Запрашиваемый вами файл не существует|К файлу долгое время не было обращений)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>Файлообменник Filehoster\\.ru - скачать файл(.*?)</title>").getMatch(0);
         if (filename == null) {
@@ -70,6 +75,7 @@ public class FileHosterRu extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        if (br.containsHTML("Файлообменник временно не работает")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.FileHosterRu.errors.hostertemporaryunavailable", "This hoster is temporary not available!"));
         String dllink = br.getRegex("class='file1link' href='(http.*?)'>").getMatch(0);
         if (dllink == null) dllink = br.getRegex("'(http://dl[0-9]+\\.filehoster\\.ru/files/.*?)'>").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

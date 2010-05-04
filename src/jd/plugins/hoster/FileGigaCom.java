@@ -32,7 +32,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filegiga.com" }, urls = { "http://[\\w\\.]*?filegiga\\.com/[a-z0-9]+{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filegiga.com" }, urls = { "http://[\\w\\.]*?filegiga\\.com/[a-z0-9]{12}" }, flags = { 0 })
 public class FileGigaCom extends PluginForHost {
 
     public FileGigaCom(PluginWrapper wrapper) {

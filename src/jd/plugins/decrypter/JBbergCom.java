@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2008  JD-Team support@jdownloader.org
+//    Copyright (C) 2009  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -21,27 +21,30 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "music-base.ws" }, urls = { "http://[\\w\\.]*?music-base\\.ws/dl\\.php.*?c=[\\w]+" }, flags = { 0 })
-public class MscBsWs extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "jheberg.com" }, urls = { "http://[\\w\\.]*?jheberg\\.com/download-[A-Z0-9]+-.*?\\.html" }, flags = { 0 })
+public class JBbergCom extends PluginForDecrypt {
 
-    public MscBsWs(PluginWrapper wrapper) {
+    public JBbergCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
-        String link = br.getRegex("url=(.*?)'").getMatch(0);
-        decryptedLinks.add(createDownloadlink(link));
+        if (br.containsHTML("<b>Aucune URL ne correspond au fichier voulut")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        String[] links = br.getRegex("/> <a href=\"(http://.*?)\"").getColumn(0);
+        if (links == null || links.length == 0) return null;
+        for (String dl : links)
+            decryptedLinks.add(createDownloadlink(dl));
+
         return decryptedLinks;
     }
-
-    // @Override
 
 }
