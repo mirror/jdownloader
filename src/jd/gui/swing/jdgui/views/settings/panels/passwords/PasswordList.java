@@ -16,8 +16,6 @@
 
 package jd.gui.swing.jdgui.views.settings.panels.passwords;
 
-import javax.swing.JTabbedPane;
-
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.controlling.PasswordListController;
@@ -28,11 +26,6 @@ import jd.utils.locale.JDL;
 public class PasswordList extends ConfigPanel {
 
     private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.PasswordList.";
-
-    @Override
-    public String getBreadcrumb() {
-        return JDL.L(JDL_PREFIX + "breadcrum", "Modules - Passwords & Logins - Unrar/Extract");
-    }
 
     public static String getTitle() {
         return JDL.L(JDL_PREFIX + "general.title", "Archive passwords");
@@ -50,11 +43,7 @@ public class PasswordList extends ConfigPanel {
     public void initPanel() {
         addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_LISTCONTROLLED, PasswordListController.getInstance(), JDL.LF("plugins.optional.jdunrar.config.passwordlist2", "List of all passwords. Each line one password. Available passwords: %s", ""))));
 
-        JTabbedPane tabbed = new JTabbedPane();
-        tabbed.setOpaque(false);
-        tabbed.add(getBreadcrumb(), panel);
-
-        this.add(tabbed);
+        this.add(panel);
     }
 
 }

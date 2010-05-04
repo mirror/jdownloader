@@ -24,7 +24,6 @@ import java.net.URL;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
-import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSeparator;
 
@@ -32,7 +31,6 @@ import jd.config.ConfigGroup;
 import jd.controlling.JDLogger;
 import jd.gui.swing.components.JDUnderlinedText;
 import jd.gui.swing.components.linkbutton.JLink;
-import jd.utils.JDTheme;
 import net.miginfocom.swing.MigLayout;
 
 public final class Factory {
@@ -48,7 +46,7 @@ public final class Factory {
     }
 
     public static JPanel createHeader(final String name, final ImageIcon icon) {
-        final JPanel ret = new JPanel(new MigLayout("ins 0", "[]10[grow,fill]3[]"));
+        final JPanel ret = new JPanel(new MigLayout("ins 0", "[]10[grow,fill]"));
         final JLink label;
         try {
             ret.add(label = new JLink("<html><u><b>" + name + "</b></u></html>", icon, new URL("http://wiki.jdownloader.org/quickhelp/" + name.replace(" ", "-"))));
@@ -58,7 +56,6 @@ public final class Factory {
             JDLogger.exception(e);
         }
         ret.add(new JSeparator());
-        ret.add(new JLabel(JDTheme.II("gui.images.config.tip", 16, 16)));
         ret.setOpaque(false);
         ret.setBackground(null);
         return ret;

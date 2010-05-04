@@ -20,11 +20,17 @@ import java.io.Serializable;
 
 import javax.swing.ImageIcon;
 
+import jd.utils.JDTheme;
+
 public class ConfigGroup implements Serializable {
     private static final long serialVersionUID = 1075652697591884926L;
 
-    private ImageIcon icon;
-    private String name;
+    private final String name;
+    private final ImageIcon icon;
+
+    public ConfigGroup(String name, String iconKey) {
+        this(name, JDTheme.II(iconKey, 32, 32));
+    }
 
     public ConfigGroup(String name, ImageIcon icon) {
         this.name = name;
@@ -35,16 +41,8 @@ public class ConfigGroup implements Serializable {
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
     public ImageIcon getIcon() {
         return icon;
-    }
-
-    public void setIcon(ImageIcon icon) {
-        this.icon = icon;
     }
 
 }

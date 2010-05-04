@@ -24,18 +24,12 @@ import jd.config.SubConfiguration;
 import jd.controlling.ByteBufferController;
 import jd.gui.UserIO;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
-import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 
 public class Advanced extends ConfigPanel {
 
     private static final long serialVersionUID = -8421603124342250902L;
     private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.downloadandnetwork.Advanced.";
-
-    @Override
-    public String getBreadcrumb() {
-        return JDL.L(JDL_PREFIX + "breadcrum", "Basics - Download & Connections - Advanced");
-    }
 
     public static String getTitle() {
         return JDL.L(JDL_PREFIX + "download.advanced.title", "Advanced");
@@ -59,7 +53,7 @@ public class Advanced extends ConfigPanel {
 
         ConfigContainer extended = new ConfigContainer();
 
-        extended.setGroup(new ConfigGroup(JDL.L("gui.config.download.ipcheck", "Reconnection IP-Check"), JDTheme.II("gui.images.network", 32, 32)));
+        extended.setGroup(new ConfigGroup(JDL.L("gui.config.download.ipcheck", "Reconnection IP-Check"), "gui.images.network"));
 
         extended.addEntry(conditionEntry2 = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, Configuration.PARAM_GLOBAL_IP_DISABLE, JDL.L("gui.config.download.ipcheck.disable", "Disable IP-Check")) {
             private static final long serialVersionUID = 1L;
@@ -103,7 +97,7 @@ public class Advanced extends ConfigPanel {
         ce.setDefaultValue(10);
         ce.setEnabledCondidtion(conditionEntry2, false);
 
-        extended.setGroup(new ConfigGroup(JDL.L("gui.config.download.write", "File writing"), JDTheme.II("gui.images.save", 32, 32)));
+        extended.setGroup(new ConfigGroup(JDL.L("gui.config.download.write", "File writing"), "gui.images.save"));
 
         extended.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, Configuration.PARAM_DO_CRC, JDL.L("gui.config.download.crc", "SFV/CRC check when possible")));
 

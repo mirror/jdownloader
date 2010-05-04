@@ -36,11 +36,6 @@ public class ConfigPanelGeneral extends ConfigPanel {
 
     private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.ConfigPanelGeneral.";
 
-    @Override
-    public String getBreadcrumb() {
-        return JDL.L(JDL_PREFIX + "breadcrum", "Basics - General");
-    }
-
     public static String getTitle() {
         return JDL.L(JDL_PREFIX + "general.title", "General");
     }
@@ -61,10 +56,10 @@ public class ConfigPanelGeneral extends ConfigPanel {
 
         ConfigContainer look = new ConfigContainer();
 
-        look.setGroup(new ConfigGroup(JDL.L("gui.config.general.logging", "Logging"), JDTheme.II("gui.images.terminal", 32, 32)));
+        look.setGroup(new ConfigGroup(JDL.L("gui.config.general.logging", "Logging"), "gui.images.terminal"));
         look.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, configuration, Configuration.PARAM_LOGGER_LEVEL, new Level[] { Level.ALL, Level.INFO, Level.OFF }, JDL.L("gui.config.general.loggerLevel", "Level für's Logging")).setDefaultValue(Level.INFO));
 
-        look.setGroup(new ConfigGroup(JDL.L("gui.config.general.update", "Update"), JDTheme.II("gui.splash.update", 32, 32)));
+        look.setGroup(new ConfigGroup(JDL.L("gui.config.general.update", "Update"), "gui.splash.update"));
         look.addEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, SubConfiguration.getConfig("WEBUPDATE"), Configuration.PARAM_WEBUPDATE_DISABLE, JDL.L("gui.config.general.webupdate.disable2", "Do not inform me about important updates")).setDefaultValue(false));
         look.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_WEBUPDATE_AUTO_RESTART, JDL.L("gui.config.general.webupdate.auto", "Webupdate: start automatically!")).setDefaultValue(false).setEnabledCondidtion(conditionEntry, false));
         look.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_WEBUPDATE_AUTO_SHOW_CHANGELOG, JDL.L("gui.config.general.changelog.auto", "Open Changelog after update")).setDefaultValue(true));

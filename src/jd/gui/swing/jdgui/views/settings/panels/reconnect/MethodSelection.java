@@ -78,11 +78,6 @@ public class MethodSelection extends ConfigPanel implements ActionListener {
 
     private JPanel method;
 
-    @Override
-    public String getBreadcrumb() {
-        return JDL.L(JDL_PREFIX + "breadcrum", "Modules - Reconnection - Methods");
-    }
-
     public static String getTitle() {
         return JDL.L(JDL_PREFIX + "reconnect.title", "Reconnection");
     }
@@ -204,8 +199,6 @@ public class MethodSelection extends ConfigPanel implements ActionListener {
 
         tabbed = new JTabbedPane();
         method.add(tabbed, "spanx,pushy,growy");
-        // tabbed.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
-        // tabbed.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
         tabbed.setTabPlacement(SwingConstants.TOP);
 
         tabbed.addTab(JDL.L("modules.reconnect.types.liveheader", "LiveHeader/Curl"), new SubPanelLiveHeaderReconnect(configuration));
@@ -213,7 +206,7 @@ public class MethodSelection extends ConfigPanel implements ActionListener {
         tabbed.addTab(JDL.L("modules.reconnect.types.batch", "Batch"), getPanelFor(new BatchReconnect()));
         tabbed.addTab(JDL.L("modules.reconnect.types.clr", "CLR Script"), new SubPanelCLRReconnect(configuration));
 
-        method.add(Factory.createHeader(new ConfigGroup(JDL.L("gui.config.reconnect.test", "Showcase"), JDTheme.II("gui.images.config.network_local", 32, 32))), "spanx,gaptop 15,gapleft 20,gapright 15");
+        method.add(Factory.createHeader(new ConfigGroup(JDL.L("gui.config.reconnect.test", "Showcase"), "gui.images.config.network_local")), "spanx,gaptop 15,gapleft 20,gapright 15");
         JPanel p = new JPanel(new MigLayout(" ins 0,wrap 7", "[]5[fill]5[align right]20[align right]20[align right]20[align right]20[align right]", "[][]"));
         method.add(p, "spanx,gapright 20,gapleft 54");
         btn = new JButton(JDL.L("gui.config.reconnect.showcase.reconnect", "Change IP"));
@@ -256,11 +249,7 @@ public class MethodSelection extends ConfigPanel implements ActionListener {
 
         setLayout(new MigLayout("ins 0,wrap 1", "[fill,grow 10]", "[fill,grow]"));
 
-        JTabbedPane tabbed = new JTabbedPane();
-        tabbed.setOpaque(false);
-        tabbed.add(getBreadcrumb(), method);
-
-        this.add(tabbed);
+        this.add(method);
     }
 
     @Override

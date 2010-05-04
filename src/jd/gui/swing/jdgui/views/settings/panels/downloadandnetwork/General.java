@@ -24,17 +24,11 @@ import jd.config.SubConfiguration;
 import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.jdgui.JDGuiConstants;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
-import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 public class General extends ConfigPanel {
     private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.downloadandnetwork.general.";
-
-    @Override
-    public String getBreadcrumb() {
-        return JDL.L(JDL_PREFIX + "breadcrum", "Basics - Download & Connections - General");
-    }
 
     public static String getTitle() {
         return JDL.L(JDL_PREFIX + "download.title", "Download & Network");
@@ -57,7 +51,7 @@ public class General extends ConfigPanel {
         ConfigEntry conditionEntry;
 
         /* DESTINATION PATH */
-        container.setGroup(new ConfigGroup(JDL.L("gui.config.general.downloaddirectory", "Download directory"), JDTheme.II("gui.images.package_opened", 32, 32)));
+        container.setGroup(new ConfigGroup(JDL.L("gui.config.general.downloaddirectory", "Download directory"), "gui.images.package_opened"));
         container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, JDUtilities.getConfiguration(), Configuration.PARAM_DOWNLOAD_DIRECTORY, ""));
 
         ce.setDefaultValue(JDUtilities.getResourceFile("downloads").getAbsolutePath());
@@ -72,7 +66,7 @@ public class General extends ConfigPanel {
         ce.setEnabled(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, false));
         /* control */
 
-        container.setGroup(new ConfigGroup(JDL.L("gui.config.download.download.tab", "Download Control"), JDTheme.II("gui.images.downloadorder", 32, 32)));
+        container.setGroup(new ConfigGroup(JDL.L("gui.config.download.download.tab", "Download Control"), "gui.images.downloadorder"));
 
         container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN_PER_HOST, JDL.L("gui.config.download.simultan_downloads_per_host", "Maximum of simultaneous downloads per host (0 = no limit)"), 0, 20));
         ce.setDefaultValue(0);

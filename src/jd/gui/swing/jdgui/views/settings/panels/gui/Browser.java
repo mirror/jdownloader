@@ -41,11 +41,6 @@ public class Browser extends ConfigPanel {
 
     private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.gui.Browser.";
 
-    @Override
-    public String getBreadcrumb() {
-        return JDL.L(JDL_PREFIX + "breadcrum", "Basics - User Interface - Browser");
-    }
-
     public static String getTitle() {
         return JDL.L(JDL_PREFIX + "gui.browser.title", "Browser");
     }

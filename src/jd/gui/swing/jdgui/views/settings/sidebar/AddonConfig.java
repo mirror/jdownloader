@@ -27,23 +27,16 @@ import javax.swing.event.ChangeListener;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
-import jd.utils.locale.JDL;
 
 public class AddonConfig extends ConfigPanel {
 
     private static final long serialVersionUID = 5561326475681668634L;
-    private static final String JDL_PREFIX = "jd.gui.swing.jdgui.views.settings.sidebar.AddonConfig.";
 
     private static HashMap<String, AddonConfig> MAP;
 
     private ConfigContainer container;
 
     private String name;
-
-    @Override
-    public String getBreadcrumb() {
-        return JDL.L(JDL_PREFIX + "breadcrum", "Plugins & Addons - Addons - ") + name;
-    }
 
     private AddonConfig(ConfigContainer container, String name) {
         super();
@@ -67,40 +60,44 @@ public class AddonConfig extends ConfigPanel {
             }
         }
 
-        final JTabbedPane tabbed = new JTabbedPane();
+        if (!cont.isEmpty()) {
+            final JTabbedPane tabbed = new JTabbedPane();
 
-        tabbed.addChangeListener(new ChangeListener() {
+            tabbed.addChangeListener(new ChangeListener() {
 
-            private ConfigPanel latestSelection;
+                private ConfigPanel latestSelection;
 
-            public void stateChanged(ChangeEvent e) {
+                public void stateChanged(ChangeEvent e) {
 
-                try {
-                    ConfigPanel comp = (ConfigPanel) tabbed.getSelectedComponent();
-                    if (comp == latestSelection) return;
-                    if (latestSelection != null) {
-                        latestSelection.setHidden();
+                    try {
+                        ConfigPanel comp = (ConfigPanel) tabbed.getSelectedComponent();
+                        if (comp == latestSelection) return;
+                        if (latestSelection != null) {
+                            latestSelection.setHidden();
+                        }
+                        latestSelection = comp;
+                        if (comp != null) comp.setShown();
+                        revalidate();
+                    } catch (Exception e2) {
+                        e2.printStackTrace();
                     }
-                    latestSelection = comp;
-                    if (comp != null) comp.setShown();
-                    revalidate();
-                } catch (Exception e2) {
-                    e2.printStackTrace();
+
                 }
 
+            });
+
+            tabbed.setOpaque(false);
+            tabbed.add(name, panel);
+            for (ConfigEntry c : cont) {
+                ConfigPanel p = new ConfigPanel(c.getContainer());
+                tabbed.add(c.getContainer().getTitle(), p);
+                tabbed.setIconAt(tabbed.getTabCount() - 1, c.getContainer().getIcon());
             }
 
-        });
-
-        tabbed.setOpaque(false);
-        tabbed.add(getBreadcrumb(), panel);
-        for (ConfigEntry c : cont) {
-            ConfigPanel p = new ConfigPanel(c.getContainer());
-            tabbed.add(c.getContainer().getTitle(), p);
-            tabbed.setIconAt(tabbed.getTabCount() - 1, c.getContainer().getIcon());
+            this.add(tabbed);
+        } else {
+            this.add(panel);
         }
-
-        this.add(tabbed);
     }
 
     /**

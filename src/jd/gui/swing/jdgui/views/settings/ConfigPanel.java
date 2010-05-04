@@ -19,11 +19,11 @@ package jd.gui.swing.jdgui.views.settings;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 
+import javax.swing.BorderFactory;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
-import javax.swing.JTabbedPane;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -55,9 +55,10 @@ public class ConfigPanel extends SwitchPanel {
     private JPanel header;
 
     public ConfigPanel() {
-        this.setLayout(new MigLayout("ins 0 0 0 0", "[fill,grow]", "[fill,grow]"));
+        this.setLayout(new MigLayout("ins 0", "[fill,grow]", "[fill,grow]"));
+        this.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         panel = new JPanel();
-        panel.setLayout(new MigLayout("ins 0 10 10 10,wrap 2", "[fill,grow 10]10[fill,grow]"));
+        panel.setLayout(new MigLayout("ins 0 10 10 10, wrap 2", "[fill,grow 10]10[fill,grow]"));
     }
 
     /**
@@ -74,10 +75,6 @@ public class ConfigPanel extends SwitchPanel {
 
         this.load();
         this.add(panel);
-    }
-
-    public String getBreadcrumb() {
-        return "";
     }
 
     public static String getTitle() {
@@ -97,11 +94,11 @@ public class ConfigPanel extends SwitchPanel {
                 switch (entry.getConfigEntry().getType()) {
                 case ConfigContainer.TYPE_TEXTAREA:
                 case ConfigContainer.TYPE_LISTCONTROLLED:
-                    panel.add(entry.getDecoration(), "spany " + entry.getInput().length + ",spanx, gapright " + getGapRight());
+                    panel.add(entry.getDecoration(), "spany " + entry.getInput().length + ",spanx");
                     break;
                 case ConfigContainer.TYPE_CONTAINER:
                     /**
-                     * TODO . handly different containers
+                     * TODO: handle different containers
                      */
                     break;
                 default:
@@ -109,24 +106,22 @@ public class ConfigPanel extends SwitchPanel {
                 }
             }
 
-            int i = 0;
             for (JComponent c : entry.getInput()) {
-                i++;
                 switch (entry.getConfigEntry().getType()) {
                 case ConfigContainer.TYPE_BUTTON:
-                    panel.add(c, entry.getDecoration() == null ? "spanx,gapright " + getGapRight() : "width n:n:160,gapright " + getGapRight());
+                    panel.add(c, entry.getDecoration() == null ? "spanx" : "width n:n:160");
                     break;
                 case ConfigContainer.TYPE_TEXTAREA:
                 case ConfigContainer.TYPE_LISTCONTROLLED:
-                    panel.add(new JScrollPane(c), "spanx,gapright " + getGapRight() + ",growy,pushy");
+                    panel.add(new JScrollPane(c), "spanx,growy,pushy");
                     break;
                 case ConfigContainer.TYPE_CONTAINER:
                     /**
-                     * TODO . handly different containers
+                     * TODO: handle different containers
                      */
                     break;
                 default:
-                    panel.add(c, entry.getDecoration() == null ? "spanx,gapright " + getGapRight() : "gapright " + getGapRight());
+                    panel.add(c, entry.getDecoration() == null ? "spanx" : "");
                     break;
                 }
             }
@@ -144,10 +139,10 @@ public class ConfigPanel extends SwitchPanel {
                 switch (entry.getConfigEntry().getType()) {
                 case ConfigContainer.TYPE_TEXTAREA:
                 case ConfigContainer.TYPE_LISTCONTROLLED:
-                    panel.add(entry.getDecoration(), "gapleft " + getGapLeft() + ",spany " + entry.getInput().length + ",spanx");
+                    panel.add(entry.getDecoration(), "gapleft " + this.getGapLeft() + ",spany " + entry.getInput().length + ",spanx");
                     break;
                 default:
-                    panel.add(entry.getDecoration(), "gapleft " + getGapLeft() + ",spany " + entry.getInput().length + (entry.getInput().length == 0 ? ",spanx" : ""));
+                    panel.add(entry.getDecoration(), "gapleft " + this.getGapLeft() + ",spany " + entry.getInput().length + (entry.getInput().length == 0 ? ",spanx" : ""));
                 }
             }
             int i = 0;
@@ -155,15 +150,15 @@ public class ConfigPanel extends SwitchPanel {
                 i++;
                 switch (entry.getConfigEntry().getType()) {
                 case ConfigContainer.TYPE_BUTTON:
-                    panel.add(c, entry.getDecoration() == null ? "spanx,gapright " + this.getGapRight() + ",gapleft " + this.getGapLeft() : "width n:n:160,gapright " + this.getGapRight());
+                    panel.add(c, entry.getDecoration() == null ? "spanx,gapleft " + this.getGapLeft() : "width n:n:160");
                     header.setVisible(true);
                     break;
                 case ConfigContainer.TYPE_TEXTAREA:
-                    panel.add(new JScrollPane(c), "spanx,gapright " + getGapRight() + ",growy,pushy,gapleft " + getGapLeft());
+                    panel.add(new JScrollPane(c), "spanx,growy,pushy,gapleft " + this.getGapLeft());
                     header.setVisible(true);
                     break;
                 default:
-                    panel.add(c, entry.getDecoration() == null ? "spanx,gapright " + this.getGapRight() + ",gapleft " + this.getGapLeft() : "gapright " + this.getGapRight());
+                    panel.add(c, entry.getDecoration() == null ? "spanx,gapleft " + this.getGapLeft() : "");
                     header.setVisible(true);
                     break;
                 }
@@ -174,10 +169,6 @@ public class ConfigPanel extends SwitchPanel {
 
     private String getGapLeft() {
         return "35";
-    }
-
-    private String getGapRight() {
-        return "20";
     }
 
     public void addGUIConfigEntry(GUIConfigEntry entry) {
@@ -283,9 +274,7 @@ public class ConfigPanel extends SwitchPanel {
             if (ce != null) addGUIConfigEntry(ce);
         }
 
-        JTabbedPane tabbed = new JTabbedPane();
-        tabbed.addTab(getBreadcrumb(), panel);
-        return tabbed;
+        return panel;
     }
 
 }

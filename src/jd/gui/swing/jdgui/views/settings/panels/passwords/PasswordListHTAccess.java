@@ -16,8 +16,6 @@
 
 package jd.gui.swing.jdgui.views.settings.panels.passwords;
 
-import javax.swing.JTabbedPane;
-
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.controlling.HTACCESSController;
@@ -28,11 +26,6 @@ import jd.utils.locale.JDL;
 public class PasswordListHTAccess extends ConfigPanel {
 
     private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.passwords.PasswordListHTAccess.";
-
-    @Override
-    public String getBreadcrumb() {
-        return JDL.L(JDL_PREFIX + "breadcrum", "Modules - Passwords & Logins - HTAccess");
-    }
 
     public static String getTitle() {
         return JDL.L(JDL_PREFIX + "general.title", "HTAccess logins");
@@ -50,11 +43,7 @@ public class PasswordListHTAccess extends ConfigPanel {
     public void initPanel() {
         addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_LISTCONTROLLED, HTACCESSController.getInstance(), JDL.L("plugins.http.htaccess", "List of all HTAccess passwords. Each line one password."))));
 
-        JTabbedPane tabbed = new JTabbedPane();
-        tabbed.setOpaque(false);
-        tabbed.add(getBreadcrumb(), panel);
-
-        this.add(tabbed);
+        this.add(panel);
     }
 
 }

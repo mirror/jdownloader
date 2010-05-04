@@ -25,7 +25,6 @@ import java.util.Comparator;
 import javax.swing.JCheckBox;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.JTabbedPane;
 import javax.swing.Timer;
 
 import jd.HostPluginWrapper;
@@ -58,11 +57,6 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
     private JCheckBox checkBox;
     private Timer Update_Async;
 
-    @Override
-    public String getBreadcrumb() {
-        return JDL.L(JDL_PREFIX + "breadcrum", "Plugins & Addons - Host - Premium");
-    }
-
     public static String getTitle() {
         return JDL.L(JDL_PREFIX + "title", "Premium");
     }
@@ -78,11 +72,7 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
         panel.setLayout(new MigLayout("ins 5,wrap 1", "[fill,grow]", "[][fill,grow]"));
         initPanel(panel);
 
-        JTabbedPane tabbed = new JTabbedPane();
-        tabbed.setOpaque(false);
-        tabbed.add(getBreadcrumb(), panel);
-
-        this.add(tabbed);
+        this.add(panel);
     }
 
     private void initPanel(JPanel panel) {

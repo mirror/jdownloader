@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.config.ConfigGroup;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.plugins.OptionalPlugin;
@@ -37,6 +38,7 @@ public class JDInfoBar extends PluginOptional {
     }
 
     private void initConfigEntries() {
+        config.setGroup(new ConfigGroup(getHost(), getIconKey()));
         if (JDUtilities.getJavaVersion() >= 1.6) {
             ConfigEntry ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), PROPERTY_OPACITY, JDL.L(JDL_PREFIX + "opacity", "Opacity of the Dialog [in %]"), 1, 100) {
                 private static final long serialVersionUID = 1L;

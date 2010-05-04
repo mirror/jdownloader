@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 
 import javax.swing.JScrollPane;
-import javax.swing.JTabbedPane;
 import javax.swing.ListSelectionModel;
 
 import jd.OptionalPluginWrapper;
@@ -41,11 +40,6 @@ import net.miginfocom.swing.MigLayout;
  */
 public class ConfigPanelAddons extends ConfigPanel {
     private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.ConfigPanelAddons.";
-
-    @Override
-    public String getBreadcrumb() {
-        return JDL.L(JDL_PREFIX + "breadcrum", "Plugins & Addons - Addons");
-    }
 
     public static String getTitle() {
         return JDL.L(JDL_PREFIX + "addons.title", "Extensions");
@@ -100,11 +94,7 @@ public class ConfigPanelAddons extends ConfigPanel {
         panel.setLayout(new MigLayout("ins 5,wrap 1", "[fill,grow]", "[fill,grow]"));
         panel.add(new JScrollPane(table));
 
-        JTabbedPane tabbed = new JTabbedPane();
-        tabbed.setOpaque(false);
-        tabbed.add(getBreadcrumb(), panel);
-
-        this.add(tabbed);
+        this.add(panel);
     }
 
 }

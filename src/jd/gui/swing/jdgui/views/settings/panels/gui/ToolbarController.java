@@ -23,7 +23,6 @@ import java.util.Comparator;
 import java.util.Iterator;
 
 import javax.swing.JScrollPane;
-import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 import javax.swing.table.AbstractTableModel;
@@ -114,11 +113,6 @@ public class ToolbarController extends ConfigPanel {
     }
     private static final long serialVersionUID = -7024581410075950497L;
     private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.gui.ToolbarController.";
-
-    @Override
-    public String getBreadcrumb() {
-        return JDL.L(JDL_PREFIX + "breadcrum", "Basics - User Interface - Toolbar Manager");
-    }
 
     public static String getTitle() {
         return JDL.L(JDL_PREFIX + "toolbarController.title", "Toolbar Manager");
@@ -249,11 +243,7 @@ public class ToolbarController extends ConfigPanel {
         panel.setLayout(new MigLayout("ins 5,wrap 1", "[fill,grow]", "[fill,grow][]"));
         panel.add(new JScrollPane(table));
 
-        JTabbedPane tabbed = new JTabbedPane();
-        tabbed.setOpaque(false);
-        tabbed.add(getBreadcrumb(), panel);
-
-        this.add(tabbed);
+        this.add(panel);
     }
 
     private class InternalTableModel extends AbstractTableModel {

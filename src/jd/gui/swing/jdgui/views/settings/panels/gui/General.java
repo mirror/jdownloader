@@ -43,11 +43,6 @@ public class General extends ConfigPanel {
 
     private SubConfiguration subConfig;
 
-    @Override
-    public String getBreadcrumb() {
-        return JDL.L(JDL_PREFIX + "breadcrum", "Basics - User Interface - General");
-    }
-
     public static String getTitle() {
         return JDL.L(JDL_PREFIX + "gui.title", "User Interface");
     }
@@ -64,7 +59,7 @@ public class General extends ConfigPanel {
 
         ConfigContainer look = new ConfigContainer();
 
-        look.setGroup(new ConfigGroup(JDL.L("gui.config.gui.view", "Look"), JDTheme.II("gui.images.config.gui", 32, 32)));
+        look.setGroup(new ConfigGroup(JDL.L("gui.config.gui.view", "Look"), "gui.images.config.gui"));
         look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, SubConfiguration.getConfig(JDL.CONFIG), JDL.LOCALE_PARAM_ID, JDL.getLocaleIDs().toArray(new JDLocale[] {}), JDL.L("gui.config.gui.language", "Language")));
         ce.setDefaultValue(JDL.DEFAULT_LOCALE);
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
@@ -87,7 +82,7 @@ public class General extends ConfigPanel {
             ce.setPropertyType(PropertyType.NEEDS_RESTART);
         }
 
-        look.setGroup(new ConfigGroup(JDL.L("gui.config.gui.feel", "Feel"), JDTheme.II("gui.images.configuration", 32, 32)));
+        look.setGroup(new ConfigGroup(JDL.L("gui.config.gui.feel", "Feel"), "gui.images.configuration"));
         look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, JDGuiConstants.PARAM_INPUTTIMEOUT, JDL.L("gui.config.gui.inputtimeout", "Timeout for InputWindows"), 0, 600));
         ce.setDefaultValue(20);
         look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDGuiConstants.PARAM_SHOW_SPLASH, JDL.L("gui.config.gui.showsplash", "Show splash screen on program startup")));
@@ -104,12 +99,12 @@ public class General extends ConfigPanel {
         }, JDL.L("gui.config.gui.resetdialogs.short", "Reset"), JDL.L("gui.config.gui.resetdialogs2", "Reset Dialog Information"), JDTheme.II("gui.images.restart", 16, 16)));
         ce.setEnabled(SubConfiguration.getConfig(AbstractDialog.DIALOGS_CONFIG).getProperties().size() > 0);
 
-        look.setGroup(new ConfigGroup(JDL.L("gui.config.gui.performance", "Performance"), JDTheme.II("gui.images.performance", 32, 32)));
+        look.setGroup(new ConfigGroup(JDL.L("gui.config.gui.performance", "Performance"), "gui.images.performance"));
         look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDGuiConstants.DECORATION_ENABLED, JDL.L("gui.config.gui.decoration", "Enable Windowdecoration")));
         ce.setDefaultValue(true);
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
 
-        look.setGroup(new ConfigGroup(JDL.L("gui.config.gui.barrierfree", "Barrier-Free"), JDTheme.II("gui.images.barrierfree", 32, 32)));
+        look.setGroup(new ConfigGroup(JDL.L("gui.config.gui.barrierfree", "Barrier-Free"), "gui.images.barrierfree"));
         look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, JDGuiConstants.PARAM_GENERAL_FONT_SIZE, JDL.L("gui.config.gui.font size", "Font Size [%]"), 10, 200).setDefaultValue(100));
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
 

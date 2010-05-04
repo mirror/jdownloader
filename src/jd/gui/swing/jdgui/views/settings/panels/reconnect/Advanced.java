@@ -21,7 +21,6 @@ import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
 import jd.controlling.reconnect.ReconnectMethod;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
-import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -29,11 +28,6 @@ public class Advanced extends ConfigPanel {
 
     private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.reconnect.Advanced.";
     private static final long serialVersionUID = 3383448498625377495L;
-
-    @Override
-    public String getBreadcrumb() {
-        return JDL.L(JDL_PREFIX + "breadcrum", "Modules - Reconnection - Advanced");
-    }
 
     public static String getTitle() {
         return JDL.L(JDL_PREFIX + "reconnect.advanced.title", "Advanced");
@@ -47,7 +41,7 @@ public class Advanced extends ConfigPanel {
 
     private ConfigContainer setupContainer() {
         ConfigContainer container = new ConfigContainer();
-        ConfigGroup group = new ConfigGroup(JDL.L("gui.config.reconnect.shared", "General Reconnect Settings"), JDTheme.II("gui.images.reconnect_settings", 32, 32));
+        ConfigGroup group = new ConfigGroup(JDL.L("gui.config.reconnect.shared", "General Reconnect Settings"), "gui.images.reconnect_settings");
         container.setGroup(group);
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), ReconnectMethod.PARAM_IPCHECKWAITTIME, JDL.L("reconnect.waittimetofirstipcheck", "First IP check wait time (sec)"), 5, 600).setDefaultValue(5));
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), ReconnectMethod.PARAM_RETRIES, JDL.L("reconnect.retries", "Max repeats (-1 = no limit)"), -1, 20).setDefaultValue(5));

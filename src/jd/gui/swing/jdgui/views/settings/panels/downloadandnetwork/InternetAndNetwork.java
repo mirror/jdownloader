@@ -23,7 +23,6 @@ import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.config.ConfigEntry.PropertyType;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
-import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 
 public class InternetAndNetwork extends ConfigPanel {
@@ -31,11 +30,6 @@ public class InternetAndNetwork extends ConfigPanel {
     private static final long serialVersionUID = -7292287136387344296L;
     private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.downloadandnetwork.internetandnetwork.";
     private SubConfiguration config;
-
-    @Override
-    public String getBreadcrumb() {
-        return JDL.L(JDL_PREFIX + "breadcrum", "Basics - Download & Connections - Internet & Network");
-    }
 
     public static String getTitle() {
         return JDL.L(JDL_PREFIX + "download.internetandnetwork.title", "Internet & Network");
@@ -56,7 +50,7 @@ public class InternetAndNetwork extends ConfigPanel {
 
         ConfigContainer network = new ConfigContainer();
 
-        network.setGroup(new ConfigGroup(JDL.L("gui.config.download.timeout", "Timeout & Connection loss"), JDTheme.II("gui.images.networkerror", 32, 32)));
+        network.setGroup(new ConfigGroup(JDL.L("gui.config.download.timeout", "Timeout & Connection loss"), "gui.images.networkerror"));
 
         network.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, Configuration.PARAM_DOWNLOAD_READ_TIMEOUT, JDL.L("gui.config.download.timeout.read", "Read Timeout (ms)"), 20000, 120000));
         ce.setDefaultValue(100000);
@@ -66,7 +60,7 @@ public class InternetAndNetwork extends ConfigPanel {
         ce.setDefaultValue(100000);
         ce.setStep(500);
 
-        network.setGroup(new ConfigGroup(JDL.L("gui.config.download.proxy", "Proxy Settings"), JDTheme.II("gui.images.proxy", 32, 32)));
+        network.setGroup(new ConfigGroup(JDL.L("gui.config.download.proxy", "Proxy Settings"), "gui.images.proxy"));
         network.addEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, Configuration.USE_PROXY, JDL.L("gui.config.download.use_proxy", "Use proxy") + " (" + JDL.L("gui.warning.restartneeded", "JD-Restart needed after changes!") + ")"));
 
         conditionEntry.setDefaultValue(false);

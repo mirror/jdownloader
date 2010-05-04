@@ -65,7 +65,7 @@ public class ConfigSidebar extends SideBarPanel {
         this.view = configurationView;
         this.setLayout(new MigLayout("ins 0", "[grow,fill]", "[grow,fill]"));
 
-        this.add(tree = new JTree(new ConfigTreeModel()) {
+        tree = new JTree(new ConfigTreeModel()) {
             private static final long serialVersionUID = -5018817191000357595L;
 
             /**
@@ -83,7 +83,7 @@ public class ConfigSidebar extends SideBarPanel {
                 super.processKeyEvent(m);
             }
 
-        });
+        };
 
         tree.setCellRenderer(new TreeRenderer());
         tree.setOpaque(false);
@@ -92,10 +92,12 @@ public class ConfigSidebar extends SideBarPanel {
         tree.setExpandsSelectedPaths(true);
         tree.setBackground(null);
 
-        // It seems that people do not dint configentries like
-        // "Languageselection" because it is hidden in a expandable treentry.
-        // No this entry gets selected if the tree expands. This should help
-        // people finding what they are looking for.
+        /*
+         * It seems that people do not find configentries like
+         * "Languageselection" because it is hidden in a expandable treeentry.
+         * No this entry gets selected if the tree expands. This should help
+         * people finding what they are looking for.
+         */
         tree.addTreeExpansionListener(new TreeExpansionListener() {
 
             public void treeCollapsed(TreeExpansionEvent event) {
@@ -144,6 +146,8 @@ public class ConfigSidebar extends SideBarPanel {
             } catch (ClassNotFoundException e1) {
             }
         }
+
+        this.add(tree);
     }
 
     public void expandAll(JTree tree, boolean expand) {

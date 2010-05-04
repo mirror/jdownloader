@@ -25,7 +25,6 @@ import java.util.Collections;
 
 import javax.swing.JButton;
 import javax.swing.JScrollPane;
-import javax.swing.JTabbedPane;
 import javax.swing.ListSelectionModel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
@@ -50,11 +49,6 @@ import net.miginfocom.swing.MigLayout;
 public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListener, MouseListener {
 
     private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.ConfigPanelPluginForHost.";
-
-    @Override
-    public String getBreadcrumb() {
-        return JDL.L(JDL_PREFIX + "breadcrum", "Plugins & Addons - Host");
-    }
 
     public static String getTitle() {
         return JDL.L(JDL_PREFIX + "host.title", "Hoster & Premium");
@@ -137,11 +131,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         panel.add(new JScrollPane(table));
         panel.add(btnEdit, "w pref!");
 
-        JTabbedPane tabbed = new JTabbedPane();
-        tabbed.setOpaque(false);
-        tabbed.add(getBreadcrumb(), panel);
-
-        this.add(tabbed);
+        this.add(panel);
     }
 
     public void mouseClicked(MouseEvent e) {

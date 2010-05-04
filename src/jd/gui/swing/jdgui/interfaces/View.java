@@ -18,10 +18,11 @@ package jd.gui.swing.jdgui.interfaces;
 
 import java.awt.Component;
 
+import javax.swing.BorderFactory;
 import javax.swing.Icon;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.ScrollPaneConstants;
+import javax.swing.JSeparator;
 
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.JDGui;
@@ -39,7 +40,8 @@ public abstract class View extends SwitchPanel {
     public static final int ICON_SIZE = 16;
 
     private JPanel rightPane;
-    protected JScrollPane sidebar;
+    private JSeparator separator;
+    private JScrollPane sidebar;
     private SideBarPanel sidebarContent;
     private SwitchPanel content;
     private JPanel topContent;
@@ -49,11 +51,15 @@ public abstract class View extends SwitchPanel {
 
     public View() {
         SwingGui.checkEDT();
-        setLayout(new MigLayout("ins 0", "[]0[grow,fill]", "[grow,fill]"));
+        setLayout(new MigLayout("ins 0", "[][]0[grow,fill]", "[grow,fill]"));
 
-        add(sidebar = new JScrollPane(), "width 200!,hidemode 1,gapright 3");
-        sidebar.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+        add(sidebar = new JScrollPane(), "w 225!,hidemode 1");
+        sidebar.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         sidebar.setVisible(false);
+        sidebar.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        add(separator = new JSeparator(JSeparator.VERTICAL), "w pref!,hidemode 1");
+        separator.setVisible(false);
 
         add(rightPane = new JPanel(new MigLayout("ins 0", "[grow,fill]", "[grow,fill]")));
 
@@ -157,8 +163,10 @@ public abstract class View extends SwitchPanel {
         if (left == sidebarContent) return;
         if (left == null) {
             sidebar.setVisible(false);
+            separator.setVisible(false);
         } else {
             sidebar.setVisible(true);
+            separator.setVisible(true);
             sidebar.setViewportView(left);
         }
 
