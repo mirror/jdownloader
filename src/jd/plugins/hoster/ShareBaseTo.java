@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -120,11 +121,9 @@ public class ShareBaseTo extends PluginForHost {
         String url = downloadLink.getDownloadURL();
         br.getPage(url);
         if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
-        br.postPage(br.getURL(), "lang=de&submit.x=8&submit.y=9");
-        br.postPage(br.getURL(), "free=Free");
-        Form form = br.getFormBySubmitvalue("Please+Activate+Javascript");
-        String id = form.getVarsMap().get("asi");
-        form.put(id, Encoding.urlEncode("Download Now !"));
+        Browser ajax = br.cloneBrowser();
+        ajax.getPage("/ajax/download.php?a=1&f=undefined&s=undefined");
+        Form form = ajax.getForm(0);
         br.submitForm(form);
 
         if (br.containsHTML("Von deinem Computer ist noch ein Download aktiv.")) {
