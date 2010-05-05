@@ -228,8 +228,20 @@ public class MediafireCom extends PluginForHost {
      * @throws PluginException
      */
     private String[] getParameters() throws Exception {
-        String evalWhat = br.getRegex("var\\s*?[a-zA-Z0-9]+=\\s*?unes.*?eval\\((.*?)\\)").getMatch(0);
-        String eval = br.getRegex("(var\\s*?" + evalWhat + "=.*?var\\s*?[a-zA-Z0-9]+=unes.*?;?)eval\\(").getMatch(0);
+        String brData = br.toString();
+        brData = brData.replaceAll("\\\\'", "'");
+        brData = brData.replaceAll("\\\\\"", "\"");
+        String evalWhats[] = new Regex(brData, "eval\\(([a-zA-Z0-9]+)\\)").getColumn(0);
+        String evalWhat = null;
+        String eval = null;
+        for (String test : evalWhats) {
+            eval = new Regex(brData, "(" + test + "\\s*?=\\s*?['a-zA-Z0-9]+.*?=unes.*?;?)eval\\(" + test).getMatch(0);
+            if (eval != null) {
+                evalWhat = test;
+                break;
+            }
+        }
+        if (evalWhat == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         eval = eval.replaceAll("\\\\'", "'");
         eval = eval.replaceAll("\\\\\"", "\"");
         String params = null;
@@ -241,11 +253,11 @@ public class MediafireCom extends PluginForHost {
                 Scriptable scope = cx.initStandardObjects();
                 Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
                 params = Context.toString(result);
-                if (!params.startsWith("var") && !params.startsWith("eval")) break;
-                eval = new Regex(params, "(var.*?)eval\\(").getMatch(0);
-                evalWhat = new Regex(params, "var.*?eval\\((.*?)\\)").getMatch(0);
-                eval = eval.replaceAll("\\\\'", "'");
-                eval = eval.replaceAll("\\\\\"", "\"");
+                params = params.replaceAll("\\\\'", "'");
+                params = params.replaceAll("\\\\\"", "\"");
+                if (!params.startsWith("var") && !params.startsWith("eval") && !new Regex(params, "^([a-zA-Z0-9]+\\s*?=\\s*?['a-zA-Z0-9]+)").matches()) break;
+                evalWhat = new Regex(params, "eval\\((.*?)\\)").getMatch(0);
+                eval = new Regex(params, "(" + evalWhat + ".*?)eval\\(").getMatch(0);
             }
         } catch (PluginException e2) {
             throw e2;
@@ -268,24 +280,26 @@ public class MediafireCom extends PluginForHost {
      * @throws Exception
      */
     private String evalLoop(String input, String varMap) throws Exception {
-        String eval = new Regex(input, "(var.*?)(eval\\(|$)").getMatch(0).trim();
-        String evalWhat = new Regex(input, "var(.*?)=").getMatch(0).trim();
+        String evalWhat = new Regex(input, "(var\\s*?)?([a-zA-Z0-9]+)").getMatch(1);
+        String eval = new Regex(input, evalWhat + "\\s*?=\\s*?['a-zA-Z0-9]+;(.*?=unes.*?;?)$").getMatch(0);
+
+        if (evalWhat == null || eval == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         eval = eval.replaceAll("\\\\'", "'");
         eval = eval.replaceAll("\\\\\"", "\"");
         String params = null;
         try {
             while (true) {
                 if (eval == null || evalWhat == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                String fun = "function f(){ " + varMap + eval + " return " + evalWhat + "} f()";
+                String fun = "function f(){ var " + evalWhat + "='';" + varMap + eval + " return " + evalWhat + "} f()";
                 Context cx = ContextFactory.getGlobal().enter();
                 Scriptable scope = cx.initStandardObjects();
                 Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
                 params = Context.toString(result);
-                if (!params.startsWith("var") && !params.startsWith("eval")) break;
-                eval = new Regex(params, "(var.*?)(eval\\(|$)").getMatch(0).trim();
-                evalWhat = new Regex(params, "var(.*?)=").getMatch(0).trim();
-                eval = eval.replaceAll("\\\\'", "'");
-                eval = eval.replaceAll("\\\\\"", "\"");
+                if (!params.startsWith("var") && !params.startsWith("eval") && !new Regex(params, "^([a-zA-Z0-9]+\\s*?=\\s*?['a-zA-Z0-9]+)").matches()) break;
+                params = params.replaceAll("\\\\'", "'");
+                params = params.replaceAll("\\\\\"", "\"");
+                evalWhat = new Regex(params, "(.*?var\\s*?)?([a-zA-Z0-9]+)\\s*?=").getMatch(1);
+                eval = new Regex(params, evalWhat + "\\s*?=\\s*?['a-zA-Z0-9]+;(.*?=unes.*?;?)(eval\\(|$)").getMatch(0);
             }
         } catch (PluginException e2) {
             throw e2;
@@ -315,13 +329,17 @@ public class MediafireCom extends PluginForHost {
         String error = br.getRegex("var\\s.*?et=(.*?);").getMatch(0);
         if (error != null && !error.trim().equalsIgnoreCase("15")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
         /* now we have to js the functions and find the right js parts */
-        String evalsWhat[] = br.getRegex("eval\\((?!\")(.*?)\\)").getColumn(0);
+        String brData = br.toString();
+        brData = brData.replaceAll("\\\\'", "'");
+        brData = brData.replaceAll("\\\\\"", "\"");
+        String evalsWhat[] = new Regex(brData, "eval\\((?!\")(.*?)\\)").getColumn(0);
+
         ArrayList<String> evals = new ArrayList<String>();
         for (String evalWhat : evalsWhat) {
-            String evalThis = br.getRegex("(var\\s*?" + evalWhat + "=.*?var\\s*?[a-zA-Z0-9]+=unes.*?)eval\\(").getMatch(0);
+            String evalThis = new Regex(brData, "(" + evalWhat + "\\s*?=\\s*?['a-zA-Z0-9]+.*?=unes.*?)eval\\(").getMatch(0);
             if (evalThis != null) evals.add(evalThis);
         }
-        vars = br.getRegex("<!--(.*?)function").getMatch(0);
+        vars = new Regex(brData, "<!--(.*?)function").getMatch(0);
         if (vars == null) {
             logger.info("Error (1)");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
