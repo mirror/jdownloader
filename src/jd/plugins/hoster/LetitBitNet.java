@@ -140,9 +140,8 @@ public class LetitBitNet extends PluginForHost {
         }
         if (!br.containsHTML("<frame")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         url = br.getRegex("<frame src=\"http://letitbit.net/tmpl/tmpl_frame_top.php\\?link=(.*?)\" name=\"topFrame\" scrolling=\"No\" noresize=\"noresize\" id=\"topFrame\" title=\"topFrame\" />").getMatch(0);
-        if (url == null) {
-            String nextpage = br.getRegex("(http://s\\d+.letitbit.net/tmpl/tmpl_frame_top.*?)\"").getMatch(0);
-            if (nextpage == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (url == null || url.equals("")) {
+            String nextpage = "http://letitbit.net/tmpl/tmpl_frame_top.php";
             br.getPage(nextpage);
             // Ticket Time
             String time = br.getRegex("id=\"errt\">(\\d+)</span>").getMatch(0);
@@ -155,9 +154,15 @@ public class LetitBitNet extends PluginForHost {
             /* letitbit and vipfile share same hosting server ;) */
             /* because there can be another link to a downlodmanager first */
             url = br.getRegex("(http://[^/]*?/download.*?/.*?)(\"|').*?(http://[^/]*?/download.*?/.*?)(\"|')").getMatch(2);
-            if (url == null) url = br.getRegex("(http://[^/]*?/download.*?/.*?)(\"|')").getMatch(0);
+            if (url == null) {
+                url = br.getRegex("(http://[^/]*?/download.*?/.*?)(\"|')").getMatch(0);
+                if (url == null) url = br.getRegex("\"(http://[0-9]{2,3}\\.[0-9]{2,3}\\.[0-9]{2,3}\\.[0-9]{2,3}/download\\d+/.*?)\"").getMatch(0);
+            }
         }
-        if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (url == null || url.equals("")) {
+            logger.warning("url couldn't be found!");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         /* we have to wait little because server too buggy */
         sleep(2000, downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 1);
@@ -169,6 +174,11 @@ public class LetitBitNet extends PluginForHost {
         if (!con.isOK()) {
             con.disconnect();
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+        }
+        if (con.getContentType().contains("html")) {
+            br.followConnection();
+            if (br.containsHTML("<title>Error</title>")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
