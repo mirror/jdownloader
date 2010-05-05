@@ -92,12 +92,16 @@ public class SendRouter extends PluginOptional {
 
     private void executeSend() {
         int ret = UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN, JDL.L(JDL_PREFIX + "info.topic", "Help to Improve JD"), JDL.L(JDL_PREFIX + "info.msg", "THIS IS A BETATEST! JD has detected that you had 5 successfull reconnects.\r\nYou now can send the script to our server so we can include it permanently in JD"), UserIO.getInstance().getIcon(UserIO.ICON_INFO), null, null);
-        if (!UserIO.isOK(ret)) return;
+        if (!UserIO.isOK(ret)) {
+            stopAddon();
+            return;
+        }
         if (submitData()) {
             UserIO.getInstance().requestMessageDialog(JDL.L(JDL_PREFIX + "send.successfull", "Thank you for your help"));
             send = true;
             getPluginConfig().setProperty("send", send);
             getPluginConfig().save();
+            stopAddon();
         } else {
             UserIO.getInstance().requestMessageDialog(JDL.L(JDL_PREFIX + "send.failed", "A error occured while sending your data.\r\n We will ask you again later."));
             reconnectCounter = 0;
