@@ -91,7 +91,13 @@ public class UploadingCom extends PluginForHost {
             return ai;
         }
         account.setValid(true);
-        ai.setValidUntil(br.getCookies("http://www.uploading.com/").get("remembered_user").getExpireDate());
+        String validUntil = br.getRegex("Valid Until:(.*?)<").getMatch(0);
+        if (validUntil != null) {
+            ai.setValidUntil(Regex.getMilliSeconds(validUntil.trim(), "MMM dd, yyyy", null));
+        } else {
+            /* fallback */
+            ai.setValidUntil(br.getCookies("http://www.uploading.com/").get("remembered_user").getExpireDate());
+        }
         return ai;
     }
 
