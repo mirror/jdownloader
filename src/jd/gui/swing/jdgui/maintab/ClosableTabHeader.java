@@ -33,6 +33,7 @@ public class ClosableTabHeader extends JPanel {
     public ClosableTabHeader(final ClosableView view) {
         setLayout(new MigLayout("ins 0", "[grow,fill]", "[16!]"));
         setOpaque(false);
+        setToolTipText(view.getTooltip());
         addMouseListener(new JDMouseAdapter() {
             @Override
             public void mouseDragged(MouseEvent e) {

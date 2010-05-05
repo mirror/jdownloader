@@ -36,25 +36,26 @@ public class Proxy extends Thread {
     public final static int RECORD_HEADER = 1 << 2;
     public final static int CHANGE_HEADER = 1 << 3;
 
-    private Socket Current_Socket;
-    public Vector<String> steps = null;
-    String serverip;
-    int port;
-    boolean ishttps = false;
-    boolean israw = false;
+    private Socket socket;
+    private Vector<String> steps = null;
+    private String serverip;
+    private int port;
+    private boolean ishttps = false;
+    private boolean israw = false;
 
-    public Proxy(Socket Client_Socket, Vector<String> steps, String serverip, int port, boolean ishttps, boolean israw) {
-        Current_Socket = Client_Socket;
+    public Proxy(Socket socket, Vector<String> steps, String serverip, int port, boolean ishttps, boolean israw) {
+        super("JDProxy");
+        this.socket = socket;
         this.steps = steps;
         this.serverip = serverip;
-        this.setName("JDDProxy");
         this.port = port;
         this.ishttps = ishttps;
         this.israw = israw;
     }
 
+    @Override
     public void run() {
-        Socket incoming = Current_Socket;
+        Socket incoming = socket;
         Socket outgoing = null;
         try {
             if (!ishttps) {
@@ -94,21 +95,21 @@ public class Proxy extends Thread {
 
 class ProxyThread extends Thread {
 
-    Socket incoming, outgoing;
-    public Vector<String> steps = null;
-    int dowhat = 0;
+    private Socket incoming;
+    private Socket outgoing;
+    private Vector<String> steps = null;
+    private int dowhat = 0;
+    private boolean ishttps = false;
+    private boolean israw = true;
+
     boolean renewbuffer = false;
     String buffer;
-    ProxyThread instance;
-    boolean ishttps = false;
-    boolean israw = true;
 
-    public ProxyThread(Socket in, Socket out, int dowhat, Vector<String> steps, boolean ishttps, boolean israw) {
-        incoming = in;
-        outgoing = out;
+    public ProxyThread(Socket incoming, Socket outgoing, int dowhat, Vector<String> steps, boolean ishttps, boolean israw) {
+        this.incoming = incoming;
+        this.outgoing = outgoing;
         this.dowhat = dowhat;
         this.steps = steps;
-        this.instance = this;
         this.ishttps = ishttps;
         this.israw = israw;
     }
@@ -117,6 +118,7 @@ class ProxyThread extends Thread {
         return (this.dowhat & dothis) > 0;
     }
 
+    @Override
     public void run() {
         byte[] minibuffer = new byte[2048];
         ByteBuffer headerbuffer = null;
@@ -187,10 +189,10 @@ class ProxyThread extends Thread {
                 headerbuffer.get(b);
                 buffer = JDHexUtils.getHexString(b);
                 if (dothis(Proxy.CHANGE_HEADER)) {
-                    Utils.rewriteConnectionHeader(instance);
-                    Utils.rewriteLocationHeader(instance);
-                    Utils.rewriteHostHeader(instance);
-                    Utils.rewriteRefererHeader(instance);
+                    Utils.rewriteConnectionHeader(this);
+                    Utils.rewriteLocationHeader(this);
+                    Utils.rewriteHostHeader(this);
+                    Utils.rewriteRefererHeader(this);
                 }
                 if (renewbuffer == true) {
                     headerbuffer = ByteBuffer.wrap(JDHexUtils.getByteArray(buffer));
