@@ -40,13 +40,15 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.parser.HTMLParser;
+
 /**
  * TODO: Remove after next big update of core to use the public static methods!
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "DirectHTTP", "http links" }, urls = { "directhttp://.+", "https?viajd://[\\d\\w\\.:\\-@]*/.*\\.(3gp|7zip|7z|abr|ac3|ai|aiff|aif|aifc|au|avi|bin|bz2|cbr|cbz|ccf|cue|deb|divx|djvu|dlc|dmg|doc|docx|dot|eps|exe|ff|flv|gif|gz|iwd|iso|java|jar|jpg|jpeg|jdeatme|load|m4v|mkv|mp2|mp3|mp4|mov|movie|mpeg|mpe|mpg|msi|msu|nfo|oga|ogg|ogv|otrkey|pkg|png|pdf|ppt|pptx|pps|ppz|pot|psd|qt|rmvb|rar|r\\d+|rpm|run|rsdf|rtf|sh|srt|snd|sfv|swf|tar|tif|tiff|ts|viv|vivo|vob|wav|wmv|xla|xls|xpi|zip|z\\d+|_[_a-z]{2}|\\d+)" }, flags = { 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "DirectHTTP", "http links" }, urls = { "directhttp://.+", "https?viajd://[\\d\\w\\.:\\-@]*/.*\\.(3gp|7zip|7z|abr|ac3|ai|aiff|aif|aifc|au|avi|bin|bz2|cbr|cbz|ccf|cue|deb|divx|djvu|dlc|dmg|doc|docx|dot|eps|exe|ff|flv|gif|gz|iwd|iso|java|jar|jpg|jpeg|jdeatme|load|m4v|mkv|mp2|mp3|mp4|mov|movie|mpeg|mpe|mpg|msi|msu|nfo|oga|ogg|ogv|otrkey|pkg|png|pdf|ppt|pptx|pps|ppz|pot|psd|qt|rmvb|rar|r\\d+|rpm|run|rsdf|rtf|sh|srt|snd|sfv|swf|tar|tif|tiff|ts|txt|viv|vivo|vob|wav|wmv|xla|xls|xpi|zip|z\\d+|_[_a-z]{2}|\\d+)" }, flags = { 0, 0 })
 public class DirectHTTP extends PluginForHost {
 
-    public static final String ENDINGS = "\\.(3gp|7zip|7z|abr|ac3|ai|aiff|aif|aifc|au|avi|bin|bz2|cbr|cbz|ccf|cue|deb|divx|djvu|dlc|dmg|doc|docx|dot|eps|exe|ff|flv|gif|gz|iwd|iso|java|jar|jpg|jpeg|jdeatme|load|m4v|mkv|mp2|mp3|mp4|mov|movie|mpeg|mpe|mpg|msi|msu|nfo|oga|ogg|ogv|otrkey|pkg|png|pdf|ppt|pptx|pps|ppz|pot|psd|qt|rmvb|rar|r\\d+|rpm|run|rsdf|rtf|sh|srt|snd|sfv|swf|tar|tif|tiff|ts|viv|vivo|vob|wav|wmv|xla|xls|xpi|zip|z\\d+|_[_a-z]{2}|\\d+)";
+    public static final String ENDINGS = "\\.(3gp|7zip|7z|abr|ac3|ai|aiff|aif|aifc|au|avi|bin|bz2|cbr|cbz|ccf|cue|deb|divx|djvu|dlc|dmg|doc|docx|dot|eps|exe|ff|flv|gif|gz|iwd|iso|java|jar|jpg|jpeg|jdeatme|load|m4v|mkv|mp2|mp3|mp4|mov|movie|mpeg|mpe|mpg|msi|msu|nfo|oga|ogg|ogv|otrkey|pkg|png|pdf|ppt|pptx|pps|ppz|pot|psd|qt|rmvb|rar|r\\d+|rpm|run|rsdf|rtf|sh|srt|snd|sfv|swf|tar|tif|tiff|ts|txt|viv|vivo|vob|wav|wmv|xla|xls|xpi|zip|z\\d+|_[_a-z]{2}|\\d+)";
 
     /**
      * Returns the annotations names array
@@ -69,7 +71,7 @@ public class DirectHTTP extends PluginForHost {
         return new int[] { 0, 0 };
     }
 
-    private String contentType;
+    private String contentType = "";
 
     // TODO: uncomment with next big update of core
     // private String host = null;
@@ -187,7 +189,25 @@ public class DirectHTTP extends PluginForHost {
             if (downloadLink.getFinalFileName() == null) downloadLink.setFinalFileName(Plugin.getFileNameFromHeader(urlConnection));
             downloadLink.setDownloadSize(urlConnection.getLongContentLength());
             this.contentType = urlConnection.getContentType();
-            urlConnection.disconnect();
+            if (contentType.startsWith("text/html")) {
+                /* jd does not want to download html content! */
+                /* if this page does redirect via js/html, try to follow */
+                br.followConnection();
+                /* search urls */
+                ArrayList<String> follow = HTMLParser.findUrls(br.toString());
+                /*
+                 * if we already tried htmlRedirect or not exactly one link
+                 * found, throw File not available
+                 */
+                if (follow.size() != 1 || downloadLink.getBooleanProperty("htmlRedirect", false)) return AvailableStatus.FALSE;
+                /* found one valid url */
+                downloadLink.setUrlDownload(follow.get(0).trim());
+                /* we set property here to avoid loops */
+                downloadLink.setProperty("htmlRedirect", true);
+                return downloadLink.getAvailableStatus();
+            } else {
+                urlConnection.disconnect();
+            }
             return AvailableStatus.TRUE;
         } catch (PluginException e2) {
             throw e2;
