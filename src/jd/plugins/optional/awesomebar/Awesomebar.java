@@ -3,9 +3,7 @@ package jd.plugins.optional.awesomebar;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
-import jd.controlling.JDController;
 import jd.event.ControlEvent;
-import jd.event.ControlListener;
 import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.actions.CustomToolbarAction;
 import jd.gui.swing.jdgui.menu.MenuAction;
@@ -18,7 +16,7 @@ import jd.plugins.optional.awesomebar.awesome.gui.AwesomeProposalPanel;
 import jd.plugins.optional.awesomebar.awesome.gui.AwesomeToolbarPanel;
 
 @OptionalPlugin(rev = "$Revision: 10379 $", id = "addons.awesomebar", hasGui = true, interfaceversion = 5)
-public class Awesomebar extends PluginOptional implements ControlListener {
+public class Awesomebar extends PluginOptional {
 
     private CustomToolbarAction toolbarAction;
     private AwesomeToolbarPanel toolbarPanel;
@@ -32,20 +30,23 @@ public class Awesomebar extends PluginOptional implements ControlListener {
     public Awesomebar(PluginWrapper wrapper) {
         super(wrapper);
         this.toolbarAction = new AwesomeCustomToolbarAction(this);
-        /* Workaround for toolbar */
-        JDController.getInstance().addControlListener(new ControlListener() {
-            public void controlEvent(ControlEvent event) {
-                if (event.getID() == ControlEvent.CONTROL_INIT_COMPLETE) {
-                    initAddon();
-                }
-            }
-        });
+    }
+
+    /**
+     * Workaround for toolbar
+     */
+    @Override
+    public void controlEvent(ControlEvent event) {
+        if (event.getID() == ControlEvent.CONTROL_INIT_COMPLETE) {
+            initAddon();
+        }
+        super.controlEvent(event);
     }
 
     @Override
     public boolean initAddon() {
         setGuiEnable(true);
-        return false;
+        return true;
     }
 
     @Override

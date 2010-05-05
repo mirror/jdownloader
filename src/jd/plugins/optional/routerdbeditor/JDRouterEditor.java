@@ -25,9 +25,7 @@ import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FilenameFilter;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Vector;
@@ -41,10 +39,7 @@ import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
-import net.miginfocom.swing.MigLayout;
-
 import jd.PluginWrapper;
-import jd.event.ControlListener;
 import jd.gui.UserIO;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
@@ -56,9 +51,10 @@ import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+import net.miginfocom.swing.MigLayout;
 
 @OptionalPlugin(rev = "$Revision$", id = "routereditor", hasGui = true, interfaceversion = 5)
-public class JDRouterEditor extends PluginOptional implements ControlListener {
+public class JDRouterEditor extends PluginOptional {
 
     private static final String JDL_PREFIX = "jd.plugins.optional.JDRouterEditor.";
     private Boolean readonly = false;
@@ -145,7 +141,7 @@ public class JDRouterEditor extends PluginOptional implements ControlListener {
                 if (filename == null) return;
                 if (!filename.endsWith(".xml")) filename = filename.concat(".xml").toString();
                 currentfile = JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/jd/router/" + filename;
-                if(new File(currentfile).exists()) return;
+                if (new File(currentfile).exists()) return;
                 router.cleanRouter();
                 saveToFile();
                 getFiles();
@@ -380,11 +376,7 @@ public class JDRouterEditor extends PluginOptional implements ControlListener {
                     shipped.add(nextline);
                 }
                 in.close();
-            } catch (FileNotFoundException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            } catch (IOException e) {
-                // TODO Auto-generated catch block
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }

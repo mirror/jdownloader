@@ -36,7 +36,6 @@ import jd.controlling.PasswordListController;
 import jd.controlling.ProgressController;
 import jd.controlling.SingleDownloadController;
 import jd.event.ControlEvent;
-import jd.event.ControlListener;
 import jd.gui.UserIO;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.components.JDFileChooser;
@@ -59,7 +58,7 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 @OptionalPlugin(rev = "$Revision$", defaultEnabled = true, id = "unrar", interfaceversion = 5)
-public class JDUnrar extends PluginOptional implements ControlListener, UnrarListener, ActionListener {
+public class JDUnrar extends PluginOptional implements UnrarListener, ActionListener {
 
     private static final String DUMMY_HOSTER = "dum.my";
 
@@ -596,7 +595,6 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
                 }
             }
         };
-        JDUtilities.getController().addControlListener(this);
         return true;
     }
 
@@ -758,7 +756,6 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
 
     @Override
     public void onExit() {
-        JDUtilities.getController().removeControlListener(this);
     }
 
     public void onUnrarEvent(int id, UnrarWrapper wrapper) {

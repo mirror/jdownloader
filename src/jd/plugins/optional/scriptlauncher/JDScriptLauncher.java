@@ -25,7 +25,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import jd.PluginWrapper;
-import jd.event.ControlListener;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
@@ -34,7 +33,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.Regex;
 
 @OptionalPlugin(rev = "$Revision$", id = "scriptlauncher", interfaceversion = 5)
-public class JDScriptLauncher extends PluginOptional implements ControlListener {
+public class JDScriptLauncher extends PluginOptional {
 
     private static final String scriptdir = "./scripts/";
 

@@ -16,7 +16,6 @@
 
 package jd.plugins.optional.proxyrot;
 
-import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
@@ -27,18 +26,16 @@ import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 import jd.controlling.reconnect.Reconnecter;
 import jd.event.ControlEvent;
-import jd.event.ControlListener;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.http.Browser;
 import jd.http.JDProxy;
 import jd.parser.Regex;
 import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 @OptionalPlugin(rev = "$Revision$", id = "proxyrotation", interfaceversion = 5)
-public class ProxyRotation extends PluginOptional implements ControlListener {
+public class ProxyRotation extends PluginOptional {
 
     private static final String PARAM_PROXYLIST = "PARAM_PROXYLIST";
     private SubConfiguration cfg;
@@ -129,7 +126,6 @@ public class ProxyRotation extends PluginOptional implements ControlListener {
 
     @Override
     public boolean initAddon() {
-        JDUtilities.getController().addControlListener(this);
         return true;
     }
 
@@ -138,13 +134,7 @@ public class ProxyRotation extends PluginOptional implements ControlListener {
     }
 
     @Override
-    public void actionPerformed(ActionEvent e) {
-
-    }
-
-    @Override
     public void onExit() {
-        JDUtilities.getController().removeControlListener(this);
     }
 
 }

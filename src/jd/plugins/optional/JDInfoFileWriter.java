@@ -29,7 +29,6 @@ import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 import jd.controlling.SingleDownloadController;
 import jd.event.ControlEvent;
-import jd.event.ControlListener;
 import jd.gui.swing.components.JDTextArea;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.gui.swing.jdgui.views.settings.GUIConfigEntry;
@@ -39,12 +38,11 @@ import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginOptional;
 import jd.utils.JDTheme;
-import jd.utils.JDUtilities;
 import jd.utils.Replacer;
 import jd.utils.locale.JDL;
 
 @OptionalPlugin(rev = "$Revision$", id = "infofilewriter", interfaceversion = 5)
-public class JDInfoFileWriter extends PluginOptional implements ControlListener {
+public class JDInfoFileWriter extends PluginOptional {
 
     private static final String FILENAME_DEFAULT = "%LAST_FINISHED_PACKAGE.DOWNLOAD_DIRECTORY%/%LAST_FINISHED_PACKAGE.PACKAGENAME%.info";
 
@@ -90,7 +88,6 @@ public class JDInfoFileWriter extends PluginOptional implements ControlListener 
 
     @Override
     public boolean initAddon() {
-        JDUtilities.getController().addControlListener(this);
         return true;
     }
 
@@ -111,7 +108,6 @@ public class JDInfoFileWriter extends PluginOptional implements ControlListener 
 
     @Override
     public void onExit() {
-        JDUtilities.getController().removeControlListener(this);
     }
 
     private void writeInfoFile(DownloadLink lastDownloadFinished) {

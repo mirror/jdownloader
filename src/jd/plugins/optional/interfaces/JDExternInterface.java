@@ -193,10 +193,10 @@ public class JDExternInterface extends PluginOptional {
         try {
             server = new HttpServer(this.getPluginConfig().getIntegerProperty("INTERFACE_PORT", 9666), handler, true);
             server.start();
-            return true;
         } catch (Exception e) {
+            return false;
         }
-        return false;
+        return true;
     }
 
     @Override

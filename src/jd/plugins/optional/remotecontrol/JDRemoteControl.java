@@ -24,21 +24,19 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
-import jd.event.ControlListener;
 import jd.gui.UserIO;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.nutils.httpserver.HttpServer;
 import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 /**
  * Alle Ausgaben sollten lediglich eine Zeile lang sein, um die kompatibilität
  * zu erhöhen.
  */
-@OptionalPlugin(rev = "$Revision:$", id = "remotecontrol", interfaceversion = 5)
-public class JDRemoteControl extends PluginOptional implements ControlListener {
+@OptionalPlugin(rev = "$Revision$", id = "remotecontrol", interfaceversion = 5)
+public class JDRemoteControl extends PluginOptional {
 
     private static final String PARAM_PORT = "PORT";
     private static final String PARAM_ENABLED = "ENABLED";
@@ -104,8 +102,6 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                 JDLogger.exception(e);
             }
         }
-
-        JDUtilities.getController().addControlListener(this);
 
         logger.info("RemoteControl OK");
         return true;

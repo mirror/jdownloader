@@ -54,7 +54,6 @@ import jd.config.ConfigEntry;
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 import jd.event.ControlEvent;
-import jd.event.ControlListener;
 import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.SwingGui;
@@ -77,7 +76,7 @@ import net.miginfocom.swing.MigLayout;
 import org.schwering.irc.lib.IRCConnection;
 
 @OptionalPlugin(rev = "$Revision$", id = "chat", hasGui = true, interfaceversion = 5)
-public class JDChat extends PluginOptional implements ControlListener {
+public class JDChat extends PluginOptional {
     private static final long AWAY_TIMEOUT = 15 * 60 * 1000;
     private static String CHANNEL = "#jDownloader";
     private static final Pattern CMD_ACTION = Pattern.compile("(me)", Pattern.CASE_INSENSITIVE);
@@ -711,14 +710,14 @@ public class JDChat extends PluginOptional implements ControlListener {
     }
 
     @Override
-    public void controlEvent(ControlEvent e) {
-        if (e.getID() == ControlEvent.CONTROL_AFTER_RECONNECT) {
+    public void controlEvent(ControlEvent event) {
+        if (event.getID() == ControlEvent.CONTROL_AFTER_RECONNECT) {
             if (SwingGui.getInstance().getMainFrame().isActive() && !nickaway) {
                 initIRC();
             } else {
                 addToText(null, STYLE_ERROR, "You got disconnected because of a reconnect. <a href='intern:reconnect|reconnect'><b>[RECONNECT NOW]</b></a>");
             }
-        } else if (e.getID() == ControlEvent.CONTROL_BEFORE_RECONNECT) {
+        } else if (event.getID() == ControlEvent.CONTROL_BEFORE_RECONNECT) {
             // sendMessage(CHANNEL, "/me is reconnecting...");
             if (conn != null && conn.isConnected()) {
                 addToText(null, STYLE_SYSTEM_MESSAGE, "closing connection due to requested reconnect.");
@@ -727,6 +726,7 @@ public class JDChat extends PluginOptional implements ControlListener {
                 conn = null;
             }
         }
+        super.controlEvent(event);
     }
 
     @Override
@@ -841,7 +841,6 @@ public class JDChat extends PluginOptional implements ControlListener {
             activateAction.setTitle(getHost());
             activateAction.setIcon(this.getIconKey());
             activateAction.setSelected(false);
-
         }
         return true;
     }
@@ -1448,7 +1447,6 @@ public class JDChat extends PluginOptional implements ControlListener {
             }
             SwingGui.getInstance().setContent(view);
 
-            JDUtilities.getController().addControlListener(this);
             new Thread() {
                 @Override
                 public void run() {

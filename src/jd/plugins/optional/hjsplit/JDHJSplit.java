@@ -32,7 +32,6 @@ import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
 import jd.controlling.SingleDownloadController;
 import jd.event.ControlEvent;
-import jd.event.ControlListener;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.components.JDFileChooser;
 import jd.gui.swing.jdgui.actions.ToolBarAction.Types;
@@ -58,7 +57,7 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 @OptionalPlugin(rev = "$Revision$", defaultEnabled = true, id = "hjsplit", interfaceversion = 5)
-public class JDHJSplit extends PluginOptional implements ControlListener {
+public class JDHJSplit extends PluginOptional {
 
     private static enum ARCHIV_TYPE {
         NONE, NORMAL, UNIX, CUTKILLER, XTREMSPLIT
@@ -66,9 +65,6 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
 
     private static final String CONFIG_KEY_REMOVE_MERGED = "REMOVE_MERGED";
     private static final String DUMMY_HOSTER = "dum.my";
-    // private static final int ARCHIVE_TYPE_NONE = -1;
-    // private static final int ARCHIVE_TYPE_NORMAL = 0;
-    // private static final int ARCHIVE_TYPE_UNIX = 1;
     private static final String CONFIG_KEY_OVERWRITE = "OVERWRITE";
 
     /** Wird als reihe für anstehende extracthjobs verwendet */
@@ -306,7 +302,6 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
                                 progress.setStatusText(JDL.LF("plugins.optional.hjsplit.merged", "%s: %s MB merged", output.getName(), pe.getCurrent() / 1048576));
                             }
                         } catch (Exception e) {
-                            // TODO: handle exception
                         }
                     }
                 });
@@ -579,7 +574,6 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
 
     @Override
     public boolean initAddon() {
-        JDUtilities.getController().addControlListener(this);
         return true;
     }
 
@@ -622,6 +616,5 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
 
     @Override
     public void onExit() {
-        JDUtilities.getController().removeControlListener(this);
     }
 }

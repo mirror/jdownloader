@@ -27,7 +27,6 @@ import jd.config.Configuration;
 import jd.controlling.JDLogger;
 import jd.controlling.reconnect.ReconnectMethod;
 import jd.event.ControlEvent;
-import jd.event.ControlListener;
 import jd.gui.UserIO;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.nutils.encoding.Encoding;
@@ -39,13 +38,14 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 @OptionalPlugin(rev = "$Revision$", defaultEnabled = true, id = "routersend", interfaceversion = 5)
-public class SendRouter extends PluginOptional implements ControlListener {
+public class SendRouter extends PluginOptional {
     private static final String JDL_PREFIX = "jd.plugins.optional.SendRouter.";
     private static final boolean DEBUG = false;
     private String scripturl = "http://jdownloader.org:8081/advert/routerdb/index.php";
-    private String manufactururl = "http://jdownloader.org:8081/advert/routerdb/hersteller"; // List
-    // separated
-    // by ","
+    /**
+     * List separated by ','
+     */
+    private String manufactururl = "http://jdownloader.org:8081/advert/routerdb/hersteller";
     private String currentScript = "";
     private int reconnectCounter = 0;
     private Boolean send = false;
@@ -60,24 +60,21 @@ public class SendRouter extends PluginOptional implements ControlListener {
         reconnectCounter = getPluginConfig().getIntegerProperty("ReconnectCounter", 0);
         currentScript = getPluginConfig().getStringProperty("CurrentScript", "");
         send = getPluginConfig().getBooleanProperty("send", false);
-        if (!check() || !send || DEBUG) JDUtilities.getController().addControlListener(this);
-        return false;
+        return true;
     }
 
     @Override
     public void onExit() {
-
     }
 
     @Override
     public ArrayList<MenuAction> createMenuitems() {
-        // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public void controlEvent(ControlEvent e) {
-        if (e.getID() == ControlEvent.CONTROL_AFTER_RECONNECT) {
+    public void controlEvent(ControlEvent event) {
+        if (event.getID() == ControlEvent.CONTROL_AFTER_RECONNECT) {
             if (JDUtilities.getConfiguration().getIntegerProperty(ReconnectMethod.PARAM_RECONNECT_TYPE, ReconnectMethod.LIVEHEADER) == ReconnectMethod.LIVEHEADER) {
                 reconnectCounter++;
                 getPluginConfig().setProperty("ReconnectCounter", reconnectCounter);
@@ -92,26 +89,22 @@ public class SendRouter extends PluginOptional implements ControlListener {
                 }
             }
         }
+        super.controlEvent(event);
     }
 
     private void executeSend() {
         int ret = UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN, JDL.L(JDL_PREFIX + "info.topic", "Help to Improve JD"), JDL.L(JDL_PREFIX + "info.msg", "THIS IS A BETATEST! JD has detected that you had 5 successfull reconnects.\r\nYou now can send the script to our server so we can include it permanently in JD"), UserIO.getInstance().getIcon(UserIO.ICON_INFO), null, null);
-        if (!UserIO.isOK(ret)) {
-            JDUtilities.getController().removeControlListener(this);
-            return;
-        }
+        if (!UserIO.isOK(ret)) return;
         if (submitData()) {
             UserIO.getInstance().requestMessageDialog(JDL.L(JDL_PREFIX + "send.successfull", "Thank you for your help"));
             send = true;
             getPluginConfig().setProperty("send", send);
             getPluginConfig().save();
-            JDUtilities.getController().removeControlListener(this);
         } else {
             UserIO.getInstance().requestMessageDialog(JDL.L(JDL_PREFIX + "send.failed", "A error occured while sending your data.\r\n We will ask you again later."));
             reconnectCounter = 0;
             getPluginConfig().setProperty("ReconnectCounter", reconnectCounter);
             getPluginConfig().save();
-            JDUtilities.getController().removeControlListener(this);
         }
     }
 
