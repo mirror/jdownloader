@@ -25,6 +25,7 @@ import jd.nrouter.RouterUtils;
 import jd.utils.locale.JDL;
 
 public class FindRouterIP {
+
     public static String findIP(GUIConfigEntry ip) {
         final ProgressController progress = new ProgressController(JDL.L("gui.config.routeripfinder.featchIP", "Search for routers hostname..."), 100, null);
 
@@ -49,9 +50,8 @@ public class FindRouterIP {
     }
 
     public FindRouterIP(final GUIConfigEntry ip) {
-
         new Thread() {
-            // @Override
+            @Override
             public void run() {
                 findIP(ip);
             }

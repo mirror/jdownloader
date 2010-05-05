@@ -20,7 +20,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 import javax.swing.JButton;
-import javax.swing.JScrollPane;
+import javax.swing.JPanel;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
@@ -34,7 +34,6 @@ import jd.gui.swing.dialog.ImportRouterDialog;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
 import jd.gui.swing.jdgui.views.settings.GUIConfigEntry;
 import jd.router.FindRouterIP;
-import jd.router.GetRouterInfo;
 import jd.router.reconnectrecorder.Gui;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
@@ -44,8 +43,6 @@ public class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionLi
     private static final long serialVersionUID = 6710420298517566329L;
 
     private Configuration configuration;
-
-    private JButton btnAutoConfig;
 
     private JButton btnFindIP;
 
@@ -128,60 +125,36 @@ public class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionLi
                 if (pw == null || pw.matches("[\\s]*")) {
                     pass.setData(data[5]);
                 }
-
             }
-        } else if (e.getSource() == btnAutoConfig) {
-            GetRouterInfo.autoConfig(pass, user, ip, script);
         }
-
     }
 
     @Override
     public void initPanel() {
+        JPanel buttons = new JPanel(new MigLayout("ins 0"));
 
-        this.setLayout(new MigLayout("ins 0 20 0 20, wrap 2", "[grow 20,fill][grow,fill]", "[]5[]5[]"));
         btnSelectRouter = new JButton(JDL.L("gui.config.liveheader.selectrouter", "Select Router"));
         btnSelectRouter.addActionListener(this);
-        add(btnSelectRouter, "gaptop 10");
-        add(panel, "spany 3,gapbottom 20");
+        buttons.add(btnSelectRouter, "sizegroup btns");
 
         btnFindIP = new JButton(JDL.L("gui.config.liveheader.btnfindip", "Fetch Router IP"));
         btnFindIP.addActionListener(this);
-        add(btnFindIP);
-        // JDUtilities.addToGridBag(panel, btnFindIP, 1, 0, 1, 1, 0, 1, insets,
-        // GridBagConstraints.NONE, GridBagConstraints.WEST);
+        buttons.add(btnFindIP, "sizegroup btns");
 
-        btnAutoConfig = new JButton(JDL.L("gui.config.liveheader.autoconfig", "Config router automatically"));
-        btnAutoConfig.addActionListener(this);
-
-        // add(btnAutoConfig,"aligny top");
-        // JDUtilities.addToGridBag(panel, btnAutoConfig, 2, 0,
-        // GridBagConstraints.REMAINDER, 1, 0, 1, insets,
-        // GridBagConstraints.NONE, GridBagConstraints.WEST);
         btnRouterRecorder = new JButton(JDL.L("gui.config.liveheader.recorder", "Create Reconnect Script"));
         btnRouterRecorder.addActionListener(this);
-        add(btnRouterRecorder, "aligny top");
-        panel.setLayout(new MigLayout("ins 10 10 10 0,wrap 2", "[fill,grow 10]10[fill,grow]"));
-        user = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, configuration, Configuration.PARAM_HTTPSEND_USER, JDL.L("gui.config.httpliveheader.user", "User")));
-        addGUIConfigEntry(user);
-        pass = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, configuration, Configuration.PARAM_HTTPSEND_PASS, JDL.L("gui.config.httpliveheader.password", "Password")));
-        addGUIConfigEntry(pass);
-        ip = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, configuration, Configuration.PARAM_HTTPSEND_IP, JDL.L("gui.config.httpliveheader.routerip", "Router's ip")));
-        addGUIConfigEntry(ip);
+        buttons.add(btnRouterRecorder, "sizegroup btns");
 
-        add(new JScrollPane((script = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, configuration, Configuration.PARAM_HTTPSEND_REQUESTS, JDL.L("gui.config.httpliveheader.script", "Reconnection Script")))).getInput()[0]), "gaptop 10,spanx,gapright 20,pushy, growy");
+        panel.setLayout(new MigLayout("ins 5, wrap 2", "[fill]10[grow,fill]"));
+        panel.add(buttons, "spanx");
 
-        script.setData(configuration.getStringProperty(Configuration.PARAM_HTTPSEND_REQUESTS));
-        // sp.setBorder(null);
-        // routerScript = new GUIConfigEntry();
-        // this.entries.add(routerScript);
+        addGUIConfigEntry(user = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, configuration, Configuration.PARAM_HTTPSEND_USER, JDL.L("gui.config.httpliveheader.user", "User"))));
+        addGUIConfigEntry(pass = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, configuration, Configuration.PARAM_HTTPSEND_PASS, JDL.L("gui.config.httpliveheader.password", "Password"))));
+        addGUIConfigEntry(ip = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, configuration, Configuration.PARAM_HTTPSEND_IP, JDL.L("gui.config.httpliveheader.routerip", "Router's ip"))));
+        addGUIConfigEntry(script = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, configuration, Configuration.PARAM_HTTPSEND_REQUESTS, null)));
 
-        // add(routerScript);
-    }
-
-    @Override
-    public void saveSpecial() {
-        configuration.setProperty(Configuration.PARAM_HTTPSEND_REQUESTS, script.getText());
+        this.setBorder(null);
+        this.add(panel);
     }
 
 }

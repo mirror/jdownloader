@@ -9,7 +9,11 @@
 	<classpathentry kind="lib" path="ressourcen/libs/js.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/savemytube.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/cobra.jar"/>
-	<classpathentry kind="lib" path="ressourcen/libs/miglayout.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/miglayout.jar" sourcepath="ressourcen/code-ressourcen/miglayout-3.7.3.1-sources.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="jar:platform:/resource/JDownloader/ressourcen/code-ressourcen/miglayout-3.7.3.1-javadoc.jar!/"/>
+		</attributes>
+	</classpathentry>
 	<classpathentry kind="lib" path="ressourcen/libs/swingworker.jar" sourcepath="ressourcen/code-ressourcen/swing-worker-src-1.2.zip">
 		<attributes>
 			<attribute name="javadoc_location" value="jar:platform:/resource/jd/ressourcen/code-ressourcen/swing-worker-doc-1.2.zip!/"/>

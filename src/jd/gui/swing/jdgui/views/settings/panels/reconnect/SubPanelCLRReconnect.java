@@ -20,8 +20,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 import javax.swing.JButton;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -42,8 +40,6 @@ public class SubPanelCLRReconnect extends ConfigPanel implements ActionListener 
 
     private GUIConfigEntry ip;
 
-    private GUIConfigEntry script;
-
     public SubPanelCLRReconnect(Configuration configuration) {
         super();
         this.configuration = configuration;
@@ -59,35 +55,19 @@ public class SubPanelCLRReconnect extends ConfigPanel implements ActionListener 
 
     @Override
     public void initPanel() {
-
-        JPanel buttons = new JPanel();
-        buttons.setLayout(new MigLayout("ins 0, wrap 3"));
-
-        // JDUtilities.addToGridBag(panel, btnSelectRouter, 0, 0, 1, 1, 0, 1,
-        // insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
-
         btnFindIP = new JButton(JDL.L("gui.config.liveHeader.btnfindip", "Fetch Router IP"));
         btnFindIP.addActionListener(this);
-        buttons.add(btnFindIP, "width 160!");
 
-        panel.add(buttons, "spanx,gapleft 0,gaptop 10");
+        panel.setLayout(new MigLayout("ins 5, wrap 2", "[fill]10[grow,fill]"));
+        panel.add(btnFindIP, "wrap");
+
         addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, configuration, Configuration.PARAM_HTTPSEND_USER, JDL.L("gui.config.liveheader.user", "Login User (->%%%user%%%)"))));
         addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, configuration, Configuration.PARAM_HTTPSEND_PASS, JDL.L("gui.config.liveheader.password", "Login Password (->%%%pass%%%)"))));
         addGUIConfigEntry(ip = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, configuration, Configuration.PARAM_HTTPSEND_IP, JDL.L("gui.config.liveheader.routerip", "RouterIP (->%%%routerip%%%)"))));
+        addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, configuration, Configuration.PARAM_HTTPSEND_REQUESTS_CLR, null)));
 
-        panel.add(new JScrollPane((script = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, configuration, Configuration.PARAM_HTTPSEND_REQUESTS_CLR, JDL.L("gui.config.liveheader.script", "HTTP Script")))).getInput()[0]), "gaptop 10,spanx,gapright 20,pushy, growy");
-
-        script.setData(configuration.getStringProperty(Configuration.PARAM_HTTPSEND_REQUESTS_CLR));
-        // routerScript = new GUIConfigEntry();
-        // this.entries.add(routerScript);
-
-        add(panel);
-        // add(routerScript);
-    }
-
-    @Override
-    public void saveSpecial() {
-        configuration.setProperty(Configuration.PARAM_HTTPSEND_REQUESTS_CLR, script.getText());
+        this.setBorder(null);
+        this.add(panel);
     }
 
 }
