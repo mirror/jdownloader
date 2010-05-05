@@ -41,6 +41,8 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megashares.com" }, urls = { "http://[\\w\\.]*?(d[0-9]{2}\\.)?megashares\\.com/(.*\\?d[0-9]{2}=[0-9a-zA-Z]{7}|dl/[0-9a-zA-Z]{7}/)" }, flags = { 2 })
 public class MegasharesCom extends PluginForHost {
 
+    private final String UserAgent = "JD_" + this.getVersion();
+
     public MegasharesCom(PluginWrapper wrapper) {
         super(wrapper);
         enablePremium("http://www.megashares.com/lc_order.php?tid=sasky");
@@ -48,6 +50,7 @@ public class MegasharesCom extends PluginForHost {
 
     private void login(Account account) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.getHeaders().put("User-Agent", UserAgent);
         br.setFollowRedirects(true);
         String pw = account.getPass();
         if (pw.length() > 32) {
@@ -94,6 +97,7 @@ public class MegasharesCom extends PluginForHost {
     @Override
     public void correctDownloadLink(DownloadLink link) throws IOException {
         Browser brt = new Browser();
+        brt.getHeaders().put("User-Agent", UserAgent);
         brt.setFollowRedirects(false);
         brt.getPage(link.getDownloadURL());
         if (brt.getRedirectLocation() != null) {
@@ -233,6 +237,7 @@ public class MegasharesCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         setBrowserExclusive();
         br.setDebug(true);
+        br.getHeaders().put("User-Agent", UserAgent);
         loadpage(downloadLink.getDownloadURL());
         /* new filename, size regex */
         String fln = br.getRegex("FILE Download.*?>.*?>(.*?)<").getMatch(0);
