@@ -38,7 +38,7 @@ public abstract class PluginOptional extends Plugin implements ControlListener {
      */
     private boolean running = false;
 
-    public void controlEvent(ControlEvent event) {
+    public final void controlEvent(ControlEvent event) {
         if (isRunning()) {
             // Deaktiviert das PLugin beim beenden
             if (event.getID() == ControlEvent.CONTROL_SYSTEM_EXIT) {
@@ -50,7 +50,14 @@ public abstract class PluginOptional extends Plugin implements ControlListener {
                 }
                 JDController.releaseDelayExit(id);
             }
+            onControlEvent(event);
         }
+    }
+
+    /**
+     * Overwrite this, when your addon should react on ControlEvents
+     */
+    public void onControlEvent(ControlEvent event) {
     }
 
     @Override

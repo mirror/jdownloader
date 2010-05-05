@@ -36,16 +36,14 @@ public class Awesomebar extends PluginOptional {
      * Workaround for toolbar
      */
     @Override
-    public void controlEvent(ControlEvent event) {
+    public void onControlEvent(ControlEvent event) {
         if (event.getID() == ControlEvent.CONTROL_INIT_COMPLETE) {
-            initAddon();
+            setGuiEnable(true);
         }
-        super.controlEvent(event);
     }
 
     @Override
     public boolean initAddon() {
-        setGuiEnable(true);
         return true;
     }
 
@@ -75,11 +73,9 @@ public class Awesomebar extends PluginOptional {
 
     @Override
     public void setGuiEnable(boolean b) {
-        System.out.println("setGuiEnable");
         if (b) {
             ActionController.register(toolbarAction);
             ToolbarController.setActions(ActionController.getActions());
-
         } else {
             ActionController.unRegister(toolbarAction);
             ToolbarController.setActions(ActionController.getActions());

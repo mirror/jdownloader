@@ -710,7 +710,7 @@ public class JDChat extends PluginOptional {
     }
 
     @Override
-    public void controlEvent(ControlEvent event) {
+    public void onControlEvent(ControlEvent event) {
         if (event.getID() == ControlEvent.CONTROL_AFTER_RECONNECT) {
             if (SwingGui.getInstance().getMainFrame().isActive() && !nickaway) {
                 initIRC();
@@ -726,7 +726,6 @@ public class JDChat extends PluginOptional {
                 conn = null;
             }
         }
-        super.controlEvent(event);
     }
 
     @Override

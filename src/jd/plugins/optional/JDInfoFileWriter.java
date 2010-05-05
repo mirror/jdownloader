@@ -70,8 +70,7 @@ public class JDInfoFileWriter extends PluginOptional {
     }
 
     @Override
-    public void controlEvent(ControlEvent event) {
-        super.controlEvent(event);
+    public void onControlEvent(ControlEvent event) {
         if (event.getID() == ControlEvent.CONTROL_PLUGIN_INACTIVE && event.getSource() instanceof PluginForHost) {
             // Nur Hostpluginevents auswerten
             DownloadLink lastDownloadFinished = ((SingleDownloadController) event.getParameter()).getDownloadLink();

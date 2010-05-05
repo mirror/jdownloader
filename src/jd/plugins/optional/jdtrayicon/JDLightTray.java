@@ -179,7 +179,7 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
     }
 
     @Override
-    public void controlEvent(ControlEvent event) {
+    public void onControlEvent(ControlEvent event) {
         if (event.getID() == ControlEvent.CONTROL_INIT_COMPLETE && event.getSource() instanceof Main) {
             logger.info("JDLightTrayIcon Init complete");
             guiFrame = JDGui.getInstance().getMainFrame();
@@ -223,7 +223,6 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
             if (updateThread != null) updateThread.interrupt();
             JDGui.getInstance().setWindowTitle(JDUtilities.getJDTitle());
         }
-        super.controlEvent(event);
     }
 
     private void initGUI() {

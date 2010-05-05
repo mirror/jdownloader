@@ -65,8 +65,7 @@ public class JDShutdown extends PluginOptional {
     }
 
     @Override
-    public void controlEvent(ControlEvent event) {
-        super.controlEvent(event);
+    public void onControlEvent(ControlEvent event) {
         if (shutdownEnabled) {
             if (event.getID() == ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED && DownloadWatchDog.getInstance().getDownloadssincelastStart() > 0) {
                 if (shutdown != null) {

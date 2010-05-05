@@ -73,7 +73,7 @@ public class SendRouter extends PluginOptional {
     }
 
     @Override
-    public void controlEvent(ControlEvent event) {
+    public void onControlEvent(ControlEvent event) {
         if (event.getID() == ControlEvent.CONTROL_AFTER_RECONNECT) {
             if (JDUtilities.getConfiguration().getIntegerProperty(ReconnectMethod.PARAM_RECONNECT_TYPE, ReconnectMethod.LIVEHEADER) == ReconnectMethod.LIVEHEADER) {
                 reconnectCounter++;
@@ -85,11 +85,9 @@ public class SendRouter extends PluginOptional {
                             executeSend();
                         }
                     }.start();
-
                 }
             }
         }
-        super.controlEvent(event);
     }
 
     private void executeSend() {

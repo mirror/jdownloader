@@ -67,7 +67,7 @@ public class JDGrowlNotification extends PluginOptional {
     }
 
     @Override
-    public void controlEvent(ControlEvent event) {
+    public void onControlEvent(ControlEvent event) {
         switch (event.getID()) {
         case ControlEvent.CONTROL_INIT_COMPLETE:
             growlNotification(JDL.L(JDL_PREFIX + "started", "jDownloader started..."), getDateAndTime(), "Programstart");
@@ -82,11 +82,7 @@ public class JDGrowlNotification extends PluginOptional {
                 growlNotification(JDL.L(JDL_PREFIX + "finished", "Download stopped"), lastLink.getFinalFileName(), "Download complete");
             }
             break;
-        default:
-            break;
         }
-
-        super.controlEvent(event);
     }
 
     private void growlNotification(String headline, String message, String title) {

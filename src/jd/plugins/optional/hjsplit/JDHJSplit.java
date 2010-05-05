@@ -90,8 +90,7 @@ public class JDHJSplit extends PluginOptional {
      */
     @SuppressWarnings("unchecked")
     @Override
-    public void controlEvent(ControlEvent event) {
-        super.controlEvent(event);
+    public void onControlEvent(ControlEvent event) {
         DownloadLink link;
         switch (event.getID()) {
         case ControlEvent.CONTROL_PLUGIN_INACTIVE:
