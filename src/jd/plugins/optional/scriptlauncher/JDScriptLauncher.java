@@ -44,7 +44,7 @@ public class JDScriptLauncher extends PluginOptional implements ControlListener 
     private ArrayList<MenuAction> menuitems = new ArrayList<MenuAction>();
     private ArrayList<String> scriptconfig = new ArrayList<String>();
 
-    private static final String LINUX_INFINITE_LOOP = "LINUX_INFINITE_LOOP";
+    private static final String UNIX_INFINITE_LOOP = "UNIX_INFINITE_LOOP";
     private static final String ADD_CHECKBOX = "ADD_CHECKBOX";
 
     public JDScriptLauncher(PluginWrapper wrapper) {
@@ -73,7 +73,7 @@ public class JDScriptLauncher extends PluginOptional implements ControlListener 
 
             if (JDScriptLauncher.processlist.get(index) == null) {
                 launch(index);
-            } else if (scriptconfig.contains(LINUX_INFINITE_LOOP)) {
+            } else if (scriptconfig.contains(UNIX_INFINITE_LOOP)) {
                 kill(index);
             }
         }

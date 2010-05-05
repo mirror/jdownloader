@@ -82,19 +82,14 @@ public class Serverhandler implements Handler {
             // Get help page
 
             response.addContent(HelpPage.getHTML());
-        } else if (request.getRequestUrl().equals("/get/ip")) {
-            // Get IP
+        } else if (request.getRequestUrl().equals("/get/rcversion")) {
+            // Get JDRemoteControl version
 
-            if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
-                response.addContent("IPCheck disabled");
-            } else {
-                response.addContent(IPCheck.getIPAddress());
-            }
-        } else if (request.getRequestUrl().equals("/get/randomip")) {
-            // Get random-IP
+            response.addContent(rc.getVersion());
+        } else if (request.getRequestUrl().equals("/get/version")) {
+            // Get version
 
-            Random r = new Random();
-            response.addContent(r.nextInt(255) + "." + r.nextInt(255) + "." + r.nextInt(255) + "." + r.nextInt(255));
+            response.addContent(JDUtilities.getJDTitle());
         } else if (request.getRequestUrl().equals("/get/config")) {
             // Get config
 
@@ -110,108 +105,36 @@ public class Serverhandler implements Handler {
             }
 
             response.addContent("</pre>");
-        } else if (request.getRequestUrl().equals("/get/version")) {
-            // Get version
+        } else if (request.getRequestUrl().equals("/get/ip")) {
+            // Get IP
 
-            response.addContent(JDUtilities.getJDTitle());
-        } else if (request.getRequestUrl().equals("/get/rcversion")) {
-            // Get JDRemoteControl version
-
-            response.addContent(rc.getVersion());
-        } else if (request.getRequestUrl().equals("/get/speedlimit")) {
-            // Get speed limit
-            int value = SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0);
-            response.addContent(value);
-        } else if (request.getRequestUrl().equals("/get/downloads/current/count")) {
-            // Get amount of current DLs COUNT
-
-            int counter = 0;
-
-            for (FilePackage fp : JDUtilities.getController().getPackages()) {
-                for (DownloadLink dl : fp.getDownloadLinkList()) {
-                    if (dl.getLinkStatus().isPluginActive()) {
-                        counter++;
-                    }
-                }
+            if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
+                response.addContent("IPCheck disabled");
+            } else {
+                response.addContent(IPCheck.getIPAddress());
             }
+        } else if (request.getRequestUrl().equals("/get/randomip")) {
+            // Get random-IP
 
-            response.addContent(counter);
-        } else if (request.getRequestUrl().equals("/get/downloads/current/list")) {
-            // Get current DLs
-
-            for (FilePackage fp : JDUtilities.getController().getPackages()) {
-                Element fp_xml = addFilePackage(xml, fp);
-
-                for (DownloadLink dl : fp.getDownloadLinkList()) {
-                    if (dl.getLinkStatus().isPluginActive()) {
-                        fp_xml.appendChild(addDownloadLink(xml, dl));
-                    }
-                }
-            }
-
-            response.addContent(JDUtilities.createXmlString(xml));
-        } else if (request.getRequestUrl().equals("/get/downloads/all/count")) {
-            // Get DLList COUNT
-
-            int counter = 0;
-
-            for (FilePackage fp : JDUtilities.getController().getPackages()) {
-                counter += fp.getDownloadLinkList().size();
-            }
-
-            response.addContent(counter);
-        } else if (request.getRequestUrl().equals("/get/downloads/all/list")) {
-            // Get DLList
-
-            for (FilePackage fp : JDUtilities.getController().getPackages()) {
-                Element fp_xml = addFilePackage(xml, fp);
-
-                for (DownloadLink dl : fp.getDownloadLinkList()) {
-                    fp_xml.appendChild(addDownloadLink(xml, dl));
-                }
-            }
-
-            response.addContent(JDUtilities.createXmlString(xml));
-        } else if (request.getRequestUrl().equals("/get/downloads/finished/count")) {
-            // Get finished DLs COUNT
-
-            int counter = 0;
-
-            for (FilePackage fp : JDUtilities.getController().getPackages()) {
-                for (DownloadLink dl : fp.getDownloadLinkList()) {
-                    if (dl.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
-                        counter++;
-                    }
-                }
-            }
-
-            response.addContent(counter);
-        } else if (request.getRequestUrl().equals("/get/downloads/finished/list")) {
-            // Get finished DLs
-
-            for (FilePackage fp : JDUtilities.getController().getPackages()) {
-                Element fp_xml = addFilePackage(xml, fp);
-
-                for (DownloadLink dl : fp.getDownloadLinkList()) {
-                    if (dl.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
-                        fp_xml.appendChild(addDownloadLink(xml, dl));
-                    }
-                }
-            }
-
-            response.addContent(JDUtilities.createXmlString(xml));
+            Random r = new Random();
+            response.addContent(r.nextInt(255) + "." + r.nextInt(255) + "." + r.nextInt(255) + "." + r.nextInt(255));
         } else if (request.getRequestUrl().equals("/get/speed")) {
             // Get current speed
 
             response.addContent(DownloadWatchDog.getInstance().getConnectionManager().getIncommingBandwidthUsage() / 1000);
-        } else if (request.getRequestUrl().equals("/get/isreconnect")) {
-            // Get isReconnect
+        } else if (request.getRequestUrl().equals("/get/speedlimit")) {
+            // Get speed limit
 
-            response.addContent(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true));
+            int value = SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0);
+            response.addContent(value);
         } else if (request.getRequestUrl().equals("/get/downloadstatus")) {
             // Get download status
 
             response.addContent(DownloadWatchDog.getInstance().getDownloadStatus().toString());
+        } else if (request.getRequestUrl().equals("/get/isreconnect")) {
+            // Get isReconnect
+
+            response.addContent(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true));
         } else if (request.getRequestUrl().matches("/get/grabber/list")) {
             // Get grabber content as xml
 
@@ -250,6 +173,157 @@ public class Serverhandler implements Handler {
 
             boolean value = GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_START_AFTER_ADDING_LINKS, true);
             response.addContent(value);
+        } else if (request.getRequestUrl().equals("/get/downloads/all/count")) {
+            // Get DLList COUNT
+
+            int counter = 0;
+
+            for (FilePackage fp : JDUtilities.getController().getPackages()) {
+                counter += fp.getDownloadLinkList().size();
+            }
+
+            response.addContent(counter);
+        } else if (request.getRequestUrl().equals("/get/downloads/current/count")) {
+            // Get amount of current DLs COUNT
+
+            int counter = 0;
+
+            for (FilePackage fp : JDUtilities.getController().getPackages()) {
+                for (DownloadLink dl : fp.getDownloadLinkList()) {
+                    if (dl.getLinkStatus().isPluginActive()) {
+                        counter++;
+                    }
+                }
+            }
+
+            response.addContent(counter);
+        } else if (request.getRequestUrl().equals("/get/downloads/finished/count")) {
+            // Get finished DLs COUNT
+
+            int counter = 0;
+
+            for (FilePackage fp : JDUtilities.getController().getPackages()) {
+                for (DownloadLink dl : fp.getDownloadLinkList()) {
+                    if (dl.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
+                        counter++;
+                    }
+                }
+            }
+
+            response.addContent(counter);
+        } else if (request.getRequestUrl().equals("/get/downloads/all/list")) {
+            // Get DLList
+
+            for (FilePackage fp : JDUtilities.getController().getPackages()) {
+                Element fp_xml = addFilePackage(xml, fp);
+
+                for (DownloadLink dl : fp.getDownloadLinkList()) {
+                    fp_xml.appendChild(addDownloadLink(xml, dl));
+                }
+            }
+
+            response.addContent(JDUtilities.createXmlString(xml));
+        } else if (request.getRequestUrl().equals("/get/downloads/current/list")) {
+            // Get current DLs
+
+            for (FilePackage fp : JDUtilities.getController().getPackages()) {
+                Element fp_xml = addFilePackage(xml, fp);
+
+                for (DownloadLink dl : fp.getDownloadLinkList()) {
+                    if (dl.getLinkStatus().isPluginActive()) {
+                        fp_xml.appendChild(addDownloadLink(xml, dl));
+                    }
+                }
+            }
+
+            response.addContent(JDUtilities.createXmlString(xml));
+        } else if (request.getRequestUrl().equals("/get/downloads/finished/list")) {
+            // Get finished DLs
+
+            for (FilePackage fp : JDUtilities.getController().getPackages()) {
+                Element fp_xml = addFilePackage(xml, fp);
+
+                for (DownloadLink dl : fp.getDownloadLinkList()) {
+                    if (dl.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
+                        fp_xml.appendChild(addDownloadLink(xml, dl));
+                    }
+                }
+            }
+
+            response.addContent(JDUtilities.createXmlString(xml));
+        } else if (request.getRequestUrl().matches("(?is).*/set/reconnect/(true|false)")) {
+            // Set Reconnect enabled
+
+            boolean newrc = Boolean.parseBoolean(new Regex(request.getRequestUrl(), ".*/set/reconnect/(true|false)").getMatch(0));
+
+            logger.fine("RemoteControl - Set ReConnect: " + newrc);
+
+            if (newrc != JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true)) {
+                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_ALLOW_RECONNECT, newrc);
+                JDUtilities.getConfiguration().save();
+            }
+
+            response.addContent("PARAM_ALLOW_RECONNECT=" + newrc);
+        } else if (request.getRequestUrl().matches("(?is).*/set/premium/(true|false)")) {
+            // Set Use premium
+
+            boolean newuseprem = Boolean.parseBoolean(new Regex(request.getRequestUrl(), ".*/set/premium/(true|false)").getMatch(0));
+            logger.fine("RemoteControl - Set Premium: " + newuseprem);
+
+            if (newuseprem != JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)) {
+                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, newuseprem);
+                JDUtilities.getConfiguration().save();
+            }
+
+            response.addContent("PARAM_USE_GLOBAL_PREMIUM=" + newuseprem);
+        } else if (request.getRequestUrl().matches("(?is).*/set/downloaddir/general/.+")) {
+            String dir = new Regex(request.getRequestUrl(), ".*/set/downloaddir/general/(.+)").getMatch(0);
+
+            // TODO: Doesn't seem to work but I really don't know why :-/
+            SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY, dir);
+            SubConfiguration.getConfig("DOWNLOAD").save();
+
+            response.addContent("PARAM_DOWNLOAD_DIRECTORY=" + dir);
+        } else if (request.getRequestUrl().matches("(?is).*/set/download/limit/[0-9]+")) {
+            // Set download limit
+
+            Integer newdllimit = Integer.parseInt(new Regex(request.getRequestUrl(), ".*/set/download/limit/([0-9]+)").getMatch(0));
+            logger.fine("RemoteControl - Set max. Downloadspeed: " + newdllimit.toString());
+            SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, newdllimit.toString());
+            SubConfiguration.getConfig("DOWNLOAD").save();
+
+            response.addContent("PARAM_DOWNLOAD_MAX_SPEED=" + newdllimit);
+        } else if (request.getRequestUrl().matches("(?is).*/set/download/max/[0-9]+")) {
+            // Set max. sim. downloads
+
+            Integer newsimdl = Integer.parseInt(new Regex(request.getRequestUrl(), ".*/set/download/max/([0-9]+)").getMatch(0));
+            logger.fine("RemoteControl - Set max. sim. Downloads: " + newsimdl.toString());
+            SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, newsimdl.toString());
+            SubConfiguration.getConfig("DOWNLOAD").save();
+
+            response.addContent("PARAM_DOWNLOAD_MAX_SIMULTAN=" + newsimdl);
+        } else if (request.getRequestUrl().matches("(?is).*/set/grabber/startafteradding/(true|false)")) {
+            boolean value = Boolean.parseBoolean(new Regex(request.getRequestUrl(), ".*/set/grabber/startafteradding/(true|false)").getMatch(0));
+
+            logger.fine("RemoteControl - Set PARAM_START_AFTER_ADDING_LINKS: " + value);
+
+            if (value != GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_START_AFTER_ADDING_LINKS, true)) {
+                GUIUtils.getConfig().setProperty(JDGuiConstants.PARAM_START_AFTER_ADDING_LINKS, value);
+                JDUtilities.getConfiguration().save();
+            }
+
+            response.addContent("PARAM_START_AFTER_ADDING_LINKS=" + value);
+        } else if (request.getRequestUrl().matches("(?is).*/set/grabber/autoadding/(true|false)")) {
+            boolean value = Boolean.parseBoolean(new Regex(request.getRequestUrl(), ".*/set/grabber/autoadding/(true|false)").getMatch(0));
+
+            logger.fine("RemoteControl - Set PARAM_START_AFTER_ADDING_LINKS_AUTO: " + value);
+
+            if (value != GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_START_AFTER_ADDING_LINKS_AUTO, true)) {
+                GUIUtils.getConfig().setProperty(JDGuiConstants.PARAM_START_AFTER_ADDING_LINKS_AUTO, value);
+                JDUtilities.getConfiguration().save();
+            }
+
+            response.addContent("PARAM_START_AFTER_ADDING_LINKS_AUTO=" + value);
         } else if (request.getRequestUrl().equals("/action/start")) {
             // Do Start downloads
 
@@ -270,6 +344,11 @@ public class Serverhandler implements Handler {
 
             DownloadWatchDog.getInstance().toggleStartStop();
             response.addContent("Downloads toggled");
+        } else if (request.getRequestUrl().equals("/action/reconnect")) {
+            // Do Reconnect
+
+            response.addContent("Do Reconnect...");
+            Reconnecter.doManualReconnect();
         } else if (request.getRequestUrl().matches(".*?/action/(force)?update")) {
             // Do Perform webupdate
 
@@ -280,11 +359,6 @@ public class Serverhandler implements Handler {
 
             WebUpdate.doUpdateCheck(true);
             response.addContent("Do Webupdate...");
-        } else if (request.getRequestUrl().equals("/action/reconnect")) {
-            // Do Reconnect
-
-            response.addContent("Do Reconnect...");
-            Reconnecter.doManualReconnect();
         } else if (request.getRequestUrl().equals("/action/restart")) {
             // Do Restart JD
 
@@ -315,93 +389,11 @@ public class Serverhandler implements Handler {
                     JDUtilities.getController().exit();
                 }
             }).start();
-        } else if (request.getRequestUrl().matches("(?is).*/action/set/download/limit/[0-9]+")) {
-            // Set download limit
-
-            Integer newdllimit = Integer.parseInt(new Regex(request.getRequestUrl(), ".*/action/set/download/limit/([0-9]+)").getMatch(0));
-            logger.fine("RemoteControl - Set max. Downloadspeed: " + newdllimit.toString());
-            SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, newdllimit.toString());
-            SubConfiguration.getConfig("DOWNLOAD").save();
-            response.addContent("PARAM_DOWNLOAD_MAX_SPEED=" + newdllimit);
-        } else if (request.getRequestUrl().matches("(?is).*/action/set/download/max/[0-9]+")) {
-            // Set max. sim. downloads
-
-            Integer newsimdl = Integer.parseInt(new Regex(request.getRequestUrl(), ".*/action/set/download/max/([0-9]+)").getMatch(0));
-            logger.fine("RemoteControl - Set max. sim. Downloads: " + newsimdl.toString());
-            SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, newsimdl.toString());
-            SubConfiguration.getConfig("DOWNLOAD").save();
-            response.addContent("PARAM_DOWNLOAD_MAX_SIMULTAN=" + newsimdl);
-        } else if (request.getRequestUrl().matches("(?is).*/action/set/grabber/startafteradding/(true|false)")) {
-            boolean value = Boolean.parseBoolean(new Regex(request.getRequestUrl(), ".*/action/set/grabber/startafteradding/(true|false)").getMatch(0));
-            logger.fine("RemoteControl - Set PARAM_START_AFTER_ADDING_LINKS: " + value);
-
-            if (value != GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_START_AFTER_ADDING_LINKS, true)) {
-                GUIUtils.getConfig().setProperty(JDGuiConstants.PARAM_START_AFTER_ADDING_LINKS, value);
-                JDUtilities.getConfiguration().save();
-                response.addContent("PARAM_START_AFTER_ADDING_LINKS=" + value);
-            } else {
-                response.addContent("PARAM_START_AFTER_ADDING_LINKS=" + value);
-            }
-        } else if (request.getRequestUrl().matches("(?is).*/action/set/downloaddir/general/.+")) {
-            String dir = new Regex(request.getRequestUrl(), ".*/action/set/downloaddir/general/(.+)").getMatch(0);
-
-            // Doesn't seem to work but I really don't know why :-/
-            SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY, dir);
-            SubConfiguration.getConfig("DOWNLOAD").save();
-
-            response.addContent("PARAM_DOWNLOAD_DIRECTORY=" + dir);
-        } else if (request.getRequestUrl().matches("(?is).*/action/add/archivepassword/.+/.+")) {
-            // Add an archive password to package
-
-            String[] packagenames = getHTMLDecoded(new Regex(request.getRequestUrl(), "(?is).*/action/add/archivepassword/(.+)/.+").getMatch(0).split("/"));
-            String password = new Regex(request.getRequestUrl(), ".*/action/add/archivepassword/.+/(.+)").getMatch(0);
-
-            ArrayList<LinkGrabberFilePackage> packages = LinkGrabberController.getInstance().getPackages();
-            ArrayList<LinkGrabberFilePackage> packagesWithPW = new ArrayList<LinkGrabberFilePackage>();
-            boolean isErrorMsg = false;
-
-            // TODO: Password will not be set for a package whose info panel is
-            // opened. I don't know any workaround here!
-            synchronized (LinkGrabberController.ControllerLock) {
-                outer: for (String packagename : packagenames) {
-                    for (LinkGrabberFilePackage pack : packages) {
-                        if (packagename.equals(pack.getName())) {
-                            pack.setPassword(password);
-                            packagesWithPW.add(pack);
-                            continue outer;
-                        }
-                    }
-
-                    if (!isErrorMsg) {
-                        response.addContent("Package '" + packagename + "' doesn't exist! ");
-                        isErrorMsg = true;
-                    }
-                }
-            }
-
-            if (packagesWithPW.size() > 0) {
-                response.addContent("Added Password '" + password + "' to packages: ");
-
-                for (int i = 0; i < packagesWithPW.size(); i++) {
-                    if (i != 0) response.addContent(", ");
-                    response.addContent("'" + packagesWithPW.get(i).getName() + "'");
-                }
-            }
-        } else if (request.getRequestUrl().matches("(?is).*/action/add(/auto)?/links/.+")) {
+        } else if (request.getRequestUrl().matches("(?is).*/action/add/links/.+")) {
             // Add link(s)
 
-            boolean issetAuto = false;
             ArrayList<String> links = new ArrayList<String>();
-
-            if (request.getRequestUrl().matches(".+/auto/.+")) {
-                issetAuto = true;
-            }
-
-            // set PARAM_START_AFTER_ADDING_LINKS_AUTO
-            GUIUtils.getConfig().setProperty(JDGuiConstants.PARAM_START_AFTER_ADDING_LINKS_AUTO, issetAuto);
-            JDUtilities.getConfiguration().save();
-
-            String link = new Regex(request.getRequestUrl(), ".*/action/add(/auto)?/links/(.+)").getMatch(1);
+            String link = new Regex(request.getRequestUrl(), ".*/action/add/links/(.+)").getMatch(1);
 
             for (String tlink : HTMLParser.getHttpLinks(Encoding.urlDecode(link, false), null)) {
                 links.add(tlink);
@@ -432,20 +424,10 @@ public class Serverhandler implements Handler {
             new DistributeData(link, false).start();
 
             response.addContent("Link(s) added. (" + link + ")");
-        } else if (request.getRequestUrl().matches("(?is).*/action/add(/auto)?/container/.+")) {
+        } else if (request.getRequestUrl().matches("(?is).*/action/add/container/.+")) {
             // Open a local or remote DLC-container
 
-            boolean issetAuto = false;
-
-            if (request.getRequestUrl().matches(".+/auto/.+")) {
-                issetAuto = true;
-            }
-
-            // set PARAM_START_AFTER_ADDING_LINKS_AUTO
-            GUIUtils.getConfig().setProperty(JDGuiConstants.PARAM_START_AFTER_ADDING_LINKS_AUTO, issetAuto);
-            JDUtilities.getConfiguration().save();
-
-            String dlcfilestr = new Regex(request.getRequestUrl(), ".*/action/add(/auto)?/container/(.+)").getMatch(1);
+            String dlcfilestr = new Regex(request.getRequestUrl(), ".*/action/add/container/(.+)").getMatch(1);
             dlcfilestr = Encoding.htmlDecode(dlcfilestr);
 
             // import dlc
@@ -522,31 +504,42 @@ public class Serverhandler implements Handler {
             }
 
             response.addContent("Container saved. (" + dlcfilestr + ")");
-        } else if (request.getRequestUrl().matches("(?is).*/action/set/reconnect/(true|false)")) {
-            // Set Reconnect enabled
+        } else if (request.getRequestUrl().matches("(?is).*/action/grabber/add/archivepassword/.+/.+")) {
+            // Add an archive password to package
 
-            boolean newrc = Boolean.parseBoolean(new Regex(request.getRequestUrl(), ".*/action/set/reconnect/(true|false)").getMatch(0));
-            logger.fine("RemoteControl - Set ReConnect: " + newrc);
+            String[] packagenames = getHTMLDecoded(new Regex(request.getRequestUrl(), "(?is).*/action/grabber/add/archivepassword/(.+)/.+").getMatch(0).split("/"));
+            String password = new Regex(request.getRequestUrl(), ".*/action/grabber/add/archivepassword/.+/(.+)").getMatch(0);
 
-            if (newrc != JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true)) {
-                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_ALLOW_RECONNECT, newrc);
-                JDUtilities.getConfiguration().save();
-                response.addContent("PARAM_ALLOW_RECONNECT=" + newrc);
-            } else {
-                response.addContent("PARAM_ALLOW_RECONNECT=" + newrc);
+            ArrayList<LinkGrabberFilePackage> packages = LinkGrabberController.getInstance().getPackages();
+            ArrayList<LinkGrabberFilePackage> packagesWithPW = new ArrayList<LinkGrabberFilePackage>();
+            boolean isErrorMsg = false;
+
+            // TODO: Could make trouble if info panel is opened by hand.
+            synchronized (LinkGrabberController.ControllerLock) {
+                outer: for (String packagename : packagenames) {
+                    for (LinkGrabberFilePackage pack : packages) {
+                        if (packagename.equals(pack.getName())) {
+                            pack.setPassword(password);
+                            packagesWithPW.add(pack);
+                            LinkGrabberController.getInstance().throwRefresh();
+                            continue outer;
+                        }
+                    }
+
+                    if (!isErrorMsg) {
+                        response.addContent("Package '" + packagename + "' doesn't exist! ");
+                        isErrorMsg = true;
+                    }
+                }
             }
-        } else if (request.getRequestUrl().matches("(?is).*/action/set/premium/(true|false)")) {
-            // Set Use premium
 
-            boolean newuseprem = Boolean.parseBoolean(new Regex(request.getRequestUrl(), ".*/action/set/premium/(true|false)").getMatch(0));
-            logger.fine("RemoteControl - Set Premium: " + newuseprem);
+            if (packagesWithPW.size() > 0) {
+                response.addContent("Added Password '" + password + "' to packages: ");
 
-            if (newuseprem != JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)) {
-                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, newuseprem);
-                JDUtilities.getConfiguration().save();
-                response.addContent("PARAM_USE_GLOBAL_PREMIUM=" + newuseprem);
-            } else {
-                response.addContent("PARAM_USE_GLOBAL_PREMIUM=" + newuseprem);
+                for (int i = 0; i < packagesWithPW.size(); i++) {
+                    if (i != 0) response.addContent(", ");
+                    response.addContent("'" + packagesWithPW.get(i).getName() + "'");
+                }
             }
         } else if (request.getRequestUrl().matches("(?is).*/action/grabber/join/.+")) {
             // Join link grabber packages

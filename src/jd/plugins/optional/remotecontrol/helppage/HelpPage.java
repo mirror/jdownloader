@@ -34,10 +34,11 @@ public class HelpPage {
     }
 
     private static void initTables() {
+        StringBuilder info = null;
         Table t = null;
 
-        // Values table
-        t = create(new Table("Get values"));
+        // Table: Get main information/configuration
+        t = create(new Table("Get main information/configuration"));
 
         t.setCommand("/get/rcversion");
         t.setInfo("Get RemoteControl version");
@@ -66,6 +67,9 @@ public class HelpPage {
         t.setCommand("/get/isreconnect");
         t.setInfo("Get whether reconnect is enabled or not");
 
+        // Table: Get linkgrabber information
+        t = create(new Table("Get linkgrabber information"));
+
         t.setCommand("/get/grabber/list");
         t.setInfo("Get all links that are currently held by the link grabber (XML)");
 
@@ -77,6 +81,9 @@ public class HelpPage {
 
         t.setCommand("/get/grabber/isset/startafteradding");
         t.setInfo("Get whether downloads should start or not start after they were added to the download queue");
+
+        // Table: Get download list information
+        t = create(new Table("Get download list information"));
 
         t.setCommand("/get/downloads/all/count");
         t.setInfo("Get amount of all downloads");
@@ -96,8 +103,32 @@ public class HelpPage {
         t.setCommand("/get/downloads/finished/list");
         t.setInfo("Get list of finished downloads (XML)");
 
-        // Actions table
-        t = create(new Table("Actions"));
+        // Table: Set (download-/grabber-)configuration
+        t = create(new Table("Set (download-/grabber-)configuration", "set-values"));
+
+        t.setCommand("/set/reconnect/(true|false)");
+        t.setInfo("Set reconnect enabled or not");
+
+        t.setCommand("/set/premium/(true|false)");
+        t.setInfo("Set premium usage enabled or not");
+
+        t.setCommand("/set/downloaddir/general/%X%");
+        t.setInfo("Set the general download directory %X%");
+
+        t.setCommand("/set/download/limit/%X%");
+        t.setInfo("Set download speedlimit %X%");
+
+        t.setCommand("/set/download/max/%X%");
+        t.setInfo("Set max. sim. Downloads %X%");
+
+        t.setCommand("/set/grabber/startafteradding/(true|false)");
+        t.setInfo("Set whether downloads should start or not start after they were added to the download queue");
+
+        t.setCommand("/set/grabber/autoadding/(true|false)");
+        t.setInfo("Set whether the packages should be added to the downloadlist automatically after linkcheck.");
+
+        // Table: Control downloads
+        t = create(new Table("Control downloads"));
 
         t.setCommand("/action/start");
         t.setInfo("Start downloads");
@@ -114,6 +145,9 @@ public class HelpPage {
         t.setCommand("/action/reconnect");
         t.setInfo("Reconnect");
 
+        // Table: Client actions
+        t = create(new Table("Client actions"));
+
         t.setCommand("/action/(force)update");
         t.setInfo("Do a webupdate - /action/forceupdate will activate auto-restart if update is possible");
 
@@ -123,35 +157,36 @@ public class HelpPage {
         t.setCommand("/action/shutdown");
         t.setInfo("Shutdown JDownloader");
 
-        t.setCommand("/action/set/download/limit/%X%");
-        t.setInfo("Set download speedlimit %X%");
+        // Table: Add downloads
+        t = create(new Table("Add downloads"));
 
-        t.setCommand("/action/set/download/max/%X%");
-        t.setInfo("Set max. sim. Downloads %X%");
+        t.setCommand("/action/add/links/%X%");
+        info = new StringBuilder();
+        info.append("Add links %X% to grabber<br/>");
+        info.append("e.g. /action/add/links/http://tinyurl.com/6o73eq");
+        info.append("<p>Set <a href=\"#set-values\"><u>startafteradding</u></a> and <a href=\"#set-values\"><u>autoadding</u></a> true first if you wish the DLs to be added and started automatically!</p>");
+        info.append("Note: Links must be URLEncoded. Use NEWLINE between links!");
+        t.setInfo(info.toString());
 
-        t.setCommand("/action/set/reconnect/(true|false)");
-        t.setInfo("Set reconnect enabled or not");
+        t.setCommand("/action/add/container/%X%");
+        info = new StringBuilder();
+        info.append("Add (remote or local) container %X%<br/>");
+        info.append("e.g. /action/add/container/C:\\container.dlc");
+        info.append("<p>Set <a href=\"#set-values\"><u>startafteradding</u></a> and <a href=\"#set-values\"><u>autoadding</u></a> true first if you wish the DLs to be added and started automatically!</p>");
+        info.append("Note: Address (remote or local) must be URLEncoded!");
+        t.setInfo(info.toString());
 
-        t.setCommand("/action/set/premium/(true|false)");
-        t.setInfo("Set premium usage enabled or not");
-
-        t.setCommand("/action/set/grabber/startafteradding/(true|false)");
-        t.setInfo("Set whether downloads should start or not start after they were added to the download queue");
-
-        t.setCommand("/action/set/downloaddir/general/%X%");
-        t.setInfo("Set the general download directory %X%");
-
-        t.setCommand("/action/add/archivepassword/%X%/%Y%");
-        t.setInfo("Add an archive password %Y% to one or more packages with packagename %X% hold by the linkgrabber, each packagename seperated by a slash)");
-
-        t.setCommand("/action/add(/auto)/links/%X%");
-        t.setInfo("Add links %X% to grabber<br/>" + "e.g. /action/add/links/http://tinyurl.com/6o73eq" + "<p>auto parameter: Downloads will be automatically added to download queue after the linkcheck is done</p>" + "Note: Links must be URLEncoded. Use NEWLINE between links!");
-
-        t.setCommand("/action/add(/auto)/container/%X%");
-        t.setInfo("Add (remote or local) container %X%<br/>" + "e.g. /action/add/container/C:\\container.dlc" + "<p>auto parameter: Downloads will be automatically added to download queue after the linkcheck is done</p>" + "Note: Address (remote or local) must be URLEncoded!");
+        // Table: Export download packages
+        t = create(new Table("Export download packages"));
 
         t.setCommand("/action/save/container(/fromgrabber)/%X%");
         t.setInfo("Save DLC-container with all links to %X%<br/>" + "e.g. /action/add/container/%X%" + "<p>fromgrabber: save DLC-container from grabber list instead from download list</p>");
+
+        // Table: Edit linkgrabber packages
+        t = create(new Table("Edit linkgrabber packages"));
+
+        t.setCommand("/action/grabber/add/archivepassword/%X%/%Y%");
+        t.setInfo("Add an archive password %Y% to one or more packages with packagename %X% hold by the linkgrabber, each packagename seperated by a slash)");
 
         t.setCommand("/action/grabber/join/%X%/%Y%");
         t.setInfo("Join all denoted linkgrabber packages %Y%, each separated by a slash, to the package %X%");
@@ -177,23 +212,26 @@ public class HelpPage {
         t.setCommand("/action/grabber/move/%X%/%Y%");
         t.setInfo("Move %Y% (single link or list of links, each separated by NEWLINE char) to package %X%. In case the package given is not available, it will be newly created. Please note that if there are multiple packages named equally, the links will be put into the first one that is found. The term 'link' equals the 'browser url' you've provided previously, not the final download url. Package will be searched by case insensitive search.");
 
+        // Table: Edit download packages
+        t = create(new Table("Edit download packages"));
+
         t.setCommand("/action/downloads/removeall");
         t.setInfo("Remove all scheduled downloads");
 
         t.setCommand("/action/downloads/remove/%X%");
         t.setInfo("Remove packages %X% from download list, each packagename seperated by a slash");
 
-        // special table
+        // Table: Specials
         t = create(new Table("Specials"));
 
         t.setCommand("/special/check/%X%");
         t.setInfo("Check links in %X% without adding them to the linkgrabber or the download list. %X% may be a list of urls. Note: Links must be URLEncoded. Use NEWLINE between links!");
 
-        // JDScriptLaucher table
+        // Addon-Table: JDScriptLaucher
         OptionalPluginWrapper sl = JDUtilities.getOptionalPlugin("scriptlauncher");
 
         if (sl != null && sl.isLoaded() && sl.isEnabled()) {
-            t = create(new Table("[addon] JDScriptLauncher"));
+            t = create(new Table("Addon: JDScriptLauncher"));
 
             t.setCommand("/addon/scriptlauncher/getlist");
             t.setInfo("Get list of all available scripts");
@@ -236,7 +274,7 @@ public class HelpPage {
 
         for (Table table : tables) {
             html.append("<table>");
-            html.append("<tr><th colspan=\"2\">" + table.getName() + "</th></tr>");
+            html.append("<tr><th id=\"" + table.getId() + "\" colspan=\"2\">" + table.getName() + "</th></tr>");
 
             for (Entry entry : table.getEntries()) {
                 html.append("<tr>");

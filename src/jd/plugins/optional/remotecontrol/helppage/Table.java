@@ -22,11 +22,17 @@ public class Table {
 
     private int index = -1;
     private String name = "";
+    private String id = "";
 
     private Vector<Entry> entries = new Vector<Entry>();
 
     public Table(String name) {
         this.setName(name);
+    }
+
+    public Table(String name, String id) {
+        this(name);
+        this.setId(id);
     }
 
     public void setName(String name) {
@@ -35,6 +41,14 @@ public class Table {
 
     public String getName() {
         return name;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public String getId() {
+        return id;
     }
 
     public void setCommand(String command) {
