@@ -25,7 +25,7 @@ public class HelpPage {
 
     private static final long serialVersionUID = -7554703678938558791L;
 
-    private static ArrayList<Table> tables = new ArrayList<Table>();
+    private static ArrayList<Table> tables = null;
     private static OptionalPluginWrapper rc = JDUtilities.getOptionalPlugin("remotecontrol");
 
     private static Table create(Table table) {
@@ -34,8 +34,9 @@ public class HelpPage {
     }
 
     private static void initTables() {
-        StringBuilder info = null;
+        tables = new ArrayList<Table>();
         Table t = null;
+        StringBuilder info = null;
 
         // Table: Get main information/configuration
         t = create(new Table("Get main information/configuration"));
