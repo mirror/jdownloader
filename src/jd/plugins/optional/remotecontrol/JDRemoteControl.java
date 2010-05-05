@@ -37,7 +37,7 @@ import jd.utils.locale.JDL;
  * Alle Ausgaben sollten lediglich eine Zeile lang sein, um die kompatibilität
  * zu erhöhen.
  */
-@OptionalPlugin(rev = "$Revision$", id = "remotecontrol", interfaceversion = 5)
+@OptionalPlugin(rev = "$Revision:$", id = "remotecontrol", interfaceversion = 5)
 public class JDRemoteControl extends PluginOptional implements ControlListener {
 
     private static final String PARAM_PORT = "PORT";
