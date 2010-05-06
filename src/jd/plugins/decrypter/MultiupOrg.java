@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2008  JD-Team support@jdownloader.org
+//    Copyright (C) 2009  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -20,32 +20,31 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rs-protect.freehoster.ch" }, urls = { "http://[\\w\\.]*?rs-protect\\.freehoster\\.ch/r[sc]-[\\w]{11}/.*" }, flags = { 0 })
-public class Rsprtctfrhstrch extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "multiup.org" }, urls = { "http://[\\w\\.]*?multiup\\.org/\\?lien=.+" }, flags = { 0 })
+public class MultiupOrg extends PluginForDecrypt {
 
-    public Rsprtctfrhstrch(PluginWrapper wrapper) {
+    public MultiupOrg(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-
         br.getPage(parameter);
-        String link = br.getRegex("<FORM ACTION=\"(.*?)\" METHOD=\"post\" ID=\"postit\"").getMatch(0);
-        if (link == null) return null;
-        decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(link)));
+        if (br.containsHTML("Sorry but your file does not exist or no longer exists")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        String[] links = br.getRegex("<a href=\"pages/telecharger\\.php\\?lien=.*?\">(.*?)</a>").getColumn(0);
+        if (links == null || links.length == 0) return null;
+        for (String dl : links)
+            decryptedLinks.add(createDownloadlink(dl));
 
         return decryptedLinks;
     }
-
-    // @Override
 
 }

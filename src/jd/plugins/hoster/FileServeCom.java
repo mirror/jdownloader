@@ -20,7 +20,10 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -28,11 +31,12 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileserve.com" }, urls = { "http://[\\w\\.]*?fileserve\\.com/file/[a-zA-Z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileserve.com" }, urls = { "http://[\\w\\.]*?fileserve\\.com/file/[a-zA-Z0-9]+" }, flags = { 2 })
 public class FileServeCom extends PluginForHost {
 
     public FileServeCom(PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium("http://www.fileserve.com/premium.php");
     }
 
     @Override
@@ -51,6 +55,51 @@ public class FileServeCom extends PluginForHost {
         link.setName(filename.trim());
         if (filesize != null) link.setDownloadSize(Regex.getSize(filesize));
         return AvailableStatus.TRUE;
+    }
+
+    public void login(Account account) throws Exception {
+        setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.postPage("http://fileserve.com/login.php", "loginUserName=" + Encoding.urlEncode(account.getUser()) + "&loginUserPassword=" + Encoding.urlEncode(account.getPass()) + "&autoLogin=on&loginFormSubmit=Login");
+        String isPremium = br.getRegex("<h(4|5)>Account Type</h(4|5)>\r\n[ ]+<h(5|3)>(Premium)</h(5|3)>").getMatch(3);
+        if (br.getCookie("http://fileserve.com", "cookie") == null || isPremium == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        String uploadedFiles = br.getRegex("<h5>Files uploaded:</h5>\r\n[ ]+<h3>(\\d+)<span>").getMatch(0);
+        if (uploadedFiles != null) ai.setFilesNum(Integer.parseInt(uploadedFiles));
+        ai.setUnlimitedTraffic();
+        ai.setStatus("Premium User");
+        account.setValid(true);
+        return ai;
+    }
+
+    public void handlePremium(DownloadLink link, Account account) throws Exception {
+        requestFileInformation(link);
+        login(account);
+        br.setFollowRedirects(false);
+        br.postPage(link.getDownloadURL(), "download=premium");
+        String dllink = br.getRedirectLocation();
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
     }
 
     @Override

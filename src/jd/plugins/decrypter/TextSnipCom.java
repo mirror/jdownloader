@@ -20,8 +20,6 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.RandomUserAgent;
-import jd.parser.Regex;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
@@ -30,10 +28,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "paste2.org" }, urls = { "http://[\\w\\.]*?paste2\\.org/(p|followup)/[0-9]+" }, flags = { 0 })
-public class Paste2Org extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "textsnip.com" }, urls = { "http://[\\w\\.]*?textsnip\\.com/[a-z0-9]+" }, flags = { 0 })
+public class TextSnipCom extends PluginForDecrypt {
 
-    public Paste2Org(PluginWrapper wrapper) {
+    public TextSnipCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -41,16 +39,11 @@ public class Paste2Org extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.setFollowRedirects(false);
-        // Workaround for "followup" links
-        if (parameter.contains("followup")) {
-            String id = new Regex(parameter, "followup/(\\d+)").getMatch(0);
-            parameter = "http://paste2.org/p/" + id;
-        }
-        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.getPage(parameter);
         /* Error handling */
-        if (br.containsHTML("Page Not Found")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.nolinks", "Perhaps wrong URL or there are no links to add."));
-        String plaintxt = br.getRegex("main-container(.*?)footer-contents").getMatch(0);
+        if (br.getRedirectLocation() != null && br.getRedirectLocation().equals("http://textsnip.com")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.nolinks", "Perhaps wrong URL or there are no links to add."));
+        if (br.getRedirectLocation() != null) return null;
+        String plaintxt = br.getRegex("<code>(.*?)</code>").getMatch(0);
         if (plaintxt == null) return null;
         String[] links = HTMLParser.getHttpLinks(plaintxt, "");
         if (links == null || links.length == 0) {
@@ -58,10 +51,9 @@ public class Paste2Org extends PluginForDecrypt {
             throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.nolinks", "Perhaps wrong URL or there are no links to add."));
         }
         /* avoid recursion */
-        for (int i = 0; i < links.length; i++) {
-            String dlLink = links[i];
-            if (!this.canHandle(dlLink)) {
-                decryptedLinks.add(createDownloadlink(dlLink));
+        for (String link : links) {
+            if (!this.canHandle(link)) {
+                decryptedLinks.add(createDownloadlink(link));
             }
         }
         return decryptedLinks;

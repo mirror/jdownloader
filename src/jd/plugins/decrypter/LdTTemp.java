@@ -64,7 +64,7 @@ public class LdTTemp extends PluginForDecrypt {
         String[] links = HTMLParser.getHttpLinks(br.toString(), "");
         if (links.length == 0) return null;
         for (String finallink : links) {
-            if (!finallink.contains("iload.to") && !finallink.contains("lof.cc") && !finallink.contains("iptrack.biz")) decryptedLinks.add(createDownloadlink(finallink));
+            if (!finallink.contains("iload.to") && !finallink.contains("lof.cc") && !finallink.endsWith(".gif") && !finallink.endsWith(".swf")) decryptedLinks.add(createDownloadlink(finallink));
         }
 
         return decryptedLinks;
