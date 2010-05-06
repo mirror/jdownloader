@@ -173,6 +173,11 @@ public class Serverhandler implements Handler {
 
             boolean value = GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_START_AFTER_ADDING_LINKS, true);
             response.addContent(value);
+        } else if (request.getRequestUrl().equals("/get/grabber/isset/autoadding")) {
+            // Get whether auto-adding option is set or not
+
+            boolean value = GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_START_AFTER_ADDING_LINKS_AUTO, true);
+            response.addContent(value);
         } else if (request.getRequestUrl().equals("/get/downloads/all/count")) {
             // Get DLList COUNT
 

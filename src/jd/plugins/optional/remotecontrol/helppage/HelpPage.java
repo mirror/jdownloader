@@ -83,6 +83,9 @@ public class HelpPage {
         t.setCommand("/get/grabber/isset/startafteradding");
         t.setInfo("Get whether downloads should start or not start after they were added to the download queue");
 
+        t.setCommand("/get/grabber/isset/autoadding");
+        t.setInfo("Get whether packages in the linkgrabber list should be added automatically after their availability was checked.");
+
         // Table: Get download list information
         t = create(new Table("Get download list information"));
 
