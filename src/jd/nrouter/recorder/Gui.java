@@ -14,7 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.router.reconnectrecorder;
+package jd.nrouter.recorder;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;

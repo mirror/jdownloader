@@ -49,7 +49,7 @@ public class SubPanelCLRReconnect extends ConfigPanel implements ActionListener 
 
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == btnFindIP) {
-            RouterUtils.findIP(ip);
+            RouterUtils.findIP(ip, false);
         }
     }
 

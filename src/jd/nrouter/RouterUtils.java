@@ -129,8 +129,8 @@ public class RouterUtils {
 
     }
 
-    public static String findIP(final GUIConfigEntry ip) {
-        return new GuiRunnable<String>() {
+    public static void findIP(final GUIConfigEntry ip, boolean waitForResult) {
+        GuiRunnable<String> run = new GuiRunnable<String>() {
 
             @Override
             public String runSave() {
@@ -154,7 +154,12 @@ public class RouterUtils {
                 }
             }
 
-        }.getReturnValue();
+        };
+        if (waitForResult) {
+            run.waitForEDT();
+        } else {
+            run.start();
+        }
     }
 
     /**
