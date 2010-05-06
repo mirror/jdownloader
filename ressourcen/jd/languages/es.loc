@@ -1309,6 +1309,7 @@ plugins.hoster.httplinks.errors.basicauthneeded = Autorización básica necesari
 plugins.hoster.ifolderru.errors.ticketwait = Esperando el ticket
 plugins.hoster.jamendo = Preferir descargas de Alta Calidad
 plugins.hoster.letitbitnet.errors.countryblock = Letitbit prohibio la descarga de este archivo en tu país
+plugins.hoster.letitfileru.only4premium = Solo disponible para cuentas Premium
 plugins.hoster.madsharecom.nofreeslotsavailable = No hay slots gratuitos disponibles
 plugins.hoster.mega1280com.servererror = Error del servidor!
 plugins.hoster.megarapideu.busyoroffline = No disponible, o servidor ocupado
