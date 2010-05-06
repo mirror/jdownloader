@@ -26,7 +26,7 @@ import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
 import jd.gui.swing.jdgui.views.settings.GUIConfigEntry;
-import jd.router.FindRouterIP;
+import jd.nrouter.RouterUtils;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
@@ -49,7 +49,7 @@ public class SubPanelCLRReconnect extends ConfigPanel implements ActionListener 
 
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == btnFindIP) {
-            new FindRouterIP(ip);
+            RouterUtils.findIP(ip);
         }
     }
 

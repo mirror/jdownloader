@@ -33,7 +33,7 @@ import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.dialog.ImportRouterDialog;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
 import jd.gui.swing.jdgui.views.settings.GUIConfigEntry;
-import jd.router.FindRouterIP;
+import jd.nrouter.RouterUtils;
 import jd.router.reconnectrecorder.Gui;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
@@ -67,7 +67,7 @@ public class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionLi
 
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == btnFindIP) {
-            new FindRouterIP(ip);
+            RouterUtils.findIP(ip);
         } else if (e.getSource() == this.btnRouterRecorder) {
             if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
                 UserIO.getInstance().requestMessageDialog(UserIO.ICON_WARNING, JDL.L("jd.gui.swing.jdgui.settings.panels.downloadandnetwork.advanced.ipcheckdisable.warning.title", "IP-Check disabled!"), JDL.L("jd.gui.swing.jdgui.settings.panels.downloadandnetwork.advanced.ipcheckdisable.warning.message", "You disabled the IP-Check. This will increase the reconnection times dramatically!\r\n\r\nSeveral further modules like Reconnect Recorder are disabled."));
@@ -76,20 +76,7 @@ public class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionLi
                     @Override
                     public void run() {
                         if (((JTextField) ip.getInput()[0]).getText() == null || ((JTextField) ip.getInput()[0]).getText().trim().equals("")) {
-                            Thread th = new Thread() {
-                                @Override
-                                public void run() {
-                                    FindRouterIP.findIP(ip);
-                                }
-                            };
-                            th.start();
-                            while (th.isAlive()) {
-                                try {
-                                    Thread.sleep(1000);
-                                } catch (InterruptedException e) {
-                                    return;
-                                }
-                            }
+                            RouterUtils.findIP(ip);
                         }
                         new GuiRunnable<Object>() {
 

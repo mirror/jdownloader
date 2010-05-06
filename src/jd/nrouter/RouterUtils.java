@@ -16,6 +16,7 @@
 
 package jd.nrouter;
 
+import java.awt.Color;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -27,12 +28,16 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.controlling.JDLogger;
+import jd.controlling.ProgressController;
+import jd.gui.swing.GuiRunnable;
+import jd.gui.swing.jdgui.views.settings.GUIConfigEntry;
 import jd.nutils.Executer;
 import jd.nutils.OSDetector;
 import jd.nutils.Threader;
 import jd.nutils.Threader.WorkerListener;
 import jd.nutils.jobber.JDRunnable;
 import jd.parser.Regex;
+import jd.utils.locale.JDL;
 
 public class RouterUtils {
 
@@ -122,6 +127,34 @@ public class RouterUtils {
         HOST_NAMES.add("172.16.0.1");
         HOST_NAMES.add("192.168.4.1");
 
+    }
+
+    public static String findIP(final GUIConfigEntry ip) {
+        return new GuiRunnable<String>() {
+
+            @Override
+            public String runSave() {
+                final ProgressController progress = new ProgressController(JDL.L("gui.config.routeripfinder.featchIP", "Search for routers hostname..."), 100, null);
+
+                ip.setData(JDL.L("gui.config.routeripfinder.featchIP", "Search for routers hostname..."));
+
+                progress.setStatus(80);
+                InetAddress ia = RouterUtils.getAddress(false);
+                if (ia != null) ip.setData(ia.getHostAddress());
+                progress.setStatus(100);
+                if (ia != null) {
+                    progress.setStatusText(JDL.LF("gui.config.routeripfinder.ready", "Hostname found: %s", ia.getHostAddress()));
+                    progress.doFinalize(3000);
+                    return ia.getHostAddress();
+                } else {
+                    progress.setStatusText(JDL.L("gui.config.routeripfinder.notfound", "Can't find your routers hostname"));
+                    progress.doFinalize(3000);
+                    progress.setColor(Color.RED);
+                    return null;
+                }
+            }
+
+        }.getReturnValue();
     }
 
     /**
@@ -397,7 +430,6 @@ public class RouterUtils {
         }
 
         public void go() throws Exception {
-
             try {
                 InetAddress ia = InetAddress.getByName(host);
                 if (ia.isReachable(1500)) {
@@ -405,10 +437,8 @@ public class RouterUtils {
                         address = ia;
                     }
                 }
-
             } catch (IOException e) {
             }
-
         }
     }
 

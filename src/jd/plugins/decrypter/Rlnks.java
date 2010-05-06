@@ -102,7 +102,8 @@ public class Rlnks extends PluginForDecrypt {
                                  * TODO: captcha handling not working at the
                                  * moment, loop
                                  */
-                                if (true) return;
+                                Boolean b = true;
+                                if (b) return;
                                 Form f = brc.getForm(0);
                                 File file = this.getLocalCaptchaFile();
                                 Browser temp = brc.cloneBrowser();
@@ -129,7 +130,7 @@ public class Rlnks extends PluginForDecrypt {
         }
     }
 
-    // @Override
+    @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         this.progress = progress;
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -163,7 +164,7 @@ public class Rlnks extends PluginForDecrypt {
                 decryptContainer(page, parameter, "rsdf", decryptedLinks);
             }
         }
-        if (decryptedLinks.size() == 0) {
+        if (decryptedLinks.isEmpty()) {
             decryptLinks(decryptedLinks);
             String more_links[] = new Regex(page, Pattern.compile("<a href=\"(go\\.php\\?id=[a-zA-Z0-9]+\\&seite=\\d+)\">", Pattern.CASE_INSENSITIVE)).getColumn(0);
             for (String link : more_links) {
@@ -171,7 +172,7 @@ public class Rlnks extends PluginForDecrypt {
                 decryptLinks(decryptedLinks);
             }
         }
-        if (decryptedLinks.size() == 0 && br.containsHTML("swf/cnl2.swf")) throw new DecrypterException("CNL2 only, open this link in Browser");
+        if (decryptedLinks.isEmpty() && br.containsHTML("swf/cnl2.swf")) throw new DecrypterException("CNL2 only, open this link in Browser");
         return decryptedLinks;
     }
 
