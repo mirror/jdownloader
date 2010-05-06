@@ -26,6 +26,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "letitfile.ru" }, urls = { "http://[\\w\\.]*?letitfile\\.ru/download/id\\d+" }, flags = { 0 })
 public class LetitFileRu extends PluginForHost {
@@ -54,12 +55,14 @@ public class LetitFileRu extends PluginForHost {
         filesize = filesize.replaceAll("(Б|б)", "");
         filesize = filesize + "b";
         link.setDownloadSize(Regex.getSize(filesize));
+        if (br.containsHTML("Владелец данного файла разрешил скачивать файл только пользователям")) link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.LetitFileRu.Only4Premium", "This file is only downloadable for premium users!"));
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        if (br.containsHTML("Владелец данного файла разрешил скачивать файл только пользователям")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.LetitFileRu.Only4Premium", "This file is only downloadable for premium users!"));
         String dllink = null;
         for (int i = 0; i <= 3; i++) {
             br.setFollowRedirects(true);

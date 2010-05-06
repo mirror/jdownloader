@@ -47,7 +47,7 @@ public class XFileSharingProBasic extends PluginForHost {
         // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
-    // XfileSharingProBasic Version 1.6
+    // XfileSharingProBasic Version 1.7
     // This is only for developers to easily implement hosters using the
     // "xfileshare(pro)" script (more informations can be found on
     // xfilesharing.net)!
@@ -222,19 +222,11 @@ public class XFileSharingProBasic extends PluginForHost {
             if (password) {
                 passCode = handlePassword(passCode, DLForm, downloadLink);
             }
-            jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLForm, resumable, maxchunks);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLForm, resumable, maxchunks);
             logger.info("Submitted DLForm");
         }
-        boolean error = false;
-        try {
-            if (dl.getConnection().getContentType().contains("html")) {
-                error = true;
-            }
-        } catch (Exception e) {
-            error = true;
-        }
         String dllink = br.getRedirectLocation();
-        if (dllink == null || error) {
+        if (dllink == null || dl.getConnection().getContentType().contains("html")) {
             if (dllink == null) {
                 br.followConnection();
                 logger.info("followed connection...");
@@ -257,20 +249,12 @@ public class XFileSharingProBasic extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
-            jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
         }
         if (passCode != null) {
             downloadLink.setProperty("pass", passCode);
         }
-        boolean error2 = false;
-        try {
-            if (dl.getConnection().getContentType().contains("html")) {
-                error2 = true;
-            }
-        } catch (Exception e) {
-            error2 = true;
-        }
-        if (error2 == true) {
+        if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
             checkServerErrors();
@@ -392,19 +376,11 @@ public class XFileSharingProBasic extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
-            jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
             if (passCode != null) {
                 link.setProperty("pass", passCode);
             }
-            boolean error = false;
-            try {
-                if (dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("html")) {
-                    error = true;
-                }
-            } catch (Exception e) {
-                error = true;
-            }
-            if (error == true) {
+            if (dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("html")) {
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection();
                 checkServerErrors();
