@@ -136,8 +136,6 @@ public class ConfigContainer implements Serializable {
      */
     public static final int TYPE_COMBOBOX_INDEX = 15;
 
-    private int containers = 0;
-
     private ArrayList<ConfigEntry> content;
     private Property propertyInstance;
     private String title;
@@ -162,18 +160,11 @@ public class ConfigContainer implements Serializable {
      */
     public void addEntry(ConfigEntry entry) {
         if (entry.getGroup() == null) entry.setGroup(group);
-        if (entry.getContainer() != null) {
-            containers++;
-        }
 
         if (entry.getPropertyInstance() == null) {
             entry.setPropertyInstance(propertyInstance);
         }
         content.add(entry);
-    }
-
-    public int getContainerNum() {
-        return containers;
     }
 
     /**
@@ -183,18 +174,6 @@ public class ConfigContainer implements Serializable {
      */
     public ArrayList<ConfigEntry> getEntries() {
         return content;
-    }
-
-    /**
-     * Gibt den Konfigurationseintrag an der Stelle i zurück
-     * 
-     * @param i
-     *            Index des Eintrags
-     * @return ConfigEntry
-     */
-    public ConfigEntry getEntryAt(int i) {
-        if (content.size() <= i) return null;
-        return content.get(i);
     }
 
     /**

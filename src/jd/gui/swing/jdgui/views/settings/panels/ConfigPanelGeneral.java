@@ -46,9 +46,10 @@ public class ConfigPanelGeneral extends ConfigPanel {
 
     public ConfigPanelGeneral() {
         super();
+
         this.configuration = JDUtilities.getConfiguration();
-        initPanel();
-        load();
+
+        setContainer(setupContainer());
     }
 
     private ConfigContainer setupContainer() {
@@ -81,11 +82,6 @@ public class ConfigPanelGeneral extends ConfigPanel {
         ce.setEnabled(branch != null);
 
         return look;
-    }
-
-    @Override
-    public void initPanel() {
-        add(createPanel(setupContainer()));
     }
 
     @Override

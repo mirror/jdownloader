@@ -50,7 +50,7 @@ public class Advanced extends ConfigPanel {
     private ConfigContainer setupContainer() {
         ConfigContainer container = new ConfigContainer();
 
-        ConfigEntry ce;
+        ConfigEntry ce, cond;
 
         container.setGroup(new ConfigGroup(JDL.L("gui.config.gui.container", "Container (RSDF,DLC,CCF,..)"), "gui.images.container"));
 
@@ -61,17 +61,14 @@ public class Advanced extends ConfigPanel {
         ce.setDefaultValue(false);
 
         /* Speedmeter */
-        ConfigGroup speedmeter = new ConfigGroup(JDL.L("gui.config.gui.speedmeter", "Speedmeter"), "gui.images.download");
+        container.setGroup(new ConfigGroup(JDL.L("gui.config.gui.speedmeter", "Speedmeter"), "gui.images.download"));
 
-        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDGuiConstants.PARAM_SHOW_SPEEDMETER, JDL.L("gui.config.gui.show_speed_graph", "Display speedmeter graph")).setGroup(speedmeter));
-        ce.setDefaultValue(true);
-        ConfigEntry cond = ce;
+        container.addEntry(cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDGuiConstants.PARAM_SHOW_SPEEDMETER, JDL.L("gui.config.gui.show_speed_graph", "Display speedmeter graph")));
+        cond.setDefaultValue(true);
 
-        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, JDGuiConstants.PARAM_SHOW_SPEEDMETER_WINDOWSIZE, JDL.L("gui.config.gui.show_speed_graph_window", "Speedmeter Time period (sec)"), 10, 60 * 60 * 12).setGroup(speedmeter));
+        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, JDGuiConstants.PARAM_SHOW_SPEEDMETER_WINDOWSIZE, JDL.L("gui.config.gui.show_speed_graph_window", "Speedmeter Time period (sec)"), 10, 60 * 60 * 12));
         ce.setDefaultValue(60);
         ce.setEnabledCondidtion(cond, true);
-
-        container.setGroup(null);
 
         return container;
     }
