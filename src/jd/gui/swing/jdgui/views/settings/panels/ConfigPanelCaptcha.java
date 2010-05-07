@@ -58,6 +58,6 @@ public class ConfigPanelCaptcha extends ConfigPanel {
 
     @Override
     public void initPanel() {
-        add(createTabbedPane(setupContainer()));
+        add(createPanel(setupContainer()));
     }
 }

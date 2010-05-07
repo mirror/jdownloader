@@ -24,6 +24,7 @@ import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
+import javax.swing.JTabbedPane;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -57,8 +58,7 @@ public class ConfigPanel extends SwitchPanel {
     public ConfigPanel() {
         this.setLayout(new MigLayout("ins 0", "[fill,grow]", "[fill,grow]"));
         this.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-        panel = new JPanel();
-        panel.setLayout(new MigLayout("ins 0 10 10 10, wrap 2", "[fill,grow 10]10[fill,grow]"));
+        panel = new JPanel(new MigLayout("ins 5, wrap 2", "[fill,grow 10]10[fill,grow]"));
     }
 
     /**
@@ -68,17 +68,14 @@ public class ConfigPanel extends SwitchPanel {
      */
     public ConfigPanel(ConfigContainer container) {
         this();
-        for (ConfigEntry cfgEntry : container.getEntries()) {
-            GUIConfigEntry ce = new GUIConfigEntry(cfgEntry);
-            if (ce != null) addGUIConfigEntry(ce);
-        }
 
-        this.load();
-        this.add(panel);
+        setContainer(container);
     }
 
-    public static String getTitle() {
-        return "NOTITLE";
+    public void setContainer(ConfigContainer container) {
+        this.add(createPanel(container));
+
+        this.load();
     }
 
     public void addGUIConfigEntry(GUIConfigEntry entry, JPanel panel) {
@@ -97,9 +94,6 @@ public class ConfigPanel extends SwitchPanel {
                     panel.add(entry.getDecoration(), "spany " + entry.getInput().length + ",spanx");
                     break;
                 case ConfigContainer.TYPE_CONTAINER:
-                    /**
-                     * TODO: handle different containers
-                     */
                     break;
                 default:
                     panel.add(entry.getDecoration(), "spany " + Math.max(1, entry.getInput().length) + (entry.getInput().length == 0 ? ",spanx" : ""));
@@ -116,9 +110,6 @@ public class ConfigPanel extends SwitchPanel {
                     panel.add(new JScrollPane(c), "spanx,growy,pushy");
                     break;
                 case ConfigContainer.TYPE_CONTAINER:
-                    /**
-                     * TODO: handle different containers
-                     */
                     break;
                 default:
                     panel.add(c, entry.getDecoration() == null ? "spanx" : "");
@@ -141,21 +132,25 @@ public class ConfigPanel extends SwitchPanel {
                 case ConfigContainer.TYPE_LISTCONTROLLED:
                     panel.add(entry.getDecoration(), "gapleft " + this.getGapLeft() + ",spany " + entry.getInput().length + ",spanx");
                     break;
+                case ConfigContainer.TYPE_CONTAINER:
+                    break;
                 default:
                     panel.add(entry.getDecoration(), "gapleft " + this.getGapLeft() + ",spany " + entry.getInput().length + (entry.getInput().length == 0 ? ",spanx" : ""));
                 }
             }
-            int i = 0;
+
             for (JComponent c : entry.getInput()) {
-                i++;
                 switch (entry.getConfigEntry().getType()) {
                 case ConfigContainer.TYPE_BUTTON:
                     panel.add(c, entry.getDecoration() == null ? "spanx,gapleft " + this.getGapLeft() : "width n:n:160");
                     header.setVisible(true);
                     break;
+                case ConfigContainer.TYPE_LISTCONTROLLED:
                 case ConfigContainer.TYPE_TEXTAREA:
                     panel.add(new JScrollPane(c), "spanx,growy,pushy,gapleft " + this.getGapLeft());
                     header.setVisible(true);
+                    break;
+                case ConfigContainer.TYPE_CONTAINER:
                     break;
                 default:
                     panel.add(c, entry.getDecoration() == null ? "spanx,gapleft " + this.getGapLeft() : "");
@@ -216,7 +211,6 @@ public class ConfigPanel extends SwitchPanel {
 
     @Override
     public void onHide() {
-
         PropertyType changes = hasChanges();
         this.save();
         if (changes == PropertyType.NEEDS_RESTART) {
@@ -268,13 +262,28 @@ public class ConfigPanel extends SwitchPanel {
         }
     }
 
-    protected final JComponent createTabbedPane(ConfigContainer config) {
-        for (ConfigEntry cfgEntry : config.getEntries()) {
-            GUIConfigEntry ce = new GUIConfigEntry(cfgEntry);
-            if (ce != null) addGUIConfigEntry(ce);
+    protected final JComponent createPanel(ConfigContainer container) {
+        ArrayList<ConfigEntry> cont = new ArrayList<ConfigEntry>();
+        for (ConfigEntry cfgEntry : container.getEntries()) {
+            if (cfgEntry.getType() == ConfigContainer.TYPE_CONTAINER) {
+                cont.add(cfgEntry);
+            } else {
+                GUIConfigEntry ce = new GUIConfigEntry(cfgEntry);
+                if (ce != null) addGUIConfigEntry(ce);
+            }
         }
 
-        return panel;
+        if (!cont.isEmpty()) {
+            JTabbedPane tabbed = new JTabbedPane();
+            tabbed.setOpaque(false);
+            tabbed.addTab(container.getTitle(), container.getIcon(), panel);
+            for (ConfigEntry c : cont) {
+                tabbed.addTab(c.getContainer().getTitle(), c.getContainer().getIcon(), new ConfigPanel(c.getContainer()));
+            }
+            return tabbed;
+        } else {
+            return panel;
+        }
     }
 
 }

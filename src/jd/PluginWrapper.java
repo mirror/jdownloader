@@ -35,18 +35,14 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 /**
- * A Container for {@link jd.plugins.Plugin Plugins}. Plugins usually do not get
+ * A Container for {@link Plugin Plugins}. Plugins usually do not get
  * instantiated after program start. {@link JDInit#initPlugins()} reads all
  * Annotations and creates a PluginWrapper instance. The PluginWrapper creates a
  * plugin instance when required
- * 
- * @author unkown
- * 
  */
 public abstract class PluginWrapper implements Comparable<PluginWrapper> {
     /**
-     * Usage Flag for {@link jd.PluginWrapper.PluginWrapper(String, String,
-     * String, String, int)}<br>
+     * Usage Flag for {@link PluginWrapper(String, String, String, String, int)}
      */
     public static final int LOAD_ON_INIT = 1 << 1;
 
@@ -106,7 +102,7 @@ public abstract class PluginWrapper implements Comparable<PluginWrapper> {
     private boolean alwaysenabled = false;
 
     /**
-     * Usage and InitFlags created by <br>{@link PluginWrapper#CNL_2} <br>
+     * Usage and InitFlags created by <br> {@link PluginWrapper#CNL_2} <br>
      * {@link PluginWrapper#DEBUG_ONLY} <br> {@link PluginWrapper#LOAD_ON_INIT} <br>
      * {@link PluginWrapper#PATTERN_ACCEPTS_INVALID_URI}
      */
@@ -408,16 +404,6 @@ public abstract class PluginWrapper implements Comparable<PluginWrapper> {
      */
     public String getClassName() {
         return className;
-    }
-
-    /**
-     * @return the {@link PluginWrapper#acceptOnlyURIs}
-     * @see PluginWrapper#acceptOnlyURIs
-     * @deprecated Currently is not used by any plugin. Review required
-     */
-    @Deprecated
-    public boolean isAcceptOnlyURIs() {
-        return true;
     }
 
 }

@@ -41,9 +41,10 @@ public class Advanced extends ConfigPanel {
 
     public Advanced() {
         super();
+
         subConfig = GUIUtils.getConfig();
-        initPanel();
-        load();
+
+        setContainer(setupContainer());
     }
 
     private ConfigContainer setupContainer() {
@@ -73,11 +74,6 @@ public class Advanced extends ConfigPanel {
         container.setGroup(null);
 
         return container;
-    }
-
-    @Override
-    public void initPanel() {
-        add(createTabbedPane(setupContainer()));
     }
 
 }

@@ -18,9 +18,9 @@ package jd.gui.swing.jdgui.views.settings.panels.passwords;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.config.ConfigGroup;
 import jd.controlling.HTACCESSController;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
-import jd.gui.swing.jdgui.views.settings.GUIConfigEntry;
 import jd.utils.locale.JDL;
 
 public class PasswordListHTAccess extends ConfigPanel {
@@ -36,14 +36,17 @@ public class PasswordListHTAccess extends ConfigPanel {
     public PasswordListHTAccess() {
         super();
 
-        initPanel();
+        setContainer(setupContainer());
     }
 
-    @Override
-    public void initPanel() {
-        addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_LISTCONTROLLED, HTACCESSController.getInstance(), JDL.L("plugins.http.htaccess", "List of all HTAccess passwords. Each line one password."))));
+    private ConfigContainer setupContainer() {
+        ConfigContainer container = new ConfigContainer();
 
-        this.add(panel);
+        container.setGroup(new ConfigGroup(getTitle(), "gui.images.htaccess"));
+
+        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_LISTCONTROLLED, HTACCESSController.getInstance(), JDL.L("plugins.http.htaccess", "List of all HTAccess passwords. Each line one password.")));
+
+        return container;
     }
 
 }

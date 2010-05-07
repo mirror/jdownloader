@@ -74,8 +74,6 @@ public class DistributeData extends Thread {
      */
     private boolean hideGrabber;
 
-    private String orgData;
-
     private boolean filterNormalHTTP = false;
     private final ArrayList<String> foundPasswords = new ArrayList<String>();
 
@@ -119,14 +117,14 @@ public class DistributeData extends Thread {
         return this;
     }
 
-    static public boolean hasContainerPluginFor(final String tmp) {
+    public static boolean hasContainerPluginFor(final String tmp) {
         for (CPluginWrapper cDecrypt : CPluginWrapper.getCWrapper()) {
             if (cDecrypt.isEnabled() && cDecrypt.canHandle(tmp)) return true;
         }
         return false;
     }
 
-    static public boolean hasPluginFor(final String tmp, final boolean filterNormalHTTP) {
+    public static boolean hasPluginFor(final String tmp, final boolean filterNormalHTTP) {
         if (DecryptPluginWrapper.getDecryptWrapper() != null) {
             String data = tmp;
             data = data.replaceAll("jd://", "http://");
@@ -160,9 +158,6 @@ public class DistributeData extends Thread {
     /**
      * Sucht in dem übergebenen vector nach weiteren decryptbaren Links und
      * decrypted diese
-     * 
-     * @param decryptedLinks
-     * @return
      */
     private boolean deepDecrypt(final ArrayList<DownloadLink> decryptedLinks) {
         if (decryptedLinks.isEmpty()) return false;
@@ -292,8 +287,6 @@ public class DistributeData extends Thread {
 
     /**
      * Checks if data is only a singlehoster link
-     * 
-     * @return
      */
     private ArrayList<DownloadLink> quickHosterCheck(final String data) {
         final String lowercasedata = data.toLowerCase(Locale.getDefault());
@@ -323,14 +316,16 @@ public class DistributeData extends Thread {
         final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
         final ArrayList<HostPluginWrapper> pHostAll = HostPluginWrapper.getHostWrapper();
         if (pHostAll.size() == 0) return new ArrayList<DownloadLink>();
-        this.orgData = data;
         reformDataString();
-        // es werden die entschlüsselten Links (soweit überhaupt
-        // vorhanden) an die HostPlugins geschickt, damit diese einen
-        // Downloadlink erstellen können
-
-        // Edit Coa:
-        // Hier werden auch die SourcePLugins in die Downloadlinks gesetzt
+        /*
+         * es werden die entschlüsselten Links (soweit überhaupt vorhanden) an
+         * die HostPlugins geschickt, damit diese einen Downloadlink erstellen
+         * können
+         */
+        /*
+         * Edit Coa: Hier werden auch die SourcePLugins in die Downloadlinks
+         * gesetzt
+         */
         final ArrayList<DownloadLink> alldecrypted = handleDecryptPlugins();
 
         for (final DownloadLink decrypted : alldecrypted) {
@@ -342,8 +337,10 @@ public class DistributeData extends Thread {
                 }
             }
         }
-        // Danach wird der (noch verbleibende) Inhalt der Zwischenablage an die
-        // Plugins der Hoster geschickt
+        /*
+         * Danach wird der (noch verbleibende) Inhalt der Zwischenablage an die
+         * Plugins der Hoster geschickt
+         */
         useHoster(links);
         return links;
     }
@@ -389,19 +386,12 @@ public class DistributeData extends Thread {
 
     private void useHoster(final ArrayList<DownloadLink> links) {
         for (final HostPluginWrapper pHost : HostPluginWrapper.getHostWrapper()) {
-            final boolean isAcceptOnlyURIs = pHost.isAcceptOnlyURIs();
-            if (pHost.canHandle(isAcceptOnlyURIs ? data : orgData)) {
-                final ArrayList<DownloadLink> dl = pHost.getPlugin().getDownloadLinks(isAcceptOnlyURIs ? data : orgData, null);
-                if (isAcceptOnlyURIs) {
-                    data = pHost.getPlugin().cutMatches(data);
-                } else {
-                    orgData = pHost.getPlugin().cutMatches(orgData);
-                }
+            if (pHost.canHandle(data)) {
+                final ArrayList<DownloadLink> dl = pHost.getPlugin().getDownloadLinks(data, null);
+                data = pHost.getPlugin().cutMatches(data);
                 if (!pHost.isEnabled()) continue;
                 for (final DownloadLink dll : dl) {
-                    if (LinkGrabberController.isFiltered(dll)) {
-                        continue;
-                    }
+                    if (LinkGrabberController.isFiltered(dll)) continue;
                     links.add(dll);
                 }
             }
@@ -431,16 +421,11 @@ public class DistributeData extends Thread {
         }
         final Jobber decryptJobbers = new Jobber(4);
         for (final DecryptPluginWrapper pDecrypt : DecryptPluginWrapper.getDecryptWrapper()) {
-            if (pDecrypt.isEnabled() && pDecrypt.canHandle(pDecrypt.isAcceptOnlyURIs() ? data : orgData)) {
+            if (pDecrypt.isEnabled() && pDecrypt.canHandle(data)) {
                 try {
                     final PluginForDecrypt plg = pDecrypt.getNewPluginInstance();
-
-                    final CryptedLink[] decryptableLinks = plg.getDecryptableLinks(plg.isAcceptOnlyURIs() ? data : orgData);
-                    if (plg.isAcceptOnlyURIs()) {
-                        data = plg.cutMatches(data);
-                    } else {
-                        orgData = plg.cutMatches(orgData);
-                    }
+                    final CryptedLink[] decryptableLinks = plg.getDecryptableLinks(data);
+                    data = plg.cutMatches(data);
                     decryptJobbers.add(new DThread(plg, decryptableLinks));
                 } catch (Exception e) {
                     JDLogger.exception(e);
@@ -476,7 +461,7 @@ public class DistributeData extends Thread {
         }
     }
 
-    // @Override
+    @Override
     public void run() {
         /*
          * check if there are any links (we need at least a domain and
@@ -539,8 +524,9 @@ public class DistributeData extends Thread {
             pc.increase(1);
 
         }
-        JDLogger.getLogger().info("Found Links" + sb);
+        JDLogger.getLogger().info("Found Links " + sb);
         pc.doFinalize(2000);
         return sb.toString();
     }
+
 }

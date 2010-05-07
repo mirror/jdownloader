@@ -37,9 +37,10 @@ public class InternetAndNetwork extends ConfigPanel {
 
     public InternetAndNetwork() {
         super();
+
         config = SubConfiguration.getConfig("DOWNLOAD");
-        initPanel();
-        load();
+
+        setContainer(setupContainer());
     }
 
     private ConfigContainer setupContainer() {
@@ -113,11 +114,6 @@ public class InternetAndNetwork extends ConfigPanel {
         ce.setEnabledCondidtion(conditionEntry, true);
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
         return network;
-    }
-
-    @Override
-    public void initPanel() {
-        add(createTabbedPane(setupContainer()));
     }
 
 }

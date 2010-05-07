@@ -78,8 +78,7 @@ public class ConfigTreeModel implements TreeModel {
     private void initExtensions(TreeEntry addons) {
         for (final OptionalPluginWrapper plg : OptionalPluginWrapper.getOptionalWrapper()) {
             if (!plg.isLoaded() || !plg.isEnabled() || !plg.hasConfig()) continue;
-
-            addons.add(new TreeEntry(AddonConfig.getInstance(plg.getPlugin().getConfig(), plg.getHost(), ""), plg.getHost(), plg.getPlugin().getIconKey()));
+            addons.add(new TreeEntry(AddonConfig.getInstance(plg.getPlugin().getConfig(), ""), plg.getHost(), plg.getPlugin().getIconKey()));
         }
     }
 

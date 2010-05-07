@@ -461,12 +461,12 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
      * @param container
      */
     protected void showConfigPanel(final ConfigContainer container) {
-
         String name = "";
         if (container.getTitle() != null) {
             name = container.getTitle();
+        } else if (container.getGroup() != null && container.getGroup().getName() != null) {
+            name = container.getGroup().getName();
         }
-        if (name == null && container.getGroup() != null && container.getGroup().getName() != null) name = container.getGroup().getName();
 
         ImageIcon icon = null;
         if (container.getIcon() != null) {
@@ -476,7 +476,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         }
 
         final SwitchPanel oldPanel = mainTabbedPane.getSelectedView().getInfoPanel();
-        AddonConfig p = AddonConfig.getInstance(container, name, "_2");
+        AddonConfig p = AddonConfig.getInstance(container, "_2");
         JDCollapser col = new JDCollapser() {
 
             private static final long serialVersionUID = 1L;

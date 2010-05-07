@@ -130,10 +130,10 @@ public class RouterUtils {
     }
 
     public static void findIP(final GUIConfigEntry ip, boolean waitForResult) {
-        GuiRunnable<String> run = new GuiRunnable<String>() {
+        GuiRunnable<Object> run = new GuiRunnable<Object>() {
 
             @Override
-            public String runSave() {
+            public Object runSave() {
                 final ProgressController progress = new ProgressController(JDL.L("gui.config.routeripfinder.featchIP", "Search for routers hostname..."), 100, null);
 
                 ip.setData(JDL.L("gui.config.routeripfinder.featchIP", "Search for routers hostname..."));
@@ -145,13 +145,12 @@ public class RouterUtils {
                 if (ia != null) {
                     progress.setStatusText(JDL.LF("gui.config.routeripfinder.ready", "Hostname found: %s", ia.getHostAddress()));
                     progress.doFinalize(3000);
-                    return ia.getHostAddress();
                 } else {
                     progress.setStatusText(JDL.L("gui.config.routeripfinder.notfound", "Can't find your routers hostname"));
                     progress.doFinalize(3000);
                     progress.setColor(Color.RED);
-                    return null;
                 }
+                return null;
             }
 
         };

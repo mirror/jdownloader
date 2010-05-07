@@ -49,9 +49,10 @@ public class Browser extends ConfigPanel {
 
     public Browser() {
         super();
+
         subConfig = GUIUtils.getConfig();
-        initPanel();
-        load();
+
+        setContainer(setupContainer());
     }
 
     private ConfigContainer setupContainer() {
@@ -128,11 +129,6 @@ public class Browser extends ConfigPanel {
         ce.setEnabledCondidtion(conditionEntry, true);
 
         return container;
-    }
-
-    @Override
-    public void initPanel() {
-        add(createTabbedPane(setupContainer()));
     }
 
 }

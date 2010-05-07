@@ -40,9 +40,10 @@ public class General extends ConfigPanel {
 
     public General() {
         super();
+
         config = SubConfiguration.getConfig("DOWNLOAD");
-        initPanel();
-        load();
+
+        setContainer(setupContainer());
     }
 
     private ConfigContainer setupContainer() {
@@ -92,11 +93,6 @@ public class General extends ConfigPanel {
         conditionEntry.setStep(10);
 
         return container;
-    }
-
-    @Override
-    public void initPanel() {
-        add(createTabbedPane(setupContainer()));
     }
 
 }

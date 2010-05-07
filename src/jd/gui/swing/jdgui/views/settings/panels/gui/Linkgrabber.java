@@ -37,8 +37,8 @@ public class Linkgrabber extends ConfigPanel {
 
     public Linkgrabber() {
         super();
-        initPanel();
-        load();
+
+        setContainer(setupContainer());
     }
 
     private ConfigContainer setupContainer() {
@@ -67,11 +67,6 @@ public class Linkgrabber extends ConfigPanel {
         ce.setDefaultValue("#Ignorefiletype 'olo':\r\n\r\n.+?\\.olo\r\n\r\n#Ignore hoster 'examplehost.com':\r\n\r\n.*?examplehost\\.com.*?");
 
         return container;
-    }
-
-    @Override
-    public void initPanel() {
-        add(createTabbedPane(setupContainer()));
     }
 
 }

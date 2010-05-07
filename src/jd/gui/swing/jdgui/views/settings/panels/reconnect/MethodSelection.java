@@ -20,16 +20,12 @@ import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
-import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
-import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
@@ -44,7 +40,6 @@ import jd.gui.swing.Factory;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
-import jd.gui.swing.jdgui.views.settings.GUIConfigEntry;
 import jd.nrouter.IPCheck;
 import jd.nutils.Formatter;
 import jd.utils.JDTheme;
@@ -200,7 +195,7 @@ public class MethodSelection extends ConfigPanel implements ActionListener {
 
         tabbed = new JTabbedPane();
         method.add(tabbed, "spanx,pushy,growy");
-        tabbed.setTabPlacement(SwingConstants.TOP);
+        tabbed.setTabPlacement(JTabbedPane.TOP);
 
         tabbed.addTab(JDL.L("modules.reconnect.types.liveheader", "LiveHeader/Curl"), new SubPanelLiveHeaderReconnect(configuration));
         tabbed.addTab(JDL.L("modules.reconnect.types.extern", "Extern"), getPanelFor(new ExternReconnect()));
@@ -277,25 +272,8 @@ public class MethodSelection extends ConfigPanel implements ActionListener {
     }
 
     private static final ConfigPanel getPanelFor(final ReconnectMethod method) {
-        ConfigPanel cp = new ConfigPanel() {
-
-            private static final long serialVersionUID = 1086423194283483561L;
-
-            @Override
-            public void initPanel() {
-                ConfigContainer container = method.getConfig();
-
-                for (ConfigEntry cfgEntry : container.getEntries()) {
-                    GUIConfigEntry ce = new GUIConfigEntry(cfgEntry);
-                    if (ce != null) addGUIConfigEntry(ce);
-                }
-
-                add(panel);
-            }
-
-        };
-        cp.initPanel();
-        cp.setBorder(BorderFactory.createEmptyBorder(3, 0, 0, 0));
+        ConfigPanel cp = new ConfigPanel(method.getConfig());
+        cp.setBorder(null);
         return cp;
     }
 }

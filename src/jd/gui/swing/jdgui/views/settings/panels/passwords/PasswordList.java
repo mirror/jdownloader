@@ -18,9 +18,9 @@ package jd.gui.swing.jdgui.views.settings.panels.passwords;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.config.ConfigGroup;
 import jd.controlling.PasswordListController;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
-import jd.gui.swing.jdgui.views.settings.GUIConfigEntry;
 import jd.utils.locale.JDL;
 
 public class PasswordList extends ConfigPanel {
@@ -36,14 +36,17 @@ public class PasswordList extends ConfigPanel {
     public PasswordList() {
         super();
 
-        initPanel();
+        setContainer(setupContainer());
     }
 
-    @Override
-    public void initPanel() {
-        addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_LISTCONTROLLED, PasswordListController.getInstance(), JDL.LF("plugins.optional.jdunrar.config.passwordlist2", "List of all passwords. Each line one password. Available passwords: %s", ""))));
+    private ConfigContainer setupContainer() {
+        ConfigContainer container = new ConfigContainer();
 
-        this.add(panel);
+        container.setGroup(new ConfigGroup(getTitle(), "gui.images.addons.unrar"));
+
+        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_LISTCONTROLLED, PasswordListController.getInstance(), JDL.L("plugins.optional.jdunrar.config.passwordlist", "List of all passwords. Each line one password.")));
+
+        return container;
     }
 
 }

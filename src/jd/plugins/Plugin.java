@@ -34,6 +34,7 @@ import jd.HostPluginWrapper;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.SubConfiguration;
+import jd.controlling.JDLogger;
 import jd.event.ControlEvent;
 import jd.gui.swing.components.ConvertDialog;
 import jd.gui.swing.components.ConvertDialog.ConversionMode;
@@ -57,11 +58,7 @@ public abstract class Plugin implements ActionListener {
 
     public static final String ACCEPT_LANGUAGE = "de, en-gb;q=0.9, en;q=0.8";
 
-    private boolean acceptOnlyURIs = true;
-    /**
-     * Ein Logger, um Meldungen darzustellen
-     */
-    protected static Logger logger = jd.controlling.JDLogger.getLogger();
+    protected static Logger logger = JDLogger.getLogger();
 
     public static ConversionMode showDisplayDialog(ArrayList<ConversionMode> displaymodes, String name, CryptedLink link) throws DecrypterException {
         link.getProgressController().setStatusText(JDL.L("gui.linkgrabber.waitinguserio", "Waiting for user input"));
@@ -410,19 +407,8 @@ public abstract class Plugin implements ActionListener {
 
     }
 
-    /**
-     * gibt zurück ob das plugin als supportedLinks nur gültige URIs
-     * aktzeotiert. Soll ein PLugin auf andere strings reagieren, z.B. auf
-     * Javascript strings, muss setAcceptOnlyURIs(false) gesetzt werden
-     * 
-     * @return
-     */
-    public boolean isAcceptOnlyURIs() {
-        return acceptOnlyURIs;
-    }
-
+    @Deprecated
     public void setAcceptOnlyURIs(boolean acceptCompleteLinks) {
-        this.acceptOnlyURIs = acceptCompleteLinks;
     }
 
 }

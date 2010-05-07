@@ -35,8 +35,8 @@ public class Advanced extends ConfigPanel {
 
     public Advanced() {
         super();
-        initPanel();
-        load();
+
+        setContainer(setupContainer());
     }
 
     private ConfigContainer setupContainer() {
@@ -48,11 +48,6 @@ public class Advanced extends ConfigPanel {
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), ReconnectMethod.PARAM_WAITFORIPCHANGE, JDL.L("reconnect.waitforip", "Timeout for ip change [sec]"), 30, 600).setDefaultValue(30));
 
         return container;
-    }
-
-    @Override
-    public void initPanel() {
-        add(createTabbedPane(setupContainer()));
     }
 
 }

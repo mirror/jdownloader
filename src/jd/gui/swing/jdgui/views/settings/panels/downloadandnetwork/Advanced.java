@@ -39,9 +39,10 @@ public class Advanced extends ConfigPanel {
 
     public Advanced() {
         super();
+
         config = SubConfiguration.getConfig("DOWNLOAD");
-        initPanel();
-        load();
+
+        setContainer(setupContainer());
     }
 
     private ConfigContainer setupContainer() {
@@ -109,8 +110,4 @@ public class Advanced extends ConfigPanel {
         return extended;
     }
 
-    @Override
-    public void initPanel() {
-        add(createTabbedPane(setupContainer()));
-    }
 }

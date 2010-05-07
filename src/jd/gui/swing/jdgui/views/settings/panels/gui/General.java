@@ -49,9 +49,10 @@ public class General extends ConfigPanel {
 
     public General() {
         super();
+
         subConfig = GUIUtils.getConfig();
-        initPanel();
-        load();
+
+        setContainer(setupContainer());
     }
 
     private ConfigContainer setupContainer() {
@@ -109,11 +110,6 @@ public class General extends ConfigPanel {
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
 
         return look;
-    }
-
-    @Override
-    public void initPanel() {
-        add(createTabbedPane(setupContainer()));
     }
 
 }

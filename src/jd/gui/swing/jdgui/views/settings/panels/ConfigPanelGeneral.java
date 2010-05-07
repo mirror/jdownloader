@@ -85,7 +85,7 @@ public class ConfigPanelGeneral extends ConfigPanel {
 
     @Override
     public void initPanel() {
-        add(createTabbedPane(setupContainer()));
+        add(createPanel(setupContainer()));
     }
 
     @Override
