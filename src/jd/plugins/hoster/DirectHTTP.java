@@ -269,7 +269,7 @@ public class DirectHTTP extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return -1;
     }
 
     @Override
@@ -390,7 +390,7 @@ public class DirectHTTP extends PluginForHost {
             }
         }
 
-        public void load() throws IOException {
+        public void load() throws IOException, PluginException {
             rcBr = br.cloneBrowser();
             /* follow redirect needed as google redirects to another domain */
             rcBr.setFollowRedirects(true);
@@ -399,6 +399,7 @@ public class DirectHTTP extends PluginForHost {
             server = rcBr.getRegex("server.*?:.*?'(.*?)',").getMatch(0);
             if (challenge == null || server == null) {
                 JDLogger.getLogger().severe("Recaptcha Module fails: " + br.getHttpConnection());
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             captchaAddress = server + "image?c=" + challenge;
         }

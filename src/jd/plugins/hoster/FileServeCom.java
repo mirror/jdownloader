@@ -16,12 +16,14 @@
 
 package jd.plugins.hoster;
 
+import java.io.File;
 import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -30,6 +32,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.utils.JDUtilities;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileserve.com" }, urls = { "http://[\\w\\.]*?fileserve\\.com/file/[a-zA-Z0-9]+" }, flags = { 2 })
 public class FileServeCom extends PluginForHost {
@@ -105,18 +108,38 @@ public class FileServeCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        String fileId = br.getRegex("fileserve\\.com/file/([a-zA-Z0-9]+)").getMatch(0);
         br.setFollowRedirects(false);
         Browser br2 = br.cloneBrowser();
-        br2.getPage("http://www.fileserve.com/landing/DL12/download_captcha.js");
-        if (!br2.containsHTML("captica.php")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // It doesn't work without accessing this page!!
+        br2.getPage("http://www.fileserve.com/landing/DL13/download_captcha.js");
+        br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        Boolean failed = true;
         for (int i = 0; i <= 3; i++) {
-            String captchaUrl = "http://www.fileserve.com/captica.php?x=" + System.currentTimeMillis();
-            String code = getCaptchaCode(captchaUrl, downloadLink);
-            br2.postPage("http://www.fileserve.com/checkCaptcha.php", "captchaValue=" + code);
-            if (!br2.toString().trim().equals("1")) continue;
+            String id = br.getRegex("var reCAPTCHA_publickey='(.*?)';").getMatch(0);
+            if (!br.containsHTML("api.recaptcha.net") || id == null || fileId == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            Form reCaptchaForm = new Form();
+            reCaptchaForm.setMethod(Form.MethodType.POST);
+            reCaptchaForm.setAction("http://www.fileserve.com/checkReCaptcha.php");
+            reCaptchaForm.put("recaptcha_shortencode_field", fileId);
+            PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+            jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+            rc.setForm(reCaptchaForm);
+            rc.setId(id);
+            rc.load();
+            File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+            String c = getCaptchaCode(cf, downloadLink);
+            rc.getForm().put("recaptcha_response_field", c);
+            rc.getForm().put("recaptcha_challenge_field", rc.getChallenge());
+            br2.submitForm(rc.getForm());
+            if (br2.containsHTML("incorrect-captcha")) {
+                br.getPage(downloadLink.getDownloadURL());
+                continue;
+            }
+            failed = false;
             break;
         }
-        if (!br2.toString().trim().equals("1")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        if (failed) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         br.postPage(downloadLink.getDownloadURL(), "downloadLink=wait");
         // Ticket Time
         String reconTime = br.getRegex("(\\d+)").getMatch(0);
@@ -126,6 +149,7 @@ public class FileServeCom extends PluginForHost {
             tt = Integer.parseInt(reconTime);
         }
         sleep(tt * 1001, downloadLink);
+        br2.postPage(downloadLink.getDownloadURL(), "downloadLink=show");
         br.postPage(downloadLink.getDownloadURL(), "download=normal");
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
