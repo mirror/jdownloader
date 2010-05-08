@@ -83,7 +83,6 @@ public class TurboBitNet extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-
         String id = new Regex(downloadLink.getDownloadURL(), Pattern.compile(".*/(.*?)\\.html")).getMatch(0);
         br.getPage("http://turbobit.net/download/free/" + id);
         if (br.containsHTML("(Попробуйте повторить через|The limit of connection was succeeded for your|Try to repeat after)")) {
@@ -158,8 +157,7 @@ public class TurboBitNet extends PluginForHost {
         login(account);
         br.getPage(link.getDownloadURL());
         String dllink = br.getRegex("<h1><a href='(http://.*?)'><b>Download it").getMatch(0);
-        dllink = null;
-        if (dllink == null) dllink = br.getRegex("('|\")(http://www\\.turbobit\\.net//download/redirect/[a-z0-9]+/[a-z0-9]+)('|\")").getMatch(1);
+        if (dllink == null) dllink = br.getRegex("('|\")(http://www\\.turbobit\\.net//download/redirect/[a-z0-9]+/[a-z0-9]+(/[a-z0-9]+)?)('|\")").getMatch(1);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         if (!dllink.contains("turbobit.net")) dllink = "http://turbobit.net" + dllink;
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);

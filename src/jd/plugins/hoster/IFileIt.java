@@ -144,6 +144,7 @@ public class IFileIt extends PluginForHost {
         String finaldownlink = "http://ifile.it/download:dl_request?alias_id=" + downlink + "&type=na&esn=1";
         // Br2 is our xml browser now!
         Browser br2 = br.cloneBrowser();
+        br2.setReadTimeout(40 * 1000);
         xmlrequest(br2, finaldownlink);
         if (!br2.containsHTML("status\":\"ok\"")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         if (br2.containsHTML("download:captcha")) {
@@ -182,8 +183,14 @@ public class IFileIt extends PluginForHost {
             }
         }
         if (br2.containsHTML("(\"retry\":\"retry\"|\"retry\":1)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        if (br2.containsHTML("an error has occured while processing your request")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
         if (!br2.containsHTML("status\":\"ok\"")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage("http://ifile.it/dl");
+        try {
+            br.getPage("http://ifile.it/dl");
+        } catch (Exception e) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
+        }
         String dllink = br.getRegex("req_btn.*?target=\".*?\" href=\"(http.*?)\"").getMatch(0);
         if (dllink == null) {
             logger.info("first try getting dllink failed");
@@ -207,8 +214,8 @@ public class IFileIt extends PluginForHost {
         br.setFollowRedirects(false);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
             if (dl.getConnection().getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
+            br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

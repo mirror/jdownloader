@@ -61,7 +61,10 @@ public class FileRackCom extends PluginForHost {
         if (br.containsHTML("Premium member can download more than 200MB file")) throw new PluginException(LinkStatus.ERROR_FATAL, "Only Premium member can download more than 200MB file");
         if (br.containsHTML("File is deleted.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String wait = br.getRegex("Wait <span id=\"countdown\">(.*?)</span> seconds").getMatch(0);
-        if (wait == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (wait == null) {
+            logger.warning("Failed on step 1");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         int sleep = Integer.parseInt(wait);
         sleep(sleep * 1001, link);
         int retry = 0;
@@ -76,17 +79,26 @@ public class FileRackCom extends PluginForHost {
                 form[0].put("vImageCodP", captchaCode);
             }
             br.submitForm(form[0]);
+            if (br.containsHTML("p><b>There is active downloads from your")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads started");
             dllink = br.getRegex(Pattern.compile("<span id=\"btn_download2\">.*<a href=\"(.*?)\" onclick=\"disableimg\\(\\)\">", Pattern.DOTALL)).getMatch(0);
             if (dllink != null) break;
             retry++;
         } while (br.containsHTML("<b>Verification Code doesn't match </b>"));
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            logger.warning("Failed on step 2");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         br.setDebug(true);
         br.setReadTimeout(120 * 1000);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (dl.getConnection().getResponseCode() == 404) {
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            logger.warning("Failed on step 3");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.setAllowFilenameFromURL(true);
         dl.startDownload();
