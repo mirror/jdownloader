@@ -79,14 +79,17 @@ public class FreeShareRu extends PluginForHost {
         }
         freeform.put("sid", "2");
         br.submitForm(freeform);
+        String sid = br.getRegex("name=\"sid\" value=\"(.*?)\"").getMatch(0);
+        if (sid == null) {
+            logger.warning("sid equals null");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
         jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
         rc.parse();
         rc.load();
         File cf = rc.downloadCaptcha(getLocalCaptchaFile());
         String c = getCaptchaCode(cf, downloadLink);
-        String sid = br.getRegex("name=\"sid\" value=\"(.*?)\"").getMatch(0);
-        if (sid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         rc.getForm().put("sid", sid);
         rc.getForm().setAction(downloadLink.getDownloadURL());
         rc.setCode(c);
@@ -95,10 +98,14 @@ public class FreeShareRu extends PluginForHost {
         if (dllink == null) {
             dllink = br.getRegex("\"(http://frdl[0-9]+\\.free-share\\.ru/[0-9a-z]+/.*?)\"").getMatch(0);
         }
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            logger.warning("dllink equals null");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (!(dl.getConnection().isContentDisposition())) {
             br.followConnection();
+            logger.warning("dllink doesn't seem to be a file");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
