@@ -249,75 +249,87 @@ public class JDExternInterface extends PluginOptional {
                     }
 
                 } else if (namespace.equalsIgnoreCase("flash") || namespace.equalsIgnoreCase("jsonp")) {
-                    if (splitPath.length > 1 && splitPath[1].equalsIgnoreCase("add")) {
-                        askPermission(request);
-                        /* parse the post data */
-                        String urls[] = Regex.getLines(Encoding.htmlDecode(request.getParameters().get("urls")));
-                        String passwords[] = Regex.getLines(Encoding.htmlDecode(request.getParameters().get("passwords")));
-                        String source = Encoding.urlDecode(request.getParameters().get("source"), false);
-                        if (urls.length != 0) {
-                            ArrayList<DownloadLink> links = new DistributeData(Encoding.htmlDecode(request.getParameters().get("urls"))).findLinks();
-                            for (DownloadLink link : links) {
-                                link.addSourcePluginPasswords(passwords);
-                                if (source != null) link.setBrowserUrl(source);
+                    if (splitPath.length > 1) {
+                        if (splitPath[1].equalsIgnoreCase("add")) {
+                            askPermission(request);
+                            /* parse the post data */
+                            String urls[] = Regex.getLines(Encoding.htmlDecode(request.getParameters().get("urls")));
+                            String passwords[] = Regex.getLines(Encoding.htmlDecode(request.getParameters().get("passwords")));
+                            String source = Encoding.urlDecode(request.getParameters().get("source"), false);
+                            String comment = Encoding.urlDecode(request.getParameters().get("comment"), false);
+                            if (urls.length != 0) {
+                                ArrayList<DownloadLink> links = new DistributeData(Encoding.htmlDecode(request.getParameters().get("urls"))).findLinks();
+                                for (DownloadLink link : links) {
+                                    link.addSourcePluginPasswords(passwords);
+                                    if (comment != null) link.setSourcePluginComment(comment);
+                                    if (source != null) link.setBrowserUrl(source);
+                                }
+                                LinkGrabberController.getInstance().addLinks(links, false, false);
+                                new GuiRunnable<Object>() {
+
+                                    @Override
+                                    public Object runSave() {
+                                        SwingGui.getInstance().getMainFrame().toFront();
+
+                                        return null;
+                                    }
+
+                                }.waitForEDT();
+                                response.addContent(addJSONPCallback("success", request));
+                            } else {
+                                response.addContent(addJSONPCallback("failed", request));
                             }
+                        } else if (splitPath[1].equalsIgnoreCase("addcrypted")) {
+                            askPermission(request);
+                            /* parse the post data */
+                            String dlc = Encoding.htmlDecode(request.getParameters().get("crypted")).trim().replace(" ", "+");
+                            File tmp = JDUtilities.getResourceFile("tmp/jd_" + System.currentTimeMillis() + ".dlc", true);
+                            tmp.deleteOnExit();
+
+                            JDIO.saveToFile(tmp, dlc.getBytes());
+                            ArrayList<DownloadLink> links = JDUtilities.getController().getContainerLinks(tmp);
+
                             LinkGrabberController.getInstance().addLinks(links, false, false);
                             new GuiRunnable<Object>() {
-
                                 @Override
                                 public Object runSave() {
                                     SwingGui.getInstance().getMainFrame().toFront();
-
                                     return null;
                                 }
-
                             }.waitForEDT();
                             response.addContent(addJSONPCallback("success", request));
-                        } else {
-                            response.addContent(addJSONPCallback("failed", request));
-                        }
-                    } else if (splitPath.length > 1 && splitPath[1].equalsIgnoreCase("addcrypted")) {
-                        askPermission(request);
-                        /* parse the post data */
-                        String dlc = Encoding.htmlDecode(request.getParameters().get("crypted")).trim().replace(" ", "+");
-                        File tmp = JDUtilities.getResourceFile("tmp/jd_" + System.currentTimeMillis() + ".dlc", true);
-                        tmp.deleteOnExit();
+                        } else if (splitPath[1].equalsIgnoreCase("addcrypted2")) {
+                            askPermission(request);
+                            /* parse the post data */
+                            String crypted = Encoding.htmlDecode(request.getParameters().get("crypted")).trim().replace(" ", "+");
+                            String jk = Encoding.urlDecode(request.getParameters().get("jk"), false);
+                            String k = Encoding.urlDecode(request.getParameters().get("k"), false);
+                            String passwords = Encoding.urlDecode(request.getParameters().get("passwords"), false);
+                            String source = Encoding.urlDecode(request.getParameters().get("source"), false);
+                            try {
+                                decrypt(crypted, jk, k, passwords, source);
 
-                        JDIO.saveToFile(tmp, dlc.getBytes());
-                        ArrayList<DownloadLink> links = JDUtilities.getController().getContainerLinks(tmp);
+                                response.addContent(addJSONPCallback("success", request));
+                                new GuiRunnable<Object>() {
+                                    @Override
+                                    public Object runSave() {
+                                        SwingGui.getInstance().getMainFrame().toFront();
+                                        return null;
+                                    }
+                                }.waitForEDT();
+                            } catch (Exception e) {
+                                JDLogger.exception(e);
 
-                        LinkGrabberController.getInstance().addLinks(links, false, false);
-                        new GuiRunnable<Object>() {
-                            @Override
-                            public Object runSave() {
-                                SwingGui.getInstance().getMainFrame().toFront();
-                                return null;
+                                response.addContent(addJSONPCallback("failed " + e.getMessage(), request.getParameters().get("callback")));
                             }
-                        }.waitForEDT();
-                        response.addContent(addJSONPCallback("success", request));
-                    } else if (splitPath.length > 1 && splitPath[1].equalsIgnoreCase("addcrypted2")) {
-                        askPermission(request);
-                        /* parse the post data */
-                        String crypted = Encoding.htmlDecode(request.getParameters().get("crypted")).trim().replace(" ", "+");
-                        String jk = Encoding.urlDecode(request.getParameters().get("jk"), false);
-                        String k = Encoding.urlDecode(request.getParameters().get("k"), false);
-                        String passwords = Encoding.urlDecode(request.getParameters().get("passwords"), false);
-                        String source = Encoding.urlDecode(request.getParameters().get("source"), false);
-                        try {
-                            decrypt(crypted, jk, k, passwords, source);
+                        } else if (splitPath[1].equalsIgnoreCase("checkSupportForUrl")) {
 
-                            response.addContent(addJSONPCallback("success", request));
-                            new GuiRunnable<Object>() {
-                                @Override
-                                public Object runSave() {
-                                    SwingGui.getInstance().getMainFrame().toFront();
-                                    return null;
-                                }
-                            }.waitForEDT();
-                        } catch (Exception e) {
-                            JDLogger.exception(e);
-
-                            response.addContent(addJSONPCallback("failed " + e.getMessage(), request.getParameters().get("callback")));
+                            // TODO: Bugtracker Issue #1729
+                            String url = Encoding.htmlDecode(request.getParameters().get("url"));
+                            String urlSupported = new Boolean(DistributeData.hasPluginFor(url, true)).toString();
+                            response.addContent(addJSONPCallback(urlSupported, request.getParameters().get("callback")));
+                        } else {
+                            response.addContent(addJSONPCallback("unknowncommand", request.getParameters().get("callback")));
                         }
                     } else {
                         response.addContent(addJSONPCallback(JDUtilities.getJDTitle(), request.getParameters().get("callback")));

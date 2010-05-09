@@ -1,0 +1,22 @@
+{
+    "name": {
+        "message": "JDownloader Integration",
+        "description": "Extension name."
+    },
+    "description": {
+        "message": "This extension adds a JDownloader icon to the adress bar for supported sites. Click on it to start downloading!",
+        "description": "Extension description."
+    },
+    "buttonTitle": {
+        "message": "Download with JD.",
+        "description": "Shown in tooltip of the page action button."
+    },
+	"commentPrefix": {
+        "message": "Source: ",
+        "description": "Prepended to the comment of the file in JD."
+    },
+    "commentSuffix": {
+        "message": "",
+        "description": "Appended to the comment of the file in JD."
+    } 
+}

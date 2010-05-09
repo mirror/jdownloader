@@ -1,0 +1,1 @@
+coalado and scr4ve have access to the signature file needed to update the extension. 

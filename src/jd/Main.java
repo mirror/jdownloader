@@ -357,7 +357,7 @@ public class Main {
         // JDUtilities.getController().fireControlEvent(new ControlEvent(this,
         // SplashScreen.SPLASH_PROGRESS, "This is JD :)"));
         init.init();
-        LOG.info(new Date() + "");
+        LOG.info((new Date()).toString());
         LOG.info("init Configuration");
         // JDUtilities.getController().fireControlEvent(new ControlEvent(this,
         // SplashScreen.SPLASH_PROGRESS, "Once upon a time..."));
