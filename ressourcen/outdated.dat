@@ -291,3 +291,4 @@ jd/plugins/hoster/DatenKloNet.class
 jd/plugins/hoster/QshareCom.class
 jd/plugins/hoster/DualShareCom.class
 jd/plugins/hoster/PixelhitCom.class
+jd/plugins/hoster/GetTheBitCom.class
