@@ -98,20 +98,23 @@ public class JDShutdown extends PluginOptional {
                 this.setEnabled(true);
                 setType(ToolBarAction.Types.TOGGLE);
                 this.setIcon("gui.images.logout");
+                this.setActionListener(new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        if (shutdownEnabled) {
+                            UserIO.getInstance().requestMessageDialog(UserIO.DONT_SHOW_AGAIN, JDL.L("addons.jdshutdown.statusmessage.enabled", "JDownloader will shut down your System after downloads finished."));
+                        } else {
+                            UserIO.getInstance().requestMessageDialog(UserIO.DONT_SHOW_AGAIN, JDL.L("addons.jdshutdown.statusmessage.disabled", "The System will NOT be shut down by JDownloader."));
+                        }
+                    }
+                });
                 this.addPropertyChangeListener(new PropertyChangeListener() {
                     public void propertyChange(PropertyChangeEvent evt) {
                         if (evt.getPropertyName() == SELECTED_KEY) {
                             shutdownEnabled = isSelected();
-                            if (shutdownEnabled) {
-                                UserIO.getInstance().requestMessageDialog(UserIO.DONT_SHOW_AGAIN, JDL.L("addons.jdshutdown.statusmessage.enabled", "JDownloader will shut down your System after downloads finished."));
-                            } else {
-                                UserIO.getInstance().requestMessageDialog(UserIO.DONT_SHOW_AGAIN, JDL.L("addons.jdshutdown.statusmessage.disabled", "The System will NOT be shut down by JDownloader."));
-                            }
                         }
                     }
                 });
             }
-
         };
         menuAction.setSelected(shutdownEnabled);
         logger.info("Shutdown OK");
