@@ -28,7 +28,6 @@ import jd.JDInit;
 import jd.Main;
 import jd.OptionalPluginWrapper;
 import jd.config.SubConfiguration;
-import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.event.ControlEvent;
 import jd.gui.UserIO;
@@ -189,7 +188,6 @@ public abstract class TestUtils {
 
         jdi = new JDInit();
         jdi.init();
-        JDUtilities.setController(JDController.getInstance());
         if (jdi.loadConfiguration() == null) {
             UserIO.getInstance().requestMessageDialog("JDownloader cannot create the config files. Make sure, that JD_HOME/config/ exists and is writeable");
         }

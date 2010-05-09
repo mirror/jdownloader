@@ -99,11 +99,6 @@ public class JDUtilities {
     private static HashMap<String, PluginsC> CONTAINER_PLUGINS = new HashMap<String, PluginsC>();
 
     /**
-     * Der DownloadController
-     */
-    private static JDController CONTROLLER = null;
-
-    /**
      * Ein URLClassLoader, um Dateien aus dem HomeVerzeichnis zu holen
      */
     private static JDClassLoader JD_CLASSLOADER = null;
@@ -286,7 +281,7 @@ public class JDUtilities {
      * @return gerade verwendete CONTROLLER-instanz
      */
     public static JDController getController() {
-        return CONTROLLER;
+        return JDController.getInstance();
     }
 
     public static long getCRC(final File file) {
@@ -703,16 +698,6 @@ public class JDUtilities {
      */
     public static void setConfiguration(final Configuration configuration) {
         JDUtilities.CONFIGURATION = configuration;
-    }
-
-    /**
-     * Setzt den Controller
-     * 
-     * @param con
-     *            CONTROLLER
-     */
-    public static void setController(final JDController con) {
-        CONTROLLER = con;
     }
 
     public static DownloadController getDownloadController() {

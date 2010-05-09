@@ -19,7 +19,6 @@ package jd.controlling;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
@@ -44,12 +43,10 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 /**
- * Im Controller wird das ganze App gesteuert. Evebnts werden deligiert.
+ * Im JDController wird das ganze App gesteuert. Events werden deligiert.
  * 
  * @author JD-Team/astaldo
- * 
  */
-
 public class JDController implements ControlListener {
 
     public static JDController getInstance() {
@@ -181,9 +178,11 @@ public class JDController implements ControlListener {
 
     private static final Object SHUTDOWNLOCK = new Object();
 
-    public JDController() {
+    /**
+     * Private constructor. Use singleton method instead!
+     */
+    private JDController() {
         eventSender = getEventSender();
-        JDUtilities.setController(this);
     }
 
     /**
@@ -243,8 +242,7 @@ public class JDController implements ControlListener {
         case ControlEvent.CONTROL_PLUGIN_INACTIVE:
             // Nur Hostpluginevents auswerten
             if (!(event.getSource() instanceof PluginForHost)) return;
-            DownloadLink lastDownloadFinished;
-            lastDownloadFinished = ((SingleDownloadController) event.getParameter()).getDownloadLink();
+            DownloadLink lastDownloadFinished = ((SingleDownloadController) event.getParameter()).getDownloadLink();
 
             // Prüfen ob das Paket fertig ist und entfernt werden soll
             if (lastDownloadFinished.getFilePackage().getRemainingLinks() == 0) {
@@ -392,7 +390,7 @@ public class JDController implements ControlListener {
         }
     }
 
-    /*
+    /**
      * verzögert den exit, sofern delayExit requests vorliegen, max 10 seks
      */
     private void waitDelayExit() {
@@ -494,9 +492,7 @@ public class JDController implements ControlListener {
 
     public static boolean isContainerFile(File file) {
         ArrayList<CPluginWrapper> pluginsForContainer = CPluginWrapper.getCWrapper();
-        CPluginWrapper pContainer;
-        for (int i = 0; i < pluginsForContainer.size(); i++) {
-            pContainer = pluginsForContainer.get(i);
+        for (CPluginWrapper pContainer : pluginsForContainer) {
             if (pContainer.canHandle(file.getName())) return true;
         }
         return false;
@@ -506,11 +502,9 @@ public class JDController implements ControlListener {
         ArrayList<CPluginWrapper> pluginsForContainer = CPluginWrapper.getCWrapper();
         ArrayList<DownloadLink> downloadLinks = new ArrayList<DownloadLink>();
         PluginsC pContainer;
-        CPluginWrapper wrapper;
         ProgressController progress = new ProgressController("Containerloader", pluginsForContainer.size(), null);
         logger.info("load Container: " + file);
-        for (int i = 0; i < pluginsForContainer.size(); i++) {
-            wrapper = pluginsForContainer.get(i);
+        for (CPluginWrapper wrapper : pluginsForContainer) {
             progress.setStatusText("Containerplugin: " + wrapper.getHost());
             if (wrapper.canHandle(file.getName())) {
                 // es muss jeweils eine neue plugininstanz erzeugt
@@ -567,11 +561,9 @@ public class JDController implements ControlListener {
             public void run() {
                 ArrayList<CPluginWrapper> pluginsForContainer = CPluginWrapper.getCWrapper();
                 ArrayList<DownloadLink> downloadLinks = new ArrayList<DownloadLink>();
-                CPluginWrapper wrapper;
                 ProgressController progress = new ProgressController("Containerloader", pluginsForContainer.size(), null);
                 logger.info("load Container: " + file);
-                for (int i = 0; i < pluginsForContainer.size(); i++) {
-                    wrapper = pluginsForContainer.get(i);
+                for (CPluginWrapper wrapper : pluginsForContainer) {
                     progress.setStatusText("Containerplugin: " + wrapper.getHost());
                     if (wrapper.canHandle(file.getName())) {
                         // es muss jeweils eine neue plugininstanz erzeugt
@@ -626,12 +618,13 @@ public class JDController implements ControlListener {
         if (cipher != null) {
             SubConfiguration cfg = SubConfiguration.getConfig("DLCrypt");
             JDIO.writeLocalFile(file, cipher);
-            if (cfg.getBooleanProperty("SHOW_INFO_AFTER_CREATE", false))
-            // Nur Falls Die Meldung nicht deaktiviert wurde {
+            if (cfg.getBooleanProperty("SHOW_INFO_AFTER_CREATE", false)) {
+                // Nur Falls Die Meldung nicht deaktiviert wurde {
                 if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN, JDL.L("sys.dlc.success", "DLC encryption successfull. Run Testdecrypt now?")), UserIO.RETURN_OK)) {
                     loadContainerFile(file);
                     return;
                 }
+            }
             return;
         }
         logger.severe("Container creation failed");
@@ -648,11 +641,8 @@ public class JDController implements ControlListener {
         ArrayList<DownloadLink> al = new ArrayList<DownloadLink>();
         ArrayList<FilePackage> packages = JDUtilities.getDownloadController().getPackages();
         synchronized (packages) {
-            DownloadLink nextDownloadLink;
             for (FilePackage fp : packages) {
-                Iterator<DownloadLink> it2 = fp.getDownloadLinkList().iterator();
-                while (it2.hasNext()) {
-                    nextDownloadLink = it2.next();
+                for (DownloadLink nextDownloadLink : fp.getDownloadLinkList()) {
                     if (nextDownloadLink.getPlugin().getClass() == pluginForHost.getClass()) al.add(nextDownloadLink);
                 }
             }
@@ -663,10 +653,9 @@ public class JDController implements ControlListener {
     public synchronized void autostartDownloadsonStartup() {
         if (alreadyAutostart == true) return;
         alreadyAutostart = true;
-        new Thread() {
+        new Thread("Autostart counter") {
             @Override
             public void run() {
-                this.setName("Autostart counter");
                 final ProgressController pc = new ProgressController(JDL.L("gui.autostart", "Autostart downloads in few seconds..."), null);
                 pc.getBroadcaster().addListener(new ProgressControllerListener() {
                     public void onProgressControllerEvent(ProgressControllerEvent event) {
@@ -686,15 +675,16 @@ public class JDController implements ControlListener {
         }.start();
     }
 
-    public DownloadLink getDownloadLinkByFileOutput(File file, Integer Linkstatus) {
+    public DownloadLink getDownloadLinkByFileOutput(File file, Integer linkstatus) {
         ArrayList<DownloadLink> links = JDUtilities.getDownloadController().getAllDownloadLinks();
         try {
             for (DownloadLink nextDownloadLink : links) {
                 if (new File(nextDownloadLink.getFileOutput()).getAbsoluteFile().equals(file.getAbsoluteFile())) {
-                    if (Linkstatus != null) {
-                        if (nextDownloadLink.getLinkStatus().hasStatus(Linkstatus)) return nextDownloadLink;
-                    } else
+                    if (linkstatus != null) {
+                        if (nextDownloadLink.getLinkStatus().hasStatus(linkstatus)) return nextDownloadLink;
+                    } else {
                         return nextDownloadLink;
+                    }
                 }
             }
         } catch (Exception e) {
@@ -707,19 +697,12 @@ public class JDController implements ControlListener {
         ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         ArrayList<FilePackage> packages = JDUtilities.getDownloadController().getPackages();
         try {
-            Iterator<FilePackage> iterator = packages.iterator();
-            FilePackage fp = null;
-            DownloadLink nextDownloadLink;
-            while (iterator.hasNext()) {
-                fp = iterator.next();
-                Iterator<DownloadLink> it2 = fp.getDownloadLinkList().iterator();
-                while (it2.hasNext()) {
-                    nextDownloadLink = it2.next();
+            for (FilePackage fp : packages) {
+                for (DownloadLink nextDownloadLink : fp.getDownloadLinkList()) {
                     String name = new File(nextDownloadLink.getFileOutput()).getName();
                     if (new Regex(name, matcher, Pattern.CASE_INSENSITIVE).matches()) {
                         ret.add(nextDownloadLink);
                     }
-
                 }
             }
             return ret;
@@ -733,19 +716,12 @@ public class JDController implements ControlListener {
         ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         ArrayList<FilePackage> packages = JDUtilities.getDownloadController().getPackages();
         try {
-            Iterator<FilePackage> iterator = packages.iterator();
-            FilePackage fp = null;
-            DownloadLink nextDownloadLink;
-            while (iterator.hasNext()) {
-                fp = iterator.next();
-                Iterator<DownloadLink> it2 = fp.getDownloadLinkList().iterator();
-                while (it2.hasNext()) {
-                    nextDownloadLink = it2.next();
+            for (FilePackage fp : packages) {
+                for (DownloadLink nextDownloadLink : fp.getDownloadLinkList()) {
                     String path = nextDownloadLink.getFileOutput();
                     if (new Regex(path, matcher, Pattern.CASE_INSENSITIVE).matches()) {
                         ret.add(nextDownloadLink);
                     }
-
                 }
             }
             return ret;
