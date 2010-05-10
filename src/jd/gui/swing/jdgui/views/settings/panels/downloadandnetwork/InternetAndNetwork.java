@@ -57,13 +57,11 @@ public class InternetAndNetwork extends ConfigPanel {
 
         network.setGroup(new ConfigGroup(JDL.L("gui.config.download.timeout", "Timeout & Connection loss"), "gui.images.networkerror"));
 
-        network.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, Configuration.PARAM_DOWNLOAD_READ_TIMEOUT, JDL.L("gui.config.download.timeout.read", "Read Timeout (ms)"), 20000, 120000));
+        network.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, Configuration.PARAM_DOWNLOAD_READ_TIMEOUT, JDL.L("gui.config.download.timeout.read", "Read Timeout (ms)"), 20000, 120000, 500));
         ce.setDefaultValue(100000);
-        ce.setStep(500);
 
-        network.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, Configuration.PARAM_DOWNLOAD_CONNECT_TIMEOUT, JDL.L("gui.config.download.timeout.connect", "Connect Timeout (Request) (ms)"), 20000, 120000));
+        network.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, Configuration.PARAM_DOWNLOAD_CONNECT_TIMEOUT, JDL.L("gui.config.download.timeout.connect", "Connect Timeout (Request) (ms)"), 20000, 120000, 500));
         ce.setDefaultValue(100000);
-        ce.setStep(500);
 
         network.setGroup(new ConfigGroup(JDL.L("gui.config.download.proxy", "Proxy Settings"), "gui.images.proxy"));
         network.addEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, Configuration.USE_PROXY, JDL.L("gui.config.download.use_proxy", "Use proxy") + " (" + JDL.L("gui.warning.restartneeded", "JD-Restart needed after changes!") + ")"));
@@ -74,7 +72,7 @@ public class InternetAndNetwork extends ConfigPanel {
         ce.setDefaultValue("");
         ce.setEnabledCondidtion(conditionEntry, true);
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
-        network.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, Configuration.PROXY_PORT, JDL.L("gui.config.download.proxy.port", "Port"), 1, 65535));
+        network.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, Configuration.PROXY_PORT, JDL.L("gui.config.download.proxy.port", "Port"), 1, 65535, 1));
         ce.setDefaultValue(8080);
         ce.setEnabledCondidtion(conditionEntry, true);
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
@@ -105,7 +103,7 @@ public class InternetAndNetwork extends ConfigPanel {
         ce.setDefaultValue("");
         ce.setEnabledCondidtion(conditionEntry, true);
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
-        network.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, Configuration.SOCKS_PORT, JDL.L("gui.config.download.socks.port", "Port"), 1, 65535));
+        network.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, Configuration.SOCKS_PORT, JDL.L("gui.config.download.socks.port", "Port"), 1, 65535, 1));
         ce.setDefaultValue(1080);
         ce.setEnabledCondidtion(conditionEntry, true);
         ce.setPropertyType(PropertyType.NEEDS_RESTART);

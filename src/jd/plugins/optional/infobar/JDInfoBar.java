@@ -40,7 +40,7 @@ public class JDInfoBar extends PluginOptional {
     private void initConfigEntries() {
         config.setGroup(new ConfigGroup(getHost(), getIconKey()));
         if (JDUtilities.getJavaVersion() >= 1.6) {
-            ConfigEntry ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), PROPERTY_OPACITY, JDL.L(JDL_PREFIX + "opacity", "Opacity of the Dialog [in %]"), 1, 100) {
+            ConfigEntry ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), PROPERTY_OPACITY, JDL.L(JDL_PREFIX + "opacity", "Opacity of the Dialog [in %]"), 1, 100, 10) {
                 private static final long serialVersionUID = 1L;
 
                 @Override
@@ -50,7 +50,6 @@ public class JDInfoBar extends PluginOptional {
                 }
             };
             ce.setDefaultValue(100);
-            ce.setStep(10);
             config.addEntry(ce);
             config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         }

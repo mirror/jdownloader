@@ -88,7 +88,7 @@ public class General extends ConfigPanel {
         }
 
         look.setGroup(new ConfigGroup(JDL.L("gui.config.gui.feel", "Feel"), "gui.images.configuration"));
-        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, JDGuiConstants.PARAM_INPUTTIMEOUT, JDL.L("gui.config.gui.inputtimeout", "Timeout for InputWindows"), 0, 600));
+        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, JDGuiConstants.PARAM_INPUTTIMEOUT, JDL.L("gui.config.gui.inputtimeout", "Timeout for InputWindows"), 0, 600, 5));
         ce.setDefaultValue(20);
         look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDGuiConstants.PARAM_SHOW_SPLASH, JDL.L("gui.config.gui.showsplash", "Show splash screen on program startup")));
         ce.setDefaultValue(true);
@@ -110,7 +110,7 @@ public class General extends ConfigPanel {
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
 
         look.setGroup(new ConfigGroup(JDL.L("gui.config.gui.barrierfree", "Barrier-Free"), "gui.images.barrierfree"));
-        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, JDGuiConstants.PARAM_GENERAL_FONT_SIZE, JDL.L("gui.config.gui.font size", "Font Size [%]"), 10, 200).setDefaultValue(100));
+        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, JDGuiConstants.PARAM_GENERAL_FONT_SIZE, JDL.L("gui.config.gui.font size", "Font Size [%]"), 10, 200, 10).setDefaultValue(100));
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
 
         return look;

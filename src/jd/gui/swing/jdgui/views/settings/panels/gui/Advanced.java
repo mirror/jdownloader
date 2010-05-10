@@ -70,7 +70,7 @@ public class Advanced extends ConfigPanel {
         container.addEntry(cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDGuiConstants.PARAM_SHOW_SPEEDMETER, JDL.L("gui.config.gui.show_speed_graph", "Display speedmeter graph")));
         cond.setDefaultValue(true);
 
-        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, JDGuiConstants.PARAM_SHOW_SPEEDMETER_WINDOWSIZE, JDL.L("gui.config.gui.show_speed_graph_window", "Speedmeter Time period (sec)"), 10, 60 * 60 * 12));
+        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, JDGuiConstants.PARAM_SHOW_SPEEDMETER_WINDOWSIZE, JDL.L("gui.config.gui.show_speed_graph_window", "Speedmeter Time period (sec)"), 10, 60 * 60 * 12, 10));
         ce.setDefaultValue(60);
         ce.setEnabledCondidtion(cond, true);
 

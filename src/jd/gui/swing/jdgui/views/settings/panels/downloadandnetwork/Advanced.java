@@ -98,7 +98,7 @@ public class Advanced extends ConfigPanel {
         ce.setDefaultValue("\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).)" + "{3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b");
         ce.setEnabledCondidtion(conditionEntry2, false);
 
-        extended.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, "EXTERNAL_IP_CHECK_INTERVAL2", JDL.L("gui.config.download.ipcheck.externalinterval2", "External IP Check Interval [min]"), 10, 240));
+        extended.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, "EXTERNAL_IP_CHECK_INTERVAL2", JDL.L("gui.config.download.ipcheck.externalinterval2", "External IP Check Interval [min]"), 10, 240, 10));
         ce.setDefaultValue(10);
         ce.setEnabledCondidtion(conditionEntry2, false);
 
@@ -108,8 +108,7 @@ public class Advanced extends ConfigPanel {
 
         ce.setDefaultValue(true);
 
-        extended.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, ByteBufferController.MAXBUFFERSIZE, JDL.L("gui.config.download.buffersize2", "Max. Buffersize[KB]"), 500, 2000));
-        ce.setStep(100);
+        extended.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, ByteBufferController.MAXBUFFERSIZE, JDL.L("gui.config.download.buffersize2", "Max. Buffersize[KB]"), 500, 2000, 100));
         ce.setDefaultValue(500);
         return extended;
     }

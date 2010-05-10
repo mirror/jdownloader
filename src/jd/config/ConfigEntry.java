@@ -22,13 +22,13 @@ import java.beans.PropertyChangeListener;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Vector;
 
 import javax.swing.ImageIcon;
 
 import jd.controlling.ListController;
 
 public class ConfigEntry implements Serializable {
+
     public static enum PropertyType {
         NONE, NORMAL, NEEDS_RESTART;
 
@@ -47,42 +47,60 @@ public class ConfigEntry implements Serializable {
             return getMax(propertyType, this);
         }
 
-        public String toString() {
-            return this.name();
-        }
     }
 
-    /**
-     * serialVersionUID
-     */
     private static final long serialVersionUID = 7422046260361380162L;
-    private ActionListener actionListener;
-    private boolean changes;
+
+    /**
+     * Generelle Variablen
+     */
+    private int type;
+    private ConfigGroup group;
+    private String label;
+    private Object defaultValue;
+    private String helptags = null;
+    private boolean enabled = true;
+    private Property propertyInstance = null;
+    private String propertyName = null;
+    private PropertyType propertyType = PropertyType.NORMAL;
+    private PropertyChangeListener guiListener;
+
+    /**
+     * Variablen für den Vergleich mit einem anderen ConfigEntry.
+     */
     private ConfigEntry conditionEntry;
     private Boolean compareValue;
-    private transient ListController controller;
-    private Object defaultValue;
+    private ConfigEntry listener = null;
+
+    /**
+     * Variablen für einen Button-Eintrag.
+     */
     private String description;
-    private boolean enabled = true;
-    private int end;
-    private ConfigGroup group;
-    private PropertyChangeListener guiListener;
-    private String helptags = null;
+    private ActionListener actionListener;
     private ImageIcon imageIcon;
-    private String label;
+
+    /**
+     * Variablen für einen ListController-Eintrag.
+     */
+    private transient ListController controller;
+
+    /**
+     * Variablen für einen ComboBox- oder RadioField-Eintrag.
+     */
     private Object[] list;
-    private Vector<ConfigEntry> listener = new Vector<ConfigEntry>();
-    private Property propertyInstance;
-    private String propertyName;
-    private PropertyType propertyType = PropertyType.NORMAL;
+
+    /**
+     * Variablen für einen Spinner-Eintrag.
+     */
     private int start;
+    private int end;
     private int step = 1;
-    private int type;
 
     /**
      * Konstruktor für Komponenten die nix brauchen. z.B. JSeparator
      * 
      * @param type
+     * @see ConfigContainer#TYPE_SEPARATOR
      */
     public ConfigEntry(int type) {
         this.type = type;
@@ -98,6 +116,7 @@ public class ConfigEntry implements Serializable {
      *            unterstützt
      * @param label
      *            Label für die Komponente
+     * @see ConfigContainer#TYPE_BUTTON
      */
     public ConfigEntry(int type, ActionListener actionListener, String label, String description, ImageIcon icon) {
         this.type = type;
@@ -105,15 +124,15 @@ public class ConfigEntry implements Serializable {
         this.label = label;
         this.description = description;
         this.imageIcon = icon;
-        this.enabled = true;
     }
 
+    /**
+     * @see ConfigContainer#TYPE_LISTCONTROLLED
+     */
     public ConfigEntry(int type, ListController controller, String label) {
         this.type = type;
         this.controller = controller;
         this.label = label;
-        this.propertyName = null;
-        this.enabled = true;
     }
 
     /**
@@ -122,7 +141,7 @@ public class ConfigEntry implements Serializable {
      * 
      * @param type
      * @param propertyInstance
-     *            EINE INstanz die von der propertyklasse abgeleitet wurde. mit
+     *            EINE Instanz die von der propertyklasse abgeleitet wurde. mit
      *            hilfe von propertyName werden Informationen aus ihr gelesen
      *            und wieder in ihr abgelegt
      * @param propertyName
@@ -131,6 +150,9 @@ public class ConfigEntry implements Serializable {
      * @param list
      *            Liste mit allen werten aus denen ausgewählt werden kann
      * @param label
+     * @see ConfigContainer#TYPE_COMBOBOX
+     * @see ConfigContainer#TYPE_COMBOBOX_INDEX
+     * @see ConfigContainer#TYPE_RADIOFIELD
      */
     public ConfigEntry(int type, Property propertyInstance, String propertyName, Object[] list, String label) {
         this.type = type;
@@ -154,21 +176,26 @@ public class ConfigEntry implements Serializable {
      *            zugegriffen wird
      * @param label
      *            angezeigtes label
+     * @see ConfigContainer#TYPE_BROWSEFILE
+     * @see ConfigContainer#TYPE_BROWSEFOLDER
+     * @see ConfigContainer#TYPE_PASSWORDFIELD
+     * @see ConfigContainer#TYPE_TEXTAREA
+     * @see ConfigContainer#TYPE_TEXTFIELD
      */
     public ConfigEntry(int type, Property propertyInstance, String propertyName, String label) {
         this.type = type;
         this.propertyInstance = propertyInstance;
         this.propertyName = propertyName;
         this.label = label;
-        this.enabled = true;
     }
 
     /**
-     * Konstruktor z.B. für einen JSpinner (property, label, range (start/end)
+     * Konstruktor z.B. für einen JSpinner (property, label, range (start/end),
+     * step)
      * 
      * @param type
      * @param propertyInstance
-     *            EINE INstanz die von der propertyklasse abgeleitet wurde. mit
+     *            EINE Instanz die von der propertyklasse abgeleitet wurde. mit
      *            hilfe von propertyName werden Informationen aus ihr gelesen
      *            und wieder in ihr abgelegt
      * @param propertyName
@@ -176,17 +203,42 @@ public class ConfigEntry implements Serializable {
      *            zugegriffen wird
      * @param label
      * @param start
-     *            Range-start
+     *            Range-Start
      * @param end
-     *            range-ende
+     *            Range-Ende
+     * @param step
+     *            Schrittweite
+     * @see ConfigContainer#TYPE_SPINNER
      */
-    public ConfigEntry(int type, Property propertyInstance, String propertyName, String label, int start, int end) {
+    public ConfigEntry(int type, Property propertyInstance, String propertyName, String label, int start, int end, int step) {
         this.type = type;
         this.propertyInstance = propertyInstance;
         this.propertyName = propertyName;
         this.label = label;
         this.start = start;
         this.end = end;
+        this.step = step;
+    }
+
+    /**
+     * @deprecated Use
+     *             {@link ConfigEntry#ConfigEntry(int, Property, String, String, int, int, int)}
+     *             instead.
+     */
+    @Deprecated
+    public ConfigEntry(int type, Property propertyInstance, String propertyName, String label, int start, int end) {
+        this(type, propertyInstance, propertyName, label, start, end, 1);
+    }
+
+    /**
+     * @deprecated Use
+     *             {@link ConfigEntry#ConfigEntry(int, Property, String, String, int, int, int)}
+     *             instead.
+     */
+    @Deprecated
+    public ConfigEntry setStep(int step) {
+        this.step = step;
+        return this;
     }
 
     /**
@@ -194,17 +246,11 @@ public class ConfigEntry implements Serializable {
      * 
      * @param type
      * @param label
+     * @see ConfigContainer#TYPE_LABEL
      */
     public ConfigEntry(int type, String label) {
         this.type = type;
         this.label = label;
-        this.enabled = true;
-    }
-
-    public void addListener(ConfigEntry configEntry) {
-        if (configEntry != null) {
-            listener.add(configEntry);
-        }
     }
 
     public ActionListener getActionListener() {
@@ -262,10 +308,6 @@ public class ConfigEntry implements Serializable {
         return controller;
     }
 
-    public Vector<ConfigEntry> getListener() {
-        return listener;
-    }
-
     public Property getPropertyInstance() {
         return propertyInstance;
     }
@@ -295,11 +337,6 @@ public class ConfigEntry implements Serializable {
         return type;
     }
 
-    /** return if this configentry got changed and has to be saved */
-    public boolean hasChanges() {
-        return changes;
-    }
-
     public boolean isConditionalEnabled(PropertyChangeEvent evt) {
         if (evt.getSource() == conditionEntry) return compareValue.equals((Boolean) evt.getNewValue());
         return true;
@@ -307,16 +344,6 @@ public class ConfigEntry implements Serializable {
 
     public boolean isEnabled() {
         return enabled;
-    }
-
-    public ConfigEntry setActionListener(ActionListener actionListener) {
-        this.actionListener = actionListener;
-        return this;
-    }
-
-    /** Gets set if this config entry has changes */
-    public void setChanges(boolean b) {
-        changes = b;
     }
 
     /**
@@ -328,69 +355,37 @@ public class ConfigEntry implements Serializable {
      *         ConfigEntry(...).setdefaultValue(...).setStep(...).setBla...
      *         möglich
      */
-    public ConfigEntry setDefaultValue(Object value) {
-        defaultValue = value;
+    public ConfigEntry setDefaultValue(Object defaultValue) {
+        this.defaultValue = defaultValue;
         return this;
     }
 
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public ConfigEntry setEnabled(boolean value) {
-        enabled = value;
+    public ConfigEntry setEnabled(boolean enabled) {
+        this.enabled = enabled;
         return this;
     }
 
     public ConfigEntry setEnabledCondidtion(ConfigEntry conditionEntry, boolean compareValue) {
-        if (conditionEntry.getType() != ConfigContainer.TYPE_CHECKBOX) new Exception("Only checkbox-configentries are allowed").printStackTrace();
         this.conditionEntry = conditionEntry;
         this.compareValue = compareValue;
-        conditionEntry.addListener(this);
+        conditionEntry.setListener(this);
         return this;
     }
 
-    public ConfigEntry setEnd(int end) {
-        this.end = end;
-        return this;
+    public void setListener(ConfigEntry listener) {
+        this.listener = listener;
     }
 
-    public ConfigEntry setGroup(ConfigGroup cg) {
-        this.group = cg;
-        return this;
+    public void setGroup(ConfigGroup group) {
+        this.group = group;
     }
 
     public void setGuiListener(PropertyChangeListener gce) {
-        if (guiListener == null) {
-            guiListener = gce;
-        }
+        if (guiListener == null) guiListener = gce;
     }
 
-    public void setHelptags(String helptags) {
+    public ConfigEntry setHelptags(String helptags) {
         this.helptags = helptags;
-    }
-
-    public void setImageIcon(ImageIcon imageIcon) {
-        this.imageIcon = imageIcon;
-    }
-
-    public ConfigEntry setLabel(String label) {
-        this.label = label;
-        return this;
-    }
-
-    public ConfigEntry setList(Object[] list) {
-        this.list = list;
-        return this;
-    }
-
-    public ConfigEntry setPropertyInstance(Property propertyInstance) {
-        this.propertyInstance = propertyInstance;
-        return this;
-    }
-
-    public ConfigEntry setPropertyName(String propertyName) {
-        this.propertyName = propertyName;
         return this;
     }
 
@@ -405,36 +400,9 @@ public class ConfigEntry implements Serializable {
         return this;
     }
 
-    public ConfigEntry setStart(int start) {
-        this.start = start;
-        return this;
-    }
-
-    /**
-     * Setzt die Schrittbreite für alle Komponenten die mit Schritten arbeiten.
-     * z.B. JSpiner
-     * 
-     * @param step
-     * @return this. damit ist eine Struktur new
-     *         ConfigEntry(...).setdefaultValue(...).setStep(...).setBla...
-     *         möglich
-     * 
-     */
-    public ConfigEntry setStep(int step) {
-        this.step = step;
-        return this;
-    }
-
-    public ConfigEntry setType(int type) {
-        this.type = type;
-        return this;
-    }
-
     public void valueChanged(Object newValue) {
-        for (ConfigEntry next : listener) {
-            if (next.getGuiListener() != null) {
-                next.getGuiListener().propertyChange(new PropertyChangeEvent(this, getPropertyName(), null, newValue));
-            }
+        if (listener != null && listener.getGuiListener() != null) {
+            listener.getGuiListener().propertyChange(new PropertyChangeEvent(this, getPropertyName(), null, newValue));
         }
     }
 

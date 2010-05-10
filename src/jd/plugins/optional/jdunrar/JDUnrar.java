@@ -636,7 +636,7 @@ public class JDUnrar extends PluginOptional implements UnrarListener, ActionList
         config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, JDUnrarConstants.CONFIG_KEY_SUBPATH, JDL.L("gui.config.unrar.subpath", "Subpath")));
         ce.setDefaultValue("%PACKAGENAME%");
         ce.setEnabledCondidtion(conditionEntry, true);
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, JDUnrarConstants.CONFIG_KEY_SUBPATH_MINNUM, JDL.L("gui.config.unrar.subpath_minnum", "Only use subpath if archive contains more than x files"), 0, 600).setDefaultValue(0));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, JDUnrarConstants.CONFIG_KEY_SUBPATH_MINNUM, JDL.L("gui.config.unrar.subpath_minnum", "Only use subpath if archive contains more than x files"), 0, 600, 5).setDefaultValue(0));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDUnrarConstants.CONFIG_KEY_ASK_UNKNOWN_PASS, JDL.L("gui.config.unrar.ask_path", "Ask for unknown passwords?")).setDefaultValue(true));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDUnrarConstants.CONFIG_KEY_DEEP_EXTRACT, JDL.L("gui.config.unrar.deep_extract", "Deep-Extraction")).setDefaultValue(true));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDUnrarConstants.CONFIG_KEY_REMOVE_INFO_FILE, JDL.L("gui.config.unrar.remove_infofile", "Delete Infofile after extraction")).setDefaultValue(false));

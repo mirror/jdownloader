@@ -182,9 +182,6 @@ public class ConfigPanel extends SwitchPanel {
         synchronized (entries) {
             for (GUIConfigEntry akt : entries) {
                 if (akt.getConfigEntry().getPropertyInstance() != null && akt.getConfigEntry().getPropertyName() != null) {
-                    if (akt.getConfigEntry().hasChanges()) {
-                        ret = ret.getMax(PropertyType.NORMAL);
-                    }
                     old = akt.getConfigEntry().getPropertyInstance().getProperty(akt.getConfigEntry().getPropertyName());
                     if (old == null && akt.getText() != null) {
                         ret = ret.getMax(akt.getConfigEntry().getPropertyType());

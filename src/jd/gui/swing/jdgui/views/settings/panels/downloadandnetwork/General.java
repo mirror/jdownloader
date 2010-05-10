@@ -73,9 +73,8 @@ public class General extends ConfigPanel {
 
         container.setGroup(new ConfigGroup(JDL.L("gui.config.download.download.tab", "Download Control"), "gui.images.downloadorder"));
 
-        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN_PER_HOST, JDL.L("gui.config.download.simultan_downloads_per_host", "Maximum of simultaneous downloads per host (0 = no limit)"), 0, 20));
+        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN_PER_HOST, JDL.L("gui.config.download.simultan_downloads_per_host", "Maximum of simultaneous downloads per host (0 = no limit)"), 0, 20, 1));
         ce.setDefaultValue(0);
-        ce.setStep(1);
 
         String[] removeDownloads = new String[] { JDL.L("gui.config.general.toDoWithDownloads.immediate", "immediately"), JDL.L("gui.config.general.toDoWithDownloads.atstart", "at startup"), JDL.L("gui.config.general.toDoWithDownloads.packageready", "when package is ready"), JDL.L("gui.config.general.toDoWithDownloads.never", "never") };
         container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, JDUtilities.getConfiguration(), Configuration.PARAM_FINISHED_DOWNLOADS_ACTION, removeDownloads, JDL.L("gui.config.general.todowithdownloads", "Remove finished downloads ...")));
@@ -92,9 +91,8 @@ public class General extends ConfigPanel {
 
         container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, SubConfiguration.getConfig("DOWNLOAD"), "PARAM_DOWNLOAD_PREFER_RECONNECT", JDL.L("gui.config.download.preferreconnect", "Do not start new links if reconnect requested")).setDefaultValue(true));
 
-        container.addEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_SPINNER, SubConfiguration.getConfig("DOWNLOAD"), Configuration.PARAM_DOWNLOAD_PAUSE_SPEED, JDL.L("gui.config.download.pausespeed", "Speed of pause in kb/s"), 10, 500));
+        container.addEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_SPINNER, SubConfiguration.getConfig("DOWNLOAD"), Configuration.PARAM_DOWNLOAD_PAUSE_SPEED, JDL.L("gui.config.download.pausespeed", "Speed of pause in kb/s"), 10, 500, 10));
         conditionEntry.setDefaultValue(10);
-        conditionEntry.setStep(10);
 
         return container;
     }

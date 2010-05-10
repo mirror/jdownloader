@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import javax.swing.ImageIcon;
 
 import jd.controlling.ListController;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 /**
@@ -92,7 +91,8 @@ public class ConfigContainer implements Serializable {
     /**
      * ConfigElement ist eine Zahlenkomponente (Spinner)
      * 
-     * @see ConfigEntry#ConfigEntry(int, Property, String, String, int, int)
+     * @see ConfigEntry#ConfigEntry(int, Property, String, String, int, int,
+     *      int)
      */
     public static final int TYPE_SPINNER = 8;
     /**
@@ -130,7 +130,6 @@ public class ConfigContainer implements Serializable {
     public static final int TYPE_COMBOBOX_INDEX = 15;
 
     private ArrayList<ConfigEntry> content;
-    private Property propertyInstance;
     private String title;
     private ConfigGroup group;
     private ImageIcon icon;
@@ -141,8 +140,7 @@ public class ConfigContainer implements Serializable {
 
     public ConfigContainer(String title) {
         this.title = title;
-        propertyInstance = JDUtilities.getConfiguration();
-        content = new ArrayList<ConfigEntry>();
+        this.content = new ArrayList<ConfigEntry>();
     }
 
     /**
@@ -154,9 +152,6 @@ public class ConfigContainer implements Serializable {
     public void addEntry(ConfigEntry entry) {
         if (entry.getGroup() == null) entry.setGroup(group);
 
-        if (entry.getPropertyInstance() == null) {
-            entry.setPropertyInstance(propertyInstance);
-        }
         content.add(entry);
     }
 
@@ -169,29 +164,8 @@ public class ConfigContainer implements Serializable {
         return content;
     }
 
-    /**
-     * Gibt die Propertyinstanz zurück die dieser container zum speichern
-     * verwendet(Es werden nur die einstellungen überdeckt bei denen die
-     * propertyinstanz bei den COnfigEntries null ist Default ist die
-     * CONFIGURATION
-     * 
-     * @return
-     */
-    public Property getPropertyInstance() {
-        return propertyInstance;
-    }
-
     public String getTitle() {
         return title;
-    }
-
-    /**
-     * Setzt die Propertyinstanz zurück, die dieser Container zum Speichern
-     * verwendet(Es werden nur die einstellungen überdeckt bei denen die
-     * propertyinstanz bei den ConfigEntries null ist
-     */
-    public void setPropertyInstance(Property propertInstance) {
-        propertyInstance = propertInstance;
     }
 
     public void setTitle(String title) {

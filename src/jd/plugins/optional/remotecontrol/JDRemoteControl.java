@@ -110,7 +110,7 @@ public class JDRemoteControl extends PluginOptional {
 
     private void initConfig() {
         config.setGroup(new ConfigGroup(getHost(), getIconKey()));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, PARAM_PORT, JDL.L("plugins.optional.RemoteControl.port", "Port:"), 1000, 65500).setDefaultValue(10025));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, PARAM_PORT, JDL.L("plugins.optional.RemoteControl.port", "Port:"), 1000, 65500, 1).setDefaultValue(10025));
     }
 
     @Override

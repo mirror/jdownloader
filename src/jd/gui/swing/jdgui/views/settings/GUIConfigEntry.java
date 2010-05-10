@@ -42,6 +42,7 @@ import javax.swing.event.ChangeListener;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.text.Document;
+import javax.swing.text.JTextComponent;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -62,7 +63,7 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
 
     private static final long serialVersionUID = -1391952049282528582L;
 
-    private ConfigEntry configEntry;
+    private final ConfigEntry configEntry;
 
     /**
      * Die input Komponente
@@ -76,18 +77,11 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
     /**
      * Erstellt einen neuen GUIConfigEntry
      * 
-     * @param type
-     *            TypID z.B. GUIConfigEntry.TYPE_BUTTON
-     * @param propertyInstance
-     *            Instanz einer propertyklasse (Extends property).
-     * @param propertyName
-     *            Name der Eigenschaft
-     * @param label
-     *            Label
+     * @param configEntry
      */
-    public GUIConfigEntry(ConfigEntry cfg) {
-        configEntry = cfg;
-        cfg.setGuiListener(this);
+    public GUIConfigEntry(ConfigEntry configEntry) {
+        this.configEntry = configEntry;
+        configEntry.setGuiListener(this);
 
         switch (configEntry.getType()) {
         case ConfigContainer.TYPE_PASSWORDFIELD:
@@ -232,8 +226,8 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
                 decoration.setToolTipText(tooltip);
             }
             if (input != null) {
-                input.setToolTipText(tooltip);
                 input.setName(configEntry.getHelptags());
+                input.setToolTipText(tooltip);
             }
         }
     }
@@ -264,31 +258,25 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
         case ConfigContainer.TYPE_PASSWORDFIELD:
             return new String(((JPasswordField) input).getPassword());
         case ConfigContainer.TYPE_TEXTFIELD:
-            return ((JDTextField) input).getText();
         case ConfigContainer.TYPE_TEXTAREA:
-            return ((JDTextArea) input).getText();
+        case ConfigContainer.TYPE_LISTCONTROLLED:
+            return ((JTextComponent) input).getText();
         case ConfigContainer.TYPE_CHECKBOX:
             return ((JCheckBox) input).isSelected();
-        case ConfigContainer.TYPE_LISTCONTROLLED:
-            return ((JDTextArea) input).getText();
-        case ConfigContainer.TYPE_BUTTON:
-            return null;
         case ConfigContainer.TYPE_COMBOBOX:
             return ((JComboBox) input).getSelectedItem();
         case ConfigContainer.TYPE_COMBOBOX_INDEX:
             return ((JComboBox) input).getSelectedIndex();
-        case ConfigContainer.TYPE_LABEL:
-            return null;
         case ConfigContainer.TYPE_RADIOFIELD:
             JRadioButton radio;
             Component[] inputs = input.getComponents();
-
             for (Component element : inputs) {
                 radio = (JRadioButton) element;
-
                 if (radio.getSelectedObjects() != null && radio.getSelectedObjects()[0] != null) { return radio.getSelectedObjects()[0]; }
             }
             return null;
+        case ConfigContainer.TYPE_BUTTON:
+        case ConfigContainer.TYPE_LABEL:
         case ConfigContainer.TYPE_SEPARATOR:
             return null;
         case ConfigContainer.TYPE_BROWSEFOLDER:
@@ -326,12 +314,8 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
         getConfigEntry().valueChanged(getText());
     }
 
-    public void setConfigEntry(ConfigEntry configEntry) {
-        this.configEntry = configEntry;
-    }
-
     /**
-     * Setz daten ind ei INput Komponente
+     * Sets data to the input component.
      * 
      * @param text
      */
@@ -341,29 +325,19 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
         }
         switch (configEntry.getType()) {
         case ConfigContainer.TYPE_PASSWORDFIELD:
-            ((JPasswordField) input).setText(text == null ? "" : text.toString());
-            break;
         case ConfigContainer.TYPE_TEXTFIELD:
-            ((JDTextField) input).setText(text == null ? "" : text.toString());
-            break;
         case ConfigContainer.TYPE_LISTCONTROLLED:
-            ((JDTextArea) input).setText(text == null ? "" : text.toString());
-            break;
         case ConfigContainer.TYPE_TEXTAREA:
-            ((JDTextArea) input).setText(text == null ? "" : text.toString());
+            ((JTextComponent) input).setText(text == null ? "" : text.toString());
             break;
         case ConfigContainer.TYPE_CHECKBOX:
-            if (text == null) {
-                text = false;
-            }
+            if (text == null) text = false;
             try {
                 ((JCheckBox) input).setSelected((Boolean) text);
             } catch (Exception e) {
                 logger.severe("Falcher Wert: " + text);
                 ((JCheckBox) input).setSelected(false);
             }
-            break;
-        case ConfigContainer.TYPE_BUTTON:
             break;
         case ConfigContainer.TYPE_COMBOBOX:
             ((JComboBox) input).setSelectedItem(text);
@@ -375,8 +349,6 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
                 ((JComboBox) input).setSelectedItem(text);
             }
             break;
-        case ConfigContainer.TYPE_LABEL:
-            break;
         case ConfigContainer.TYPE_BROWSEFOLDER:
         case ConfigContainer.TYPE_BROWSEFILE:
             ((BrowseFile) input).setText(text == null ? "" : text.toString());
@@ -384,17 +356,14 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
         case ConfigContainer.TYPE_SPINNER:
             int value = text instanceof Integer ? (Integer) text : Integer.parseInt(text.toString());
             try {
-
                 value = Math.min((Integer) ((SpinnerNumberModel) ((JSpinner) input).getModel()).getMaximum(), value);
                 value = Math.max((Integer) ((SpinnerNumberModel) ((JSpinner) input).getModel()).getMinimum(), value);
                 ((JSpinner) input).setModel(new SpinnerNumberModel(value, configEntry.getStart(), configEntry.getEnd(), configEntry.getStep()));
-
             } catch (Exception e) {
                 JDLogger.exception(e);
             }
             break;
         case ConfigContainer.TYPE_RADIOFIELD:
-
             Component[] inputs = input.getComponents();
             for (int i = 0; i < configEntry.getList().length; i++) {
                 JRadioButton radio = (JRadioButton) inputs[i];
@@ -404,9 +373,10 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
                     radio.setSelected(false);
                 }
             }
-
+            break;
+        case ConfigContainer.TYPE_BUTTON:
+        case ConfigContainer.TYPE_LABEL:
         case ConfigContainer.TYPE_SEPARATOR:
-
             break;
         }
         getConfigEntry().valueChanged(getText());
@@ -417,7 +387,7 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
     }
 
     /**
-     * updates config--> guiO
+     * updates config --> gui
      */
     public void load() {
         if (getConfigEntry().getPropertyInstance() != null && getConfigEntry().getPropertyName() != null) {
