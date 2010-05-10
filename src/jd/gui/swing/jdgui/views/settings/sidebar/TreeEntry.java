@@ -7,11 +7,12 @@ import javax.swing.ImageIcon;
 
 import jd.gui.swing.jdgui.SingletonPanel;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
+import jd.gui.swing.jdgui.views.settings.ConfigPanel;
 import jd.utils.JDTheme;
 
 public class TreeEntry {
 
-    private static final HashMap<Class<? extends SwitchPanel>, TreeEntry> PANELS = new HashMap<Class<? extends SwitchPanel>, TreeEntry>();
+    private static final HashMap<Class<? extends ConfigPanel>, TreeEntry> PANELS = new HashMap<Class<? extends ConfigPanel>, TreeEntry>();
 
     /**
      * Returns the TreeEntry to a class if it has been added using the
@@ -24,7 +25,7 @@ public class TreeEntry {
         return PANELS.get(clazz);
     }
 
-    private Class<? extends SwitchPanel> clazz;
+    private Class<? extends ConfigPanel> clazz;
     private SwitchPanel panel;
 
     private String title;
@@ -32,13 +33,14 @@ public class TreeEntry {
     private ImageIcon icon;
     private ArrayList<TreeEntry> entries;
 
-    public TreeEntry(String title, String iconKey) {
-        this.title = title;
-        if (iconKey != null) {
-            this.iconSmall = JDTheme.II(iconKey, 16, 16);
-            this.icon = JDTheme.II(iconKey, 20, 20);
-        }
+    private TreeEntry() {
         this.entries = new ArrayList<TreeEntry>();
+    }
+
+    public TreeEntry(String title, String iconKey) {
+        this();
+        setTitle(title);
+        setIcon(iconKey);
     }
 
     /**
@@ -54,15 +56,47 @@ public class TreeEntry {
         this.panel = panel;
     }
 
-    public TreeEntry(final Class<? extends SwitchPanel> clazz, String title, String iconKey) {
-        this(title, iconKey);
+    /**
+     * Creates a new TreeEntry. The title and the iconKey will be obtained via
+     * the <code>public static String</code> methods <code>getTitle()</code> and
+     * <code>getIconKey()</code>.
+     * 
+     * @param clazz
+     */
+    public TreeEntry(final Class<? extends ConfigPanel> clazz) {
+        this();
+
+        try {
+            setTitle(clazz.getMethod("getTitle").invoke(null).toString());
+        } catch (Exception e) {
+            e.printStackTrace();
+            setTitle(clazz.getSimpleName());
+        }
+
+        try {
+            setIcon(clazz.getMethod("getIconKey").invoke(null).toString());
+        } catch (Exception e) {
+            e.printStackTrace();
+            setIcon("gui.images.taskpanes.configuration");
+        }
 
         PANELS.put(clazz, this);
 
         this.clazz = clazz;
     }
 
-    public Class<? extends SwitchPanel> getClazz() {
+    private void setTitle(String title) {
+        this.title = title;
+    }
+
+    private void setIcon(String iconKey) {
+        if (iconKey != null) {
+            this.iconSmall = JDTheme.II(iconKey, 16, 16);
+            this.icon = JDTheme.II(iconKey, 20, 20);
+        }
+    }
+
+    public Class<? extends ConfigPanel> getClazz() {
         return clazz;
     }
 

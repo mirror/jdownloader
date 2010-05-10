@@ -118,6 +118,10 @@ public class ToolbarController extends ConfigPanel {
         return JDL.L(JDL_PREFIX + "toolbarController.title", "Toolbar Manager");
     }
 
+    public static String getIconKey() {
+        return "gui.images.toolbar";
+    }
+
     private JXTable table;
 
     private InternalTableModel tableModel;

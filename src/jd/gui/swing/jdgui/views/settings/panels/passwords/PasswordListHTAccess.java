@@ -31,6 +31,10 @@ public class PasswordListHTAccess extends ConfigPanel {
         return JDL.L(JDL_PREFIX + "general.title", "HTAccess logins");
     }
 
+    public static String getIconKey() {
+        return "gui.images.htaccess";
+    }
+
     private static final long serialVersionUID = 3383448498625377495L;
 
     public PasswordListHTAccess() {
@@ -42,7 +46,7 @@ public class PasswordListHTAccess extends ConfigPanel {
     private ConfigContainer setupContainer() {
         ConfigContainer container = new ConfigContainer();
 
-        container.setGroup(new ConfigGroup(getTitle(), "gui.images.htaccess"));
+        container.setGroup(new ConfigGroup(getTitle(), getIconKey()));
 
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_LISTCONTROLLED, HTACCESSController.getInstance(), JDL.L("plugins.http.htaccess", "List of all HTAccess passwords. Each line one password.")));
 

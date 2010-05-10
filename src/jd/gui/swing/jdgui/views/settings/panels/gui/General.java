@@ -47,6 +47,10 @@ public class General extends ConfigPanel {
         return JDL.L(JDL_PREFIX + "gui.title", "User Interface");
     }
 
+    public static String getIconKey() {
+        return "gui.images.config.gui";
+    }
+
     public General() {
         super();
 

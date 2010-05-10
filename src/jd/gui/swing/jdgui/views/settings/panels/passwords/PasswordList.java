@@ -31,6 +31,10 @@ public class PasswordList extends ConfigPanel {
         return JDL.L(JDL_PREFIX + "general.title", "Archive passwords");
     }
 
+    public static String getIconKey() {
+        return "gui.images.addons.unrar";
+    }
+
     private static final long serialVersionUID = 3383448498625377495L;
 
     public PasswordList() {
@@ -42,7 +46,7 @@ public class PasswordList extends ConfigPanel {
     private ConfigContainer setupContainer() {
         ConfigContainer container = new ConfigContainer();
 
-        container.setGroup(new ConfigGroup(getTitle(), "gui.images.addons.unrar"));
+        container.setGroup(new ConfigGroup(getTitle(), getIconKey()));
 
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_LISTCONTROLLED, PasswordListController.getInstance(), JDL.L("plugins.optional.jdunrar.config.passwordlist", "List of all passwords. Each line one password.")));
 

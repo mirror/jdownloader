@@ -72,10 +72,12 @@ public class MethodSelection extends ConfigPanel implements ActionListener {
 
     private JLabel time;
 
-    private JPanel method;
-
     public static String getTitle() {
         return JDL.L(JDL_PREFIX + "reconnect.title", "Reconnection");
+    }
+
+    public static String getIconKey() {
+        return "gui.images.config.reconnect";
     }
 
     public MethodSelection() {
@@ -188,45 +190,40 @@ public class MethodSelection extends ConfigPanel implements ActionListener {
 
     @Override
     public void initPanel() {
-
-        /* 0=LiveHeader, 1=Extern, 2=Batch,3=CLR */
-
-        method = new JPanel(new MigLayout("ins 0 0 0 0,wrap 2", "[fill,grow 10]10[fill,grow]"));
+        /* 0=LiveHeader, 1=Extern, 2=Batch, 3=CLR */
 
         tabbed = new JTabbedPane();
-        method.add(tabbed, "spanx,pushy,growy");
         tabbed.setTabPlacement(JTabbedPane.TOP);
-
         tabbed.addTab(JDL.L("modules.reconnect.types.liveheader", "LiveHeader/Curl"), new SubPanelLiveHeaderReconnect(configuration));
         tabbed.addTab(JDL.L("modules.reconnect.types.extern", "Extern"), getPanelFor(new ExternReconnect()));
         tabbed.addTab(JDL.L("modules.reconnect.types.batch", "Batch"), getPanelFor(new BatchReconnect()));
         tabbed.addTab(JDL.L("modules.reconnect.types.clr", "CLR Script"), new SubPanelCLRReconnect(configuration));
 
-        method.add(Factory.createHeader(new ConfigGroup(JDL.L("gui.config.reconnect.test", "Showcase"), "gui.images.config.network_local")), "spanx,gaptop 15,gapleft 20,gapright 15");
-        JPanel p = new JPanel(new MigLayout(" ins 0,wrap 7", "[]5[fill]5[align right]20[align right]20[align right]20[align right]20[align right]", "[][]"));
-        method.add(p, "spanx,gapright 20,gapleft 54");
-        btn = new JButton(JDL.L("gui.config.reconnect.showcase.reconnect", "Change IP"));
-        btn.addActionListener(this);
-        p.add(btn, "spany, aligny top");
-        p.add(new JPanel(), "height 32!,spany,alignx left,pushx");
-        p.add(timeLabel = new JLabel(JDL.L("gui.config.reconnect.showcase.time", "Reconnect duration")));
-        p.add(time = new JLabel("---"));
+        JPanel p = new JPanel(new MigLayout("ins 0, wrap 7", "[]5[fill]5[right]20[right]20[right]20[right]20[right]", "[][]"));
 
+        p.add(btn = new JButton(JDL.L("gui.config.reconnect.showcase.reconnect", "Change IP")), "spany, aligny top");
+        btn.addActionListener(this);
+
+        p.add(new JPanel(), "h 32!, spany, alignx left, pushx");
+        p.add(timeLabel = new JLabel(JDL.L("gui.config.reconnect.showcase.time", "Reconnect duration")));
         timeLabel.setEnabled(false);
+
+        p.add(time = new JLabel("---"));
         time.setEnabled(false);
+
         p.add(new JLabel(JDL.L("gui.config.reconnect.showcase.currentip", "Your current IP")));
         p.add(currentip = new JLabel("---"));
 
-        success = new JLabel(JDTheme.II("gui.images.selected", 32, 32));
+        p.add(success = new JLabel(JDTheme.II("gui.images.selected", 32, 32)), "spany,alignx right");
         success.setEnabled(false);
-        p.add(success, "spany,alignx right");
 
         p.add(message = new JLabel(JDL.L("gui.config.reconnect.showcase.message.none", "Not tested yet")), "spanx 2");
         message.setEnabled(false);
 
         p.add(beforeIPLabel = new JLabel(JDL.L("gui.config.reconnect.showcase.lastip", "Ip before reconnect")));
-        p.add(beforeIP = new JLabel("---"));
         beforeIPLabel.setEnabled(false);
+
+        p.add(beforeIP = new JLabel("---"));
         beforeIP.setEnabled(false);
 
         if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false) == false) {
@@ -243,9 +240,12 @@ public class MethodSelection extends ConfigPanel implements ActionListener {
             }.start();
         }
 
-        setLayout(new MigLayout("ins 0,wrap 1", "[fill,grow 10]", "[fill,grow]"));
+        panel.setLayout(new MigLayout("ins 5, wrap 1", "[fill,grow]"));
+        panel.add(tabbed, "pushy,growy");
+        panel.add(Factory.createHeader(new ConfigGroup(JDL.L("gui.config.reconnect.test", "Showcase"), "gui.images.config.network_local")), "gaptop 15");
+        panel.add(p, "gapleft 35");
 
-        this.add(method);
+        add(panel);
     }
 
     @Override

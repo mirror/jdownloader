@@ -33,6 +33,10 @@ public class ConfigPanelCaptcha extends ConfigPanel {
         return JDL.L(JDL_PREFIX + "captcha.title", "JAntiCaptcha");
     }
 
+    public static String getIconKey() {
+        return "gui.images.config.ocr";
+    }
+
     public ConfigPanelCaptcha() {
         super();
         initPanel();

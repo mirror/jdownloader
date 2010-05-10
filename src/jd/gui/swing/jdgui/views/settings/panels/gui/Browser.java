@@ -22,6 +22,7 @@ import java.io.File;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.config.ConfigGroup;
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 import jd.gui.UserIO;
@@ -45,6 +46,10 @@ public class Browser extends ConfigPanel {
         return JDL.L(JDL_PREFIX + "gui.browser.title", "Browser");
     }
 
+    public static String getIconKey() {
+        return "gui.images.config.host";
+    }
+
     private SubConfiguration subConfig;
 
     public Browser() {
@@ -57,6 +62,8 @@ public class Browser extends ConfigPanel {
 
     private ConfigContainer setupContainer() {
         ConfigContainer container = new ConfigContainer();
+
+        container.setGroup(new ConfigGroup(getTitle(), getIconKey()));
 
         ConfigEntry ce;
 

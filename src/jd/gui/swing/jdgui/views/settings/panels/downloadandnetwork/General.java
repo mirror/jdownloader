@@ -34,6 +34,10 @@ public class General extends ConfigPanel {
         return JDL.L(JDL_PREFIX + "download.title", "Download & Network");
     }
 
+    public static String getIconKey() {
+        return "gui.images.config.network_local";
+    }
+
     private static final long serialVersionUID = 3383448498625377495L;
 
     private SubConfiguration config;

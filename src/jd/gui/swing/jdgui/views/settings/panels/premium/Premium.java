@@ -61,6 +61,10 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
         return JDL.L(JDL_PREFIX + "title", "Premium");
     }
 
+    public static String getIconKey() {
+        return "gui.images.premium";
+    }
+
     public Premium() {
         super();
         initPanel();

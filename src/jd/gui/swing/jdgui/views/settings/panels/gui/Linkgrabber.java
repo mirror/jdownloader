@@ -33,6 +33,10 @@ public class Linkgrabber extends ConfigPanel {
         return JDL.L(JDL_PREFIX + "gui.linkgrabber.title", "Linkgrabber");
     }
 
+    public static String getIconKey() {
+        return "gui.images.taskpanes.linkgrabber";
+    }
+
     private static final long serialVersionUID = 3383448498625377495L;
 
     public Linkgrabber() {

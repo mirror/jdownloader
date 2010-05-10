@@ -286,4 +286,12 @@ public class ConfigPanel extends SwitchPanel {
         }
     }
 
+    public static String getTitle() {
+        return "No Title set!";
+    }
+
+    public static String getIconKey() {
+        return "gui.images.taskpanes.configuration";
+    }
+
 }

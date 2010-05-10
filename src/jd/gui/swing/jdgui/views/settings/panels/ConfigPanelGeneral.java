@@ -40,6 +40,10 @@ public class ConfigPanelGeneral extends ConfigPanel {
         return JDL.L(JDL_PREFIX + "general.title", "General");
     }
 
+    public static String getIconKey() {
+        return "gui.images.config.home";
+    }
+
     private static final long serialVersionUID = 3383448498625377495L;
 
     private Configuration configuration;

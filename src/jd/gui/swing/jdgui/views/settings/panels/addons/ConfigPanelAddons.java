@@ -45,6 +45,10 @@ public class ConfigPanelAddons extends ConfigPanel {
         return JDL.L(JDL_PREFIX + "addons.title", "Extensions");
     }
 
+    public static String getIconKey() {
+        return "gui.images.config.packagemanager";
+    }
+
     private class InternalTableModel extends JDTableModel {
 
         private static final long serialVersionUID = 5847076032639053531L;

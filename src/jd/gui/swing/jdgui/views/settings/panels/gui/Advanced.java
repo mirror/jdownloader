@@ -39,6 +39,10 @@ public class Advanced extends ConfigPanel {
         return JDL.L(JDL_PREFIX + "gui.advanced.title", "Advanced");
     }
 
+    public static String getIconKey() {
+        return "gui.images.container";
+    }
+
     public Advanced() {
         super();
 

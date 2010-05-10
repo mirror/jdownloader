@@ -33,6 +33,10 @@ public class Advanced extends ConfigPanel {
         return JDL.L(JDL_PREFIX + "reconnect.advanced.title", "Advanced");
     }
 
+    public static String getIconKey() {
+        return "gui.images.reconnect_settings";
+    }
+
     public Advanced() {
         super();
 

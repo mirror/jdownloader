@@ -35,6 +35,10 @@ public class InternetAndNetwork extends ConfigPanel {
         return JDL.L(JDL_PREFIX + "download.internetandnetwork.title", "Internet & Network");
     }
 
+    public static String getIconKey() {
+        return "gui.images.networkerror";
+    }
+
     public InternetAndNetwork() {
         super();
 

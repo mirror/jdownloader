@@ -41,36 +41,36 @@ public class ConfigTreeModel implements TreeModel {
         TreeEntry teTop, teLeaf;
         root.add(teTop = new TreeEntry(JDL.L(JDL_PREFIX + "basics.title", "Basics"), "gui.images.config.home"));
 
-        teTop.add(new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.ConfigPanelGeneral.class, jd.gui.swing.jdgui.views.settings.panels.ConfigPanelGeneral.getTitle(), "gui.images.config.home"));
+        teTop.add(new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.ConfigPanelGeneral.class));
 
-        teTop.add(teLeaf = new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.downloadandnetwork.General.class, jd.gui.swing.jdgui.views.settings.panels.downloadandnetwork.General.getTitle(), "gui.images.config.network_local"));
-        teLeaf.add(new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.downloadandnetwork.InternetAndNetwork.class, jd.gui.swing.jdgui.views.settings.panels.downloadandnetwork.InternetAndNetwork.getTitle(), "gui.images.networkerror"));
-        teLeaf.add(new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.downloadandnetwork.Advanced.class, jd.gui.swing.jdgui.views.settings.panels.downloadandnetwork.Advanced.getTitle(), "gui.images.network"));
+        teTop.add(teLeaf = new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.downloadandnetwork.General.class));
+        teLeaf.add(new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.downloadandnetwork.InternetAndNetwork.class));
+        teLeaf.add(new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.downloadandnetwork.Advanced.class));
 
-        teTop.add(teLeaf = new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.gui.General.class, jd.gui.swing.jdgui.views.settings.panels.gui.General.getTitle(), "gui.images.config.gui"));
-        teLeaf.add(new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.gui.ToolbarController.class, jd.gui.swing.jdgui.views.settings.panels.gui.ToolbarController.getTitle(), "gui.images.toolbar"));
-        teLeaf.add(new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.gui.Linkgrabber.class, jd.gui.swing.jdgui.views.settings.panels.gui.Linkgrabber.getTitle(), "gui.images.taskpanes.linkgrabber"));
-        teLeaf.add(new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.gui.Browser.class, jd.gui.swing.jdgui.views.settings.panels.gui.Browser.getTitle(), "gui.images.config.host"));
-        teLeaf.add(new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.gui.Advanced.class, jd.gui.swing.jdgui.views.settings.panels.gui.Advanced.getTitle(), "gui.images.container"));
+        teTop.add(teLeaf = new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.gui.General.class));
+        teLeaf.add(new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.gui.ToolbarController.class));
+        teLeaf.add(new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.gui.Linkgrabber.class));
+        teLeaf.add(new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.gui.Browser.class));
+        teLeaf.add(new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.gui.Advanced.class));
 
         root.add(teTop = new TreeEntry(JDL.L(JDL_PREFIX + "modules.title", "Modules"), "gui.images.config.home"));
 
-        teTop.add(new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.ConfigPanelCaptcha.class, jd.gui.swing.jdgui.views.settings.panels.ConfigPanelCaptcha.getTitle(), "gui.images.config.ocr"));
+        teTop.add(new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.ConfigPanelCaptcha.class));
 
-        teTop.add(teLeaf = new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.reconnect.MethodSelection.class, jd.gui.swing.jdgui.views.settings.panels.reconnect.MethodSelection.getTitle(), "gui.images.config.reconnect"));
-        teLeaf.add(new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.reconnect.Advanced.class, jd.gui.swing.jdgui.views.settings.panels.reconnect.Advanced.getTitle(), "gui.images.reconnect_settings"));
+        teTop.add(teLeaf = new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.reconnect.MethodSelection.class));
+        teLeaf.add(new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.reconnect.Advanced.class));
 
         teTop.add(teLeaf = new TreeEntry(JDL.L(JDL_PREFIX + "passwordsAndLogins", "Passwords & Logins"), "gui.images.list"));
-        teLeaf.add(new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.passwords.PasswordList.class, jd.gui.swing.jdgui.views.settings.panels.passwords.PasswordList.getTitle(), "gui.images.addons.unrar"));
-        teLeaf.add(new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.passwords.PasswordListHTAccess.class, jd.gui.swing.jdgui.views.settings.panels.passwords.PasswordListHTAccess.getTitle(), "gui.images.htaccess"));
+        teLeaf.add(new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.passwords.PasswordList.class));
+        teLeaf.add(new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.passwords.PasswordListHTAccess.class));
 
         root.add(plugins = new TreeEntry(JDL.L(JDL_PREFIX + "plugins.title", "Plugins & Add-ons"), "gui.images.config.packagemanager"));
 
-        plugins.add(teLeaf = new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.hoster.ConfigPanelPluginForHost.class, jd.gui.swing.jdgui.views.settings.panels.hoster.ConfigPanelPluginForHost.getTitle(), "gui.images.config.host"));
+        plugins.add(teLeaf = new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.hoster.ConfigPanelPluginForHost.class));
 
-        teLeaf.add(new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.premium.Premium.class, jd.gui.swing.jdgui.views.settings.panels.premium.Premium.getTitle(), "gui.images.premium"));
+        teLeaf.add(new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.premium.Premium.class));
 
-        plugins.add(addons = new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.addons.ConfigPanelAddons.class, jd.gui.swing.jdgui.views.settings.panels.addons.ConfigPanelAddons.getTitle(), "gui.images.config.packagemanager"));
+        plugins.add(addons = new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.addons.ConfigPanelAddons.class));
 
         initExtensions(addons);
     }
@@ -134,7 +134,6 @@ public class ConfigTreeModel implements TreeModel {
         TreeModelEvent e = null;
         for (int i = listeners.length - 2; i >= 0; i -= 2) {
             if (listeners[i] == TreeModelListener.class) {
-
                 if (e == null) e = new TreeModelEvent(this, path);
                 ((TreeModelListener) listeners[i + 1]).treeStructureChanged(e);
             }

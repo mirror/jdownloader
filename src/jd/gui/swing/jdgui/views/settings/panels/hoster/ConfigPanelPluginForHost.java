@@ -54,6 +54,10 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         return JDL.L(JDL_PREFIX + "host.title", "Hoster & Premium");
     }
 
+    public static String getIconKey() {
+        return "gui.images.config.host";
+    }
+
     private class InternalTableModel extends JDTableModel {
 
         private static final long serialVersionUID = -5584463272737285033L;
