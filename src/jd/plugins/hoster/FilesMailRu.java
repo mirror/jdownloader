@@ -44,7 +44,7 @@ public class FilesMailRu extends PluginForHost {
     }
 
     public boolean iHaveToWait = false;
-    public String finalLinkRegex = "\"(http://.*?\\.files\\.mail\\.ru/.*?/.*?)\"";
+    public String finalLinkRegex = "\"(http://[a-z0-9]+\\.files\\.mail\\.ru/.*?/.*?)\"";
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
@@ -64,7 +64,7 @@ public class FilesMailRu extends PluginForHost {
             if (!br.openGetConnection(downloadLink.getDownloadURL()).getContentType().contains("html")) {
                 long size = br.getHttpConnection().getLongContentLength();
                 if (size == 0) {
-                    logger.warning("Filesize observer by the direct URL is 0...");
+                    logger.warning("Filesize observed by the direct URL is 0...");
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 downloadLink.setDownloadSize(Long.valueOf(size));
@@ -140,6 +140,10 @@ public class FilesMailRu extends PluginForHost {
         if (con.getContentType().contains("html")) {
             logger.info("Renewing dllink, seems like we had a broken link here!");
             br.followConnection();
+            if (br.containsHTML("?trycount=")) {
+                logger.info("files.mail.ru page showed the \"trycount\" link. Trying to open the mainpage of the link to find a new dllink...");
+                br.getPage(downloadLink.getStringProperty("folderID", null));
+            }
             String finallink = br.getRegex(finalLinkRegex).getMatch(0);
             if (finallink == null) {
                 logger.warning("Critical error occured: The final downloadlink couldn't be found in handleFree!");

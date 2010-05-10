@@ -35,6 +35,8 @@ public class FlsMailRu extends PluginForDecrypt {
         super(wrapper);
     }
 
+    public String dllinkRegex = "\"(http://[a-z0-9]+\\.files\\.mail\\.ru/.*?/.*?)\"";
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -47,7 +49,7 @@ public class FlsMailRu extends PluginForDecrypt {
         String[] linkinformation = br.getRegex("<td class=\"name\">(.*?)<td class=\"do\">").getColumn(0);
         if (linkinformation.length == 0) return null;
         for (String info : linkinformation) {
-            String directlink = new Regex(info, "\"(http://.*?\\.files\\.mail\\.ru/.*?/.*?)\"").getMatch(0);
+            String directlink = new Regex(info, dllinkRegex).getMatch(0);
             String filename = new Regex(info, "href=\".*?onclick=\"return.*?\">(.*?)<").getMatch(0);
             if (directlink == null || filename == null) return null;
             String filesize = new Regex(info, "<td>(.*?{1,15})</td>").getMatch(0);

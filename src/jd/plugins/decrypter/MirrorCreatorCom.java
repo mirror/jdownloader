@@ -67,13 +67,16 @@ public class MirrorCreatorCom extends PluginForDecrypt {
             if (singlelink.contains("/redirect/")) {
                 br.getPage(host + singlelink);
                 dllink = br.getRedirectLocation();
-                if (dllink == null) dllink = br.getRegex("window\\.location = \"(.*?)\"").getMatch(0);
+                if (dllink == null) dllink = br.getRegex("<frame name=\"main\" src=\"(.*?)\">").getMatch(0);
             } else {
                 // Handling for already regexed final-links
                 dllink = singlelink;
             }
-            if (dllink == null) return null;
-            if (dllink.matches("")) logger.info("Found one broken link!");
+            if (dllink == null) {
+                logger.warning("Decrypter for this link is broken: " + parameter);
+                return null;
+            }
+            if (dllink.equals("")) logger.info("Found one broken link!");
             decryptedLinks.add(createDownloadlink(dllink));
             progress.increase(1);
         }

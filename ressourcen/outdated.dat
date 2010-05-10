@@ -292,3 +292,7 @@ jd/plugins/hoster/QshareCom.class
 jd/plugins/hoster/DualShareCom.class
 jd/plugins/hoster/PixelhitCom.class
 jd/plugins/hoster/GetTheBitCom.class
+jd/plugins/decrypter/Trm.class
+jd/plugins/decrypter/Wrlss6xT.class
+jd/plugins/decrypter/Xrls.class
+jd/plugins/decrypter/SvLnk.class

@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zero10.info" }, urls = { "http://[\\w\\.]*?((zero10\\.info|save-link\\.info|share-link\\.info|h-link\\.us|zero10\\.us|(darkhorse|brg8)\\.fi5\\.us|arbforce\\.com/short|(pp9p|2utop)\\.com|arb4h\\.net|(get\\.(el3lam|al9daqa|sirtggp))\\.com|get\\.(i44i|city-way)\\.net|tanzel\\.eb2a\\.com/short|go4down\\.(com|net)/short)/[0-9]+|url-2\\.com/[A-Z]+/|h-url\\.in/[A-Z0-9]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zero10.info" }, urls = { "http://[\\w\\.]*?((zero10\\.info|save-link\\.info|share-link\\.info|h-link\\.us|zero10\\.us|(darkhorse|brg8)\\.fi5\\.us|arbforce\\.com/short|(get\\.(el3lam|sirtggp))\\.com|tanzel\\.eb2a\\.com/short|go4down\\.(com|net)/short)/[0-9]+|url-2\\.com/[A-Z]+/|h-url\\.in/[A-Z0-9]+)" }, flags = { 0 })
 public class Zro10BasicDecrypt extends PluginForDecrypt {
 
     public Zro10BasicDecrypt(PluginWrapper wrapper) {
@@ -40,7 +40,7 @@ public class Zro10BasicDecrypt extends PluginForDecrypt {
         String parameter = param.toString();
         // 3l3lam workaround, they got double redirect if i don't replace all
         // their domains with the main domain!
-        parameter = parameter.replaceAll("(pp9p\\.com|2utop\\.com|get\\.i44i\\.net|arb4h\\.net|get\\.city-way\\.net|get\\.al9daqa\\.com|get\\.sirtggp\\.com)", "get.el3lam.com");
+        parameter = parameter.replaceAll("get\\.sirtggp\\.com", "get.el3lam.com");
         br.setFollowRedirects(false);
         // finallink2 is used for unusual zero10 crypters like arbforce and
         // url-2

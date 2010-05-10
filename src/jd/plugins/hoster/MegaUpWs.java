@@ -39,18 +39,16 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ForDevsToPlayWith.com" }, urls = { "http://[\\w\\.]*?ForDevsToPlayWith\\.com/[a-z0-9]{12}" }, flags = { 0 })
-public class XFileSharingProBasic extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megaup.ws" }, urls = { "http://[\\w\\.]*?megaup\\.ws/[a-z0-9]{12}" }, flags = { 2 })
+public class MegaUpWs extends PluginForHost {
 
-    public XFileSharingProBasic(PluginWrapper wrapper) {
+    public MegaUpWs(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium(COOKIE_HOST + "/premium.html");
+        this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
-    // XfileSharingProBasic Version 1.7
-    // This is only for developers to easily implement hosters using the
-    // "xfileshare(pro)" script (more informations can be found on
-    // xfilesharing.net)!
+    // XfileSharingProBasic Version 1.7, modified login cookie handling, changed
+    // "expire" regex
     @Override
     public String getAGBLink() {
         return COOKIE_HOST + "/tos.html";
@@ -58,7 +56,7 @@ public class XFileSharingProBasic extends PluginForHost {
 
     public String brbefore = "";
     private static final String passwordText = "(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)";
-    private static final String COOKIE_HOST = "http://ForDevsToPlayWith.com";
+    private static final String COOKIE_HOST = "http://megaup.ws";
     public boolean nopremium = false;
 
     @Override
@@ -261,6 +259,17 @@ public class XFileSharingProBasic extends PluginForHost {
         return -1;
     }
 
+    public String getDllink() {
+        String dllink = new Regex(brbefore, "dotted #bbb;padding.*?<a href=\"(.*?)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = new Regex(brbefore, "This (direct link|download link) will be available for your IP.*?href=\"(http.*?)\"").getMatch(1);
+            if (dllink == null) {
+                dllink = new Regex(brbefore, "Download: <a href=\"(.*?)\"").getMatch(0);
+            }
+        }
+        return dllink;
+    }
+
     private void login(Account account) throws Exception {
         this.setBrowserExclusive();
         br.setCookie(COOKIE_HOST, "lang", "english");
@@ -273,7 +282,7 @@ public class XFileSharingProBasic extends PluginForHost {
         br.submitForm(loginform);
         br.getPage(COOKIE_HOST + "/?op=my_account");
         doSomething();
-        if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         if (!brbefore.contains("Premium-Account expire") && !brbefore.contains("Upgrade to premium") && !br.containsHTML(">Renew premium<")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         if (!brbefore.contains("Premium-Account expire") && !br.containsHTML(">Renew premium<")) nopremium = true;
     }
@@ -308,6 +317,7 @@ public class XFileSharingProBasic extends PluginForHost {
         }
         if (!nopremium) {
             String expire = new Regex(brbefore, "<td>Premium-Account expire:</td>.*?<td>(.*?)</td>").getMatch(0);
+            if (expire == null) expire = br.getRegex("Your Premium-Account is valid until <b>(.*?)</b>").getMatch(0);
             if (expire == null) {
                 ai.setExpired(true);
                 account.setValid(false);
@@ -384,17 +394,6 @@ public class XFileSharingProBasic extends PluginForHost {
         pwform.put("password", passCode);
         logger.info("Put password \"" + passCode + "\" entered by user in the DLForm.");
         return passCode;
-    }
-
-    public String getDllink() {
-        String dllink = new Regex(brbefore, "dotted #bbb;padding.*?<a href=\"(.*?)\"").getMatch(0);
-        if (dllink == null) {
-            dllink = new Regex(brbefore, "This (direct link|download link) will be available for your IP.*?href=\"(http.*?)\"").getMatch(1);
-            if (dllink == null) {
-                dllink = new Regex(brbefore, "Download: <a href=\"(.*?)\"").getMatch(0);
-            }
-        }
-        return dllink;
     }
 
     public void checkServerErrors() throws NumberFormatException, PluginException {
