@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.config.ConfigGroup;
 import jd.config.SubConfiguration;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.plugins.OptionalPlugin;
@@ -47,37 +48,32 @@ public class JDWebinterface extends PluginOptional {
     public JDWebinterface(PluginWrapper wrapper) {
         super(wrapper);
         instance = this;
-        SubConfiguration subConfig = SubConfiguration.getConfig("WEBINTERFACE");
-        ConfigEntry cfg;
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_REFRESH, JDL.L("plugins.optional.webinterface.refresh", "AutoRefresh")));
-        cfg.setDefaultValue(true);
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, PROPERTY_REFRESH_INTERVAL, JDL.L("plugins.optional.webinterface.refresh_interval", "Refresh Interval"), 5, 60));
-        cfg.setStep(1);
-        cfg.setDefaultValue(5);
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, PROPERTY_PORT, JDL.L("plugins.optional.webinterface.port", "Port"), 1, 65000));
-        cfg.setStep(1);
-        cfg.setDefaultValue(8765);
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_LOGIN, JDL.L("plugins.optional.webinterface.needlogin", "Need User Authentication")));
-        cfg.setDefaultValue(true);
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_HTTPS, JDL.L("plugins.optional.webinterface.https", "Use HTTPS")));
-        cfg.setDefaultValue(false);
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, PROPERTY_USER, JDL.L("plugins.optional.webinterface.loginname", "Login Name")));
-        cfg.setDefaultValue("JD");
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, subConfig, PROPERTY_PASS, JDL.L("plugins.optional.webinterface.loginpass", "Login Pass")));
-        cfg.setDefaultValue("JD");
+        initConfig();
     }
 
-    // @Override
+    private void initConfig() {
+        SubConfiguration subConfig = SubConfiguration.getConfig("WEBINTERFACE");
+        config.setGroup(new ConfigGroup(getHost(), getIconKey()));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_REFRESH, JDL.L("plugins.optional.webinterface.refresh", "AutoRefresh")).setDefaultValue(true));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, PROPERTY_REFRESH_INTERVAL, JDL.L("plugins.optional.webinterface.refresh_interval", "Refresh Interval"), 5, 60).setStep(1).setDefaultValue(5));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, PROPERTY_PORT, JDL.L("plugins.optional.webinterface.port", "Port"), 1, 65000).setStep(1).setDefaultValue(8765));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_LOGIN, JDL.L("plugins.optional.webinterface.needlogin", "Need User Authentication")).setDefaultValue(true));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_HTTPS, JDL.L("plugins.optional.webinterface.https", "Use HTTPS")).setDefaultValue(false));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, PROPERTY_USER, JDL.L("plugins.optional.webinterface.loginname", "Login Name")).setDefaultValue("JD"));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, subConfig, PROPERTY_PASS, JDL.L("plugins.optional.webinterface.loginpass", "Login Pass")).setDefaultValue("JD"));
+    }
+
+    @Override
     public void actionPerformed(ActionEvent e) {
 
     }
 
-    // @Override
+    @Override
     public ArrayList<MenuAction> createMenuitems() {
         return null;
     }
 
-    // @Override
+    @Override
     public String getCoder() {
         return "jiaz";
     }
@@ -91,14 +87,14 @@ public class JDWebinterface extends PluginOptional {
         }
     }
 
-    // @Override
+    @Override
     public boolean initAddon() {
         new JDSimpleWebserver();
         logger.info("WebInterface ok: java " + JDUtilities.getJavaVersion());
         return true;
     }
 
-    // @Override
+    @Override
     public void onExit() {
     }
 }

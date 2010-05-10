@@ -51,6 +51,7 @@ import javax.swing.event.HyperlinkListener;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.config.ConfigGroup;
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 import jd.event.ControlEvent;
@@ -845,6 +846,7 @@ public class JDChat extends PluginOptional {
     }
 
     private void initConfigEntries() {
+        config.setGroup(new ConfigGroup(getHost(), getIconKey()));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, PARAM_NICK, JDL.L("plugins.optional.jdchat.user", "Nickname")));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PARAM_USERCOLOR, JDL.L("plugins.optional.jdchat.usercolor", "Only black usernames?")));
         String[] positions = new String[] { JDL.L("plugins.jdchat.userlistposition_right", "Right"), JDL.L("plugins.jdchat.userlistposition_left", "Left") };

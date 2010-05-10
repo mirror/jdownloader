@@ -27,6 +27,7 @@ import javax.swing.filechooser.FileFilter;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.config.ConfigGroup;
 import jd.config.ConfigPropertyListener;
 import jd.config.Property;
 import jd.config.SubConfiguration;
@@ -598,58 +599,47 @@ public class JDUnrar extends PluginOptional implements UnrarListener, ActionList
     }
 
     public void initConfig() {
-        SubConfiguration subConfig = getPluginConfig();
-        ConfigEntry ce;
-        ConfigEntry conditionEntry;
-        String hash = this.getPluginConfig().getStringProperty(JDUnrarConstants.UNRAR_HASH, null);
+        ConfigEntry ce, conditionEntry;
+        final SubConfiguration subConfig = getPluginConfig();
+
+        config.setGroup(new ConfigGroup(getHost(), getIconKey()));
+
+        String hash = subConfig.getStringProperty(JDUnrarConstants.UNRAR_HASH, null);
         if (hash == null) {
             config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, JDL.L("gui.config.unrar.cmd", "UnRAR command")));
-            ce.setDefaultValue("please install unrar");
+            ce.setDefaultValue("Please install Unrar");
             JDController.getInstance().addControlListener(new ConfigPropertyListener(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND) {
                 @Override
                 public void onPropertyChanged(Property source, final String key) {
                     if (JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND.equalsIgnoreCase(key)) {
-                        String path = getPluginConfig().getStringProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, null);
+                        String path = subConfig.getStringProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, null);
                         if (path != null && isUnrarCommandValid(path)) {
-                            getPluginConfig().setProperty(JDUnrarConstants.UNRAR_HASH, JDHash.getMD5(new File(path)));
-                            getPluginConfig().save();
+                            subConfig.setProperty(JDUnrarConstants.UNRAR_HASH, JDHash.getMD5(new File(path)));
                         } else {
-                            getPluginConfig().setProperty(JDUnrarConstants.UNRAR_HASH, null);
-                            getPluginConfig().save();
+                            subConfig.setProperty(JDUnrarConstants.UNRAR_HASH, null);
                         }
+                        subConfig.save();
                     }
                 }
             });
         }
 
-        config.addEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDUnrarConstants.CONFIG_KEY_USE_EXTRACT_PATH, JDL.L("gui.config.unrar.use_extractto", "Use customized extract path")));
-        conditionEntry.setDefaultValue(false);
-
+        config.addEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDUnrarConstants.CONFIG_KEY_USE_EXTRACT_PATH, JDL.L("gui.config.unrar.use_extractto", "Use customized extract path")).setDefaultValue(false));
         config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, subConfig, JDUnrarConstants.CONFIG_KEY_UNRARPATH, JDL.L("gui.config.unrar.path", "Extract to")));
         ce.setDefaultValue(JDUtilities.getDefaultDownloadDirectory());
         ce.setEnabledCondidtion(conditionEntry, true);
-        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDUnrarConstants.CONFIG_KEY_REMVE_AFTER_EXTRACT, JDL.L("gui.config.unrar.remove_after_extract", "Delete archives after suc. extraction?")));
-        ce.setDefaultValue(false);
-        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDUnrarConstants.CONFIG_KEY_OVERWRITE, JDL.L("gui.config.unrar.overwrite", "Overwrite existing files?")));
-        ce.setDefaultValue(false);
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDUnrarConstants.CONFIG_KEY_REMVE_AFTER_EXTRACT, JDL.L("gui.config.unrar.remove_after_extract", "Delete archives after suc. extraction?")).setDefaultValue(false));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDUnrarConstants.CONFIG_KEY_OVERWRITE, JDL.L("gui.config.unrar.overwrite", "Overwrite existing files?")).setDefaultValue(false));
 
-        ConfigContainer ext = new ConfigContainer(JDL.L("plugins.optional.jdunrar.config.advanced", "Premium settings"));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, ext));
-
-        ext.addEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDUnrarConstants.CONFIG_KEY_USE_SUBPATH, JDL.L("gui.config.unrar.use_subpath", "Use subpath")));
-        conditionEntry.setDefaultValue(false);
-
-        ext.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, JDUnrarConstants.CONFIG_KEY_SUBPATH, JDL.L("gui.config.unrar.subpath", "Subpath")));
+        config.setGroup(new ConfigGroup(JDL.L("plugins.optional.jdunrar.config.advanced", "Premium settings"), getIconKey()));
+        config.addEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDUnrarConstants.CONFIG_KEY_USE_SUBPATH, JDL.L("gui.config.unrar.use_subpath", "Use subpath")).setDefaultValue(false));
+        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, JDUnrarConstants.CONFIG_KEY_SUBPATH, JDL.L("gui.config.unrar.subpath", "Subpath")));
         ce.setDefaultValue("%PACKAGENAME%");
         ce.setEnabledCondidtion(conditionEntry, true);
-        ext.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, JDUnrarConstants.CONFIG_KEY_SUBPATH_MINNUM, JDL.L("gui.config.unrar.subpath_minnum", "Only use subpath if archive contains more than x files"), 0, 600).setDefaultValue(0));
-        ext.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDUnrarConstants.CONFIG_KEY_ASK_UNKNOWN_PASS, JDL.L("gui.config.unrar.ask_path", "Ask for unknown passwords?")));
-        ce.setDefaultValue(true);
-        ext.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDUnrarConstants.CONFIG_KEY_DEEP_EXTRACT, JDL.L("gui.config.unrar.deep_extract", "Deep-Extraction")));
-        ce.setDefaultValue(true);
-
-        ext.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDUnrarConstants.CONFIG_KEY_REMOVE_INFO_FILE, JDL.L("gui.config.unrar.remove_infofile", "Delete Infofile after extraction")));
-        ce.setDefaultValue(false);
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, JDUnrarConstants.CONFIG_KEY_SUBPATH_MINNUM, JDL.L("gui.config.unrar.subpath_minnum", "Only use subpath if archive contains more than x files"), 0, 600).setDefaultValue(0));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDUnrarConstants.CONFIG_KEY_ASK_UNKNOWN_PASS, JDL.L("gui.config.unrar.ask_path", "Ask for unknown passwords?")).setDefaultValue(true));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDUnrarConstants.CONFIG_KEY_DEEP_EXTRACT, JDL.L("gui.config.unrar.deep_extract", "Deep-Extraction")).setDefaultValue(true));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDUnrarConstants.CONFIG_KEY_REMOVE_INFO_FILE, JDL.L("gui.config.unrar.remove_infofile", "Delete Infofile after extraction")).setDefaultValue(false));
     }
 
     private void chmodUnrar(String path) {

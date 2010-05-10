@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.config.ConfigGroup;
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 import jd.gui.UserIO;
@@ -108,9 +109,8 @@ public class JDRemoteControl extends PluginOptional {
     }
 
     private void initConfig() {
-        ConfigEntry cfg;
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, PARAM_PORT, JDL.L("plugins.optional.RemoteControl.port", "Port:"), 1000, 65500));
-        cfg.setDefaultValue(10025);
+        config.setGroup(new ConfigGroup(getHost(), getIconKey()));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, PARAM_PORT, JDL.L("plugins.optional.RemoteControl.port", "Port:"), 1000, 65500).setDefaultValue(10025));
     }
 
     @Override

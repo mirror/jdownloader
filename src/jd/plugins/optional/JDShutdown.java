@@ -29,6 +29,7 @@ import jd.OptionalPluginWrapper;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.config.ConfigGroup;
 import jd.config.SubConfiguration;
 import jd.controlling.DownloadWatchDog;
 import jd.controlling.JDController;
@@ -428,6 +429,7 @@ public class JDShutdown extends PluginOptional {
     private void initConfig() {
         SubConfiguration subConfig = getPluginConfig();
 
+        config.setGroup(new ConfigGroup(getHost(), getIconKey()));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, CONFIG_ENABLEDONSTART, JDL.L("gui.config.jdshutdown.enabledOnStart", "Enabled on Start")).setDefaultValue(false));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, subConfig, CONFIG_MODE, MODES_AVAIL, JDL.L("gui.config.jdshutdown.mode", "Mode:")).setDefaultValue(0));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, CONFIG_FORCESHUTDOWN, JDL.L("gui.config.jdshutdown.forceshutdown", "Force Shutdown (Not for all OS)")).setDefaultValue(false));

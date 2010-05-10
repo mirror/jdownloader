@@ -20,11 +20,9 @@ import java.util.ArrayList;
 import java.util.logging.Logger;
 
 import javax.swing.BorderFactory;
-import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
-import javax.swing.JTabbedPane;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -97,8 +95,6 @@ public class ConfigPanel extends SwitchPanel {
             case ConfigContainer.TYPE_LISTCONTROLLED:
                 panel.add(entry.getDecoration(), gapLeft + "spanx");
                 break;
-            case ConfigContainer.TYPE_CONTAINER:
-                break;
             default:
                 panel.add(entry.getDecoration(), gapLeft + (entry.getInput() == null ? "spanx" : ""));
             }
@@ -112,8 +108,6 @@ public class ConfigPanel extends SwitchPanel {
             case ConfigContainer.TYPE_LISTCONTROLLED:
             case ConfigContainer.TYPE_TEXTAREA:
                 panel.add(new JScrollPane(entry.getInput()), gapLeft + "spanx, growy, pushy");
-                break;
-            case ConfigContainer.TYPE_CONTAINER:
                 break;
             default:
                 panel.add(entry.getInput(), entry.getDecoration() == null ? gapLeft + "spanx" : "");
@@ -220,31 +214,13 @@ public class ConfigPanel extends SwitchPanel {
         }
     }
 
-    protected final JComponent createPanel(ConfigContainer container) {
-        ArrayList<ConfigEntry> cont = new ArrayList<ConfigEntry>();
+    protected final JPanel createPanel(ConfigContainer container) {
         for (ConfigEntry cfgEntry : container.getEntries()) {
-            if (cfgEntry.getType() == ConfigContainer.TYPE_CONTAINER) {
-                cont.add(cfgEntry);
-            } else {
-                GUIConfigEntry ce = new GUIConfigEntry(cfgEntry);
-                if (ce != null) addGUIConfigEntry(ce);
-            }
+            GUIConfigEntry ce = new GUIConfigEntry(cfgEntry);
+            if (ce != null) addGUIConfigEntry(ce);
         }
 
-        if (!cont.isEmpty()) {
-            JTabbedPane tabbed = new JTabbedPane();
-            tabbed.setOpaque(false);
-            tabbed.addTab(container.getTitle(), container.getIcon(), panel);
-            ConfigPanel cp;
-            for (ConfigEntry c : cont) {
-                cp = new ConfigPanel(c.getContainer());
-                cp.setBorder(null);
-                tabbed.addTab(c.getContainer().getTitle(), c.getContainer().getIcon(), cp);
-            }
-            return tabbed;
-        } else {
-            return panel;
-        }
+        return panel;
     }
 
     public static String getTitle() {

@@ -25,6 +25,7 @@ import javax.swing.JComboBox;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.config.ConfigGroup;
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 import jd.controlling.SingleDownloadController;
@@ -91,6 +92,7 @@ public class JDInfoFileWriter extends PluginOptional {
     }
 
     public void initConfig() {
+        config.setGroup(new ConfigGroup(getHost(), getIconKey()));
         config.addEntry(cmbVars = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, "VARS", Replacer.getKeyList(), JDL.L("plugins.optional.infofilewriter.variables", "Available variables")));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, JDL.L("plugins.optional.infofilewriter.insertKey.short", "Insert"), JDL.L("plugins.optional.infofilewriter.insertKey", "Insert selected Key into the Content"), JDTheme.II("gui.icons.paste", 16, 16)));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, PARAM_FILENAME, JDL.L("plugins.optional.infofilewriter.filename", "Filename:")).setDefaultValue(FILENAME_DEFAULT));

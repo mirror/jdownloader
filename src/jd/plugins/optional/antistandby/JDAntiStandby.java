@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.config.ConfigGroup;
 import jd.controlling.JDLogger;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.gui.swing.jdgui.menu.MenuAction;
@@ -106,6 +107,7 @@ public class JDAntiStandby extends PluginOptional {
     }
 
     private void initConfig() {
+        config.setGroup(new ConfigGroup(getHost(), getIconKey()));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), CONFIG_MODE, MODES_AVAIL, JDL.L("gui.config.antistandby.mode", "Mode:")).setDefaultValue(0));
     }
 

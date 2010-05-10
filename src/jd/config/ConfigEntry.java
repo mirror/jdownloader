@@ -60,7 +60,6 @@ public class ConfigEntry implements Serializable {
     private boolean changes;
     private ConfigEntry conditionEntry;
     private Boolean compareValue;
-    private ConfigContainer container;
     private transient ListController controller;
     private Object defaultValue;
     private String description;
@@ -106,12 +105,6 @@ public class ConfigEntry implements Serializable {
         this.label = label;
         this.description = description;
         this.imageIcon = icon;
-        this.enabled = true;
-    }
-
-    public ConfigEntry(int type, ConfigContainer container) {
-        this.type = type;
-        this.container = container;
         this.enabled = true;
     }
 
@@ -216,10 +209,6 @@ public class ConfigEntry implements Serializable {
 
     public ActionListener getActionListener() {
         return actionListener;
-    }
-
-    public ConfigContainer getContainer() {
-        return container;
     }
 
     public Object getDefaultValue() {
@@ -328,10 +317,6 @@ public class ConfigEntry implements Serializable {
     /** Gets set if this config entry has changes */
     public void setChanges(boolean b) {
         changes = b;
-    }
-
-    public void setContainer(ConfigContainer container) {
-        this.container = container;
     }
 
     /**

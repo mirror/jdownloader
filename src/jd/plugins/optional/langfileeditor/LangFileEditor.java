@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.config.ConfigGroup;
 import jd.gui.UserIO;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.SingletonPanel;
@@ -61,6 +62,7 @@ public class LangFileEditor extends PluginOptional {
     }
 
     private void initConfigEntries() {
+        config.setGroup(new ConfigGroup(getHost(), getIconKey()));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {

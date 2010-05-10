@@ -115,13 +115,6 @@ public class ConfigContainer implements Serializable {
     public static final int TYPE_PASSWORDFIELD = 11;
 
     /**
-     * ConfigElement ist ein Container mit weiteren ConfigEntry's
-     * 
-     * @see ConfigEntry#ConfigEntry(int, ConfigContainer)
-     */
-    public static final int TYPE_CONTAINER = 13;
-
-    /**
      * ConfigElement ist ein Textbereich, welcher von einem eigenen Controller
      * verwaltet wird (siehe PasswordListController und HTAccessController)
      * 

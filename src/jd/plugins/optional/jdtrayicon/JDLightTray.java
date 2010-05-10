@@ -39,6 +39,7 @@ import jd.Main;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.config.ConfigGroup;
 import jd.config.SubConfiguration;
 import jd.controlling.DownloadWatchDog;
 import jd.controlling.JDLogger;
@@ -163,6 +164,7 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
 
     public void initConfig() {
         ConfigEntry ce, cond;
+        config.setGroup(new ConfigGroup(getHost(), getIconKey()));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_CLOSE_TO_TRAY, JDL.L("plugins.optional.JDLightTray.closetotray", "Close to tray")).setDefaultValue(true));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_START_MINIMIZED, JDL.L("plugins.optional.JDLightTray.startMinimized", "Start minimized")).setDefaultValue(false));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));

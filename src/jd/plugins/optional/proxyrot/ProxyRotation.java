@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.config.ConfigGroup;
 import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
@@ -128,6 +129,7 @@ public class ProxyRotation extends PluginOptional {
     }
 
     public void initConfig() {
+        config.setGroup(new ConfigGroup(getHost(), getIconKey()));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, cfg, PARAM_PROXYLIST, JDL.L("jd.plugins.optional.ProxyRotation.initConfig", "ProxyList:")).setDefaultValue("#http://user:password@ip:port\r\n#socks://user:password@ip:port\r\n"));
     }
 

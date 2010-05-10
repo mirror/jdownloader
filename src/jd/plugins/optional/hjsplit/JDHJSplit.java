@@ -26,6 +26,7 @@ import javax.swing.filechooser.FileFilter;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.config.ConfigGroup;
 import jd.config.SubConfiguration;
 import jd.controlling.DownloadWatchDog;
 import jd.controlling.JDLogger;
@@ -605,12 +606,9 @@ public class JDHJSplit extends PluginOptional {
     }
 
     public void initConfig() {
-        SubConfiguration subConfig = getPluginConfig();
-        ConfigEntry ce;
-        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, CONFIG_KEY_REMOVE_MERGED, JDL.L("gui.config.hjsplit.remove_merged", "Delete archive after merging")));
-        ce.setDefaultValue(false);
-        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, CONFIG_KEY_OVERWRITE, JDL.L("gui.config.hjsplit.overwrite", "Overwrite existing files")));
-        ce.setDefaultValue(true);
+        config.setGroup(new ConfigGroup(getHost(), getIconKey()));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CONFIG_KEY_REMOVE_MERGED, JDL.L("gui.config.hjsplit.remove_merged", "Delete archive after merging")).setDefaultValue(false));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CONFIG_KEY_OVERWRITE, JDL.L("gui.config.hjsplit.overwrite", "Overwrite existing files")).setDefaultValue(true));
     }
 
     @Override
