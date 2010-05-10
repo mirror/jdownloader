@@ -115,10 +115,10 @@ public class ConfigContainer implements Serializable {
     public static final int TYPE_PASSWORDFIELD = 11;
 
     /**
-     * <b>TODO:</b> Unused for now!
+     * ConfigElement ist ein Container mit weiteren ConfigEntry's
+     * 
+     * @see ConfigEntry#ConfigEntry(int, ConfigContainer)
      */
-    public static final int TYPE_LINK = 12;
-
     public static final int TYPE_CONTAINER = 13;
 
     /**

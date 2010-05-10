@@ -45,15 +45,13 @@ public class ConfigPanel extends SwitchPanel {
 
     private static final long serialVersionUID = 3383448498625377495L;
 
-    protected ArrayList<GUIConfigEntry> entries = new ArrayList<GUIConfigEntry>();
+    private ArrayList<GUIConfigEntry> entries = new ArrayList<GUIConfigEntry>();
 
     protected Logger logger = JDLogger.getLogger();
 
     protected JPanel panel;
 
     private ConfigGroup currentGroup;
-
-    private JPanel header;
 
     public ConfigPanel() {
         this.setLayout(new MigLayout("ins 0", "[fill,grow]", "[fill,grow]"));
@@ -63,8 +61,6 @@ public class ConfigPanel extends SwitchPanel {
 
     /**
      * Constructor to display a ConfigPanel with contents of container
-     * 
-     * @param container
      */
     public ConfigPanel(ConfigContainer container) {
         this();
@@ -72,6 +68,10 @@ public class ConfigPanel extends SwitchPanel {
         setContainer(container);
     }
 
+    /**
+     * Adds all ConfigEntry's from the ConfigContainer to the internal panel and
+     * loads the stored values.
+     */
     public void setContainer(ConfigContainer container) {
         this.add(createPanel(container));
 
@@ -81,89 +81,47 @@ public class ConfigPanel extends SwitchPanel {
     public void addGUIConfigEntry(GUIConfigEntry entry, JPanel panel) {
         ConfigGroup group = entry.getConfigEntry().getGroup();
 
-        if (group == null) {
-            if (currentGroup != null) {
-                panel.add(new JSeparator(), "spanx,gapbottom 15,gaptop 15");
-                currentGroup = null;
+        if (currentGroup != group) {
+            if (group != null) {
+                panel.add(Factory.createHeader(group), "spanx, hidemode 3");
+            } else {
+                panel.add(new JSeparator(), "spanx, gapbottom 15, gaptop 15");
             }
+            currentGroup = group;
+        }
 
-            if (entry.getDecoration() != null) {
-                switch (entry.getConfigEntry().getType()) {
-                case ConfigContainer.TYPE_TEXTAREA:
-                case ConfigContainer.TYPE_LISTCONTROLLED:
-                    panel.add(entry.getDecoration(), "spany " + entry.getInput().length + ",spanx");
-                    break;
-                case ConfigContainer.TYPE_CONTAINER:
-                    break;
-                default:
-                    panel.add(entry.getDecoration(), "spany " + Math.max(1, entry.getInput().length) + (entry.getInput().length == 0 ? ",spanx" : ""));
-                }
-            }
-
-            for (JComponent c : entry.getInput()) {
-                switch (entry.getConfigEntry().getType()) {
-                case ConfigContainer.TYPE_BUTTON:
-                    panel.add(c, entry.getDecoration() == null ? "spanx" : "width n:n:160");
-                    break;
-                case ConfigContainer.TYPE_TEXTAREA:
-                case ConfigContainer.TYPE_LISTCONTROLLED:
-                    panel.add(new JScrollPane(c), "spanx,growy,pushy");
-                    break;
-                case ConfigContainer.TYPE_CONTAINER:
-                    break;
-                default:
-                    panel.add(c, entry.getDecoration() == null ? "spanx" : "");
-                    break;
-                }
-            }
-            entries.add(entry);
-            currentGroup = null;
-            return;
-        } else {
-            if (currentGroup != group) {
-                panel.add(header = Factory.createHeader(group), "spanx,hidemode 3");
-                header.setVisible(false);
-                currentGroup = group;
-            }
-
-            if (entry.getDecoration() != null) {
-                switch (entry.getConfigEntry().getType()) {
-                case ConfigContainer.TYPE_TEXTAREA:
-                case ConfigContainer.TYPE_LISTCONTROLLED:
-                    panel.add(entry.getDecoration(), "gapleft " + this.getGapLeft() + ",spany " + entry.getInput().length + ",spanx");
-                    break;
-                case ConfigContainer.TYPE_CONTAINER:
-                    break;
-                default:
-                    panel.add(entry.getDecoration(), "gapleft " + this.getGapLeft() + ",spany " + entry.getInput().length + (entry.getInput().length == 0 ? ",spanx" : ""));
-                }
-            }
-
-            for (JComponent c : entry.getInput()) {
-                switch (entry.getConfigEntry().getType()) {
-                case ConfigContainer.TYPE_BUTTON:
-                    panel.add(c, entry.getDecoration() == null ? "spanx,gapleft " + this.getGapLeft() : "width n:n:160");
-                    header.setVisible(true);
-                    break;
-                case ConfigContainer.TYPE_LISTCONTROLLED:
-                case ConfigContainer.TYPE_TEXTAREA:
-                    panel.add(new JScrollPane(c), "spanx,growy,pushy,gapleft " + this.getGapLeft());
-                    header.setVisible(true);
-                    break;
-                case ConfigContainer.TYPE_CONTAINER:
-                    break;
-                default:
-                    panel.add(c, entry.getDecoration() == null ? "spanx,gapleft " + this.getGapLeft() : "");
-                    header.setVisible(true);
-                    break;
-                }
+        String gapLeft = (group == null) ? "" : "gapleft 35,";
+        if (entry.getDecoration() != null) {
+            switch (entry.getConfigEntry().getType()) {
+            case ConfigContainer.TYPE_TEXTAREA:
+            case ConfigContainer.TYPE_LISTCONTROLLED:
+                panel.add(entry.getDecoration(), gapLeft + "spanx");
+                break;
+            case ConfigContainer.TYPE_CONTAINER:
+                break;
+            default:
+                panel.add(entry.getDecoration(), gapLeft + (entry.getInput() == null ? "spanx" : ""));
             }
         }
-        entries.add(entry);
-    }
 
-    private String getGapLeft() {
-        return "35";
+        if (entry.getInput() != null) {
+            switch (entry.getConfigEntry().getType()) {
+            case ConfigContainer.TYPE_BUTTON:
+                panel.add(entry.getInput(), entry.getDecoration() == null ? gapLeft + "spanx" : "wmax 160");
+                break;
+            case ConfigContainer.TYPE_LISTCONTROLLED:
+            case ConfigContainer.TYPE_TEXTAREA:
+                panel.add(new JScrollPane(entry.getInput()), gapLeft + "spanx, growy, pushy");
+                break;
+            case ConfigContainer.TYPE_CONTAINER:
+                break;
+            default:
+                panel.add(entry.getInput(), entry.getDecoration() == null ? gapLeft + "spanx" : "");
+                break;
+            }
+        }
+
+        entries.add(entry);
     }
 
     public void addGUIConfigEntry(GUIConfigEntry entry) {
@@ -246,7 +204,7 @@ public class ConfigPanel extends SwitchPanel {
     }
 
     /**
-     * Saves the configentries in THIS panel.
+     * Saves the ConfigEntries in THIS panel.
      */
     private final void saveConfigEntries() {
         ArrayList<SubConfiguration> subs = new ArrayList<SubConfiguration>();

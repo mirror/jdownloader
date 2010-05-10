@@ -75,19 +75,19 @@ public class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionLi
                 new Thread() {
                     @Override
                     public void run() {
-                        if (((JTextField) ip.getInput()[0]).getText() == null || ((JTextField) ip.getInput()[0]).getText().trim().equals("")) {
+                        if (((JTextField) ip.getInput()).getText() == null || ((JTextField) ip.getInput()).getText().trim().equals("")) {
                             RouterUtils.findIP(ip, true);
                         }
                         new GuiRunnable<Object>() {
 
                             @Override
                             public Object runSave() {
-                                Gui jd = new Gui(((JTextField) ip.getInput()[0]).getText());
+                                Gui jd = new Gui(((JTextField) ip.getInput()).getText());
                                 if (jd.saved) {
-                                    ((JTextField) ip.getInput()[0]).setText(jd.ip);
-                                    if (jd.user != null) ((JTextField) user.getInput()[0]).setText(jd.user);
-                                    if (jd.pass != null) ((JTextField) pass.getInput()[0]).setText(jd.pass);
-                                    ((JTextArea) script.getInput()[0]).setText(jd.methode);
+                                    ((JTextField) ip.getInput()).setText(jd.ip);
+                                    if (jd.user != null) ((JTextField) user.getInput()).setText(jd.user);
+                                    if (jd.pass != null) ((JTextField) pass.getInput()).setText(jd.pass);
+                                    ((JTextArea) script.getInput()).setText(jd.methode);
                                 }
                                 return null;
                             }

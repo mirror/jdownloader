@@ -99,9 +99,9 @@ public class JDInfoFileWriter extends PluginOptional {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        JComboBox cmb = ((JComboBox) ((GUIConfigEntry) cmbVars.getGuiListener()).getInput()[0]);
+        JComboBox cmb = ((JComboBox) ((GUIConfigEntry) cmbVars.getGuiListener()).getInput());
         if (cmb.getSelectedIndex() < 0) return;
-        JDTextArea txt = ((JDTextArea) ((GUIConfigEntry) txtInfo.getGuiListener()).getInput()[0]);
+        JDTextArea txt = ((JDTextArea) ((GUIConfigEntry) txtInfo.getGuiListener()).getInput());
         txt.insert("%" + Replacer.getKey(cmb.getSelectedIndex()) + "%", txt.getCaretPosition());
     }
 
