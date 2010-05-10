@@ -144,7 +144,7 @@ public class XFileSharingProBasic extends PluginForHost {
         String ttt = new Regex(brbefore, "countdown\">.*?(\\d+).*?</span>").getMatch(0);
         if (ttt == null) ttt = new Regex(brbefore, "id=\"countdown_str\".*?<span id=\".*?\">.*?(\\d+).*?</span").getMatch(0);
         if (ttt != null) {
-            logger.info("Waittime detected, waiting " + ttt.trim() + " seconds from now on...");
+            logger.info("Waittime detected, waiting " + ttt + " seconds from now on...");
             int tt = Integer.parseInt(ttt);
             sleep(tt * 1001, downloadLink);
         }

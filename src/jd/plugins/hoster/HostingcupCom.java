@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
@@ -45,6 +46,8 @@ public class HostingcupCom extends PluginForHost {
     public String getAGBLink() {
         return "http://hostingcup.com/tos.html";
     }
+
+    private static final String passwordText = "(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)";
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
@@ -86,22 +89,23 @@ public class HostingcupCom extends PluginForHost {
         Form DLForm = br.getFormbyProperty("name", "F1");
         if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // Ticket Time
-        String ttt = br.getRegex("countdown\">.*?(\\d+).*?</span>").getMatch(0);
+        String ttt = new Regex(br.toString(), "countdown\">.*?(\\d+).*?</span>").getMatch(0);
+        if (ttt == null) ttt = new Regex(br.toString(), "id=\"countdown_str\".*?<span id=\".*?\">.*?(\\d+).*?</span").getMatch(0);
         if (ttt != null) {
-            logger.info("Waittime detected, waiting " + ttt.trim() + " seconds from now on...");
+            logger.info("Waittime detected, waiting " + ttt + " seconds from now on...");
             int tt = Integer.parseInt(ttt);
             sleep(tt * 1001, downloadLink);
         }
         String passCode = null;
         boolean password = false;
         boolean recaptcha = false;
-        if (br.containsHTML("(<br><b>Passwort:</b>|<br><b>Password:</b>)")) {
+        if (br.containsHTML(passwordText)) {
             password = true;
             logger.info("The downloadlink seems to be password protected.");
         }
 
         /* Captcha START */
-        if (br.containsHTML("background:#ccc;text-align")) {
+        if (br.containsHTML(";background:#ccc;text-align")) {
             logger.info("Detected captcha method \"plaintext captchas\" for this host");
             // Captcha method by ManiacMansion
             String[][] letters = new Regex(Encoding.htmlDecode(br.toString()), "<span style='position:absolute;padding-left:(\\d+)px;padding-top:\\d+px;'>(\\d)</span>").getMatches();
@@ -140,10 +144,7 @@ public class HostingcupCom extends PluginForHost {
             String code = getCaptchaCode(captchaurl, downloadLink);
             DLForm.put("code", code);
             logger.info("Put captchacode " + code + " obtained by captcha metod \"Standard captcha\" in the form.");
-        } else if (br.containsHTML("api.recaptcha.net") && !br.containsHTML("api\\.recaptcha\\.net.*?<Textarea.*?<input type=\"submit\" value.*?</Form>")) {
-            // Some hosters also got commentfields with captchas, therefore is
-            // the !br.contains...check Exampleplugin:
-            // FileGigaCom
+        } else if (br.containsHTML("api.recaptcha.net")) {
             logger.info("Detected captcha method \"Re Captcha\" for this host");
             PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
             jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
@@ -152,15 +153,7 @@ public class HostingcupCom extends PluginForHost {
             File cf = rc.downloadCaptcha(getLocalCaptchaFile());
             String c = getCaptchaCode(cf, downloadLink);
             if (password == true) {
-                if (downloadLink.getStringProperty("pass", null) == null) {
-                    passCode = Plugin.getUserInput("Password?", downloadLink);
-                } else {
-                    /* gespeicherten PassCode holen */
-                    passCode = downloadLink.getStringProperty("pass", null);
-                }
-                rc.getForm().put("password", passCode);
-                logger.info("Put password \"" + passCode + "\" entered by user in the DLForm.");
-                password = false;
+                passCode = handlePassword(passCode, DLForm, downloadLink);
             }
             recaptcha = true;
             rc.setCode(c);
@@ -173,14 +166,7 @@ public class HostingcupCom extends PluginForHost {
         // usually recaptcha is false
         if (recaptcha == false) {
             if (password == true) {
-                if (downloadLink.getStringProperty("pass", null) == null) {
-                    passCode = Plugin.getUserInput("Password?", downloadLink);
-                } else {
-                    /* gespeicherten PassCode holen */
-                    passCode = downloadLink.getStringProperty("pass", null);
-                }
-                DLForm.put("password", passCode);
-                logger.info("Put password \"" + passCode + "\" entered by user in the DLForm.");
+                passCode = handlePassword(passCode, DLForm, downloadLink);
             }
             jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLForm, resumable, maxchunks);
             logger.info("Submitted DLForm");
@@ -200,7 +186,7 @@ public class HostingcupCom extends PluginForHost {
             if (dllink == null) {
                 checkErrors(downloadLink);
                 if (br.containsHTML("You're using all download slots for IP")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
-                if (br.containsHTML("(<br><b>Passwort:</b>|<br><b>Password:</b>|Wrong password)")) {
+                if (br.containsHTML("(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input|Wrong password)")) {
                     logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
                     downloadLink.setProperty("pass", null);
                     throw new PluginException(LinkStatus.ERROR_RETRY);
@@ -249,6 +235,18 @@ public class HostingcupCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    public String handlePassword(String passCode, Form pwform, DownloadLink thelink) throws IOException, PluginException {
+        if (thelink.getStringProperty("pass", null) == null) {
+            passCode = Plugin.getUserInput("Password?", thelink);
+        } else {
+            /* gespeicherten PassCode holen */
+            passCode = thelink.getStringProperty("pass", null);
+        }
+        pwform.put("password", passCode);
+        logger.info("Put password \"" + passCode + "\" entered by user in the DLForm.");
+        return passCode;
     }
 
     @Override

@@ -70,6 +70,10 @@ public class CraMitIn extends PluginForHost {
         br.setCookie(COOKIE_HOST, "lang", "english");
         br.getPage(link.getDownloadURL());
         doSomething();
+        if (brbefore.contains("class=\"err\">This server is in maintenance mode")) {
+            logger.info("File " + link.getDownloadURL() + " is on a server which is in maintenance mode!");
+            return AvailableStatus.UNCHECKABLE;
+        }
         String filename = br.getRegex("You have requested.*?http://.*?[a-z0-9]{12}/(.*?)</font>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("fname\" value=\"(.*?)\"").getMatch(0);
@@ -86,11 +90,11 @@ public class CraMitIn extends PluginForHost {
                 }
             }
         }
-        String filesize = br.getRegex("<small>\\((.*?)\\)</small>").getMatch(0);
+        String filesize = br.getRegex("\\(([0-9]+ bytes)\\)").getMatch(0);
         if (filesize == null) {
-            filesize = br.getRegex("\\(([0-9]+ bytes)\\)").getMatch(0);
+            filesize = br.getRegex("</font>[ ]+\\((.*?)\\)(.*?)</font>").getMatch(0);
             if (filesize == null) {
-                filesize = br.getRegex("</font>[ ]+\\((.*?)\\)(.*?)</font>").getMatch(0);
+                filesize = br.getRegex(">http://cramit\\.in/[a-z0-9]{12}</font> \\((.*?)\\)</font>").getMatch(0);
             }
         }
         if (brbefore.contains("<b>File Not Found</b><br><br>") && (filename == null || filename.matches(""))) {
@@ -116,217 +120,12 @@ public class CraMitIn extends PluginForHost {
 
     public void doFree(DownloadLink downloadLink) throws Exception, PluginException {
         doSomething();
-        try {
-            boolean resumable = true;
-            int maxchunks = 1;
-            Form freeform = new Form();
-            freeform.setMethod(MethodType.POST);
-            freeform.put("method_free", "Continue to Download");
-            freeform.put("op", "download1");
-            freeform.put("fname", downloadLink.getName());
-            freeform.put("id", new Regex(downloadLink.getDownloadURL(), "cramit\\.in/([a-z0-9]{12})").getMatch(0));
-            br.submitForm(freeform);
-            doSomething();
-            String md5hash = br.getRegex("<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
-            if (md5hash != null) {
-                md5hash = md5hash.trim();
-                logger.info("Found md5hash: " + md5hash);
-                downloadLink.setMD5Hash(md5hash);
-            }
-            br.setFollowRedirects(false);
-            Form DLForm = new Form();
-            DLForm.setMethod(MethodType.POST);
-            DLForm.put("op", "download2");
-            DLForm.put("down_direct", "1");
-            DLForm.put("method_free", "Continue to Download");
-            DLForm.put("referer", downloadLink.getDownloadURL());
-            DLForm.put("id", new Regex(downloadLink.getDownloadURL(), "cramit\\.in/([a-z0-9]{12})").getMatch(0));
-            DLForm.put("rand", new Regex(br.toString(), "name=\"rand\" value=\"(.*?)\"").getMatch(0));
-            int tt = 60;
-            // Ticket Time
-            String ttt = br.getRegex("countdown\">.*?(\\d+).*?</span>").getMatch(0);
-            if (ttt == null) ttt = br.getRegex("id=\"countdown_str\".*?<span id=\".*?\">.*?(\\d+).*?</span").getMatch(0);
-            if (ttt != null && Integer.parseInt(ttt) < 180) {
-                logger.info("Waittime detected, waiting " + ttt.trim() + " seconds from now on...");
-                tt = Integer.parseInt(ttt);
-            }
-            sleep(tt * 1001, downloadLink);
-            String passCode = null;
-            boolean password = false;
-            boolean recaptcha = false;
-            if (br.containsHTML("(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)")) {
-                password = true;
-                logger.info("The downloadlink seems to be password protected.");
-            }
-
-            /* Captcha START */
-            if (br.containsHTML("background:#ccc;text-align") && !br.containsHTML("display:none;\">background:#ccc;text-align")) {
-                logger.info("Detected captcha method \"plaintext captchas\" for this host");
-                // Captcha method by ManiacMansion
-                String[][] letters = new Regex(Encoding.htmlDecode(br.toString()), "<span style='position:absolute;padding-left:(\\d+)px;padding-top:\\d+px;'>(\\d)</span>").getMatches();
-                if (letters == null || letters.length == 0) {
-                    logger.warning("plaintext captchahandling broken!");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                SortedMap<Integer, String> capMap = new TreeMap<Integer, String>();
-                for (String[] letter : letters) {
-                    capMap.put(Integer.parseInt(letter[0]), letter[1]);
-                }
-                StringBuilder code = new StringBuilder();
-                for (String value : capMap.values()) {
-                    code.append(value);
-                }
-                DLForm.put("code", code.toString());
-                logger.info("Put captchacode " + code.toString() + " obtained by captcha metod \"plaintext captchas\" in the form.");
-            } else if (br.containsHTML("/captchas/")) {
-                logger.info("Detected captcha method \"Standard captcha\" for this host");
-                String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
-                String captchaurl = null;
-                if (sitelinks == null || sitelinks.length == 0) {
-                    logger.warning("Standard captcha captchahandling broken!");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                for (String link : sitelinks) {
-                    if (link.contains("/captchas/")) {
-                        captchaurl = link;
-                        break;
-                    }
-                }
-                if (captchaurl == null) {
-                    logger.warning("Standard captcha captchahandling broken!");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                String code = getCaptchaCode(captchaurl, downloadLink);
-                DLForm.put("code", code);
-                logger.info("Put captchacode " + code + " obtained by captcha metod \"Standard captcha\" in the form.");
-            } else if (br.containsHTML("api.recaptcha.net")) {
-                logger.info("Detected captcha method \"Re Captcha\" for this host");
-                PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-                rc.parse();
-                rc.load();
-                File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                String c = getCaptchaCode(cf, downloadLink);
-                if (password == true) {
-                    if (downloadLink.getStringProperty("pass", null) == null) {
-                        passCode = Plugin.getUserInput("Password?", downloadLink);
-                    } else {
-                        /* gespeicherten PassCode holen */
-                        passCode = downloadLink.getStringProperty("pass", null);
-                    }
-                    rc.getForm().put("password", passCode);
-                    logger.info("Put password \"" + passCode + "\" entered by user in the DLForm.");
-                    password = false;
-                }
-                rc.getForm().remove("method_free");
-                rc.getForm().put("method_free", "Free Download");
-                rc.getForm().put("op", "download2");
-                rc.getForm().put("recaptcha_challenge_field", rc.getChallenge());
-                rc.getForm().put("recaptcha_response_field", c);
-                rc.getForm().put("referer", downloadLink.getDownloadURL());
-                Form lol = rc.getForm();
-                recaptcha = true;
-                // rc.setCode(c);
-                br.submitForm(lol);
-                logger.info("Put captchacode " + c + " obtained by captcha metod \"Re Captcha\" in the form and submitted it.");
-            }
-            doSomething();
-            /* Captcha END */
-
-            // If the hoster uses Re Captcha the form has already been sent
-            // before
-            // here so here it's checked. Most hosters don't use Re Captcha so
-            // usually recaptcha is false
-            if (recaptcha == false) {
-                if (password == true) {
-                    if (downloadLink.getStringProperty("pass", null) == null) {
-                        passCode = Plugin.getUserInput("Password?", downloadLink);
-                    } else {
-                        /* gespeicherten PassCode holen */
-                        passCode = downloadLink.getStringProperty("pass", null);
-                    }
-                    DLForm.put("password", passCode);
-                    logger.info("Put password \"" + passCode + "\" entered by user in the DLForm.");
-                }
-                jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLForm, resumable, maxchunks);
-                logger.info("Submitted DLForm");
-            }
-            boolean error = false;
-            try {
-                if (dl.getConnection().getContentType().contains("html")) {
-                    error = true;
-                }
-            } catch (Exception e) {
-                error = true;
-            }
-            if (br.getRedirectLocation() != null || error == true) {
-                br.followConnection();
-                logger.info("followed connection...");
-                doSomething();
-                String dllink = br.getRedirectLocation();
-                if (dllink == null) {
-                    if (brbefore.contains("You're using all download slots for IP")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
-                    if (br.containsHTML("(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input|Wrong password)")) {
-                        logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
-                        downloadLink.setProperty("pass", null);
-                        throw new PluginException(LinkStatus.ERROR_RETRY);
-                    }
-                    if (brbefore.contains("Wrong captcha")) {
-                        logger.warning("Wrong captcha or wrong password!");
-                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                    }
-                    if (dllink == null) {
-                        dllink = br.getRegex("dotted #bbb;padding.*?<a href=\"(.*?)\"").getMatch(0);
-                        if (dllink == null) {
-                            dllink = br.getRegex("This [ a-zA-Z]+ link will be available for your IP.*?href=\"(http.*?)\"").getMatch(1);
-                            if (dllink == null) {
-                                dllink = br.getRegex("(http://ns\\d+\\.ovh\\.net:\\d+/d/[a-z0-9]+/.*?)\"").getMatch(0);
-                            }
-                        }
-                    }
-                }
-                if (dllink == null) {
-                    logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                logger.info("Final downloadlink = " + dllink + " starting the download...");
-                jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
-            }
-            if (passCode != null) {
-                downloadLink.setProperty("pass", passCode);
-            }
-            boolean error2 = false;
-            try {
-                if (dl.getConnection().getContentType().contains("html")) {
-                    error2 = true;
-                }
-            } catch (Exception e) {
-                error2 = true;
-            }
-            if (error2 == true) {
-                logger.warning("The final dllink seems not to be a file!");
-                br.followConnection();
-                if (br.containsHTML("File Not Found")) {
-                    logger.warning("Server says link offline, please recheck that!");
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            dl.startDownload();
-        } catch (Exception e) {
-            checkErrors(downloadLink);
-            logger.warning(br.toString());
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (brbefore.contains("class=\"err\">This server is in maintenance mode")) {
+            logger.info("File " + downloadLink.getDownloadURL() + " is on a server which is in maintenance mode!");
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server under maintenance");
         }
-    }
-
-    @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        doFree(downloadLink);
-    }
-
-    public void doesFreeWork(DownloadLink downloadLink) throws Exception, PluginException {
+        boolean resumable = true;
+        int maxchunks = 1;
         Form freeform = new Form();
         freeform.setMethod(MethodType.POST);
         freeform.put("method_free", "Continue to Download");
@@ -334,10 +133,183 @@ public class CraMitIn extends PluginForHost {
         freeform.put("fname", downloadLink.getName());
         freeform.put("id", new Regex(downloadLink.getDownloadURL(), "cramit\\.in/([a-z0-9]{12})").getMatch(0));
         br.submitForm(freeform);
+        doSomething();
+        checkErrors(downloadLink);
+        String md5hash = br.getRegex("<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
+        if (md5hash != null) {
+            md5hash = md5hash.trim();
+            logger.info("Found md5hash: " + md5hash);
+            downloadLink.setMD5Hash(md5hash);
+        }
         br.setFollowRedirects(false);
-        Form check = br.getFormbyProperty("name", "F1");
-        String rand = br.getRegex("name=\"rand\" value=\"(.*?)\"").getMatch(0);
-        if (check == null || rand == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        Form DLForm = new Form();
+        DLForm.setMethod(MethodType.POST);
+        DLForm.put("op", "download2");
+        DLForm.put("down_direct", "1");
+        DLForm.put("method_free", "Free+Download");
+        DLForm.put("referer", downloadLink.getDownloadURL());
+        DLForm.put("id", new Regex(downloadLink.getDownloadURL(), "cramit\\.in/([a-z0-9]{12})").getMatch(0));
+        DLForm.put("rand", new Regex(br.toString(), "name=\"rand\" value=\"(.*?)\"").getMatch(0));
+        int tt = 60;
+        // Ticket Time
+        String ttt = br.getRegex("countdown\">.*?(\\d+).*?</span>").getMatch(0);
+        if (ttt == null) ttt = br.getRegex("id=\"countdown_str\".*?<span id=\".*?\">.*?(\\d+).*?</span").getMatch(0);
+        if (ttt != null && Integer.parseInt(ttt) < 180) {
+            logger.info("Waittime detected, waiting " + ttt.trim() + " seconds from now on...");
+            tt = Integer.parseInt(ttt);
+        }
+        sleep(tt * 1001, downloadLink);
+        String passCode = null;
+        boolean password = false;
+        boolean recaptcha = false;
+        if (br.containsHTML("(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)")) {
+            password = true;
+            logger.info("The downloadlink seems to be password protected.");
+        }
+
+        /* Captcha START */
+        if (br.containsHTML("background:#ccc;text-align") && !br.containsHTML("display:none;\">background:#ccc;text-align")) {
+            logger.info("Detected captcha method \"plaintext captchas\" for this host");
+            // Captcha method by ManiacMansion
+            String[][] letters = new Regex(Encoding.htmlDecode(br.toString()), "<span style='position:absolute;padding-left:(\\d+)px;padding-top:\\d+px;'>(\\d)</span>").getMatches();
+            if (letters == null || letters.length == 0) {
+                logger.warning("plaintext captchahandling broken!");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            SortedMap<Integer, String> capMap = new TreeMap<Integer, String>();
+            for (String[] letter : letters) {
+                capMap.put(Integer.parseInt(letter[0]), letter[1]);
+            }
+            StringBuilder code = new StringBuilder();
+            for (String value : capMap.values()) {
+                code.append(value);
+            }
+            DLForm.put("code", code.toString());
+            logger.info("Put captchacode " + code.toString() + " obtained by captcha metod \"plaintext captchas\" in the form.");
+        } else if (br.containsHTML("/captchas/")) {
+            logger.info("Detected captcha method \"Standard captcha\" for this host");
+            String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
+            String captchaurl = null;
+            if (sitelinks == null || sitelinks.length == 0) {
+                logger.warning("Standard captcha captchahandling broken!");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            for (String link : sitelinks) {
+                if (link.contains("/captchas/")) {
+                    captchaurl = link;
+                    break;
+                }
+            }
+            if (captchaurl == null) {
+                logger.warning("Standard captcha captchahandling broken!");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            String code = getCaptchaCode(captchaurl, downloadLink);
+            DLForm.put("code", code);
+            logger.info("Put captchacode " + code + " obtained by captcha metod \"Standard captcha\" in the form.");
+        } else if (br.containsHTML("api.recaptcha.net")) {
+            logger.info("Detected captcha method \"Re Captcha\" for this host");
+            PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+            jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+            rc.parse();
+            rc.load();
+            File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+            String c = getCaptchaCode(cf, downloadLink);
+            if (password == true) {
+                if (downloadLink.getStringProperty("pass", null) == null) {
+                    passCode = Plugin.getUserInput("Password?", downloadLink);
+                } else {
+                    /* gespeicherten PassCode holen */
+                    passCode = downloadLink.getStringProperty("pass", null);
+                }
+                rc.getForm().put("password", passCode);
+                logger.info("Put password \"" + passCode + "\" entered by user in the DLForm.");
+                password = false;
+            }
+            rc.getForm().remove("method_free");
+            rc.getForm().put("method_free", "Free Download");
+            rc.getForm().put("op", "download2");
+            rc.getForm().put("recaptcha_challenge_field", rc.getChallenge());
+            rc.getForm().put("recaptcha_response_field", c);
+            rc.getForm().put("referer", downloadLink.getDownloadURL());
+            Form lol = rc.getForm();
+            recaptcha = true;
+            // rc.setCode(c);
+            br.submitForm(lol);
+            logger.info("Put captchacode " + c + " obtained by captcha metod \"Re Captcha\" in the form and submitted it.");
+        }
+        doSomething();
+        /* Captcha END */
+
+        // If the hoster uses Re Captcha the form has already been sent
+        // before
+        // here so here it's checked. Most hosters don't use Re Captcha so
+        // usually recaptcha is false
+        if (recaptcha == false) {
+            if (password == true) {
+                if (downloadLink.getStringProperty("pass", null) == null) {
+                    passCode = Plugin.getUserInput("Password?", downloadLink);
+                } else {
+                    /* gespeicherten PassCode holen */
+                    passCode = downloadLink.getStringProperty("pass", null);
+                }
+                DLForm.put("password", passCode);
+                logger.info("Put password \"" + passCode + "\" entered by user in the DLForm.");
+            }
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLForm, resumable, maxchunks);
+            logger.info("Submitted DLForm");
+        }
+        boolean error = false;
+        try {
+            if (dl.getConnection().getContentType().contains("html")) error = true;
+        } catch (Exception e) {
+            error = true;
+        }
+        if (error) {
+            br.followConnection();
+            logger.info("followed connection...");
+            doSomething();
+            checkErrors(downloadLink);
+            String dllink = br.getRedirectLocation();
+            if (dllink == null) {
+                if (brbefore.contains("You're using all download slots for IP")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
+                if (br.containsHTML("(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input|Wrong password)")) {
+                    logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
+                    downloadLink.setProperty("pass", null);
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+                if (brbefore.contains("Wrong captcha")) {
+                    logger.warning("Wrong captcha or wrong password!");
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
+                dllink = getDllink();
+            }
+            if (dllink == null) {
+                logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            logger.info("Final downloadlink = " + dllink + " starting the download...");
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
+        }
+        if (passCode != null) {
+            downloadLink.setProperty("pass", passCode);
+        }
+        if (dl.getConnection().getContentType().contains("html")) {
+            logger.warning("The final dllink seems not to be a file!");
+            br.followConnection();
+            if (br.containsHTML("File Not Found")) {
+                logger.warning("Server says link offline, please recheck that!");
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        requestFileInformation(downloadLink);
+        doFree(downloadLink);
     }
 
     private void login(Account account) throws Exception {
@@ -366,8 +338,10 @@ public class CraMitIn extends PluginForHost {
             return ai;
         }
         String space = br.getRegex(Pattern.compile("<td>Used space:</td>.*?<td.*?b>(.*?)of.*?Mb</b>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
+        if (space == null) space = br.getRegex(Pattern.compile("<TD>Used space:.{1,20}</TD><TD><b>(.*?)</b></TD>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (space != null) ai.setUsedSpace(space.trim() + " Mb");
         String points = br.getRegex(Pattern.compile("<td>You have collected:</td.*?b>(.*?)premium points", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        if (points == null) points = br.getRegex(Pattern.compile("<TD>Your Points:.{1,20}</TD><TD><b>(.*?)</b></TD>", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (points != null) {
             // Who needs half points ? If we have a dot in the points, just
             // remove it
@@ -378,7 +352,7 @@ public class CraMitIn extends PluginForHost {
             ai.setPremiumPoints(Long.parseLong(points.trim()));
         }
         account.setValid(true);
-        String availabletraffic = br.getRegex("Traffic available.*?:</TD><TD><b>(.*?)</b>").getMatch(0);
+        String availabletraffic = br.getRegex("Traffic (a|A)vailable(.*?)?:(.*?)?</TD><TD><b>(.*?)</b>").getMatch(3);
         if (availabletraffic != null) {
             ai.setTrafficLeft(Regex.getSize(availabletraffic));
         } else {
@@ -386,6 +360,7 @@ public class CraMitIn extends PluginForHost {
         }
         if (!nopremium) {
             String expire = br.getRegex("<td>Premium-Account expire:</td>.*?<td>(.*?)</td>").getMatch(0);
+            if (expire == null) expire = br.getRegex("<TD>Premium-Account expires on:.{1,20}</TD><TD><b>(.*?)</b>").getMatch(0);
             if (expire == null) {
                 ai.setExpired(true);
                 account.setValid(false);
@@ -404,11 +379,6 @@ public class CraMitIn extends PluginForHost {
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         requestFileInformation(link);
-        try {
-            doesFreeWork(link);
-        } catch (Exception e) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Error in testing free mode");
-        }
         String passCode = null;
         login(account);
         br.setCookie(COOKIE_HOST, "lang", "english");
@@ -429,17 +399,7 @@ public class CraMitIn extends PluginForHost {
                 dllink = br.getRedirectLocation();
                 if (dllink == null) {
                     checkErrors(link);
-                    if (dllink == null) {
-                        dllink = br.getRegex("dotted #bbb;padding.*?<a href=\"(.*?)\"").getMatch(0);
-                        if (dllink == null) {
-                            dllink = br.getRegex("This (direct link|download link) will be available for your IP.*?href=\"(http.*?)\"").getMatch(1);
-                            if (dllink == null) {
-                                // This was for fileop.com, maybe also works for
-                                // others!
-                                dllink = br.getRegex("Download: <a href=\"(.*?)\"").getMatch(0);
-                            }
-                        }
-                    }
+                    dllink = getDllink();
                 }
             }
             if (dllink == null) {
@@ -484,6 +444,17 @@ public class CraMitIn extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 2;
+    }
+
+    public String getDllink() {
+        String dllink = br.getRegex("name=\"dl_link\" onclick=\"this\\.focus\\(\\);this\\.select\\(\\);\">(http://.*?)</textarea").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex(">This download will be available for your IP for the next 24 hours\\.</font></h3><BR>.*?ACTION=\"(http://.*?)\"").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("\"(http://ns\\d+\\.ovh\\.net:\\d+/d/[a-z0-9]+/.+)\"").getMatch(0);
+            }
+        }
+        return dllink;
     }
 
     public String handlePassword(String passCode, Form pwform, DownloadLink thelink) throws IOException, PluginException {
