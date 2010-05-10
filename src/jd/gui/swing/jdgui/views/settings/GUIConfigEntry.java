@@ -124,113 +124,92 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
             break;
 
         case ConfigContainer.TYPE_TEXTFIELD:
-
             decoration = new JLabel(configEntry.getLabel());
-            // decoration.setName(((JLabel)decoration).getText());
-            input[0] = new JDTextField();
 
-            doc = ((JDTextField) input[0]).getDocument();
-            doc.addDocumentListener(this);
+            input[0] = new JDTextField();
             input[0].setEnabled(configEntry.isEnabled());
             ((JDTextField) input[0]).setHorizontalAlignment(SwingConstants.RIGHT);
-
+            doc = ((JDTextField) input[0]).getDocument();
+            doc.addDocumentListener(this);
             break;
         case ConfigContainer.TYPE_TEXTAREA:
         case ConfigContainer.TYPE_LISTCONTROLLED:
             decoration = new JLabel(configEntry.getLabel());
 
             input[0] = new JDTextArea();
-            // input[0].setBorder(BorderFactory.createLineBorder(input[0].getBackground().darker()));
             input[0].setEnabled(configEntry.isEnabled());
-            // Dimension dim = input[0].getPreferredSize();
-            // dim.height = 20;
-            // input[0].setPreferredSize(new Dimension(-1,20));
             doc = ((JDTextArea) input[0]).getDocument();
             doc.addDocumentListener(this);
-
             break;
         case ConfigContainer.TYPE_CHECKBOX:
+            decoration = new JLabel(configEntry.getLabel());
 
             input[0] = new JCheckBox();
             input[0].setEnabled(configEntry.isEnabled());
             ((JCheckBox) input[0]).addChangeListener(this);
-
-            decoration = new JLabel(configEntry.getLabel());
-
             break;
         case ConfigContainer.TYPE_BROWSEFILE:
             if (configEntry.getLabel().trim().length() > 0) decoration = new JLabel(configEntry.getLabel());
+
             input[0] = new BrowseFile();
             ((BrowseFile) input[0]).setEnabled(configEntry.isEnabled());
-
             ((BrowseFile) input[0]).setEditable(true);
-
             break;
         case ConfigContainer.TYPE_BROWSEFOLDER:
             if (configEntry.getLabel().trim().length() > 0) decoration = new JLabel(configEntry.getLabel());
-            input[0] = new BrowseFile();
 
+            input[0] = new BrowseFile();
             ((BrowseFile) input[0]).setEditable(true);
             ((BrowseFile) input[0]).setEnabled(configEntry.isEnabled());
             ((BrowseFile) input[0]).setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-
             break;
         case ConfigContainer.TYPE_SPINNER:
             decoration = new JLabel(configEntry.getLabel());
-            // decoration.setName(((JLabel)decoration).getText());
+
             input[0] = new JSpinner(new SpinnerNumberModel(configEntry.getStart(), configEntry.getStart(), configEntry.getEnd(), configEntry.getStep()));
             input[0].setEnabled(configEntry.isEnabled());
             ((JSpinner) input[0]).addChangeListener(this);
-
             break;
         case ConfigContainer.TYPE_BUTTON:
             decoration = new JLabel(configEntry.getDescription());
+
             input[0] = new JButton(configEntry.getLabel());
+            input[0].setEnabled(configEntry.isEnabled());
             if (configEntry.getImageIcon() != null) {
                 ((JButton) input[0]).setIcon(configEntry.getImageIcon());
             }
-            // input[0].setName(configEntry.getLabel());
             ((JButton) input[0]).addActionListener(this);
             ((JButton) input[0]).addActionListener(configEntry.getActionListener());
-            input[0].setEnabled(configEntry.isEnabled());
-
             break;
         case ConfigContainer.TYPE_COMBOBOX:
         case ConfigContainer.TYPE_COMBOBOX_INDEX:
             decoration = new JLabel(configEntry.getLabel());
-            // decoration.setName(configEntry.getLabel());
+
             input[0] = new JComboBox(configEntry.getList());
             if (configEntry.getList().length > 0) {
                 if (configEntry.getList()[0] instanceof JDLabelContainer) {
                     ((JComboBox) input[0]).setRenderer(new JDLabelListRenderer());
                     ((JComboBox) input[0]).setMaximumRowCount(10);
-
                 }
             }
 
             ((JComboBox) input[0]).addActionListener(this);
             if (configEntry.getPropertyInstance().getProperty(configEntry.getPropertyName()) instanceof String) {
-
                 for (int i = 0; i < configEntry.getList().length; i++) {
-
                     if (configEntry.getList()[i].toString().equals(configEntry.getPropertyInstance().getStringProperty(configEntry.getPropertyName()))) {
                         ((JComboBox) input[0]).setSelectedIndex(i);
-
                         break;
                     }
                 }
             } else {
                 for (int i = 0; i < configEntry.getList().length; i++) {
-
                     if (configEntry.getList()[i].equals(configEntry.getPropertyInstance().getProperty(configEntry.getPropertyName()))) {
                         ((JComboBox) input[0]).setSelectedIndex(i);
-
                         break;
                     }
                 }
             }
             input[0].setEnabled(configEntry.isEnabled());
-            // org.jvnet.substance.skin.BusinessBlueSteelSkin
             break;
         case ConfigContainer.TYPE_RADIOFIELD:
             decoration = new JLabel(configEntry.getLabel());
@@ -251,27 +230,23 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
                 group.add(radio);
 
                 Object p = configEntry.getPropertyInstance().getProperty(configEntry.getPropertyName());
-                if (p == null) {
-                    p = "";
-                }
+                if (p == null) p = "";
 
                 if (configEntry.getList()[i].toString().equals(p.toString())) {
                     radio.setSelected(true);
-
                 }
-
             }
             break;
         case ConfigContainer.TYPE_LABEL:
-            input = new JComponent[0];
             decoration = new JLabel(configEntry.getLabel());
+
+            input = new JComponent[0];
             break;
         case ConfigContainer.TYPE_SEPARATOR:
-            input = new JComponent[0];
             decoration = new JSeparator(SwingConstants.HORIZONTAL);
 
+            input = new JComponent[0];
             break;
-
         }
 
         if (configEntry.getHelptags() != null) {
@@ -287,8 +262,6 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
                 }
             }
         }
-        // this.firePropertyChange(getConfigEntry().getPropertyName(), null,
-        // getText());
     }
 
     public JComponent[] getInput() {
@@ -325,7 +298,6 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
         case ConfigContainer.TYPE_CHECKBOX:
             return ((JCheckBox) input[0]).isSelected();
         case ConfigContainer.TYPE_LISTCONTROLLED:
-
             return ((JDTextArea) input[0]).getText();
         case ConfigContainer.TYPE_BUTTON:
             return null;
@@ -397,15 +369,11 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
         if (text == null && configEntry.getDefaultValue() != null) {
             text = configEntry.getDefaultValue();
         }
-        // //logger.info(configEntry.getDefaultValue()+" - "+text + "
-        // "+input.length+" -
-        // "+input[0]);
         switch (configEntry.getType()) {
         case ConfigContainer.TYPE_LINK:
             try {
                 ((JLink) input[0]).setUrl(new URL(text == null ? "" : text.toString()));
             } catch (MalformedURLException e1) {
-
                 JDLogger.exception(e1);
             }
             break;
@@ -490,25 +458,21 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
      */
     public void load() {
         if (getConfigEntry().getPropertyInstance() != null && getConfigEntry().getPropertyName() != null) {
-
             setData(getConfigEntry().getPropertyInstance().getProperty(getConfigEntry().getPropertyName(), getConfigEntry().getDefaultValue()));
         } else if (getConfigEntry().getListController() != null) {
             setData(getConfigEntry().getListController().getList());
         }
-
     }
 
     /**
      * Saves the gui to config
      */
     public void save() {
-
         if (getConfigEntry().getPropertyInstance() != null && getConfigEntry().getPropertyName() != null) {
             getConfigEntry().getPropertyInstance().setProperty(getConfigEntry().getPropertyName(), getText());
         } else if (getConfigEntry().getListController() != null) {
             getConfigEntry().getListController().setList(getText() + "");
         }
-
     }
 
 }

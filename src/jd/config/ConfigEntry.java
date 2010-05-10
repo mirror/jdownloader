@@ -100,28 +100,27 @@ public class ConfigEntry implements Serializable {
      * @param label
      *            Label für die Komponente
      */
-    public ConfigEntry(int type, ActionListener listener, String label, String description, ImageIcon icon) {
-
+    public ConfigEntry(int type, ActionListener actionListener, String label, String description, ImageIcon icon) {
         this.type = type;
+        this.actionListener = actionListener;
         this.label = label;
-        this.imageIcon = icon;
         this.description = description;
-        actionListener = listener;
-        enabled = true;
+        this.imageIcon = icon;
+        this.enabled = true;
     }
 
-    public ConfigEntry(int type, ConfigContainer premiumConfig) {
+    public ConfigEntry(int type, ConfigContainer container) {
         this.type = type;
-        container = premiumConfig;
-        enabled = true;
+        this.container = container;
+        this.enabled = true;
     }
 
     public ConfigEntry(int type, ListController controller, String label) {
         this.type = type;
-        this.label = label;
         this.controller = controller;
-        this.propertyName = "ListControlled";
-        enabled = true;
+        this.label = label;
+        this.propertyName = null;
+        this.enabled = true;
     }
 
     /**
@@ -142,8 +141,8 @@ public class ConfigEntry implements Serializable {
      */
     public ConfigEntry(int type, Property propertyInstance, String propertyName, Object[] list, String label) {
         this.type = type;
-        this.propertyName = propertyName;
         this.propertyInstance = propertyInstance;
+        this.propertyName = propertyName;
         this.list = list;
         this.label = label;
     }
@@ -165,11 +164,10 @@ public class ConfigEntry implements Serializable {
      */
     public ConfigEntry(int type, Property propertyInstance, String propertyName, String label) {
         this.type = type;
-        this.propertyName = propertyName;
         this.propertyInstance = propertyInstance;
+        this.propertyName = propertyName;
         this.label = label;
-
-        enabled = true;
+        this.enabled = true;
     }
 
     /**
@@ -191,9 +189,8 @@ public class ConfigEntry implements Serializable {
      */
     public ConfigEntry(int type, Property propertyInstance, String propertyName, String label, int start, int end) {
         this.type = type;
-        this.propertyName = propertyName;
         this.propertyInstance = propertyInstance;
-
+        this.propertyName = propertyName;
         this.label = label;
         this.start = start;
         this.end = end;
@@ -208,17 +205,7 @@ public class ConfigEntry implements Serializable {
     public ConfigEntry(int type, String label) {
         this.type = type;
         this.label = label;
-        enabled = true;
-    }
-
-    /**
-     * Konstruktor für z.B. einen Link (label & url)
-     */
-    public ConfigEntry(int type, String label, String link) {
-        this.type = type;
-        propertyName = link;
-        this.label = label;
-        enabled = true;
+        this.enabled = true;
     }
 
     public void addListener(ConfigEntry configEntry) {
@@ -273,14 +260,16 @@ public class ConfigEntry implements Serializable {
     }
 
     public ListController getListController() {
-        if (controller == null) controller = new ListController() {
-            public String getList() {
-                return "";
-            }
+        if (controller == null) {
+            controller = new ListController() {
+                public String getList() {
+                    return "";
+                }
 
-            public void setList(String list) {
-            }
-        };
+                public void setList(String list) {
+                }
+            };
+        }
         return controller;
     }
 

@@ -106,7 +106,7 @@ public class PasswordListController implements ActionListener, ListController {
         synchronized (LIST2) {
             StringBuilder sb = new StringBuilder();
             for (String pw : getPasswordList()) {
-                sb.append(pw + "\r\n");
+                sb.append(pw).append(new char[] { '\r', '\n' });
             }
             return sb.toString().trim();
         }

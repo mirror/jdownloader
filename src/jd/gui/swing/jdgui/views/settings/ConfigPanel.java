@@ -277,8 +277,11 @@ public class ConfigPanel extends SwitchPanel {
             JTabbedPane tabbed = new JTabbedPane();
             tabbed.setOpaque(false);
             tabbed.addTab(container.getTitle(), container.getIcon(), panel);
+            ConfigPanel cp;
             for (ConfigEntry c : cont) {
-                tabbed.addTab(c.getContainer().getTitle(), c.getContainer().getIcon(), new ConfigPanel(c.getContainer()));
+                cp = new ConfigPanel(c.getContainer());
+                cp.setBorder(null);
+                tabbed.addTab(c.getContainer().getTitle(), c.getContainer().getIcon(), cp);
             }
             return tabbed;
         } else {
