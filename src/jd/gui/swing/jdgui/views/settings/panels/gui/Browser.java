@@ -92,7 +92,7 @@ public class Browser extends ConfigPanel {
 
         container.addEntry(conditionEntry);
 
-        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, JDGuiConstants.PARAM_CUSTOM_BROWSER, JDL.L("gui.config.gui.custom_browser", "Browserpath")));
+        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_BROWSEFILE, subConfig, JDGuiConstants.PARAM_CUSTOM_BROWSER, JDL.L("gui.config.gui.custom_browser", "Browserpath")));
 
         String parameter = null;
         String path = null;

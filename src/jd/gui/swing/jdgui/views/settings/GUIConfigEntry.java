@@ -48,7 +48,7 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.container.JDLabelContainer;
 import jd.controlling.JDLogger;
-import jd.gui.swing.components.BrowseFile;
+import jd.gui.swing.components.ComboBrowseFile;
 import jd.gui.swing.components.JDTextArea;
 import jd.gui.swing.components.JDTextField;
 import jd.utils.locale.JDL;
@@ -72,7 +72,7 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
 
     private JComponent decoration;
 
-    private Logger logger = jd.controlling.JDLogger.getLogger();
+    private Logger logger = JDLogger.getLogger();
 
     /**
      * Erstellt einen neuen GUIConfigEntry
@@ -122,17 +122,17 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
         case ConfigContainer.TYPE_BROWSEFILE:
             if (configEntry.getLabel().trim().length() > 0) decoration = new JLabel(configEntry.getLabel());
 
-            input = new BrowseFile();
-            ((BrowseFile) input).setEnabled(configEntry.isEnabled());
-            ((BrowseFile) input).setEditable(true);
+            input = new ComboBrowseFile(configEntry.getPropertyName());
+            ((ComboBrowseFile) input).setEnabled(configEntry.isEnabled());
+            ((ComboBrowseFile) input).setEditable(true);
             break;
         case ConfigContainer.TYPE_BROWSEFOLDER:
             if (configEntry.getLabel().trim().length() > 0) decoration = new JLabel(configEntry.getLabel());
 
-            input = new BrowseFile();
-            ((BrowseFile) input).setEditable(true);
-            ((BrowseFile) input).setEnabled(configEntry.isEnabled());
-            ((BrowseFile) input).setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+            input = new ComboBrowseFile(configEntry.getPropertyName());
+            ((ComboBrowseFile) input).setEditable(true);
+            ((ComboBrowseFile) input).setEnabled(configEntry.isEnabled());
+            ((ComboBrowseFile) input).setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
             break;
         case ConfigContainer.TYPE_SPINNER:
             decoration = new JLabel(configEntry.getLabel());
@@ -237,11 +237,11 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
     }
 
     public void actionPerformed(ActionEvent e) {
-        getConfigEntry().valueChanged(getText());
+        configEntry.valueChanged(getText());
     }
 
     public void changedUpdate(DocumentEvent e) {
-        getConfigEntry().valueChanged(getText());
+        configEntry.valueChanged(getText());
     }
 
     public ConfigEntry getConfigEntry() {
@@ -281,7 +281,7 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
             return null;
         case ConfigContainer.TYPE_BROWSEFOLDER:
         case ConfigContainer.TYPE_BROWSEFILE:
-            return ((BrowseFile) input).getText();
+            return ((ComboBrowseFile) input).getText();
         case ConfigContainer.TYPE_SPINNER:
             return ((JSpinner) input).getValue();
         }
@@ -290,18 +290,16 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
     }
 
     public void insertUpdate(DocumentEvent e) {
-        getConfigEntry().valueChanged(getText());
+        configEntry.valueChanged(getText());
     }
 
     public void propertyChange(PropertyChangeEvent evt) {
         if (input == null) return;
-        boolean state = getConfigEntry().isConditionalEnabled(evt);
-        if (input != null) {
-            input.setEnabled(state);
-            if (input.getComponents() != null) {
-                for (Component c : input.getComponents()) {
-                    c.setEnabled(state);
-                }
+        boolean state = configEntry.isConditionalEnabled(evt);
+        input.setEnabled(state);
+        if (input.getComponents() != null) {
+            for (Component c : input.getComponents()) {
+                c.setEnabled(state);
             }
         }
     }
@@ -311,7 +309,7 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
     }
 
     public void removeUpdate(DocumentEvent e) {
-        getConfigEntry().valueChanged(getText());
+        configEntry.valueChanged(getText());
     }
 
     /**
@@ -351,7 +349,7 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
             break;
         case ConfigContainer.TYPE_BROWSEFOLDER:
         case ConfigContainer.TYPE_BROWSEFILE:
-            ((BrowseFile) input).setText(text == null ? "" : text.toString());
+            ((ComboBrowseFile) input).setText(text == null ? "" : text.toString());
             break;
         case ConfigContainer.TYPE_SPINNER:
             int value = text instanceof Integer ? (Integer) text : Integer.parseInt(text.toString());
@@ -379,21 +377,21 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
         case ConfigContainer.TYPE_SEPARATOR:
             break;
         }
-        getConfigEntry().valueChanged(getText());
+        configEntry.valueChanged(getText());
     }
 
     public void stateChanged(ChangeEvent e) {
-        getConfigEntry().valueChanged(getText());
+        configEntry.valueChanged(getText());
     }
 
     /**
      * updates config --> gui
      */
     public void load() {
-        if (getConfigEntry().getPropertyInstance() != null && getConfigEntry().getPropertyName() != null) {
-            setData(getConfigEntry().getPropertyInstance().getProperty(getConfigEntry().getPropertyName(), getConfigEntry().getDefaultValue()));
-        } else if (getConfigEntry().getListController() != null) {
-            setData(getConfigEntry().getListController().getList());
+        if (configEntry.getPropertyInstance() != null && configEntry.getPropertyName() != null) {
+            setData(configEntry.getPropertyInstance().getProperty(configEntry.getPropertyName(), configEntry.getDefaultValue()));
+        } else if (configEntry.getListController() != null) {
+            setData(configEntry.getListController().getList());
         }
     }
 
@@ -401,10 +399,10 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
      * Saves the gui to config
      */
     public void save() {
-        if (getConfigEntry().getPropertyInstance() != null && getConfigEntry().getPropertyName() != null) {
-            getConfigEntry().getPropertyInstance().setProperty(getConfigEntry().getPropertyName(), getText());
-        } else if (getConfigEntry().getListController() != null) {
-            getConfigEntry().getListController().setList(getText() + "");
+        if (configEntry.getPropertyInstance() != null && configEntry.getPropertyName() != null) {
+            configEntry.getPropertyInstance().setProperty(configEntry.getPropertyName(), getText());
+        } else if (configEntry.getListController() != null) {
+            configEntry.getListController().setList(getText() + "");
         }
     }
 

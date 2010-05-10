@@ -70,7 +70,7 @@ public class ConfigEntry implements Serializable {
      */
     private ConfigEntry conditionEntry;
     private Boolean compareValue;
-    private ConfigEntry listener = null;
+    private ArrayList<ConfigEntry> listener = new ArrayList<ConfigEntry>();
 
     /**
      * Variablen für einen Button-Eintrag.
@@ -368,12 +368,12 @@ public class ConfigEntry implements Serializable {
     public ConfigEntry setEnabledCondidtion(ConfigEntry conditionEntry, boolean compareValue) {
         this.conditionEntry = conditionEntry;
         this.compareValue = compareValue;
-        conditionEntry.setListener(this);
+        conditionEntry.addListener(this);
         return this;
     }
 
-    public void setListener(ConfigEntry listener) {
-        this.listener = listener;
+    public void addListener(ConfigEntry listener) {
+        if (listener != null) this.listener.add(listener);
     }
 
     public void setGroup(ConfigGroup group) {
@@ -401,8 +401,10 @@ public class ConfigEntry implements Serializable {
     }
 
     public void valueChanged(Object newValue) {
-        if (listener != null && listener.getGuiListener() != null) {
-            listener.getGuiListener().propertyChange(new PropertyChangeEvent(this, getPropertyName(), null, newValue));
+        for (ConfigEntry next : listener) {
+            if (next.getGuiListener() != null) {
+                next.getGuiListener().propertyChange(new PropertyChangeEvent(this, getPropertyName(), null, newValue));
+            }
         }
     }
 

@@ -85,6 +85,7 @@ public class InternetAndNetwork extends ConfigPanel {
         ce.setEnabledCondidtion(conditionEntry, true);
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
 
+        network.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         network.addEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, Configuration.USE_SOCKS, JDL.L("gui.config.download.use_socks", "Use Socks-Proxy") + " (" + JDL.L("gui.warning.restartneeded", "JD-Restart needed after changes!") + ")"));
         conditionEntry.setDefaultValue(false);
         conditionEntry.setPropertyType(PropertyType.NEEDS_RESTART);
