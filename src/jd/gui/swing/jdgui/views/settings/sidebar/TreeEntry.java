@@ -6,7 +6,6 @@ import java.util.HashMap;
 import javax.swing.ImageIcon;
 
 import jd.gui.swing.jdgui.SingletonPanel;
-import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
 import jd.utils.JDTheme;
 
@@ -26,7 +25,7 @@ public class TreeEntry {
     }
 
     private Class<? extends ConfigPanel> clazz;
-    private SwitchPanel panel;
+    private ConfigPanel panel;
 
     private String title;
     private ImageIcon iconSmall;
@@ -50,7 +49,7 @@ public class TreeEntry {
      * @param title
      * @param iconKey
      */
-    public TreeEntry(SwitchPanel panel, String title, String iconKey) {
+    public TreeEntry(ConfigPanel panel, String title, String iconKey) {
         this(title, iconKey);
 
         this.panel = panel;
@@ -112,9 +111,9 @@ public class TreeEntry {
         return iconSmall;
     }
 
-    public SwitchPanel getPanel() {
+    public ConfigPanel getPanel() {
         if (panel == null && clazz != null) {
-            panel = new SingletonPanel(clazz).getPanel();
+            panel = (ConfigPanel) new SingletonPanel(clazz).getPanel();
         }
         return panel;
     }

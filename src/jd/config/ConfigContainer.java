@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import javax.swing.ImageIcon;
 
 import jd.controlling.ListController;
-import jd.utils.locale.JDL;
 
 /**
  * Diese Klasse speichert die GUI-Dialog Informationen. Jede GUI kann diese
@@ -77,7 +76,7 @@ public class ConfigContainer implements Serializable {
      */
     public static final int TYPE_RADIOFIELD = 5;
     /**
-     * ConfigElement ist eine Trennlinie ConfigEntry(int type)
+     * ConfigElement ist eine Trennlinie
      * 
      * @see ConfigEntry#ConfigEntry(int)
      */
@@ -135,12 +134,12 @@ public class ConfigContainer implements Serializable {
     private ImageIcon icon;
 
     public ConfigContainer() {
-        this(JDL.L("config.container.defaultname", "General"));
+        this.content = new ArrayList<ConfigEntry>();
     }
 
     public ConfigContainer(String title) {
+        this();
         this.title = title;
-        this.content = new ArrayList<ConfigEntry>();
     }
 
     /**
@@ -166,10 +165,6 @@ public class ConfigContainer implements Serializable {
 
     public String getTitle() {
         return title;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
     }
 
     /**

@@ -36,7 +36,6 @@ import javax.swing.JRadioButton;
 import javax.swing.JSeparator;
 import javax.swing.JSpinner;
 import javax.swing.SpinnerNumberModel;
-import javax.swing.SwingConstants;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.DocumentEvent;
@@ -89,7 +88,7 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
 
             input = new JPasswordField();
             input.setEnabled(configEntry.isEnabled());
-            ((JPasswordField) input).setHorizontalAlignment(SwingConstants.RIGHT);
+            ((JPasswordField) input).setHorizontalAlignment(JPasswordField.RIGHT);
 
             Document doc = ((JPasswordField) input).getDocument();
             doc.addDocumentListener(this);
@@ -99,7 +98,7 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
 
             input = new JDTextField();
             input.setEnabled(configEntry.isEnabled());
-            ((JDTextField) input).setHorizontalAlignment(SwingConstants.RIGHT);
+            ((JDTextField) input).setHorizontalAlignment(JDTextField.RIGHT);
             doc = ((JDTextField) input).getDocument();
             doc.addDocumentListener(this);
             break;
@@ -213,7 +212,7 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
             input = null;
             break;
         case ConfigContainer.TYPE_SEPARATOR:
-            decoration = new JSeparator(SwingConstants.HORIZONTAL);
+            decoration = new JSeparator(JSeparator.HORIZONTAL);
 
             input = null;
             break;

@@ -18,7 +18,7 @@ package jd.gui.swing.jdgui.views.settings.sidebar;
 
 import java.util.HashMap;
 
-import javax.swing.JComponent;
+import javax.swing.JPanel;
 
 import jd.config.ConfigContainer;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
@@ -33,8 +33,8 @@ public class AddonConfig extends ConfigPanel {
         super(container);
     }
 
-    public JComponent getPanel() {
-        return this.getRootPane();
+    public JPanel getPanel() {
+        return panel;
     }
 
     /**
