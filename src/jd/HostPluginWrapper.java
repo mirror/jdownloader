@@ -117,25 +117,6 @@ public class HostPluginWrapper extends PluginWrapper implements JDLabelContainer
     }
 
     @Override
-    public int compareTo(final PluginWrapper pw) {
-        if (!(pw instanceof HostPluginWrapper)) return super.compareTo(pw);
-
-        final HostPluginWrapper plg = (HostPluginWrapper) pw;
-        if (this.isLoaded() && plg.isLoaded()) {
-            if (this.isPremiumEnabled() && plg.isPremiumEnabled()) return this.getHost().compareToIgnoreCase(plg.getHost());
-            if (this.isPremiumEnabled() && !plg.isPremiumEnabled()) return -1;
-            if (!this.isPremiumEnabled() && plg.isPremiumEnabled()) return 1;
-        }
-        if (this.isLoaded() && !plg.isLoaded()) {
-            if (this.isPremiumEnabled()) return -1;
-        }
-        if (!this.isLoaded() && !!plg.isLoaded()) {
-            if (plg.isPremiumEnabled()) return 1;
-        }
-        return this.getHost().compareToIgnoreCase(plg.getHost());
-    }
-
-    @Override
     public String toString() {
         return getHost();
     }

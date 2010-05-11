@@ -134,11 +134,6 @@ public class OptionalPluginWrapper extends PluginWrapper {
     }
 
     @Override
-    public int compareTo(PluginWrapper plg) {
-        return getHost().toLowerCase().compareTo(plg.getHost().toLowerCase());
-    }
-
-    @Override
     public boolean isEnabled() {
         return JDUtilities.getConfiguration().getBooleanProperty(getConfigParamKey(), annotation.defaultEnabled());
     }
