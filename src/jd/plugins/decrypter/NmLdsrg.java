@@ -22,10 +22,12 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anime-loads.org" }, urls = { "http://[\\w\\.]*?anime-loads\\.org/download/\\d+/rs\\.0|http://[\\w\\.]*?anime-loads\\.org/media/\\d+" }, flags = { 0 })
 public class NmLdsrg extends PluginForDecrypt {
@@ -46,6 +48,7 @@ public class NmLdsrg extends PluginForDecrypt {
             links.add(parameter);
         } else {
             br.getPage(parameter);
+            if (br.containsHTML("Media nicht gefunden")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
             fpName = br.getRegex("<title>\\[ ANIME-LOADS\\.ORG ] - Serie:(.*?)</title>").getMatch(0);
             if (fpName == null) fpName = br.getRegex("<div class=\"headlinebg\"><h1 class=\"headline_inner\">(.*?)</h1>").getMatch(0);
             String[] continueLinks = br.getRegex("\"(http://www\\.anime-loads\\.org/download/\\d+/.*?)\"").getColumn(0);
