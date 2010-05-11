@@ -36,6 +36,8 @@ import jd.plugins.DownloadLink.AvailableStatus;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "data.hu" }, urls = { "http://[\\w\\.]*?data.hu/get/.+/.+" }, flags = { 2 })
 public class DataHu extends PluginForHost {
 
+    private static final Object LOCK = new Object();
+
     public DataHu(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://data.hu/premium.php");
@@ -59,27 +61,37 @@ public class DataHu extends PluginForHost {
     }
 
     public void login(Account account) throws Exception {
-        this.setBrowserExclusive();
-        br.forceDebug(true);
-        br.getPage("http://data.hu/");
-        Form form = br.getForm(0);
-        form.put("username", Encoding.urlEncode(account.getUser()));
-        form.put(form.getInputFieldByName("login_passfield").getValue(), Encoding.urlEncode(account.getPass()));
-        form.put("remember", "on");
-        br.submitForm(form);
-        br.getPage("http://data.hu/index.php");
-        if (br.getCookie("http://data.hu/", "datapremiumseccode") == null) {
-            logger.warning("Cookie error!");
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        }
-        if (!isPremium()) {
-            logger.warning("This account is no a premium account!");
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        synchronized (LOCK) {
+            this.setBrowserExclusive();
+            br.forceDebug(true);
+            br.getPage("http://data.hu/");
+            Form form = br.getForm(0);
+            form.put("username", Encoding.urlEncode(account.getUser()));
+            form.put(form.getInputFieldByName("login_passfield").getValue(), Encoding.urlEncode(account.getPass()));
+            form.put("remember", "on");
+            br.submitForm(form);
+            br.getPage("http://data.hu/index.php");
+            if (br.getCookie("http://data.hu/", "datapremiumseccode") == null) {
+                logger.warning("Cookie error!");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+            if (!isPremium()) {
+                logger.warning("This account is no a premium account!");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
         }
     }
 
     public boolean isPremium() throws IOException {
         br.getPage("http://data.hu/user.php");
+        if (br.getRedirectLocation() != null) {
+            /* try to workaround server issue */
+            try {
+                Thread.sleep(1500);
+            } catch (InterruptedException e) {
+            }
+            br.getPage("http://data.hu/user.php");
+        }
         if (br.getRegex("logged_user_prem_date\">(.*?)<").matches()) return true;
         return false;
     }

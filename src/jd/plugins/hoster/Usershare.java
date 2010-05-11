@@ -27,7 +27,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "usershare.net" }, urls = { "http://[\\w\\.]*?usershare\\.net/(.*?/[0-9a-z]{12}|[0-9a-z]{12})" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "usershare.net" }, urls = { "http(s)://[\\w\\.]*?usershare\\.net/(.*?/[0-9a-z]{12}|[0-9a-z]{12})" }, flags = { 0 })
 public class Usershare extends PluginForHost {
 
     public Usershare(PluginWrapper wrapper) {
@@ -37,6 +37,11 @@ public class Usershare extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://usershare.net/tos.html";
+    }
+
+    @Override
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replaceFirst("https", "http"));
     }
 
     @Override
