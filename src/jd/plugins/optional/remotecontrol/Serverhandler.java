@@ -148,7 +148,7 @@ public class Serverhandler implements Handler {
 
             response.addContent(JDUtilities.createXmlString(xml));
         } else if (request.getRequestUrl().matches("/get/grabber/count")) {
-            // Get amount of links in grabber
+            // Get number of links in grabber
 
             int counter = 0;
 
@@ -179,7 +179,7 @@ public class Serverhandler implements Handler {
             boolean value = GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_START_AFTER_ADDING_LINKS_AUTO, true);
             response.addContent(value);
         } else if (request.getRequestUrl().equals("/get/downloads/all/count")) {
-            // Get DLList COUNT
+            // Get number of all DLs in DL-list
 
             int counter = 0;
 
@@ -189,7 +189,7 @@ public class Serverhandler implements Handler {
 
             response.addContent(counter);
         } else if (request.getRequestUrl().equals("/get/downloads/current/count")) {
-            // Get amount of current DLs COUNT
+            // Get number of current DLs
 
             int counter = 0;
 
@@ -203,7 +203,7 @@ public class Serverhandler implements Handler {
 
             response.addContent(counter);
         } else if (request.getRequestUrl().equals("/get/downloads/finished/count")) {
-            // Get finished DLs COUNT
+            // Get number of finished DLs
 
             int counter = 0;
 

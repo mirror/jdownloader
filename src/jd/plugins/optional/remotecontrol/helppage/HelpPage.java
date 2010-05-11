@@ -75,7 +75,7 @@ public class HelpPage {
         t.setInfo("Get all links that are currently held by the link grabber (XML)");
 
         t.setCommand("/get/grabber/count");
-        t.setInfo("Get amount of all links in linkgrabber");
+        t.setInfo("Get number of all links in linkgrabber");
 
         t.setCommand("/get/grabber/isbusy");
         t.setInfo("Get whether linkgrabber is busy or not");
@@ -90,13 +90,13 @@ public class HelpPage {
         t = create(new Table("Get download list information"));
 
         t.setCommand("/get/downloads/all/count");
-        t.setInfo("Get amount of all downloads");
+        t.setInfo("Get number of all downloads");
 
         t.setCommand("/get/downloads/current/count");
-        t.setInfo("Get amount of current downloads");
+        t.setInfo("Get number of current downloads");
 
         t.setCommand("/get/downloads/finished/count");
-        t.setInfo("Get amount of finished downloads");
+        t.setInfo("Get number of finished downloads");
 
         t.setCommand("/get/downloads/all/list");
         t.setInfo("Get list of all downloads (XML)");
@@ -144,7 +144,7 @@ public class HelpPage {
         t.setInfo("Stop downloads");
 
         t.setCommand("/action/toggle");
-        t.setInfo("Toggle downloads");
+        t.setInfo("Toggle start/stop all downloads");
 
         t.setCommand("/action/reconnect");
         t.setInfo("Reconnect");
