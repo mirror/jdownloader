@@ -1,8 +1,11 @@
 package jd.plugins.optional.schedule.modules;
 
 import jd.controlling.ClipboardHandler;
+import jd.plugins.optional.schedule.SchedulerModule;
+import jd.plugins.optional.schedule.SchedulerModuleInterface;
 import jd.utils.locale.JDL;
 
+@SchedulerModule
 public class EnableClipboard implements SchedulerModuleInterface {
 
     private static final long serialVersionUID = 7131982059931117440L;

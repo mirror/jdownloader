@@ -17,10 +17,14 @@
 package jd.plugins.optional.schedule.modules;
 
 import jd.config.Configuration;
+import jd.plugins.optional.schedule.SchedulerModule;
+import jd.plugins.optional.schedule.SchedulerModuleInterface;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+@SchedulerModule
 public class EnablePremium implements SchedulerModuleInterface {
+
     private static final long serialVersionUID = 8621543260803605634L;
 
     public boolean checkParameter(String parameter) {
@@ -39,4 +43,5 @@ public class EnablePremium implements SchedulerModuleInterface {
     public boolean needParameter() {
         return false;
     }
+
 }

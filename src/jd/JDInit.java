@@ -18,7 +18,6 @@ package jd;
 
 import java.awt.Toolkit;
 import java.io.File;
-import java.lang.annotation.Annotation;
 import java.net.MalformedURLException;
 import java.net.Proxy;
 import java.net.URL;
@@ -413,55 +412,52 @@ public class JDInit {
         try {
             for (final Class<?> c : ClassFinder.getClasses("jd.plugins.decrypter", getPluginClassLoader())) {
                 try {
-                    if (c != null && c.getAnnotations().length > 0) {
-                        final DecrypterPlugin help = (DecrypterPlugin) c.getAnnotations()[0];
+                    final DecrypterPlugin help = c.getAnnotation(DecrypterPlugin.class);
+                    if (help == null) continue;
 
-                        if (help.interfaceVersion() != DecrypterPlugin.INTERFACE_VERSION) {
-                            LOG.warning("Outdated Plugin found: " + help);
-                            continue;
-                        }
+                    if (help.interfaceVersion() != DecrypterPlugin.INTERFACE_VERSION) {
+                        LOG.warning("Outdated Plugin found: " + help);
+                        continue;
+                    }
 
-                        String simpleName = c.getSimpleName();
-                        String[] names = help.names();
-                        String[] patterns = help.urls();
-                        int[] flags = help.flags();
-                        final String revision = help.revision();
-                        LOG.finest("Try to load " + c + " Revision: " + Formatter.getRevision(revision));
-                        /*
-                         * TODO: Change this String to test the changes from
-                         * plugins with public static methods instead of
-                         * annotation, e.g. cms
-                         */
-                        String dump = "";
-                        // See if there are cached annotations
-                        if (names.length == 0) {
-                            final SubConfiguration cfg = SubConfiguration.getConfig("jd.JDInit.loadPluginForDecrypt");
-                            names = cfg.getGenericProperty(c.getName() + "_names_" + dump + revision, names);
-                            patterns = cfg.getGenericProperty(c.getName() + "_pattern_" + dump + revision, patterns);
-                            flags = cfg.getGenericProperty(c.getName() + "_flags_" + dump + revision, flags);
-                        }
-                        // if not, try to load them from static functions
-                        if (names.length == 0) {
-                            names = (String[]) c.getMethod("getAnnotationNames").invoke(null);
-                            patterns = (String[]) c.getMethod("getAnnotationUrls").invoke(null);
-                            flags = (int[]) c.getMethod("getAnnotationFlags").invoke(null);
-                            final SubConfiguration cfg = SubConfiguration.getConfig("jd.JDInit.loadPluginForDecrypt");
-                            cfg.setProperty(c.getName() + "_names_" + revision, names);
-                            cfg.setProperty(c.getName() + "_pattern_" + revision, patterns);
-                            cfg.setProperty(c.getName() + "_flags_" + revision, flags);
-                            cfg.save();
-                        }
+                    String simpleName = c.getSimpleName();
+                    String[] names = help.names();
+                    String[] patterns = help.urls();
+                    int[] flags = help.flags();
+                    final String revision = help.revision();
+                    LOG.finest("Try to load " + c + " Revision: " + Formatter.getRevision(revision));
+                    /*
+                     * TODO: Change this String to test the changes from plugins
+                     * with public static methods instead of annotation, e.g.
+                     * cms
+                     */
+                    String dump = "";
+                    // See if there are cached annotations
+                    if (names.length == 0) {
+                        final SubConfiguration cfg = SubConfiguration.getConfig("jd.JDInit.loadPluginForDecrypt");
+                        names = cfg.getGenericProperty(c.getName() + "_names_" + dump + revision, names);
+                        patterns = cfg.getGenericProperty(c.getName() + "_pattern_" + dump + revision, patterns);
+                        flags = cfg.getGenericProperty(c.getName() + "_flags_" + dump + revision, flags);
+                    }
+                    // if not, try to load them from static functions
+                    if (names.length == 0) {
+                        names = (String[]) c.getMethod("getAnnotationNames").invoke(null);
+                        patterns = (String[]) c.getMethod("getAnnotationUrls").invoke(null);
+                        flags = (int[]) c.getMethod("getAnnotationFlags").invoke(null);
+                        final SubConfiguration cfg = SubConfiguration.getConfig("jd.JDInit.loadPluginForDecrypt");
+                        cfg.setProperty(c.getName() + "_names_" + revision, names);
+                        cfg.setProperty(c.getName() + "_pattern_" + revision, patterns);
+                        cfg.setProperty(c.getName() + "_flags_" + revision, flags);
+                        cfg.save();
+                    }
 
-                        for (int i = 0; i < names.length; i++) {
-                            try {
-                                new DecryptPluginWrapper(names[i], simpleName, patterns[i], flags[i], revision);
-                            } catch (Throwable e) {
-                                LOG.severe("Could not load " + c);
-                                JDLogger.exception(e);
-                            }
+                    for (int i = 0; i < names.length; i++) {
+                        try {
+                            new DecryptPluginWrapper(names[i], simpleName, patterns[i], flags[i], revision);
+                        } catch (Throwable e) {
+                            LOG.severe("Could not load " + c);
+                            JDLogger.exception(e);
                         }
-                    } else {
-                        LOG.finest("Could not load " + c);
                     }
                 } catch (Throwable e) {
                     JDLogger.exception(e);
@@ -479,7 +475,7 @@ public class JDInit {
      * 
      * @return
      */
-    private static ClassLoader getPluginClassLoader() {
+    public static ClassLoader getPluginClassLoader() {
         if (CL == null) {
             try {
                 if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL_JARED) {
@@ -503,56 +499,52 @@ public class JDInit {
         try {
             for (final Class<?> c : ClassFinder.getClasses("jd.plugins.hoster", getPluginClassLoader())) {
                 try {
-                    final Annotation[] cAnnotations = (c == null) ? null : c.getAnnotations();
-                    if (cAnnotations != null && cAnnotations.length > 0) {
-                        final HostPlugin help = (HostPlugin) cAnnotations[0];
+                    final HostPlugin help = c.getAnnotation(HostPlugin.class);
+                    if (help == null) continue;
 
-                        if (help.interfaceVersion() != HostPlugin.INTERFACE_VERSION) {
-                            LOG.warning("Outdated Plugin found: " + help);
-                            continue;
-                        }
+                    if (help.interfaceVersion() != HostPlugin.INTERFACE_VERSION) {
+                        LOG.warning("Outdated Plugin found: " + help);
+                        continue;
+                    }
 
-                        String simpleName = c.getSimpleName();
-                        String[] names = help.names();
-                        String[] patterns = help.urls();
-                        int[] flags = help.flags();
-                        final String revision = help.revision();
-                        LOG.finest("Try to load " + c + " Revision: " + Formatter.getRevision(revision));
-                        /*
-                         * TODO: Change this String to test the changes from
-                         * plugins with public static methods instead of
-                         * annotation, e.g. cms
-                         */
-                        String dump = "";
-                        // See if there are cached annotations
-                        if (names.length == 0) {
-                            final SubConfiguration cfg = SubConfiguration.getConfig("jd.JDInit.loadPluginForHost");
-                            names = cfg.getGenericProperty(c.getName() + "_names_" + dump + revision, names);
-                            patterns = cfg.getGenericProperty(c.getName() + "_pattern_" + dump + revision, patterns);
-                            flags = cfg.getGenericProperty(c.getName() + "_flags_" + dump + revision, flags);
-                        }
-                        // if not, try to load them from static functions
-                        if (names.length == 0) {
-                            names = (String[]) c.getMethod("getAnnotationNames").invoke(null);
-                            patterns = (String[]) c.getMethod("getAnnotationUrls").invoke(null);
-                            flags = (int[]) c.getMethod("getAnnotationFlags").invoke(null);
-                            final SubConfiguration cfg = SubConfiguration.getConfig("jd.JDInit.loadPluginForHost");
-                            cfg.setProperty(c.getName() + "_names_" + revision, names);
-                            cfg.setProperty(c.getName() + "_pattern_" + revision, patterns);
-                            cfg.setProperty(c.getName() + "_flags_" + revision, flags);
-                            cfg.save();
-                        }
+                    String simpleName = c.getSimpleName();
+                    String[] names = help.names();
+                    String[] patterns = help.urls();
+                    int[] flags = help.flags();
+                    final String revision = help.revision();
+                    LOG.finest("Try to load " + c + " Revision: " + Formatter.getRevision(revision));
+                    /*
+                     * TODO: Change this String to test the changes from plugins
+                     * with public static methods instead of annotation, e.g.
+                     * cms
+                     */
+                    String dump = "";
+                    // See if there are cached annotations
+                    if (names.length == 0) {
+                        final SubConfiguration cfg = SubConfiguration.getConfig("jd.JDInit.loadPluginForHost");
+                        names = cfg.getGenericProperty(c.getName() + "_names_" + dump + revision, names);
+                        patterns = cfg.getGenericProperty(c.getName() + "_pattern_" + dump + revision, patterns);
+                        flags = cfg.getGenericProperty(c.getName() + "_flags_" + dump + revision, flags);
+                    }
+                    // if not, try to load them from static functions
+                    if (names.length == 0) {
+                        names = (String[]) c.getMethod("getAnnotationNames").invoke(null);
+                        patterns = (String[]) c.getMethod("getAnnotationUrls").invoke(null);
+                        flags = (int[]) c.getMethod("getAnnotationFlags").invoke(null);
+                        final SubConfiguration cfg = SubConfiguration.getConfig("jd.JDInit.loadPluginForHost");
+                        cfg.setProperty(c.getName() + "_names_" + revision, names);
+                        cfg.setProperty(c.getName() + "_pattern_" + revision, patterns);
+                        cfg.setProperty(c.getName() + "_flags_" + revision, flags);
+                        cfg.save();
+                    }
 
-                        for (int i = 0; i < names.length; i++) {
-                            try {
-                                new HostPluginWrapper(names[i], simpleName, patterns[i], flags[i], revision);
-                            } catch (Throwable e) {
-                                LOG.severe("Could not load " + c);
-                                JDLogger.exception(e);
-                            }
+                    for (int i = 0; i < names.length; i++) {
+                        try {
+                            new HostPluginWrapper(names[i], simpleName, patterns[i], flags[i], revision);
+                        } catch (Throwable e) {
+                            LOG.severe("Could not load " + c);
+                            JDLogger.exception(e);
                         }
-                    } else {
-                        LOG.severe("Could not load " + c);
                     }
                 } catch (Throwable e) {
                     JDLogger.exception(e);
@@ -569,19 +561,18 @@ public class JDInit {
             for (final Class<?> c : ClassFinder.getClasses("jd.plugins.optional", JDUtilities.getJDClassLoader())) {
                 try {
                     final String cName = c.getName();
-                    final Annotation[] cAnnotations = c.getAnnotations();
                     if (list.contains(cName)) {
-                        System.out.println("Already loaded:" + c);
+                        System.out.println("Already loaded: " + c);
                         continue;
                     }
-                    if (cAnnotations.length > 0) {
-                        final OptionalPlugin help = (OptionalPlugin) cAnnotations[0];
-                        if ((help.windows() && OSDetector.isWindows()) || (help.linux() && OSDetector.isLinux()) || (help.mac() && OSDetector.isMac())) {
-                            if (JDUtilities.getJavaVersion() >= help.minJVM() && PluginOptional.ADDON_INTERFACE_VERSION == help.interfaceversion()) {
-                                LOG.finest("Init PluginWrapper!");
-                                new OptionalPluginWrapper(c, help);
-                                list.add(cName);
-                            }
+
+                    final OptionalPlugin help = c.getAnnotation(OptionalPlugin.class);
+                    if (help == null) continue;
+
+                    if ((help.windows() && OSDetector.isWindows()) || (help.linux() && OSDetector.isLinux()) || (help.mac() && OSDetector.isMac())) {
+                        if (JDUtilities.getJavaVersion() >= help.minJVM() && PluginOptional.ADDON_INTERFACE_VERSION == help.interfaceversion()) {
+                            new OptionalPluginWrapper(c, help);
+                            list.add(cName);
                         }
                     }
                 } catch (Throwable e) {

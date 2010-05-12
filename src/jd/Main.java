@@ -83,8 +83,6 @@ public class Main {
             initMACProperties();
         }
         System.setProperty("file.encoding", "UTF-8");
-        // OSDetector.setOSString(System.getProperty("os.name"));
-        // System.setProperty("os.name", "Windows Vista m.a.c");
         System.setProperty("sun.swing.enableImprovedDragGesture", "true");
         // only use ipv4, because debian changed default stack to ipv6
         System.setProperty("java.net.preferIPv4Stack", "true");
@@ -357,7 +355,7 @@ public class Main {
         // JDUtilities.getController().fireControlEvent(new ControlEvent(this,
         // SplashScreen.SPLASH_PROGRESS, "This is JD :)"));
         init.init();
-        LOG.info((new Date()).toString());
+        LOG.info(new Date().toString());
         LOG.info("init Configuration");
         // JDUtilities.getController().fireControlEvent(new ControlEvent(this,
         // SplashScreen.SPLASH_PROGRESS, "Once upon a time..."));

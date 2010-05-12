@@ -21,10 +21,14 @@ import java.util.ArrayList;
 import jd.controlling.AccountController;
 import jd.plugins.Account;
 import jd.plugins.PluginForHost;
+import jd.plugins.optional.schedule.SchedulerModule;
+import jd.plugins.optional.schedule.SchedulerModuleInterface;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+@SchedulerModule
 public class DisablePremiumForHost implements SchedulerModuleInterface {
+
     private static final long serialVersionUID = -8537683716013681486L;
 
     public boolean checkParameter(String parameter) {
@@ -46,4 +50,5 @@ public class DisablePremiumForHost implements SchedulerModuleInterface {
     public boolean needParameter() {
         return true;
     }
+
 }

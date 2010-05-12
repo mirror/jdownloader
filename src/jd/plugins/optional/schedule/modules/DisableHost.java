@@ -18,10 +18,14 @@ package jd.plugins.optional.schedule.modules;
 
 import jd.gui.swing.jdgui.menu.PremiumMenu;
 import jd.plugins.PluginForHost;
+import jd.plugins.optional.schedule.SchedulerModule;
+import jd.plugins.optional.schedule.SchedulerModuleInterface;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+@SchedulerModule
 public class DisableHost implements SchedulerModuleInterface {
+
     private static final long serialVersionUID = -8537683716013681486L;
 
     public boolean checkParameter(String parameter) {
@@ -42,4 +46,5 @@ public class DisableHost implements SchedulerModuleInterface {
     public boolean needParameter() {
         return true;
     }
+
 }

@@ -185,7 +185,10 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         mainFrame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         mainFrame.addWindowListener(this);
 
+        // Directly reshow another tooltip
         ToolTipManager.sharedInstance().setReshowDelay(0);
+        // Increase time a tooltip is displayed (default is 4000)
+        ToolTipManager.sharedInstance().setDismissDelay(6000);
     }
 
     public void setWindowTitle(final String msg) {

@@ -18,9 +18,13 @@ package jd.plugins.optional.schedule.modules;
 
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
+import jd.plugins.optional.schedule.SchedulerModule;
+import jd.plugins.optional.schedule.SchedulerModuleInterface;
 import jd.utils.locale.JDL;
 
-public class SetChunck implements SchedulerModuleInterface {
+@SchedulerModule
+public class SetChunk implements SchedulerModuleInterface {
+
     private static final long serialVersionUID = -986046937528397324L;
 
     public boolean checkParameter(String parameter) {
@@ -39,10 +43,11 @@ public class SetChunck implements SchedulerModuleInterface {
     }
 
     public String getTranslation() {
-        return JDL.L("jd.plugins.optional.schedule.modules.setChuncks", "Set Chunks");
+        return JDL.L("jd.plugins.optional.schedule.modules.setChunks", "Set Chunks");
     }
 
     public boolean needParameter() {
         return true;
     }
+
 }

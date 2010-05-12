@@ -1,9 +1,12 @@
 package jd.plugins.optional.schedule.modules;
 
 import jd.controlling.JDController;
+import jd.plugins.optional.schedule.SchedulerModule;
+import jd.plugins.optional.schedule.SchedulerModuleInterface;
 import jd.update.JDUpdateUtils;
 import jd.utils.locale.JDL;
 
+@SchedulerModule
 public class DoBackup implements SchedulerModuleInterface {
 
     private static final long serialVersionUID = 1056431689595464918L;

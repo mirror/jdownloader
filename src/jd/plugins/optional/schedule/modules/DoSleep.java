@@ -2,9 +2,12 @@ package jd.plugins.optional.schedule.modules;
 
 import jd.OptionalPluginWrapper;
 import jd.controlling.JDLogger;
+import jd.plugins.optional.schedule.SchedulerModule;
+import jd.plugins.optional.schedule.SchedulerModuleInterface;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+@SchedulerModule
 public class DoSleep implements SchedulerModuleInterface {
 
     private static final long serialVersionUID = 7232503485324370368L;

@@ -17,9 +17,13 @@
 package jd.plugins.optional.schedule.modules;
 
 import jd.controlling.DownloadWatchDog;
+import jd.plugins.optional.schedule.SchedulerModule;
+import jd.plugins.optional.schedule.SchedulerModuleInterface;
 import jd.utils.locale.JDL;
 
+@SchedulerModule
 public class UnSetStopMark implements SchedulerModuleInterface {
+
     private static final long serialVersionUID = -6187873889631828704L;
 
     public boolean checkParameter(String parameter) {
@@ -39,4 +43,5 @@ public class UnSetStopMark implements SchedulerModuleInterface {
     public boolean needParameter() {
         return false;
     }
+
 }

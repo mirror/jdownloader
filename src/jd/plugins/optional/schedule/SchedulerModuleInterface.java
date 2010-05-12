@@ -14,11 +14,12 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.plugins.optional.schedule.modules;
+package jd.plugins.optional.schedule;
 
 import java.io.Serializable;
 
 public interface SchedulerModuleInterface extends Serializable {
+
     public boolean checkParameter(String parameter);
 
     public void execute(String parameter);
@@ -26,4 +27,5 @@ public interface SchedulerModuleInterface extends Serializable {
     public String getTranslation();
 
     public boolean needParameter();
+
 }

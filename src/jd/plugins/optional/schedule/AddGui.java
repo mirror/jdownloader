@@ -41,7 +41,6 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.table.AbstractTableModel;
 
-import jd.plugins.optional.schedule.modules.SchedulerModuleInterface;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 

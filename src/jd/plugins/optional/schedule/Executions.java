@@ -19,7 +19,6 @@ package jd.plugins.optional.schedule;
 import java.io.Serializable;
 
 import jd.controlling.JDLogger;
-import jd.plugins.optional.schedule.modules.SchedulerModuleInterface;
 
 public class Executions implements Serializable {
     private static final long serialVersionUID = 8873752967587288865L;

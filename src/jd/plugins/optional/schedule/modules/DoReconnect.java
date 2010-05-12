@@ -17,9 +17,13 @@
 package jd.plugins.optional.schedule.modules;
 
 import jd.controlling.reconnect.Reconnecter;
+import jd.plugins.optional.schedule.SchedulerModule;
+import jd.plugins.optional.schedule.SchedulerModuleInterface;
 import jd.utils.locale.JDL;
 
+@SchedulerModule
 public class DoReconnect implements SchedulerModuleInterface {
+
     private static final long serialVersionUID = 1782904765267434004L;
 
     public boolean checkParameter(String parameter) {
@@ -37,4 +41,5 @@ public class DoReconnect implements SchedulerModuleInterface {
     public boolean needParameter() {
         return false;
     }
+
 }

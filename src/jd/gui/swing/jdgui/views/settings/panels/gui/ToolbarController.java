@@ -47,7 +47,7 @@ import org.jdesktop.swingx.renderer.JRendererLabel;
 public class ToolbarController extends ConfigPanel {
     private static final ArrayList<String> WHITELIST = new ArrayList<String>();
     static {
-        // controlls
+        // controls
         WHITELIST.add("toolbar.control.start");
         WHITELIST.add("toolbar.control.pause");
         WHITELIST.add("toolbar.control.stop");
@@ -73,11 +73,15 @@ public class ToolbarController extends ConfigPanel {
         WHITELIST.add("toolbar.quickconfig.reconnecttoggle");
         WHITELIST.add("toolbar.control.stopmark");
 
+        // addons
         WHITELIST.add("separator");
         WHITELIST.add("scheduler");
         WHITELIST.add("langfileditor");
         WHITELIST.add("chat");
         WHITELIST.add("livescripter");
+        WHITELIST.add("infobar");
+        WHITELIST.add("gui.jdshutdown.toggle");
+        WHITELIST.add("optional.jdunrar.menu.extract.singlefils");
 
         // removes
         WHITELIST.add("separator");
@@ -106,10 +110,6 @@ public class ToolbarController extends ConfigPanel {
         WHITELIST.add("action.changes");
         WHITELIST.add("action.restart");
         WHITELIST.add("action.exit");
-
-        WHITELIST.add("gui.jdshutdown.toggle");
-        WHITELIST.add("optional.jdunrar.menu.extract.singlefils");
-
     }
     private static final long serialVersionUID = -7024581410075950497L;
     private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.gui.ToolbarController.";

@@ -18,10 +18,14 @@ package jd.plugins.optional.schedule.modules;
 
 import jd.config.Configuration;
 import jd.controlling.reconnect.Reconnecter;
+import jd.plugins.optional.schedule.SchedulerModule;
+import jd.plugins.optional.schedule.SchedulerModuleInterface;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+@SchedulerModule
 public class DisableReconnect implements SchedulerModuleInterface {
+
     private static final long serialVersionUID = -4388497540511505008L;
 
     public boolean checkParameter(String parameter) {
@@ -39,4 +43,5 @@ public class DisableReconnect implements SchedulerModuleInterface {
     public boolean needParameter() {
         return false;
     }
+
 }

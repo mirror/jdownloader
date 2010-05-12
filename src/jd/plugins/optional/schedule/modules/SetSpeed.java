@@ -18,9 +18,13 @@ package jd.plugins.optional.schedule.modules;
 
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
+import jd.plugins.optional.schedule.SchedulerModule;
+import jd.plugins.optional.schedule.SchedulerModuleInterface;
 import jd.utils.locale.JDL;
 
+@SchedulerModule
 public class SetSpeed implements SchedulerModuleInterface {
+
     private static final long serialVersionUID = -6026889777421088500L;
 
     public boolean checkParameter(String parameter) {
@@ -45,4 +49,5 @@ public class SetSpeed implements SchedulerModuleInterface {
     public boolean needParameter() {
         return true;
     }
+
 }

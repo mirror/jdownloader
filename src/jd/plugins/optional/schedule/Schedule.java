@@ -22,39 +22,16 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 
+import jd.JDInit;
 import jd.PluginWrapper;
 import jd.controlling.JDLogger;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelListener;
 import jd.gui.swing.jdgui.menu.MenuAction;
+import jd.nutils.ClassFinder;
 import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
-import jd.plugins.optional.schedule.modules.DisableClipboard;
-import jd.plugins.optional.schedule.modules.DisableHost;
-import jd.plugins.optional.schedule.modules.DisablePremium;
-import jd.plugins.optional.schedule.modules.DisablePremiumForHost;
-import jd.plugins.optional.schedule.modules.DisableReconnect;
-import jd.plugins.optional.schedule.modules.DoBackup;
-import jd.plugins.optional.schedule.modules.DoHibernate;
-import jd.plugins.optional.schedule.modules.DoReconnect;
-import jd.plugins.optional.schedule.modules.DoShutdown;
-import jd.plugins.optional.schedule.modules.DoSleep;
-import jd.plugins.optional.schedule.modules.EnableClipboard;
-import jd.plugins.optional.schedule.modules.EnableHost;
-import jd.plugins.optional.schedule.modules.EnablePremium;
-import jd.plugins.optional.schedule.modules.EnablePremiumForHost;
-import jd.plugins.optional.schedule.modules.EnableReconnect;
-import jd.plugins.optional.schedule.modules.PauseDownloads;
-import jd.plugins.optional.schedule.modules.SchedulerModuleInterface;
-import jd.plugins.optional.schedule.modules.SetChunck;
-import jd.plugins.optional.schedule.modules.SetMaxDownloads;
-import jd.plugins.optional.schedule.modules.SetSpeed;
-import jd.plugins.optional.schedule.modules.SetStopMark;
-import jd.plugins.optional.schedule.modules.StartDownloads;
-import jd.plugins.optional.schedule.modules.StopDownloads;
-import jd.plugins.optional.schedule.modules.UnPauseDownloads;
-import jd.plugins.optional.schedule.modules.UnSetStopMark;
 
 @OptionalPlugin(rev = "$Revision$", id = "scheduler", hasGui = true, interfaceversion = 5)
 public class Schedule extends PluginOptional {
@@ -90,36 +67,25 @@ public class Schedule extends PluginOptional {
         activateAction.setSelected(false);
     }
 
-    /**
-     * TODO: Maybe refactor to use Annotations?
-     */
     private void initModules() {
         modules = new ArrayList<SchedulerModuleInterface>();
-        modules.add(new StartDownloads());
-        modules.add(new StopDownloads());
-        modules.add(new SetSpeed());
-        modules.add(new SetChunck());
-        modules.add(new SetMaxDownloads());
-        modules.add(new PauseDownloads());
-        modules.add(new UnPauseDownloads());
-        modules.add(new EnableHost());
-        modules.add(new DisableHost());
-        modules.add(new EnablePremium());
-        modules.add(new DisablePremium());
-        modules.add(new EnablePremiumForHost());
-        modules.add(new DisablePremiumForHost());
-        modules.add(new EnableReconnect());
-        modules.add(new DisableReconnect());
-        modules.add(new DoBackup());
-        modules.add(new DoReconnect());
-        modules.add(new DoShutdown());
-        modules.add(new DoSleep());
-        modules.add(new DoHibernate());
-        modules.add(new SetStopMark());
-        modules.add(new UnSetStopMark());
-        modules.add(new EnableClipboard());
-        modules.add(new DisableClipboard());
+        try {
+            for (final Class<?> c : ClassFinder.getClasses("jd.plugins.optional.schedule.modules", JDInit.getPluginClassLoader())) {
+                try {
+                    final SchedulerModule help = c.getAnnotation(SchedulerModule.class);
+                    if (help == null) {
+                        logger.info("Scheduler: Skipped " + c + " due to missing annotation!");
+                        continue;
+                    }
 
+                    modules.add((SchedulerModuleInterface) c.getConstructor().newInstance());
+                } catch (Throwable e) {
+                    JDLogger.exception(e);
+                }
+            }
+        } catch (Throwable e) {
+            JDLogger.exception(e);
+        }
     }
 
     public ArrayList<SchedulerModuleInterface> getModules() {
