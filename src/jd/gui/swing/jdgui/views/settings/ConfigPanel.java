@@ -58,7 +58,7 @@ public abstract class ConfigPanel extends SwitchPanel {
         panel = new JPanel(new MigLayout("ins 5, wrap 2", "[fill,grow 10]10[fill,grow]"));
     }
 
-    protected void init() {
+    public void init() {
         for (ConfigEntry cfgEntry : setupContainer().getEntries()) {
             GUIConfigEntry ce = new GUIConfigEntry(cfgEntry);
             if (ce != null) addGUIConfigEntry(ce);
@@ -95,13 +95,14 @@ public abstract class ConfigPanel extends SwitchPanel {
                 break;
             default:
                 panel.add(entry.getDecoration(), gapLeft + (entry.getInput() == null ? "spanx" : ""));
+                break;
             }
         }
 
         if (entry.getInput() != null) {
             switch (entry.getConfigEntry().getType()) {
             case ConfigContainer.TYPE_BUTTON:
-                panel.add(entry.getInput(), (entry.getDecoration() == null ? gapLeft + "spanx" : "wmax 160"));
+                panel.add(entry.getInput(), (entry.getDecoration() == null ? gapLeft + "spanx," : "") + "wmax 160");
                 break;
             case ConfigContainer.TYPE_TEXTAREA:
             case ConfigContainer.TYPE_LISTCONTROLLED:

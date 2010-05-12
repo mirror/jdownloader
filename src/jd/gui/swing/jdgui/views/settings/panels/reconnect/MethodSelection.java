@@ -287,6 +287,7 @@ public class MethodSelection extends ConfigPanel implements ActionListener {
             }
         };
         cp.setBorder(null);
+        cp.init();
         return cp;
     }
 }
