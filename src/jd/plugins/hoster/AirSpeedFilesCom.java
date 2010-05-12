@@ -53,9 +53,17 @@ public class AirSpeedFilesCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
         String fileid = new Regex(parameter.getDownloadURL(), "/file/(\\d+)/").getMatch(0);
-        br.getPage("http://www.airspeedfiles.com/api/index.php?number=" + fileid);
+        br.getPage("http://airspeedfiles.com/api/index.php?number=" + fileid);
+        String pageMoved = br.getRegex("The document has moved <a href=\"(http://airspeedfiles\\.com/api/index\\.php\\?number=\\d+)\">here</a>").getMatch(0);
+        if (pageMoved != null) {
+            logger.info("Page for file " + fileid + " moved...");
+            String newFileid = new Regex(pageMoved, "airspeedfiles\\.com/api/index\\.php\\?number=(\\d+)").getMatch(0);
+            parameter.setUrlDownload("http://airspeedfiles.com/file/" + newFileid + "/");
+            br.getPage(pageMoved);
+        }
         String status = br.getRegex("STATUS:'(.*?)'").getMatch(0);
-        if (status == null || !status.equals("1")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (status == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (!status.equals("1")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("FILENAME:'(.*?)'").getMatch(0);
         String filesize = br.getRegex("SIZE:'(.*?)'").getMatch(0);
         if (filename == null || filename.matches("") || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -163,7 +171,7 @@ public class AirSpeedFilesCom extends PluginForHost {
         br.setFollowRedirects(false);
         br.setCookie(COOKIE_HOST, "mfh_mylang", "en");
         String fileid = new Regex(parameter.getDownloadURL(), "/file/(\\d+)/").getMatch(0);
-        br.getPage("http://www.airspeedfiles.com/api/index.php?number=" + fileid);
+        br.getPage("http://airspeedfiles.com/api/index.php?number=" + fileid);
         // br.getPage(parameter.getDownloadURL());
         if (br.getRedirectLocation() != null && (br.getRedirectLocation().contains("access_key=") || br.getRedirectLocation().contains("getfile.php"))) {
             finalLink = br.getRedirectLocation();
