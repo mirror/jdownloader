@@ -18,7 +18,6 @@ package jd.config;
 
 import java.awt.event.ActionListener;
 import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -64,7 +63,7 @@ public class ConfigEntry implements Serializable {
     private Property propertyInstance = null;
     private String propertyName = null;
     private PropertyType propertyType = PropertyType.NORMAL;
-    private PropertyChangeListener guiListener;
+    private GuiConfigListener guiListener;
 
     /**
      * Variablen für den Vergleich mit einem anderen ConfigEntry.
@@ -101,7 +100,7 @@ public class ConfigEntry implements Serializable {
      * Variablen für einen Komponenten-Eintrag.
      */
     private JComponent component;
-    private Object constraints;
+    private String constraints;
 
     /**
      * Konstruktor für Komponenten die nix brauchen. z.B. JSeparator
@@ -122,7 +121,7 @@ public class ConfigEntry implements Serializable {
      * @param constraints
      * @see ConfigContainer#TYPE_COMPONENT
      */
-    public ConfigEntry(int type, JComponent component, Object constraints) {
+    public ConfigEntry(int type, JComponent component, String constraints) {
         this.type = type;
         this.component = component;
         this.constraints = constraints;
@@ -133,18 +132,18 @@ public class ConfigEntry implements Serializable {
      * 
      * @param type
      *            Typ ID (ConfigContainer.TYPE_*)
-     * @param listener
+     * @param actionListener
      *            Actionlistener. Actionlistener werden z.B. von Buttons
      *            unterstützt
      * @param label
      *            Label für die Komponente
      * @see ConfigContainer#TYPE_BUTTON
      */
-    public ConfigEntry(int type, ActionListener actionListener, String label, String description, ImageIcon icon) {
+    public ConfigEntry(int type, ActionListener actionListener, String description, String label, ImageIcon icon) {
         this.type = type;
         this.actionListener = actionListener;
-        this.label = label;
         this.description = description;
+        this.label = label;
         this.imageIcon = icon;
     }
 
@@ -284,7 +283,7 @@ public class ConfigEntry implements Serializable {
         return component;
     }
 
-    public Object getConstraints() {
+    public String getConstraints() {
         return constraints;
     }
 
@@ -304,7 +303,7 @@ public class ConfigEntry implements Serializable {
         return group;
     }
 
-    public PropertyChangeListener getGuiListener() {
+    public GuiConfigListener getGuiListener() {
         return guiListener;
     }
 
@@ -411,8 +410,8 @@ public class ConfigEntry implements Serializable {
         this.group = group;
     }
 
-    public void setGuiListener(PropertyChangeListener gce) {
-        if (guiListener == null) guiListener = gce;
+    public void setGuiListener(GuiConfigListener guiListener) {
+        if (this.guiListener == null) this.guiListener = guiListener;
     }
 
     public ConfigEntry setHelptags(String helptags) {

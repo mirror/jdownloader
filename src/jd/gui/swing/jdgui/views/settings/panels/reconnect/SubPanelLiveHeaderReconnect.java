@@ -21,7 +21,6 @@ import java.awt.event.ActionListener;
 
 import javax.swing.JButton;
 import javax.swing.JPanel;
-import javax.swing.JTextField;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -68,7 +67,7 @@ public class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionLi
                 new Thread() {
                     @Override
                     public void run() {
-                        String text = ((JTextField) ((GUIConfigEntry) ip.getGuiListener()).getInput()).getText();
+                        String text = ip.getGuiListener().getText().toString();
                         if (text == null || text.trim().equals("")) {
                             RouterUtils.findIP((GUIConfigEntry) ip.getGuiListener(), true);
                         }

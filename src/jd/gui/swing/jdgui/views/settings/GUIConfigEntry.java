@@ -20,7 +20,6 @@ import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import java.util.logging.Logger;
 
 import javax.swing.ButtonGroup;
@@ -45,6 +44,7 @@ import javax.swing.text.JTextComponent;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.config.GuiConfigListener;
 import jd.config.container.JDLabelContainer;
 import jd.controlling.JDLogger;
 import jd.gui.swing.components.ComboBrowseFile;
@@ -58,7 +58,7 @@ import net.miginfocom.swing.MigLayout;
  * schreiben einheitlich. Es lassen sich so Dialogelemente Automatisiert
  * einfügen.
  */
-public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyChangeListener, DocumentListener {
+public class GUIConfigEntry implements GuiConfigListener, ActionListener, ChangeListener, DocumentListener {
 
     private static final long serialVersionUID = -1391952049282528582L;
 
@@ -82,73 +82,49 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
         this.configEntry = configEntry;
         configEntry.setGuiListener(this);
 
+        if (configEntry.getLabel() != null && configEntry.getLabel().trim().length() > 0) {
+            decoration = new JLabel(configEntry.getLabel());
+        }
+
         switch (configEntry.getType()) {
         case ConfigContainer.TYPE_PASSWORDFIELD:
-            decoration = new JLabel(configEntry.getLabel());
-
             input = new JPasswordField();
-            input.setEnabled(configEntry.isEnabled());
             ((JPasswordField) input).setHorizontalAlignment(JPasswordField.RIGHT);
 
             Document doc = ((JPasswordField) input).getDocument();
             doc.addDocumentListener(this);
             break;
         case ConfigContainer.TYPE_TEXTFIELD:
-            decoration = new JLabel(configEntry.getLabel());
-
             input = new JDTextField();
-            input.setEnabled(configEntry.isEnabled());
             ((JDTextField) input).setHorizontalAlignment(JDTextField.RIGHT);
             doc = ((JDTextField) input).getDocument();
             doc.addDocumentListener(this);
             break;
         case ConfigContainer.TYPE_TEXTAREA:
         case ConfigContainer.TYPE_LISTCONTROLLED:
-            decoration = new JLabel(configEntry.getLabel());
-
             input = new JDTextArea();
-            input.setEnabled(configEntry.isEnabled());
             doc = ((JDTextArea) input).getDocument();
             doc.addDocumentListener(this);
             break;
         case ConfigContainer.TYPE_CHECKBOX:
-            decoration = new JLabel(configEntry.getLabel());
-
             input = new JCheckBox();
-            input.setEnabled(configEntry.isEnabled());
             ((JCheckBox) input).addChangeListener(this);
             break;
         case ConfigContainer.TYPE_BROWSEFILE:
-            if (configEntry.getLabel().trim().length() > 0) decoration = new JLabel(configEntry.getLabel());
-
             input = new ComboBrowseFile(configEntry.getPropertyName());
-            ((ComboBrowseFile) input).setEnabled(configEntry.isEnabled());
             ((ComboBrowseFile) input).setEditable(true);
             break;
         case ConfigContainer.TYPE_BROWSEFOLDER:
-            if (configEntry.getLabel().trim().length() > 0) decoration = new JLabel(configEntry.getLabel());
-
             input = new ComboBrowseFile(configEntry.getPropertyName());
             ((ComboBrowseFile) input).setEditable(true);
-            ((ComboBrowseFile) input).setEnabled(configEntry.isEnabled());
             ((ComboBrowseFile) input).setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
             break;
         case ConfigContainer.TYPE_SPINNER:
-            decoration = new JLabel(configEntry.getLabel());
-
             input = new JSpinner(new SpinnerNumberModel(configEntry.getStart(), configEntry.getStart(), configEntry.getEnd(), configEntry.getStep()));
-            input.setEnabled(configEntry.isEnabled());
             ((JSpinner) input).addChangeListener(this);
             break;
         case ConfigContainer.TYPE_BUTTON:
-            if (configEntry.getDescription() != null) {
-                decoration = new JLabel(configEntry.getDescription());
-            } else {
-                decoration = null;
-            }
-
-            input = new JButton(configEntry.getLabel());
-            input.setEnabled(configEntry.isEnabled());
+            input = new JButton(configEntry.getDescription());
             if (configEntry.getImageIcon() != null) {
                 ((JButton) input).setIcon(configEntry.getImageIcon());
             }
@@ -157,8 +133,6 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
             break;
         case ConfigContainer.TYPE_COMBOBOX:
         case ConfigContainer.TYPE_COMBOBOX_INDEX:
-            decoration = new JLabel(configEntry.getLabel());
-
             input = new JComboBox(configEntry.getList());
             if (configEntry.getList().length > 0) {
                 if (configEntry.getList()[0] instanceof JDLabelContainer) {
@@ -183,49 +157,41 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
                     }
                 }
             }
-            input.setEnabled(configEntry.isEnabled());
             break;
         case ConfigContainer.TYPE_RADIOFIELD:
-            decoration = new JLabel(configEntry.getLabel());
             input = new JPanel(new MigLayout("ins 0", "", ""));
             JRadioButton radio;
 
             ButtonGroup group = new ButtonGroup();
 
-            for (int i = 0; i < configEntry.getList().length; i++) {
-                radio = new JRadioButton(configEntry.getList()[i].toString());
+            for (Object obj : configEntry.getList()) {
+                radio = new JRadioButton(obj.toString());
 
-                radio.setActionCommand(configEntry.getList()[i].toString());
+                radio.setActionCommand(obj.toString());
                 input.add(radio);
 
-                radio.setEnabled(configEntry.isEnabled());
                 radio.addActionListener(this);
                 group.add(radio);
 
                 Object p = configEntry.getPropertyInstance().getProperty(configEntry.getPropertyName());
                 if (p == null) p = "";
 
-                if (configEntry.getList()[i].toString().equals(p.toString())) {
+                if (obj.toString().equals(p.toString())) {
                     radio.setSelected(true);
                 }
             }
             break;
         case ConfigContainer.TYPE_LABEL:
-            decoration = new JLabel(configEntry.getLabel());
-
-            input = null;
             break;
         case ConfigContainer.TYPE_SEPARATOR:
             decoration = new JSeparator(JSeparator.HORIZONTAL);
-
-            input = null;
             break;
         case ConfigContainer.TYPE_COMPONENT:
             decoration = configEntry.getComponent();
-
-            input = null;
             break;
         }
+
+        if (input != null) enableComponent(input, configEntry.isEnabled());
 
         if (configEntry.getHelptags() != null) {
             String tooltip = JDL.LF("gui.tooltips.quickhelp", "Quickhelp available: %s (ctrl+shift+CLICK)", configEntry.getHelptags());
@@ -293,7 +259,6 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
         case ConfigContainer.TYPE_SEPARATOR:
         case ConfigContainer.TYPE_COMPONENT:
             return null;
-
         }
 
         return null;
@@ -303,15 +268,19 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
         configEntry.valueChanged(getText());
     }
 
+    private final void enableComponent(JComponent cmp, boolean enabled) {
+        cmp.setEnabled(enabled);
+        if (cmp.getComponents() != null) {
+            for (Component c : cmp.getComponents()) {
+                c.setEnabled(enabled);
+            }
+        }
+    }
+
     public void propertyChange(PropertyChangeEvent evt) {
         if (input == null) return;
         boolean state = configEntry.isConditionalEnabled(evt);
-        input.setEnabled(state);
-        if (input.getComponents() != null) {
-            for (Component c : input.getComponents()) {
-                c.setEnabled(state);
-            }
-        }
+        enableComponent(input, state);
     }
 
     public JComponent getDecoration() {

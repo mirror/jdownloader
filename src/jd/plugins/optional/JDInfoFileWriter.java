@@ -20,8 +20,6 @@ import java.awt.event.ActionEvent;
 import java.io.File;
 import java.util.ArrayList;
 
-import javax.swing.JComboBox;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -93,7 +91,7 @@ public class JDInfoFileWriter extends PluginOptional {
 
     public void initConfig() {
         config.setGroup(new ConfigGroup(getHost(), getIconKey()));
-        config.addEntry(cmbVars = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, "VARS", Replacer.getKeyList(), JDL.L("plugins.optional.infofilewriter.variables", "Available variables")));
+        config.addEntry(cmbVars = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, subConfig, "VARS", Replacer.getKeyList(), JDL.L("plugins.optional.infofilewriter.variables", "Available variables")));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, JDL.L("plugins.optional.infofilewriter.insertKey.short", "Insert"), JDL.L("plugins.optional.infofilewriter.insertKey", "Insert selected Key into the Content"), JDTheme.II("gui.icons.paste", 16, 16)));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, PARAM_FILENAME, JDL.L("plugins.optional.infofilewriter.filename", "Filename:")).setDefaultValue(FILENAME_DEFAULT));
         config.addEntry(txtInfo = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, subConfig, PARAM_INFO_STRING, JDL.L("plugins.optional.infofilewriter.content", "Content:")).setDefaultValue(INFO_STRING_DEFAULT));
@@ -101,10 +99,10 @@ public class JDInfoFileWriter extends PluginOptional {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        JComboBox cmb = ((JComboBox) ((GUIConfigEntry) cmbVars.getGuiListener()).getInput());
-        if (cmb.getSelectedIndex() < 0) return;
+        int index = Integer.parseInt(cmbVars.getGuiListener().getText().toString());
+        if (index < 0) return;
         JDTextArea txt = ((JDTextArea) ((GUIConfigEntry) txtInfo.getGuiListener()).getInput());
-        txt.insert("%" + Replacer.getKey(cmb.getSelectedIndex()) + "%", txt.getCaretPosition());
+        txt.insert("%" + Replacer.getKey(index) + "%", txt.getCaretPosition());
     }
 
     @Override

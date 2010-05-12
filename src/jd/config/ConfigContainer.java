@@ -116,7 +116,7 @@ public class ConfigContainer implements Serializable {
     /**
      * ConfigElement ist eine Swing-Komponente
      * 
-     * @see ConfigEntry#ConfigEntry(int, javax.swing.JComponent, Object)
+     * @see ConfigEntry#ConfigEntry(int, javax.swing.JComponent, String)
      */
     public static final int TYPE_COMPONENT = 12;
     /**
