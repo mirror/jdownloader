@@ -44,10 +44,11 @@ public class InternetAndNetwork extends ConfigPanel {
 
         config = SubConfiguration.getConfig("DOWNLOAD");
 
-        setContainer(setupContainer());
+        init();
     }
 
-    private ConfigContainer setupContainer() {
+    @Override
+    protected ConfigContainer setupContainer() {
 
         ConfigEntry ce;
         ConfigEntry conditionEntry;

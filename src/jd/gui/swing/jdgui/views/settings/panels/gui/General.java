@@ -56,10 +56,11 @@ public class General extends ConfigPanel {
 
         subConfig = GUIUtils.getConfig();
 
-        setContainer(setupContainer());
+        init();
     }
 
-    private ConfigContainer setupContainer() {
+    @Override
+    protected ConfigContainer setupContainer() {
         ConfigEntry ce;
 
         ConfigContainer look = new ConfigContainer();

@@ -22,12 +22,13 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 
-import javax.swing.JCheckBox;
-import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.Timer;
 
 import jd.HostPluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
+import jd.config.ConfigGroup;
 import jd.config.ConfigEntry.PropertyType;
 import jd.controlling.AccountController;
 import jd.controlling.AccountControllerEvent;
@@ -45,7 +46,6 @@ import jd.plugins.Account;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-import net.miginfocom.swing.MigLayout;
 
 public class Premium extends ConfigPanel implements ActionListener, AccountControllerListener {
 
@@ -54,8 +54,7 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
     private static final long serialVersionUID = -7685744533817989161L;
     private PremiumTable internalTable;
     private JScrollPane scrollPane;
-    private JCheckBox checkBox;
-    private Timer Update_Async;
+    private Timer updateAsync;
 
     public static String getTitle() {
         return JDL.L(JDL_PREFIX + "title", "Premium");
@@ -67,39 +66,32 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
 
     public Premium() {
         super();
-        initPanel();
-        load();
+
+        init();
     }
 
     @Override
-    public void initPanel() {
-        panel.setLayout(new MigLayout("ins 5,wrap 1", "[fill,grow]", "[][fill,grow]"));
-        initPanel(panel);
-
-        this.add(panel);
-    }
-
-    private void initPanel(JPanel panel) {
+    protected ConfigContainer setupContainer() {
         internalTable = new PremiumTable(this);
 
         scrollPane = new JScrollPane(internalTable);
-        Update_Async = new Timer(250, this);
-        Update_Async.setInitialDelay(250);
-        Update_Async.setRepeats(false);
+
+        updateAsync = new Timer(250, this);
+        updateAsync.setInitialDelay(250);
+        updateAsync.setRepeats(false);
+
         AccountController.getInstance().addListener(this);
         initActions();
 
-        panel.add(new ViewToolbar("action.premiumview.addacc", "action.premiumview.removeacc", "action.premium.buy"), "split 2");
-        panel.add(checkBox = new JCheckBox(JDL.L(JDL_PREFIX + "accountSelection", "Always select the premium account with the most traffic left for downloading")), "w min!, right");
-        checkBox.setHorizontalTextPosition(JCheckBox.LEADING);
-        checkBox.setSelected(AccountController.getInstance().getBooleanProperty(AccountController.PROPERTY_ACCOUNT_SELECTION, true));
-        panel.add(scrollPane);
-    }
+        ConfigContainer container = new ConfigContainer();
 
-    @Override
-    protected void saveSpecial() {
-        AccountController.getInstance().setProperty(AccountController.PROPERTY_ACCOUNT_SELECTION, checkBox.isSelected());
-        AccountController.getInstance().save();
+        container.setGroup(new ConfigGroup(getTitle(), getIconKey()));
+        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMPONENT, new ViewToolbar("action.premiumview.addacc", "action.premiumview.removeacc", "action.premium.buy"), ""));
+        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMPONENT, scrollPane, "growy, pushy"));
+
+        container.setGroup(new ConfigGroup(JDL.L(JDL_PREFIX + "settings", "Advanced Settings"), getIconKey()));
+        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, AccountController.getInstance(), AccountController.PROPERTY_ACCOUNT_SELECTION, JDL.L(JDL_PREFIX + "accountSelection", "Always select the premium account with the most traffic left for downloading")));
+        return container;
     }
 
     @Override
@@ -213,7 +205,7 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
     @Override
     public void onHide() {
         super.onHide();
-        Update_Async.stop();
+        updateAsync.stop();
         AccountController.getInstance().removeListener(this);
     }
 
@@ -222,7 +214,7 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
             internalTable.fireTableChanged();
         } catch (Exception e) {
             logger.severe("TreeTable Exception, complete refresh!");
-            Update_Async.restart();
+            updateAsync.restart();
         }
     }
 
@@ -234,9 +226,8 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
     }
 
     public void actionPerformed(ActionEvent arg0) {
-        if (arg0.getSource() == Update_Async) {
+        if (arg0.getSource() == updateAsync) {
             fireTableChanged();
-            return;
         }
     }
 
@@ -247,7 +238,7 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
         case AccountControllerEvent.ACCOUNT_UPDATE:
         case AccountControllerEvent.ACCOUNT_EXPIRED:
         case AccountControllerEvent.ACCOUNT_INVALID:
-            Update_Async.restart();
+            updateAsync.restart();
             break;
         default:
             break;

@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 
 import javax.swing.ImageIcon;
+import javax.swing.JComponent;
 
 import jd.controlling.ListController;
 
@@ -97,6 +98,12 @@ public class ConfigEntry implements Serializable {
     private int step = 1;
 
     /**
+     * Variablen für einen Komponenten-Eintrag.
+     */
+    private JComponent component;
+    private Object constraints;
+
+    /**
      * Konstruktor für Komponenten die nix brauchen. z.B. JSeparator
      * 
      * @param type
@@ -104,6 +111,21 @@ public class ConfigEntry implements Serializable {
      */
     public ConfigEntry(int type) {
         this.type = type;
+    }
+
+    /**
+     * Konstruktor für Komponenten, welche eine Swing-Komponente darstellen
+     * sollen
+     * 
+     * @param type
+     * @param component
+     * @param constraints
+     * @see ConfigContainer#TYPE_COMPONENT
+     */
+    public ConfigEntry(int type, JComponent component, Object constraints) {
+        this.type = type;
+        this.component = component;
+        this.constraints = constraints;
     }
 
     /**
@@ -178,6 +200,7 @@ public class ConfigEntry implements Serializable {
      *            angezeigtes label
      * @see ConfigContainer#TYPE_BROWSEFILE
      * @see ConfigContainer#TYPE_BROWSEFOLDER
+     * @see ConfigContainer#TYPE_CHECKBOX
      * @see ConfigContainer#TYPE_PASSWORDFIELD
      * @see ConfigContainer#TYPE_TEXTAREA
      * @see ConfigContainer#TYPE_TEXTFIELD
@@ -255,6 +278,14 @@ public class ConfigEntry implements Serializable {
 
     public ActionListener getActionListener() {
         return actionListener;
+    }
+
+    public JComponent getComponent() {
+        return component;
+    }
+
+    public Object getConstraints() {
+        return constraints;
     }
 
     public Object getDefaultValue() {

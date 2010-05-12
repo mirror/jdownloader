@@ -23,6 +23,9 @@ import javax.swing.JScrollPane;
 import javax.swing.ListSelectionModel;
 
 import jd.OptionalPluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
+import jd.config.ConfigGroup;
 import jd.gui.swing.components.table.JDTable;
 import jd.gui.swing.components.table.JDTableModel;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
@@ -32,7 +35,6 @@ import jd.gui.swing.jdgui.views.settings.panels.addons.columns.NeedsColumn;
 import jd.gui.swing.jdgui.views.settings.panels.addons.columns.PluginColumn;
 import jd.gui.swing.jdgui.views.settings.panels.addons.columns.VersionColumn;
 import jd.utils.locale.JDL;
-import net.miginfocom.swing.MigLayout;
 
 /**
  * @author JD-Team
@@ -85,20 +87,22 @@ public class ConfigPanelAddons extends ConfigPanel {
         super();
         pluginsOptional = new ArrayList<OptionalPluginWrapper>(OptionalPluginWrapper.getOptionalWrapper());
         Collections.sort(pluginsOptional);
-        initPanel();
-        load();
+
+        init();
     }
 
     @Override
-    public void initPanel() {
+    protected ConfigContainer setupContainer() {
         table = new JDTable(new InternalTableModel());
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.getColumnModel().getColumn(0).setMaxWidth(80);
 
-        panel.setLayout(new MigLayout("ins 5,wrap 1", "[fill,grow]", "[fill,grow]"));
-        panel.add(new JScrollPane(table));
+        ConfigContainer container = new ConfigContainer();
 
-        this.add(panel);
+        container.setGroup(new ConfigGroup(getTitle(), getIconKey()));
+        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMPONENT, new JScrollPane(table), "growy, pushy"));
+
+        return container;
     }
 
 }

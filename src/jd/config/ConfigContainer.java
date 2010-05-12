@@ -114,6 +114,12 @@ public class ConfigContainer implements Serializable {
     public static final int TYPE_PASSWORDFIELD = 11;
 
     /**
+     * ConfigElement ist eine Swing-Komponente
+     * 
+     * @see ConfigEntry#ConfigEntry(int, javax.swing.JComponent, Object)
+     */
+    public static final int TYPE_COMPONENT = 12;
+    /**
      * ConfigElement ist ein Textbereich, welcher von einem eigenen Controller
      * verwaltet wird (siehe PasswordListController und HTAccessController)
      * 

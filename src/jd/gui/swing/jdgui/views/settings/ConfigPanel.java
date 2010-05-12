@@ -39,7 +39,7 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
-public class ConfigPanel extends SwitchPanel {
+public abstract class ConfigPanel extends SwitchPanel {
 
     private static final long serialVersionUID = 3383448498625377495L;
 
@@ -54,34 +54,29 @@ public class ConfigPanel extends SwitchPanel {
     public ConfigPanel() {
         this.setLayout(new MigLayout("ins 0", "[fill,grow]", "[fill,grow]"));
         this.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
         panel = new JPanel(new MigLayout("ins 5, wrap 2", "[fill,grow 10]10[fill,grow]"));
     }
 
-    /**
-     * Constructor to display a ConfigPanel with contents of container
-     */
-    public ConfigPanel(ConfigContainer container) {
-        this();
+    protected void init() {
+        for (ConfigEntry cfgEntry : setupContainer().getEntries()) {
+            GUIConfigEntry ce = new GUIConfigEntry(cfgEntry);
+            if (ce != null) addGUIConfigEntry(ce);
+        }
 
-        setContainer(container);
-    }
-
-    /**
-     * Adds all ConfigEntry's from the ConfigContainer to the internal panel and
-     * loads the stored values.
-     */
-    public void setContainer(ConfigContainer container) {
-        this.add(createPanel(container));
+        this.add(panel);
 
         this.load();
     }
 
-    public void addGUIConfigEntry(GUIConfigEntry entry, JPanel panel) {
+    protected abstract ConfigContainer setupContainer();
+
+    private void addGUIConfigEntry(GUIConfigEntry entry) {
         ConfigGroup group = entry.getConfigEntry().getGroup();
 
         if (currentGroup != group) {
             if (group != null) {
-                panel.add(Factory.createHeader(group), "spanx, hidemode 3");
+                panel.add(Factory.createHeader(group), "spanx");
             } else {
                 panel.add(new JSeparator(), "spanx, gapbottom 15, gaptop 15");
             }
@@ -95,6 +90,9 @@ public class ConfigPanel extends SwitchPanel {
             case ConfigContainer.TYPE_LISTCONTROLLED:
                 panel.add(entry.getDecoration(), gapLeft + "spanx");
                 break;
+            case ConfigContainer.TYPE_COMPONENT:
+                panel.add(entry.getDecoration(), gapLeft + "spanx," + entry.getConfigEntry().getConstraints());
+                break;
             default:
                 panel.add(entry.getDecoration(), gapLeft + (entry.getInput() == null ? "spanx" : ""));
             }
@@ -103,10 +101,10 @@ public class ConfigPanel extends SwitchPanel {
         if (entry.getInput() != null) {
             switch (entry.getConfigEntry().getType()) {
             case ConfigContainer.TYPE_BUTTON:
-                panel.add(entry.getInput(), entry.getDecoration() == null ? gapLeft + "spanx" : "wmax 160");
+                panel.add(entry.getInput(), (entry.getDecoration() == null ? gapLeft + "spanx" : "wmax 160"));
                 break;
-            case ConfigContainer.TYPE_LISTCONTROLLED:
             case ConfigContainer.TYPE_TEXTAREA:
+            case ConfigContainer.TYPE_LISTCONTROLLED:
                 panel.add(new JScrollPane(entry.getInput()), gapLeft + "spanx, growy, pushy");
                 break;
             default:
@@ -116,16 +114,6 @@ public class ConfigPanel extends SwitchPanel {
         }
 
         entries.add(entry);
-    }
-
-    public void addGUIConfigEntry(GUIConfigEntry entry) {
-        addGUIConfigEntry(entry, panel);
-    }
-
-    /**
-     * Should be overwritten to initialise the contentpanel.
-     */
-    public void initPanel() {
     }
 
     public final void load() {
@@ -209,15 +197,6 @@ public class ConfigPanel extends SwitchPanel {
         for (SubConfiguration subConfiguration : subs) {
             subConfiguration.save();
         }
-    }
-
-    protected final JPanel createPanel(ConfigContainer container) {
-        for (ConfigEntry cfgEntry : container.getEntries()) {
-            GUIConfigEntry ce = new GUIConfigEntry(cfgEntry);
-            if (ce != null) addGUIConfigEntry(ce);
-        }
-
-        return panel;
     }
 
     public static String getTitle() {

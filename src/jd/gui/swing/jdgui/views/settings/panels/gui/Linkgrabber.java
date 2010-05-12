@@ -42,10 +42,11 @@ public class Linkgrabber extends ConfigPanel {
     public Linkgrabber() {
         super();
 
-        setContainer(setupContainer());
+        init();
     }
 
-    private ConfigContainer setupContainer() {
+    @Override
+    protected ConfigContainer setupContainer() {
         ConfigContainer container = new ConfigContainer();
 
         ConfigEntry ce;

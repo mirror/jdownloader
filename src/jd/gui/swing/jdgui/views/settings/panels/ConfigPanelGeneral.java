@@ -53,10 +53,11 @@ public class ConfigPanelGeneral extends ConfigPanel {
 
         this.configuration = JDUtilities.getConfiguration();
 
-        setContainer(setupContainer());
+        init();
     }
 
-    private ConfigContainer setupContainer() {
+    @Override
+    protected ConfigContainer setupContainer() {
         ConfigEntry ce, conditionEntry;
 
         ConfigContainer look = new ConfigContainer();

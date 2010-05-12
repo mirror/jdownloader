@@ -24,12 +24,15 @@ import java.util.ArrayList;
 import java.util.Collections;
 
 import javax.swing.JButton;
+import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.ListSelectionModel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
 import jd.HostPluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
 import jd.gui.UserIF;
 import jd.gui.swing.components.table.JDTable;
@@ -88,24 +91,23 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
 
     private static final long serialVersionUID = -5219586497809869375L;
 
-    private JButton btnEdit;
-
     private ArrayList<HostPluginWrapper> pluginsForHost;
 
     private JDTable table;
 
+    private JButton btnEdit;
+
     public ConfigPanelPluginForHost() {
         super();
+
         pluginsForHost = new ArrayList<HostPluginWrapper>(HostPluginWrapper.getHostWrapper());
         Collections.sort(pluginsForHost);
-        initPanel();
-        load();
+
+        init();
     }
 
     public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == btnEdit) {
-            editEntry(pluginsForHost.get(table.getSelectedRow()));
-        }
+        editEntry(pluginsForHost.get(table.getSelectedRow()));
     }
 
     private void editEntry(HostPluginWrapper hpw) {
@@ -115,7 +117,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
     }
 
     @Override
-    public void initPanel() {
+    protected ConfigContainer setupContainer() {
         table = new JDTable(new InternalTableModel());
         table.addMouseListener(this);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
@@ -130,12 +132,18 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         btnEdit = new JButton(JDL.L("gui.btn_settings", "Settings"));
         btnEdit.setEnabled(false);
         btnEdit.addActionListener(this);
+        btnEdit.setIcon(JDTheme.II("gui.images.config.home", 16, 16));
 
-        panel.setLayout(new MigLayout("ins 5,wrap 1", "[fill,grow]", "[fill,grow][]"));
-        panel.add(new JScrollPane(table));
-        panel.add(btnEdit, "w pref!");
+        JPanel p = new JPanel(new MigLayout("ins 0,wrap 1", "[fill,grow]", "[fill,grow][]"));
+        p.add(new JScrollPane(table));
+        p.add(btnEdit, "w pref!");
 
-        this.add(panel);
+        ConfigContainer container = new ConfigContainer();
+
+        container.setGroup(new ConfigGroup(getTitle(), getIconKey()));
+        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMPONENT, p, "growy, pushy"));
+
+        return container;
     }
 
     public void mouseClicked(MouseEvent e) {

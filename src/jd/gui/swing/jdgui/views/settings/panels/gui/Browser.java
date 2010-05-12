@@ -57,10 +57,11 @@ public class Browser extends ConfigPanel {
 
         subConfig = GUIUtils.getConfig();
 
-        setContainer(setupContainer());
+        init();
     }
 
-    private ConfigContainer setupContainer() {
+    @Override
+    protected ConfigContainer setupContainer() {
         ConfigContainer container = new ConfigContainer();
 
         container.setGroup(new ConfigGroup(getTitle(), getIconKey()));

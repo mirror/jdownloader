@@ -40,14 +40,14 @@ public class PasswordListHTAccess extends ConfigPanel {
     public PasswordListHTAccess() {
         super();
 
-        setContainer(setupContainer());
+        init();
     }
 
-    private ConfigContainer setupContainer() {
+    @Override
+    protected ConfigContainer setupContainer() {
         ConfigContainer container = new ConfigContainer();
 
         container.setGroup(new ConfigGroup(getTitle(), getIconKey()));
-
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_LISTCONTROLLED, HTACCESSController.getInstance(), JDL.L("plugins.http.htaccess", "List of all HTAccess passwords. Each line one password.")));
 
         return container;

@@ -29,6 +29,9 @@ import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
+import jd.config.ConfigGroup;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.jdgui.actions.ActionController;
@@ -38,7 +41,6 @@ import jd.gui.swing.jdgui.components.toolbar.MainToolBar;
 import jd.gui.swing.jdgui.components.toolbar.ToolBar;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
 import jd.utils.locale.JDL;
-import net.miginfocom.swing.MigLayout;
 
 import org.jdesktop.swingx.JXTable;
 import org.jdesktop.swingx.renderer.DefaultTableRenderer;
@@ -132,9 +134,10 @@ public class ToolbarController extends ConfigPanel {
 
     public ToolbarController() {
         super();
+
         actions = new ArrayList<ToolBarAction>();
-        initPanel();
-        load();
+
+        init();
     }
 
     @Override
@@ -224,7 +227,7 @@ public class ToolbarController extends ConfigPanel {
     }
 
     @Override
-    public void initPanel() {
+    protected ConfigContainer setupContainer() {
         tableModel = new InternalTableModel();
         table = new JXTable(tableModel) {
             private static final long serialVersionUID = -7914266013067863393L;
@@ -244,10 +247,12 @@ public class ToolbarController extends ConfigPanel {
         column.setPreferredWidth(50);
         column.setMaxWidth(50);
 
-        panel.setLayout(new MigLayout("ins 5,wrap 1", "[fill,grow]", "[fill,grow][]"));
-        panel.add(new JScrollPane(table));
+        ConfigContainer container = new ConfigContainer();
 
-        this.add(panel);
+        container.setGroup(new ConfigGroup(getTitle(), getIconKey()));
+        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMPONENT, new JScrollPane(table), "growy, pushy"));
+
+        return container;
     }
 
     private class InternalTableModel extends AbstractTableModel {

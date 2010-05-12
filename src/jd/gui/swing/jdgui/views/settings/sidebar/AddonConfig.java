@@ -29,8 +29,19 @@ public class AddonConfig extends ConfigPanel {
 
     private static HashMap<String, AddonConfig> MAP;
 
+    private final ConfigContainer container;
+
     private AddonConfig(ConfigContainer container) {
-        super(container);
+        super();
+
+        this.container = container;
+
+        init();
+    }
+
+    @Override
+    protected ConfigContainer setupContainer() {
+        return container;
     }
 
     public JPanel getPanel() {

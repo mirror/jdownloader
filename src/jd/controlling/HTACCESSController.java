@@ -129,7 +129,8 @@ public class HTACCESSController implements ActionListener, ListController {
             final StringBuilder sb = new StringBuilder();
             for (final String host : LIST.keySet()) {
                 final String auth[] = LIST.get(host);
-                sb.append(host + " %%%% " + auth[0] + " %%%% " + auth[1]);
+                sb.append(host).append(" %%%% ").append(auth[0]).append(" %%%% ").append(auth[1]);
+                sb.append(new char[] { '\r', '\n' });
             }
             return sb.toString().trim();
         }

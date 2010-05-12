@@ -21,7 +21,6 @@ import java.awt.event.ActionListener;
 
 import javax.swing.JButton;
 import javax.swing.JPanel;
-import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
 import jd.config.ConfigContainer;
@@ -44,51 +43,50 @@ public class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionLi
 
     private Configuration configuration;
 
-    private JButton btnFindIP;
-
     private JButton btnSelectRouter;
-
-    private GUIConfigEntry ip;
-
-    private GUIConfigEntry pass;
-
-    private GUIConfigEntry user;
-
+    private JButton btnFindIP;
     private JButton btnRouterRecorder;
 
-    private GUIConfigEntry script;
+    private ConfigEntry ip;
 
     public SubPanelLiveHeaderReconnect(Configuration configuration) {
         super();
+
         this.configuration = configuration;
-        initPanel();
-        load();
+
+        init();
+        this.setBorder(null);
     }
 
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == btnFindIP) {
-            RouterUtils.findIP(ip, false);
-        } else if (e.getSource() == this.btnRouterRecorder) {
+            RouterUtils.findIP(((GUIConfigEntry) ip.getGuiListener()), false);
+        } else if (e.getSource() == btnRouterRecorder) {
             if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
                 UserIO.getInstance().requestMessageDialog(UserIO.ICON_WARNING, JDL.L("jd.gui.swing.jdgui.settings.panels.downloadandnetwork.advanced.ipcheckdisable.warning.title", "IP-Check disabled!"), JDL.L("jd.gui.swing.jdgui.settings.panels.downloadandnetwork.advanced.ipcheckdisable.warning.message", "You disabled the IP-Check. This will increase the reconnection times dramatically!\r\n\r\nSeveral further modules like Reconnect Recorder are disabled."));
             } else {
                 new Thread() {
                     @Override
                     public void run() {
-                        if (((JTextField) ip.getInput()).getText() == null || ((JTextField) ip.getInput()).getText().trim().equals("")) {
-                            RouterUtils.findIP(ip, true);
+                        String text = ((JTextField) ((GUIConfigEntry) ip.getGuiListener()).getInput()).getText();
+                        if (text == null || text.trim().equals("")) {
+                            RouterUtils.findIP((GUIConfigEntry) ip.getGuiListener(), true);
                         }
+
                         new GuiRunnable<Object>() {
 
                             @Override
                             public Object runSave() {
-                                Gui jd = new Gui(((JTextField) ip.getInput()).getText());
+                                save();
+                                Gui jd = new Gui(configuration.getStringProperty(Configuration.PARAM_HTTPSEND_IP, null));
                                 if (jd.saved) {
-                                    ((JTextField) ip.getInput()).setText(jd.ip);
-                                    if (jd.user != null) ((JTextField) user.getInput()).setText(jd.user);
-                                    if (jd.pass != null) ((JTextField) pass.getInput()).setText(jd.pass);
-                                    ((JTextArea) script.getInput()).setText(jd.methode);
+                                    configuration.setProperty(Configuration.PARAM_HTTPSEND_IP, jd.ip);
+                                    if (jd.user != null) configuration.setProperty(Configuration.PARAM_HTTPSEND_USER, jd.user);
+                                    if (jd.pass != null) configuration.setProperty(Configuration.PARAM_HTTPSEND_PASS, jd.pass);
+                                    configuration.setProperty(Configuration.PARAM_HTTPSEND_REQUESTS, jd.methode);
+                                    configuration.save();
                                 }
+                                load();
                                 return null;
                             }
 
@@ -100,48 +98,52 @@ public class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionLi
         } else if (e.getSource() == btnSelectRouter) {
             String[] data = ImportRouterDialog.showDialog();
             if (data != null) {
+                save();
+
                 if (data[2].toLowerCase().indexOf("curl") >= 0) {
                     UserIO.getInstance().requestMessageDialog(JDL.L("gui.config.liveHeader.warning.noCURLConvert", "JD could not convert this curl-batch to a Live-Header Script. Please consult your JD-Support Team!"));
                 }
-                script.setData(data[2]);
-                String username = (String) user.getText();
+                configuration.setProperty(Configuration.PARAM_HTTPSEND_REQUESTS, data[2]);
+                String username = configuration.getStringProperty(Configuration.PARAM_HTTPSEND_USER, null);
                 if (username == null || username.matches("[\\s]*")) {
-                    user.setData(data[4]);
+                    configuration.setProperty(Configuration.PARAM_HTTPSEND_USER, data[4]);
                 }
-                String pw = (String) pass.getText();
+                String pw = configuration.getStringProperty(Configuration.PARAM_HTTPSEND_PASS, null);
                 if (pw == null || pw.matches("[\\s]*")) {
-                    pass.setData(data[5]);
+                    configuration.setProperty(Configuration.PARAM_HTTPSEND_PASS, data[5]);
                 }
+                configuration.save();
+
+                load();
             }
         }
     }
 
     @Override
-    public void initPanel() {
-        JPanel buttons = new JPanel(new MigLayout("ins 0"));
-
+    protected ConfigContainer setupContainer() {
         btnSelectRouter = new JButton(JDL.L("gui.config.liveheader.selectrouter", "Select Router"));
         btnSelectRouter.addActionListener(this);
-        buttons.add(btnSelectRouter, "sizegroup btns");
 
         btnFindIP = new JButton(JDL.L("gui.config.liveheader.btnfindip", "Fetch Router IP"));
         btnFindIP.addActionListener(this);
-        buttons.add(btnFindIP, "sizegroup btns");
 
         btnRouterRecorder = new JButton(JDL.L("gui.config.liveheader.recorder", "Create Reconnect Script"));
         btnRouterRecorder.addActionListener(this);
+
+        JPanel buttons = new JPanel(new MigLayout("ins 0"));
+        buttons.add(btnSelectRouter, "sizegroup btns");
+        buttons.add(btnFindIP, "sizegroup btns");
         buttons.add(btnRouterRecorder, "sizegroup btns");
 
-        panel.setLayout(new MigLayout("ins 5, wrap 2", "[fill]10[grow,fill]"));
-        panel.add(buttons, "spanx");
+        ConfigContainer container = new ConfigContainer();
 
-        addGUIConfigEntry(user = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, configuration, Configuration.PARAM_HTTPSEND_USER, JDL.L("gui.config.httpliveheader.user", "User"))));
-        addGUIConfigEntry(pass = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, configuration, Configuration.PARAM_HTTPSEND_PASS, JDL.L("gui.config.httpliveheader.password", "Password"))));
-        addGUIConfigEntry(ip = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, configuration, Configuration.PARAM_HTTPSEND_IP, JDL.L("gui.config.httpliveheader.routerip", "Router's ip"))));
-        addGUIConfigEntry(script = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, configuration, Configuration.PARAM_HTTPSEND_REQUESTS, null)));
+        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMPONENT, buttons, ""));
+        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, configuration, Configuration.PARAM_HTTPSEND_USER, JDL.L("gui.config.httpliveheader.user", "User")));
+        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, configuration, Configuration.PARAM_HTTPSEND_PASS, JDL.L("gui.config.httpliveheader.password", "Password")));
+        container.addEntry(ip = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, configuration, Configuration.PARAM_HTTPSEND_IP, JDL.L("gui.config.httpliveheader.routerip", "Router's ip")));
+        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, configuration, Configuration.PARAM_HTTPSEND_REQUESTS, null));
 
-        this.setBorder(null);
-        this.add(panel);
+        return container;
     }
 
 }

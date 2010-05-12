@@ -40,14 +40,14 @@ public class PasswordList extends ConfigPanel {
     public PasswordList() {
         super();
 
-        setContainer(setupContainer());
+        init();
     }
 
-    private ConfigContainer setupContainer() {
+    @Override
+    protected ConfigContainer setupContainer() {
         ConfigContainer container = new ConfigContainer();
 
         container.setGroup(new ConfigGroup(getTitle(), getIconKey()));
-
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_LISTCONTROLLED, PasswordListController.getInstance(), JDL.L("plugins.optional.jdunrar.config.passwordlist", "List of all passwords. Each line one password.")));
 
         return container;

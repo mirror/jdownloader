@@ -141,7 +141,11 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
             ((JSpinner) input).addChangeListener(this);
             break;
         case ConfigContainer.TYPE_BUTTON:
-            decoration = new JLabel(configEntry.getDescription());
+            if (configEntry.getDescription() != null) {
+                decoration = new JLabel(configEntry.getDescription());
+            } else {
+                decoration = null;
+            }
 
             input = new JButton(configEntry.getLabel());
             input.setEnabled(configEntry.isEnabled());
@@ -216,6 +220,11 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
 
             input = null;
             break;
+        case ConfigContainer.TYPE_COMPONENT:
+            decoration = configEntry.getComponent();
+
+            input = null;
+            break;
         }
 
         if (configEntry.getHelptags() != null) {
@@ -271,18 +280,20 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
             Component[] inputs = input.getComponents();
             for (Component element : inputs) {
                 radio = (JRadioButton) element;
-                if (radio.getSelectedObjects() != null && radio.getSelectedObjects()[0] != null) { return radio.getSelectedObjects()[0]; }
+                if (radio.getSelectedObjects() != null && radio.getSelectedObjects()[0] != null) return radio.getSelectedObjects()[0];
             }
-            return null;
-        case ConfigContainer.TYPE_BUTTON:
-        case ConfigContainer.TYPE_LABEL:
-        case ConfigContainer.TYPE_SEPARATOR:
             return null;
         case ConfigContainer.TYPE_BROWSEFOLDER:
         case ConfigContainer.TYPE_BROWSEFILE:
             return ((ComboBrowseFile) input).getText();
         case ConfigContainer.TYPE_SPINNER:
             return ((JSpinner) input).getValue();
+        case ConfigContainer.TYPE_BUTTON:
+        case ConfigContainer.TYPE_LABEL:
+        case ConfigContainer.TYPE_SEPARATOR:
+        case ConfigContainer.TYPE_COMPONENT:
+            return null;
+
         }
 
         return null;
@@ -374,6 +385,7 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
         case ConfigContainer.TYPE_BUTTON:
         case ConfigContainer.TYPE_LABEL:
         case ConfigContainer.TYPE_SEPARATOR:
+        case ConfigContainer.TYPE_COMPONENT:
             break;
         }
         configEntry.valueChanged(getText());

@@ -48,10 +48,11 @@ public class Advanced extends ConfigPanel {
 
         subConfig = GUIUtils.getConfig();
 
-        setContainer(setupContainer());
+        init();
     }
 
-    private ConfigContainer setupContainer() {
+    @Override
+    protected ConfigContainer setupContainer() {
         ConfigContainer container = new ConfigContainer();
 
         ConfigEntry ce, cond;

@@ -19,8 +19,6 @@ package jd.gui.swing.jdgui.views.settings.panels.reconnect;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
-import javax.swing.JButton;
-
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
@@ -28,7 +26,6 @@ import jd.gui.swing.jdgui.views.settings.ConfigPanel;
 import jd.gui.swing.jdgui.views.settings.GUIConfigEntry;
 import jd.nrouter.RouterUtils;
 import jd.utils.locale.JDL;
-import net.miginfocom.swing.MigLayout;
 
 public class SubPanelCLRReconnect extends ConfigPanel implements ActionListener {
 
@@ -36,38 +33,32 @@ public class SubPanelCLRReconnect extends ConfigPanel implements ActionListener 
 
     private Configuration configuration;
 
-    private JButton btnFindIP;
-
-    private GUIConfigEntry ip;
+    private ConfigEntry ip;
 
     public SubPanelCLRReconnect(Configuration configuration) {
         super();
+
         this.configuration = configuration;
-        initPanel();
-        load();
+
+        init();
+        this.setBorder(null);
     }
 
     public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == btnFindIP) {
-            RouterUtils.findIP(ip, false);
-        }
+        RouterUtils.findIP((GUIConfigEntry) ip.getGuiListener(), false);
     }
 
     @Override
-    public void initPanel() {
-        btnFindIP = new JButton(JDL.L("gui.config.liveHeader.btnfindip", "Fetch Router IP"));
-        btnFindIP.addActionListener(this);
+    protected ConfigContainer setupContainer() {
+        ConfigContainer container = new ConfigContainer();
 
-        panel.setLayout(new MigLayout("ins 5, wrap 2", "[fill]10[grow,fill]"));
-        panel.add(btnFindIP, "wrap");
+        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, JDL.L("gui.config.liveHeader.btnfindip", "Fetch Router IP"), null, null));
+        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, configuration, Configuration.PARAM_HTTPSEND_USER, JDL.L("gui.config.liveheader.user", "Login User (->%%%user%%%)")));
+        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, configuration, Configuration.PARAM_HTTPSEND_PASS, JDL.L("gui.config.liveheader.password", "Login Password (->%%%pass%%%)")));
+        container.addEntry(ip = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, configuration, Configuration.PARAM_HTTPSEND_IP, JDL.L("gui.config.liveheader.routerip", "RouterIP (->%%%routerip%%%)")));
+        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, configuration, Configuration.PARAM_HTTPSEND_REQUESTS_CLR, null));
 
-        addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, configuration, Configuration.PARAM_HTTPSEND_USER, JDL.L("gui.config.liveheader.user", "Login User (->%%%user%%%)"))));
-        addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, configuration, Configuration.PARAM_HTTPSEND_PASS, JDL.L("gui.config.liveheader.password", "Login Password (->%%%pass%%%)"))));
-        addGUIConfigEntry(ip = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, configuration, Configuration.PARAM_HTTPSEND_IP, JDL.L("gui.config.liveheader.routerip", "RouterIP (->%%%routerip%%%)"))));
-        addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, configuration, Configuration.PARAM_HTTPSEND_REQUESTS_CLR, null)));
-
-        this.setBorder(null);
-        this.add(panel);
+        return container;
     }
 
 }
