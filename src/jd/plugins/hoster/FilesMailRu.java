@@ -140,7 +140,7 @@ public class FilesMailRu extends PluginForHost {
         if (con.getContentType().contains("html")) {
             logger.info("Renewing dllink, seems like we had a broken link here!");
             br.followConnection();
-            if (br.containsHTML("?trycount=")) {
+            if (br.containsHTML("\\?trycount=")) {
                 logger.info("files.mail.ru page showed the \"trycount\" link. Trying to open the mainpage of the link to find a new dllink...");
                 br.getPage(downloadLink.getStringProperty("folderID", null));
             }
