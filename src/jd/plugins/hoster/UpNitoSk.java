@@ -90,7 +90,14 @@ public class UpNitoSk extends PluginForHost {
         br2.getPage("http://dl1.upnito.sk/getwait.php?dwToken=" + thisDamnToken);
         String gwt_validate = br2.toString().trim();
         freeform.put("gwt_validate", Encoding.htmlDecode(gwt_validate));
-        sleep(605 * 1001l, downloadLink);
+        int sleepTime = 600;
+        String ttt = br2.getRegex("(\\d+);").getMatch(0);
+        if (ttt != null) {
+            sleepTime = Integer.parseInt(ttt);
+        } else {
+            logger.warning("Sleeptime regex seems to be broken. This could cause errors...");
+        }
+        sleep(sleepTime * 1001l, downloadLink);
         freeform.put("verifytext", Encoding.urlEncode(verifytext));
         br.submitForm(freeform);
         freeform = br.getFormbyProperty("name", "gdl_form");

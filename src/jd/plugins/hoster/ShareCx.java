@@ -63,6 +63,8 @@ public class ShareCx extends PluginForHost {
         if (dlform0 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dlform0.put("method_free", "Datei+herunterladen");
         br.submitForm(dlform0);
+        String reconTime = br.getRegex("startTimer\\((\\d+)\\)").getMatch(0);
+        if (reconTime != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(reconTime) * 1001l);
         Form dlform1 = br.getForm(0);
         if (dlform1 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // Ticket Time

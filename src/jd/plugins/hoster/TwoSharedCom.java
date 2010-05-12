@@ -31,7 +31,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "2shared.com" }, urls = { "http://[\\w\\.]*?2shared\\.com/file/[a-zA-Z0-9]+/[\\w]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "2shared.com" }, urls = { "http://[\\w\\.]*?2shared\\.com/(file|video)/[a-zA-Z0-9]+/[\\w]+" }, flags = { 0 })
 public class TwoSharedCom extends PluginForHost {
 
     public TwoSharedCom(PluginWrapper wrapper) {
@@ -41,6 +41,10 @@ public class TwoSharedCom extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://www.2shared.com/terms.jsp";
+    }
+
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("(/video/", "/file/"));
     }
 
     @Override
