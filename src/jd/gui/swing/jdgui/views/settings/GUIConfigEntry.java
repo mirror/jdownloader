@@ -19,7 +19,6 @@ package jd.gui.swing.jdgui.views.settings;
 import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.beans.PropertyChangeEvent;
 import java.util.logging.Logger;
 
 import javax.swing.ButtonGroup;
@@ -277,9 +276,9 @@ public class GUIConfigEntry implements GuiConfigListener, ActionListener, Change
         }
     }
 
-    public void propertyChange(PropertyChangeEvent evt) {
+    public void dataChanged(ConfigEntry source, Object newData) {
         if (input == null) return;
-        boolean state = configEntry.isConditionalEnabled(evt);
+        boolean state = configEntry.isConditionalEnabled(source, newData);
         enableComponent(input, state);
     }
 

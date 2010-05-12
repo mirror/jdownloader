@@ -173,7 +173,14 @@ public class BrowseFile extends JPanel implements ActionListener {
         editable = value;
     }
 
-    // @Override
+    @Override
+    public void setToolTipText(String text) {
+        txtInput.setToolTipText(text);
+        btnBrowse.setToolTipText(text);
+        super.setToolTipText(text);
+    }
+
+    @Override
     public void setEnabled(final boolean value) {
         txtInput.setEnabled(value);
         btnBrowse.setEnabled(value);

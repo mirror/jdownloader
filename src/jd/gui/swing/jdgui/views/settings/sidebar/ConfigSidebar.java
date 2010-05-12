@@ -26,6 +26,9 @@ import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.TreePath;
 
+import jd.controlling.JDController;
+import jd.event.ControlEvent;
+import jd.event.ControlListener;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.jdgui.interfaces.SideBarPanel;
@@ -34,7 +37,7 @@ import jd.gui.swing.jdgui.views.settings.ConfigurationView;
 import jd.gui.swing.laf.LookAndFeelController;
 import net.miginfocom.swing.MigLayout;
 
-public class ConfigSidebar extends SideBarPanel {
+public class ConfigSidebar extends SideBarPanel implements ControlListener {
 
     private static final long serialVersionUID = 6456662020047832983L;
     private static final String PROPERTY_LAST_PANEL = "LAST_PANEL";
@@ -49,7 +52,10 @@ public class ConfigSidebar extends SideBarPanel {
      * @return singleton instance
      */
     public static ConfigSidebar getInstance(ConfigurationView configurationView) {
-        if (INSTANCE == null && configurationView != null) INSTANCE = new ConfigSidebar(configurationView);
+        if (INSTANCE == null && configurationView != null) {
+            INSTANCE = new ConfigSidebar(configurationView);
+            JDController.getInstance().addControlListener(INSTANCE);
+        }
         return INSTANCE;
     }
 
@@ -57,7 +63,10 @@ public class ConfigSidebar extends SideBarPanel {
      * Removes the singleton instance
      */
     public static void removeInstance() {
-        if (INSTANCE != null) INSTANCE.saveCurrentState();
+        if (INSTANCE != null) {
+            INSTANCE.saveCurrentState();
+            JDController.getInstance().removeControlListener(INSTANCE);
+        }
         INSTANCE = null;
     }
 
@@ -113,14 +122,12 @@ public class ConfigSidebar extends SideBarPanel {
         });
         tree.getSelectionModel().addTreeSelectionListener(new TreeSelectionListener() {
 
-            private TreeEntry entry;
-
             public void valueChanged(TreeSelectionEvent e) {
                 new GuiRunnable<Object>() {
                     @Override
                     public Object runSave() {
                         if (tree.getSelectionPath() == null) return null;
-                        entry = (TreeEntry) tree.getSelectionPath().getLastPathComponent();
+                        TreeEntry entry = (TreeEntry) tree.getSelectionPath().getLastPathComponent();
                         tree.expandPath(tree.getSelectionPath());
                         if (entry.getPanel() != null) view.setContent(entry.getPanel());
                         return null;
@@ -148,6 +155,12 @@ public class ConfigSidebar extends SideBarPanel {
         }
 
         this.add(tree);
+    }
+
+    public void controlEvent(ControlEvent event) {
+        if (event.getID() == ControlEvent.CONTROL_SYSTEM_SHUTDOWN_PREPARED) {
+            saveCurrentState();
+        }
     }
 
     public void expandAll(JTree tree, boolean expand) {

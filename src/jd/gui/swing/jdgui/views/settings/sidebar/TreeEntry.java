@@ -112,8 +112,12 @@ public class TreeEntry {
     }
 
     public ConfigPanel getPanel() {
-        if (panel == null && clazz != null) {
-            panel = (ConfigPanel) new SingletonPanel(clazz).getPanel();
+        if (panel == null) {
+            if (clazz != null) {
+                panel = (ConfigPanel) new SingletonPanel(clazz).getPanel();
+            } else if (!entries.isEmpty()) {
+                panel = entries.get(0).getPanel();
+            }
         }
         return panel;
     }

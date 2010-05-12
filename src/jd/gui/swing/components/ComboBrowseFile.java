@@ -170,14 +170,17 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
 
             private static final long serialVersionUID = 5288948184335860046L;
 
+            @Override
             public Dimension getMaximumSize() {
                 return new Dimension(20, 20);
             }
 
+            @Override
             public Dimension getMinimumSize() {
                 return new Dimension(20, 20);
             }
 
+            @Override
             public Dimension getPreferredSize() {
                 return new Dimension(20, 20);
             }
@@ -258,12 +261,22 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
         });
     }
 
-    // @Override
+    @Override
     public void setEnabled(final boolean value) {
         EventQueue.invokeLater(new Runnable() {
             public void run() {
                 cmboInput.setEnabled(value);
                 btnBrowse.setEnabled(value);
+            }
+        });
+    }
+
+    @Override
+    public void setToolTipText(final String text) {
+        EventQueue.invokeLater(new Runnable() {
+            public void run() {
+                cmboInput.setToolTipText(text);
+                btnBrowse.setToolTipText(text);
             }
         });
     }

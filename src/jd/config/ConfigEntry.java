@@ -17,7 +17,6 @@
 package jd.config;
 
 import java.awt.event.ActionListener;
-import java.beans.PropertyChangeEvent;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -58,7 +57,6 @@ public class ConfigEntry implements Serializable {
     private ConfigGroup group;
     private String label;
     private Object defaultValue;
-    private String helptags = null;
     private boolean enabled = true;
     private Property propertyInstance = null;
     private String propertyName = null;
@@ -66,44 +64,44 @@ public class ConfigEntry implements Serializable {
     private GuiConfigListener guiListener;
 
     /**
-     * Variablen für den Vergleich mit einem anderen ConfigEntry.
+     * Variablen fuer den Vergleich mit einem anderen ConfigEntry.
      */
     private ConfigEntry conditionEntry;
     private Boolean compareValue;
     private ArrayList<ConfigEntry> listener = new ArrayList<ConfigEntry>();
 
     /**
-     * Variablen für einen Button-Eintrag.
+     * Variablen fuer einen Button-Eintrag.
      */
     private String description;
     private ActionListener actionListener;
     private ImageIcon imageIcon;
 
     /**
-     * Variablen für einen ListController-Eintrag.
+     * Variablen fuer einen ListController-Eintrag.
      */
     private transient ListController controller;
 
     /**
-     * Variablen für einen ComboBox- oder RadioField-Eintrag.
+     * Variablen fuer einen ComboBox- oder RadioField-Eintrag.
      */
     private Object[] list;
 
     /**
-     * Variablen für einen Spinner-Eintrag.
+     * Variablen fuer einen Spinner-Eintrag.
      */
     private int start;
     private int end;
     private int step = 1;
 
     /**
-     * Variablen für einen Komponenten-Eintrag.
+     * Variablen fuer einen Komponenten-Eintrag.
      */
     private JComponent component;
     private String constraints;
 
     /**
-     * Konstruktor für Komponenten die nix brauchen. z.B. JSeparator
+     * Konstruktor fuer Komponenten die nix brauchen. z.B. JSeparator
      * 
      * @param type
      * @see ConfigContainer#TYPE_SEPARATOR
@@ -113,7 +111,7 @@ public class ConfigEntry implements Serializable {
     }
 
     /**
-     * Konstruktor für Komponenten, welche eine Swing-Komponente darstellen
+     * Konstruktor fuer Komponenten, welche eine Swing-Komponente darstellen
      * sollen
      * 
      * @param type
@@ -128,15 +126,15 @@ public class ConfigEntry implements Serializable {
     }
 
     /**
-     * Konstruktor für z.B. Buttons (Label + Actionlistener)
+     * Konstruktor fuer z.B. Buttons (Label + Actionlistener)
      * 
      * @param type
      *            Typ ID (ConfigContainer.TYPE_*)
      * @param actionListener
      *            Actionlistener. Actionlistener werden z.B. von Buttons
-     *            unterstützt
+     *            unterstuetzt
      * @param label
-     *            Label für die Komponente
+     *            Label fuer die Komponente
      * @see ConfigContainer#TYPE_BUTTON
      */
     public ConfigEntry(int type, ActionListener actionListener, String description, String label, ImageIcon icon) {
@@ -157,8 +155,8 @@ public class ConfigEntry implements Serializable {
     }
 
     /**
-     * Konstruktor z.B. für Combobox oder radiofield ( mehrere werte(list), eine
-     * auswahl (property)
+     * Konstruktor z.B. fuer Combobox oder radiofield ( mehrere werte(list),
+     * eine auswahl (property)
      * 
      * @param type
      * @param propertyInstance
@@ -166,10 +164,10 @@ public class ConfigEntry implements Serializable {
      *            hilfe von propertyName werden Informationen aus ihr gelesen
      *            und wieder in ihr abgelegt
      * @param propertyName
-     *            propertyname über den auf einen wert in der propertyInstanz
+     *            propertyname ueber den auf einen wert in der propertyInstanz
      *            zugegriffen wird
      * @param list
-     *            Liste mit allen werten aus denen ausgewählt werden kann
+     *            Liste mit allen werten aus denen ausgewaehlt werden kann
      * @param label
      * @see ConfigContainer#TYPE_COMBOBOX
      * @see ConfigContainer#TYPE_COMBOBOX_INDEX
@@ -184,7 +182,7 @@ public class ConfigEntry implements Serializable {
     }
 
     /**
-     * Konstruktor für z.B. ein Textfeld (label& ein eingabefeld
+     * Konstruktor fuer z.B. ein Textfeld (label& ein eingabefeld
      * 
      * @param type
      *            TYP ID
@@ -193,7 +191,7 @@ public class ConfigEntry implements Serializable {
      *            hilfe von propertyName werden Informationen aus ihr gelesen
      *            und wieder in ihr abgelegt
      * @param propertyName
-     *            propertyname über den auf einen wert in der propertyInstanz
+     *            propertyname ueber den auf einen wert in der propertyInstanz
      *            zugegriffen wird
      * @param label
      *            angezeigtes label
@@ -212,7 +210,7 @@ public class ConfigEntry implements Serializable {
     }
 
     /**
-     * Konstruktor z.B. für einen JSpinner (property, label, range (start/end),
+     * Konstruktor z.B. fuer einen JSpinner (property, label, range (start/end),
      * step)
      * 
      * @param type
@@ -221,7 +219,7 @@ public class ConfigEntry implements Serializable {
      *            hilfe von propertyName werden Informationen aus ihr gelesen
      *            und wieder in ihr abgelegt
      * @param propertyName
-     *            propertyname über den auf einen wert in der propertyInstanz
+     *            propertyname ueber den auf einen wert in der propertyInstanz
      *            zugegriffen wird
      * @param label
      * @param start
@@ -264,7 +262,7 @@ public class ConfigEntry implements Serializable {
     }
 
     /**
-     * Konstruktor für ein einfaches Label
+     * Konstruktor fuer ein einfaches Label
      * 
      * @param type
      * @param label
@@ -307,9 +305,12 @@ public class ConfigEntry implements Serializable {
         return guiListener;
     }
 
+    /**
+     * deprecated should think about removing it, there is nearly <b>no</b>
+     * helppage in our wiki
+     */
     public String getHelptags() {
-        if (helptags == null) return label;
-        return helptags;
+        return label;
     }
 
     public ImageIcon getImageIcon() {
@@ -359,7 +360,7 @@ public class ConfigEntry implements Serializable {
     }
 
     /**
-     * Gibt den Typ zurück
+     * Gibt den Typ zurueck
      * 
      * @return Typ des Eintrages
      */
@@ -367,8 +368,8 @@ public class ConfigEntry implements Serializable {
         return type;
     }
 
-    public boolean isConditionalEnabled(PropertyChangeEvent evt) {
-        if (evt.getSource() == conditionEntry) return compareValue.equals((Boolean) evt.getNewValue());
+    public boolean isConditionalEnabled(ConfigEntry source, Object newData) {
+        if (source == conditionEntry) return compareValue.equals((Boolean) newData);
         return true;
     }
 
@@ -383,7 +384,7 @@ public class ConfigEntry implements Serializable {
      * @param value
      * @return this. damit ist eine Struktur new
      *         ConfigEntry(...).setdefaultValue(...).setStep(...).setBla...
-     *         möglich
+     *         moeglich
      */
     public ConfigEntry setDefaultValue(Object defaultValue) {
         this.defaultValue = defaultValue;
@@ -414,11 +415,6 @@ public class ConfigEntry implements Serializable {
         if (this.guiListener == null) this.guiListener = guiListener;
     }
 
-    public ConfigEntry setHelptags(String helptags) {
-        this.helptags = helptags;
-        return this;
-    }
-
     /**
      * Sets the propoertyType. one of PropertyType enum.
      * 
@@ -433,7 +429,7 @@ public class ConfigEntry implements Serializable {
     public void valueChanged(Object newValue) {
         for (ConfigEntry next : listener) {
             if (next.getGuiListener() != null) {
-                next.getGuiListener().propertyChange(new PropertyChangeEvent(this, getPropertyName(), null, newValue));
+                next.getGuiListener().dataChanged(this, newValue);
             }
         }
     }

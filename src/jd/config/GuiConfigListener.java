@@ -1,11 +1,11 @@
 package jd.config;
 
-import java.beans.PropertyChangeListener;
-
-public interface GuiConfigListener extends PropertyChangeListener {
+public interface GuiConfigListener {
 
     public Object getText();
 
     public void setData(Object data);
+
+    public void dataChanged(ConfigEntry source, Object newData);
 
 }
