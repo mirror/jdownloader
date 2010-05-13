@@ -19,9 +19,12 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -29,11 +32,12 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "share.cx" }, urls = { "http://[\\w\\.]*?share\\.cx/files/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "share.cx" }, urls = { "http://[\\w\\.]*?share\\.cx/files/\\d+" }, flags = { 2 })
 public class ShareCx extends PluginForHost {
 
     public ShareCx(PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium("http://www.share.cx/premium");
     }
 
     @Override
@@ -109,6 +113,76 @@ public class ShareCx extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    public void login(Account account) throws Exception {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(false);
+        br.getPage("http://www.share.cx");
+        Form form = br.getFormbyProperty("name", "FL");
+        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        form.put("login", Encoding.urlEncode(account.getUser()));
+        form.put("password", Encoding.urlEncode(account.getPass()));
+        br.submitForm(form);
+        if (br.getCookie("http://www.share.cx", "login") == null || br.getCookie("http://www.share.cx", "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        br.getPage("http://www.share.cx/myaccount");
+        String accType = br.getRegex(">Account</TD><TD><b><a href=\"http://www\\.share\\.cx/premium\">(Premium)</a>").getMatch(0);
+        if (accType == null) {
+            logger.info("This account is no premium account!");
+            account.setValid(false);
+            return ai;
+        }
+        String usedSpace = br.getRegex("Belegter Speicherplatz</TD><TD>(.*?)</TD>").getMatch(0);
+        if (usedSpace != null) ai.setUsedSpace(usedSpace);
+        String expireDate = br.getRegex("ltig bis</TD><TD>(\\d+\\.\\d+\\.\\d+)</TD>").getMatch(0);
+        if (expireDate != null) {
+            ai.setValidUntil(Regex.getMilliSeconds(expireDate, "dd.MM.yyyy", null));
+        } else {
+            account.setValid(false);
+            return ai;
+        }
+        ai.setStatus("Premium User");
+        account.setValid(true);
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+        requestFileInformation(downloadLink);
+        login(account);
+        br.getPage(downloadLink.getDownloadURL());
+        Form dlform = br.getFormbyProperty("name", "F1");
+        br.submitForm(dlform);
+        String dllink = br.getRegex("wenigen Sekunden automatisch... <a href=\"(http://.*?)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("window\\.location\\.href='(http://file\\d+\\.share\\.cx.*?)'\"").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("(\"|')(http://file\\d+\\.share\\.cx:\\d+/d/[a-z0-9]+/.*?)(\"|')").getMatch(1);
+            }
+        }
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -10);
+        if (!(dl.getConnection().isContentDisposition())) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
     }
 
     @Override

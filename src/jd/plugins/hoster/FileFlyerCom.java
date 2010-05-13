@@ -27,6 +27,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileflyer.com" }, urls = { "http://[\\w\\.]*?fileflyer\\.com/view/[\\w]+" }, flags = { 0 })
 public class FileFlyerCom extends PluginForHost {
@@ -48,6 +49,7 @@ public class FileFlyerCom extends PluginForHost {
         if (name == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         downloadLink.setName(name.trim());
         downloadLink.setDownloadSize(Regex.getSize(filesize));
+        if (br.containsHTML("Access to old files is available to premium users only")) downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.FileFlyerCom.errors.Only4Premium", "Only downloadable for premium users"));
         if (br.containsHTML("(class=\"handlink\">Expired</a>|class=\"handlink\">Removed</a>)"))
             return AvailableStatus.FALSE;
         else
@@ -56,6 +58,7 @@ public class FileFlyerCom extends PluginForHost {
 
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        if (br.containsHTML("Access to old files is available to premium users only")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.FileFlyerCom.errors.Only4Premium", "Only downloadable for premium users"));
         if (br.containsHTML("access to the service may be unavailable for a while")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No free slots available", 30 * 60 * 1000l);
         String linkurl = br.getRegex(Pattern.compile("<a id=\"ItemsList_ctl00_img\".*href=\"(.*)\">")).getMatch(0);
         if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

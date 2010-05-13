@@ -17,12 +17,14 @@
 package jd.plugins.hoster;
 
 import java.io.File;
+import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.RandomUserAgent;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -134,9 +136,16 @@ public class MegaShareCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        Form submit = br.getForm(1);
-        submit.setPreferredSubmit(2);
-        br.submitForm(submit);
+        String fileId = new Regex(downloadLink.getDownloadURL(), "megashare.com/(\\d+)").getMatch(0);
+        if (!br.containsHTML("free premium") && !br.containsHTML("FREE") || fileId == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String preferThat = "free+premium";
+        String preferThat2 = "FreePremDz";
+        if (!br.containsHTML("free premium")) {
+            preferThat = "FREE";
+            preferThat2 = "FreeDz" + fileId;
+        }
+        String post = preferThat2 + ".x=" + new Random().nextInt(10) + "&" + preferThat2 + ".y=" + new Random().nextInt(10) + "&" + preferThat2 + "=" + preferThat;
+        br.postPage(downloadLink.getDownloadURL(), post);
         if (br.containsHTML("This File has been DELETED")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         return AvailableStatus.TRUE;
     }
@@ -195,15 +204,26 @@ public class MegaShareCom extends PluginForHost {
         }
         form.put("captcha_code", captchaCode);
         form.put("yesss", "Download");
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, true, 1);
+        form.put("yesss.x", (new Random().nextInt(10) + ""));
+        form.put("yesss.y", (new Random().nextInt(10) + ""));
+        br.setFollowRedirects(false);
+        br.submitForm(form);
+        String dllink = br.getRedirectLocation();
+        if (dllink == null) {
+            if (br.containsHTML("get premium access")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
+            System.out.print(br.toString());
             if (br.containsHTML("Invalid Captcha Value")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             if (br.containsHTML("This file is password protected.")) {
                 logger.warning("Wrong password!");
                 downloadLink.setProperty("pass", null);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
+            if (br.containsHTML("get premium access")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (passCode != null) {
