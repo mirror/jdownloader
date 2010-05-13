@@ -68,8 +68,11 @@ public class SharingMatrixCom extends PluginForHost {
         br.getPage("http://sharingmatrix.com/ajax_scripts/login.php?email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember_me=true");
         String validornot = br.toString();
         String number = new Regex(validornot, "(\\d+)").getMatch(0);
-        if (number != null) validornot = number.trim();
-        if (!validornot.equals("1")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (number != null) validornot = number;
+        if (!validornot.equals("1")) {
+            logger.info("Login failed");
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
     }
 
     @Override
@@ -95,6 +98,7 @@ public class SharingMatrixCom extends PluginForHost {
             account.setValid(true);
             return ai;
         }
+        logger.info("Bith expire-date regexes failed, this account seems not to be a premium account...");
         account.setValid(false);
         return ai;
     }
@@ -127,7 +131,7 @@ public class SharingMatrixCom extends PluginForHost {
                 newform.put("email", form.getVarsMap().get("email") != null ? form.getVarsMap().get("email") : "");
                 newform.put("password", form.getVarsMap().get("password") != null ? form.getVarsMap().get("password") : "");
                 newform.put("fast_link", "true");
-                br.getPage("Referer: http://sharingmatrix.com/personal");
+                br.getPage("http://sharingmatrix.com/personal");
                 br.submitForm(newform);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
