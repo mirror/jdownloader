@@ -17,10 +17,13 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -28,11 +31,13 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shareflare.net" }, urls = { "http://[\\w\\.]*?shareflare\\.net/download/.*?/.*?\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shareflare.net" }, urls = { "http://[\\w\\.]*?shareflare\\.net/download/.*?/.*?\\.html" }, flags = { 2 })
 public class ShareFlareNet extends PluginForHost {
 
     public ShareFlareNet(PluginWrapper wrapper) {
         super(wrapper);
+        this.setAccountwithoutUsername(true);
+        enablePremium("http://shareflare.net/page/premium.php");
     }
 
     @Override
@@ -43,6 +48,7 @@ public class ShareFlareNet extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.setCookie("http://shareflare.net", "lang", "en");
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("(File not found|deleted for abuse or something like this)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("id=\"file-info\">(.*?)<small").getMatch(0);
@@ -108,6 +114,36 @@ public class ShareFlareNet extends PluginForHost {
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML("title>Error</title>")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    @Override
+    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+        requestFileInformation(downloadLink);
+        Form premForm = null;
+        Form allForms[] = br.getForms();
+        if (allForms == null || allForms.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        for (Form aForm : allForms) {
+            if (aForm.containsHTML("\"pass\"")) {
+                premForm = aForm;
+                break;
+            }
+        }
+        if (premForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        premForm.put("pass", Encoding.urlEncode(account.getPass()));
+        br.submitForm(premForm);
+        if (br.containsHTML("<b>Given password does not exist")) {
+            logger.info("Downloadpassword seems to be wrong, disabeling account now!");
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
+        String url = Encoding.htmlDecode(br.getRegex(Pattern.compile("valign=\"middle\"><br><span style=\"font-size:12px;\"><a href='(http://.*?)'", Pattern.CASE_INSENSITIVE)).getMatch(0));
+        if (url == null) url = br.getRegex("('|\")(http://\\d+\\.\\d+\\.\\d+\\.\\d+/downloadp\\d+/.*?\\..*?/\\d+/shareflare\\.net/.*?)('|\")").getMatch(1);
+        if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

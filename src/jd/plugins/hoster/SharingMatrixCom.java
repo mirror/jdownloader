@@ -98,7 +98,7 @@ public class SharingMatrixCom extends PluginForHost {
             account.setValid(true);
             return ai;
         }
-        logger.info("Bith expire-date regexes failed, this account seems not to be a premium account...");
+        logger.info("Both expire-date regexes failed, this account seems not to be a premium account...");
         account.setValid(false);
         return ai;
     }
