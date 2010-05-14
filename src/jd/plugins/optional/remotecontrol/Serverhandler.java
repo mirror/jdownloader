@@ -398,7 +398,7 @@ public class Serverhandler implements Handler {
             // Add link(s)
 
             ArrayList<String> links = new ArrayList<String>();
-            String link = new Regex(request.getRequestUrl(), ".*/action/add/links/(.+)").getMatch(1);
+            String link = new Regex(request.getRequestUrl(), ".*/action/add/links/(.+)").getMatch(0);
 
             for (String tlink : HTMLParser.getHttpLinks(Encoding.urlDecode(link, false), null)) {
                 links.add(tlink);
@@ -432,7 +432,7 @@ public class Serverhandler implements Handler {
         } else if (request.getRequestUrl().matches("(?is).*/action/add/container/.+")) {
             // Open a local or remote DLC-container
 
-            String dlcfilestr = new Regex(request.getRequestUrl(), ".*/action/add/container/(.+)").getMatch(1);
+            String dlcfilestr = new Regex(request.getRequestUrl(), ".*/action/add/container/(.+)").getMatch(0);
             dlcfilestr = Encoding.htmlDecode(dlcfilestr);
 
             // import dlc
