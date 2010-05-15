@@ -28,8 +28,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megarapid.eu" }, urls = { "http://[\\w\\.]*?megarapid\\.eu/files/\\d+/.+" }, flags = { 0 })
+                                                                                                                                                       
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megarapid.eu" }, urls = { "(http://[\\w\\.]*?megarapid\\.eu/files/\\d+/.+)|(http://[\\w\\.]*?megarapid\\.eu/\\?e=403\\&m=captcha\\&file=\\d+/.+)" }, flags = { 0 })
 public class MegaRapidEu extends PluginForHost {
 
     public MegaRapidEu(PluginWrapper wrapper) {
@@ -60,7 +60,7 @@ public class MegaRapidEu extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         String fileid = new Regex(downloadLink.getDownloadURL(), "(files/|file=)(\\d+)").getMatch(1);
         if (fileid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -88,7 +88,6 @@ public class MegaRapidEu extends PluginForHost {
             String code = getCaptchaCode(captchaurl, downloadLink);
             br.postPage("http://megarapid.eu/remote/", "action=captcha&hash=" + hash + "&code=" + code);
             if (!br.containsHTML("status\":true,\"msg\":\"OK\"") && br.containsHTML("msg\":\"Kod se neshoduje")) {
-                continue;
             } else if (!br.containsHTML("status\":true,\"msg\":\"OK\"")) {
                 logger.warning("Unknown error in captchahandling for link: " + downloadLink.getDownloadURL());
                 logger.warning(br.toString());
