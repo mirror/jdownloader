@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 
-import jd.JDInit;
 import jd.PluginWrapper;
 import jd.controlling.JDLogger;
 import jd.gui.swing.jdgui.JDGui;
@@ -32,6 +31,7 @@ import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.nutils.ClassFinder;
 import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
+import jd.utils.JDUtilities;
 
 @OptionalPlugin(rev = "$Revision$", id = "scheduler", hasGui = true, interfaceversion = 5)
 public class Schedule extends PluginOptional {
@@ -70,7 +70,7 @@ public class Schedule extends PluginOptional {
     private void initModules() {
         modules = new ArrayList<SchedulerModuleInterface>();
         try {
-            for (final Class<?> c : ClassFinder.getClasses("jd.plugins.optional.schedule.modules", JDInit.getPluginClassLoader())) {
+            for (final Class<?> c : ClassFinder.getClasses("jd.plugins.optional.schedule.modules", JDUtilities.getJDClassLoader())) {
                 try {
                     final SchedulerModule help = c.getAnnotation(SchedulerModule.class);
                     if (help == null) {
