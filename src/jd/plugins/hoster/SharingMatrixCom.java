@@ -113,6 +113,10 @@ public class SharingMatrixCom extends PluginForHost {
         String url = br.getRedirectLocation();
         boolean direct = true;
         if (url == null) {
+            if (br.containsHTML("<p>Upgrade to a premium account and")) {
+                logger.info("This account doesn't seem to be a premium account...disabling it");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
             if (br.containsHTML("download limit of 10Gb is over")) {
                 logger.info(JDL.L("plugins.hoster.sharingmatrixcom.limit", "Deposit: We are sorry, but your daily Premium user's download limit of 10Gb is over."));
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);

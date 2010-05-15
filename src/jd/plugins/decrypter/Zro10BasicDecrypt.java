@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zero10.info" }, urls = { "http://[\\w\\.]*?((zero10\\.info|save-link\\.info|share-link\\.info|h-link\\.us|zero10\\.us|(darkhorse|brg8)\\.fi5\\.us|arbforce\\.com/short|(get\\.(el3lam|sirtggp))\\.com|tanzel\\.eb2a\\.com/short|go4down\\.(com|net)/short)/[0-9]+|url-2\\.com/[A-Z]+/|h-url\\.in/[A-Z0-9]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zero10.info" }, urls = { "http://[\\w\\.]*?((zero10\\.info|save-link\\.info|share-link\\.info|h-link\\.us|zero10\\.us|(darkhorse|brg8)\\.fi5\\.us|arbforce\\.com/short|(get\\.(el3lam|sirtggp))\\.com|tanzel\\.eb2a\\.com/short|go4down\\.(com|net)/short|angel-tears\\.com/short)/[0-9]+|url-2\\.com/[A-Z]+/|h-url\\.in/[A-Z0-9]+)" }, flags = { 0 })
 public class Zro10BasicDecrypt extends PluginForDecrypt {
 
     public Zro10BasicDecrypt(PluginWrapper wrapper) {
