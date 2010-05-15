@@ -156,7 +156,7 @@ public abstract class JDAction extends AbstractAction {
                 final int splitLength = split.length;
                 for (int i = 0; i < splitLength - 1; ++i) {
                     if (new Regex(split[i], "^CTRL$").matches()) {
-                        mod = mod | KeyEvent.CTRL_DOWN_MASK;
+                        mod = mod | Toolkit.getDefaultToolkit().getMenuShortcutKeyMask();
                     } else if (new Regex(split[i], "^SHIFT$").matches()) {
                         mod = mod | KeyEvent.SHIFT_DOWN_MASK;
                     } else if (new Regex(split[i], "^ALTGR$").matches()) {
