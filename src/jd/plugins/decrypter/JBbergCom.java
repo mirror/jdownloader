@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
@@ -37,7 +38,8 @@ public class JBbergCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        br.getPage(parameter);
+        String downloadId = new Regex(parameter, ".*download-([A-Z0-9]+)-.*?\\.html").getMatch(0);
+        br.getPage("http://www.jheberg.com/status.php?id="+ downloadId);
         if (br.containsHTML("<b>Aucune URL ne correspond au fichier voulut")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         String[] links = br.getRegex("/> <a href=\"(http://.*?)\"").getColumn(0);
         if (links == null || links.length == 0) return null;
