@@ -90,7 +90,6 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
     private MainTabbedPane mainTabbedPane;
     private DownloadView downloadView;
     private LinkgrabberView linkgrabberView;
-    // private ConfigurationView configurationView;
 
     private MainToolBar toolBar;
     private JPanel waitingPane;
@@ -439,7 +438,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
                     break;
                 case CONFIGPANEL:
                     if (param instanceof ConfigContainer) {
-                        if (((ConfigContainer) param).getEntries().size() == 0) return null;
+                        if (((ConfigContainer) param).getEntries().isEmpty()) return null;
                         showConfigPanel((ConfigContainer) param);
                     }
                     break;
@@ -479,7 +478,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         }
 
         final SwitchPanel oldPanel = mainTabbedPane.getSelectedView().getInfoPanel();
-        AddonConfig p = AddonConfig.getInstance(container, "_2");
+        AddonConfig p = AddonConfig.getInstance(container, "_2", false);
         JDCollapser col = new JDCollapser() {
 
             private static final long serialVersionUID = 1L;

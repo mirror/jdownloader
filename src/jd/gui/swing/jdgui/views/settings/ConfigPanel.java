@@ -71,9 +71,15 @@ public abstract class ConfigPanel extends SwitchPanel {
 
     protected abstract ConfigContainer setupContainer();
 
-    private void addGUIConfigEntry(GUIConfigEntry entry) {
-        ConfigGroup group = entry.getConfigEntry().getGroup();
+    /**
+     * Overwrite this, when no ConfigGroups Headers should be displayed
+     */
+    protected boolean showGroups() {
+        return true;
+    }
 
+    private void addGUIConfigEntry(GUIConfigEntry entry) {
+        ConfigGroup group = showGroups() ? entry.getConfigEntry().getGroup() : null;
         if (currentGroup != group) {
             if (group != null) {
                 panel.add(Factory.createHeader(group), "spanx");
@@ -102,7 +108,7 @@ public abstract class ConfigPanel extends SwitchPanel {
         if (entry.getInput() != null) {
             switch (entry.getConfigEntry().getType()) {
             case ConfigContainer.TYPE_BUTTON:
-                panel.add(entry.getInput(), (entry.getDecoration() == null ? gapLeft + "spanx," : "") + "wmax 160");
+                panel.add(entry.getInput(), (entry.getDecoration() == null ? gapLeft + "spanx," : "") + "wmax 250");
                 break;
             case ConfigContainer.TYPE_TEXTAREA:
             case ConfigContainer.TYPE_LISTCONTROLLED:

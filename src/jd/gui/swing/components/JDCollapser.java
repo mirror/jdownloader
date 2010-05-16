@@ -20,13 +20,14 @@ import java.awt.event.ActionEvent;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
-import javax.swing.Icon;
+import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import javax.swing.JMenuBar;
 import javax.swing.JPanel;
 
 import jd.gui.swing.jdgui.borders.JDBorderFactory;
 import jd.gui.swing.jdgui.interfaces.DroppedPanel;
+import jd.nutils.JDImage;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
@@ -74,8 +75,10 @@ public abstract class JDCollapser extends DroppedPanel {
         setVisible(true);
     }
 
-    public void setInfos(String name, Icon icon) {
+    public void setInfos(String name, ImageIcon icon) {
         menutitle.setText(name);
+
+        if (icon != null) icon = JDImage.getScaledImageIcon(icon, 16, 16);
         menutitle.setIcon(icon);
 
         closeButton.setToolTipText(JDL.LF("jd.gui.swing.components.JDCollapser.closetooltip", "Close %s", name));

@@ -31,12 +31,20 @@ public class AddonConfig extends ConfigPanel {
 
     private final ConfigContainer container;
 
-    private AddonConfig(ConfigContainer container) {
+    private final boolean showGroups;
+
+    private AddonConfig(ConfigContainer container, boolean showGroups) {
         super();
 
         this.container = container;
+        this.showGroups = showGroups;
 
         init();
+    }
+
+    @Override
+    protected boolean showGroups() {
+        return showGroups;
     }
 
     @Override
@@ -55,13 +63,13 @@ public class AddonConfig extends ConfigPanel {
      * @param ext
      * @return
      */
-    public synchronized static AddonConfig getInstance(ConfigContainer container, String ext) {
+    public synchronized static AddonConfig getInstance(ConfigContainer container, String ext, boolean showGroups) {
         if (MAP == null) MAP = new HashMap<String, AddonConfig>();
 
         AddonConfig p = MAP.get(container + "_" + ext);
         if (p != null) return p;
 
-        MAP.put(container + "_" + ext, p = new AddonConfig(container));
+        MAP.put(container + "_" + ext, p = new AddonConfig(container, showGroups));
         return p;
     }
 

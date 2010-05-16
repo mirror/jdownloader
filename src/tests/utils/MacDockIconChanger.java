@@ -16,17 +16,19 @@
 
 package tests.utils;
 
-import com.apple.eawt.Application;
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.util.logging.Logger;
+
+import javax.imageio.ImageIO;
+
 import jd.controlling.JDLogger;
 import jd.utils.JDUtilities;
 
-import javax.imageio.ImageIO;
-import java.awt.*;
-import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
-import java.util.logging.Logger;
-
+import com.apple.eawt.Application;
 
 public class MacDockIconChanger {
 
@@ -40,62 +42,48 @@ public class MacDockIconChanger {
 
     private static final Logger LOG = JDLogger.getLogger();
 
-
-
     public MacDockIconChanger() {
         loadDockImage();
     }
 
     private void loadDockImage() {
-
         try {
-
             File dockImageFile = JDUtilities.getResourceFile("jd/img/logo/jd_logo_128_128.png");
             dockImage = ImageIO.read(dockImageFile);
-        } catch (IOException e) {
+        } catch (Exception e) {
             LOG.info("Can't Load Dock Image!");
         }
     }
 
     public void changeToProcent(int procent) {
-        Graphics dockGraphic = dockImage.getGraphics();
+        Graphics g = dockImage.getGraphics();
 
-        drawBackgroundRect(dockGraphic);
-        drawForegroundRect(procent, dockGraphic);
-        drawProcentText(procent, dockGraphic);
-        
-        dockGraphic.dispose();
-
-        new Application().setDockIconImage(dockImage);
-    }
-    
-    public void setCompleteDownloadcount(int count) {
-        new Application().setDockIconBadge(count + "");
-    }
-
-    private void drawForegroundRect(int procent, Graphics g) {
-
-        int width = generateWidth(procent);
-
-        g.setColor(this.foregroundColor);
-        g.fillRect(10, 49, width, 30);
-    }
-
-    private void drawBackgroundRect(Graphics g) {
+        // Draw background
         g.setColor(this.backgroundColor);
         g.fillRect(5, 44, 118, 40);
-    }
 
-    private void drawProcentText(int procent, Graphics g) {
+        // Draw foreground
+        g.setColor(this.foregroundColor);
+        int width = generateWidth(procent);
+        g.fillRect(10, 49, width, 30);
+
+        // Draw string
         g.setColor(this.fontColor);
-
         Font font = new Font("Arial", Font.BOLD, 15);
         g.setFont(font);
-
         g.drawString(procent + " %", 52, 68);
+
+        g.dispose();
+
+        Application.getApplication().setDockIconImage(dockImage);
+    }
+
+    public void setCompleteDownloadcount(int count) {
+        Application.getApplication().setDockIconBadge(count + "");
     }
 
     private int generateWidth(int procent) {
-        return (int)(108*(procent/100.0));
+        return (int) (108 * (procent / 100.0));
     }
+
 }

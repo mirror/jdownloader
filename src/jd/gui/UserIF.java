@@ -76,18 +76,21 @@ public abstract class UserIF {
      * asks the gui backend to display the downloadlist. IT depends on the
      * guibackend which requests are fullfilled and which not.
      * 
+     * @param panelID
+     *            {@link Panels}
      * @param parameter
      *            TODO
-     * @param panelIdDownloadlist
+     * @see Panels
      */
     public abstract void requestPanel(Panels panelID, Object parameter);
 
     public abstract void displayMiniWarning(String shortWarn, String longWarn);
 
     /**
+     * Minimiert die GUI. als ID können die WINDOW_STATUS_IDS aus
+     * {@link UIConstants} verwendet werden
      * 
-     * Minimiert die GUI. als ID können die WINDOW_STATUS_IDS aus UIConstants,*
-     * verwendet werden
+     * @see UIConstants
      */
     public abstract void setFrameStatus(int id);
 
