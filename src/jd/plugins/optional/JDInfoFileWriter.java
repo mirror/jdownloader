@@ -120,13 +120,13 @@ public class JDInfoFileWriter extends PluginOptional {
     }
 
     private void writeInfoFile(DownloadLink lastDownloadFinished) {
-        String content = Replacer.insertVariables(subConfig.getStringProperty(PARAM_INFO_STRING, INFO_STRING_DEFAULT), lastDownloadFinished);
         String filename = Replacer.insertVariables(subConfig.getStringProperty(PARAM_FILENAME, FILENAME_DEFAULT), lastDownloadFinished);
-
         File dest = new File(filename);
 
         try {
             if (dest.createNewFile() && dest.canWrite()) {
+                String content = Replacer.insertVariables(subConfig.getStringProperty(PARAM_INFO_STRING, INFO_STRING_DEFAULT), lastDownloadFinished);
+
                 JDIO.writeLocalFile(dest, content);
                 logger.severe("JDInfoFileWriter: info file " + dest.getAbsolutePath() + " successfully created");
             } else {

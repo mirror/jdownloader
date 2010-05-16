@@ -25,7 +25,7 @@ import jd.gui.swing.components.JDCloseButton;
 import jd.gui.swing.jdgui.MainTabbedPane;
 import jd.gui.swing.jdgui.interfaces.View;
 
-abstract public class ClosableView extends View {
+public abstract class ClosableView extends View {
 
     private static final long serialVersionUID = 8698758386841005256L;
     private JMenuBar menubar;
@@ -50,7 +50,7 @@ abstract public class ClosableView extends View {
             }
         };
         if (menubar.getComponentCount() > count) {
-            add(menubar, "dock NORTH,height 16!,gapbottom 2");
+            add(menubar, "dock NORTH,h pref!,gapbottom 2");
         }
     }
 

@@ -50,9 +50,12 @@ public class MainTabbedPane extends JTabbedPane implements MouseListener {
         return INSTANCE;
     }
 
+    /**
+     * Use {@link MainTabbedPane#remove(View)}!
+     */
     @Override
     public void remove(Component component) {
-        throw new RuntimeException(" This method is not allowed");
+        throw new RuntimeException("This method is not allowed!");
     }
 
     @Override
@@ -65,9 +68,10 @@ public class MainTabbedPane extends JTabbedPane implements MouseListener {
 
     public void remove(View view) {
         if (!this.contains(view)) return;
+        boolean selected = (getSelectedView() == view);
         super.remove(view);
         if (view != null) view.getBroadcaster().fireEvent(new SwitchPanelEvent(view, SwitchPanelEvent.ON_REMOVE));
-        if (getTabCount() > 0) setSelectedComponent(getComponentAt(0));
+        if (selected && getTabCount() > 0) setSelectedComponent(getComponentAt(0));
     }
 
     public void addTab(View view) {
