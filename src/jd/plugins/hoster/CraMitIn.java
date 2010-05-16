@@ -142,14 +142,7 @@ public class CraMitIn extends PluginForHost {
             downloadLink.setMD5Hash(md5hash);
         }
         br.setFollowRedirects(false);
-        Form DLForm = new Form();
-        DLForm.setMethod(MethodType.POST);
-        DLForm.put("op", "download2");
-        DLForm.put("down_direct", "1");
-        DLForm.put("method_free", "Free+Download");
-        DLForm.put("referer", downloadLink.getDownloadURL());
-        DLForm.put("id", new Regex(downloadLink.getDownloadURL(), "cramit\\.in/([a-z0-9]{12})").getMatch(0));
-        DLForm.put("rand", new Regex(br.toString(), "name=\"rand\" value=\"(.*?)\"").getMatch(0));
+        Form DLForm = getTheForm(downloadLink);
         int tt = 60;
         // Ticket Time
         String ttt = br.getRegex("countdown\">.*?(\\d+).*?</span>").getMatch(0);
@@ -208,10 +201,16 @@ public class CraMitIn extends PluginForHost {
             DLForm.put("code", code);
             logger.info("Put captchacode " + code + " obtained by captcha metod \"Standard captcha\" in the form.");
         } else if (br.containsHTML("api.recaptcha.net")) {
+            String theId = new Regex(brbefore, "k=([a-zA-Z0-9% ]+)\"").getMatch(0);
+            if (theId == null) {
+                logger.warning("Re Captcha ID is null!");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             logger.info("Detected captcha method \"Re Captcha\" for this host");
             PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
             jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-            rc.parse();
+            rc.setId(theId);
+            rc.setForm(getTheForm(downloadLink));
             rc.load();
             File cf = rc.downloadCaptcha(getLocalCaptchaFile());
             String c = getCaptchaCode(cf, downloadLink);
@@ -324,8 +323,10 @@ public class CraMitIn extends PluginForHost {
         br.submitForm(loginform);
         br.getPage(COOKIE_HOST + "/?op=my_account");
         if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        if (!br.containsHTML("Premium-Account expire") && !br.containsHTML("Upgrade to premium")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        if (!br.containsHTML("Premium-Account expire")) nopremium = true;
+        if (br.containsHTML("<B>Premium</B>")) {
+            logger.info("Entered account is valid and it's a registered account.");
+            nopremium = true;
+        }
     }
 
     @Override
@@ -455,6 +456,23 @@ public class CraMitIn extends PluginForHost {
             }
         }
         return dllink;
+    }
+
+    public Form getTheForm(DownloadLink downloadLink) throws PluginException {
+        String rand = new Regex(brbefore, "name=\"rand\" value=\"(.*?)\"").getMatch(0);
+        if (rand == null) {
+            logger.warning("The rand string is null!");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        Form DLForm = new Form();
+        DLForm.setMethod(MethodType.POST);
+        DLForm.put("op", "download2");
+        DLForm.put("down_direct", "1");
+        DLForm.put("method_free", "Free+Download");
+        DLForm.put("referer", downloadLink.getDownloadURL());
+        DLForm.put("id", new Regex(downloadLink.getDownloadURL(), "cramit\\.in/([a-z0-9]{12})").getMatch(0));
+        DLForm.put("rand", rand);
+        return DLForm;
     }
 
     public String handlePassword(String passCode, Form pwform, DownloadLink thelink) throws IOException, PluginException {
