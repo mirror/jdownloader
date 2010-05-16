@@ -126,14 +126,7 @@ public class FilesMailRu extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
-        if (iHaveToWait) {
-            logger.info("Waiting...");
-            String ttt = br.getRegex("файлы через.*?(\\d+).*?сек").getMatch(0);
-            if (ttt == null) ttt = br.getRegex("download files in.*?(\\d+).*?sec").getMatch(0);
-            int tt = 10;
-            if (ttt != null) tt = Integer.parseInt(ttt);
-            sleep(tt * 1001, downloadLink);
-        }
+        if (iHaveToWait) goToSleep(downloadLink);
         // Errorhandling, sometimes the link which is usually renewed by the
         // linkgrabber doesn't work and needs to be refreshed again!
         URLConnectionAdapter con = br.openGetConnection(downloadLink.getDownloadURL());
@@ -143,6 +136,8 @@ public class FilesMailRu extends PluginForHost {
             if (br.containsHTML("\\?trycount=")) {
                 logger.info("files.mail.ru page showed the \"trycount\" link. Trying to open the mainpage of the link to find a new dllink...");
                 br.getPage(downloadLink.getStringProperty("folderID", null));
+                // Because we are renewing the link we have to sleep here
+                goToSleep(downloadLink);
             }
             String finallink = br.getRegex(finalLinkRegex).getMatch(0);
             if (finallink == null) {
@@ -162,6 +157,15 @@ public class FilesMailRu extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    public void goToSleep(DownloadLink downloadLink) throws PluginException {
+        String ttt = br.getRegex("файлы через.*?(\\d+).*?сек").getMatch(0);
+        if (ttt == null) ttt = br.getRegex("download files in.*?(\\d+).*?sec").getMatch(0);
+        int tt = 10;
+        if (ttt != null) tt = Integer.parseInt(ttt);
+        logger.info("Waiting" + tt + " seconds...");
+        sleep(tt * 1001, downloadLink);
     }
 
     @Override
