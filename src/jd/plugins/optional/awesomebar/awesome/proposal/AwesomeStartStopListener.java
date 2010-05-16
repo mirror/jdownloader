@@ -34,7 +34,7 @@ public class AwesomeStartStopListener implements AwesomeProposalRequestListener 
     }
 
     public void requestProposal(AwesomeProposalRequest request) {
-        new AwesomeProposal(this, request, new JLabel("Stop JDownloader."), actionid.STOPJD, AwesomeUtils.createProposalListElement(this, request, "stop"), 0.1f);
+        new AwesomeProposal(this, request, new JLabel("Stop JDownloader."), actionid.STOPJD, AwesomeUtils.createProposalListElement(request, "stop"), 0.1f);
         if (DownloadWatchDog.getInstance().getDownloadStatus() != DownloadWatchDog.STATE.RUNNING) {
             new AwesomeProposal(this, request, new JLabel("Start your downloads."), actionid.STARTDL, (request.getCommand().startsWith("sta")) ? 2.0f : 1.0f);
         } else {

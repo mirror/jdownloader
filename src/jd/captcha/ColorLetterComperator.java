@@ -240,7 +240,7 @@ public class ColorLetterComperator {
      */
     private Captcha reduceColors(Letter letter) {
         PosterizeFilter qf = new PosterizeFilter();
-        BufferedImage image = (BufferedImage) letter.getImage();
+        BufferedImage image = letter.getImage();
         BufferedImage dest = qf.createCompatibleDestImage(image, ColorModel.getRGBdefault());
         qf.setNumLevels(colorLevels);
         qf.filter(image, dest);

@@ -69,7 +69,7 @@ public class Rbkprr {
             frames[0].setGrid(colorGrid);
             // File fileOut = new File(file.getParent() + "\\out\\" +
             // file.getName().replace("gif", "png"));
-            ImageIO.write((BufferedImage) frames[0].getImage(1), "png", file);
+            ImageIO.write(frames[0].getImage(1), "png", file);
         } catch (Exception e) {
 
         }

@@ -37,7 +37,7 @@ public class Linksave {
         int id = (int) (Math.random() * (list.length - 1));
         id = 3;
         File f = list[id];
-//        prepareCaptcha(f);
+        // prepareCaptcha(f);
 
         for (File file : list) {
             prepareCaptcha(file);
@@ -135,8 +135,8 @@ public class Linksave {
             }
             frames[0].setGrid(grid);
 
-//            BasicWindow.showImage(frames[0].getImage(1));
-            ImageIO.write((BufferedImage) (frames[0].getImage(1)), "png", file);
+            // BasicWindow.showImage(frames[0].getImage(1));
+            ImageIO.write(frames[0].getImage(1), "png", file);
         } catch (Exception e) {
 
         }

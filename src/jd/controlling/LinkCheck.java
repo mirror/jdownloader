@@ -29,7 +29,6 @@ import jd.event.JDBroadcaster;
 import jd.nutils.jobber.JDRunnable;
 import jd.nutils.jobber.Jobber;
 import jd.plugins.DownloadLink;
-import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
 class LinkCheckBroadcaster extends JDBroadcaster<LinkCheckListener, LinkCheckEvent> {
@@ -111,7 +110,7 @@ public class LinkCheck implements ActionListener, ProgressControllerListener {
                                 check.remove(k);
                             }
                         } else if (event.getParameter() instanceof DownloadLink) {
-                            check.remove((DownloadLink) event.getParameter());
+                            check.remove(event.getParameter());
                         }
                         synchronized (lock) {
                             if (check.size() == 0) {
@@ -142,7 +141,7 @@ public class LinkCheck implements ActionListener, ProgressControllerListener {
             DownloadLink link = hosterList.get(0);
 
             long timer = System.currentTimeMillis();
-            boolean ret = ((PluginForHost) link.getPlugin().getWrapper().getNewPluginInstance()).checkLinks(hosterList.toArray(new DownloadLink[] {}));
+            boolean ret = link.getPlugin().getWrapper().getNewPluginInstance().checkLinks(hosterList.toArray(new DownloadLink[] {}));
 
             if (!ret) {
                 for (int i = 0; i < hosterList.size(); i++) {

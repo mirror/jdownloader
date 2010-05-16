@@ -542,7 +542,7 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
             break;
         case LinkGrabberFilePackageEvent.ADD_LINK:
         case LinkGrabberFilePackageEvent.REMOVE_LINK:
-            if (!packages.contains(((LinkGrabberFilePackage) event.getSource()))) {
+            if (!packages.contains(event.getSource())) {
                 addPackage(((LinkGrabberFilePackage) event.getSource()));
             } else {
                 broadcaster.fireEvent(new LinkGrabberControllerEvent(this, LinkGrabberControllerEvent.REFRESH_STRUCTURE, event.getSource()));

@@ -30,7 +30,7 @@ public class LFEView extends ClosableView {
     private static final String JDL_PREFIX = "jd.plugins.optional.langfileeditor.LFEView.";
     private LFEGui lfeGui;
 
-    public LFEView(SwitchPanel panel, final LangFileEditor langFileEditor) {
+    public LFEView(SwitchPanel panel) {
         super();
         this.setContent(panel);
         this.setInfoPanel(LFEInfoPanel.getInstance());

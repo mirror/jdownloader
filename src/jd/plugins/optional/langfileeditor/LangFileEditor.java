@@ -129,7 +129,7 @@ public class LangFileEditor extends PluginOptional {
     public void setGuiEnable(boolean b) {
         if (b) {
             if (lfeView == null) {
-                lfeView = new LFEView(lfe.getPanel(), this);
+                lfeView = new LFEView(lfe.getPanel());
                 lfeView.getBroadcaster().addListener(new SwitchPanelListener() {
 
                     @Override

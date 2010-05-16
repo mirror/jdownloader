@@ -17,7 +17,6 @@
 package jd.captcha.easy;
 
 import java.awt.Image;
-import java.awt.image.RenderedImage;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
@@ -121,9 +120,8 @@ public class BackgroundFilterCreater {
         }
         File ret = new File(methode.file, "mask_" + System.currentTimeMillis() + ".png");
         try {
-            ImageIO.write((RenderedImage) firstCaptcha.getImage(), "png", ret);
+            ImageIO.write(firstCaptcha.getImage(), "png", ret);
         } catch (IOException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
         return ret;

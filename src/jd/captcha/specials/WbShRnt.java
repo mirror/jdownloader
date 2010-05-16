@@ -141,7 +141,7 @@ public class WbShRnt {
         captcha.grid = grid;
 
         for (Iterator<PixelObject> iterator = coLetters.iterator(); iterator.hasNext();) {
-            PixelObject pixelObject = (PixelObject) iterator.next();
+            PixelObject pixelObject = iterator.next();
             if (pixelObject.getArea() / pixelObject.getSize() > 10 || pixelObject.getHeight() > 70 || pixelObject.getWidth() > 70) {
                 captcha.removeObjectFromGrid(pixelObject);
                 iterator.remove();

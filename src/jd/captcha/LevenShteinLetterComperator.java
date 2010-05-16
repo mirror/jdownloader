@@ -51,7 +51,7 @@ public class LevenShteinLetterComperator {
             }
         }
         if (bestOffset == null) return;
-//        System.out.println(bestdist);
+        // System.out.println(bestdist);
         Letter bestLetter = letterDB[best].toLetter();
         // LetterComperator r = new
         // LetterComperator(letter,bestBiggest.detected.getB() );
@@ -60,7 +60,7 @@ public class LevenShteinLetterComperator {
         letter.detected.setOffset(new int[] { bestOffset[1], bestOffset[2] });
 
         // 75 weil zeilen und reihen gescannt werden
-        letter.detected.setValityPercent(((double) 75 * bestdist / costs) / ((double) letter.getArea()));
+        letter.detected.setValityPercent(((double) 75 * bestdist / costs) / letter.getArea());
 
         letter.setDecodedValue(bestLetter.getDecodedValue());
     }
@@ -88,7 +88,6 @@ public class LevenShteinLetterComperator {
                     try {
                         thread.wait();
                     } catch (InterruptedException e) {
-                        // TODO Auto-generated catch block
                         e.printStackTrace();
                     }
                 }
@@ -122,7 +121,7 @@ public class LevenShteinLetterComperator {
             a.detected = new LetterComperator(a, b);
             a.detected.setOffset(new int[] { d[1], d[2] });
             // 75 weil zeilen und reihen gescannt werden
-            double ret = (double) (((double) 75 * d[0] / costs) / ((double) a.getArea()));
+            double ret = (((double) 75 * d[0] / costs) / a.getArea());
             a.detected.setValityPercent(ret);
             return ret;
         }
@@ -274,7 +273,7 @@ public class LevenShteinLetterComperator {
                 d[i] = Math.min(d[i1] + costs, Math.min(p[i] + costs, p[i1] + cost));
                 // Damerau
                 if (i > 1 && j > 1 && l1[i1] == l2[j2] && l1[i2 = i1 - 1] == l2[j1]) {
-                    d[i] = Math.min(d[i], c[i2] + (cost>0?1:cost));
+                    d[i] = Math.min(d[i], c[i2] + (cost > 0 ? 1 : cost));
                 }
             }
             // previous of previous for Damerau

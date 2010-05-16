@@ -51,14 +51,14 @@ public abstract class View extends SwitchPanel {
 
     public View() {
         SwingGui.checkEDT();
-        setLayout(new MigLayout("ins 0", "[][]0[grow,fill]", "[grow,fill]"));
+        setLayout(new MigLayout("ins 0", "[]0[]0[grow,fill]", "[grow,fill]"));
 
-        add(sidebar = new JScrollPane(), "w 225!,hidemode 1");
+        add(sidebar = new JScrollPane(), "w 225!,hidemode 2");
         sidebar.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         sidebar.setVisible(false);
         sidebar.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        add(separator = new JSeparator(JSeparator.VERTICAL), "w pref!,hidemode 1");
+        add(separator = new JSeparator(JSeparator.VERTICAL), "w pref!,hidemode 2");
         separator.setVisible(false);
 
         add(rightPane = new JPanel(new MigLayout("ins 0", "[grow,fill]", "[grow,fill]")));

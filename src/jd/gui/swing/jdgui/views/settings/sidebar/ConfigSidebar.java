@@ -72,7 +72,6 @@ public class ConfigSidebar extends SideBarPanel implements ControlListener {
 
     private ConfigSidebar(ConfigurationView configurationView) {
         this.view = configurationView;
-        this.setLayout(new MigLayout("ins 0", "[grow,fill]", "[grow,fill]"));
 
         tree = new JTree(new ConfigTreeModel()) {
             private static final long serialVersionUID = -5018817191000357595L;
@@ -129,7 +128,8 @@ public class ConfigSidebar extends SideBarPanel implements ControlListener {
                         if (tree.getSelectionPath() == null) return null;
                         TreeEntry entry = (TreeEntry) tree.getSelectionPath().getLastPathComponent();
                         tree.expandPath(tree.getSelectionPath());
-                        if (entry.getPanel() != null) view.setContent(entry.getPanel());
+                        SwitchPanel panel = entry.getPanel();
+                        if (panel != null) view.setContent(panel);
                         return null;
                     }
                 }.start();
@@ -154,6 +154,7 @@ public class ConfigSidebar extends SideBarPanel implements ControlListener {
             }
         }
 
+        this.setLayout(new MigLayout("ins 0", "[grow,fill]", "[grow,fill]"));
         this.add(tree);
     }
 

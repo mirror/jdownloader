@@ -3,6 +3,7 @@ package jd.captcha.specials;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
+
 import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.pixelgrid.Letter;
 import jd.captcha.pixelgrid.PixelGrid;
@@ -167,7 +168,7 @@ public class ShrLnksBz {
             }
         }
         for (Iterator<PixelObject> iterator = coLetters.iterator(); iterator.hasNext();) {
-            PixelObject pixelObject = (PixelObject) iterator.next();
+            PixelObject pixelObject = iterator.next();
             if (pixelObject.getSize() <= minAnzahl) iterator.remove();
         }
         Collections.sort(coLetters);
@@ -198,7 +199,7 @@ public class ShrLnksBz {
                 }
             }
             for (Iterator<PixelObject> iterator = coLetters.iterator(); iterator.hasNext();) {
-                PixelObject pixelObject = (PixelObject) iterator.next();
+                PixelObject pixelObject = iterator.next();
                 if (Math.abs(pixelObject.getYMax() - minY) < 10) {
                     coLetters2.get(i).add(pixelObject);
                     iterator.remove();
@@ -206,7 +207,7 @@ public class ShrLnksBz {
 
             }
             outer: for (Iterator<PixelObject> iterator = coLetters.iterator(); iterator.hasNext();) {
-                PixelObject pixelObject = (PixelObject) iterator.next();
+                PixelObject pixelObject = iterator.next();
                 if (Math.abs(pixelObject.getYMin() - minY) < 20) {
                     for (PixelObject arrayList : coLetters2.get(i)) {
                         if (Math.abs(pixelObject.getXMin() - arrayList.getXMin()) < 4) continue outer;
@@ -242,8 +243,8 @@ public class ShrLnksBz {
             if (i == c) break;
             b++;
         }
-//        System.out.println("c:" + c + "" + numorg);
-//        System.out.println("b:" + b);
+        // System.out.println("c:" + c + "" + numorg);
+        // System.out.println("b:" + b);
         ArrayList<ArrayList<PixelObject>> letterList = getSmallLetters(captcha);
         int last = -1;
         PixelObject lastObje = null;
@@ -276,15 +277,15 @@ public class ShrLnksBz {
                             for (Letter letter : letters) {
                                 if (letter.getDecodedValue() != null) num += letter.getDecodedValue();
                             }
-//                            System.out.println("num:" + num);
+                            // System.out.println("num:" + num);
                             num = num.substring(1);
                             if (num.length() > 0) {
-                                if (num.length()>1 && num.charAt(0) == 'z') {
+                                if (num.length() > 1 && num.charAt(0) == 'z') {
                                     num = num.substring(1);
                                 }
                                 if (num.length() > 0) {
                                     String numnew = num.replaceAll("[^0-9]", "1");
-//                                    System.out.println("newnum" + numnew);
+                                    // System.out.println("newnum" + numnew);
                                     number = Integer.parseInt(numnew);
                                 }
                             }
@@ -296,7 +297,7 @@ public class ShrLnksBz {
                         last++;
                         number = last;
                     }
-//                    System.out.println(number);
+                    // System.out.println(number);
                     if (numorg == number) {
                         x = let.getLocation()[0] + (let.getWidth() / 2);
                         y = let.getLocation()[1] + (let.getHeight() / 2);
@@ -312,21 +313,17 @@ public class ShrLnksBz {
             } catch (Exception e) {
             }
         }
-        if(x==-1)
-        {
-            if(lastObje!=null)
-            {
+        if (x == -1) {
+            if (lastObje != null) {
                 x = lastObje.getLocation()[0] + (lastObje.getWidth() / 2);
                 y = lastObje.getLocation()[1] + (lastObje.getHeight() / 2);
-            }
-            else
-            {
+            } else {
                 x = 10;
                 y = 10;
             }
         }
-//        captcha.setPixelValue(x, y, 0xff0000);
-//        BasicWindow.showImage(captcha.getImage());
+        // captcha.setPixelValue(x, y, 0xff0000);
+        // BasicWindow.showImage(captcha.getImage());
         return Circle.getPostionLetters(x, y);
     }
 }

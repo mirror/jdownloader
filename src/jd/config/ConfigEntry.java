@@ -369,7 +369,7 @@ public class ConfigEntry implements Serializable {
     }
 
     public boolean isConditionalEnabled(ConfigEntry source, Object newData) {
-        if (source == conditionEntry) return compareValue.equals((Boolean) newData);
+        if (source == conditionEntry) return compareValue.equals(newData);
         return true;
     }
 

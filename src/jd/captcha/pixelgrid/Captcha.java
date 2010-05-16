@@ -1201,7 +1201,7 @@ public class Captcha extends PixelGrid {
     }
 
     public void setContrast(float contrast, float brightness) {
-        BufferedImage image = (BufferedImage) getImage();
+        BufferedImage image = getImage();
         ContrastFilter cf = new ContrastFilter();
         cf.setContrast(contrast);
         if (brightness != 0) cf.setBrightness(brightness);
@@ -1212,7 +1212,7 @@ public class Captcha extends PixelGrid {
     }
 
     public void blur(int hRadius, int vRadius, int iteration) {
-        BufferedImage image = (BufferedImage) getImage();
+        BufferedImage image = getImage();
         BoxBlurFilter blur = new BoxBlurFilter(hRadius, vRadius, iteration);
         BufferedImage dest = blur.createCompatibleDestImage(image, null);
         blur.filter(image, dest);
@@ -1226,7 +1226,7 @@ public class Captcha extends PixelGrid {
      * @param colorNums
      */
     public void reduceColors(int colorNums) {
-        BufferedImage image = (BufferedImage) getImage();
+        BufferedImage image = getImage();
         QuantizeFilter reduceFilter = new QuantizeFilter();
         BufferedImage dest = reduceFilter.createCompatibleDestImage(image, null);
         reduceFilter.setNumColors(colorNums);
@@ -1241,7 +1241,7 @@ public class Captcha extends PixelGrid {
      * @param colorNums
      */
     public void reduceColorsPosterizeFilter(int numLevels) {
-        BufferedImage image = (BufferedImage) getImage();
+        BufferedImage image = getImage();
         PosterizeFilter reduceFilter = new PosterizeFilter();
         BufferedImage dest = reduceFilter.createCompatibleDestImage(image, null);
         reduceFilter.setNumLevels(numLevels);
@@ -1606,10 +1606,9 @@ public class Captcha extends PixelGrid {
                             }
                         }
                     } catch (Exception e) {
-                        // TODO: handle exception
                     }
                 }
-                if (right > 200) { return true; }
+                if (right > 200) return true;
 
             }
         }
