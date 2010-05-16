@@ -75,6 +75,9 @@ public final class Replacer {
         KEYS.add(new String[] { "LAST_FINISHED_FILE.NAME", JDL.L("replacer.filename", "Last finished File: Filename") });
         KEYS.add(new String[] { "LAST_FINISHED_FILE.FILESIZE", JDL.L("replacer.filesize", "Last finished File: Filesize") });
         KEYS.add(new String[] { "LAST_FINISHED_FILE.AVAILABLE", JDL.L("replacer.available", "Last finished File: is Available (Yes,No)") });
+        KEYS.add(new String[] { "LAST_FINISHED_FILE.BROWSER_URL", JDL.L("replacer.browserurl", "Last finished File: Browser-URL") });
+        KEYS.add(new String[] { "LAST_FINISHED_FILE.DOWNLOAD_URL", JDL.L("replacer.downloadurl", "Last finished File: Download-URL (only for non-container links)") });
+        KEYS.add(new String[] { "LAST_FINISHED_FILE.CHECKSUM", JDL.L("replacer.checksum", "Last finished File: Checksum (SHA1/MD5) if set by hoster") });
         KEYS.add(new String[] { "SYSTEM.IP", JDL.L("replacer.ipaddress", "Current IP Address") });
         KEYS.add(new String[] { "SYSTEM.DATE", JDL.L("replacer.date", "Current Date") });
         KEYS.add(new String[] { "SYSTEM.TIME", JDL.L("replacer.time", "Current Time") });
@@ -83,42 +86,57 @@ public final class Replacer {
         KEYS.add(new String[] { "JD.HOME_DIR", JDL.L("replacer.jdhomedirectory", "jDownloader: Homedirectory/Installdirectory") });
     }
 
-    public static String getReplacement(final String key, DownloadLink dLink) {
+    public static String getReplacement(final String key, final DownloadLink dLink) {
 
-        if (key.equalsIgnoreCase("LAST_FINISHED_PACKAGE.PASSWORD")) { return (dLink == null) ? "" : dLink.getFilePackage().getPassword(); }
+        if (key.startsWith("LAST_FINISHED_") && dLink == null) return "";
 
-        if (key.equalsIgnoreCase("LAST_FINISHED_PACKAGE.AUTO_PASSWORD")) { return (dLink == null) ? "" : dLink.getFilePackage().getPasswordAuto().toString(); }
+        if (key.equalsIgnoreCase("LAST_FINISHED_PACKAGE.PASSWORD")) return dLink.getFilePackage().getPassword();
 
-        if (key.equalsIgnoreCase("LAST_FINISHED_PACKAGE.FILELIST")) { return (dLink == null) ? "" : dLink.getFilePackage().getDownloadLinkList().toString(); }
+        if (key.equalsIgnoreCase("LAST_FINISHED_PACKAGE.AUTO_PASSWORD")) return dLink.getFilePackage().getPasswordAuto().toString();
+
+        if (key.equalsIgnoreCase("LAST_FINISHED_PACKAGE.FILELIST")) return dLink.getFilePackage().getDownloadLinkList().toString();
 
         if (key.equalsIgnoreCase("LAST_FINISHED_PACKAGE.PACKAGENAME")) {
-            if (dLink == null) {
-                return "";
+            final String name = dLink.getFilePackage().getName();
+            if (name == null || name.equals("") || name.equals(JDL.L("controller.packages.defaultname", "various"))) {
+                return dLink.getName();
             } else {
-                final String name = dLink.getFilePackage().getName();
-                if (name == null || name.equals("") || name.equals(JDL.L("controller.packages.defaultname", "various"))) {
-                    return dLink.getName();
-                } else {
-                    return dLink.getFilePackage().getName();
-                }
+                return dLink.getFilePackage().getName();
             }
         }
 
-        if (key.equalsIgnoreCase("LAST_FINISHED_PACKAGE.COMMENT")) { return (dLink == null) ? "" : dLink.getFilePackage().getComment(); }
+        if (key.equalsIgnoreCase("LAST_FINISHED_PACKAGE.COMMENT")) return dLink.getFilePackage().getComment();
 
-        if (key.equalsIgnoreCase("LAST_FINISHED_PACKAGE.DOWNLOAD_DIRECTORY")) { return (dLink == null) ? "" : dLink.getFilePackage().getDownloadDirectory(); }
+        if (key.equalsIgnoreCase("LAST_FINISHED_PACKAGE.DOWNLOAD_DIRECTORY")) return dLink.getFilePackage().getDownloadDirectory();
 
-        if (key.equalsIgnoreCase("LAST_FINISHED_FILE.DOWNLOAD_PATH")) { return (dLink == null) ? "" : dLink.getFileOutput(); }
+        if (key.equalsIgnoreCase("LAST_FINISHED_FILE.DOWNLOAD_PATH")) return dLink.getFileOutput();
 
-        if (key.equalsIgnoreCase("LAST_FINISHED_FILE.INFOSTRING")) { return (dLink == null) ? "" : dLink.getFileInfomationString(); }
+        if (key.equalsIgnoreCase("LAST_FINISHED_FILE.INFOSTRING")) return dLink.getFileInfomationString();
 
-        if (key.equalsIgnoreCase("LAST_FINISHED_FILE.HOST")) { return (dLink == null) ? "" : dLink.getHost(); }
+        if (key.equalsIgnoreCase("LAST_FINISHED_FILE.HOST")) return dLink.getHost();
 
-        if (key.equalsIgnoreCase("LAST_FINISHED_FILE.NAME")) { return (dLink == null) ? "" : dLink.getName(); }
+        if (key.equalsIgnoreCase("LAST_FINISHED_FILE.NAME")) return dLink.getName();
 
-        if (key.equalsIgnoreCase("LAST_FINISHED_FILE.FILESIZE")) { return (dLink == null) ? "" : dLink.getDownloadSize() + ""; }
+        if (key.equalsIgnoreCase("LAST_FINISHED_FILE.FILESIZE")) return dLink.getDownloadSize() + "";
 
-        if (key.equalsIgnoreCase("LAST_FINISHED_FILE.AVAILABLE")) { return (dLink == null) ? "" : dLink.isAvailable() ? "YES" : "NO"; }
+        if (key.equalsIgnoreCase("LAST_FINISHED_FILE.AVAILABLE")) return dLink.isAvailable() ? "YES" : "NO";
+
+        if (key.equals("LAST_FINISHED_FILE.BROWSER_URL")) return dLink.getBrowserUrl();
+
+        if (key.equals("LAST_FINISHED_FILE.DOWNLOAD_URL")) return dLink.getLinkType() == DownloadLink.LINKTYPE_CONTAINER ? "[Not allowed]" : dLink.getDownloadURL();
+
+        if (key.equals("LAST_FINISHED_FILE.CHECKSUM")) {
+            StringBuilder sb = new StringBuilder();
+            if (dLink.getSha1Hash() != null) {
+                sb.append("SHA1: ").append(dLink.getSha1Hash());
+            }
+            if (dLink.getMD5Hash() != null) {
+                if (sb.length() > 0) sb.append(' ');
+                sb.append("MD5: ").append(dLink.getMD5Hash());
+            }
+            if (sb.length() > 0) return sb.toString();
+            return "[Not set]";
+        }
 
         if (key.equalsIgnoreCase("SYSTEM.IP")) {
             if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
@@ -138,14 +156,13 @@ public final class Replacer {
             return Formatter.fillInteger(c.get(Calendar.HOUR_OF_DAY), 2, "0") + ":" + Formatter.fillInteger(c.get(Calendar.MINUTE), 2, "0") + ":" + Formatter.fillInteger(c.get(Calendar.SECOND), 2, "0");
         }
 
-        if (key.equalsIgnoreCase("JD.REVISION")) return JDUtilities.getRevision();
-
         if (key.equalsIgnoreCase("SYSTEM.JAVA_VERSION")) return JDUtilities.getJavaVersion().toString();
+
+        if (key.equalsIgnoreCase("JD.REVISION")) return JDUtilities.getRevision();
 
         if (key.equalsIgnoreCase("JD.HOME_DIR")) return JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath();
 
         return "";
-
     }
 
     public static String insertVariables(final String str, DownloadLink dLink) {

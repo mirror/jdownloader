@@ -47,8 +47,10 @@ public class JDMouseAdapter implements MouseMotionListener, MouseListener {
     public void mouseReleased(MouseEvent e) {
     }
 
-    /* HINT: we must dispatch events to underlying component ourself */
-    static public void forwardEvent(MouseEvent e, Component dest) {
+    /**
+     * HINT: we must dispatch events to underlying component ourself
+     */
+    public static void forwardEvent(MouseEvent e, Component dest) {
         if (e == null || dest == null) return;
         Point p = SwingUtilities.convertPoint(e.getComponent(), e.getPoint(), dest);
         MouseEvent ee = new MouseEvent(dest, e.getID(), e.getWhen(), e.getModifiers(), p.x, p.y, e.getClickCount(), e.isPopupTrigger(), e.getButton());
