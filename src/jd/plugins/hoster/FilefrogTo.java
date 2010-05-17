@@ -34,7 +34,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision: 11054 $", interfaceVersion = 2, names = { "filefrog.to" }, urls = { "http://[\\w\\.]*?filefrog\\.to/download/\\d{1,}/.*" }, flags = { 2 })
+@HostPlugin(revision = "$Revision: 11054 $", interfaceVersion = 2, names = { "filefrog.to" }, urls = { "http://[\\w\\.]*?filefrog\\.to/download/\\d+/[a-zA-Z0-9]+" }, flags = { 2 })
 public class FilefrogTo extends PluginForHost {
 
     public FilefrogTo(PluginWrapper wrapper) {
