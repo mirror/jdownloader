@@ -14,7 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package tests.utils;
+package jd.plugins.optional.improveddock;
 
 import java.awt.Color;
 import java.awt.Font;
@@ -42,9 +42,19 @@ public class MacDockIconChanger {
 
     private static final Logger LOG = JDLogger.getLogger();
 
-    public MacDockIconChanger() {
+    private static MacDockIconChanger instance = null;
+
+    private MacDockIconChanger() {
         loadDockImage();
     }
+
+    public static MacDockIconChanger getInstance() {
+        if (instance == null) {
+            instance = new MacDockIconChanger();
+        }
+        return instance;
+    }
+
 
     private void loadDockImage() {
         try {
