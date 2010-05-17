@@ -3,11 +3,9 @@ package jd.plugins.optional.improveddock;
 import jd.PluginWrapper;
 import jd.controlling.DownloadWatchDog;
 import jd.event.ControlEvent;
-import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
-import jd.utils.JDUtilities;
 
 import java.util.ArrayList;
 
@@ -61,7 +59,6 @@ public class ImrovedMacOSXDock extends PluginOptional {
                             } catch (Exception e) {
                             }
                         }
-                        JDGui.getInstance().setWindowTitle(JDUtilities.getJDTitle());
                     }
                 };
                 updateThread.start();
@@ -70,7 +67,6 @@ public class ImrovedMacOSXDock extends PluginOptional {
             case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
             case ControlEvent.CONTROL_DOWNLOAD_STOP:
                 if (updateThread != null) updateThread.interrupt();
-                JDGui.getInstance().setWindowTitle(JDUtilities.getJDTitle());
                 break;
         }
     }
