@@ -32,6 +32,15 @@ import com.apple.eawt.Application;
 
 public class MacDockIconChanger {
 
+    private static MacDockIconChanger INSTANCE = null;
+
+    public static MacDockIconChanger getInstance() {
+        if (INSTANCE == null) {
+            INSTANCE = new MacDockIconChanger();
+        }
+        return INSTANCE;
+    }
+
     private BufferedImage dockImage = null;
 
     private final Color backgroundColor = Color.WHITE;
@@ -42,30 +51,20 @@ public class MacDockIconChanger {
 
     private static final Logger LOG = JDLogger.getLogger();
 
-    private static MacDockIconChanger instance = null;
-
     private MacDockIconChanger() {
         loadDockImage();
     }
-
-    public static MacDockIconChanger getInstance() {
-        if (instance == null) {
-            instance = new MacDockIconChanger();
-        }
-        return instance;
-    }
-
 
     private void loadDockImage() {
         try {
             File dockImageFile = JDUtilities.getResourceFile("jd/img/logo/jd_logo_128_128.png");
             dockImage = ImageIO.read(dockImageFile);
         } catch (Exception e) {
-            LOG.info("Can't Load Dock Image!");
+            LOG.info("Can't load Dock Image!");
         }
     }
 
-    public void changeToProcent(int procent) {
+    public void updateDockIcon(int percent, int count) {
         Graphics g = dockImage.getGraphics();
 
         // Draw background
@@ -74,26 +73,23 @@ public class MacDockIconChanger {
 
         // Draw foreground
         g.setColor(this.foregroundColor);
-        int width = generateWidth(procent);
+        int width = generateWidth(percent);
         g.fillRect(10, 49, width, 30);
 
         // Draw string
         g.setColor(this.fontColor);
         Font font = new Font("Arial", Font.BOLD, 15);
         g.setFont(font);
-        g.drawString(procent + " %", 52, 68);
+        g.drawString(percent + " %", 52, 68);
 
         g.dispose();
 
         Application.getApplication().setDockIconImage(dockImage);
-    }
-
-    public void setCompleteDownloadcount(int count) {
         Application.getApplication().setDockIconBadge(count + "");
     }
 
-    private int generateWidth(int procent) {
-        return (int) (108 * (procent / 100.0));
+    private int generateWidth(int percent) {
+        return (int) (108 * (percent / 100.0));
     }
 
 }

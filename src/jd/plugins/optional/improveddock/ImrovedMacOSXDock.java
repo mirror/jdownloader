@@ -16,21 +16,20 @@
 
 package jd.plugins.optional.improveddock;
 
+import java.util.ArrayList;
+
 import jd.PluginWrapper;
+import jd.controlling.DownloadController;
 import jd.controlling.DownloadInformations;
 import jd.controlling.DownloadWatchDog;
 import jd.event.ControlEvent;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
-import jd.utils.JDUtilities;
-
-import java.util.ArrayList;
 
 @OptionalPlugin(rev = "$Revision$", defaultEnabled = true, id = "improvedmacosxdock", interfaceversion = 5, minJVM = 1.6, windows = false, linux = false)
-
 public class ImrovedMacOSXDock extends PluginOptional {
-    
+
     private Thread updateThread;
 
     private DownloadInformations downloadInfo;
@@ -43,7 +42,7 @@ public class ImrovedMacOSXDock extends PluginOptional {
 
     @Override
     public boolean initAddon() {
-        
+
         return true;
     }
 
@@ -59,41 +58,37 @@ public class ImrovedMacOSXDock extends PluginOptional {
     @Override
     public void onControlEvent(ControlEvent event) {
 
+        switch (event.getID()) {
 
-        switch(event.getID()) {
+        case ControlEvent.CONTROL_DOWNLOAD_START:
+            updateThread = new Thread("Improved Mac OSX Dock Updater") {
+                @Override
+                public void run() {
+                    while (true) {
+                        if (DownloadWatchDog.getInstance().getDownloadStatus() != DownloadWatchDog.STATE.RUNNING) break;
 
-            case ControlEvent.CONTROL_DOWNLOAD_START:
-                updateThread = new Thread("Improved Mac OSX Dock Updater") {
-                    @Override
-                    public void run() {
-                        while (true) {
-                            if (DownloadWatchDog.getInstance().getDownloadStatus() != DownloadWatchDog.STATE.RUNNING) break;
+                        updateDockIcon();
 
-                            updateDockIcon();
-
-                            try {
-                                Thread.sleep(1000);
-                            } catch (Exception e) {
-                            }
+                        try {
+                            Thread.sleep(1000);
+                        } catch (Exception e) {
                         }
                     }
-                };
-                updateThread.start();
-                break;
+                }
+            };
+            updateThread.start();
+            break;
 
-            case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
-            case ControlEvent.CONTROL_DOWNLOAD_STOP:
-                if (updateThread != null) updateThread.interrupt();
-                break;
+        case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
+        case ControlEvent.CONTROL_DOWNLOAD_STOP:
+            if (updateThread != null) updateThread.interrupt();
+            break;
         }
     }
 
     private void updateDockIcon() {
-        JDUtilities.getDownloadController().getDownloadStatus(downloadInfo);
+        DownloadController.getInstance().getDownloadStatus(downloadInfo);
 
-        float actualProcent = (float) downloadInfo.getCurrentDownloadSize() / (float) downloadInfo.getTotalDownloadSize() * 100;
-
-        MacDockIconChanger.getInstance().setCompleteDownloadcount(DownloadWatchDog.getInstance().getDownloadssincelastStart());
-        MacDockIconChanger.getInstance().changeToProcent((int) actualProcent);
+        MacDockIconChanger.getInstance().updateDockIcon((int) downloadInfo.getPercent(), DownloadWatchDog.getInstance().getDownloadssincelastStart());
     }
 }

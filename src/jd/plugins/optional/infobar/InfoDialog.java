@@ -162,7 +162,7 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
 
         long totalDl = ds.getTotalDownloadSize();
         long curDl = ds.getCurrentDownloadSize();
-        prgTotal.setString(Math.round((curDl * 10000.0) / totalDl) / 100.0 + "%");
+        prgTotal.setString(ds.getPercent() + "%");
         prgTotal.setMaximum(totalDl);
         prgTotal.setValue(curDl);
     }

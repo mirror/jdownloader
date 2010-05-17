@@ -136,4 +136,9 @@ public class DownloadInformations {
         if (DownloadWatchDog.getInstance().getConnectionManager().getIncommingBandwidthUsage() > 1024) etanum = (getTotalDownloadSize() - getCurrentDownloadSize()) / DownloadWatchDog.getInstance().getConnectionManager().getIncommingBandwidthUsage();
         return etanum;
     }
+
+    public double getPercent() {
+        return Math.round((getCurrentDownloadSize() * 10000.0) / getTotalDownloadSize()) / 100.0;
+    }
+
 }

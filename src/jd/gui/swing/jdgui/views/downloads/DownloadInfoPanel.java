@@ -73,7 +73,7 @@ public class DownloadInfoPanel extends InfoPanel {
                 updateInfo(JDL.L(JDL_PREFIX + "packages", "Package(s)"), ds.getPackagesCount());
                 updateInfo(JDL.L(JDL_PREFIX + "links", "Links(s)"), ds.getDownloadCount());
                 updateInfo(JDL.L(JDL_PREFIX + "size", "Total size"), Formatter.formatReadable(ds.getTotalDownloadSize()));
-                updateInfo(JDL.L(JDL_PREFIX + "progress", "Progress"), Math.round((ds.getCurrentDownloadSize() * 10000.0) / ds.getTotalDownloadSize()) / 100.0 + "%");
+                updateInfo(JDL.L(JDL_PREFIX + "progress", "Progress"), ds.getPercent() + "%");
                 return null;
             }
         }.start();
