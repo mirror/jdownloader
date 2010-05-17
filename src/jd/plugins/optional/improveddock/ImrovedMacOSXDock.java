@@ -1,22 +1,44 @@
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2008  JD-Team support@jdownloader.org
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package jd.plugins.optional.improveddock;
 
 import jd.PluginWrapper;
+import jd.controlling.DownloadInformations;
 import jd.controlling.DownloadWatchDog;
 import jd.event.ControlEvent;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
+import jd.utils.JDUtilities;
 
 import java.util.ArrayList;
 
-@OptionalPlugin(rev = "$Revision$", defaultEnabled = false, id = "improvedmacosxdock", interfaceversion = 5, minJVM = 1.6, windows = false, linux = false)
+@OptionalPlugin(rev = "$Revision$", defaultEnabled = true, id = "improvedmacosxdock", interfaceversion = 5, minJVM = 1.6, windows = false, linux = false)
 
 public class ImrovedMacOSXDock extends PluginOptional {
     
     private Thread updateThread;
 
+    private DownloadInformations downloadInfo;
+
     public ImrovedMacOSXDock(PluginWrapper wrapper) {
         super(wrapper);
+        downloadInfo = new DownloadInformations();
+        updateDockIcon();
     }
 
     @Override
@@ -46,13 +68,8 @@ public class ImrovedMacOSXDock extends PluginOptional {
                     public void run() {
                         while (true) {
                             if (DownloadWatchDog.getInstance().getDownloadStatus() != DownloadWatchDog.STATE.RUNNING) break;
-                            //JDGui.getInstance().setWindowTitle("JD AC: " +  + " DL: " + Formatter.formatReadable(DownloadWatchDog.getInstance().getConnectionManager().getIncommingBandwidthUsage()));
-                            /*
-                            for(DownloadLink link : watchdog.getRunningDownloads()) {
-                            }*/
 
-                            //MacDockIconChanger.getInstance().setCompleteDownloadcount(DownloadWatchDog.getInstance().getDownloadssincelastStart());
-                            //MacDockIconChanger.getInstance().changeToProcent(50);
+                            updateDockIcon();
 
                             try {
                                 Thread.sleep(1000);
@@ -69,5 +86,14 @@ public class ImrovedMacOSXDock extends PluginOptional {
                 if (updateThread != null) updateThread.interrupt();
                 break;
         }
+    }
+
+    private void updateDockIcon() {
+        JDUtilities.getDownloadController().getDownloadStatus(downloadInfo);
+
+        float actualProcent = (float) downloadInfo.getCurrentDownloadSize() / (float) downloadInfo.getTotalDownloadSize() * 100;
+
+        MacDockIconChanger.getInstance().setCompleteDownloadcount(DownloadWatchDog.getInstance().getDownloadssincelastStart());
+        MacDockIconChanger.getInstance().changeToProcent((int) actualProcent);
     }
 }
