@@ -47,7 +47,7 @@ public class ComboZipCom extends PluginForHost {
         this.setStartIntervall(60 * 1000l);
     }
 
-    // XfileSharingProBasic Version 1.6
+    // XfileSharingProBasic Version 1.6, added a filesize regex
     @Override
     public String getAGBLink() {
         return COOKIE_HOST + "/tos.html";
@@ -88,6 +88,7 @@ public class ComboZipCom extends PluginForHost {
             filesize = br.getRegex("\\(([0-9]+ bytes)\\)").getMatch(0);
             if (filesize == null) {
                 filesize = br.getRegex("</font>[ ]+\\((.*?)\\)(.*?)</font>").getMatch(0);
+                if (filesize == null) filesize = br.getRegex("class=\"filesize\">(.*?)</span>").getMatch(0);
             }
         }
         if (filename == null || filename.equals("")) {

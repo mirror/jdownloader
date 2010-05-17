@@ -164,7 +164,7 @@ public class FilesMailRu extends PluginForHost {
         if (ttt == null) ttt = br.getRegex("download files in.*?(\\d+).*?sec").getMatch(0);
         int tt = 10;
         if (ttt != null) tt = Integer.parseInt(ttt);
-        logger.info("Waiting" + tt + " seconds...");
+        logger.info("Waiting " + tt + " seconds...");
         sleep(tt * 1001, downloadLink);
     }
 

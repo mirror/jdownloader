@@ -76,8 +76,12 @@ public class RapidGatorNet extends PluginForHost {
         if (ttt != null) tt = Integer.parseInt(ttt);
         sleep(tt * 1001, downloadLink);
         br.getPage(downloadLink.getDownloadURL() + "&s=download");
-        if (br.containsHTML("(Sorry, there is no download slots at this moment|Please try to download your file later)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No free slots available at the moment!");
-        if (br.containsHTML("Our aim is to have loyal customers who choose RapidGator with conviction")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+        if (br.containsHTML("(Sorry, there is no download slots at this moment|Please try to download your file later)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
+        if (br.containsHTML("Our aim is to have loyal customers who choose RapidGator with conviction")) {
+            logger.warning("Unknown error for link: " + downloadLink.getDownloadURL());
+            logger.warning(br.toString());
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown error occured!");
+        }
         String dllink = br.getRegex("<p>Your link: <a href=\"(http.*?)\"").getMatch(0);
         if (dllink == null) dllink = br.getRegex("\"(http://dl\\.rapidgator\\.net/\\?dlsession=.*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

@@ -30,6 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "x7.to" }, urls = { "http://[\\w\\.]*?x7\\.to/(?!list)[a-zA-Z0-9]+" }, flags = { 2 })
 public class XSevenTo extends PluginForHost {
@@ -115,6 +116,7 @@ public class XSevenTo extends PluginForHost {
         if (extension == null) extension = "";
         downloadLink.setName(filename.trim() + extension);
         downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", ".")));
+        if (br.containsHTML("(only premium members will be able to download the file|The requested file is larger than)")) downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.XSevenTo.errors.only4premium", "Only downloadable for premium users"));
         return AvailableStatus.TRUE;
     }
 
@@ -131,6 +133,7 @@ public class XSevenTo extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        if (br.containsHTML("(only premium members will be able to download the file|The requested file is larger than)")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.XSevenTo.errors.only4premium", "Only downloadable for premium users"));
         String dllink = null;
         String fileID = new Regex(downloadLink.getDownloadURL(), "\\.to/([a-zA-Z0-9]+)").getMatch(0);
         boolean isStream = br.containsHTML("<b>Stream</b>");
