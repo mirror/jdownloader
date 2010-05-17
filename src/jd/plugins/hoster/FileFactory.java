@@ -23,6 +23,7 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -102,7 +103,6 @@ public class FileFactory extends PluginForHost {
         if (waittime > 60000l) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waittime); }
         waittime += 1000;
         sleep(waittime, parameter);
-
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, downloadUrl);
         // Prüft ob content disposition header da sind
@@ -258,6 +258,7 @@ public class FileFactory extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.setFollowRedirects(true);
         for (int i = 0; i < 4; i++) {
             try {
