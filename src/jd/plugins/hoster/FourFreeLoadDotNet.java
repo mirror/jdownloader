@@ -25,7 +25,6 @@ import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
-import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -73,29 +72,24 @@ public class FourFreeLoadDotNet extends PluginForHost {
     }
 
     public void doFree(DownloadLink downloadLink) throws Exception {
-
+        if (br.containsHTML("value=\"Free Users\"")) br.postPage(downloadLink.getDownloadURL(), "Free=Free+Users");
+        if (!br.containsHTML("captcha.php")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         /* CaptchaCode holen */
         String captchaCode = getCaptchaCode("http://4freeload.net/captcha.php", downloadLink);
-        Form form = br.getFormbyProperty("name", "myform");
-        if (form == null) form = br.getForm(1);
-        if (form == null || !br.containsHTML("captcha.php")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        form.setMethod(MethodType.POST);
+        String postThat = "captchacode=" + captchaCode + "&Update=Submit";
         String passCode = null;
-        if (form.containsHTML("name=downloadpw")) {
+        if (br.containsHTML("name=downloadpw")) {
             if (downloadLink.getStringProperty("pass", null) == null) {
                 passCode = Plugin.getUserInput(null, downloadLink);
             } else {
                 /* gespeicherten PassCode holen */
                 passCode = downloadLink.getStringProperty("pass", null);
             }
-            form.put("downloadpw", passCode);
+            postThat = postThat + "&downloadpw=" + passCode;
         }
-
-        /* Überprüfen(Captcha,Password) */
-        form.put("captchacode", captchaCode);
-        br.submitForm(form);
-        if (br.containsHTML("Code fehler oder abgelaufen") || br.containsHTML("asswort")) {
-            if (br.containsHTML("asswort")) {
+        br.postPage(downloadLink.getDownloadURL(), postThat);
+        if (br.containsHTML("Code fehler oder abgelaufen") || br.containsHTML("name=downloadpw")) {
+            if (br.containsHTML("name=downloadpw")) {
                 /* PassCode war falsch, also Löschen */
                 downloadLink.setProperty("pass", null);
             }
@@ -153,7 +147,7 @@ public class FourFreeLoadDotNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
         if (accType.equals("Registered")) nopremium = true;
-        if (br.getCookie("http://www.4freeload.net", "yab_passhash") == null || br.getCookie("http://www.4freeload.net", "yab_uid").equals("0")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (br.getCookie("http://www.4freeload.net", "mfh_passhash") == null || ((br.getCookie("http://www.4freeload.net", "mfh_uid") == null || br.getCookie("http://www.4freeload.net", "mfh_uid").equals("0")))) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
     @Override
@@ -165,35 +159,35 @@ public class FourFreeLoadDotNet extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        String expired = br.getRegex("Paket abgelaufen\\?.+?left\">(.*?)<a").getMatch(0).trim();
+        String expired = br.getRegex("Paket abgelaufen\\?.+?left\">(.*?)<a").getMatch(0);
         if (expired != null) {
             if (expired.equalsIgnoreCase("Nein"))
                 ai.setExpired(false);
             else if (expired.equalsIgnoreCase("Ja")) ai.setExpired(true);
         }
         if (!nopremium) {
-            String expires = br.getRegex("Paket läuft ab am.+?left\">(.*?)</td>").getMatch(0).trim();
+            String expires = br.getRegex("Paket läuft ab am.+?left\">(.*?)</td>").getMatch(0);
             if (expires != null) {
                 String[] e = expires.split("/");
                 Calendar cal = new GregorianCalendar(Integer.parseInt("20" + e[2]), Integer.parseInt(e[0]) - 1, Integer.parseInt(e[1]));
                 ai.setValidUntil(cal.getTimeInMillis());
             }
         }
-        String create = br.getRegex("Registriert am.+?left\">(.*?)</td>").getMatch(0).trim();
+        String create = br.getRegex("<b>Registert am</b></td>.*?<td align=\"left\">(.*?)</td>").getMatch(0);
         if (create != null) {
-            String[] c = create.split("/");
+            String[] c = create.split("\\.");
             Calendar cal = new GregorianCalendar(Integer.parseInt("20" + c[2]), Integer.parseInt(c[0]) - 1, Integer.parseInt(c[1]));
             ai.setCreateTime(cal.getTimeInMillis());
         }
 
         ai.setFilesNum(0);
-        String files = br.getRegex("Hochgeladene Dateien.+?left\">(.*?)<a").getMatch(0).trim();
+        String files = br.getRegex("Hochgeladene Dateien.+?left\">.*?(\\d+).*?<a").getMatch(0);
         if (files != null) {
             ai.setFilesNum(Integer.parseInt(files));
         }
 
         ai.setPremiumPoints(0);
-        String points = br.getRegex("Bonuspunkte insgesamt.+?left\">(.*?)</td>").getMatch(0).trim();
+        String points = br.getRegex("<b>Punkte Gesamt</b></td>.*?<td align=\"left\">(\\d+)</td>").getMatch(0);
         if (points != null) {
             ai.setPremiumPoints(Integer.parseInt(points));
         }

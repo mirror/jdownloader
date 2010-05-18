@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -47,17 +48,23 @@ public class FileServeCom extends PluginForHost {
         return "http://www.fileserve.com/terms.php";
     }
 
+    public String FILEIDREGEX = "fileserve\\.com/file/([a-zA-Z0-9]+)";
+
+    @Override
+    public void correctDownloadLink(DownloadLink link) {
+        // All links should look the same to get no problems with regexing them
+        // later
+        String fileId = new Regex(link.getDownloadURL(), FILEIDREGEX).getMatch(0);
+        link.setUrlDownload("http://fileserve.com/file/" + fileId);
+    }
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(The file could not be found|Please check the download link|<p>File not available</p>|File not available)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
-        String filesize = br.getRegex("<span><strong>(.*?)</strong>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(filename.trim());
-        if (filesize != null) link.setDownloadSize(Regex.getSize(filesize));
-        return AvailableStatus.TRUE;
+        checkLinks(new DownloadLink[] { link });
+        if (!link.isAvailabilityStatusChecked()) {
+            link.setAvailableStatus(AvailableStatus.UNCHECKABLE);
+        }
+        return link.getAvailableStatus();
     }
 
     public void login(Account account) throws Exception {
@@ -108,6 +115,7 @@ public class FileServeCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        br.getPage(downloadLink.getDownloadURL());
         String fileId = br.getRegex("fileserve\\.com/file/([a-zA-Z0-9]+)").getMatch(0);
         br.setFollowRedirects(false);
         Browser br2 = br.cloneBrowser();
@@ -165,6 +173,72 @@ public class FileServeCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    public boolean checkLinks(DownloadLink[] urls) {
+        if (urls == null || urls.length == 0) { return false; }
+        try {
+            ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
+            int index = 0;
+            StringBuilder sb = new StringBuilder();
+            while (true) {
+                sb.delete(0, sb.capacity());
+                sb.append("submit=Check+Urls&urls=");
+                links.clear();
+                while (true) {
+                    /*
+                     * we test 500 links at once - its tested with 500 links,
+                     * probably we could test even more at the same time...
+                     */
+                    if (index == urls.length || links.size() > 500) break;
+                    links.add(urls[index]);
+                    index++;
+                }
+                br.getPage("http://fileserve.com/link-checker.php");
+                int c = 0;
+                for (DownloadLink dl : links) {
+                    /*
+                     * append fake filename, because api will not report
+                     * anything else
+                     */
+                    if (c > 0) sb.append("%0D%0A");
+                    sb.append(Encoding.urlEncode(dl.getDownloadURL()));
+                    c++;
+                }
+                br.postPage("http://fileserve.com/link-checker.php", sb.toString());
+                for (DownloadLink dl : links) {
+                    String fileid = new Regex(dl.getDownloadURL(), FILEIDREGEX).getMatch(0);
+                    if (fileid == null) {
+                        logger.warning("Fileserve availablecheck is broken!");
+                        return false;
+                    }
+                    String regexForThisLink = "(<td>http://fileserve\\.com/file/" + fileid + "([\r\n\t]+)?</td>[\r\n\t ]+<td>.*?</td>[\r\n\t ]+<td>.*?</td>[\r\n\t ]+<td>(Available|Not available)(\\&nbsp;)?(<img|</td>))";
+                    String theData = br.getRegex(regexForThisLink).getMatch(0);
+                    if (theData == null) {
+                        logger.warning("Fileserve availablecheck is broken!");
+                        return false;
+                    }
+                    Regex linkinformation = new Regex(theData, "<td>http://fileserve\\.com/file/" + fileid + "([\r\n\t]+)?</td>[\r\n\t ]+<td>(.*?)</td>[\r\n\t ]+<td>(.*?)</td>[\r\n\t ]+<td>(Available|Not available)(\\&nbsp;)?(<img|</td>)");
+                    String status = linkinformation.getMatch(3);
+                    String filename = linkinformation.getMatch(1);
+                    String filesize = linkinformation.getMatch(2);
+                    if (filename == null || filesize == null) {
+                        logger.warning("Fileserve availablecheck is broken!");
+                        dl.setAvailable(false);
+                    } else if (!status.equals("Available") || filename.equals("--") || filesize.equals("--")) {
+                        dl.setAvailable(false);
+                    } else {
+                        dl.setAvailable(true);
+                    }
+                    dl.setName(filename);
+                    dl.setDownloadSize(Regex.getSize(filesize));
+                }
+                if (index == urls.length) break;
+            }
+        } catch (Exception e) {
+            return false;
+        }
+        return true;
     }
 
     @Override

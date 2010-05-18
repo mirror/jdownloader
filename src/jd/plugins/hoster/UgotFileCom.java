@@ -181,16 +181,16 @@ public class UgotFileCom extends PluginForHost {
                     String status = new Regex(theData, "<td align='center'>(.*?)</td").getMatch(0);
                     String filename = new Regex(theData, "ugotfile.com/file/\\d+/(.*?)</td>").getMatch(0);
                     String filesize = new Regex(theData, "<td align='right'>(.*?)</td>").getMatch(0);
-                    if (classx.contains("red") || !status.matches("Alive")) {
-                        dl.setAvailable(false);
-                    } else if (filename == null || filesize == null) {
+                    if (filename == null || filesize == null) {
                         logger.warning("Ugotfile availablecheck is broken!");
+                        dl.setAvailable(false);
+                    } else if (classx.contains("red") || !status.matches("Alive")) {
                         dl.setAvailable(false);
                     } else {
                         dl.setAvailable(true);
                     }
-                    if (filename != null) dl.setName(filename);
-                    if (filesize != null) dl.setDownloadSize(Regex.getSize(filesize));
+                    dl.setName(filename);
+                    dl.setDownloadSize(Regex.getSize(filesize));
                 }
                 if (index == urls.length) break;
             }

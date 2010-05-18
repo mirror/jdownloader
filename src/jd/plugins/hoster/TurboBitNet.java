@@ -97,30 +97,48 @@ public class TurboBitNet extends PluginForHost {
             } else if (wait > 31) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait * 1001l);
         }
 
-        String captchaUrl = br.getRegex("\"(http://turbobit\\.net/captcha/.*?)\"").getMatch(0);
-        if (captchaUrl == null) {
+        Form captchaform = br.getForm(2);
+        if (captchaform == null) {
+            logger.warning("captchaform equals null!");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (br.containsHTML("api.recaptcha.net")) {
+            logger.info("Handling Re Captcha");
+            String theId = new Regex(br.toString(), "challenge\\?k=(.*?)\"").getMatch(0);
+            if (theId == null) {
+                logger.warning("the id for Re Captcha equals null!");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
             jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-            rc.parse();
+            rc.setId(theId);
+            rc.setForm(captchaform);
             rc.load();
             File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-            String c = getCaptchaCode(cf, downloadLink);
+            String c = getCaptchaCode(null, cf, downloadLink);
+            rc.getForm().setAction(downloadLink.getDownloadURL() + "#");
             rc.setCode(c);
+            if (br.containsHTML("api.recaptcha.net")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         } else {
-            Form form = br.getForm(2);
-            if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            logger.info("Handling normal captchas");
+            String captchaUrl = br.getRegex("\"(http://turbobit\\.net/captcha/.*?)\"").getMatch(0);
+            if (captchaUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             for (int i = 1; i <= 3; i++) {
                 String captchaCode = getCaptchaCode(captchaUrl, downloadLink);
-                form.put("captcha_response", captchaCode);
-                br.submitForm(form);
+                captchaform.put("captcha_response", captchaCode);
+                br.submitForm(captchaform);
                 if (br.containsHTML("updateTime: function()")) break;
             }
+            if (!br.containsHTML("updateTime: function()")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
-
-        if (!br.containsHTML("updateTime: function()")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-
-        int tt = Integer.parseInt(br.getRegex("limit: (\\d+),").getMatch(0));
-        sleep(tt * 1001l, downloadLink);
+        // Ticket Time
+        String ttt = new Regex(br.toString(), "limit: (\\d+),").getMatch(0);
+        int tt = 60;
+        if (ttt != null) {
+            logger.info("Waittime detected, waiting " + ttt + " seconds from now on...");
+            tt = Integer.parseInt(ttt);
+        }
+        sleep(tt * 1001, downloadLink);
         br.getPage("http://turbobit.net/download/timeout/" + id);
 
         String downloadUrl = br.getRegex("<a href='(.*?)'>").getMatch(0);
