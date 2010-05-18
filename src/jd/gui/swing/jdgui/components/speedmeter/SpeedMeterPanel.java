@@ -14,7 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.gui.swing.components;
+package jd.gui.swing.jdgui.components.speedmeter;
 
 import java.awt.AlphaComposite;
 import java.awt.BasicStroke;
@@ -49,39 +49,23 @@ import jd.nutils.Formatter;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-public class SpeedMeterPanel extends JPanel implements ActionListener, MouseListener {
+public class SpeedMeterPanel extends JPanel implements ActionListener, MouseListener, SpeedMeterListener {
 
     private static final long serialVersionUID = 5571694800446993879L;
-    private int i;
-    private int[] cache;
-    private transient Thread th;
-    private int window;
+
     private boolean show;
 
-    private static final int CAPACITY = 40;
-
     public SpeedMeterPanel(boolean contextMenu, boolean start) {
-        i = 0;
-        window = GUIUtils.getConfig().getIntegerProperty(JDGuiConstants.PARAM_SHOW_SPEEDMETER_WINDOWSIZE, 60);
         show = contextMenu ? GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_SHOW_SPEEDMETER, true) : true;
-        cache = new int[CAPACITY];
-        for (int x = 0; x < CAPACITY; x++) {
-            cache[x] = 0;
-        }
 
         setOpaque(false);
         setBorder(show ? BorderFactory.createEtchedBorder() : null);
 
-        JDUtilities.getController().addControlListener(new ConfigPropertyListener(Configuration.PARAM_DOWNLOAD_MAX_SPEED, JDGuiConstants.PARAM_SHOW_SPEEDMETER_WINDOWSIZE) {
+        JDUtilities.getController().addControlListener(new ConfigPropertyListener(Configuration.PARAM_DOWNLOAD_MAX_SPEED) {
 
             @Override
             public void onPropertyChanged(Property source, String key) {
-                if (key == null) return;
-                if (key.equalsIgnoreCase(Configuration.PARAM_DOWNLOAD_MAX_SPEED)) {
-                    update();
-                } else if (key.equalsIgnoreCase(JDGuiConstants.PARAM_SHOW_SPEEDMETER_WINDOWSIZE)) {
-                    window = GUIUtils.getConfig().getIntegerProperty(JDGuiConstants.PARAM_SHOW_SPEEDMETER_WINDOWSIZE, 60);
-                }
+                update();
             }
 
         });
@@ -92,51 +76,26 @@ public class SpeedMeterPanel extends JPanel implements ActionListener, MouseList
 
                 @Override
                 public void onPropertyChanged(Property source, String key) {
-                    if (key == null) return;
                     show = GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_SHOW_SPEEDMETER, true);
                     setBorder(show ? BorderFactory.createEtchedBorder() : null);
                 }
 
             });
         }
-        
+
         if (start) start();
     }
 
     public void start() {
-        if (th != null) return;
-        th = new Thread("Speedmeter updater") {
-
-            @Override
-            public void run() {
-                long nextCacheEntry = 0;
-                while (!this.isInterrupted()) {
-                    update();
-                    if (nextCacheEntry < System.currentTimeMillis()) {
-                        cache[i] = (int) DownloadWatchDog.getInstance().getConnectionManager().getIncommingBandwidthUsage();
-                        i++;
-                        i = i % cache.length;
-                        nextCacheEntry = System.currentTimeMillis() + ((window * 1000) / CAPACITY);
-                    }
-                    try {
-                        Thread.sleep(2000);
-                    } catch (InterruptedException e) {
-                        return;
-                    }
-                }
-            }
-        };
-        th.start();
+        SpeedMeterCache.getInstance().getBroadcaster().addListener(this);
 
         if (show) fadeIn();
     }
 
     public void stop() {
         if (!show) return;
-        if (th != null) {
-            th.interrupt();
-            th = null;
-        }
+
+        SpeedMeterCache.getInstance().getBroadcaster().removeListener(this);
 
         if (show) fadeOut();
     }
@@ -160,7 +119,8 @@ public class SpeedMeterPanel extends JPanel implements ActionListener, MouseList
         Color col1 = new Color(0x7CD622);
         Color col2 = new Color(0x339933);
 
-        int id = i;
+        int id = SpeedMeterCache.getInstance().getIndex();
+        int[] cache = SpeedMeterCache.getInstance().getCache();
         int limit = SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0) * 1024;
         int max = Math.max(10, limit);
         for (int element : cache) {
@@ -173,8 +133,8 @@ public class SpeedMeterPanel extends JPanel implements ActionListener, MouseList
 
         poly.addPoint(0, height);
 
-        for (int x = 0; x < CAPACITY; x++) {
-            poly.addPoint((x * width) / (CAPACITY - 1), height - (int) (height * cache[id] * 0.9) / max);
+        for (int x = 0; x < cache.length; x++) {
+            poly.addPoint((x * width) / (cache.length - 1), height - (int) (height * cache[id] * 0.9) / max);
             id++;
             id = id % cache.length;
         }
@@ -284,6 +244,10 @@ public class SpeedMeterPanel extends JPanel implements ActionListener, MouseList
     }
 
     public void mouseReleased(MouseEvent e) {
+    }
+
+    public void onSpeedMeterEvent(SpeedMeterEvent e) {
+        update();
     }
 
 }

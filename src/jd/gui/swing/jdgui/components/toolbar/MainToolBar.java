@@ -20,8 +20,8 @@ import jd.controlling.JDController;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.swing.GuiRunnable;
-import jd.gui.swing.components.SpeedMeterPanel;
 import jd.gui.swing.jdgui.actions.ActionController;
+import jd.gui.swing.jdgui.components.speedmeter.SpeedMeterPanel;
 
 public class MainToolBar extends ToolBar implements ControlListener {
 

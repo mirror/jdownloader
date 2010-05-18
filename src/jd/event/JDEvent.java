@@ -18,22 +18,22 @@ package jd.event;
 
 public abstract class JDEvent {
 
-    private final int ID;
+    private final int id;
     private final Object source;
-    private Object parameter;
+    private final Object parameter;
 
-    public JDEvent(final Object source, final int ID) {
-        this.source = source;
-        this.ID = ID;
+    public JDEvent(final Object source, final int id) {
+        this(source, id, null);
     }
 
-    public JDEvent(final Object source, final int ID, final Object parameter) {
-        this(source, ID);
+    public JDEvent(final Object source, final int id, final Object parameter) {
+        this.source = source;
+        this.id = id;
         this.parameter = parameter;
     }
 
     public int getID() {
-        return ID;
+        return id;
     }
 
     public Object getParameter() {
@@ -44,8 +44,9 @@ public abstract class JDEvent {
         return source;
     }
 
+    @Override
     public String toString() {
-        return "[source:" + source + ", controlID:" + ID + ", parameter:" + parameter + "]";
+        return "[source:" + source + ", controlID:" + id + ", parameter:" + parameter + "]";
     }
 
 }
