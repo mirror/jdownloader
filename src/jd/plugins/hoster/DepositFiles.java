@@ -47,7 +47,8 @@ public class DepositFiles extends PluginForHost {
     static private final String FILE_NOT_FOUND = "Dieser File existiert nicht";
 
     private static final String PATTERN_PREMIUM_FINALURL = "<div id=\"download_url\">.*?<a href=\"(.*?)\"";
-
+    public String DLLINKREGEX = "download_url\".*?<form action=\"(.*?)\"";
+    public String DLLINKREGEX2 = "<div id=\"download_url\" style=\"display:none;\">.*?<form action=\"(.*?)\" method=\"get";
     private Pattern FILE_INFO_NAME = Pattern.compile("(?s)Dateiname: <b title=\"(.*?)\">.*?</b>", Pattern.CASE_INSENSITIVE);
 
     private Pattern FILE_INFO_SIZE = Pattern.compile("Dateigr.*?: <b>(.*?)</b>");
@@ -76,7 +77,7 @@ public class DepositFiles extends PluginForHost {
             if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
         }
         checkErrors();
-        String dllink = br.getRegex("download_url\".*?<form action=\"(.*?)\"").getMatch(0);
+        String dllink = br.getRegex(DLLINKREGEX).getMatch(0);
         if (dllink != null && !dllink.equals("")) {
             // handling for txt file downloadlinks, dunno why they made a
             // completely different page for txt files
@@ -101,7 +102,7 @@ public class DepositFiles extends PluginForHost {
             br.submitForm(form);
             checkErrors();
             if (br.getRedirectLocation() != null && br.getRedirectLocation().indexOf("error") > 0) { throw new PluginException(LinkStatus.ERROR_RETRY); }
-            dllink = br.getRegex("download_url\".*?<form action=\"(.*?)\"").getMatch(0);
+            dllink = br.getRegex(DLLINKREGEX).getMatch(0);
             String icid = br.getRegex("get_download_img_code\\.php\\?icid=(.*?)\"").getMatch(0);
             /* check for captcha */
             if ((dllink == null || dllink.equals("")) && icid != null) {
@@ -115,9 +116,8 @@ public class DepositFiles extends PluginForHost {
                 br.submitForm(cap);
                 dllink = br.getRegex("<div id=\"download_url\" style=\"display:none;\">.*?<form action=\"(.*?)\" method=\"get").getMatch(0);
                 if (dllink == null) {
-                    /* TODO: get correct output here */
                     if (br.containsHTML("get_download_img_code.php")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                    dllink = br.getRegex("<div id=\"download_url\" style=\"display:none;\">.*?<form action=\"(.*?)\" method=\"get").getMatch(0);
+                    dllink = br.getRegex(DLLINKREGEX2).getMatch(0);
                 }
 
             }
@@ -139,7 +139,7 @@ public class DepositFiles extends PluginForHost {
     public void checkErrors() throws NumberFormatException, PluginException {
         logger.info("Checking errors...");
         /* Server under maintenance */
-        if (br.containsHTML("html_download_api-temporary_unavailable")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Under maintenance", 30 * 60 * 1000l);
+        if (br.containsHTML("(html_download_api-temporary_unavailable|The site is temporarily unavailable for we are making some important upgrades)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Under maintenance", 30 * 60 * 1000l);
         /* download not available at the moment */
         if (br.containsHTML("Entschuldigung aber im Moment koennen Sie nur diesen Downloadmodus")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l);
         /* limit reached */
