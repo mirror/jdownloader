@@ -201,7 +201,7 @@ public class CraMitIn extends PluginForHost {
             DLForm.put("code", code);
             logger.info("Put captchacode " + code + " obtained by captcha metod \"Standard captcha\" in the form.");
         } else if (br.containsHTML("api.recaptcha.net")) {
-            String theId = new Regex(brbefore, "k=(.{5,})\"").getMatch(0);
+            String theId = new Regex(brbefore, "k=(.*?)\"").getMatch(0);
             if (theId == null) {
                 logger.warning("Re Captcha ID is null!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
