@@ -22,6 +22,7 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -96,13 +97,25 @@ public class TurboBitNet extends PluginForHost {
             } else if (wait > 31) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait * 1001l);
         }
 
-        PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-        jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-        rc.parse();
-        rc.load();
-        File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-        String c = getCaptchaCode(cf, downloadLink);
-        rc.setCode(c);
+        String captchaUrl = br.getRegex("\"(http://turbobit\\.net/captcha/.*?)\"").getMatch(0);
+        if (captchaUrl == null) {
+            PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+            jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+            rc.parse();
+            rc.load();
+            File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+            String c = getCaptchaCode(cf, downloadLink);
+            rc.setCode(c);
+        } else {
+            Form form = br.getForm(2);
+            if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            for (int i = 1; i <= 3; i++) {
+                String captchaCode = getCaptchaCode(captchaUrl, downloadLink);
+                form.put("captcha_response", captchaCode);
+                br.submitForm(form);
+                if (br.containsHTML("updateTime: function()")) break;
+            }
+        }
 
         if (!br.containsHTML("updateTime: function()")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
 
