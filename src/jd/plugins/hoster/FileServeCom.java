@@ -190,7 +190,7 @@ public class FileServeCom extends PluginForHost {
                      * we test 500 links at once - its tested with 500 links,
                      * probably we could test even more at the same time...
                      */
-                    if (index == urls.length || links.size() > 500) break;
+                    if (index == urls.length || links.size() > 100) break;
                     links.add(urls[index]);
                     index++;
                 }

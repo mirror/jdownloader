@@ -19,6 +19,11 @@ package jd.gui.swing.jdgui;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Image;
+import java.awt.KeyEventPostProcessor;
+import java.awt.KeyboardFocusManager;
+import java.awt.Rectangle;
+import java.awt.Toolkit;
+import java.awt.event.KeyEvent;
 import java.awt.event.WindowEvent;
 import java.util.ArrayList;
 
@@ -118,6 +123,30 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         }
         ClipboardHandler.getClipboard().setTempDisabled(false);
         LinkGrabberController.getInstance().setDistributer(this);
+        KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventPostProcessor(new KeyEventPostProcessor() {
+
+            public boolean postProcessKeyEvent(KeyEvent e) {
+                if (e.getID() == KeyEvent.KEY_RELEASED && e.isShiftDown() && e.isControlDown() && e.getKeyCode() == KeyEvent.VK_S) {
+                    try {
+                        /*
+                         * dirty little helper for mac os problem, unable to
+                         * reach window header
+                         */
+                        Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
+                        mainFrame.setExtendedState(JFrame.NORMAL);
+                        mainFrame.setSize(new Dimension(800, 600));
+                        Rectangle abounds = mainFrame.getBounds();
+                        mainFrame.setLocation((dim.width - abounds.width) / 2, (dim.height - abounds.height) / 2);
+                        JDLogger.getLogger().info("Center MainFrame");
+                        return true;
+                    } catch (Exception ee) {
+                        JDLogger.exception(ee);
+                    }
+                }
+                return false;
+            }
+        });
+
     }
 
     @Override
