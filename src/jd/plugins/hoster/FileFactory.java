@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
@@ -92,11 +93,11 @@ public class FileFactory extends PluginForHost {
 
     public void handleFree0(DownloadLink parameter) throws Exception {
         checkErrors();
-        String urlWithFilename = br.getRegex("class=\"basicBtn\".*?href=\"(.*?)\"").getMatch(0);
+        String urlWithFilename = getUrl();
         if (urlWithFilename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.getPage("http://www.filefactory.com" + urlWithFilename);
+        br.getPage(urlWithFilename);
         checkErrors();
-        String downloadUrl = br.getRegex("downloadLink\".*?href=\"(http://.*?filefactory.*?)\"").getMatch(0);
+        String downloadUrl = getUrl();
         String wait = br.getRegex("id=\"startWait\" value=\"(\\d+)\"").getMatch(0);
         if (wait == null || downloadUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         long waittime = Long.parseLong(wait) * 1000l;
@@ -122,6 +123,32 @@ public class FileFactory extends PluginForHost {
             checkErrors();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+    }
+
+    public String getUrl() {
+        String varsFound[][] = br.getRegex("var([/ a-zA-Z0-9]+)=[ ]*'(.*?)'[ ]*;").getMatches();
+        HashMap<String, String> vars = new HashMap<String, String>();
+        String urlVar = null;
+        for (String[] var : varsFound) {
+            if (var[1] != null) vars.put(var[0].trim(), var[1].trim());
+            if (var[1] != null && (var[1].contains("'") || var[1].contains("+"))) {
+                urlVar = var[1];
+            }
+        }
+        if (urlVar == null) return null;
+        String urlParts[] = urlVar.split("'|\\+");
+        String url = "";
+        for (String urlPart : urlParts) {
+            urlPart = urlPart.trim();
+            if (urlPart.length() == 0) continue;
+            if (vars.get(urlPart) == null) {
+                url = url + urlPart;
+            } else {
+                url = url + vars.get(urlPart).trim();
+            }
+        }
+        if (url.startsWith("http://")) return url;
+        return "http://www.filefactory.com" + url;
     }
 
     @Override
