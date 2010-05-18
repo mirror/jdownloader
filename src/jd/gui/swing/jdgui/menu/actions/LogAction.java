@@ -36,8 +36,7 @@ public class LogAction extends ToolBarAction {
     public void onAction(ActionEvent e) {
         GUIUtils.getConfig().setProperty(JDGuiConstants.PARAM_LOGVIEW_SHOWN, true);
         GUIUtils.getConfig().save();
-        LogView view = LogView.getInstance();
-        SwingGui.getInstance().setContent(view);
+        SwingGui.getInstance().setContent(LogView.getInstance());
     }
 
     @Override

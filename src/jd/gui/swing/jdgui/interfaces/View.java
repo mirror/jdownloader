@@ -23,7 +23,6 @@ import javax.swing.Icon;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.border.Border;
-import javax.swing.border.CompoundBorder;
 
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.JDGui;
@@ -58,7 +57,7 @@ public abstract class View extends SwitchPanel {
         sidebar.setVisible(false);
         Border insideBorder = BorderFactory.createEmptyBorder(10, 10, 10, 10);
         Border outsideBorder = BorderFactory.createMatteBorder(0, 0, 0, 2, getBackground().darker());
-        Border compoundBorder = new CompoundBorder(outsideBorder, insideBorder);
+        Border compoundBorder = BorderFactory.createCompoundBorder(outsideBorder, insideBorder);
         sidebar.setBorder(compoundBorder);
 
         add(rightPane = new JPanel(new MigLayout("ins 0", "[grow,fill]", "[grow,fill]")));
