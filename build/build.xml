@@ -279,6 +279,7 @@
 		<buildAddon number="137" package="scriptlauncher" />
 		<buildAddon number="102" package="infobar" />
 		<buildAddon number="103" package="lecturnity" />
+		<buildAddon number="107" package="improveddock" />
 
 	</target>
 
@@ -290,7 +291,6 @@
 		</signjar>
 	</target>
 
-	<!-- Is this still used? -->
 	<target name="cryptContainer">
 		<taskdef name="yguard" classname="com.yworks.yguard.YGuardTask" />
 		<yguard>

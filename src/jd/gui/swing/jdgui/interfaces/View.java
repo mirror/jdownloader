@@ -22,7 +22,8 @@ import javax.swing.BorderFactory;
 import javax.swing.Icon;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.JSeparator;
+import javax.swing.border.Border;
+import javax.swing.border.CompoundBorder;
 
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.JDGui;
@@ -40,7 +41,6 @@ public abstract class View extends SwitchPanel {
     public static final int ICON_SIZE = 16;
 
     private JPanel rightPane;
-    private JSeparator separator;
     private JScrollPane sidebar;
     private SideBarPanel sidebarContent;
     private SwitchPanel content;
@@ -51,15 +51,15 @@ public abstract class View extends SwitchPanel {
 
     public View() {
         SwingGui.checkEDT();
-        setLayout(new MigLayout("ins 0", "[]0[]0[grow,fill]", "[grow,fill]"));
+        setLayout(new MigLayout("ins 0", "[]0[grow,fill]", "[grow,fill]"));
 
         add(sidebar = new JScrollPane(), "w 225!,hidemode 2");
         sidebar.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         sidebar.setVisible(false);
-        sidebar.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-
-        add(separator = new JSeparator(JSeparator.VERTICAL), "w pref!,hidemode 2");
-        separator.setVisible(false);
+        Border insideBorder = BorderFactory.createEmptyBorder(10, 10, 10, 10);
+        Border outsideBorder = BorderFactory.createMatteBorder(0, 0, 0, 2, getBackground().darker());
+        Border compoundBorder = new CompoundBorder(outsideBorder, insideBorder);
+        sidebar.setBorder(compoundBorder);
 
         add(rightPane = new JPanel(new MigLayout("ins 0", "[grow,fill]", "[grow,fill]")));
 
@@ -163,10 +163,8 @@ public abstract class View extends SwitchPanel {
         if (left == sidebarContent) return;
         if (left == null) {
             sidebar.setVisible(false);
-            separator.setVisible(false);
         } else {
             sidebar.setVisible(true);
-            separator.setVisible(true);
             sidebar.setViewportView(left);
         }
 
@@ -215,4 +213,5 @@ public abstract class View extends SwitchPanel {
         if (this.getID().equalsIgnoreCase(((View) o).getID())) return true;
         return false;
     }
+
 }
