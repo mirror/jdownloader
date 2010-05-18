@@ -20,9 +20,18 @@ package jd.controlling;
  * Contains all needful information about the downloads
  * 
  * @author botzi
- * 
  */
 public class DownloadInformations {
+
+    private static final DownloadInformations INSTANCE = new DownloadInformations();
+
+    public static DownloadInformations getInstance() {
+        return INSTANCE;
+    }
+
+    private final Object UPDATELOCK = new Object();
+    private long lastUpdate = 0;
+
     private long totalDownloadSize = 0;
     private long currentDownloadSize = 0;
     private int packages = 0;
@@ -31,6 +40,9 @@ public class DownloadInformations {
     private int runningDownloads = 0;
     private int finishedDownloads = 0;
     private int duplicateDownloads = 0;
+
+    private DownloadInformations() {
+    }
 
     protected void reset() {
         totalDownloadSize = 0;
@@ -139,6 +151,15 @@ public class DownloadInformations {
 
     public double getPercent() {
         return Math.round((getCurrentDownloadSize() * 10000.0) / getTotalDownloadSize()) / 100.0;
+    }
+
+    public void updateInformations() {
+        synchronized (UPDATELOCK) {
+            if (System.currentTimeMillis() - lastUpdate >= 1000) {
+                DownloadController.getInstance().getDownloadStatus(this);
+                lastUpdate = System.currentTimeMillis();
+            }
+        }
     }
 
 }

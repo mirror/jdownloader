@@ -16,13 +16,11 @@
 
 package jd.gui.swing.jdgui.views.downloads;
 
-import jd.controlling.DownloadController;
 import jd.controlling.DownloadInformations;
 import jd.controlling.DownloadWatchDog;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.views.InfoPanel;
 import jd.nutils.Formatter;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 public class DownloadInfoPanel extends InfoPanel {
@@ -30,7 +28,6 @@ public class DownloadInfoPanel extends InfoPanel {
     private static final long serialVersionUID = 6127915881119236559L;
     private static final String JDL_PREFIX = "jd.gui.swing.jdgui.views.info.DownloadInfoPanel.";
     private DownloadInformations ds;
-    private DownloadController dlc;
     private long speed;
 
     public DownloadInfoPanel() {
@@ -42,8 +39,7 @@ public class DownloadInfoPanel extends InfoPanel {
         addInfoEntry(JDL.L(JDL_PREFIX + "speed", "Downloadspeed"), "0", 2, 0);
         addInfoEntry(JDL.L(JDL_PREFIX + "eta", "Download complete in"), "0", 2, 1);
         addInfoEntry(JDL.L(JDL_PREFIX + "progress", "Progress"), "0", 3, 0);
-        ds = new DownloadInformations();
-        dlc = JDUtilities.getDownloadController();
+        ds = DownloadInformations.getInstance();
         Thread updateTimer = new Thread() {
             public void run() {
                 this.setName("DownloadView: infoupdate");
@@ -66,7 +62,7 @@ public class DownloadInfoPanel extends InfoPanel {
         new GuiRunnable<Object>() {
             @Override
             public Object runSave() {
-                dlc.getDownloadStatus(ds);
+                ds.updateInformations();
                 speed = DownloadWatchDog.getInstance().getConnectionManager().getIncommingBandwidthUsage();
                 updateInfo(JDL.L(JDL_PREFIX + "speed", "Downloadspeed"), Formatter.formatReadable(speed) + "/s");
                 updateInfo(JDL.L(JDL_PREFIX + "eta", "Download complete in"), Formatter.formatSeconds(speed == 0 ? -1 : ds.getETA()));

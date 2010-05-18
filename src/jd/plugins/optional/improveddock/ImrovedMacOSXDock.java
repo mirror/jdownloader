@@ -19,7 +19,6 @@ package jd.plugins.optional.improveddock;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
-import jd.controlling.DownloadController;
 import jd.controlling.DownloadInformations;
 import jd.controlling.DownloadWatchDog;
 import jd.event.ControlEvent;
@@ -36,7 +35,7 @@ public class ImrovedMacOSXDock extends PluginOptional {
 
     public ImrovedMacOSXDock(PluginWrapper wrapper) {
         super(wrapper);
-        downloadInfo = new DownloadInformations();
+        downloadInfo = DownloadInformations.getInstance();
         updateDockIcon();
     }
 
@@ -87,8 +86,7 @@ public class ImrovedMacOSXDock extends PluginOptional {
     }
 
     private void updateDockIcon() {
-        DownloadController.getInstance().getDownloadStatus(downloadInfo);
-
+        downloadInfo.updateInformations();
         MacDockIconChanger.getInstance().updateDockIcon((int) downloadInfo.getPercent(), DownloadWatchDog.getInstance().getDownloadssincelastStart());
     }
 }

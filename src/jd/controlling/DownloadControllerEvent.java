@@ -19,23 +19,20 @@ package jd.controlling;
 import jd.event.JDEvent;
 
 public class DownloadControllerEvent extends JDEvent {
-    public DownloadControllerEvent(final Object source, final int ID) {
-        super(source, ID);
-    }
-
-    public DownloadControllerEvent(final Object source, final int ID, final Object param) {
-        super(source, ID, param);
-    }
 
     /**
      * Wird bei Strukturänderungen der DownloadListe
      */
     public static final int REFRESH_STRUCTURE = 1;
 
-    /* Downloadlink oder ArrayList<DownloadLink> soll aktuallisiert werden */
+    /**
+     * Downloadlink oder ArrayList<DownloadLink> soll aktuallisiert werden
+     */
     public static final int REFRESH_SPECIFIC = 11;
 
-    /* die komplette liste soll aktuallisiert werden */
+    /**
+     * die komplette liste soll aktuallisiert werden
+     */
     public static final int REFRESH_ALL = 12;
 
     public static final int ADD_FILEPACKAGE = 2;
@@ -45,5 +42,13 @@ public class DownloadControllerEvent extends JDEvent {
     public static final int ADD_DOWNLOADLINK = 4;
 
     public static final int REMOVE_DOWNLOADLINK = 5;
-    
+
+    public DownloadControllerEvent(final Object source, final int ID) {
+        super(source, ID);
+    }
+
+    public DownloadControllerEvent(final Object source, final int ID, final Object param) {
+        super(source, ID, param);
+    }
+
 }

@@ -18,6 +18,6 @@ package jd.controlling;
 
 public abstract class DynamicPluginInterface {
 
-   abstract public void execute();
+    public abstract void execute();
 
 }

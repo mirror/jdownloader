@@ -24,7 +24,6 @@ import jd.controlling.DownloadWatchDog;
 import jd.gui.swing.components.JWindowTooltip;
 import jd.gui.swing.jdgui.components.JDProgressBar;
 import jd.nutils.Formatter;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
@@ -43,7 +42,7 @@ public class TrayIconTooltip extends JWindowTooltip {
     private final DownloadInformations ds;
 
     public TrayIconTooltip() {
-        ds = new DownloadInformations();
+        ds = DownloadInformations.getInstance();
     }
 
     protected void addContent(JPanel panel) {
@@ -65,7 +64,7 @@ public class TrayIconTooltip extends JWindowTooltip {
     }
 
     protected void updateContent() {
-        JDUtilities.getDownloadController().getDownloadStatus(ds);
+        ds.updateInformations();
 
         lblDlRunning.setText(String.valueOf(ds.getRunningDownloads()));
         lblDlFinished.setText(String.valueOf(ds.getFinishedDownloads()));

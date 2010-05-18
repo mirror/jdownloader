@@ -20,7 +20,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.logging.Logger;
 
@@ -45,51 +44,53 @@ class DownloadControllerBroadcaster extends JDBroadcaster<DownloadControllerList
     }
 }
 
-class Optimizer {
-
-    private final HashMap<String, ArrayList<DownloadLink>> url_links = new HashMap<String, ArrayList<DownloadLink>>();
-
-    private final Object lock = new Object();
-
-    private static Optimizer INSTANCE = null;
-
-    private DownloadController INSTANCE2 = null;
-
-    public synchronized static Optimizer getINSTANCE(final DownloadController INSTANCE2) {
-        if (INSTANCE == null) {
-            INSTANCE = new Optimizer(INSTANCE2);
-        }
-        return INSTANCE;
-    }
-
-    private Optimizer(final DownloadController INSTANCE2) {
-        this.INSTANCE2 = INSTANCE2;
-        init();
-    }
-
-    private void init() {
-        final ArrayList<DownloadLink> links = INSTANCE2.getAllDownloadLinks();
-        for (final DownloadLink link : links) {
-            final String url = link.getDownloadURL().trim();
-            if (url != null) {
-                if (!url_links.containsKey(url)) {
-                    url_links.put(url, new ArrayList<DownloadLink>());
-                }
-                final ArrayList<DownloadLink> tmp = url_links.get(url);
-                if (!tmp.contains(link)) {
-                    tmp.add(link);
-                }
-            }
-        }
-    }
-
-    public ArrayList<DownloadLink> getLinkswithURL(final String url) {
-        if (url == null || url.length() == 0) return null;
-        synchronized (lock) {
-            return url_links.get(url.trim());
-        }
-    }
-}
+// class Optimizer {
+//
+// private final HashMap<String, ArrayList<DownloadLink>> url_links = new
+// HashMap<String, ArrayList<DownloadLink>>();
+//
+// private final Object lock = new Object();
+//
+// private static Optimizer INSTANCE = null;
+//
+// private DownloadController INSTANCE2 = null;
+//
+// public synchronized static Optimizer getINSTANCE(final DownloadController
+// INSTANCE2) {
+// if (INSTANCE == null) {
+// INSTANCE = new Optimizer(INSTANCE2);
+// }
+// return INSTANCE;
+// }
+//
+// private Optimizer(final DownloadController INSTANCE2) {
+// this.INSTANCE2 = INSTANCE2;
+// init();
+// }
+//
+// private void init() {
+// final ArrayList<DownloadLink> links = INSTANCE2.getAllDownloadLinks();
+// for (final DownloadLink link : links) {
+// final String url = link.getDownloadURL().trim();
+// if (url != null) {
+// if (!url_links.containsKey(url)) {
+// url_links.put(url, new ArrayList<DownloadLink>());
+// }
+// final ArrayList<DownloadLink> tmp = url_links.get(url);
+// if (!tmp.contains(link)) {
+// tmp.add(link);
+// }
+// }
+// }
+// }
+//
+// public ArrayList<DownloadLink> getLinkswithURL(final String url) {
+// if (url == null || url.length() == 0) return null;
+// synchronized (lock) {
+// return url_links.get(url.trim());
+// }
+// }
+// }
 
 public class DownloadController implements FilePackageListener, DownloadControllerListener, ActionListener {
 
@@ -420,7 +421,7 @@ public class DownloadController implements FilePackageListener, DownloadControll
     /**
      * Returns all needful downloadinformation
      */
-    public void getDownloadStatus(final DownloadInformations ds) {
+    protected void getDownloadStatus(final DownloadInformations ds) {
         ds.reset();
         ds.addRunningDownloads(DownloadWatchDog.getInstance().getActiveDownloads());
         synchronized (packages) {

@@ -16,7 +16,6 @@ import javax.swing.JPopupMenu;
 import javax.swing.JWindow;
 import javax.swing.SwingUtilities;
 
-import jd.controlling.DownloadController;
 import jd.controlling.DownloadInformations;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.components.JDCloseAction;
@@ -60,7 +59,7 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
     private InfoDialog(MenuAction action) {
         super();
 
-        this.ds = new DownloadInformations();
+        this.ds = DownloadInformations.getInstance();
         this.action = action;
         this.ddh = new DragDropHandler();
 
@@ -97,19 +96,6 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
         panel.add(lblETA);
         panel.add(prgTotal);
         panel.add(lblHelp, "hidemode 3");
-
-        // JPanel panel = new JPanel(new MigLayout("ins 5, wrap 2",
-        // "[][grow,fill]"));
-        // panel.setBorder(BorderFactory.createLineBorder(getBackground().darker().darker()));
-        // panel.add(new SpeedMeterPanel(false, true), "h 30!, w 200!, spanx");
-        // panel.add(new JLabel(JDL.L("plugins.optional.trayIcon.progress",
-        // "Progress:")));
-        // panel.add(lblProgress);
-        // panel.add(prgTotal, "w 200!, spanx");
-        // panel.add(new JLabel(JDL.L("plugins.optional.trayIcon.eta",
-        // "ETA:")));
-        // panel.add(lblETA);
-        // panel.add(lblHelp, "w 200!, spanx, hidemode 3");
 
         this.setLayout(new MigLayout("ins 0", "[grow,fill]"));
         this.add(panel);
@@ -155,7 +141,7 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
     }
 
     private void updateInfos() {
-        DownloadController.getInstance().getDownloadStatus(ds);
+        ds.updateInformations();
 
         lblProgress.setText(Formatter.formatFilesize(ds.getCurrentDownloadSize(), 0) + " / " + Formatter.formatFilesize(ds.getTotalDownloadSize(), 0));
         lblETA.setText(Formatter.formatSeconds(ds.getETA()));

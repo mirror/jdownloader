@@ -18,6 +18,8 @@ package jd.controlling;
 
 import java.util.EventListener;
 
-public interface LinkCheckListener extends EventListener{
+public interface LinkCheckListener extends EventListener {
+
     public void onLinkCheckEvent(LinkCheckEvent event);
+
 }
