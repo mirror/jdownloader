@@ -141,7 +141,6 @@ public abstract class ToolBarAction extends JDAction {
      * @param tt
      */
     public void setToolTipText(String tt) {
-
         putValue(AbstractAction.SHORT_DESCRIPTION, tt);
     }
 
@@ -159,12 +158,16 @@ public abstract class ToolBarAction extends JDAction {
         return type;
     }
 
-    /** if this method returns true, the action cannot be disabled
-     * @return
+    /**
+     * if this method returns true, the action cannot be disabled
      */
     public boolean force() {
-        // TODO Auto-generated method stub
         return false;
+    }
+
+    @Override
+    public String toString() {
+        return "[id = " + getID() + ", type = " + getType() + ", icon = " + getValue(ToolBarAction.IMAGE_KEY) + "]";
     }
 
 }

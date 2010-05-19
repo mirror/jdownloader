@@ -159,7 +159,7 @@ public class ConfigSidebar extends SideBarPanel implements ControlListener {
     }
 
     public void controlEvent(ControlEvent event) {
-        if (event.getID() == ControlEvent.CONTROL_SYSTEM_SHUTDOWN_PREPARED) {
+        if (event.getID() == ControlEvent.CONTROL_SYSTEM_EXIT) {
             saveCurrentState();
         }
     }

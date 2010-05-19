@@ -18,6 +18,7 @@ package jd.gui.swing.jdgui.views.settings.panels.gui;
 
 import java.awt.Component;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -37,6 +38,7 @@ import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.actions.CustomToolbarAction;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
+import jd.gui.swing.jdgui.actions.ToolBarAction.Types;
 import jd.gui.swing.jdgui.components.toolbar.MainToolBar;
 import jd.gui.swing.jdgui.components.toolbar.ToolBar;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
@@ -162,6 +164,7 @@ public class ToolbarController extends ConfigPanel {
      * @param actions2
      */
     public static ArrayList<String> setActions(ArrayList<ToolBarAction> actions2) {
+        String[] originalList = MainToolBar.getInstance().getList();
 
         Collections.sort(actions2, new Comparator<ToolBarAction>() {
             public int compare(ToolBarAction o1, ToolBarAction o2) {
@@ -170,9 +173,9 @@ public class ToolbarController extends ConfigPanel {
                 return ia < ib ? -1 : 1;
             }
         });
-        ArrayList<String> list = new ArrayList<String>();
 
-        list.addAll(GUIUtils.getConfig().getGenericProperty("TOOLBAR", ToolBar.DEFAULT_LIST));
+        ArrayList<String> list = new ArrayList<String>(GUIUtils.getConfig().getGenericProperty("TOOLBAR", ToolBar.DEFAULT_LIST));
+
         boolean resortRequired = false;
         for (Iterator<ToolBarAction> it = actions2.iterator(); it.hasNext();) {
             ToolBarAction a = it.next();
@@ -181,6 +184,10 @@ public class ToolbarController extends ConfigPanel {
                 resortRequired = true;
             }
             if (a instanceof CustomToolbarAction) continue;
+            if (a.getType() == Types.SEPARATOR) {
+                it.remove();
+                continue;
+            }
             if (a.getValue(ToolBarAction.IMAGE_KEY) == null) {
                 it.remove();
                 list.remove(a.getID());
@@ -192,10 +199,11 @@ public class ToolbarController extends ConfigPanel {
                 continue;
             }
         }
-        if (resortRequired) {
-            list = resort(list);
-        }
-        MainToolBar.getInstance().setList(list.toArray(new String[] {}));
+        if (resortRequired) list = resort(list);
+
+        String[] newList = list.toArray(new String[] {});
+        if (!Arrays.equals(originalList, newList)) MainToolBar.getInstance().setList(newList);
+
         return list;
     }
 
