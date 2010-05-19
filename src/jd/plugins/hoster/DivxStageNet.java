@@ -16,6 +16,8 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
@@ -32,6 +34,8 @@ public class DivxStageNet extends PluginForHost {
         br.setFollowRedirects(true);
         setBrowserExclusive();
     }
+
+    public String DLLINK = null;
 
     @Override
     public String getAGBLink() {
@@ -50,8 +54,21 @@ public class DivxStageNet extends PluginForHost {
         }
         if (br.containsHTML("The file is beeing transfered to our other servers")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
         if (br.containsHTML("This file no longer exists on our servers")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = (br.getRegex("<br>.*?<h4>(.*?)</h4>").getMatch(0));
+        String filename = br.getRegex("class=\"video_det\">.*?<strong>(.*?)</strong>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (!br.containsHTML("The file is beeing transfered to our other servers")) {
+            DLLINK = br.getRegex("video/divx\" src=\"(.*?)\"").getMatch(0);
+            if (DLLINK == null) DLLINK = br.getRegex("src\" value=\"(.*?)\"").getMatch(0);
+            if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            Browser br2 = br.cloneBrowser();
+            // In case the link redirects to the finallink
+            br2.setFollowRedirects(true);
+            URLConnectionAdapter con = br2.openGetConnection(DLLINK);
+            if (!con.getContentType().contains("html"))
+                downloadLink.setDownloadSize(con.getLongContentLength());
+            else
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (filename.contains("Untitled")) {
             downloadLink.setFinalFileName("Video " + System.currentTimeMillis() + ".avi");
         } else {
@@ -63,16 +80,8 @@ public class DivxStageNet extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (br.containsHTML("We need you to prove you're human")) {
-            Form IAmAHuman = br.getForm(0);
-            if (IAmAHuman == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            br.submitForm(IAmAHuman);
-        }
         if (br.containsHTML("The file is beeing transfered to our other servers")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-        String dllink = br.getRegex("video/divx\" src=\"(.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("src\" value=\"(.*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
         dl.startDownload();
     }
 

@@ -31,8 +31,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.PluginUtils;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-//divshareCom by pspzockerscene+Maniac
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "divshare.com" }, urls = { "http://[\\w\\.]*?divshare\\.com/(download|image|direct)/[0-9]+-.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "divshare.com" }, urls = { "http://[\\w\\.]*?divshare\\.com/(download|image|direct)/\\d+-.+" }, flags = { 0 })
 public class DivShareCom extends PluginForHost {
 
     public DivShareCom(PluginWrapper wrapper) {
@@ -58,7 +57,6 @@ public class DivShareCom extends PluginForHost {
 
         } else {
             String infolink = link.getDownloadURL();
-            br.getPage(infolink);
             // Check ob ein Passwort verlangt wird, wenn keins verlangt wird
             // wird der Link sofort geändert und geladen (unten ists dann
             // infolink2)!
@@ -84,12 +82,12 @@ public class DivShareCom extends PluginForHost {
                     link.setProperty("pass", passCode);
                 }
             }
-            String infolink2 = link.getDownloadURL().replaceAll("divshare.com/(download|image)", "divshare.com/download/launch");
+            String infolink2 = infolink.replaceAll("divshare\\.com/(download|image)", "divshare.com/download/launch");
             br.getPage(infolink2);
-            String dllink;
-            dllink = br.getRegex("refresh\" content=\"1; url=(.*?)\" />").getMatch(0);
+            String dllink = br.getRegex("If it doesn't, <a href=\"(http://.*?)\"").getMatch(0);
+            if (dllink == null) dllink = br.getRegex("\"(http://storagestart\\.divshare\\.com/launch\\.php\\?f=\\d+\\&s=[a-z0-9]+\"").getMatch(0);
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
             dl.startDownload();
 
         }
@@ -100,8 +98,6 @@ public class DivShareCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
-
-        br.setDebug(true);
         if (br.containsHTML("<title>DivShare - Password-Protected File</title>")) {
             Form pw = br.getForm(0);
             String password = null;
@@ -112,7 +108,6 @@ public class DivShareCom extends PluginForHost {
             if (password == null) password = PluginUtils.askPassword(this);
             pw.put("gallery_password", password);
             br.submitForm(pw);
-
             pw = br.getFormbyKey("gallery_password");
             if (pw != null) {
                 password = PluginUtils.askPassword(this);
@@ -126,35 +121,29 @@ public class DivShareCom extends PluginForHost {
                     getPluginConfig().setProperty("pass", password);
                     getPluginConfig().save();
                 }
-
             } else {
                 downloadLink.setProperty("pass", password);
                 getPluginConfig().setProperty("pass", password);
                 getPluginConfig().save();
             }
-
         }
         // handling für die links, die "direct" beinhalten (diese starten
         // sofort)
         if (downloadLink.getDownloadURL().contains("direct")) {
-
             String redirect = br.getRegex("If it doesn\\'t\\, <a href=\"(.*?)\">click here<").getMatch(0);
             br.setFollowRedirects(true);
             URLConnectionAdapter con = br.openGetConnection(redirect);
             con.disconnect();
             br.setFollowRedirects(false);
-
             if (con.isContentDisposition()) {
                 downloadLink.setFinalFileName(Plugin.getFileNameFromDispositionHeader(con.getHeaderField("Content-Disposition")).replace("_", "."));
                 downloadLink.setDownloadSize(con.getContentLength());
                 return AvailableStatus.TRUE;
             }
-
             if (br.containsHTML("This file is unavailable until")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             if (br.containsHTML("Sorry, we couldn't find this file.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             if (br.containsHTML("This file is secured by Divshare.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-
         } else {
             // handling für die anderen Links (mit "download" bzw. "image" im
             // Link
@@ -169,8 +158,6 @@ public class DivShareCom extends PluginForHost {
             Regex reg = br.getRegex("<b>File Size:</b> (.*?) <span class=\"tiny\">(.*?)</span><br />");
             String filesize = reg.getMatch(0) + " " + reg.getMatch(1);
             if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            // parameter.setName(filename.trim());
-
             downloadLink.setName(filename.replaceAll("(\\)|\\()", "").replace("_", "."));
             downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
         }
@@ -185,12 +172,8 @@ public class DivShareCom extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
-    @Override
-    /*
-     * public String getVersion() { return getVersion("$Revision$"); }
-     */
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return -1;
     }
 
 }

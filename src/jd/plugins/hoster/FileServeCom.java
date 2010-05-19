@@ -187,7 +187,7 @@ public class FileServeCom extends PluginForHost {
                 links.clear();
                 while (true) {
                     /*
-                     * we test 500 links at once - its tested with 500 links,
+                     * we test 100 links at once - its tested with 500 links,
                      * probably we could test even more at the same time...
                      */
                     if (index == urls.length || links.size() > 100) break;
