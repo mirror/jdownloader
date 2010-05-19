@@ -17,6 +17,7 @@
 package jd.gui.swing;
 
 import java.awt.Cursor;
+import java.awt.Font;
 import java.awt.event.ActionListener;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -24,11 +25,11 @@ import java.net.URL;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSeparator;
 
 import jd.config.ConfigGroup;
-import jd.controlling.JDLogger;
 import jd.gui.swing.components.JDUnderlinedText;
 import jd.gui.swing.components.linkbutton.JLink;
 import net.miginfocom.swing.MigLayout;
@@ -46,18 +47,21 @@ public final class Factory {
     }
 
     public static JPanel createHeader(final String name, final ImageIcon icon) {
-        final JPanel ret = new JPanel(new MigLayout("ins 0", "[]10[grow,fill]"));
-        final JLink label;
+        JLabel label;
         try {
-            ret.add(label = new JLink("<html><u><b>" + name + "</b></u></html>", icon, new URL("http://wiki.jdownloader.org/quickhelp/" + name.replace(" ", "-"))));
-            label.setIconTextGap(8);
-            label.setBorder(null);
+            label = new JLink("<html><u><b>" + name + "</b></u></html>", icon, new URL("http://wiki.jdownloader.org/quickhelp/" + name.replace(" ", "-")));
         } catch (MalformedURLException e) {
-            JDLogger.exception(e);
+            label = new JLabel(name);
+            label.setFont(label.getFont().deriveFont(Font.BOLD));
         }
+        label.setIcon(icon);
+        label.setIconTextGap(5);
+        label.setBorder(null);
+
+        final JPanel ret = new JPanel(new MigLayout("ins 0", "[]10[grow,fill]"));
+        ret.add(label);
         ret.add(new JSeparator());
         ret.setOpaque(false);
-        ret.setBackground(null);
         return ret;
     }
 
@@ -66,8 +70,8 @@ public final class Factory {
     }
 
     public static JButton createButton(final String string, final Icon i, final ActionListener listener) {
-        final JButton bt = (i != null) ? new JButton(string, i) : new JButton(string);
-
+        final JButton bt = new JButton(string);
+        if (i != null) bt.setIcon(i);
         bt.setContentAreaFilled(false);
         bt.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         bt.setFocusPainted(false);

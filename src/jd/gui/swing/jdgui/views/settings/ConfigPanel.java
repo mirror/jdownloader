@@ -89,7 +89,7 @@ public abstract class ConfigPanel extends SwitchPanel {
             currentGroup = group;
         }
 
-        String gapLeft = (group == null) ? "" : "gapleft 35,";
+        String gapLeft = (group == null) ? "" : "gapleft 37,";
         if (entry.getDecoration() != null) {
             switch (entry.getConfigEntry().getType()) {
             case ConfigContainer.TYPE_TEXTAREA:
