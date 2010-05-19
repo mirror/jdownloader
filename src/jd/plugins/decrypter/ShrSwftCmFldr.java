@@ -32,6 +32,8 @@ public class ShrSwftCmFldr extends PluginForDecrypt {
         super(wrapper);
     }
 
+    public String THEREPLACE = "6i96j4r5ffdjho45u2ddkuiqsdftjpj8.com";
+
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -39,16 +41,16 @@ public class ShrSwftCmFldr extends PluginForDecrypt {
         br.setCookie("http://www.shareswift.com", "lang", "english");
         br.getPage(parameter);
         if (br.containsHTML("You have to wait|Download File")) {
-            parameter = parameter.replaceFirst("shareswift\\.com", "shareswift.viajd");
+            parameter = parameter.replace("shareswift.com", THEREPLACE);
             decryptedLinks.add(createDownloadlink(parameter));
         } else {
             if (parameter.matches("http://[\\w\\.]*?shareswift\\.com/\\w+/.+")) {
                 String[] links = br.getRegex("<TR><TD><a href=\"(.*?)\" target=\"_blank\">").getColumn(0);
                 if (links.length == 0) return null;
                 for (String dl : links) {
-                    dl = dl.replaceFirst("shareswift\\.com", "shareswift.viajd");
+                    dl = dl.replace("shareswift.com", THEREPLACE);
                     decryptedLinks.add(createDownloadlink(dl));
-                }  
+                }
             }
         }
         return decryptedLinks;
