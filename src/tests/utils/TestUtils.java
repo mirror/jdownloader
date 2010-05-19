@@ -163,7 +163,7 @@ public abstract class TestUtils {
     }
 
     public static void mainInit() {
-        if (JDUtilities.getController() != null) return;
+        // if (JDUtilities.getController() != null) return;
 
         new GuiRunnable<Object>() {
             @Override
