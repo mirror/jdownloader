@@ -82,7 +82,7 @@ public class CursorManager {
     }
 
     public void setCursor() {
-        dispatchedEvents.peek().setCursor();
+        if (!dispatchedEvents.isEmpty()) dispatchedEvents.peek().setCursor();
     }
 
 }

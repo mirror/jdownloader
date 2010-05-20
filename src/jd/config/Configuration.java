@@ -43,6 +43,10 @@ public class Configuration extends SubConfiguration implements Serializable {
 
     public static final String PARAM_DO_CRC = "DO_CRC";
 
+    // // TODO!
+    // public static final String PARAM_REDOWNLOAD_AFTER_CRC_ERROR =
+    // "REDOWNLOAD_AFTER_CRC_ERROR";
+
     public static final String PARAM_DOWNLOAD_CONNECT_TIMEOUT = "DOWNLOAD_CONNECT_TIMEOUT_V3";
 
     public static final String PARAM_DOWNLOAD_DIRECTORY = "DOWNLOAD_DIRECTORY";
@@ -125,9 +129,6 @@ public class Configuration extends SubConfiguration implements Serializable {
 
     public static final String USE_SOCKS = "USE_SOCKS";
 
-    /**
-     * serialVersionUID
-     */
     private static final long serialVersionUID = -2709887320616014389L;
 
     public static final String PARAM_WEBUPDATE_AUTO_SHOW_CHANGELOG = "WEBUPDATE_AUTO_SHOW_CHANGELOG";
@@ -137,6 +138,7 @@ public class Configuration extends SubConfiguration implements Serializable {
     public static final String PARAM_RECONNECT_FAILED_COUNTER = "RECONNECT_FAILED_COUNTER";
 
     public static final String NAME = "jdownloaderconfig";
+
     /**
      * v4 or v5 socks
      */

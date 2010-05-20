@@ -20,11 +20,9 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.nio.channels.FileChannel;
 
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
-import jd.controlling.ByteBufferEntry;
 import jd.controlling.JDLogger;
 import jd.http.Request;
 import jd.nutils.JDHash;
@@ -38,49 +36,16 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 public class RAFDownload extends DownloadInterface {
-    class ChunkBuffer {
-        public ByteBufferEntry buffer;
-        public int chunkID;
-        public long chunkPosition;
-        public long position;
-
-        public ChunkBuffer(ByteBufferEntry buffer, long position, long chunkposition, int chunkid) {
-            this.buffer = buffer;
-            this.position = position;
-            chunkPosition = chunkposition;
-            chunkID = chunkid;
-        }
-    }
-
-    protected FileChannel[] channels;
-
-    protected long hdWritesPerSecond;
 
     private RandomAccessFile outputFile;
-
-    protected File[] partFiles;
-
-    protected long writeCount = 0;
-
-    protected long writeTimer = System.currentTimeMillis();
-
-    // public RAFDownload(PluginForHost plugin, DownloadLink downloadLink,
-    // HTTPConnection urlConnection) {
-    // super(plugin, downloadLink, urlConnection);
-    // writeType =
-    // JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty("USEWRITERTHREAD"
-    // , false);
-    // }
 
     public RAFDownload(PluginForHost plugin, DownloadLink downloadLink, Request request) throws IOException, PluginException {
         super(plugin, downloadLink, request);
     }
 
-    // @Override
+    @Override
     protected void onChunksReady() {
-        logger.finer("onChunksReady");
-        //
-        logger.info("Close connections if the are not closed yet");
+        logger.info("Close connections if they are not closed yet");
         for (Chunk c : this.getChunks()) {
             c.closeConnections();
         }
@@ -88,7 +53,6 @@ public class RAFDownload extends DownloadInterface {
         try {
             outputFile.close();
         } catch (Exception e) {
-            // JDLogger.getLogger().log(Level.SEVERE,"Exception occurred",e);
         }
         /*
          * workaround for old Idle bug when one chunk got idle but download is
@@ -100,107 +64,91 @@ public class RAFDownload extends DownloadInterface {
             downloadLink.getLinkStatus().setStatusText(null);
             logger.finest("no errors : rename");
             if (!new File(downloadLink.getFileOutput() + ".part").renameTo(new File(downloadLink.getFileOutput()))) {
-
                 logger.severe("Could not rename file " + new File(downloadLink.getFileOutput() + ".part") + " to " + downloadLink.getFileOutput());
                 error(LinkStatus.ERROR_LOCAL_IO, JDL.L("system.download.errors.couldnotrename", "Could not rename partfile"));
-
             }
-            DownloadLink sfv;
-            if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_DO_CRC, false) && (sfv = downloadLink.getFilePackage().getSFV()) != null) {
-                if (sfv.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
+
+            /*
+             * CRC/SFV Check
+             */
+            if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_DO_CRC, true)) {
+                DownloadLink sfv = downloadLink.getFilePackage().getSFV();
+                if (sfv != null && sfv.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
                     downloadLink.getLinkStatus().setStatusText(JDL.LF("system.download.doCRC2", "CRC-Check running(%s)", "CRC32"));
                     downloadLink.requestGuiUpdate();
 
-                    long crc = JDUtilities.getCRC(new File(downloadLink.getFileOutput()));
-
+                    String crc = Long.toHexString(JDUtilities.getCRC(new File(downloadLink.getFileOutput()))).toLowerCase();
                     String sfvText = JDIO.readFileToString(new File(sfv.getFileOutput()));
                     if (sfvText != null && sfvText.toLowerCase().contains(new File(downloadLink.getFileOutput()).getName().toLowerCase())) {
-                        String[] l = Regex.getLines(sfvText);
-                        boolean c = false;
-                        for (String line : l) {
-                            // logger.info(line + " - " +
-                            // Long.toHexString(crc).toUpperCase());
-                            if (line.trim().endsWith(Long.toHexString(crc).toUpperCase()) || line.trim().endsWith(Long.toHexString(crc).toLowerCase())) {
-                                c = true;
-                                logger.info("CRC CHECK SUCCESS");
+                        boolean success = false;
+                        for (String line : Regex.getLines(sfvText)) {
+                            if (line.trim().toLowerCase().endsWith(crc)) {
+                                success = true;
                                 break;
                             }
                         }
-                        if (c) {
-                            downloadLink.getLinkStatus().setStatusText(JDL.LF("system.download.doCRC2.success", "CRC-Check OK(%s)", "CRC32"));
-                            downloadLink.requestGuiUpdate();
-                        } else {
-                            downloadLink.getLinkStatus().removeStatus(LinkStatus.FINISHED);
-                            downloadLink.getLinkStatus().setStatusText(JDL.LF("system.download.doCRC2.failed", "CRC-Check FAILED(%s)", "CRC32"));
-                            downloadLink.getLinkStatus().setValue(LinkStatus.VALUE_FAILED_HASH);
-                            downloadLink.requestGuiUpdate();
-                            error(LinkStatus.ERROR_DOWNLOAD_FAILED, JDL.LF("system.download.doCRC2.failed", "CRC-Check FAILED(%s)", "CRC32"));
-
-                        }
-
+                        hashCheckFinished("CRC32", success);
                     } else {
-
                         downloadLink.getLinkStatus().setStatusText(null);
                         downloadLink.requestGuiUpdate();
                     }
                 }
 
-            }
-            if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_DO_CRC, false)) {
-
                 String linkHash = null;
                 String localHash = null;
                 String hashType = null;
-
                 if (downloadLink.getMD5Hash() != null) {
+                    downloadLink.getLinkStatus().setStatusText(JDL.LF("system.download.doCRC2", "CRC-Check running(%s)", "MD5"));
+                    downloadLink.requestGuiUpdate();
+
                     localHash = JDHash.getMD5(new File(downloadLink.getFileOutput()));
                     linkHash = downloadLink.getMD5Hash();
                     hashType = "MD5";
-
                 }
                 if (downloadLink.getSha1Hash() != null) {
+                    downloadLink.getLinkStatus().setStatusText(JDL.LF("system.download.doCRC2", "CRC-Check running(%s)", "SHA1"));
+                    downloadLink.requestGuiUpdate();
+
                     localHash = JDHash.getSHA1(new File(downloadLink.getFileOutput()));
                     linkHash = downloadLink.getSha1Hash();
                     hashType = "SHA1";
                 }
 
                 if (hashType != null) {
-                    downloadLink.getLinkStatus().setStatusText(JDL.LF("system.download.doCRC2", "CRC-Check running(%s)", hashType));
-                    downloadLink.requestGuiUpdate();
-                    if (localHash.equalsIgnoreCase(linkHash)) {
-                        downloadLink.getLinkStatus().setStatusText(JDL.LF("system.download.doCRC2.success", "CRC-Check OK(%s)", hashType));
-                        downloadLink.requestGuiUpdate();
-                    } else {
-                        downloadLink.getLinkStatus().removeStatus(LinkStatus.FINISHED);
-                        downloadLink.getLinkStatus().setStatusText(JDL.LF("system.download.doCRC2.failed", "CRC-Check FAILED(%s)", hashType));
-                        downloadLink.getLinkStatus().setValue(LinkStatus.VALUE_FAILED_HASH);
-                        downloadLink.requestGuiUpdate();
-                        error(LinkStatus.ERROR_DOWNLOAD_FAILED, JDL.LF("system.download.doCRC2.failed", "CRC-Check FAILED(%s)", hashType));
-                    }
-
+                    hashCheckFinished(hashType, localHash.equalsIgnoreCase(linkHash));
                 }
-
             }
         } catch (Exception e) {
             JDLogger.exception(e);
             addException(e);
         }
-
     }
 
-    // @Override
+    private void hashCheckFinished(String hashType, boolean success) {
+        logger.info(hashType + "-Check: " + (success ? "ok" : "failed"));
+        if (success) {
+            downloadLink.getLinkStatus().setStatusText(JDL.LF("system.download.doCRC2.success", "CRC-Check OK(%s)", hashType));
+            downloadLink.requestGuiUpdate();
+        } else {
+            String error = JDL.LF("system.download.doCRC2.failed", "CRC-Check FAILED(%s)", hashType);
+            downloadLink.getLinkStatus().removeStatus(LinkStatus.FINISHED);
+            downloadLink.getLinkStatus().setStatusText(error);
+            downloadLink.getLinkStatus().setValue(LinkStatus.VALUE_FAILED_HASH);
+            downloadLink.requestGuiUpdate();
+            error(LinkStatus.ERROR_DOWNLOAD_FAILED, error);
+        }
+    }
+
+    @Override
     protected void setupChunks() throws Exception {
         try {
-
             if (isResume() && checkResumabled()) {
                 logger.finer("Setup resume");
                 this.setupResume();
-
             } else {
                 logger.finer("Setup virgin download");
                 this.setupVirginStart();
             }
-
         } catch (Exception e) {
             try {
                 logger.info("CLOSE HD FILE");
@@ -210,9 +158,7 @@ public class RAFDownload extends DownloadInterface {
             }
             addException(e);
             throw e;
-
         }
-
     }
 
     private void setupVirginStart() throws FileNotFoundException {
@@ -231,15 +177,12 @@ public class RAFDownload extends DownloadInterface {
                 // restlichen chunks angepasst
                 partSize = (fileSize - connection.getLongContentLength()) / (getChunkNum() - 1);
             }
-
         }
         if (partSize <= 0) {
             logger.warning("Could not get Filesize.... reset chunks to 1");
             setChunkNum(1);
         }
         logger.finer("Start Download in " + getChunkNum() + " chunks. Chunksize: " + partSize);
-
-        // downloadLink.setChunksProgress(new int[chunkNum]);
 
         createOutputChannel();
         downloadLink.setChunksProgress(new long[chunkNum]);
@@ -261,7 +204,6 @@ public class RAFDownload extends DownloadInterface {
         for (int i = start; i < getChunkNum(); i++) {
             if (i == getChunkNum() - 1) {
                 chunk = new Chunk(rangePosition, -1, connection, this);
-
             } else {
                 chunk = new Chunk(rangePosition, rangePosition + partSize - 1, connection, this);
                 rangePosition = rangePosition + partSize;
@@ -269,7 +211,6 @@ public class RAFDownload extends DownloadInterface {
             logger.finer("Setup chunk " + i + ": " + chunk);
             addChunk(chunk);
         }
-        // logger.info("Total splitted size: "+total);
 
     }
 
@@ -290,11 +231,9 @@ public class RAFDownload extends DownloadInterface {
 
         for (int i = 0; i < getChunkNum(); i++) {
             if (i == getChunkNum() - 1) {
-
                 chunk = new Chunk(downloadLink.getChunksProgress()[i] == 0 ? 0 : downloadLink.getChunksProgress()[i] + 1, -1, connection, this);
                 chunk.setLoaded((downloadLink.getChunksProgress()[i] - i * parts + 1));
             } else {
-
                 chunk = new Chunk(downloadLink.getChunksProgress()[i] == 0 ? 0 : downloadLink.getChunksProgress()[i] + 1, (i + 1) * parts - 1, connection, this);
                 chunk.setLoaded((downloadLink.getChunksProgress()[i] - i * parts + 1));
             }
@@ -304,7 +243,7 @@ public class RAFDownload extends DownloadInterface {
 
     }
 
-    // @Override
+    @Override
     protected boolean writeChunkBytes(Chunk chunk) {
         try {
             synchronized (outputFile) {
@@ -339,7 +278,6 @@ public class RAFDownload extends DownloadInterface {
      * @throws IOException
      * @throws PluginException
      */
-
     public static DownloadInterface download(DownloadLink downloadLink, Request request, boolean b, int i) throws IOException, PluginException {
         /* disable gzip, because current downloadsystem cannot handle it correct */
         request.getHeaders().put("Accept-Encoding", "");
@@ -348,10 +286,8 @@ public class RAFDownload extends DownloadInterface {
         dl.setResume(b);
         if (i == 0) {
             dl.setChunkNum(SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
-
         } else {
             dl.setChunkNum(i < 0 ? Math.min(i * -1, SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2)) : i);
-
         }
 
         return dl;
@@ -361,4 +297,5 @@ public class RAFDownload extends DownloadInterface {
     public static DownloadInterface download(DownloadLink downloadLink, Request request) throws Exception {
         return download(downloadLink, request, false, 1);
     }
+
 }

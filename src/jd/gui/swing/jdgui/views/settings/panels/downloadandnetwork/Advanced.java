@@ -52,22 +52,23 @@ public class Advanced extends ConfigPanel {
     @Override
     protected ConfigContainer setupContainer() {
 
-        ConfigEntry ce;
-        ConfigEntry conditionEntry2;
+        ConfigEntry ce, cond;
 
-        // Extended Tab
+        ConfigContainer container = new ConfigContainer();
 
-        ConfigContainer extended = new ConfigContainer();
+        container.setGroup(new ConfigGroup(JDL.L("gui.config.download.ipcheck", "Reconnection IP-Check"), "gui.images.network"));
 
-        extended.setGroup(new ConfigGroup(JDL.L("gui.config.download.ipcheck", "Reconnection IP-Check"), "gui.images.network"));
-
-        extended.addEntry(conditionEntry2 = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, Configuration.PARAM_GLOBAL_IP_DISABLE, JDL.L("gui.config.download.ipcheck.disable", "Disable IP-Check")) {
+        container.addEntry(cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, Configuration.PARAM_GLOBAL_IP_DISABLE, JDL.L("gui.config.download.ipcheck.disable", "Disable IP-Check")) {
             private static final long serialVersionUID = 1L;
-            // assures that the user sees the warning only once
+            /**
+             * assures that the user sees the warning only once
+             */
             private boolean warned = true;
 
-            // This method gets called when the user clicks the checkbox. It
-            // gets also invoked at startup not only on user IO.
+            /**
+             * This method gets called when the user clicks the checkbox. It
+             * gets also invoked at startup not only on user IO.
+             */
             @Override
             public void valueChanged(Object newValue) {
                 // get Current Databasevalue
@@ -82,36 +83,45 @@ public class Advanced extends ConfigPanel {
                 }
             }
         });
-        conditionEntry2.setDefaultValue(false);
+        cond.setDefaultValue(false);
 
-        extended.addEntry(conditionEntry2 = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, Configuration.PARAM_GLOBAL_IP_BALANCE, JDL.L("gui.config.download.ipcheck.balance", "Use balanced IP-Check")));
-        conditionEntry2.setDefaultValue(true);
+        container.addEntry(cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, Configuration.PARAM_GLOBAL_IP_BALANCE, JDL.L("gui.config.download.ipcheck.balance", "Use balanced IP-Check")));
+        cond.setDefaultValue(true);
 
-        extended.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, Configuration.PARAM_GLOBAL_IP_CHECK_SITE, JDL.L("gui.config.download.ipcheck.website", "Check IP online")));
+        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, Configuration.PARAM_GLOBAL_IP_CHECK_SITE, JDL.L("gui.config.download.ipcheck.website", "Check IP online")));
         ce.setDefaultValue(JDL.L("gui.config.download.ipcheck.website.default", "Please enter Website for IPCheck here"));
-        ce.setEnabledCondidtion(conditionEntry2, false);
+        ce.setEnabledCondidtion(cond, false);
 
-        extended.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, Configuration.PARAM_GLOBAL_IP_PATTERN, JDL.L("gui.config.download.ipcheck.regex", "IP Filter RegEx")));
+        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, Configuration.PARAM_GLOBAL_IP_PATTERN, JDL.L("gui.config.download.ipcheck.regex", "IP Filter RegEx")));
         ce.setDefaultValue(JDL.L("gui.config.download.ipcheck.regex.default", "Please enter Regex for IPCheck here"));
-        ce.setEnabledCondidtion(conditionEntry2, false);
+        ce.setEnabledCondidtion(cond, false);
 
-        extended.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, Configuration.PARAM_GLOBAL_IP_MASK, JDL.L("gui.config.download.ipcheck.mask", "Allowed IPs")));
+        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, Configuration.PARAM_GLOBAL_IP_MASK, JDL.L("gui.config.download.ipcheck.mask", "Allowed IPs")));
         ce.setDefaultValue("\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).)" + "{3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b");
-        ce.setEnabledCondidtion(conditionEntry2, false);
+        ce.setEnabledCondidtion(cond, false);
 
-        extended.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, "EXTERNAL_IP_CHECK_INTERVAL2", JDL.L("gui.config.download.ipcheck.externalinterval2", "External IP Check Interval [min]"), 10, 240, 10));
+        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, "EXTERNAL_IP_CHECK_INTERVAL2", JDL.L("gui.config.download.ipcheck.externalinterval2", "External IP Check Interval [min]"), 10, 240, 10));
         ce.setDefaultValue(10);
-        ce.setEnabledCondidtion(conditionEntry2, false);
+        ce.setEnabledCondidtion(cond, false);
 
-        extended.setGroup(new ConfigGroup(JDL.L("gui.config.download.write", "File writing"), "gui.images.save"));
+        container.setGroup(new ConfigGroup(JDL.L("gui.config.download.write", "File writing"), "gui.images.save"));
 
-        extended.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, Configuration.PARAM_DO_CRC, JDL.L("gui.config.download.crc", "SFV/CRC check when possible")));
+        container.addEntry(cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, Configuration.PARAM_DO_CRC, JDL.L("gui.config.download.crc", "SFV/CRC check when possible")));
+        cond.setDefaultValue(true);
 
-        ce.setDefaultValue(true);
+        // // TODO!
+        // container.addEntry(ce = new
+        // ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config,
+        // Configuration.PARAM_REDOWNLOAD_AFTER_CRC_ERROR, JDL.L(JDL_PREFIX +
+        // "redownloadAfterCRCError", "Redownload file when check fails")));
+        // ce.setDefaultValue(false);
+        // ce.setEnabledCondidtion(cond, true);
+        //
+        // container.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
 
-        extended.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, ByteBufferController.MAXBUFFERSIZE, JDL.L("gui.config.download.buffersize2", "Max. Buffersize[KB]"), 500, 2000, 100));
+        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, ByteBufferController.MAXBUFFERSIZE, JDL.L("gui.config.download.buffersize2", "Max. Buffersize[KB]"), 500, 2000, 100));
         ce.setDefaultValue(500);
-        return extended;
+        return container;
     }
 
 }

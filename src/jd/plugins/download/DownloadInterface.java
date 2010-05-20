@@ -1332,7 +1332,7 @@ abstract public class DownloadInterface {
                  * most cases the file is okay! WONTFIX because new
                  * downloadsystem is on its way
                  */
-                logger.severe("loaded more than requested. filesize: " + fileSize + " loaded: " + totaleLinkBytesLoaded + ". This might be  a logic chunk setup error!");
+                logger.severe("Loaded more than requested. Filesize: " + fileSize + " Loaded: " + totaleLinkBytesLoaded + ". This might be a logic chunk setup error!");
                 if (!linkStatus.isFailed()) {
                     linkStatus.setStatus(LinkStatus.FINISHED);
                 }
@@ -1528,45 +1528,23 @@ abstract public class DownloadInterface {
             return false;
         }
         if (preDownloadCheckFailed(downloadLink)) return false;
-        // if (this.maxBytes > 0) {
-        // logger.finer("Nibble feature active: " + maxBytes + " rest chunks to
-        // 1");
-        // chunkNum = 1;
-        // }
         try {
             linkStatus.addStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
             setupChunks();
             waitForChunks();
             onChunksReady();
             linkStatus.removeStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
-            if (!handleErrors()) {
-                return false;
-            } else {
-                return true;
-            }
-        }
-
-        catch (Exception e) {
+            return handleErrors();
+        } catch (Exception e) {
             if (e instanceof FileNotFoundException) {
                 this.error(LinkStatus.ERROR_LOCAL_IO, JDL.LF("download.error.message.localio", "Could not write to file: %s", e.getMessage()));
             } else {
                 JDLogger.exception(e);
             }
             handleErrors();
-            // if (plugin.getCurrentStep().getStatus() !=
-            // PluginStep.STATUS_ERROR) {
-            // // logger.log(Level.SEVERE,"Exception occurred",e);
-            // linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
-            //
-            // plugin.getCurrentStep().setParameter(JDUtilities.
-            // convertExceptionReadable(e));
-            // plugin.getCurrentStep().setStatus(PluginStep.STATUS_ERROR);
-            //
-            // }
             linkStatus.removeStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
             return false;
         }
-
     }
 
     /**

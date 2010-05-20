@@ -352,7 +352,7 @@ public class LinkStatus implements Serializable {
         if (hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
             final long speed = downloadLink.getDownloadSpeed();
             String chunkString = "";
-            if (dli != null && dli.getChunkNum() > 1) chunkString = "(" + dli.getChunksDownloading() + "/" + dli.getChunkNum() + ")";
+            if (dli != null && dli.getChunkNum() > 1) chunkString = " (" + dli.getChunksDownloading() + "/" + dli.getChunkNum() + ")";
 
             if (speed > 0) {
                 if (downloadLink.getDownloadSize() < 0) {
@@ -368,7 +368,7 @@ public class LinkStatus implements Serializable {
         }
 
         if (downloadLink.isAvailabilityStatusChecked() && !downloadLink.isAvailable()) return JDL.L("gui.download.onlinecheckfailed", "[Not available]");
-        if (this.errorMessage != null) return errorMessage;
+        if (errorMessage != null) return errorMessage;
         if (statusText != null) return statusText;
         return "";
     }

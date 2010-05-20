@@ -43,50 +43,47 @@ import jd.utils.locale.JDL;
 public class Uploadedto extends PluginForHost {
     private static final UploadedtoLinkObserver LINK_OBSERVER = new UploadedtoLinkObserver();
 
-    static class UploadedtoLinkObserver {
+    static class UploadedtoLinkObserver extends Thread {
+
         private ArrayList<DownloadLink> list;
         private Object lock = new Object();
-        private Thread th;
 
         public UploadedtoLinkObserver() {
+            super("UploadedCRCObserver");
             list = new ArrayList<DownloadLink>();
-            th = new Thread("UploadedCRCObserver") {
-                public void run() {
-                    while (true) {
-                        try {
-                            Thread.sleep(10000);
-                        } catch (InterruptedException e) {
-                            // TODO Auto-generated catch block
-                            e.printStackTrace();
-                        }
-                        synchronized (lock) {
-                            ArrayList<DownloadLink> unregister = new ArrayList<DownloadLink>();
-                            for (DownloadLink link : list) {
-                                LinkStatus ls = link.getLinkStatus();
-                                if (ls.hasStatus(LinkStatus.ERROR_DOWNLOAD_FAILED) && ls.getValue() == LinkStatus.VALUE_FAILED_HASH) {
-                                    String pat = Pattern.quote(JDL.L("plugins.optional.jdunrar.crcerrorin", "Extract: failed (CRC in %s)"));
-                                    pat = pat.replace("%s", "\\E(.*?)\\Q");
-                                    if (pat == null) continue;
-                                    String rg = new Regex(ls.getErrorMessage(), pat).getMatch(0);
-                                    if (rg == null) continue;
-                                    if (rg.equalsIgnoreCase(link.getName())) {
 
-                                        collectCRCLinks(link, false);
-                                        unregister.add(link);
-                                    }
+            if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_DO_CRC, true)) {
+                start();
+            }
+        }
 
-                                }
-
+        @Override
+        public void run() {
+            ArrayList<DownloadLink> unregister = new ArrayList<DownloadLink>();
+            while (true) {
+                try {
+                    Thread.sleep(10000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                synchronized (lock) {
+                    for (DownloadLink link : list) {
+                        LinkStatus ls = link.getLinkStatus();
+                        if (ls.hasStatus(LinkStatus.ERROR_DOWNLOAD_FAILED) && ls.getValue() == LinkStatus.VALUE_FAILED_HASH) {
+                            String pat = Pattern.quote(JDL.L("plugins.optional.jdunrar.crcerrorin", "Extract: failed (CRC in %s)"));
+                            pat = pat.replace("%s", "\\E(.*?)\\Q");
+                            if (pat == null) continue;
+                            String rg = new Regex(ls.getErrorMessage(), pat).getMatch(0);
+                            if (rg == null) continue;
+                            if (rg.equalsIgnoreCase(link.getName())) {
+                                collectCRCLinks(link, false);
+                                unregister.add(link);
                             }
-                            list.removeAll(unregister);
-
                         }
                     }
+                    list.removeAll(unregister);
+                    unregister.clear();
                 }
-
-            };
-            if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_DO_CRC, false)) {
-                th.start();
             }
         }
 
@@ -95,27 +92,16 @@ public class Uploadedto extends PluginForHost {
                 list.remove(downloadLink);
                 list.add(downloadLink);
             }
-
         }
+
     }
 
     public Uploadedto(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://uploaded.to/ref?id=70683&r");
         setMaxConnections(20);
-
-        // config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER,
-        // getPluginConfig(), "PREMIUMCHUNKS",
-        // JDLocale.L("plugins.hoster.uploadedto.chunks",
-        // "Premium connections # (>1 causes higher traffic)"), 1,
-        // 20).setDefaultValue(1).setStep(1));
     }
 
-    /**
-     * Korrigiert den Downloadlink in ein einheitliches Format
-     * 
-     * @param link
-     */
     @Override
     public void correctDownloadLink(DownloadLink link) {
         String url = link.getDownloadURL();
@@ -269,7 +255,6 @@ public class Uploadedto extends PluginForHost {
             br.setDebug(true);
             br.getPage("http://uploaded.to/rarerrors?auth=" + Encoding.urlEncode(id) + "&server=" + Encoding.urlEncode(server) + "&flag=" + (b ? 1 : 0));
         } catch (IOException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
     }
