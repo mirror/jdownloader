@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sourceforge.net" }, urls = { "http://[\\w\\.]*?(sourceforge\\.net/projects/(.*?/files/extras/.*?/download|[a-zA-Z0-9]+)|downloads\\.sourceforge\\.net/.+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sourceforge.net" }, urls = { "http://[\\w\\.]*?(sourceforge\\.net/projects/(.*?/files/extras/.*?/download|.+)|downloads\\.sourceforge\\.net/.+)" }, flags = { 0 })
 public class SourceForgeNet extends PluginForDecrypt {
 
     public SourceForgeNet(PluginWrapper wrapper) {
@@ -46,7 +46,8 @@ public class SourceForgeNet extends PluginForDecrypt {
                 link = br.getRegex("Please use this <a href=\"(.*?)\"").getMatch(0);
                 if (link == null) link = br.getRegex("\"(http://downloads\\.sourceforge\\.net/project/.*?/extras/.*?/.*?use_mirror=.*?)\"").getMatch(0);
             } else {
-                link = br.getRegex("pd-dload editable\">.*?button button-dload dload \\{ url: '(.*?)'").getMatch(0);
+                link = br.getRegex("Please use this <a href=\"(http://.*?)\"").getMatch(0);
+                if (link == null) link = br.getRegex("\"(http://downloads\\.sourceforge.net/project/.*?\\?use_mirror=.*?)\"").getMatch(0);
             }
             if (link == null) return null;
             br.setFollowRedirects(false);
