@@ -21,7 +21,6 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
 
 import jd.controlling.JDLogger;
 
@@ -34,22 +33,15 @@ public class HttpServer extends Thread {
     private int port;
     private boolean uselocalhost = false;
 
- 
-
     public HttpServer(int port, Handler handler) throws IOException {
-        super("HTTP-Server");
-        this.handler = handler;
-        this.port = port;
-        this.uselocalhost = false;
-       
+        this(port, handler, false);
     }
 
     public HttpServer(int port, Handler handler, boolean localhost) throws IOException {
         super("HTTP-Server");
-        this.handler = handler;
         this.port = port;
+        this.handler = handler;
         this.uselocalhost = localhost;
-       
     }
 
     public void sstop() throws IOException {
@@ -57,6 +49,7 @@ public class HttpServer extends Thread {
         run = null;
     }
 
+    @Override
     public void start() {
         running = true;
         try {
@@ -90,12 +83,13 @@ public class HttpServer extends Thread {
         return localhost;
     }
 
+    @Override
     public void run() {
         Thread thisThread = Thread.currentThread();
         while (run == thisThread && running) {
             if (ssocket == null) return;
             try {
-              
+
                 Socket csocket = ssocket.accept();
                 addSocket(csocket);
 
@@ -113,7 +107,7 @@ public class HttpServer extends Thread {
     }
 
     private void addSocket(Socket csocket) {
-        RequestHandler mhandler = new RequestHandler(csocket, handler);      
+        RequestHandler mhandler = new RequestHandler(csocket, handler);
         mhandler.start();
 
     }
@@ -121,4 +115,5 @@ public class HttpServer extends Thread {
     public boolean isStarted() {
         return running;
     }
+
 }

@@ -20,28 +20,17 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.util.logging.Logger;
 
-import javax.imageio.ImageIO;
-
-import jd.controlling.JDLogger;
-import jd.utils.JDUtilities;
+import jd.controlling.DownloadInformations;
+import jd.controlling.DownloadWatchDog;
+import jd.controlling.DownloadWatchDog.STATE;
+import jd.nutils.JDImage;
 
 import com.apple.eawt.Application;
 
-public class MacDockIconChanger {
+public class MacDockIconChanger extends Thread implements Runnable {
 
-    private static MacDockIconChanger INSTANCE = null;
-
-    public static MacDockIconChanger getInstance() {
-        if (INSTANCE == null) {
-            INSTANCE = new MacDockIconChanger();
-        }
-        return INSTANCE;
-    }
-
-    private BufferedImage dockImage = null;
+    private final BufferedImage dockImage = JDImage.getImage("logo/jd_logo_128_128");
 
     private final Color backgroundColor = Color.WHITE;
 
@@ -49,22 +38,43 @@ public class MacDockIconChanger {
 
     private final Color fontColor = Color.BLACK;
 
-    private static final Logger LOG = JDLogger.getLogger();
+    private final DownloadInformations downloadInfo;
 
-    private MacDockIconChanger() {
-        loadDockImage();
+    private boolean interrupt = false;
+
+    public MacDockIconChanger() {
+        super("Improved Mac OSX Dock Updater");
+
+        downloadInfo = DownloadInformations.getInstance();
     }
 
-    private void loadDockImage() {
-        try {
-            File dockImageFile = JDUtilities.getResourceFile("jd/img/logo/jd_logo_128_128.png");
-            dockImage = ImageIO.read(dockImageFile);
-        } catch (Exception e) {
-            LOG.info("Can't load Dock Image!");
+    @Override
+    public void run() {
+        while (DownloadWatchDog.getInstance().getDownloadStatus() == STATE.RUNNING) {
+            if (interrupt) break;
+
+            updateDockIcon();
+
+            try {
+                Thread.sleep(2000);
+            } catch (Exception e) {
+                break;
+            }
         }
     }
 
-    public void updateDockIcon(int percent, int count) {
+    public void stopUpdating() {
+        interrupt = true;
+    }
+
+    private void updateDockIcon() {
+        downloadInfo.updateInformations();
+
+        updateDockIconImage((int) downloadInfo.getPercent());
+        updateDockIconBadge(DownloadWatchDog.getInstance().getDownloadssincelastStart());
+    }
+
+    public void updateDockIconImage(int percentCompleted) {
         Graphics g = dockImage.getGraphics();
 
         // Draw background
@@ -73,19 +83,22 @@ public class MacDockIconChanger {
 
         // Draw foreground
         g.setColor(this.foregroundColor);
-        int width = generateWidth(percent);
+        int width = generateWidth(percentCompleted);
         g.fillRect(10, 49, width, 30);
 
         // Draw string
         g.setColor(this.fontColor);
         Font font = new Font("Arial", Font.BOLD, 15);
         g.setFont(font);
-        g.drawString(percent + " %", 52, 68);
+        g.drawString(percentCompleted + " %", 52, 68);
 
         g.dispose();
 
         Application.getApplication().setDockIconImage(dockImage);
-        Application.getApplication().setDockIconBadge(count + "");
+    }
+
+    private void updateDockIconBadge(int completedDownloadCount) {
+        Application.getApplication().setDockIconBadge(completedDownloadCount + "");
     }
 
     private int generateWidth(int percent) {

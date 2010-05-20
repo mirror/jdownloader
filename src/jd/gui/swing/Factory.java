@@ -52,9 +52,9 @@ public final class Factory {
             label = new JLink("<html><u><b>" + name + "</b></u></html>", icon, new URL("http://wiki.jdownloader.org/quickhelp/" + name.replace(" ", "-")));
         } catch (MalformedURLException e) {
             label = new JLabel(name);
+            label.setIcon(icon);
             label.setFont(label.getFont().deriveFont(Font.BOLD));
         }
-        label.setIcon(icon);
         label.setIconTextGap(5);
         label.setBorder(null);
 

@@ -19,8 +19,6 @@ package jd.plugins.optional.improveddock;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
-import jd.controlling.DownloadInformations;
-import jd.controlling.DownloadWatchDog;
 import jd.event.ControlEvent;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.plugins.OptionalPlugin;
@@ -29,24 +27,23 @@ import jd.plugins.PluginOptional;
 @OptionalPlugin(rev = "$Revision$", defaultEnabled = true, id = "improvedmacosxdock", interfaceversion = 5, minJVM = 1.6, windows = false, linux = false)
 public class ImrovedMacOSXDock extends PluginOptional {
 
-    private Thread updateThread;
-
-    private DownloadInformations downloadInfo;
+    private MacDockIconChanger updateThread;
 
     public ImrovedMacOSXDock(PluginWrapper wrapper) {
         super(wrapper);
-        downloadInfo = DownloadInformations.getInstance();
-        updateDockIcon();
     }
 
     @Override
     public boolean initAddon() {
-
         return true;
     }
 
     @Override
     public void onExit() {
+        if (updateThread != null) {
+            updateThread.stopUpdating();
+            updateThread = null;
+        }
     }
 
     @Override
@@ -56,37 +53,21 @@ public class ImrovedMacOSXDock extends PluginOptional {
 
     @Override
     public void onControlEvent(ControlEvent event) {
-
         switch (event.getID()) {
-
         case ControlEvent.CONTROL_DOWNLOAD_START:
-            updateThread = new Thread("Improved Mac OSX Dock Updater") {
-                @Override
-                public void run() {
-                    while (true) {
-                        if (DownloadWatchDog.getInstance().getDownloadStatus() != DownloadWatchDog.STATE.RUNNING) break;
-
-                        updateDockIcon();
-
-                        try {
-                            Thread.sleep(1000);
-                        } catch (Exception e) {
-                        }
-                    }
-                }
-            };
-            updateThread.start();
+            if (updateThread == null) {
+                updateThread = new MacDockIconChanger();
+                updateThread.start();
+            }
             break;
-
         case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
         case ControlEvent.CONTROL_DOWNLOAD_STOP:
-            if (updateThread != null) updateThread.interrupt();
+            if (updateThread != null) {
+                updateThread.stopUpdating();
+                updateThread = null;
+            }
             break;
         }
     }
 
-    private void updateDockIcon() {
-        downloadInfo.updateInformations();
-        MacDockIconChanger.getInstance().updateDockIcon((int) downloadInfo.getPercent(), DownloadWatchDog.getInstance().getDownloadssincelastStart());
-    }
 }
