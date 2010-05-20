@@ -71,7 +71,8 @@ public class FileServeCom extends PluginForHost {
         setBrowserExclusive();
         br.setFollowRedirects(true);
         br.postPage("http://fileserve.com/login.php", "loginUserName=" + Encoding.urlEncode(account.getUser()) + "&loginUserPassword=" + Encoding.urlEncode(account.getPass()) + "&autoLogin=on&loginFormSubmit=Login");
-        String isPremium = br.getRegex("<h(4|5)>Account Type</h(4|5)>\r\n[ ]+<h(5|3)>(Premium)</h(5|3)>").getMatch(3);
+        String isPremium = br.getRegex("<h5>Account type:</h5>[\r\n ]+<h3>(Premium)</h3>").getMatch(0);
+        if (isPremium == null) isPremium = br.getRegex("<h4>Account Type</h4></td> <td><h5 class=\"inline\">(Premium)([ ]+)?</h5>").getMatch(0);
         if (br.getCookie("http://fileserve.com", "cookie") == null || isPremium == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
