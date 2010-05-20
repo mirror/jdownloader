@@ -152,10 +152,13 @@ public class HostPluginWrapper extends PluginWrapper implements JDLabelContainer
         GraphicsDevice gd = ge.getDefaultScreenDevice();
         GraphicsConfiguration gc = gd.getDefaultConfiguration();
         final BufferedImage image = gc.createCompatibleImage(w, h, Transparency.BITMASK);
-        Graphics2D g = image.createGraphics();
-        String dummy = getHost();
-        if (dummy.length() < 2) dummy = getClassName().toUpperCase();
+
+        String classname = getClassName();
+        String dummy = cleanString(classname.substring(classname.lastIndexOf('.')));
+        if (dummy.length() < 2) dummy = getHost().toUpperCase();
         if (dummy.length() > 2) dummy = dummy.substring(0, 2);
+
+        Graphics2D g = image.createGraphics();
         g.setFont(new Font("Arial", Font.BOLD, size));
         int ww = g.getFontMetrics().stringWidth(dummy);
         g.setColor(Color.WHITE);
@@ -166,8 +169,8 @@ public class HostPluginWrapper extends PluginWrapper implements JDLabelContainer
         return image;
     }
 
-    public String cleanString(String host) {
-        return host.replaceAll("[\\-\\.]", "");
+    private String cleanString(String host) {
+        return host.replaceAll("[a-z0-9\\-\\.]", "");
     }
 
     public void setFavIcon(ImageIcon icon) {
