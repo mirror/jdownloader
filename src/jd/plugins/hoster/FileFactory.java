@@ -94,14 +94,21 @@ public class FileFactory extends PluginForHost {
     public void handleFree0(DownloadLink parameter) throws Exception {
         checkErrors();
         String urlWithFilename = getUrl();
-        if (urlWithFilename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (urlWithFilename == null) {
+            logger.warning("getUrl is broken!");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         br.getPage(urlWithFilename);
         checkErrors();
         String downloadUrl = getUrl();
-        String wait = br.getRegex("id=\"startWait\" value=\"(\\d+)\"").getMatch(0);
-        if (wait == null || downloadUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        long waittime = Long.parseLong(wait) * 1000l;
-        if (waittime > 60000l) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waittime); }
+        if (downloadUrl == null) {
+            logger.warning("getUrl is broken!");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        String wait = br.getRegex("class=\"countdown\">(\\d+)</span>").getMatch(0);
+        long waittime = 60 * 1000l;
+        if (wait != null) waittime = Long.parseLong(wait) * 1000l;
+        if (waittime > 60000l) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waittime);
         waittime += 1000;
         sleep(waittime, parameter);
         br.setFollowRedirects(true);
@@ -125,7 +132,9 @@ public class FileFactory extends PluginForHost {
         }
     }
 
-    public String getUrl() {
+    public String getUrl() throws IOException {
+        String hashpage = br.getRegex("(/file/getLink\\.js.*?)\"").getMatch(0);
+        if (hashpage != null) br.getPage("http://www.filefactory.com" + hashpage);
         String varsFound[][] = br.getRegex("var([/ a-zA-Z0-9]+)=[ ]*'(.*?)'[ ]*;").getMatches();
         HashMap<String, String> vars = new HashMap<String, String>();
         String urlVar = null;

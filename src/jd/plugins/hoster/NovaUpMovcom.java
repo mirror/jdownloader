@@ -38,61 +38,65 @@ public class NovaUpMovcom extends PluginForHost {
         return "http://novamov.com/terms.html";
     }
 
+    String VIDEOREGEX = "\"file\",\"(.*?)\"";
+
     @Override
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
         br.setFollowRedirects(false);
         String infolink = link.getDownloadURL();
         br.getPage(infolink);
+        String dllink = null;
         // Handling für Videolinks
         if (link.getDownloadURL().contains("video")) {
-            String dllink = br.getRegex("\"file\",\"(.*?)\"").getMatch(0);
-            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            if (!dllink.contains("http")) dllink = "http://www.novaup.com" + dllink;
-            link.setFinalFileName(null);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-            dl.startDownload();
-
+            dllink = br.getRegex(VIDEOREGEX).getMatch(0);
         } else {
             // handling für "nicht"-video Links
-            String dllink = br.getRegex("> <strong><a href=\"(.*?)\"><span class=\"dwl_novaup").getMatch(0);
+            dllink = br.getRegex("class= \"click_download\"><a href=\"(http://.*?)\"").getMatch(0);
+            if (dllink == null) dllink = br.getRegex("\"(http://e\\d+\\.novaup\\.com/dl/[a-z0-9]+/[a-z0-9]+/.*?)\"").getMatch(0);
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            if (!dllink.contains("http")) dllink = "http://www.novaup.com" + dllink;
-            link.setFinalFileName(null);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-            dl.startDownload();
+            if (!dllink.contains("http://")) dllink = "http://novaup.com" + dllink;
         }
-
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
         br.getPage(parameter.getDownloadURL());
+        if (br.containsHTML("This file no longer exists on our servers")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("The file is beeing transfered to our other servers. This may take few minutes.")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
         // onlinecheck für Videolinks
         if (parameter.getDownloadURL().contains("video")) {
-            if (br.containsHTML("This file no longer exists on our servers.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            if (br.containsHTML("The file is beeing transfered to our other servers. This may take few minutes.")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-            String filename1 = br.getRegex("<h3>(.*?)</h3>").getMatch(0);
-            if (filename1 == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            String dllink = br.getRegex("\"file\",\"(.*?)\"").getMatch(0);
-
+            String dllink = br.getRegex(VIDEOREGEX).getMatch(0);
+            String filename = br.getRegex("<h3>(.*?)</h3").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("name=\"title\" content=\"Watch(.*?)online\"").getMatch(0);
+                if (filename == null) {
+                    filename = br.getRegex("<title>Watch(.*?)online \\| NovaMov - Free and reliable flash video hosting</title>").getMatch(0);
+                }
+            }
+            if (dllink == null || filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             URLConnectionAdapter con = br.openGetConnection(dllink);
             try {
                 parameter.setDownloadSize(con.getContentLength());
-                String filename = filename1 + ".flv";
-                parameter.setName(filename.trim());
+                filename = filename.trim() + ".flv";
+                parameter.setFinalFileName(filename);
             } finally {
                 con.disconnect();
             }
 
         } else {
             // Onlinecheck für "nicht"-video Links
-            if (br.containsHTML("This file no longer exists on our servers.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            if (br.containsHTML("The file is beeing transfered to our other servers. This may take few minutes.")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-            String filename = br.getRegex("/([^/]{1,})/?\"><span class=\"dwl_novaup\">Click here to download</span>").getMatch(0);
-            String filesize = br.getRegex("strong>File size : </strong>(.*?)</td>").getMatch(0);
-            if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            String filename = br.getRegex("<h3><a href=\"#\"><h3>(.*?)</h3></a></h3>").getMatch(0);
+            if (filename == null) filename = br.getRegex("style=\"text-indent:0;\"><h3>(.*?)</h3></h5>").getMatch(0);
+            String filesize = br.getRegex("strong>File size :</strong>(.*?)</div>").getMatch(0);
+            if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             parameter.setName(filename.trim());
             parameter.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "")));
         }

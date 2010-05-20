@@ -69,7 +69,7 @@ public class DivxStageNet extends PluginForHost {
             else
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (filename.contains("Untitled")) {
+        if (filename.trim().equals("Untitled")) {
             downloadLink.setFinalFileName("Video " + System.currentTimeMillis() + ".avi");
         } else {
             downloadLink.setFinalFileName(filename + ".avi");
