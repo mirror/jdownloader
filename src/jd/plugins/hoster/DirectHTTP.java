@@ -18,6 +18,8 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
@@ -39,8 +41,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.parser.HTMLParser;
 
 /**
  * TODO: Remove after next big update of core to use the public static methods!
@@ -194,7 +194,11 @@ public class DirectHTTP extends PluginForHost {
                 /* if this page does redirect via js/html, try to follow */
                 br.followConnection();
                 /* search urls */
-                ArrayList<String> follow = HTMLParser.findUrls(br.toString());
+                /*
+                 * TODO: Change to org.appwork.utils.parser.HTMLParser.findUrls
+                 * with next major-udpate
+                 */
+                ArrayList<String> follow = findUrls(br.toString());
                 /*
                  * if we already tried htmlRedirect or not exactly one link
                  * found, throw File not available
@@ -420,6 +424,53 @@ public class DirectHTTP extends PluginForHost {
             br.submitForm(form);
             return br;
         }
+    }
+
+    /**
+     * TODO: Remove with next major-update!
+     */
+    public static ArrayList<String> findUrls(String source) {
+        /* TODO: better parsing */
+        /* remove tags!! */
+        final ArrayList<String> ret = new ArrayList<String>();
+        try {
+
+            for (String link : new Regex(source, "((https?|ftp):((//)|(\\\\\\\\))+[\\w\\d:#@%/;$()~_?\\+-=\\\\\\.&]*)(\n|\r|$|<|\")").getColumn(0)) {
+                try {
+                    new URL(link);
+                    if (!ret.contains(link)) ret.add(link);
+                } catch (MalformedURLException e) {
+
+                }
+            }
+        } catch (Exception e) {
+            JDLogger.exception(e);
+        }
+        return removeDuplicates(ret);
+    }
+
+    /**
+     * TODO: Remove with next major-update!
+     */
+    public static ArrayList<String> removeDuplicates(ArrayList<String> links) {
+        ArrayList<String> tmplinks = new ArrayList<String>();
+        if (links == null || links.size() == 0) return tmplinks;
+        for (String link : links) {
+            if (link.contains("...")) {
+                String check = link.substring(0, link.indexOf("..."));
+                String found = link;
+                for (String link2 : links) {
+                    if (link2.startsWith(check) && !link2.contains("...")) {
+                        found = link2;
+                        break;
+                    }
+                }
+                if (!tmplinks.contains(found)) tmplinks.add(found);
+            } else {
+                tmplinks.add(link);
+            }
+        }
+        return tmplinks;
     }
 
 }

@@ -8,7 +8,7 @@ import jd.gui.swing.jdgui.events.ContextMenu;
 import jd.gui.swing.jdgui.events.QuickHelp;
 
 /**
- * @author Based on the <a
+ * @author Based on <a
  *         href="http://www.javaspecialists.eu/archive/Issue075.html">The Java
  *         Specialists' Newsletter</a>
  */
