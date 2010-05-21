@@ -29,7 +29,6 @@ import jd.captcha.pixelgrid.Captcha;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.gui.UserIO;
-import jd.utils.JDUtilities;
 
 public class CaptchaController {
 
@@ -55,7 +54,7 @@ public class CaptchaController {
      * @return
      */
     private boolean hasMethod() {
-        return (JDUtilities.getConfiguration() != null && !SubConfiguration.getConfig("JAC").getBooleanProperty(Configuration.PARAM_CAPTCHA_JAC_DISABLE, false)) && JACMethod.hasMethod(methodname);
+        return (SubConfiguration.getConfig("JAC") != null && !SubConfiguration.getConfig("JAC").getBooleanProperty(Configuration.PARAM_CAPTCHA_JAC_DISABLE, false)) && JACMethod.hasMethod(methodname);
     }
 
     public String getCode(final int flag) {

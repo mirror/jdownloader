@@ -16,17 +16,14 @@ import javax.swing.ImageIcon;
 import jd.captcha.utils.GifDecoder;
 import jd.config.SubConfiguration;
 import jd.http.Browser;
-import jd.parser.Regex;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import net.sf.image4j.codec.ico.ICODecoder;
 
 public class FavIconController extends SubConfiguration implements Runnable {
-    /**
-     * 
-     */
+
     private static final long serialVersionUID = -1455068138306163872L;
-    public static final Object LOCK = new Object();
+    private static final Object LOCK = new Object();
     private final static HashMap<String, ArrayList<FavIconRequestor>> queue = new HashMap<String, ArrayList<FavIconRequestor>>();
     private ArrayList<String> failed = new ArrayList<String>();
 
@@ -207,8 +204,7 @@ public class FavIconController extends SubConfiguration implements Runnable {
     }
 
     private BufferedImage downloadImage(String url) {
-        String ext = new Regex(url, ".+(\\..+)").getMatch(0);
-        File tmp = JDUtilities.getResourceFile("tmp/" + host + ext, true);
+        File tmp = JDUtilities.getResourceFile("tmp/" + host, true);
         if (tmp.exists()) tmp.delete();
         tmp.deleteOnExit();
         try {
@@ -222,7 +218,6 @@ public class FavIconController extends SubConfiguration implements Runnable {
             }
             return ret;
         } catch (Throwable e) {
-            // JDLogger.exception(e);
         }
         return null;
     }
@@ -235,4 +230,5 @@ public class FavIconController extends SubConfiguration implements Runnable {
         }
         JDController.releaseDelayExit(id);
     }
+
 }
