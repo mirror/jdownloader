@@ -41,7 +41,7 @@ public class ConfigPanelGeneral extends ConfigPanel {
     }
 
     public static String getIconKey() {
-        return "gui.images.findandreplace";
+        return "gui.images.configuration";
     }
 
     private static final long serialVersionUID = 3383448498625377495L;

@@ -54,7 +54,7 @@ public class JDRemoteControl extends PluginOptional {
 
     @Override
     public String getIconKey() {
-        return "gui.images.network";
+        return "gui.images.server";
     }
 
     @Override

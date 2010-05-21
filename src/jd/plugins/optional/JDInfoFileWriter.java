@@ -137,4 +137,10 @@ public class JDInfoFileWriter extends PluginOptional {
             logger.severe("JDInfoFileWriter: can not write to: " + dest.getAbsolutePath());
         }
     }
+
+    @Override
+    public String getIconKey() {
+        return "gui.images.list";
+    }
+
 }

@@ -57,11 +57,11 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
     private Timer updateAsync;
 
     public static String getTitle() {
-        return JDL.L(JDL_PREFIX + "title", "Premium");
+        return JDL.L(JDL_PREFIX + "title2", "Accounts");
     }
 
     public static String getIconKey() {
-        return "gui.images.premium";
+        return "gui.images.config.premium";
     }
 
     public Premium() {
