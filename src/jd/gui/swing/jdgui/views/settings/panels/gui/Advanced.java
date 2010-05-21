@@ -40,7 +40,7 @@ public class Advanced extends ConfigPanel {
     }
 
     public static String getIconKey() {
-        return "gui.images.container";
+        return "gui.images.configuration";
     }
 
     public Advanced() {

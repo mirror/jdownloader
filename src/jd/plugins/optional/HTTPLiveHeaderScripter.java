@@ -290,7 +290,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
 
     @Override
     public String getIconKey() {
-        return "gui.images.config.reconnect";
+        return "gui.images.reconnect_settings";
     }
 
     private void initGUI() {

@@ -29,8 +29,6 @@ import java.util.ArrayList;
 
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
-import javax.swing.JMenu;
-import javax.swing.JMenuBar;
 import javax.swing.JPanel;
 import javax.swing.ToolTipManager;
 
@@ -58,13 +56,7 @@ import jd.gui.swing.jdgui.components.toolbar.MainToolBar;
 import jd.gui.swing.jdgui.components.toolbar.ToolBar;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.interfaces.View;
-import jd.gui.swing.jdgui.menu.AboutMenu;
-import jd.gui.swing.jdgui.menu.AddLinksMenu;
-import jd.gui.swing.jdgui.menu.AddonsMenu;
-import jd.gui.swing.jdgui.menu.CleanupMenu;
-import jd.gui.swing.jdgui.menu.FileMenu;
-import jd.gui.swing.jdgui.menu.JStartMenu;
-import jd.gui.swing.jdgui.menu.PremiumMenu;
+import jd.gui.swing.jdgui.menu.JDMenuBar;
 import jd.gui.swing.jdgui.views.downloads.DownloadView;
 import jd.gui.swing.jdgui.views.linkgrabber.LinkGrabberPanel;
 import jd.gui.swing.jdgui.views.linkgrabber.LinkgrabberView;
@@ -89,7 +81,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
 
     private static final long serialVersionUID = 1048792964102830601L;
     private static JDGui INSTANCE;
-    private JMenuBar menuBar;
+    private JDMenuBar menuBar;
     private JDStatusBar statusBar;
 
     private MainTabbedPane mainTabbedPane;
@@ -251,25 +243,8 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         }
     }
 
-    private JMenuBar createMenuBar() {
-        JMenuBar ret = new JMenuBar();
-
-        JMenu edit = new JMenu(JDL.L("jd.gui.skins.simple.simplegui.menubar.linksmenu", "Links"));
-
-        edit.add(new AddLinksMenu());
-        edit.add(new CleanupMenu());
-
-        ret.add(new FileMenu());
-        ret.add(edit);
-        JStartMenu m;
-        ret.add(m = PremiumMenu.getInstance());
-        m.setIcon(null);
-        ret.add(m = AddonsMenu.getInstance());
-        m.setIcon(null);
-        ret.add(m = new AboutMenu());
-        m.setIcon(null);
-
-        return ret;
+    private JDMenuBar createMenuBar() {
+        return new JDMenuBar();
     }
 
     /**

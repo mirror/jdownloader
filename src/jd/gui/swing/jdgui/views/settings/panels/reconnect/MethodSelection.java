@@ -246,7 +246,7 @@ public class MethodSelection extends ConfigPanel implements ActionListener {
         container.setGroup(new ConfigGroup(getTitle(), getIconKey()));
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMPONENT, tabbed, "growy, pushy"));
 
-        container.setGroup(new ConfigGroup(JDL.L("gui.config.reconnect.test", "Showcase"), "gui.images.config.network_local"));
+        container.setGroup(new ConfigGroup(JDL.L("gui.config.reconnect.test", "Showcase"), "gui.images.reconnect_selection"));
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMPONENT, p, ""));
 
         return container;

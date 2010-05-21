@@ -31,7 +31,6 @@ import javax.swing.Timer;
 
 import jd.HostPluginWrapper;
 import jd.Main;
-import jd.config.ConfigGroup;
 import jd.config.Configuration;
 import jd.controlling.AccountController;
 import jd.controlling.AccountControllerEvent;
@@ -48,7 +47,6 @@ import jd.nutils.Formatter;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.PluginForHost;
-import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
@@ -293,7 +291,6 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
                 }
                 popup.show(tpb, e.getPoint().x, e.getPoint().y);
             } else {
-                tpb.getPlugin().getConfig().setGroup(new ConfigGroup(tpb.getPlugin().getHost(), JDTheme.II("gui.images.taskpanes.premium", 24, 24)));
                 UserIF.getInstance().requestPanel(UserIF.Panels.CONFIGPANEL, tpb.getPlugin().getConfig());
             }
         }

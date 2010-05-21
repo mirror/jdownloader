@@ -30,7 +30,7 @@ public class CleanupDownloads extends ToolBarAction {
     private static final long serialVersionUID = -7185006215784212976L;
 
     public CleanupDownloads() {
-        super("action.remove.links", "gui.images.delete");
+        super("action.remove.links", "gui.images.remove_ok");
     }
 
     @Override

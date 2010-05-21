@@ -29,7 +29,7 @@ public class CleanupPackages extends ToolBarAction {
     private static final long serialVersionUID = -7185006215784212976L;
 
     public CleanupPackages() {
-        super("action.remove.packages", "gui.images.delete");
+        super("action.remove.packages", "gui.images.remove_ok");
     }
 
     @Override

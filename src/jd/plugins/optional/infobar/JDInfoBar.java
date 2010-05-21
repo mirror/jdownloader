@@ -145,7 +145,7 @@ public class JDInfoBar extends PluginOptional {
 
     @Override
     public String getIconKey() {
-        return "gui.images.help";
+        return "gui.images.addons.infobar";
     }
 
 }

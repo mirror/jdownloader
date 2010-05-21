@@ -23,6 +23,7 @@ import java.beans.PropertyChangeListener;
 
 import javax.swing.AbstractAction;
 import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.Timer;
 
@@ -45,7 +46,7 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-public class PremiumMenu extends JStartMenu implements ActionListener, AccountControllerListener {
+public class PremiumMenu extends JMenu implements ActionListener, AccountControllerListener {
 
     private static final long serialVersionUID = 5075413754334671773L;
 
@@ -53,15 +54,16 @@ public class PremiumMenu extends JStartMenu implements ActionListener, AccountCo
 
     private JMenuItem config;
 
-    private Timer Update_Async;
+    private Timer updateAsync;
 
     private ToolBarAction tba;
 
     private PremiumMenu() {
-        super("gui.menu.premium", "gui.images.taskpanes.premium");
-        Update_Async = new Timer(250, this);
-        Update_Async.setInitialDelay(250);
-        Update_Async.setRepeats(false);
+        super(JDL.L("gui.menu.premium", "Premium"));
+
+        updateAsync = new Timer(250, this);
+        updateAsync.setInitialDelay(250);
+        updateAsync.setRepeats(false);
         initAction();
         updateMenu();
         AccountController.getInstance().addListener(this);
@@ -142,7 +144,7 @@ public class PremiumMenu extends JStartMenu implements ActionListener, AccountCo
     }
 
     public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == Update_Async) {
+        if (e.getSource() == updateAsync) {
             new GuiRunnable<Object>() {
                 @Override
                 public Object runSave() {
@@ -166,7 +168,7 @@ public class PremiumMenu extends JStartMenu implements ActionListener, AccountCo
         switch (event.getID()) {
         case AccountControllerEvent.ACCOUNT_ADDED:
         case AccountControllerEvent.ACCOUNT_REMOVED:
-            Update_Async.restart();
+            updateAsync.restart();
             break;
         }
     }

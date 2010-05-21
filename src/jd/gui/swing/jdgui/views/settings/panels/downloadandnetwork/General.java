@@ -56,7 +56,7 @@ public class General extends ConfigPanel {
         ConfigEntry ce, cond;
 
         /* DESTINATION PATH */
-        container.setGroup(new ConfigGroup(JDL.L("gui.config.general.downloaddirectory", "Download directory"), "gui.images.package_opened"));
+        container.setGroup(new ConfigGroup(JDL.L("gui.config.general.downloaddirectory", "Download directory"), "gui.images.userhome"));
 
         container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, JDUtilities.getConfiguration(), Configuration.PARAM_DOWNLOAD_DIRECTORY, ""));
         ce.setDefaultValue(JDUtilities.getResourceFile("downloads").getAbsolutePath());

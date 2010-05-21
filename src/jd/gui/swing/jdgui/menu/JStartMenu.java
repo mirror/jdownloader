@@ -26,7 +26,8 @@ public class JStartMenu extends JMenu {
     private static final long serialVersionUID = -7833871754471332953L;
 
     public JStartMenu(String name, String icon) {
-        super(JDL.L(name, null));
+        super(JDL.L(name, name));
+
         this.setIcon(JDTheme.II(icon, 16, 16));
     }
 

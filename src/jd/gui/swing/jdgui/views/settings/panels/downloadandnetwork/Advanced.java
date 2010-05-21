@@ -36,7 +36,7 @@ public class Advanced extends ConfigPanel {
     }
 
     public static String getIconKey() {
-        return "gui.images.network";
+        return "gui.images.preferences";
     }
 
     private SubConfiguration config;

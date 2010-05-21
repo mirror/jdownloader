@@ -20,6 +20,7 @@ import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.Collections;
 
+import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 
 import jd.OptionalPluginWrapper;
@@ -28,14 +29,15 @@ import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.gui.swing.menu.Menu;
 import jd.utils.JDTheme;
+import jd.utils.locale.JDL;
 
-public class AddonsMenu extends JStartMenu {
+public class AddonsMenu extends JMenu {
 
     private static final long serialVersionUID = 1019851981865519325L;
     private static AddonsMenu INSTANCE = null;
 
     private AddonsMenu() {
-        super("gui.menu.addons", "gui.images.config.addons");
+        super(JDL.L("gui.menu.addons", "Addons"));
 
         updateMenu();
     }
