@@ -72,6 +72,7 @@ gui.images.package_closed            = default/package-x-generic_close
 gui.images.package_closed_error      = default/package-x-generic_close_failed
 gui.images.package_opened            = default/package-x-generic
 gui.images.package_open_error        = default/package-x-generic_failed
+gui.images.downloadorder             = default/edit-redo
 gui.images.edit                      = default/edit-clear
 gui.images.networkerror              = default/network-error
 gui.images.removefailed              = default/network-error
