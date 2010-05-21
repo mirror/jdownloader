@@ -147,6 +147,7 @@ public class JDHJSplit extends PluginOptional {
         m.setSelected(this.getPluginConfig().getBooleanProperty("ACTIVATED", true));
         menu.add(new MenuAction(Types.SEPARATOR));
         menu.add(m = new MenuAction("optional.hjsplit.menu.extract.singlefils", 21));
+        m.setIcon("gui.images.addons.merge");
         m.setActionListener(this);
         return menu;
     }
