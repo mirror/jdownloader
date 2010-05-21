@@ -359,7 +359,7 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
             txtPathLabel.setText(downloadLink.getFileOutput());
             lblType.setIcon(downloadLink.getIcon());
             if (downloadLink.getPlugin() != null) {
-                lblHoster.setIcon(downloadLink.getPlugin().getHosterIcon());
+                lblHoster.setIcon(downloadLink.getPlugin().getHosterIconScaled());
             } else {
                 lblHoster.setIcon(null);
             }

@@ -120,19 +120,22 @@ public abstract class Plugin implements ActionListener {
     public Plugin(final PluginWrapper wrapper) {
         this.br = new Browser();
         this.wrapper = wrapper;
-        config = new ConfigContainer(getHost()) {
-            /**
-             * 
-             */
-            private static final long serialVersionUID = -30947319320765343L;
 
-            @Override
-            public ImageIcon getIcon() {
-                /* we dont have to catch icon until it is really needed */
-                if (wrapper instanceof HostPluginWrapper) return ((HostPluginWrapper) wrapper).getIcon();
-                return null;
-            }
-        };
+        if (wrapper instanceof HostPluginWrapper) {
+            config = new ConfigContainer(getHost()) {
+                private static final long serialVersionUID = -30947319320765343L;
+
+                /**
+                 * we dont have to catch icon until it is really needed
+                 */
+                @Override
+                public ImageIcon getIcon() {
+                    return ((HostPluginWrapper) wrapper).getIcon();
+                }
+            };
+        } else {
+            config = new ConfigContainer(getHost());
+        }
     }
 
     public PluginWrapper getWrapper() {

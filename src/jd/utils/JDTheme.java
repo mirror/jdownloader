@@ -53,7 +53,7 @@ public final class JDTheme {
 
     public static ArrayList<String> getThemeIDs() {
         final File dir = JDUtilities.getResourceFile(THEME_DIR);
-        if (!dir.exists()) { return null; }
+        if (!dir.exists()) return null;
 
         final File[] files = dir.listFiles(new JDFileFilter(null, ".icl", false));
         final ArrayList<String> ret = new ArrayList<String>();
@@ -70,7 +70,7 @@ public final class JDTheme {
             setTheme("default");
         }
 
-        if (data.containsKey(key)) { return Encoding.UTF8Decode(data.get(key)); }
+        if (data.containsKey(key)) return Encoding.UTF8Decode(data.get(key));
         LOG.warning("Key not found: " + key + " (" + def + ")");
 
         if (defaultData.containsKey(key)) {
@@ -155,7 +155,7 @@ public final class JDTheme {
     public static Image getImage(final String string, final int width, final int height) {
         if (string != null) {
             final BufferedImage img = JDImage.getImage(string + "_" + width + "_" + height);
-            if (img != null) { return img; }
+            if (img != null) return img;
             try {
                 return JDImage.getScaledImage(JDImage.getImage(string), width, height);
             } catch (Exception e) {
@@ -175,8 +175,6 @@ public final class JDTheme {
         if (!file.exists()) {
             LOG.severe("Theme " + themeID + " not installed, switch to default theme");
             themeID = "default";
-            // return;
-
         }
         currentTheme = themeID;
         data = new HashMap<String, String>();

@@ -198,7 +198,7 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
                                 }
                                 if (!enabled) continue;
                                 bars[ii].setVisible(true);
-                                bars[ii].setIcon(plugin.getHosterIcon());
+                                bars[ii].setIcon(plugin.getHosterIconScaled());
                                 bars[ii].setAlignmentX(RIGHT_ALIGNMENT);
                                 bars[ii].setPlugin(plugin);
 

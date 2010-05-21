@@ -16,7 +16,7 @@ import javax.swing.ImageIcon;
 import jd.captcha.utils.GifDecoder;
 import jd.config.SubConfiguration;
 import jd.http.Browser;
-import jd.utils.JDTheme;
+import jd.nutils.JDImage;
 import jd.utils.JDUtilities;
 import net.sf.image4j.codec.ico.ICODecoder;
 
@@ -32,7 +32,7 @@ public class FavIconController extends SubConfiguration implements Runnable {
         if (host == null || requestor == null) return null;
         synchronized (LOCK) {
             /* check if we already have a favicon? */
-            Image image = JDTheme.getImage("favicons/" + host, 16, -1);
+            Image image = JDImage.getImage("favicons/" + host);
             if (image != null) return new ImageIcon(image);
         }
         /* add to queue list */
@@ -131,12 +131,11 @@ public class FavIconController extends SubConfiguration implements Runnable {
                         File imageFile = JDUtilities.getResourceFile("jd/img/favicons/" + host + ".png", true);
                         ImageIO.write(favicon, "png", imageFile);
                         /* load and scale it again */
-                        Image image = JDTheme.getImage("favicons/" + host, 16, -1);
+                        Image image = JDImage.getImage("favicons/" + host);
                         if (image != null) {
                             /* refresh icons for all queued plugins */
                             for (FavIconRequestor requestor : requestors) {
-                                ImageIcon icon = new ImageIcon(image);
-                                requestor.setFavIcon(icon);
+                                requestor.setFavIcon(new ImageIcon(image));
                             }
                         }
                     } catch (Exception e) {

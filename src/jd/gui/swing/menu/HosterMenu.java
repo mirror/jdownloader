@@ -51,7 +51,7 @@ public class HosterMenu extends Menu {
             if (!wrapper.isEnabled()) continue;
             plugin = wrapper.getPlugin();
             pluginPopup = new JMenu(wrapper.getHost());
-            pluginPopup.setIcon(plugin.getHosterIcon());
+            pluginPopup.setIcon(plugin.getHosterIconScaled());
             for (MenuAction next : plugin.createMenuitems()) {
                 mi = getJMenuItem(next);
                 if (mi == null) {
@@ -89,7 +89,7 @@ public class HosterMenu extends Menu {
 
             plugin = wrapper.getPlugin();
             pluginPopup = new JMenu(wrapper.getHost());
-            pluginPopup.setIcon(plugin.getHosterIcon());
+            pluginPopup.setIcon(plugin.getHosterIconScaled());
             for (MenuAction next : plugin.createMenuitems()) {
                 mi = getJMenuItem(next);
                 if (mi == null) {

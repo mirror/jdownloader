@@ -28,13 +28,11 @@ import javax.swing.ImageIcon;
 
 import jd.HostPluginWrapper;
 import jd.PluginWrapper;
-import jd.config.ConfigGroup;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.controlling.CaptchaController;
 import jd.controlling.DownloadController;
-import jd.controlling.FavIconRequestor;
 import jd.controlling.JDLogger;
 import jd.controlling.SingleDownloadController;
 import jd.gui.UserIF;
@@ -54,12 +52,12 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 /**
- * Dies ist die Oberklasse für alle Plugins, die von einem Anbieter Dateien
- * herunterladen können
+ * Dies ist die Oberklasse fuer alle Plugins, die von einem Anbieter Dateien
+ * herunterladen koennen
  * 
  * @author astaldo
  */
-public abstract class PluginForHost extends Plugin implements FavIconRequestor {
+public abstract class PluginForHost extends Plugin {
 
     public PluginForHost(final PluginWrapper wrapper) {
         super(wrapper);
@@ -113,9 +111,7 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
             }
             downloadController.fireDownloadLinkUpdate(link);
 
-            // Use unscaled icon as ImageIcon to avoid freezes!
-            ImageIcon ii = JDImage.getImageIcon("favicons/" + getHost());
-            final String cc = new CaptchaController(getHost(), ii, method, file, defaultValue, explain).getCode(flag);
+            final String cc = new CaptchaController(getHost(), getHosterIconUnscaled(), method, file, defaultValue, explain).getCode(flag);
             if (cc == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             return cc;
         } finally {
@@ -240,8 +236,6 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
             menuList.add(new MenuAction(Types.SEPARATOR));
         }
 
-        if (config != null) config.setGroup(new ConfigGroup(getHost(), getHosterIcon()));
-
         if (premiumAction == null) {
             premiumAction = new MenuAction("accounts", 0);
             premiumAction.setType(Types.CONTAINER);
@@ -316,8 +310,8 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
     }
 
     /**
-     * Hier werden Treffer für Downloadlinks dieses Anbieters in diesem Text
-     * gesucht. Gefundene Links werden dann in einem ArrayList zurückgeliefert
+     * Hier werden Treffer fuer Downloadlinks dieses Anbieters in diesem Text
+     * gesucht. Gefundene Links werden dann in einem ArrayList zurueckgeliefert
      * 
      * @param data
      *            Ein Text mit beliebig vielen Downloadlinks dieses Anbieters
@@ -356,24 +350,24 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
         return links;
     }
 
-    /** überschreiben falls die downloadurl erst rekonstruiert werden muss */
+    /** ueberschreiben falls die downloadurl erst rekonstruiert werden muss */
     public void correctDownloadLink(final DownloadLink link) throws Exception {
     }
 
     /**
-     * Holt Informationen zu einem Link. z.B. dateigröße, Dateiname,
-     * verfügbarkeit etc.
+     * Holt Informationen zu einem Link. z.B. dateigroeße, Dateiname,
+     * verfuegbarkeit etc.
      * 
      * @param parameter
-     * @return true/false je nach dem ob die Datei noch online ist (verfügbar)
+     * @return true/false je nach dem ob die Datei noch online ist (verfuegbar)
      * @throws IOException
      */
     public abstract AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception;
 
     /**
-     * Gibt einen String mit den Dateiinformationen zurück. Die Defaultfunktion
-     * gibt nur den dateinamen zurück. Allerdings Sollte diese Funktion
-     * überschrieben werden. So kann ein Plugin zusatzinfos zu seinen Links
+     * Gibt einen String mit den Dateiinformationen zurueck. Die Defaultfunktion
+     * gibt nur den dateinamen zurueck. Allerdings Sollte diese Funktion
+     * ueberschrieben werden. So kann ein Plugin zusatzinfos zu seinen Links
      * anzeigen (Nach dem aufruf von getFileInformation()
      * 
      * @param downloadLink
@@ -549,7 +543,7 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
     }
 
     /**
-     * Stellt das Plugin in den Ausgangszustand zurück (variablen intialisieren
+     * Stellt das Plugin in den Ausgangszustand zurueck (variablen intialisieren
      * etc)
      */
     public abstract void reset();
@@ -642,7 +636,8 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
     }
 
     /**
-     * Gibt die Url zurück, unter welcher ein PremiumAccount gekauft werden kann
+     * Gibt die Url zurueck, unter welcher ein PremiumAccount gekauft werden
+     * kann
      * 
      * @return
      */
@@ -669,11 +664,15 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
     }
 
     public ImageIcon getHosterIcon() {
-        return getWrapper().getIcon();
+        return null;
     }
 
-    public void setFavIcon(ImageIcon icon) {
-        config.setIcon(icon);
+    public ImageIcon getHosterIconUnscaled() {
+        return getWrapper().getIconUnscaled();
+    }
+
+    public final ImageIcon getHosterIconScaled() {
+        return getWrapper().getIconScaled();
     }
 
     public void setDownloadLink(DownloadLink link) {

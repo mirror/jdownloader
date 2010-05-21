@@ -47,14 +47,6 @@ public class JDImage {
     private static HashMap<Icon, Icon> DISABLED_ICON_CACHE = new HashMap<Icon, Icon>();
     private static HashMap<String, Image> SCALED_IMAGE_CACHE = new HashMap<String, Image>();
 
-    public static BufferedImage createEmptyBufferedImage(int w, int h) {
-
-        GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-        GraphicsDevice gd = ge.getDefaultScreenDevice();
-        GraphicsConfiguration gc = gd.getDefaultConfiguration();
-        return gc.createCompatibleImage(w, h, Transparency.BITMASK);
-    }
-
     public static ImageIcon iconToImage(Icon icon) {
         if (icon == null) return null;
         if (icon instanceof ImageIcon) {

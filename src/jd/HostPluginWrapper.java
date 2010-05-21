@@ -36,6 +36,7 @@ import jd.controlling.FavIconController;
 import jd.controlling.FavIconRequestor;
 import jd.controlling.JDLogger;
 import jd.nutils.JDFlags;
+import jd.nutils.JDImage;
 import jd.plugins.PluginForHost;
 
 public class HostPluginWrapper extends PluginWrapper implements JDLabelContainer, FavIconRequestor {
@@ -122,6 +123,14 @@ public class HostPluginWrapper extends PluginWrapper implements JDLabelContainer
     }
 
     public ImageIcon getIcon() {
+        return getIconScaled();
+    }
+
+    public ImageIcon getIconScaled() {
+        return JDImage.getScaledImageIcon(getIconUnscaled(), 16, -1);
+    }
+
+    public ImageIcon getIconUnscaled() {
         if (icon != null) return icon;
         /* try to load from disk */
         ImageIcon image = FavIconController.getFavIcon(getHost(), this, true);

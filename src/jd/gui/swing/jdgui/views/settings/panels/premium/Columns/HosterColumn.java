@@ -83,7 +83,7 @@ public class HosterColumn extends JDTableColumn {
             String host = ha.getHost();
             jlr.setBorder(null);
             jlr.setHorizontalAlignment(SwingConstants.LEFT);
-            jlr.setIcon(JDUtilities.getPluginForHost(host).getHosterIcon());
+            jlr.setIcon(JDUtilities.getPluginForHost(host).getHosterIconScaled());
             jlr.setText(host);
         }
         return jlr;
