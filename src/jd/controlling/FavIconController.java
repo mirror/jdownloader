@@ -32,7 +32,7 @@ public class FavIconController extends SubConfiguration implements Runnable {
         if (host == null || requestor == null) return null;
         synchronized (LOCK) {
             /* check if we already have a favicon? */
-            Image image = JDTheme.getImage("favicons/" + host, 16, 16);
+            Image image = JDTheme.getImage("favicons/" + host, 16, -1);
             if (image != null) return new ImageIcon(image);
         }
         /* add to queue list */
@@ -131,7 +131,7 @@ public class FavIconController extends SubConfiguration implements Runnable {
                         File imageFile = JDUtilities.getResourceFile("jd/img/favicons/" + host + ".png", true);
                         ImageIO.write(favicon, "png", imageFile);
                         /* load and scale it again */
-                        Image image = JDTheme.getImage("favicons/" + host, 16, 16);
+                        Image image = JDTheme.getImage("favicons/" + host, 16, -1);
                         if (image != null) {
                             /* refresh icons for all queued plugins */
                             for (FavIconRequestor requestor : requestors) {

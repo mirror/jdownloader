@@ -101,7 +101,7 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
     protected String getCaptchaCode(final String method, final File file, final int flag, final DownloadLink link, final String defaultValue, final String explain) throws PluginException {
         final LinkStatus linkStatus = link.getLinkStatus();
         final String status = linkStatus.getStatusText();
-        final DownloadController downloadConstroller = DownloadController.getInstance();
+        final DownloadController downloadController = DownloadController.getInstance();
         try {
             linkStatus.addStatus(LinkStatus.WAITING_USERIO);
             linkStatus.setStatusText(JDL.L("gui.downloadview.statustext.jac", "Captcha recognition"));
@@ -111,16 +111,18 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            downloadConstroller.fireDownloadLinkUpdate(link);
-            final String cc = new CaptchaController(getHost(), getHosterIcon(), method, file, defaultValue, explain).getCode(flag);
+            downloadController.fireDownloadLinkUpdate(link);
 
+            // Use unscaled icon as ImageIcon to avoid freezes!
+            ImageIcon ii = JDImage.getImageIcon("favicons/" + getHost());
+            final String cc = new CaptchaController(getHost(), ii, method, file, defaultValue, explain).getCode(flag);
             if (cc == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             return cc;
         } finally {
             linkStatus.removeStatus(LinkStatus.WAITING_USERIO);
             linkStatus.setStatusText(status);
             linkStatus.setStatusIcon(null);
-            downloadConstroller.fireDownloadLinkUpdate(link);
+            downloadController.fireDownloadLinkUpdate(link);
         }
     }
 
