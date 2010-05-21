@@ -35,6 +35,7 @@ import javax.swing.JTextField;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.gui.swing.SwingGui;
+import jd.gui.userio.DummyFrame;
 import jd.nutils.Screen;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
@@ -68,12 +69,14 @@ public class CaptchaDialog extends JCountdownDialog implements ActionListener, K
     private ImageIcon icon;
 
     public CaptchaDialog(String host, ImageIcon icon, File imagefile, String defaultValue, String explain) {
-        super(SwingGui.getInstance().getMainFrame());
+        super(DummyFrame.getDialogParent());
+
         this.host = host;
         this.icon = icon;
         this.imagefile = imagefile;
         this.defaultValue = defaultValue;
         this.explain = explain;
+
         this.init();
     }
 
