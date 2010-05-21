@@ -5,7 +5,7 @@ public abstract class CustomToolbarAction extends ToolBarAction {
     private static final long serialVersionUID = -1783111085477999729L;
 
     public CustomToolbarAction(String menuKey) {
-        super(menuKey, "gui.images.config.addons", 0);
+        super(menuKey, "gui.images.config.home", 0);
         ActionController.unRegister(this);
     }
 
