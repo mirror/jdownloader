@@ -330,7 +330,7 @@ public class WebUpdate {
 
                     if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_AUTO_RESTART, false)) {
                         UserIO.setCountdownTime(5);
-                        final int answer = UserIO.getInstance().requestConfirmDialog(UserIO.STYLE_HTML, JDL.L("init.webupdate.auto.countdowndialog2", "Automatic update."), JDL.LF("jd.utils.webupdate.message", "<font size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\">%s update(s) available. Install now?</font>", files.size()), JDTheme.II("gui.splash.update", 32, 32), null, null);
+                        final int answer = UserIO.getInstance().requestConfirmDialog(UserIO.STYLE_HTML, JDL.L("init.webupdate.auto.countdowndialog2", "Automatic update."), JDL.LF("jd.utils.webupdate.message", "<font size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\">%s update(s) available. Install now?</font>", files.size()), JDTheme.II("gui.images.update", 32, 32), null, null);
                         UserIO.setCountdownTime(-1);
 
                         if (JDFlags.hasSomeFlags(answer, UserIO.RETURN_OK, UserIO.RETURN_COUNTDOWN_TIMEOUT)) {
@@ -341,7 +341,7 @@ public class WebUpdate {
                     } else {
                         try {
                             final String html = JDL.L("jd.utils.webupdate.whatchangedlink", "<hr/><a href='http://jdownloader.org/latestchanges'>What has changed?</a>");
-                            int answer = UserIO.getInstance().requestConfirmDialog(UserIO.STYLE_HTML, JDL.L("system.dialogs.update", "Updates available"), JDL.LF("jd.utils.webupdate.message2", "<font size=\"4\" face=\"Verdana, Arial, Helvetica, sans-serif\">%s update(s) available. Install now?</font>", files.size()) + html, JDTheme.II("gui.splash.update", 32, 32), null, null);
+                            int answer = UserIO.getInstance().requestConfirmDialog(UserIO.STYLE_HTML, JDL.L("system.dialogs.update", "Updates available"), JDL.LF("jd.utils.webupdate.message2", "<font size=\"4\" face=\"Verdana, Arial, Helvetica, sans-serif\">%s update(s) available. Install now?</font>", files.size()) + html, JDTheme.II("gui.images.update", 32, 32), null, null);
 
                             if (JDFlags.hasAllFlags(answer, UserIO.RETURN_OK)) {
                                 doUpdate(updater, files);

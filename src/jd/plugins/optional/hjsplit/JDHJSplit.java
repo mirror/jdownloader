@@ -119,16 +119,18 @@ public class JDHJSplit extends PluginOptional {
                 link = (DownloadLink) event.getSource();
 
                 items.add(m = new MenuAction("optional.jdhjsplit.linkmenu.merge", 1000));
+                m.setIcon("gui.images.addons.merge");
                 m.setActionListener(this);
                 m.setEnabled(false);
                 if (link.getLinkStatus().hasStatus(LinkStatus.FINISHED) && this.isStartVolume(new File(link.getFileOutput()))) m.setEnabled(true);
                 if (new File(link.getFileOutput()).exists() && link.getName().matches(".*rar$")) m.setEnabled(true);
 
                 m.setProperty("LINK", link);
-
             } else {
                 FilePackage fp = (FilePackage) event.getSource();
+
                 items.add(m = new MenuAction("optional.jdhjsplit.linkmenu.package.merge", 1001));
+                m.setIcon("gui.images.addons.merge");
                 m.setActionListener(this);
                 m.setProperty("PACKAGE", fp);
             }

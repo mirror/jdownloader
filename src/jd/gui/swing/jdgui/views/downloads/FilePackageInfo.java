@@ -122,7 +122,7 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
     private void buildGui() {
         tabbedPane = new JTabbedPane();
         tabbedPane.addTab(JDL.L("gui.fileinfopanel.packagetab", "Package"), JDTheme.II("gui.images.package_opened", 16, 16), createFilePackageInfo());
-        tabbedPane.addTab(JDL.L("gui.fileinfopanel.link", "Downloadlink"), JDTheme.II("gui.images.taskpanes.download", 16, 16), createLinkInfo());
+        tabbedPane.addTab(JDL.L("gui.fileinfopanel.link", "Downloadlink"), JDTheme.II("gui.images.link", 16, 16), createLinkInfo());
         content.setLayout(new MigLayout("ins 0", "[grow]", "[]"));
         content.add(tabbedPane, "grow");
     }

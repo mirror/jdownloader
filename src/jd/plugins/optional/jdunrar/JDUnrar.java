@@ -137,25 +137,25 @@ public class JDUnrar extends PluginOptional implements UnrarListener, ActionList
             ArrayList<MenuAction> items = (ArrayList<MenuAction>) event.getParameter();
             MenuAction m;
             MenuAction container = new MenuAction("optional.jdunrar.linkmenu.container", 0);
+            container.setIcon("gui.images.addons.unrar");
             items.add(container);
             if (event.getSource() instanceof DownloadLink) {
-
                 link = (DownloadLink) event.getSource();
 
                 container.addMenuItem(m = new MenuAction("optional.jdunrar.linkmenu.extract", 1000));
+                m.setIcon("gui.images.addons.unrar");
                 m.setActionListener(this);
                 m.setEnabled(false);
-                boolean isLocalyAvailable = (new File(link.getFileOutput()).exists() || new File(link.getStringProperty(DownloadLink.STATIC_OUTPUTFILE, link.getFileOutput())).exists());
+                boolean isLocalyAvailable = new File(link.getFileOutput()).exists() || new File(link.getStringProperty(DownloadLink.STATIC_OUTPUTFILE, link.getFileOutput())).exists();
                 if (isLocalyAvailable && link.getName().matches(".*rar$")) m.setEnabled(true);
                 m.setProperty("LINK", link);
                 container.addMenuItem(m = new MenuAction("optional.jdunrar.linkmenu.autoextract", 1005));
                 m.setActionListener(this);
                 m.setSelected(link.getFilePackage().isExtractAfterDownload());
                 m.setProperty("LINK", link);
-                container.addMenuItem(m = new MenuAction(Types.SEPARATOR));
+                container.addMenuItem(new MenuAction(Types.SEPARATOR));
                 container.addMenuItem(m = new MenuAction("optional.jdunrar.linkmenu.setextract", 1003));
                 m.setActionListener(this);
-
                 m.setProperty("LINK", link);
                 File dir = this.getExtractToPath(link);
                 while (dir != null && !dir.exists()) {
@@ -167,10 +167,11 @@ public class JDUnrar extends PluginOptional implements UnrarListener, ActionList
                 m.setActionListener(this);
                 link.setProperty(JDUnrarConstants.DOWNLOADLINK_KEY_EXTRACTEDPATH + "2", dir.getAbsolutePath());
                 m.setProperty("LINK", link);
-
             } else {
                 FilePackage fp = (FilePackage) event.getSource();
+
                 container.addMenuItem(m = new MenuAction("optional.jdunrar.linkmenu.package.extract", 1001));
+                m.setIcon("gui.images.addons.unrar");
                 m.setActionListener(this);
                 m.setProperty("PACKAGE", fp);
                 container.addMenuItem(m = new MenuAction("optional.jdunrar.linkmenu.package.autoextract", 1006));
