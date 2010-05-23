@@ -5,9 +5,9 @@ RequestExecutionLevel user
 # General Symbol Definitions
 !define REGKEY "SOFTWARE\$(^Name)"
 !define REGKEY2 "Software\$(^Name)"
-!define VERSION 0.89
-!define VERSION2 0.89.0.0
-!define COMPANY "AppWork UG (haftungsbeschränkt)"
+!define VERSION 1.0
+!define VERSION2 1.0.0.0
+!define COMPANY "AppWork UG (haftungsbeschrï¿½nkt)"
 !define URL http://www.jdownloader.org
 !define APPNAME "JDownloader"
 !define SHORTNAME "JDownloader"
@@ -460,12 +460,10 @@ FunctionEnd
 LangString ^UninstallLink ${LANG_ENGLISH} "Uninstall $(^Name)"
 LangString ^Name ${LANG_ENGLISH} "${APPNAME}"
 
-  #Kikin
-  LangString KIKIN_PITCH_PAGE_TITLE ${LANG_ENGLISH} "Personalize your Internet experience with kikin."
-  LangString KIKIN_PITCH_PAGE_TITLE ${LANG_GERMAN} "Personalisieren Sie Ihr Internet-Erlebnis mit kikin."
-  
-  LangString KIKIN_PITCH_PAGE_DIALOG ${LANG_ENGLISH} "kikin_dialog.en.ini"
-  LangString KIKIN_PITCH_PAGE_DIALOG ${LANG_GERMAN} "kikin_dialog.de.ini"
+#Kikin
+LangString KIKIN_PITCH_PAGE_TITLE ${LANG_ENGLISH} "Personalize your Internet experience with kikin."  
+LangString KIKIN_PITCH_PAGE_DIALOG ${LANG_ENGLISH} "kikin_dialog.en.ini"
+
 #Sections
 LangString SecJDMain_TITLE ${LANG_ENGLISH} "JDownloader (required)"
 LangString SecJDMain_DESC ${LANG_ENGLISH} "The main part of JDownloader."
@@ -489,19 +487,23 @@ LangString JRE_NOADMIN_TEXT ${LANG_ENGLISH} "This application requires installat
 LangString ^UninstallLink ${LANG_GERMAN} "Deinstalliere $(^Name)"
 LangString ^Name ${LANG_GERMAN} "${APPNAME}"
 
+#Kikin
+LangString KIKIN_PITCH_PAGE_TITLE ${LANG_GERMAN} "Personalisieren Sie Ihr Internet-Erlebnis mit kikin."
+LangString KIKIN_PITCH_PAGE_DIALOG ${LANG_GERMAN} "kikin_dialog.de.ini"
+
 #Sections
-LangString SecJDMain_TITLE ${LANG_GERMAN} "JDownloader (benötigt)"
+LangString SecJDMain_TITLE ${LANG_GERMAN} "JDownloader (benï¿½tigt)"
 LangString SecJDMain_DESC ${LANG_GERMAN} "JDownloader - Hauptprogramm"
-LangString SecAssociateFiles_TITLE ${LANG_GERMAN} "Verknüpfe JDownloader mit Containerdateien"
-LangString SecAssociateFiles_DESC ${LANG_GERMAN} "Verknüpfe JDownloader mit DLC, CCF, RSDF, Click'n'Load and Metalink Dateien"
+LangString SecAssociateFiles_TITLE ${LANG_GERMAN} "Verknï¿½pfe JDownloader mit Containerdateien"
+LangString SecAssociateFiles_DESC ${LANG_GERMAN} "Verknï¿½pfe JDownloader mit DLC, CCF, RSDF, Click'n'Load and Metalink Dateien"
 
 #JRE Stuff
 LangString JRE_INSTALL_TITLE ${LANG_GERMAN} "JRE Installation erforderlich"
-LangString JRE_INSTALL_HEADLINE ${LANG_GERMAN} "Diese Anwendung erfordert Java ${JRE_VERSION} oder höher"
+LangString JRE_INSTALL_HEADLINE ${LANG_GERMAN} "Diese Anwendung erfordert Java ${JRE_VERSION} oder hï¿½her"
 LangString JRE_INSTALL_TEXT ${LANG_GERMAN} "Diese Anwendung erfordert die Installation des Java Runtime Environments. Dieses wird im Laufe des Installationsprozesses automatisch heruntergeladen und installiert."
 LangString JRE_UPDATE_TITLE ${LANG_GERMAN} "JRE Update erforderlich"
-LangString JRE_UPDATE_HEADLINE ${LANG_GERMAN} "Diese Anwendung erfordert Java ${JRE_VERSION} oder höher"
+LangString JRE_UPDATE_HEADLINE ${LANG_GERMAN} "Diese Anwendung erfordert Java ${JRE_VERSION} oder hï¿½her"
 LangString JRE_UPDATE_TEXT ${LANG_GERMAN} "Diese Anwendung erfordert eine aktuellere Version des Java Runtime Environments. Diese wird im Laufe des Installationsprozesses automatisch heruntergeladen und installiert."
 LangString JRE_NOADMIN_TITLE ${LANG_GERMAN} "JRE Installation erforderlich"
-LangString JRE_NOADMIN_HEADLINE ${LANG_GERMAN} "Diese Anwendung erfordert Java ${JRE_VERSION} oder höher"
-LangString JRE_NOADMIN_TEXT ${LANG_GERMAN} "Diese Anwendung erfordert die Installation des Java Runtime Environments. Dieses kann mit den aktuell verfügbaren Systemrechten nicht installiert werden. Bitte wenden Sie sich an ihrem Systemadministrator."
+LangString JRE_NOADMIN_HEADLINE ${LANG_GERMAN} "Diese Anwendung erfordert Java ${JRE_VERSION} oder hï¿½her"
+LangString JRE_NOADMIN_TEXT ${LANG_GERMAN} "Diese Anwendung erfordert die Installation des Java Runtime Environments. Dieses kann mit den aktuell verfï¿½gbaren Systemrechten nicht installiert werden. Bitte wenden Sie sich an ihrem Systemadministrator."
