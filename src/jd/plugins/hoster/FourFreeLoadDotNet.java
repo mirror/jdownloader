@@ -159,19 +159,15 @@ public class FourFreeLoadDotNet extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        String expired = br.getRegex("Paket abgelaufen\\?.+?left\">(.*?)<a").getMatch(0);
+        String expired = br.getRegex("<b>Abgelaufen\\?</b></td>.*?<td align=\"left\">(.*?)<a href=\"").getMatch(0);
         if (expired != null) {
-            if (expired.equalsIgnoreCase("Nein"))
+            if (expired.trim().equalsIgnoreCase("Nein"))
                 ai.setExpired(false);
-            else if (expired.equalsIgnoreCase("Ja")) ai.setExpired(true);
+            else if (expired.trim().equalsIgnoreCase("Ja")) ai.setExpired(true);
         }
         if (!nopremium) {
-            String expires = br.getRegex("Paket läuft ab am.+?left\">(.*?)</td>").getMatch(0);
-            if (expires != null) {
-                String[] e = expires.split("/");
-                Calendar cal = new GregorianCalendar(Integer.parseInt("20" + e[2]), Integer.parseInt(e[0]) - 1, Integer.parseInt(e[1]));
-                ai.setValidUntil(cal.getTimeInMillis());
-            }
+            String expires = br.getRegex("<b>Status ablauf Datum</b></td>.*?<td align=\"left\">(.*?)</td>").getMatch(0);
+            if (expires != null) ai.setValidUntil(Regex.getMilliSeconds(expires, "dd.MM.yy", null));
         }
         String create = br.getRegex("<b>Registert am</b></td>.*?<td align=\"left\">(.*?)</td>").getMatch(0);
         if (create != null) {

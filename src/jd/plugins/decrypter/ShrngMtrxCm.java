@@ -41,7 +41,8 @@ public class ShrngMtrxCm extends PluginForDecrypt {
         String[] links = br.getRegex("<td width=\"70%\" align=\"left\" valign=\"top\">(.*?)</tr>").getColumn(0);
         if (links == null || links.length == 0) {
             failed = true;
-            links = br.getRegex("valign=\"top\">.*?<a href=\"(.*?)\"").getColumn(0);
+            links = br.getRegex("<td><a href=\"(http://.*?)\"").getColumn(0);
+            if (links == null || links.length == 0) links = br.getRegex("\"(http://sharingmatrix\\.com/file/\\d+/.*?)\"").getColumn(0);
         }
         if (links == null || links.length == 0) return null;
         progress.setRange(links.length);
