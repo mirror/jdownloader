@@ -29,7 +29,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "loshare.com","www.loshare.com" }, urls = { "http://oshar(e|a)\\.com/download\\.php\\?id=[a-zA-Z0-9_-]+","http://www\\.oshar(e|a)\\.com/download\\.php\\?id=[a-zA-Z0-9_-]+"  }, flags = { 0,0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "loshare.com" }, urls = { "http://[\\w\\.]*?oshar(e|a)\\.com/download\\.php\\?id=[a-zA-Z0-9_-]+" }, flags = { 0 })
 public class LoShareCom extends PluginForHost {
 
     public LoShareCom(PluginWrapper wrapper) {

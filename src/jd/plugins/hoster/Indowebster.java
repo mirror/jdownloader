@@ -43,7 +43,7 @@ public class Indowebster extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("Requested file is deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("Original name :</b><!--INFOLINKS_ON-->(.*?)<").getMatch(0);
-        if (filename == null) filename = br.getRegex("Original name:</b> <!--INFOLINKS_ON-->(.*?)<").getMatch(0);
+        if (filename == null) filename = br.getRegex("<b>Original name:</b>(.*?)</div>").getMatch(0);
         String filesize = br.getRegex("<b>Size:</b>(.*?)</div>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setFinalFileName(filename.trim());
@@ -56,7 +56,7 @@ public class Indowebster extends PluginForHost {
         requestFileInformation(link);
         String dl_url = br.getRegex("\\&file=(http.*?)\\&logo").getMatch(0);
         if (dl_url == null) {
-            String adUrl = br.getRegex("Download Link.*?onclick='select\\(this\\)'>(http.*?)</textarea").getMatch(0);
+            String adUrl = br.getRegex("location\\.href='(http://.*?)'").getMatch(0);
             if (adUrl != null) {
                 br.getPage(adUrl);
                 dl_url = br.getRegex("</style>.*?<a href=\"(http.*?)\"").getMatch(0);
@@ -70,7 +70,6 @@ public class Indowebster extends PluginForHost {
         String filename = link.getFinalFileName();
         String ext = filename.substring(filename.lastIndexOf('.'));
         ext = ext.concat(".flv");
-
         if (dl_url.endsWith(ext)) {
             dl_url = dl_url.replaceFirst(".flv?", "");
         }
