@@ -169,6 +169,7 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException e) {
+                    e.printStackTrace();
                     interrupt();
                 }
             }

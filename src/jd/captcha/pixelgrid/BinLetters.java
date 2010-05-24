@@ -7,8 +7,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import jd.captcha.JAntiCaptcha;
-
 public class BinLetters {
     public static boolean[] fromByte(byte b) {
         final boolean[] bits = new boolean[8];
@@ -204,39 +202,4 @@ public class BinLetters {
         f.close();
     }
 
-    public static void main(String[] args) {
-        File file = new File("/home/dwd/.jd_home/jd/captcha/methods/nrdr/let.bin");
-        JAntiCaptcha jac = new JAntiCaptcha("nrdr");
-
-        if (false) {
-            for (Letter let : jac.letterDB) {
-                try {
-                    write(let, file, true);
-                } catch (IOException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }
-            }
-
-        } else {
-            try {
-                BinLetters bl = new BinLetters(file).open();
-                LevenshteinLetter let = new LevenshteinLetter(jac.letterDB.get(2400));
-
-                long time = System.currentTimeMillis();
-                bl.contains(let);
-                time = System.currentTimeMillis() - time;
-
-                System.out.println(time);
-
-                // boolean b = bl.contains(jac.letterDB.get(2400));
-
-                // BasicWindow.showImage(new
-                // BinLetters(file).open().readNext().toLetter().getImage());
-            } catch (IOException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
-        }
-    }
 }
