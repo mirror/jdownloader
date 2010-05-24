@@ -38,13 +38,15 @@ public class PrtctdScdvntCm extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        br.setFollowRedirects(false);
         br.getPage(parameter);
         String postvar = new Regex(parameter, "protected\\.socadvnet\\.com/\\?(.+)").getMatch(0);
         if (postvar == null) return null;
         String security = br.getRegex("<div id =\"cp\">.*?(.*?)= \\&nbsp;<input").getMatch(0);
         br.postPage("http://protected.socadvnet.com/allinks.php", "LinkName=" + postvar);
-        String[] linksCount = br.getRegex("(ten\\.tibobrut/)").getColumn(0);
+        String[] linksCount = br.getRegex("(moc\\.tenvdacos\\.detcetorp//:eopp)").getColumn(0);
         if (linksCount == null || linksCount.length == 0) return null;
+        int linkCounter = linksCount.length;
         if (security != null) {
             security = security.trim();
             Regex theNumbers = new Regex(security, "(\\d+) (-|\\+) (\\d+)");
@@ -67,17 +69,32 @@ public class PrtctdScdvntCm extends PluginForDecrypt {
                 return null;
             }
         }
-        logger.info("Found " + linksCount.length + " links, decrypting now...");
-        progress.setRange(linksCount.length);
-        for (int i = 0; i <= linksCount.length - 1; i++) {
+        logger.info("Found " + linkCounter + " links, decrypting now...");
+        progress.setRange(linkCounter);
+        for (int i = 0; i <= linkCounter - 1; i++) {
             String actualPage = "http://protected.socadvnet.com/allinks.php?out_name=" + postvar + "&&link_id=" + i;
             br.getPage(actualPage);
-            String turboId = br.getRegex("\"http://turbobit\\.net/download/free/(.*?)\"").getMatch(0);
-            if (turboId == null) {
-                logger.warning("There is a problem with the link: " + actualPage);
-                return null;
+            String finallink = br.getRegex("http-equiv=\"refresh\" content=\"0;url=(http.*?)\"").getMatch(0);
+            if (finallink == null) {
+                // Handlings for more hosters will come soon i think
+                if (br.containsHTML("turbobit.net")) {
+                    br.getPage("http://protected.socadvnet.com/plugin/turbobit.net.free.php?out_name=" + postvar + "&link_id=" + i);
+                    if (br.getRedirectLocation() == null) {
+                        logger.warning("Redirect location for this link is null: " + parameter);
+                        return null;
+                    }
+                    String turboId = new Regex(br.getRedirectLocation(), "http://turbobit\\.net/download/free/(.+)").getMatch(0);
+                    if (turboId == null) {
+                        logger.warning("There is a problem with the link: " + actualPage);
+                        return null;
+                    }
+                    finallink = "http://turbobit.net/" + turboId + ".html";
+                }
             }
-            decryptedLinks.add(createDownloadlink("http://turbobit.net/" + turboId + ".html"));
+            if (finallink == null) {
+                logger.warning("Finallink for the following link is null: " + parameter);
+            }
+            decryptedLinks.add(createDownloadlink(finallink));
             progress.increase(1);
         }
         return decryptedLinks;

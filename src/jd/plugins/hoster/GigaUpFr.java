@@ -44,17 +44,19 @@ public class GigaUpFr extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.getPage(link.getDownloadURL());
         br.setFollowRedirects(true);
-        if (br.containsHTML("Le fichier que vous tentez.*?harger.*?existe pas")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML("Fichier supprimé car non utilisé sur une période trop longue")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML("Le fichier a.*?sign.*?ill.*?gal")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = Encoding.htmlDecode(br.getRegex("<td>Nom :</td>.*?<td>(.*?)</td>").getMatch(0));
-        String filesize = (br.getRegex("<td>Taille :</td>.*?<td>(.*?).</td>").getMatch(0));
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        br.setCustomCharset("UTF-8");
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("(Le fichier que vous tentez.*?harger.*?existe pas|Le code de vérification entré est incorrecte|Fichier supprimé car non utilisé sur une période trop longue|Le fichier a.*?sign.*?ill.*?gal)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<title>GigaUP\\.fr \\| (.*?)</title>").getMatch(0);
+        if (filename == null) filename = br.getRegex("").getMatch(0);
+        String filesize = br.getRegex("<div class=\"text_t\">(.*?)</div>").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         filesize = filesize + "b";
         link.setName(filename);
         link.setDownloadSize(Regex.getSize(filesize));
+        String md5 = br.getRegex("Md5Sum : ([a-z0-9]+)</p>").getMatch(0);
+        if (md5 != null) link.setMD5Hash(md5);
         return AvailableStatus.TRUE;
     }
 
@@ -62,14 +64,14 @@ public class GigaUpFr extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         String captchaid = (br.getRegex("<img src=\".*?uid=(.*?)\" style=\"margi").getMatch(0));
-        String captchaurl = "http://www.gigaup.fr/constru/images/bot_sucker/bot_sucker.php?uid=" + captchaid;
-        String code = getCaptchaCode(captchaurl, downloadLink);
         Form captchaForm = br.getFormbyKey("bot_sucker");
         if (captchaForm == null || captchaid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String captchaurl = "http://www.gigaup.fr/constru/img/bot_sucker/bot_sucker.php?uid=" + captchaid;
+        String code = getCaptchaCode(captchaurl, downloadLink);
         captchaForm.remove("dl_file_SSL");
         captchaForm.put("bot_sucker", code);
         br.submitForm(captchaForm);
-        if (br.containsHTML("Le code de.*?v.*?ication.*?est incorrecte")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
+        if (br.containsHTML("Le code de vérification entré est incorrecte")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
         String dllink = br.getRegex("padding:0px;\"><a href=\"(.*?)\"").getMatch(0);
         if (dllink == null) dllink = br.getRegex("\"(ftp://gigaup.*?:.*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

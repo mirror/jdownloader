@@ -109,12 +109,18 @@ public class XSevenTo extends PluginForHost {
         /* have to call this in order so set language */
         br.getPage("http://x7.to/lang/en");
         br.getPage(downloadLink.getDownloadURL());
-        String filename = br.getRegex("<b>(Download|Stream)</b>.*?<span.*?>(.*?)<").getMatch(1);
+        String filename = br.getRegex("<title>x7\\.to » Download: (.*?)</title>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<b>(Download|Stream)</b>.*?<span.*?>(.*?)<").getMatch(1);
+            if (filename != null) {
+                String extension = br.getRegex("<b>(Download|Stream)</b>.*?<span.*?>.*?<small.*?>(.*?)<").getMatch(1);
+                if (extension == null) extension = "";
+                filename = filename.trim() + extension;
+            }
+        }
         String filesize = br.getRegex("<b>(Download|Stream)</b>.*?\\((.*?)\\)").getMatch(1);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String extension = br.getRegex("<b>(Download|Stream)</b>.*?<span.*?>.*?<small.*?>(.*?)<").getMatch(1);
-        if (extension == null) extension = "";
-        downloadLink.setName(filename.trim() + extension);
+        downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", ".")));
         if (br.containsHTML("(only premium members will be able to download the file|The requested file is larger than)")) downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.XSevenTo.errors.only4premium", "Only downloadable for premium users"));
         return AvailableStatus.TRUE;

@@ -61,7 +61,11 @@ public class LdTTemp extends PluginForDecrypt {
             break;
         }
         if (br.containsHTML("(api.recaptcha.net|Das war leider Falsch|das Falsche Captcha eingegeben)")) throw new DecrypterException(DecrypterException.CAPTCHA);
-        String[] links = HTMLParser.getHttpLinks(br.toString(), "");
+        String links[] = br.getRegex("<a href=\"(http.*?)\" target=\"_blank\" onclick=").getColumn(0);
+        if (links == null || links.length == 0) {
+            logger.warning("First LdTTemp regex failed, trying the second one...");
+            links = HTMLParser.getHttpLinks(br.toString(), "");
+        }
         if (links.length == 0) return null;
         for (String finallink : links) {
             if (!finallink.contains("iload.to") && !finallink.contains("lof.cc") && !finallink.endsWith(".gif") && !finallink.endsWith(".swf")) decryptedLinks.add(createDownloadlink(finallink));
