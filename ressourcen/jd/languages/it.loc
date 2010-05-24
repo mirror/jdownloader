@@ -1,5 +1,5 @@
 action.customize.addsetting.ask = Inserire il nome per una nuova impostazione:
-action.customize.removesetting.ask = Rimuovere le impostazioni selezionate? (Account %s)
+action.customize.removesetting.ask = Rimuovere le impostazioni selezionate (account %s)?
 action.premiumview.removeacc.accs = Account %s
 action.premiumview.removeacc.ask = Rimuovi selezionati
 addons.jdshutdown.statusmessage.disabled = JDownloader NON arresterà il sistema alla termine dei download
