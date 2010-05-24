@@ -20,10 +20,12 @@ import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 
 import jd.controlling.DownloadController;
+import jd.gui.UserIO;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.gui.swing.jdgui.views.linkgrabber.LinkGrabberPanel;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.utils.locale.JDL;
 
 public class RemoveFailedAction extends ToolBarAction {
 
@@ -36,6 +38,8 @@ public class RemoveFailedAction extends ToolBarAction {
     @Override
     public void onAction(ActionEvent e) {
         if (!LinkGrabberPanel.getLinkGrabber().isNotVisible()) return;
+        if (!UserIO.isOK(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, JDL.L("jd.gui.swing.jdgui.menu.actions.RemoveFailedAction.message", "Do you really want to remove all failed DownloadLinks?")))) return;
+
         DownloadController dlc = DownloadController.getInstance();
         ArrayList<DownloadLink> downloadstodelete = new ArrayList<DownloadLink>();
         synchronized (dlc.getPackages()) {

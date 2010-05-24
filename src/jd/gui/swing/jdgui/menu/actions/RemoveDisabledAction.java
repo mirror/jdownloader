@@ -18,15 +18,16 @@ package jd.gui.swing.jdgui.menu.actions;
 
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
-import java.util.Vector;
 
 import jd.controlling.DownloadController;
 import jd.controlling.LinkGrabberController;
+import jd.gui.UserIO;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.gui.swing.jdgui.views.linkgrabber.LinkGrabberPanel;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkGrabberFilePackage;
+import jd.utils.locale.JDL;
 
 public class RemoveDisabledAction extends ToolBarAction {
 
@@ -38,26 +39,24 @@ public class RemoveDisabledAction extends ToolBarAction {
 
     @Override
     public void onAction(ActionEvent e) {
+        if (!UserIO.isOK(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, JDL.L("jd.gui.swing.jdgui.menu.actions.RemoveDisabledAction.message", "Do you really want to remove all disabled DownloadLinks?")))) return;
+
         if (!LinkGrabberPanel.getLinkGrabber().isNotVisible()) {
             synchronized (LinkGrabberController.ControllerLock) {
                 synchronized (LinkGrabberController.getInstance().getPackages()) {
-                    synchronized (LinkGrabberController.ControllerLock) {
-                        synchronized (LinkGrabberController.getInstance().getPackages()) {
-                            ArrayList<LinkGrabberFilePackage> selected_packages = new ArrayList<LinkGrabberFilePackage>(LinkGrabberController.getInstance().getPackages());
-                            selected_packages.add(LinkGrabberController.getInstance().getFilterPackage());
-                            for (LinkGrabberFilePackage fp2 : selected_packages) {
-                                ArrayList<DownloadLink> links = new ArrayList<DownloadLink>(fp2.getDownloadLinks());
-                                for (DownloadLink dl : links) {
-                                    if (!dl.isEnabled()) fp2.remove(dl);
-                                }
-                            }
+                    ArrayList<LinkGrabberFilePackage> selected_packages = new ArrayList<LinkGrabberFilePackage>(LinkGrabberController.getInstance().getPackages());
+                    selected_packages.add(LinkGrabberController.getInstance().getFilterPackage());
+                    for (LinkGrabberFilePackage fp2 : selected_packages) {
+                        ArrayList<DownloadLink> links = new ArrayList<DownloadLink>(fp2.getDownloadLinks());
+                        for (DownloadLink dl : links) {
+                            if (!dl.isEnabled()) fp2.remove(dl);
                         }
                     }
                 }
             }
         } else {
             DownloadController dlc = DownloadController.getInstance();
-            Vector<DownloadLink> downloadstodelete = new Vector<DownloadLink>();
+            ArrayList<DownloadLink> downloadstodelete = new ArrayList<DownloadLink>();
             synchronized (dlc.getPackages()) {
                 for (FilePackage fp : dlc.getPackages()) {
                     synchronized (fp.getDownloadLinkList()) {

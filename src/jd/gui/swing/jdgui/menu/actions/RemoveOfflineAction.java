@@ -21,12 +21,14 @@ import java.util.ArrayList;
 
 import jd.controlling.DownloadController;
 import jd.controlling.LinkGrabberController;
+import jd.gui.UserIO;
 import jd.gui.swing.jdgui.actions.ThreadedAction;
 import jd.gui.swing.jdgui.views.linkgrabber.LinkGrabberPanel;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkGrabberFilePackage;
 import jd.plugins.LinkStatus;
+import jd.utils.locale.JDL;
 
 public class RemoveOfflineAction extends ThreadedAction {
 
@@ -46,17 +48,15 @@ public class RemoveOfflineAction extends ThreadedAction {
 
     @Override
     public void threadedActionPerformed(ActionEvent e) {
+        if (!UserIO.isOK(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, JDL.L("jd.gui.swing.jdgui.menu.actions.RemoveOfflineAction.message", "Do you really want to remove all offline DownloadLinks?")))) return;
+
         if (!LinkGrabberPanel.getLinkGrabber().isNotVisible()) {
             synchronized (LinkGrabberController.ControllerLock) {
                 synchronized (LinkGrabberController.getInstance().getPackages()) {
-                    synchronized (LinkGrabberController.ControllerLock) {
-                        synchronized (LinkGrabberController.getInstance().getPackages()) {
-                            ArrayList<LinkGrabberFilePackage> selected_packages = new ArrayList<LinkGrabberFilePackage>(LinkGrabberController.getInstance().getPackages());
-                            selected_packages.add(LinkGrabberController.getInstance().getFilterPackage());
-                            for (LinkGrabberFilePackage fp2 : selected_packages) {
-                                fp2.removeOffline();
-                            }
-                        }
+                    ArrayList<LinkGrabberFilePackage> selected_packages = new ArrayList<LinkGrabberFilePackage>(LinkGrabberController.getInstance().getPackages());
+                    selected_packages.add(LinkGrabberController.getInstance().getFilterPackage());
+                    for (LinkGrabberFilePackage fp2 : selected_packages) {
+                        fp2.removeOffline();
                     }
                 }
             }

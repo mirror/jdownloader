@@ -17,12 +17,14 @@
 package jd.gui.swing.jdgui.menu.actions;
 
 import java.awt.event.ActionEvent;
-import java.util.Vector;
+import java.util.ArrayList;
 
 import jd.controlling.DownloadController;
+import jd.gui.UserIO;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
+import jd.utils.locale.JDL;
 
 public class CleanupPackages extends ToolBarAction {
 
@@ -34,8 +36,10 @@ public class CleanupPackages extends ToolBarAction {
 
     @Override
     public void onAction(ActionEvent e) {
+        if (!UserIO.isOK(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, JDL.L("jd.gui.swing.jdgui.menu.actions.CleanupPackages.message", "Do you really want to remove all completed FilePackages?")))) return;
+
         DownloadController dlc = DownloadController.getInstance();
-        Vector<FilePackage> packagestodelete = new Vector<FilePackage>();
+        ArrayList<FilePackage> packagestodelete = new ArrayList<FilePackage>();
         synchronized (dlc.getPackages()) {
             for (FilePackage fp : dlc.getPackages()) {
                 if (fp.getLinksListbyStatus(LinkStatus.FINISHED | LinkStatus.ERROR_ALREADYEXISTS).size() == fp.size()) packagestodelete.add(fp);

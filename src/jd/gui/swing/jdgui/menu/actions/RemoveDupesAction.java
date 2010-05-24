@@ -18,16 +18,17 @@ package jd.gui.swing.jdgui.menu.actions;
 
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
-import java.util.Vector;
 
 import jd.controlling.DownloadController;
 import jd.controlling.LinkGrabberController;
+import jd.gui.UserIO;
 import jd.gui.swing.jdgui.actions.ThreadedAction;
 import jd.gui.swing.jdgui.views.linkgrabber.LinkGrabberPanel;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkGrabberFilePackage;
 import jd.plugins.LinkStatus;
+import jd.utils.locale.JDL;
 
 public class RemoveDupesAction extends ThreadedAction {
 
@@ -47,6 +48,8 @@ public class RemoveDupesAction extends ThreadedAction {
 
     @Override
     public void threadedActionPerformed(ActionEvent e) {
+        if (!UserIO.isOK(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, JDL.L("jd.gui.swing.jdgui.menu.actions.RemoveDupesAction.message", "Do you really want to remove all duplicated DownloadLinks?")))) return;
+
         if (!LinkGrabberPanel.getLinkGrabber().isNotVisible()) {
             synchronized (LinkGrabberController.ControllerLock) {
                 synchronized (LinkGrabberController.getInstance().getPackages()) {
@@ -60,7 +63,7 @@ public class RemoveDupesAction extends ThreadedAction {
             }
         } else {
             DownloadController dlc = DownloadController.getInstance();
-            Vector<DownloadLink> downloadstodelete = new Vector<DownloadLink>();
+            ArrayList<DownloadLink> downloadstodelete = new ArrayList<DownloadLink>();
             synchronized (dlc.getPackages()) {
                 for (FilePackage fp : dlc.getPackages()) {
                     downloadstodelete.addAll(fp.getLinksListbyStatus(LinkStatus.ERROR_ALREADYEXISTS));
