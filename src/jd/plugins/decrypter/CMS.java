@@ -91,7 +91,6 @@ public class CMS extends PluginForDecrypt {
         try {
             br.getPage(parameter);
             if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
-            File captchaFile = null;
             String capTxt = "";
             String host = br.getHost();
 
@@ -117,10 +116,7 @@ public class CMS extends PluginForDecrypt {
                         if (matcher.find()) {
                             logger.finest("Captcha Protected");
                             String captchaAdress = host + new Regex(element[2], Pattern.compile("<IMG SRC=\"(/.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
-                            captchaFile = getLocalCaptchaFile();
-                            br.cloneBrowser().getDownload(captchaFile, captchaAdress);
-                            capTxt = getCaptchaCode("ucms", captchaFile, param);
-                            captchaFile.renameTo(new File(captchaFile.getParentFile(), capTxt + ".gif"));
+                            capTxt = getCaptchaCode("ucms", captchaAdress, param);
 
                             String posthelp = HTMLParser.getFormInputHidden(element[2]);
                             if (element[0].startsWith("http")) {
@@ -206,10 +202,7 @@ public class CMS extends PluginForDecrypt {
                         if (tform.containsHTML("<img src=")) {
                             logger.finest("Captcha Protected");
                             String captchaAdress = host + tform.getRegex(Pattern.compile("<img src=\"(/captcha/.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
-                            captchaFile = getLocalCaptchaFile();
-                            brc.getDownload(captchaFile, captchaAdress);
-                            capTxt = getCaptchaCode("ucms", captchaFile, param);
-                            captchaFile.renameTo(new File(captchaFile.getParentFile(), capTxt + ".gif"));
+                            capTxt = getCaptchaCode("ucms", captchaAdress, param);
 
                             tform.put("code", capTxt);
                             brc.submitForm(tform);
