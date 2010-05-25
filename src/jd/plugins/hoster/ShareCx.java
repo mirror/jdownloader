@@ -161,19 +161,25 @@ public class ShareCx extends PluginForHost {
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         requestFileInformation(downloadLink);
         login(account);
+        br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
-        Form dlform = br.getFormbyProperty("name", "F1");
-        br.submitForm(dlform);
-        String dllink = br.getRegex("wenigen Sekunden automatisch... <a href=\"(http://.*?)\"").getMatch(0);
-        if (dllink == null) {
-            dllink = br.getRegex("window\\.location\\.href='(http://file\\d+\\.share\\.cx.*?)'\"").getMatch(0);
+        String dllink = null;
+        if (br.getRedirectLocation() != null) {
+            dllink = br.getRedirectLocation();
+        } else {
+            Form dlform = br.getFormbyProperty("name", "F1");
+            br.submitForm(dlform);
+            dllink = br.getRegex("wenigen Sekunden automatisch... <a href=\"(http://.*?)\"").getMatch(0);
             if (dllink == null) {
-                dllink = br.getRegex("(\"|')(http://file\\d+\\.share\\.cx:\\d+/d/[a-z0-9]+/.*?)(\"|')").getMatch(1);
+                dllink = br.getRegex("window\\.location\\.href='(http://file\\d+\\.share\\.cx.*?)'\"").getMatch(0);
+                if (dllink == null) {
+                    dllink = br.getRegex("(\"|')(http://file\\d+\\.share\\.cx:\\d+/d/[a-z0-9]+/.*?)(\"|')").getMatch(1);
+                }
             }
+            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -10);
-        if (!(dl.getConnection().isContentDisposition())) {
+        if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
