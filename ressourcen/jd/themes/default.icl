@@ -32,6 +32,7 @@ gui.images.config.premium            = default/system-lock-screen
 gui.images.configuration             = default/preferences-desktop
 gui.images.preferences               = default/preferences-system
 gui.images.delete                    = default/list-remove
+gui.images.package                   = default/folder
 gui.images.newpackage                = default/folder-new
 gui.images.password                  = default/font-x-generic
 gui.images.resume                    = default/view-refresh

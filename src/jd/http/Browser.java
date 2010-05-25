@@ -148,15 +148,14 @@ public class Browser {
                 cookies.get(check).clear();
                 break;
             }
-
         }
     }
 
     public void forwardCookies(final Request request) {
-        if (request == null) { return; }
+        if (request == null) return;
         final String host = Browser.getHost(request.getUrl());
         final Cookies cookies = getCookies().get(host);
-        if (cookies == null) { return; }
+        if (cookies == null) return;
 
         for (Cookie cookie : cookies.getCookies()) {
             // Pfade sollten verarbeitet werden...TODO
@@ -231,7 +230,7 @@ public class Browser {
     }
 
     public void updateCookies(final Request request) {
-        if (request == null) { return; }
+        if (request == null) return;
         final String host = Browser.getHost(request.getUrl());
         Cookies cookies = getCookies().get(host);
         if (cookies == null) {
@@ -481,9 +480,8 @@ public class Browser {
      * @return
      */
     public String getRedirectLocation() {
-        if (request == null) { return null; }
+        if (request == null) return null;
         return request.getLocation();
-
     }
 
     /**
@@ -699,7 +697,7 @@ public class Browser {
 
     private JDProxy selectProxy() {
         if (proxy != null) {
-            if (proxy == JDProxy.NO_PROXY) { return null; }
+            if (proxy == JDProxy.NO_PROXY) return null;
             return proxy;
         }
         return GLOBAL_PROXY;
@@ -729,7 +727,7 @@ public class Browser {
         if (string == null) {
             string = this.getRedirectLocation();
         }
-        if (string == null) { throw new BrowserException("Null URL"); }
+        if (string == null) throw new BrowserException("Null URL");
         try {
             new URL(string);
         } catch (final Exception e) {
@@ -754,10 +752,10 @@ public class Browser {
     }
 
     private String getBase(final String string) {
-        if (string == null) { return ""; }
+        if (string == null) return "";
 
         final String base = getRegex("<base\\s*href=\"(.*?)\"").getMatch(0);
-        if (base != null) { return base; }
+        if (base != null) return base;
 
         final URL url = request.getHttpConnection().getURL();
         final int port = url.getPort();
@@ -877,7 +875,6 @@ public class Browser {
         }
         if (post != null) {
             request.addAll(post);
-
         }
         if (headers != null) {
             mergeHeaders(request);
@@ -1252,22 +1249,18 @@ public class Browser {
     }
 
     public void setProxy(final JDProxy proxy) {
-        System.out.println(this + "" + this.hashCode() + " set proxy " + proxy);
+        if (debug) {
+            if (LOGGER != null) LOGGER.info("Use local proxy: " + proxy);
+        }
 
         PROXIES.put(proxy.getHost() + ":" + proxy.getPort(), proxy);
-        if (debug) {
-            if (LOGGER != null) {
-                LOGGER.info("Use local proxy: " + proxy);
-            }
-        }
+
         if (proxy == null) {
             System.err.println("Browser:No proxy");
             this.proxy = null;
             return;
         }
-        // System.err.println("Browser: "+proxy);
-        // this.setAuth(proxy.getHost() + ":" + proxy.getPort(),
-        // proxy.getUser(), proxy.getPass());
+
         this.proxy = proxy;
     }
 
@@ -1385,7 +1378,7 @@ public class Browser {
      */
     public Form getFormbyKey(final String key) {
         for (Form f : getForms()) {
-            if (f.hasInputFieldByName(key)) { return f; }
+            if (f.hasInputFieldByName(key)) return f;
         }
         return null;
     }
