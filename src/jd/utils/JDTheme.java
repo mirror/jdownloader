@@ -145,7 +145,7 @@ public final class JDTheme {
             try {
                 return new ImageIcon(getImage(V(key), width, height));
             } catch (Exception e) {
-                LOG.severe("image not found: " + key + "(" + V(key) + "_" + width + "_" + height);
+                LOG.severe("Could not find image: " + key + " (" + V(key) + "_" + width + "_" + height + ")");
                 JDLogger.exception(e);
             }
         }
@@ -160,6 +160,7 @@ public final class JDTheme {
                 return JDImage.getScaledImage(JDImage.getImage(string), width, height);
             } catch (Exception e) {
                 LOG.severe("Could not find image: " + string);
+                JDLogger.exception(e);
             }
         }
         return null;

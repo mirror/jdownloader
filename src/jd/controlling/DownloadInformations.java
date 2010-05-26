@@ -156,8 +156,13 @@ public class DownloadInformations {
     public void updateInformations() {
         synchronized (UPDATELOCK) {
             if (System.currentTimeMillis() - lastUpdate >= 1000) {
-                DownloadController.getInstance().getDownloadStatus(this);
-                lastUpdate = System.currentTimeMillis();
+                try {
+                    DownloadController.getInstance().getDownloadStatus(this);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                } finally {
+                    lastUpdate = System.currentTimeMillis();
+                }
             }
         }
     }
