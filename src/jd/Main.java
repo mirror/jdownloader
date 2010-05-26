@@ -352,16 +352,12 @@ public class Main {
     private void go() {
         final JDInit init = new JDInit();
         final JDController controller = JDController.getInstance();
-        // JDUtilities.getController().fireControlEvent(new ControlEvent(this,
-        // SplashScreen.SPLASH_PROGRESS, "This is JD :)"));
         init.init();
+
         LOG.info(new Date().toString());
         LOG.info("init Configuration");
-        // JDUtilities.getController().fireControlEvent(new ControlEvent(this,
-        // SplashScreen.SPLASH_PROGRESS, "Once upon a time..."));
 
         if (init.loadConfiguration() == null) {
-
             UserIO.getInstance().requestMessageDialog("JDownloader cannot create the config files. Make sure, that JD_HOME/config/ exists and is writeable");
         }
         if (JDInitFlags.SWITCH_DEBUG) {
@@ -381,10 +377,8 @@ public class Main {
                     } catch (InterruptedException e) {
                     }
                 }
-
             }
         }
-        LOG.info("init Controller");
 
         LOG.info("init Webupdate");
         JDUtilities.getController().fireControlEvent(new ControlEvent(this, SplashScreen.SPLASH_PROGRESS, JDL.L("gui.splash.progress.webupdate", "Check updates")));
