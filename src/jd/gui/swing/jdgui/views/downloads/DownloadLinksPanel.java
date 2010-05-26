@@ -18,50 +18,27 @@ package jd.gui.swing.jdgui.views.downloads;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.File;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.logging.Logger;
 
 import javax.swing.JComponent;
-import javax.swing.JMenuItem;
 import javax.swing.JScrollPane;
 import javax.swing.Timer;
 
-import jd.controlling.ClipboardHandler;
 import jd.controlling.DownloadController;
 import jd.controlling.DownloadControllerEvent;
 import jd.controlling.DownloadControllerListener;
-import jd.controlling.DownloadWatchDog;
 import jd.controlling.JDLogger;
-import jd.controlling.LinkCheck;
-import jd.controlling.LinkCheckEvent;
-import jd.controlling.LinkCheckListener;
-import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
-import jd.gui.swing.SwingGui;
-import jd.gui.swing.components.JDFileChooser;
-import jd.gui.swing.components.linkbutton.JLink;
-import jd.gui.swing.jdgui.GUIUtils;
-import jd.gui.swing.jdgui.JDGuiConstants;
 import jd.gui.swing.jdgui.MainTabbedPane;
 import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
-import jd.nutils.JDFlags;
-import jd.nutils.io.JDFileFilter;
-import jd.nutils.io.JDIO;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
-public class DownloadLinksPanel extends SwitchPanel implements ActionListener, DownloadControllerListener, LinkCheckListener {
+public class DownloadLinksPanel extends SwitchPanel implements ActionListener, DownloadControllerListener {
 
     private static final long serialVersionUID = -6029423913449902141L;
 
@@ -78,9 +55,7 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
     private int jobID = REFRESH_DATA_AND_STRUCTURE_CHANGED;
     private ArrayList<Object> jobObjects = new ArrayList<Object>();
 
-    private boolean lastSort = true;
-
-    protected Logger logger = jd.controlling.JDLogger.getLogger();
+    protected Logger logger = JDLogger.getLogger();
 
     private DownloadTable internalTable;
 
@@ -138,19 +113,11 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
         return INSTANCE;
     }
 
-    public DownloadTable getInternalTable() {
-        return internalTable;
-    }
-
     public void move(byte mode) {
         ArrayList<FilePackage> fps = internalTable.getSelectedFilePackages();
         ArrayList<DownloadLink> links = internalTable.getSelectedDownloadLinks();
         if (fps.size() > 0) DownloadController.getInstance().move(fps, null, mode);
         if (links.size() > 0) DownloadController.getInstance().move(links, null, mode);
-    }
-
-    public boolean needsViewport() {
-        return false;
     }
 
     public void showFilePackageInfo(FilePackage fp) {
@@ -184,9 +151,7 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
 
     public void fireTableChanged(int id, ArrayList<Object> objs) {
         try {
-            ArrayList<Object> objs2 = new ArrayList<Object>(objs);
-            int id2 = id;
-            internalTable.fireTableChanged(id2, objs2);
+            internalTable.fireTableChanged(id, new ArrayList<Object>(objs));
         } catch (Exception e) {
             logger.severe("TreeTable Exception, complete refresh!");
             updateTableTask(REFRESH_DATA_AND_STRUCTURE_CHANGED, null);
@@ -298,336 +263,14 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
         }
     }
 
-    @SuppressWarnings("unchecked")
     public void actionPerformed(final ActionEvent e) {
-        new Thread() {
+        new Thread("DownloadLinks: actionPerformed") {
             public void run() {
-                this.setName("DownloadLinks: actionPerformed");
                 if (e.getSource() == DownloadLinksPanel.this.asyncUpdate) {
                     fireTableTask();
-                    return;
-                }
-                ArrayList<FilePackage> selectedPackages = new ArrayList<FilePackage>();
-                ArrayList<DownloadLink> selectedLinks = new ArrayList<DownloadLink>();
-                HashMap<String, Object> prop = new HashMap<String, Object>();
-                HashSet<String> List = new HashSet<String>();
-                StringBuilder build = new StringBuilder();
-                String string = null;
-
-                Object obj = null;
-                FilePackage fp = null;
-                DownloadLink link = null;
-                File folder = null;
-                int col = 0;
-                if (e.getSource() instanceof JMenuItem) {
-                    switch (e.getID()) {
-                    case TableAction.EDIT_NAME:
-                    case TableAction.EDIT_DIR:
-                        selectedPackages = (ArrayList<FilePackage>) ((TableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("packages");
-                        break;
-                    case TableAction.SORT:
-                        col = (Integer) ((TableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("col");
-                        selectedLinks = new ArrayList<DownloadLink>(DownloadLinksPanel.this.internalTable.getSelectedDownloadLinks());
-                        selectedPackages = new ArrayList<FilePackage>(DownloadLinksPanel.this.internalTable.getSelectedFilePackages());
-                        break;
-                    case TableAction.DOWNLOAD_PRIO:
-                    case TableAction.DE_ACTIVATE:
-                        prop = (HashMap<String, Object>) ((TableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("infos");
-                        selectedLinks = (ArrayList<DownloadLink>) prop.get("links");
-                        break;
-                    case TableAction.DELETE:
-                    case TableAction.FORCE_DOWNLOAD:
-                    case TableAction.DELETEFILE:
-                    case TableAction.SET_PW:
-                    case TableAction.NEW_PACKAGE:
-                    case TableAction.CHECK:
-                    case TableAction.DOWNLOAD_COPY_URL:
-                    case TableAction.DOWNLOAD_COPY_PASSWORD:
-                    case TableAction.DOWNLOAD_RESET:
-                    case TableAction.DOWNLOAD_DLC:
-                    case TableAction.DOWNLOAD_RESUME:
-                        selectedLinks = (ArrayList<DownloadLink>) ((TableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("links");
-                        break;
-                    case TableAction.DOWNLOAD_DIR:
-                        folder = (File) ((TableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("folder");
-                        break;
-                    case TableAction.DOWNLOAD_BROWSE_LINK:
-                        link = (DownloadLink) ((TableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("downloadlink");
-                        break;
-                    case TableAction.STOP_MARK:
-                        obj = ((TableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("item");
-                        break;
-                    }
-                } else if (e.getSource() instanceof TableAction) {
-                    switch (e.getID()) {
-                    case TableAction.SORT_ALL:
-                        col = (Integer) ((TableAction) e.getSource()).getProperty().getProperty("col");
-                        break;
-                    case TableAction.DELETE:
-                        selectedLinks = (ArrayList<DownloadLink>) ((TableAction) e.getSource()).getProperty().getProperty("links");
-                        break;
-                    }
-                }
-                switch (e.getID()) {
-                case TableAction.FORCE_DOWNLOAD: {
-                    DownloadWatchDog.getInstance().forceDownload(selectedLinks);
-                    break;
-                }
-                case TableAction.STOP_MARK:
-                    DownloadWatchDog.getInstance().toggleStopMark(obj);
-                    break;
-                case TableAction.EDIT_DIR:
-                    final ArrayList<FilePackage> selected_packages2 = new ArrayList<FilePackage>(selectedPackages);
-                    new GuiRunnable<Object>() {
-                        // @Override
-                        public Object runSave() {
-                            JDFileChooser fc = new JDFileChooser();
-                            fc.setApproveButtonText(JDL.L("gui.btn_ok", "OK"));
-                            fc.setFileSelectionMode(JDFileChooser.DIRECTORIES_ONLY);
-                            fc.setCurrentDirectory(selected_packages2.get(0).getDownloadDirectory() != null ? new File(selected_packages2.get(0).getDownloadDirectory()) : JDUtilities.getResourceFile("downloads"));
-                            if (fc.showOpenDialog(DownloadLinksPanel.this) == JDFileChooser.APPROVE_OPTION) {
-                                File ret = fc.getSelectedFile();
-                                if (ret != null) {
-                                    for (int i = 0; i < selected_packages2.size(); i++) {
-                                        selected_packages2.get(i).setDownloadDirectory(ret.getAbsolutePath());
-                                    }
-                                }
-                            }
-                            return null;
-                        }
-                    }.start();
-                    break;
-                case TableAction.EDIT_NAME:
-                    String name = UserIO.getInstance().requestInputDialog(0, JDL.L("gui.linklist.editpackagename.message", "New Package Name"), selectedPackages.get(0).getName());
-                    if (name != null) {
-                        for (int i = 0; i < selectedPackages.size(); i++) {
-                            selectedPackages.get(i).setName(name);
-                        }
-                    }
-                    break;
-                case TableAction.DOWNLOAD_RESUME:
-                    for (int i = 0; i < selectedLinks.size(); i++) {
-                        selectedLinks.get(i).getLinkStatus().setStatus(LinkStatus.TODO);
-                        selectedLinks.get(i).getLinkStatus().resetWaitTime();
-                        selectedLinks.get(i).getLinkStatus().setStatusText(JDL.L("gui.linklist.status.doresume", "Wait to resume"));
-                    }
-                    Set<String> hosts = DownloadLink.getHosterList(selectedLinks);
-                    for (String host : hosts) {
-                        DownloadWatchDog.getInstance().resetIPBlockWaittime(host);
-                        DownloadWatchDog.getInstance().resetTempUnavailWaittime(host);
-                    }
-                    break;
-                case TableAction.DOWNLOAD_BROWSE_LINK:
-                    if (link.getLinkType() == DownloadLink.LINKTYPE_NORMAL) {
-                        try {
-                            JLink.openURL(link.getBrowserUrl());
-                        } catch (Exception e1) {
-                            JDLogger.exception(e1);
-                        }
-                    }
-                    break;
-                case TableAction.DOWNLOAD_DIR:
-                    JDUtilities.openExplorer(folder);
-                    break;
-                case TableAction.DOWNLOAD_DLC:
-                    GuiRunnable<File> temp = new GuiRunnable<File>() {
-                        // @Override
-                        public File runSave() {
-                            JDFileChooser fc = new JDFileChooser("_LOADSAVEDLC");
-                            fc.setFileFilter(new JDFileFilter(null, ".dlc", true));
-                            if (fc.showSaveDialog(SwingGui.getInstance().getMainFrame()) == JDFileChooser.APPROVE_OPTION) return fc.getSelectedFile();
-                            return null;
-                        }
-                    };
-                    File ret = temp.getReturnValue();
-                    if (ret == null) return;
-                    if (JDIO.getFileExtension(ret) == null || !JDIO.getFileExtension(ret).equalsIgnoreCase("dlc")) {
-                        ret = new File(ret.getAbsolutePath() + ".dlc");
-                    }
-                    JDUtilities.getController().saveDLC(ret, selectedLinks);
-                    break;
-                case TableAction.DOWNLOAD_RESET:
-                    final ArrayList<DownloadLink> links = selectedLinks;
-                    new Thread() {
-                        public void run() {
-                            if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(0, JDL.L("gui.downloadlist.reset", "Reset selected downloads?") + " (" + JDL.LF("gui.downloadlist.delete.size_packagev2", "%s links", links.size()) + ")"), UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
-                                for (int i = 0; i < links.size(); i++) {
-                                    links.get(i).reset();
-                                }
-                            }
-                        }
-                    }.start();
-                    break;
-                case TableAction.DOWNLOAD_COPY_PASSWORD:
-                    string = getPasswordSelectedLinks(selectedLinks);
-                    ClipboardHandler.getClipboard().copyTextToClipboard(string);
-                    break;
-                case TableAction.DOWNLOAD_COPY_URL:
-                    for (int i = 0; i < selectedLinks.size(); i++) {
-                        if (selectedLinks.get(i).getLinkType() == DownloadLink.LINKTYPE_NORMAL) {
-                            String url = selectedLinks.get(i).getBrowserUrl();
-                            if (!List.contains(url)) {
-                                if (List.size() > 0) build.append("\r\n");
-                                List.add(url);
-                                build.append(url);
-                            }
-                        }
-                    }
-                    string = build.toString();
-                    ClipboardHandler.getClipboard().copyTextToClipboard(string);
-                    break;
-                case TableAction.DOWNLOAD_PRIO:
-                    int prio = (Integer) prop.get("prio");
-                    for (int i = 0; i < selectedLinks.size(); i++) {
-                        selectedLinks.get(i).setPriority(prio);
-                    }
-                    DownloadController.getInstance().fireDownloadLinkUpdate(selectedLinks);
-                    break;
-                case TableAction.CHECK:
-                    LinkCheck.getLinkChecker().checkLinks(selectedLinks, true);
-                    LinkCheck.getLinkChecker().getBroadcaster().addListener(DownloadLinksPanel.this);
-                    break;
-                case TableAction.SORT_ALL:
-                    if (DownloadController.getInstance().size() == 1) {
-                        DownloadController.getInstance().getPackages().get(0).sort(col);
-                    } else
-                        sort(col);
-                    break;
-                case TableAction.SORT:
-                    if (selectedLinks.size() > 0) {
-                        selectedLinks.get(0).getFilePackage().sort(col);
-                        break;
-                    }
-                    for (int i = 0; i < selectedPackages.size(); i++) {
-                        selectedPackages.get(i).sort(col);
-                    }
-                    break;
-                case TableAction.DE_ACTIVATE:
-                    Boolean b = (Boolean) prop.get("boolean");
-                    for (int i = 0; i < selectedLinks.size(); i++) {
-                        selectedLinks.get(i).setEnabled(b);
-                    }
-                    JDUtilities.getDownloadController().fireStructureUpdate();
-                    break;
-                case TableAction.NEW_PACKAGE:
-                    fp = selectedLinks.get(0).getFilePackage();
-                    string = UserIO.getInstance().requestInputDialog(0, JDL.L("gui.linklist.newpackage.message", "Name of the new package"), fp.getName());
-                    if (string != null) {
-                        FilePackage nfp = FilePackage.getInstance();
-                        nfp.setName(string);
-                        nfp.setDownloadDirectory(fp.getDownloadDirectory());
-                        nfp.setExtractAfterDownload(fp.isExtractAfterDownload());
-                        nfp.setComment(fp.getComment());
-                        for (DownloadLink link2 : selectedLinks) {
-                            FilePackage fp2 = link2.getFilePackage();
-                            link2.addSourcePluginPassword(fp2.getPassword());
-                        }
-                        for (int i = 0; i < selectedLinks.size(); i++) {
-                            selectedLinks.get(i).setFilePackage(nfp);
-                        }
-                        if (GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_INSERT_NEW_LINKS_AT, false)) {
-                            JDUtilities.getDownloadController().addPackageAt(nfp, 0, 0);
-                        } else {
-                            JDUtilities.getDownloadController().addPackage(nfp);
-                        }
-                    }
-                    break;
-                case TableAction.SET_PW:
-                    String pw = UserIO.getInstance().requestInputDialog(0, JDL.L("gui.linklist.setpw.message", "Set download password"), null);
-                    for (int i = 0; i < selectedLinks.size(); i++) {
-                        selectedLinks.get(i).setProperty("pass", pw);
-                    }
-                    break;
-                case TableAction.DELETE: {
-                    if (selectedLinks.size() > 0 && JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, JDL.L("gui.downloadlist.delete", "Delete selected links?") + " (" + JDL.LF("gui.downloadlist.delete.size_packagev2", "%s links", selectedLinks.size()) + ")"), UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
-                        for (int i = 0; i < selectedLinks.size(); i++) {
-                            selectedLinks.get(i).setEnabled(false);
-                        }
-                        for (int i = 0; i < selectedLinks.size(); i++) {
-                            selectedLinks.get(i).deleteFile(true, false);
-                            selectedLinks.get(i).getFilePackage().remove(selectedLinks.get(i));
-                        }
-                    }
-                    return;
-                }
-                case TableAction.DELETEFILE: {
-                    if (selectedLinks.size() > 0) {
-                        int counter = 0;
-                        for (DownloadLink tmp : selectedLinks) {
-                            if (tmp.existsFile()) counter++;
-                        }
-                        if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, JDL.L("gui.downloadlist.delete2", "Delete links from downloadlist and disk?") + " (" + JDL.LF("gui.downloadlist.delete.links", "%s links", selectedLinks.size()) + " / " + " " + JDL.LF("gui.downloadlist.delete.files", "%s files", counter) + ")"), UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
-                            for (int i = 0; i < selectedLinks.size(); i++) {
-                                selectedLinks.get(i).setEnabled(false);
-                            }
-                            for (int i = 0; i < selectedLinks.size(); i++) {
-                                selectedLinks.get(i).deleteFile(true, true);
-                                selectedLinks.get(i).getFilePackage().remove(selectedLinks.get(i));
-                            }
-                        }
-                    }
-                    return;
-                }
                 }
             }
         }.start();
-
-    }
-
-    public static String getPasswordSelectedLinks(ArrayList<DownloadLink> selectedLinks) {
-        HashSet<String> List = new HashSet<String>();
-        StringBuilder build = new StringBuilder("");
-        for (int i = 0; i < selectedLinks.size(); i++) {
-            String pw = selectedLinks.get(i).getFilePackage().getPassword();
-            if (!List.contains(pw) && pw.length() > 0) {
-                if (List.size() > 0) build.append("\r\n");
-                List.add(pw);
-                build.append(pw);
-            }
-            if (selectedLinks.get(i).getStringProperty("pass", null) != null) {
-                pw = selectedLinks.get(i).getStringProperty("pass", null);
-                if (!List.contains(pw) && pw.length() > 0) {
-                    if (List.size() > 0) build.append("\r\n");
-                    List.add(pw);
-                    build.append(pw);
-                }
-            }
-        }
-        return build.toString();
-    }
-
-    private void sort(final int col) {
-        lastSort = !lastSort;
-        ArrayList<FilePackage> packages = JDUtilities.getDownloadController().getPackages();
-        synchronized (packages) {
-
-            Collections.sort(packages, new Comparator<FilePackage>() {
-
-                public int compare(FilePackage a, FilePackage b) {
-                    FilePackage aa = a;
-                    FilePackage bb = b;
-                    if (lastSort) {
-                        aa = b;
-                        bb = a;
-                    }
-                    switch (col) {
-                    case 0:
-                        return aa.getName().compareToIgnoreCase(bb.getName());
-                    case 1:
-                        return aa.getHoster().compareToIgnoreCase(bb.getHoster());
-                    case 2:
-                        return aa.getRemainingLinks() > bb.getRemainingLinks() ? 1 : -1;
-                    case 3:
-                        return aa.getPercent() > bb.getPercent() ? 1 : -1;
-                    default:
-                        return -1;
-                    }
-
-                }
-
-            });
-        }
-        JDUtilities.getDownloadController().fireStructureUpdate();
     }
 
     public void onDownloadControllerEvent(DownloadControllerEvent event) {
@@ -650,15 +293,6 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
             break;
         case DownloadControllerEvent.REFRESH_ALL:
             updateTableTask(REFRESH_ALL_DATA_CHANGED, null);
-            break;
-        }
-    }
-
-    public void onLinkCheckEvent(LinkCheckEvent event) {
-        switch (event.getID()) {
-        case LinkCheckEvent.ABORT:
-        case LinkCheckEvent.STOP:
-            LinkCheck.getLinkChecker().getBroadcaster().removeListener(this);
             break;
         }
     }

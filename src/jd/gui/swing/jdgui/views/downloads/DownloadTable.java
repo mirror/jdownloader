@@ -26,7 +26,6 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.io.File;
 import java.util.ArrayList;
-import java.util.HashMap;
 
 import javax.swing.DropMode;
 import javax.swing.JComponent;
@@ -37,7 +36,6 @@ import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
-import jd.config.Property;
 import jd.controlling.DownloadController;
 import jd.controlling.DownloadWatchDog;
 import jd.event.ControlEvent;
@@ -45,6 +43,25 @@ import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.components.table.JDRowHighlighter;
 import jd.gui.swing.components.table.JDTable;
 import jd.gui.swing.jdgui.menu.MenuAction;
+import jd.gui.swing.jdgui.views.downloads.contextmenu.CheckStatusAction;
+import jd.gui.swing.jdgui.views.downloads.contextmenu.CopyPasswordAction;
+import jd.gui.swing.jdgui.views.downloads.contextmenu.CopyURLAction;
+import jd.gui.swing.jdgui.views.downloads.contextmenu.CreateDLCAction;
+import jd.gui.swing.jdgui.views.downloads.contextmenu.DeleteAction;
+import jd.gui.swing.jdgui.views.downloads.contextmenu.DeleteFromDiskAction;
+import jd.gui.swing.jdgui.views.downloads.contextmenu.DisableAction;
+import jd.gui.swing.jdgui.views.downloads.contextmenu.EnableAction;
+import jd.gui.swing.jdgui.views.downloads.contextmenu.ForceDownloadAction;
+import jd.gui.swing.jdgui.views.downloads.contextmenu.NewPackageAction;
+import jd.gui.swing.jdgui.views.downloads.contextmenu.OpenDirectoryAction;
+import jd.gui.swing.jdgui.views.downloads.contextmenu.OpenInBrowserAction;
+import jd.gui.swing.jdgui.views.downloads.contextmenu.PackageDirectoryAction;
+import jd.gui.swing.jdgui.views.downloads.contextmenu.PackageNameAction;
+import jd.gui.swing.jdgui.views.downloads.contextmenu.PriorityAction;
+import jd.gui.swing.jdgui.views.downloads.contextmenu.ResetAction;
+import jd.gui.swing.jdgui.views.downloads.contextmenu.ResumeAction;
+import jd.gui.swing.jdgui.views.downloads.contextmenu.SetPasswordAction;
+import jd.gui.swing.jdgui.views.downloads.contextmenu.StopsignAction;
 import jd.nutils.OSDetector;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -254,8 +271,7 @@ public class DownloadTable extends JDTable implements MouseListener, KeyListener
     public void keyReleased(KeyEvent e) {
         if (e.getKeyCode() == KeyEvent.VK_DELETE || (OSDetector.isMac() && e.getKeyCode() == KeyEvent.VK_BACK_SPACE)) {
             ArrayList<DownloadLink> alllinks = getAllSelectedDownloadLinks();
-            TableAction test = new TableAction(panel, JDTheme.II("gui.images.delete", 16, 16), JDL.L("gui.table.contextmenu.delete", "Delete") + " (" + alllinks.size() + ")", TableAction.DELETE, new Property("links", alllinks));
-            test.actionPerformed(new ActionEvent(test, 0, ""));
+            new DeleteAction(alllinks).actionPerformed(null);
         }
     }
 
@@ -277,7 +293,6 @@ public class DownloadTable extends JDTable implements MouseListener, KeyListener
         Point point = e.getPoint();
         int row = rowAtPoint(point);
         int col = realColumnAtPoint(point);
-        JMenuItem tmp;
 
         Object obj = this.getModel().getValueAt(row, 0);
 
@@ -294,39 +309,24 @@ public class DownloadTable extends JDTable implements MouseListener, KeyListener
 
             ArrayList<DownloadLink> alllinks = getAllSelectedDownloadLinks();
 
-            int links_enabled = 0;
-            for (DownloadLink next : alllinks) {
-                if (next.isEnabled()) links_enabled++;
-            }
-            int links_disabled = alllinks.size() - links_enabled;
             ArrayList<FilePackage> sfp = getSelectedFilePackages();
 
             JPopupMenu popup = new JPopupMenu();
 
-            popup.add(tmp = new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.stopsign", 16, 16), JDL.L("gui.table.contextmenu.stopmark", "Stop"), TableAction.STOP_MARK, new Property("item", obj))));
-            if (DownloadWatchDog.getInstance().isStopMark(obj)) tmp.setIcon(tmp.getDisabledIcon());
-            HashMap<String, Object> prop = new HashMap<String, Object>();
-            prop.put("links", alllinks);
-            prop.put("boolean", true);
-            popup.add(tmp = new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.ok", 16, 16), JDL.L("gui.table.contextmenu.enable", "Enable") + " (" + links_disabled + ")", TableAction.DE_ACTIVATE, new Property("infos", prop))));
-            if (links_disabled == 0) tmp.setEnabled(false);
-            prop = new HashMap<String, Object>();
-            prop.put("links", alllinks);
-            prop.put("boolean", false);
-            popup.add(tmp = new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.bad", 16, 16), JDL.L("gui.table.contextmenu.disable", "Disable") + " (" + links_enabled + ")", TableAction.DE_ACTIVATE, new Property("infos", prop))));
-            if (links_enabled == 0) tmp.setEnabled(false);
+            popup.add(new StopsignAction(obj));
+            popup.add(new EnableAction(alllinks));
+            popup.add(new DisableAction(alllinks));
             popup.add(createMoreMenu(alllinks));
             popup.addSeparator();
 
             if (obj instanceof FilePackage) {
-                popup.add(new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.package_opened", 16, 16), JDL.L("gui.table.contextmenu.downloaddir", "Open Directory"), TableAction.DOWNLOAD_DIR, new Property("folder", new File(((FilePackage) obj).getDownloadDirectory())))));
+                popup.add(new OpenDirectoryAction(new File(((FilePackage) obj).getDownloadDirectory())));
                 addSortItem(popup, col, sfp, JDL.L("gui.table.contextmenu.packagesort", "Sort Packages") + " (" + sfp.size() + "), (" + getJDTableModel().getColumnName(col) + ")");
-                popup.add(new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.edit", 16, 16), JDL.L("gui.table.contextmenu.editpackagename", "Change Package Name") + " (" + sfp.size() + ")", TableAction.EDIT_NAME, new Property("packages", sfp))));
-                popup.add(new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.save", 16, 16), JDL.L("gui.table.contextmenu.editdownloaddir", "Edit Directory") + " (" + sfp.size() + ")", TableAction.EDIT_DIR, new Property("packages", sfp))));
+                popup.add(new PackageNameAction(sfp));
+                popup.add(new PackageDirectoryAction(sfp));
             } else if (obj instanceof DownloadLink) {
-                popup.add(new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.package_opened", 16, 16), JDL.L("gui.table.contextmenu.downloaddir", "Open Directory"), TableAction.DOWNLOAD_DIR, new Property("folder", new File(((DownloadLink) obj).getFileOutput()).getParentFile()))));
-                popup.add(tmp = new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.browse", 16, 16), JDL.L("gui.table.contextmenu.browselink", "Open in browser"), TableAction.DOWNLOAD_BROWSE_LINK, new Property("downloadlink", obj))));
-                if (((DownloadLink) obj).getLinkType() != DownloadLink.LINKTYPE_NORMAL) tmp.setEnabled(false);
+                popup.add(new OpenDirectoryAction(new File(((DownloadLink) obj).getFileOutput()).getParentFile()));
+                popup.add(new OpenInBrowserAction((DownloadLink) obj));
             }
             popup.addSeparator();
 
@@ -342,77 +342,43 @@ public class DownloadTable extends JDTable implements MouseListener, KeyListener
         }
     }
 
-    private JMenu createOtherMenu(ArrayList<DownloadLink> alllinks) {
-        JMenuItem tmp;
-        ArrayList<DownloadLink> allnoncon = new ArrayList<DownloadLink>();
-        for (DownloadLink link : alllinks) {
-            if (link.getLinkType() == DownloadLink.LINKTYPE_NORMAL) {
-                allnoncon.add(link);
-            }
-        }
-
+    private JMenu createOtherMenu(ArrayList<DownloadLink> links) {
         JMenu pop = new JMenu(JDL.L("gui.table.contextmenu.other", "Other"));
         pop.setIcon(JDTheme.II("gui.images.package", 16, 16));
-        pop.add(new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.newpackage", 16, 16), JDL.L("gui.table.contextmenu.newpackage", "Move into new Package") + " (" + alllinks.size() + ")", TableAction.NEW_PACKAGE, new Property("links", alllinks))));
-        pop.add(new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.password", 16, 16), JDL.L("gui.table.contextmenu.setdlpw", "Set download password") + " (" + alllinks.size() + ")", TableAction.SET_PW, new Property("links", alllinks))));
-        pop.add(new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.config.network_local", 16, 16), JDL.L("gui.table.contextmenu.check", "Check Online Status") + " (" + alllinks.size() + ")", TableAction.CHECK, new Property("links", alllinks))));
-        pop.add(new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.dlc", 16, 16), JDL.L("gui.table.contextmenu.dlc", "Create DLC") + " (" + alllinks.size() + ")", TableAction.DOWNLOAD_DLC, new Property("links", alllinks))));
-        pop.add(tmp = new JMenuItem(new TableAction(panel, JDTheme.II("gui.icons.cut", 16, 16), JDL.L("gui.table.contextmenu.copyLink", "Copy URL") + " (" + allnoncon.size() + ")", TableAction.DOWNLOAD_COPY_URL, new Property("links", allnoncon))));
-        if (allnoncon.isEmpty()) tmp.setEnabled(false);
-        pop.add(tmp = new JMenuItem(new TableAction(panel, JDTheme.II("gui.icons.copy", 16, 16), JDL.L("gui.table.contextmenu.copyPassword", "Copy Password") + " (" + alllinks.size() + ")", TableAction.DOWNLOAD_COPY_PASSWORD, new Property("links", alllinks))));
-        if (DownloadLinksPanel.getPasswordSelectedLinks(alllinks).length() == 0) tmp.setEnabled(false);
+
+        pop.add(new NewPackageAction(links));
+        pop.add(new SetPasswordAction(links));
+        pop.add(new CheckStatusAction(links));
+        pop.add(new CreateDLCAction(links));
+        pop.add(new CopyURLAction(links));
+        pop.add(new CopyPasswordAction(links));
+
         return pop;
     }
 
-    private JMenu createMoreMenu(ArrayList<DownloadLink> alllinks) {
-        JMenuItem tmp;
-        ArrayList<DownloadLink> resumlinks = new ArrayList<DownloadLink>();
-        ArrayList<DownloadLink> notrunning = new ArrayList<DownloadLink>();
-        int counter = 0;
-        for (DownloadLink link : alllinks) {
-            if (link.existsFile() && link.getLinkStatus().hasStatus(LinkStatus.ERROR_ALREADYEXISTS)) {
-                counter++;
-            }
-
-            if (!link.getLinkStatus().isPluginActive()) {
-                notrunning.add(link);
-                if (link.getLinkStatus().isFailed()) resumlinks.add(link);
-            }
-        }
-
+    private JMenu createMoreMenu(ArrayList<DownloadLink> links) {
         JMenu pop = new JMenu(JDL.L("gui.table.contextmenu.more", "More"));
         pop.setIcon(JDTheme.II("gui.images.configuration", 16, 16));
-        pop.add(tmp = new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.next", 16, 16), JDL.L("gui.table.contextmenu.tryforce", "Force download") + " (" + notrunning.size() + ")", TableAction.FORCE_DOWNLOAD, new Property("links", notrunning))));
-        if (notrunning.isEmpty() || DownloadWatchDog.getInstance().getDownloadStatus() == DownloadWatchDog.STATE.STOPPING) tmp.setEnabled(false);
-        pop.add(tmp = new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.resume", 16, 16), JDL.L("gui.table.contextmenu.resume", "Resume") + " (" + resumlinks.size() + ")", TableAction.DOWNLOAD_RESUME, new Property("links", resumlinks))));
-        if (resumlinks.isEmpty()) tmp.setEnabled(false);
-        pop.add(new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.undo", 16, 16), JDL.L("gui.table.contextmenu.reset", "Reset") + " (" + alllinks.size() + ")", TableAction.DOWNLOAD_RESET, new Property("links", alllinks))));
+        pop.add(new ForceDownloadAction(links));
+        pop.add(new ResumeAction(links));
+        pop.add(new ResetAction(links));
         pop.addSeparator();
 
-        pop.add(new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.delete", 16, 16), JDL.L("gui.table.contextmenu.deletelist2", "Delete from list") + " (" + alllinks.size() + ")", TableAction.DELETE, new Property("links", alllinks))));
-        pop.add(new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.delete", 16, 16), JDL.L("gui.table.contextmenu.deletelistdisk2", "Delete from list and disk") + " (" + alllinks.size() + "/" + counter + ")", TableAction.DELETEFILE, new Property("links", alllinks))));
+        pop.add(new DeleteAction(links));
+        pop.add(new DeleteFromDiskAction(links));
         return pop;
     }
 
     private JMenu createPrioMenu(ArrayList<DownloadLink> links) {
-        JMenuItem tmp;
         JMenu prioPopup = new JMenu(JDL.L("gui.table.contextmenu.priority", "Priority") + " (" + links.size() + ")");
-        Integer prio = null;
-        if (links.size() == 1) prio = links.get(0).getPriority();
         prioPopup.setIcon(JDTheme.II("gui.images.priority0", 16, 16));
-        HashMap<String, Object> prop = null;
-        for (int i = 3; i >= -1; i--) {
-            prop = new HashMap<String, Object>();
-            prop.put("links", links);
-            prop.put("prio", Integer.valueOf(i));
-            prioPopup.add(tmp = new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.priority" + i, 16, 16), prioDescs[i + 1], TableAction.DOWNLOAD_PRIO, new Property("infos", prop))));
 
-            if (prio != null && i == prio) {
-                tmp.setEnabled(false);
-                tmp.setIcon(JDTheme.II("gui.images.priority" + i, 16, 16));
-            } else
-                tmp.setEnabled(true);
-        }
+        prioPopup.add(new PriorityAction(links, 3));
+        prioPopup.add(new PriorityAction(links, 2));
+        prioPopup.add(new PriorityAction(links, 1));
+        prioPopup.add(new PriorityAction(links, 0));
+        prioPopup.add(new PriorityAction(links, -1));
+
         return prioPopup;
     }
 
