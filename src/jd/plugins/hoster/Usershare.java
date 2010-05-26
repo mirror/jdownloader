@@ -27,8 +27,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "usershare.net" }, urls = { "http(s)://[\\w\\.]*?usershare\\.net/(.*?/[0-9a-z]{12}|[0-9a-z]{12})" }, flags = { 0 })
-public class Usershare extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "usershare.net" }, urls = { "http(s)?://[\\w\\.]*?usershare\\.net/(.*?/[0-9a-z]{12}|[0-9a-z]{12})" }, flags = { 0 })
+public class Usershare extends PluginForHost {// http://usershare.net/RickyTheKidd/gwbq65hzbeg6
 
     public Usershare(PluginWrapper wrapper) {
         super(wrapper);
@@ -70,12 +70,9 @@ public class Usershare extends PluginForHost {
             }
             linkurl = br.getRedirectLocation();
         } else {
-            linkurl = br.getRegex("</a></TD><TD width=\"1%\" nowrap align=right.*?/TD>.*?</Table>.*?<a href=\"(http.*?)\"").getMatch(0);
+            linkurl = br.getRegex("\"(http://[a-zA-Z0-9]+\\.usershare\\.net/files/.*?/.*?/.*?)\"").getMatch(0);
             if (linkurl == null) {
-                linkurl = br.getRegex("\"(http://[a-zA-Z0-9]+\\.usershare\\.net/files/.*?/.*?/.*?)\"").getMatch(0);
-                if (linkurl == null) {
-                    linkurl = br.getRegex("href=\"(http://[0-9]+\\..*?:[0-9]+/d/.*?/.*?)\"").getMatch(0);
-                }
+                linkurl = br.getRegex("href=\"(http://[0-9]+\\..*?:[0-9]+/d/.*?/.*?)\"").getMatch(0);
             }
         }
         if (passCode != null) {

@@ -34,7 +34,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "save.tv" }, urls = { "http://[\\w\\.]*?(save\\.tv|free\\.save\\.tv)/STV/M/obj/recordOrder/reShowDownload\\.cfm\\?TelecastID=[0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "save.tv" }, urls = { "http://[\\w\\.]*?(save\\.tv|free\\.save\\.tv)/STV/M/obj/user/usShowVideoArchiveDetail\\.cfm\\?TelecastID=\\d+" }, flags = { 2 })
 public class SaveTv extends PluginForHost {
 
     public SaveTv(PluginWrapper wrapper) {
@@ -53,20 +53,10 @@ public class SaveTv extends PluginForHost {
         for (int i = 0; i <= 1; i++) {
             String acctype = this.getPluginConfig().getStringProperty("premium", null);
             if (acctype != null) {
-                br.getPage("http://www.save.tv/STV/S/misc/home.cfm?");
-                Form loginform = br.getFormbyProperty("name", "LoginForm");
-                if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                loginform.put("sUsername", Encoding.urlEncode(account.getUser()));
-                loginform.put("sPassword", Encoding.urlEncode(account.getPass()));
-                br.submitForm(loginform);
+                extendedLogin("http://www.save.tv/STV/S/misc/home.cfm?", Encoding.urlEncode(account.getUser()), Encoding.urlEncode(account.getPass()));
                 break;
             } else {
-                br.getPage("http://free.save.tv");
-                Form loginform = br.getForm(0);
-                if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                loginform.put("sUsername", Encoding.urlEncode(account.getUser()));
-                loginform.put("sPassword", Encoding.urlEncode(account.getPass()));
-                br.submitForm(loginform);
+                extendedLogin("http://free.save.tv", Encoding.urlEncode(account.getUser()), Encoding.urlEncode(account.getPass()));
                 if (br.containsHTML("Sie sind Kunde des EasyRecord Plugins")) {
                     this.getPluginConfig().setProperty("premium", "1");
                     this.getPluginConfig().save();
@@ -111,6 +101,8 @@ public class SaveTv extends PluginForHost {
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         requestFileInformation(downloadLink);
+        boolean pluginBroken = true;
+        if (pluginBroken) throw new PluginException(LinkStatus.ERROR_FATAL, "Plugin still in development!");
         login(account);
         String addedlink = downloadLink.getDownloadURL();
         if (this.getPluginConfig().getStringProperty("premium", null) != null) {
@@ -155,19 +147,12 @@ public class SaveTv extends PluginForHost {
             String username = accdata.getMatch(0);
             String password = accdata.getMatch(1).replace("true", "").trim();
             br.setFollowRedirects(true);
-            Form loginform = null;
             String acctype = this.getPluginConfig().getStringProperty("premium", null);
             if (acctype != null) {
-                br.getPage("http://www.save.tv/STV/S/misc/home.cfm?");
-                loginform = br.getFormbyProperty("name", "LoginForm");
+                extendedLogin("http://www.save.tv/STV/S/misc/home.cfm?", Encoding.urlEncode(username), Encoding.urlEncode(password));
             } else {
-                br.getPage("http://free.save.tv");
-                loginform = br.getForm(0);
+                extendedLogin("http://free.save.tv", Encoding.urlEncode(username), Encoding.urlEncode(password));
             }
-            if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            loginform.put("sUsername", username);
-            loginform.put("sPassword", password);
-            br.submitForm(loginform);
             for (DownloadLink dl : urls) {
                 String addedlink = dl.getDownloadURL();
                 if (acctype != null) {
@@ -179,8 +164,8 @@ public class SaveTv extends PluginForHost {
                 if (br.containsHTML("(Leider ist ein Fehler aufgetreten|Bitte versuchen Sie es später noch einmal)")) {
                     dl.setAvailable(false);
                 } else {
-                    String filename = br.getRegex("rand_ueberall\" cellpadding.*?<b>(.*?)</b><br>").getMatch(0);
-                    if (filename == null) filename = br.getRegex("rowspan=.*?width=.*?>.*?<b>(.*?)</b><br>").getMatch(0);
+                    String filename = br.getRegex("<h2 id=\"archive-detailbox-title\">(.*?)</h2>").getMatch(0);
+                    if (filename == null) filename = br.getRegex("id=\"telecast-detail\">.*?<h3>(.*?)</h2>").getMatch(0);
                     if (filename != null) {
                         dl.setFinalFileName(filename.trim() + new Random().nextInt(10) + ".avi");
                         dl.setAvailable(true);
@@ -193,6 +178,16 @@ public class SaveTv extends PluginForHost {
             return false;
         }
         return true;
+    }
+
+    public void extendedLogin(String accessSite, String user, String password) throws Exception {
+        br.getPage(accessSite);
+        Form loginform = br.getFormbyProperty("id", "loginform");
+        if (loginform == null) loginform = br.getFormbyProperty("name", "LoginForm");
+        if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        loginform.put("sUsername", user);
+        loginform.put("sPassword", password);
+        br.submitForm(loginform);
     }
 
     @Override
