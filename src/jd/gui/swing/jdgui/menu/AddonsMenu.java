@@ -27,7 +27,6 @@ import jd.OptionalPluginWrapper;
 import jd.gui.UserIF;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
-import jd.gui.swing.menu.Menu;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 
@@ -93,7 +92,7 @@ public class AddonsMenu extends JMenu {
                     m.setTitle(plg.getHost());
                     m.setIcon(JDTheme.II(plg.getPlugin().getIconKey(), 16, 16));
                     m.setItems(mis);
-                    JMenuItem mi = Menu.getJMenuItem(m);
+                    JMenuItem mi = m.toJMenuItem();
                     if (mi != null) {
                         mi.setIcon(m.getIcon());
                         itemsWithSubmenu.add(mi);
@@ -102,7 +101,7 @@ public class AddonsMenu extends JMenu {
                     }
                 } else {
                     for (MenuAction mi : mis) {
-                        JMenuItem c = Menu.getJMenuItem(mi);
+                        JMenuItem c = mi.toJMenuItem();
                         c.setDisabledIcon(null);
                         c.setIcon(JDTheme.II(plg.getPlugin().getIconKey(), 16, 16));
                         c.setSelectedIcon(JDTheme.II(plg.getPlugin().getIconKey(), 16, 16));

@@ -45,7 +45,6 @@ import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.components.table.JDRowHighlighter;
 import jd.gui.swing.components.table.JDTable;
 import jd.gui.swing.jdgui.menu.MenuAction;
-import jd.gui.swing.menu.Menu;
 import jd.nutils.OSDetector;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -424,7 +423,7 @@ public class DownloadTable extends JDTable implements MouseListener, KeyListener
         JDUtilities.getController().fireControlEventDirect(new ControlEvent(obj, ControlEvent.CONTROL_LINKLIST_CONTEXT_MENU, entries));
         if (entries != null && entries.size() > 0) {
             for (MenuAction next : entries) {
-                JMenuItem mi = Menu.getJMenuItem(next);
+                JMenuItem mi = next.toJMenuItem();
                 if (mi == null) {
                     pluginPopup.addSeparator();
                 } else {

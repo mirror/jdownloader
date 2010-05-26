@@ -20,6 +20,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 
 import javax.swing.AbstractAction;
 import javax.swing.JCheckBoxMenuItem;
@@ -27,6 +30,7 @@ import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.Timer;
 
+import jd.HostPluginWrapper;
 import jd.config.ConfigPropertyListener;
 import jd.config.Configuration;
 import jd.config.Property;
@@ -40,8 +44,8 @@ import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.gui.swing.jdgui.components.premiumbar.PremiumStatus;
-import jd.gui.swing.menu.HosterMenu;
 import jd.nutils.JDFlags;
+import jd.plugins.PluginForHost;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
@@ -140,7 +144,78 @@ public class PremiumMenu extends JMenu implements ActionListener, AccountControl
         this.add(new JCheckBoxMenuItem(tba));
         this.add(config);
         this.addSeparator();
-        HosterMenu.update(this);
+        this.updateHosts();
+    }
+
+    private void updateHosts() {
+        boolean addedEntry = false;
+
+        PluginForHost plugin;
+        JMenu pluginPopup;
+        JMenuItem mi;
+        ArrayList<HostPluginWrapper> hosts = new ArrayList<HostPluginWrapper>(HostPluginWrapper.getHostWrapper());
+        Collections.sort(hosts, new Comparator<HostPluginWrapper>() {
+
+            public int compare(HostPluginWrapper o1, HostPluginWrapper o2) {
+                return o1.getHost().compareToIgnoreCase(o2.getHost());
+            }
+
+        });
+
+        for (HostPluginWrapper wrapper : hosts) {
+            if (!wrapper.isLoaded() || !wrapper.isPremiumEnabled() || !AccountController.getInstance().hasAccounts(wrapper.getHost())) continue;
+            if (!wrapper.isEnabled()) continue;
+            plugin = wrapper.getPlugin();
+            pluginPopup = new JMenu(wrapper.getHost());
+            pluginPopup.setIcon(plugin.getHosterIconScaled());
+            for (MenuAction next : plugin.createMenuitems()) {
+                mi = next.toJMenuItem();
+                if (mi == null) {
+                    pluginPopup.addSeparator();
+                } else {
+                    pluginPopup.add(mi);
+                }
+            }
+            this.add(pluginPopup);
+            addedEntry = true;
+        }
+
+        if (addedEntry) this.addSeparator();
+        int entries = 7;
+        int menus = ('z' - 'a') / entries + 1;
+        JMenu[] jmenus = new JMenu[menus];
+        JMenu num = new JMenu(JDL.LF("jd.gui.swing.menu.HosterMenu", "Hoster %s", "0 - 9"));
+        this.add(num);
+        for (HostPluginWrapper wrapper : hosts) {
+            if (!wrapper.isLoaded() || !wrapper.isPremiumEnabled()) continue;
+            char ccv = wrapper.getHost().toLowerCase().charAt(0);
+            JMenu menu = null;
+            if (ccv >= '0' && ccv <= '9') {
+                menu = num;
+            } else {
+                int index = ((ccv - 'a')) / entries;
+                if (jmenus[index] == null) {
+                    int start = 'a' + index * entries;
+                    int end = Math.min('a' + ((1 + index) * entries) - 1, 'z');
+                    jmenus[index] = new JMenu(JDL.LF("jd.gui.swing.menu.HosterMenu", "Hoster %s", new String(new byte[] { (byte) (start) }).toUpperCase() + " - " + new String(new byte[] { (byte) (end) }).toUpperCase()));
+                    this.add(jmenus[index]);
+                }
+                menu = jmenus[index];
+            }
+
+            plugin = wrapper.getPlugin();
+            pluginPopup = new JMenu(wrapper.getHost());
+            pluginPopup.setIcon(plugin.getHosterIconScaled());
+            for (MenuAction next : plugin.createMenuitems()) {
+                mi = next.toJMenuItem();
+                if (mi == null) {
+                    pluginPopup.addSeparator();
+                } else {
+                    pluginPopup.add(mi);
+                }
+            }
+            menu.add(pluginPopup);
+        }
     }
 
     public void actionPerformed(ActionEvent e) {

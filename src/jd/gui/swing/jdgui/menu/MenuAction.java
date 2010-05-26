@@ -16,9 +16,16 @@
 
 package jd.gui.swing.jdgui.menu;
 
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
 
+import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JMenu;
+import javax.swing.JMenuItem;
+
 import jd.gui.swing.jdgui.actions.ToolBarAction;
+import jd.utils.JDUtilities;
 
 public class MenuAction extends ToolBarAction {
 
@@ -69,6 +76,44 @@ public class MenuAction extends ToolBarAction {
     public void addMenuItem(MenuAction m) {
         getItems().add(m);
         this.setType(Types.CONTAINER);
+    }
+    
+    public JMenuItem toJMenuItem() {
+        switch (getType()) {
+        case SEPARATOR:
+            return null;
+        case NORMAL:
+            return new JMenuItem(this);
+        case TOGGLE:
+            if (JDUtilities.getJavaVersion() >= 1.6) {
+                // Togglebuttons for 1.6
+                JCheckBoxMenuItem m2 = new JCheckBoxMenuItem(this);
+                return m2;
+            } else {
+                // 1.5 togle buttons need a changelistener in the menuitem
+                final JCheckBoxMenuItem m2 = new JCheckBoxMenuItem(this);
+                this.addPropertyChangeListener(new PropertyChangeListener() {
+                    public void propertyChange(PropertyChangeEvent evt) {
+                        m2.setSelected(((ToolBarAction) evt.getSource()).isSelected());
+                    }
+                });
+                return m2;
+            }
+        case CONTAINER:
+            JMenu m3 = new JMenu(getTitle());
+            m3.setIcon(getIcon());
+            JMenuItem c;
+                for (int i = 0; i < this.getSize(); i++) {
+                    c = this.get(i).toJMenuItem();
+                    if (c == null) {
+                        m3.addSeparator();
+                    } else {
+                        m3.add(c);
+                    }
+                }
+            return m3;
+        }
+        return null;
     }
 
 }

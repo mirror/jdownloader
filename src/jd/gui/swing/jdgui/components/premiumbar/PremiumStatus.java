@@ -42,7 +42,6 @@ import jd.gui.UserIF;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.menu.MenuAction;
-import jd.gui.swing.menu.Menu;
 import jd.nutils.Formatter;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -282,7 +281,7 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
                 JPopupMenu popup = new JPopupMenu();
                 ArrayList<MenuAction> entries = tpb.getPlugin().createMenuitems();
                 for (MenuAction next : entries) {
-                    JMenuItem mi = Menu.getJMenuItem(next);
+                    JMenuItem mi = next.toJMenuItem();
                     if (mi == null) {
                         popup.addSeparator();
                     } else {
