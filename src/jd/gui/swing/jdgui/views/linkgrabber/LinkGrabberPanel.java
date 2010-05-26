@@ -22,23 +22,16 @@ import java.awt.event.ActionListener;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.logging.Logger;
 
-import javax.swing.JCheckBoxMenuItem;
-import javax.swing.JMenuItem;
 import javax.swing.JScrollPane;
 import javax.swing.Timer;
 
 import jd.config.Configuration;
 import jd.config.Property;
 import jd.config.SubConfiguration;
-import jd.controlling.ClipboardHandler;
 import jd.controlling.DownloadWatchDog;
 import jd.controlling.GarbageController;
-import jd.controlling.JDLogger;
 import jd.controlling.LinkCheck;
 import jd.controlling.LinkCheckEvent;
 import jd.controlling.LinkCheckListener;
@@ -50,10 +43,7 @@ import jd.controlling.ProgressControllerEvent;
 import jd.controlling.ProgressControllerListener;
 import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
-import jd.gui.swing.SwingGui;
 import jd.gui.swing.components.Balloon;
-import jd.gui.swing.components.JDFileChooser;
-import jd.gui.swing.components.linkbutton.JLink;
 import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.jdgui.JDGuiConstants;
 import jd.gui.swing.jdgui.actions.ThreadedAction;
@@ -61,7 +51,6 @@ import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.views.ViewToolbar;
 import jd.gui.swing.jdgui.views.downloads.DownloadTable;
 import jd.nutils.JDFlags;
-import jd.nutils.io.JDFileFilter;
 import jd.nutils.io.JDIO;
 import jd.nutils.jobber.Jobber;
 import jd.plugins.DownloadLink;
@@ -95,7 +84,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
     private Jobber checkJobbers = new Jobber(4);
 
     private LinkCheck lc = LinkCheck.getLinkChecker();
-    private Timer Update_Async;
+    private Timer updateAsync;
     private static LinkGrabberPanel INSTANCE;
 
     private LinkGrabberController LGINSTANCE = null;
@@ -133,9 +122,9 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
         scrollPane = new JScrollPane(internalTable);
         toolbar = new LinkGrabberToolbar();
         filePackageInfo = new LinkGrabberFilePackageInfo();
-        Update_Async = new Timer(250, this);
-        Update_Async.setInitialDelay(250);
-        Update_Async.setRepeats(false);
+        updateAsync = new Timer(250, this);
+        updateAsync.setInitialDelay(250);
+        updateAsync.setRepeats(false);
         gathertimer = new Timer(2000, LinkGrabberPanel.this);
         gathertimer.setInitialDelay(2000);
         gathertimer.setRepeats(false);
@@ -262,7 +251,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
                     internalTable.fireTableChanged();
                 } catch (Exception e) {
                     logger.severe("TreeTable Exception, complete refresh!");
-                    Update_Async.restart();
+                    updateAsync.restart();
                 }
             }
         }
@@ -272,7 +261,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
     public void onHide() {
         notvisible = true;
         LGINSTANCE.removeListener(this);
-        Update_Async.stop();
+        updateAsync.stop();
     }
 
     public void move(byte mode) {
@@ -292,7 +281,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
                     if (LGINSTANCE.isDupe(element)) continue;
                     addToWaitingList(element);
                 }
-                Update_Async.restart();
+                updateAsync.restart();
                 gathertimer.restart();
                 addinginprogress = false;
             }
@@ -440,7 +429,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
             if (!link.getBooleanProperty("removed", false)) LGINSTANCE.attachToPackagesSecondStage(link);
         }
         pc.increase(links.size());
-        Update_Async.restart();
+        updateAsync.restart();
     }
 
     @Override
@@ -450,285 +439,23 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
         fireTableChanged();
     }
 
-    @SuppressWarnings("unchecked")
-    public void actionPerformed(final ActionEvent arg0) {
-        new Thread() {
+    public void actionPerformed(final ActionEvent e) {
+        new Thread("LinkGrabberPanel: actionPerformed") {
             @Override
             public void run() {
-                this.setName("LinkGrabberPanel: actionPerformed");
-                if (arg0.getSource() == INSTANCE.Update_Async) {
+                if (e.getSource() == updateAsync) {
                     fireTableChanged();
-                    return;
-                }
-
-                if (arg0.getSource() == INSTANCE.gathertimer) {
+                } else if (e.getSource() == gathertimer) {
                     gathertimer.stop();
                     if (waitingList.size() > 0) {
                         startLinkGatherer();
-                    }
-                    return;
-                }
-                ArrayList<LinkGrabberFilePackage> selected_packages = new ArrayList<LinkGrabberFilePackage>();
-                ArrayList<DownloadLink> selected_links = new ArrayList<DownloadLink>();
-                DownloadLink link = null;
-                int prio = 0;
-                String pw = "";
-                HashMap<String, Object> prop = new HashMap<String, Object>();
-                LinkGrabberFilePackage fp;
-                String ext = null;
-                Set<String> hoster = null;
-                String name = null;
-                boolean b = false;
-                HashSet<String> List = new HashSet<String>();
-                StringBuilder build = new StringBuilder();
-                String string = null;
-                synchronized (LinkGrabberController.ControllerLock) {
-                    synchronized (LGINSTANCE.getPackages()) {
-                        ArrayList<LinkGrabberFilePackage> fps = LGINSTANCE.getPackages();
-                        if (arg0.getSource() instanceof JMenuItem) {
-                            switch (arg0.getID()) {
-                            case LinkGrabberTableAction.SELECT_HOSTER:
-                                hoster = (Set<String>) ((LinkGrabberTableAction) ((JMenuItem) arg0.getSource()).getAction()).getProperty().getProperty("hoster");
-                                selected_packages = new ArrayList<LinkGrabberFilePackage>(fps);
-                                selected_packages.add(LGINSTANCE.getFilterPackage());
-                                break;
-                            case LinkGrabberTableAction.DELETE_OFFLINE:
-                            case LinkGrabberTableAction.DELETE_DUPS:
-                                selected_packages = new ArrayList<LinkGrabberFilePackage>(fps);
-                                selected_packages.add(LGINSTANCE.getFilterPackage());
-                                break;
-                            case LinkGrabberTableAction.ADD_SELECTED_PACKAGES:
-                            case LinkGrabberTableAction.EDIT_DIR:
-                            case LinkGrabberTableAction.SPLIT_HOSTER:
-                                selected_packages = new ArrayList<LinkGrabberFilePackage>(INSTANCE.internalTable.getSelectedFilePackages());
-                                break;
-                            case LinkGrabberTableAction.DOWNLOAD_PRIO:
-                            case LinkGrabberTableAction.DE_ACTIVATE:
-                                prop = (HashMap<String, Object>) ((LinkGrabberTableAction) ((JMenuItem) arg0.getSource()).getAction()).getProperty().getProperty("infos");
-                                selected_links = (ArrayList<DownloadLink>) prop.get("links");
-                                break;
-                            case LinkGrabberTableAction.DELETE:
-                            case LinkGrabberTableAction.SET_PW:
-                            case LinkGrabberTableAction.NEW_PACKAGE:
-                            case LinkGrabberTableAction.MERGE_PACKAGE:
-                            case LinkGrabberTableAction.SAVE_DLC:
-                            case LinkGrabberTableAction.ADD_SELECTED_LINKS:
-                            case LinkGrabberTableAction.COPY_LINK:
-                            case LinkGrabberTableAction.CHECK_LINK:
-                                selected_links = (ArrayList<DownloadLink>) ((LinkGrabberTableAction) ((JMenuItem) arg0.getSource()).getAction()).getProperty().getProperty("links");
-                                break;
-                            case LinkGrabberTableAction.BROWSE_LINK:
-                                link = (DownloadLink) ((LinkGrabberTableAction) ((JMenuItem) arg0.getSource()).getAction()).getProperty().getProperty("link");
-                                break;
-                            case LinkGrabberTableAction.EXT_FILTER:
-                                ext = (String) ((LinkGrabberTableAction) ((JMenuItem) arg0.getSource()).getAction()).getProperty().getProperty("extension");
-                                b = ((JCheckBoxMenuItem) arg0.getSource()).isSelected();
-                                break;
-                            }
-                        } else if (arg0.getSource() instanceof LinkGrabberTableAction) {
-                            switch (arg0.getID()) {
-                            case LinkGrabberTableAction.DELETE:
-                                selected_links = (ArrayList<DownloadLink>) ((LinkGrabberTableAction) arg0.getSource()).getProperty().getProperty("links");
-                                break;
-                            }
-                        }
-                        switch (arg0.getID()) {
-                        case LinkGrabberTableAction.CHECK_LINK:
-                            recheckLinks(selected_links);
-                            break;
-                        case LinkGrabberTableAction.ADD_SELECTED_LINKS:
-                            ArrayList<LinkGrabberFilePackage> selected_packages2 = new ArrayList<LinkGrabberFilePackage>();
-                            while (selected_links.size() > 0) {
-                                ArrayList<DownloadLink> links2 = new ArrayList<DownloadLink>(selected_links);
-                                LinkGrabberFilePackage fp3 = LGINSTANCE.getFPwithLink(selected_links.get(0));
-                                if (fp3 == null) {
-                                    logger.warning("DownloadLink not controlled by LinkGrabberController!");
-                                    selected_links.remove(selected_links.get(0));
-                                    continue;
-                                }
-                                LinkGrabberFilePackage fp4 = new LinkGrabberFilePackage(fp3.getName());
-                                fp4.setDownloadDirectory(fp3.getDownloadDirectory());
-                                fp4.setPassword(fp3.getPassword());
-                                fp4.setExtractAfterDownload(fp3.isExtractAfterDownload());
-                                fp4.setUseSubDir(fp3.useSubDir());
-                                fp4.setComment(fp3.getComment());
-                                for (DownloadLink dl : links2) {
-                                    if (LGINSTANCE.getFPwithLink(dl) != null && LGINSTANCE.getFPwithLink(dl) == fp3) {
-                                        fp4.add(dl);
-                                        selected_links.remove(dl);
-                                    }
-                                }
-                                selected_packages2.add(fp4);
-                            }
-                            confirmPackages(selected_packages2);
-                            break;
-                        case LinkGrabberTableAction.SPLIT_HOSTER:
-                            for (LinkGrabberFilePackage fp2 : selected_packages) {
-                                synchronized (fp2) {
-                                    ArrayList<DownloadLink> links2 = new ArrayList<DownloadLink>(fp2.getDownloadLinks());
-                                    Set<String> hosts = DownloadLink.getHosterList(links2);
-                                    for (String host : hosts) {
-                                        LinkGrabberFilePackage fp3 = new LinkGrabberFilePackage(fp2.getName());
-                                        fp3.setDownloadDirectory(fp2.getDownloadDirectory());
-                                        fp3.setPassword(fp2.getPassword());
-                                        fp3.setExtractAfterDownload(fp2.isExtractAfterDownload());
-                                        fp3.setUseSubDir(fp2.useSubDir());
-                                        fp3.setComment(fp2.getComment());
-                                        for (DownloadLink dl : links2) {
-                                            if (dl.getPlugin().getHost().equalsIgnoreCase(host)) {
-                                                fp3.add(dl);
-                                            }
-                                        }
-                                        LGINSTANCE.addPackage(fp3);
-                                    }
-                                }
-                            }
-                            break;
-                        case LinkGrabberTableAction.DELETE_OFFLINE:
-                            for (LinkGrabberFilePackage fp2 : selected_packages) {
-                                fp2.removeOffline();
-                            }
-                            break;
-                        case LinkGrabberTableAction.DELETE_DUPS:
-                            for (LinkGrabberFilePackage fp2 : selected_packages) {
-                                selected_links = fp2.getLinksListbyStatus(LinkStatus.ERROR_ALREADYEXISTS);
-                                fp2.remove(selected_links);
-                            }
-                            break;
-                        case LinkGrabberTableAction.SELECT_HOSTER:
-                            for (LinkGrabberFilePackage fp2 : selected_packages) {
-                                fp2.keepHostersOnly(hoster);
-                            }
-                            break;
-                        case LinkGrabberTableAction.EDIT_DIR:
-                            final ArrayList<LinkGrabberFilePackage> selected_packages3 = new ArrayList<LinkGrabberFilePackage>(selected_packages);
-                            new GuiRunnable<Object>() {
-                                @Override
-                                public Object runSave() {
-                                    JDFileChooser fc = new JDFileChooser();
-                                    fc.setApproveButtonText(JDL.L("gui.btn_ok", "OK"));
-                                    fc.setFileSelectionMode(JDFileChooser.DIRECTORIES_ONLY);
-                                    fc.setCurrentDirectory(new File(selected_packages3.get(0).getDownloadDirectory()));
-                                    if (fc.showOpenDialog(INSTANCE) == JDFileChooser.APPROVE_OPTION) {
-                                        if (fc.getSelectedFile() != null) {
-                                            for (LinkGrabberFilePackage fp2 : selected_packages3) {
-                                                fp2.setDownloadDirectory(fc.getSelectedFile().getAbsolutePath());
-                                            }
-                                        }
-                                    }
-                                    return null;
-                                }
-                            }.start();
-                            break;
-                        case LinkGrabberTableAction.MERGE_PACKAGE:
-                            fp = LGINSTANCE.getFPwithLink(selected_links.get(0));
-                            name = fp.getName();
-                        case LinkGrabberTableAction.NEW_PACKAGE:
-                            fp = LGINSTANCE.getFPwithLink(selected_links.get(0));
-                            LinkGrabberFilePackage nfp;
-                            if (name == null) name = UserIO.getInstance().requestInputDialog(0, JDL.L("gui.linklist.newpackage.message", "Name of the new package"), fp.getName());
-                            if (name != null) {
-                                nfp = new LinkGrabberFilePackage(name, LGINSTANCE);
-                                nfp.setDownloadDirectory(fp.getDownloadDirectory());
-                                nfp.setExtractAfterDownload(fp.isExtractAfterDownload());
-                                nfp.setUseSubDir(fp.useSubDir());
-                                nfp.setComment(fp.getComment());
-                                for (DownloadLink dlink : selected_links) {
-                                    fp = LGINSTANCE.getFPwithLink(dlink);
-                                    if (fp != null) dlink.addSourcePluginPassword(fp.getPassword());
-                                }
-                                nfp.addAll(selected_links);
-                                if (GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_INSERT_NEW_LINKS_AT, false)) {
-                                    LGINSTANCE.addPackageAt(nfp, 0, 0);
-                                } else {
-                                    LGINSTANCE.addPackage(nfp);
-                                }
-                            }
-                            break;
-                        case LinkGrabberTableAction.COPY_LINK:
-                            for (int i = 0; i < selected_links.size(); i++) {
-                                if (selected_links.get(i).getLinkType() == DownloadLink.LINKTYPE_NORMAL) {
-                                    String url = selected_links.get(i).getBrowserUrl();
-                                    if (!List.contains(url)) {
-                                        if (List.size() > 0) build.append("\r\n");
-                                        List.add(url);
-                                        build.append(url);
-                                    }
-                                }
-                            }
-                            string = build.toString();
-                            ClipboardHandler.getClipboard().copyTextToClipboard(string);
-                            break;
-                        case LinkGrabberTableAction.BROWSE_LINK:
-                            if (link.getLinkType() == DownloadLink.LINKTYPE_NORMAL) {
-                                try {
-                                    JLink.openURL(link.getBrowserUrl());
-                                } catch (Exception e1) {
-                                    JDLogger.exception(e1);
-                                }
-                            }
-                            break;
-                        case LinkGrabberTableAction.SAVE_DLC: {
-                            GuiRunnable<File> temp = new GuiRunnable<File>() {
-                                @Override
-                                public File runSave() {
-                                    JDFileChooser fc = new JDFileChooser("_LOADSAVEDLC");
-                                    fc.setFileFilter(new JDFileFilter(null, ".dlc", true));
-                                    if (fc.showSaveDialog(SwingGui.getInstance().getMainFrame()) == JDFileChooser.APPROVE_OPTION) return fc.getSelectedFile();
-                                    return null;
-                                }
-                            };
-                            File ret = temp.getReturnValue();
-                            if (ret == null) return;
-                            if (JDIO.getFileExtension(ret) == null || !JDIO.getFileExtension(ret).equalsIgnoreCase("dlc")) {
-                                ret = new File(ret.getAbsolutePath() + ".dlc");
-                            }
-                            JDUtilities.getController().saveDLC(ret, selected_links);
-                            break;
-                        }
-                        case LinkGrabberTableAction.SET_PW:
-                            pw = UserIO.getInstance().requestInputDialog(0, JDL.L("gui.linklist.setpw.message", "Set download password"), null);
-                            for (int i = 0; i < selected_links.size(); i++) {
-                                selected_links.get(i).setProperty("pass", pw);
-                            }
-                            break;
-                        case LinkGrabberTableAction.DE_ACTIVATE:
-                            b = (Boolean) prop.get("boolean");
-                            for (int i = 0; i < selected_links.size(); i++) {
-                                selected_links.get(i).setEnabled(b);
-                            }
-                            Update_Async.restart();
-                            break;
-                        case LinkGrabberTableAction.ADD_SELECTED_PACKAGES:
-                            confirmPackages(selected_packages);
-                            break;
-                        case LinkGrabberTableAction.DELETE:
-                            if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, JDL.L("gui.downloadlist.delete", "Delete selected links?") + " (" + JDL.LF("gui.downloadlist.delete.size_packagev2", "%s links", selected_links.size()) + ")"), UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
-                                for (DownloadLink dlink : selected_links) {
-                                    dlink.setProperty("removed", true);
-                                    fp = LGINSTANCE.getFPwithLink(dlink);
-                                    if (fp == null) continue;
-                                    fp.remove(dlink);
-                                }
-                            }
-                            break;
-                        case LinkGrabberTableAction.DOWNLOAD_PRIO:
-                            prio = (Integer) prop.get("prio");
-                            for (int i = 0; i < selected_links.size(); i++) {
-                                selected_links.get(i).setPriority(prio);
-                            }
-                            break;
-                        case LinkGrabberTableAction.EXT_FILTER:
-                            LGINSTANCE.filterExtension(ext, b);
-                            break;
-                        }
                     }
                 }
             }
         }.start();
     }
 
-    private void confirmPackages(ArrayList<LinkGrabberFilePackage> all) {
+    public void confirmPackages(ArrayList<LinkGrabberFilePackage> all) {
         if (all.size() == 0) return;
         for (int i = 0; i < all.size(); i++) {
             confirmPackage(all.get(i), null, i);
@@ -869,7 +596,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
             if (SubConfiguration.getConfig(LinkGrabberController.CONFIG).getBooleanProperty(LinkGrabberController.PARAM_INFOPANEL_ONLINKGRAB)) {
                 showFilePackageInfo((LinkGrabberFilePackage) event.getParameter());
             }
-            Update_Async.restart();
+            updateAsync.restart();
             break;
         case LinkGrabberControllerEvent.REMOVE_FILEPACKAGE:
             if (filePackageInfo.getPackage() != null && filePackageInfo.getPackage() == ((LinkGrabberFilePackage) event.getParameter())) {
@@ -879,10 +606,10 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
                     hideFilePackageInfo();
                 }
             }
-            Update_Async.restart();
+            updateAsync.restart();
             break;
         case LinkGrabberControllerEvent.REFRESH_STRUCTURE:
-            Update_Async.restart();
+            updateAsync.restart();
             break;
         default:
             break;

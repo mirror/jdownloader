@@ -271,6 +271,7 @@ public class DownloadTable extends JDTable implements MouseListener, KeyListener
     public void keyReleased(KeyEvent e) {
         if (e.getKeyCode() == KeyEvent.VK_DELETE || (OSDetector.isMac() && e.getKeyCode() == KeyEvent.VK_BACK_SPACE)) {
             ArrayList<DownloadLink> alllinks = getAllSelectedDownloadLinks();
+            if (alllinks.isEmpty()) return;
             new DeleteAction(alllinks).actionPerformed(null);
         }
     }

@@ -1,4 +1,4 @@
-package jd.gui.swing.jdgui.views.downloads.contextmenu;
+package jd.gui.swing.jdgui.views.linkgrabber.contextmenu;
 
 import java.awt.event.ActionEvent;
 import java.io.File;
@@ -8,16 +8,16 @@ import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.components.JDFileChooser;
 import jd.gui.swing.jdgui.interfaces.ContextMenuAction;
-import jd.plugins.FilePackage;
+import jd.plugins.LinkGrabberFilePackage;
 import jd.utils.locale.JDL;
 
 public class PackageDirectoryAction extends ContextMenuAction {
 
-    private static final long serialVersionUID = -4322266872775860673L;
+    private static final long serialVersionUID = -7890741664214058627L;
 
-    private final ArrayList<FilePackage> packages;
+    private final ArrayList<LinkGrabberFilePackage> packages;
 
-    public PackageDirectoryAction(ArrayList<FilePackage> packages) {
+    public PackageDirectoryAction(ArrayList<LinkGrabberFilePackage> packages) {
         this.packages = packages;
 
         init();
@@ -45,7 +45,7 @@ public class PackageDirectoryAction extends ContextMenuAction {
                     File ret = fc.getSelectedFile();
                     if (ret == null) return null;
 
-                    for (FilePackage packagee : packages) {
+                    for (LinkGrabberFilePackage packagee : packages) {
                         packagee.setDownloadDirectory(ret.getAbsolutePath());
                     }
                 }
