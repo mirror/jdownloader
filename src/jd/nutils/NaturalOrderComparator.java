@@ -61,7 +61,9 @@ public class NaturalOrderComparator implements Comparator<String>, Serializable 
         }
     }
 
-    public int compare(String a, String b) {
+    public int compare(String aIn, String bIn) {
+        String a = aIn.toLowerCase();
+        String b = bIn.toLowerCase();
         int ia = 0, ib = 0;
         int nza = 0, nzb = 0;
         char ca, cb;
@@ -109,7 +111,7 @@ public class NaturalOrderComparator implements Comparator<String>, Serializable 
             }
 
             if (ca < cb) return -1;
-            if (ca > cb) return +1; 
+            if (ca > cb) return +1;
 
             ++ia;
             ++ib;
