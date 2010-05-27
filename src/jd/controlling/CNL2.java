@@ -32,6 +32,7 @@ import jd.nutils.encoding.Base64;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.nativeintegration.LocalBrowser;
 import jd.parser.Regex;
+import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
 import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
@@ -65,8 +66,9 @@ public final class CNL2 {
             for (final DecryptPluginWrapper plg : DecryptPluginWrapper.getDecryptWrapper()) {
                 if ((plg.getFlags() & PluginWrapper.CNL_2) > 0) {
                     if (plg.canHandle(text)) {
-                        String match = new Regex(text, plg.getPattern()).getMatch(-1);
-                        if (match.equalsIgnoreCase(text)) {
+                        String links[] = HTMLParser.getHttpLinks(text, null);
+                        if (links.length == 1) {
+                            /* only single links should open in browser */
                             if (text.contains("?")) {
                                 LocalBrowser.openDefaultURL(new URL(text + "&jd=1"));
                             } else {

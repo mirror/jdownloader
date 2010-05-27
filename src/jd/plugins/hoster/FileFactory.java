@@ -133,8 +133,8 @@ public class FileFactory extends PluginForHost {
     }
 
     public String getUrl() throws IOException {
-        String hashpage = br.getRegex("(/file/getLink\\.js.*?)\"").getMatch(0);
-        if (hashpage != null) br.getPage("http://www.filefactory.com" + hashpage);
+        String hash = br.getRegex("(hash=.*?)\"").getMatch(0);
+        if (hash != null) br.getPage("http://www.filefactory.com/file/getLink.js?" + hash);
         String varsFound[][] = br.getRegex("var([/ a-zA-Z0-9]+)=[ ]*'(.*?)'[ ]*;").getMatches();
         HashMap<String, String> vars = new HashMap<String, String>();
         String urlVar = null;
@@ -294,7 +294,7 @@ public class FileFactory extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
-        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+        br.getHeaders().put("User-Agent", RandomUserAgent.generateFF());
         br.setFollowRedirects(true);
         for (int i = 0; i < 4; i++) {
             try {

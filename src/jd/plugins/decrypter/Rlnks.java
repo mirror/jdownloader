@@ -64,6 +64,7 @@ public class Rlnks extends PluginForDecrypt {
     private void decryptLinks(ArrayList<DownloadLink> decryptedLinks) throws IOException {
         br.setFollowRedirects(false);
         String[] matches = br.getRegex("getFile\\('(cid=\\w*?&lid=\\d*?)'\\)").getColumn(0);
+        String lastcaptcha = null;
         try {
             progress.addToMax(matches.length);
             for (String match : matches) {
@@ -73,10 +74,10 @@ public class Rlnks extends PluginForDecrypt {
                     for (int i = 0; i < 5; i++) {
                         if (!captcharetry) {
                             brc = br.cloneBrowser();
-                            brc.setCookiesExclusive(true);
+                            // brc.setCookiesExclusive(true);
                             brc.getHeaders().put("User-Agent", RandomUserAgent.generate());
                             try {
-                                Thread.sleep((i + 1) * 1000);
+                                Thread.sleep((i + 1) * 2000);
                             } catch (Exception e) {
                             }
                             brc.getPage("http://www.relink.us/frame.php?" + match);
@@ -84,7 +85,7 @@ public class Rlnks extends PluginForDecrypt {
                         captcharetry = false;
                         if (brc != null && brc.getRedirectLocation() != null && brc.getRedirectLocation().contains("relink.us/getfile")) {
                             try {
-                                Thread.sleep((i + 1) * 500);
+                                Thread.sleep((i + 1) * 150);
                             } catch (Exception e) {
                             }
                             brc.getPage(brc.getRedirectLocation());
@@ -98,22 +99,18 @@ public class Rlnks extends PluginForDecrypt {
                                 decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(url)));
                                 break;
                             } else {
-                                /*
-                                 * TODO: captcha handling not working at the
-                                 * moment, loop
-                                 */
-                                Boolean b = true;
-                                if (b) return;
+                                /* captcha handling does not work very good */
+                                if (match.equalsIgnoreCase(lastcaptcha)) break;
                                 Form f = brc.getForm(0);
                                 File file = this.getLocalCaptchaFile();
                                 Browser temp = brc.cloneBrowser();
                                 temp.getDownload(file, "http://www.relink.us/core/captcha/circlecaptcha.php");
                                 /* at the moment they dont check clickcaptcha ;) */
-                                Point p = UserIO.getInstance().requestClickPositionDialog(file, "relink.us", "blaaa");
+                                Point p = UserIO.getInstance().requestClickPositionDialog(file, "relink.us", "Click on open Circle");
                                 f.put("button.x", p.x + "");
                                 f.put("button.y", p.y + "");
-                                brc.submitForm(f);
-                                captcharetry = true;
+                                br.submitForm(f);
+                                lastcaptcha = match;
                             }
                         }
                         try {
