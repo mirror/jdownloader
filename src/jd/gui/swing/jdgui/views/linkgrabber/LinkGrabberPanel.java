@@ -134,14 +134,14 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
         /* to init the DownloadAutostart Listener */
         DownloadAutostart.getInstance();
 
-        if (SubConfiguration.getConfig(LinkGrabberController.CONFIG).getBooleanProperty(LinkGrabberController.PARAM_CONTROLPOSITION, false)) {
+        if (SubConfiguration.getConfig(LinkGrabberController.CONFIG).getBooleanProperty(LinkGrabberController.PARAM_CONTROLPOSITION, true)) {
             this.setLayout(new MigLayout("ins 0, wrap 1", "[fill,grow]", "[][fill,grow]"));
-            this.add(toolbar, "gapleft 3, gaptop 3");
+            this.add(toolbar, "gaptop 3");
             this.add(scrollPane, "grow");
         } else {
             this.setLayout(new MigLayout("ins 0, wrap 1", "[fill,grow]", "[fill,grow][]"));
             this.add(scrollPane, "grow");
-            this.add(toolbar, "gapleft 3, gapbottom 3");
+            this.add(toolbar, "gapbottom 3");
         }
     }
 
@@ -177,7 +177,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
                 }
             }
         };
-        new ThreadedAction("action.linkgrabber.addall", "gui.images.add_all") {
+        new ThreadedAction("action.linkgrabber.addall", "gui.images.taskpanes.download") {
 
             private static final long serialVersionUID = 6181260839200699153L;
 

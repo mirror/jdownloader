@@ -94,8 +94,6 @@ gui.splash.languages                 = default/preferences-desktop-locale
 gui.images.reconnect                 = default/view-refresh
 gui.images.reconnect_warning         = default/view-refresh-warning
 gui.images.download                  = default/software-update-available
-gui.images.add_all                   = default/folder-open_add
-gui.images.add_package               = default/folder-open
 gui.images.clear                     = default/edit-delete
 gui.images.clipboard                 = default/edit-paste
 gui.images.clipboard_enabled         = default/clipboard_en
@@ -135,6 +133,10 @@ gui.images.enabled                   = default/enabled
 gui.images.disabled                  = default/disabled
 gui.images.filter                    = default/filter
 gui.images.addselected               = default/edit-find
+
+# Old keys
+gui.images.add_all                   = default/folder-open_add
+gui.images.add_package               = default/folder-open
 
 # Cursor. ATTENTION. CURSOR are GIFS!!
 gui.cursor.help                      = default/cursor/help

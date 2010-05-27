@@ -88,7 +88,7 @@ public class ViewToolbar extends JPanel {
         return current;
     }
 
-    private String getColConstraints(String[] list) {
+    protected String getColConstraints(String[] list) {
         StringBuilder sb = new StringBuilder();
         sb.append(getColConstraint(FIRST_COL, null));
         for (int i = 0; i < list.length; ++i) {
@@ -105,7 +105,7 @@ public class ViewToolbar extends JPanel {
      * @param string
      * @return
      */
-    public String getColConstraint(int col, String string) {
+    protected String getColConstraint(int col, String string) {
         switch (col) {
         case FIRST_COL:
             return halign == EAST ? "3[grow]5" : "3";
