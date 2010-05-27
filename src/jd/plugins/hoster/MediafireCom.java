@@ -234,7 +234,8 @@ public class MediafireCom extends PluginForHost {
 
         String eval = null;
         String evalWhat = null;
-        eval = new Regex(brData, "function RunOnLoad\\(\\)\\{.*?([a-zA-Z0-9]+\\s*?=\\s*?''\\s*?;\\s*?[a-zA-Z0-9]+\\s*?=\\s*?unes.*?;?)eval\\([a-zA-Z0-9]+\\);.*?\\}").getMatch(0);
+        eval = new Regex(brData, "<script\\s*?type=\"text/javascript\">DoShow\\(\"notloggedin_wrapper\"\\)\\s*?;\\s*?cR\\(\\)\\s*?;\\s*?([a-zA-Z0-9]+)\\s*?\\(\\)\\s*?;\\s*?ap\\(-1\\)\\s*?;\\s*?var\\s*?gV=document.getElementById\\('pagename'\\)").getMatch(0);
+        eval = new Regex(brData, "function\\s*?" + eval + "\\(\\)\\{.*?([a-zA-Z0-9]+\\s*?=\\s*?''\\s*?;\\s*?[a-zA-Z0-9]+\\s*?=\\s*?unes.*?;?)eval\\([a-zA-Z0-9]+\\);.*?\\}").getMatch(0);
         evalWhat = new Regex(eval, "([a-zA-Z0-9]+)\\s*?=\\s*?''\\s*?;\\s*?[a-zA-Z0-9]+\\s*?=\\s*?unes.*?;?").getMatch(0);
         if (evalWhat == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         eval = eval.replaceAll("\\\\'", "'");
@@ -344,7 +345,7 @@ public class MediafireCom extends PluginForHost {
          * these are our downloadbutton id's, we need them to find the right one
          * for building downloadurl later
          */
-        String[] ids = new Regex(parameters[4], "var\\s*?[0-9a-z]+\\s*?=\\s*?document.getElementById\\s*?\\(\"(.+?)\"\\)").getColumn(0);
+        String[] ids = new Regex(parameters[4], "\\s*?[0-9a-z]+\\s*?=\\s*?document.getElementById\\s*?\\(\"(.+?)\"\\)").getColumn(0);
         String[] ids2 = br.getRegex("<div class=\".*?\" style=\".*?\" id=\"(.*?)\"").getColumn(0);
         br.getPage("http://www.mediafire.com/dynamic/download.php?qk=" + qk + "&pk=" + pk + "&r=" + r);
 
