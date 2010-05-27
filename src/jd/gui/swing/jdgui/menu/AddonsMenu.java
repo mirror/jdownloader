@@ -27,7 +27,7 @@ import jd.OptionalPluginWrapper;
 import jd.gui.UserIF;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
-import jd.gui.swing.jdgui.views.settings.sidebar.AddonConfig;
+import jd.gui.swing.jdgui.views.settings.panels.addons.ConfigPanelAddons;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 
@@ -59,7 +59,7 @@ public class AddonsMenu extends JMenu {
             private static final long serialVersionUID = -3613887193435347389L;
 
             public void onAction(ActionEvent e) {
-                SwingGui.getInstance().requestPanel(UserIF.Panels.CONFIGPANEL, AddonConfig.class);
+                SwingGui.getInstance().requestPanel(UserIF.Panels.CONFIGPANEL, ConfigPanelAddons.class);
             }
 
             @Override

@@ -36,6 +36,7 @@ import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.components.table.JDRowHighlighter;
 import jd.gui.swing.components.table.JDTable;
 import jd.gui.swing.jdgui.actions.ActionController;
+import jd.nutils.OSDetector;
 import jd.plugins.Account;
 import jd.utils.locale.JDL;
 
@@ -177,7 +178,7 @@ public class PremiumTable extends JDTable implements MouseListener, KeyListener 
     }
 
     public void keyReleased(KeyEvent e) {
-        if (e.getKeyCode() == KeyEvent.VK_DELETE) {
+        if (e.getKeyCode() == KeyEvent.VK_DELETE || (OSDetector.isMac() && e.getKeyCode() == KeyEvent.VK_BACK_SPACE)) {
             ActionController.getToolBarAction("action.premiumview.removeacc").actionPerformed(null);
         }
     }
