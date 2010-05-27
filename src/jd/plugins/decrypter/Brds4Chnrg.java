@@ -18,6 +18,7 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.Date;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
@@ -27,7 +28,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "boards.4chan.org" }, urls = { "http://[\\w\\.]*?boards\\.4chan\\.org/[0-9a-z]{1,3}/res/[0-9]{9}" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "boards.4chan.org" }, urls = { "http://[\\w\\.]*?boards\\.4chan\\.org/[0-9a-z]{1,3}/res/[0-9]+" }, flags = { 0 })
 public class Brds4Chnrg extends PluginForDecrypt {
 
     public Brds4Chnrg(PluginWrapper wrapper) {
@@ -40,7 +41,7 @@ public class Brds4Chnrg extends PluginForDecrypt {
         FilePackage fp = FilePackage.getInstance();
         String parameter = param.toString();
         br.getPage(parameter);
-        String[] images = br.getRegex("(http://[\\w\\.]*?images.4chan\\.org/[0-9a-z]{1,3}/src/[0-9]{13}\\.(?i:(gif|jpg|png)))").getColumn(0);
+        String[] images = br.getRegex("(http://[\\w\\.]*?images.4chan\\.org/[0-9a-z]{1,3}/src/[0-9]+\\.(?i:(gif|jpg|png)))").getColumn(0);
 
         if (br.containsHTML("404 - Not Found")) {
             fp.setName("4chan - 404 - Not Found");
