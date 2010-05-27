@@ -19,6 +19,7 @@ package jd.gui.swing.jdgui.views.settings.panels.hoster.columns;
 import javax.swing.Icon;
 
 import jd.HostPluginWrapper;
+import jd.controlling.AccountController;
 import jd.gui.swing.components.table.JDIconColumn;
 import jd.gui.swing.components.table.JDTableModel;
 import jd.utils.JDTheme;
@@ -27,17 +28,28 @@ public class PremiumColumn extends JDIconColumn {
 
     private static final long serialVersionUID = 7674821108904765680L;
 
-    private final Icon icon;
+    private final AccountController controller;
+    private final Icon iconYellow;
+    private final Icon iconGray;
+    private final Icon iconGreen;
+    private final Icon iconRed;
 
     public PremiumColumn(String name, JDTableModel table) {
         super(name, table);
 
-        icon = JDTheme.II("gui.images.premium", 16, 16);
+        controller = AccountController.getInstance();
+        iconYellow = JDTheme.II("gui.images.premium", 16, 16);
+        iconGray = JDTheme.II("gui.images.premium.nosupport", 16, 16);
+        iconGreen = JDTheme.II("gui.images.premium.enabled", 16, 16);
+        iconRed = JDTheme.II("gui.images.premium.disabled", 16, 16);
     }
 
     @Override
     protected Icon getIcon(Object value) {
-        return ((HostPluginWrapper) value).isLoaded() && ((HostPluginWrapper) value).isPremiumEnabled() ? icon : null;
+        HostPluginWrapper hpw = ((HostPluginWrapper) value);
+        if (!hpw.isLoaded() || !hpw.isPremiumEnabled()) return iconGray;
+        if (controller.getValidAccount(hpw.getHost()) != null) return iconGreen;
+        if (!controller.getAllAccounts(hpw.getHost()).isEmpty()) return iconRed;
+        return iconYellow;
     }
-
 }

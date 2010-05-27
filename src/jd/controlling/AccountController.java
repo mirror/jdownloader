@@ -379,9 +379,13 @@ public class AccountController extends SubConfiguration implements ActionListene
     }
 
     public Account getValidAccount(final PluginForHost pluginForHost) {
+        return getValidAccount(pluginForHost.getHost());
+    }
+
+    public Account getValidAccount(final String host) {
         Account ret = null;
         synchronized (hosteraccounts) {
-            final ArrayList<Account> accounts = new ArrayList<Account>(getAllAccounts(pluginForHost));
+            final ArrayList<Account> accounts = new ArrayList<Account>(getAllAccounts(host));
             if (getBooleanProperty(PROPERTY_ACCOUNT_SELECTION, true)) {
                 Collections.sort(accounts, COMPARE_MOST_TRAFFIC_LEFT);
             }

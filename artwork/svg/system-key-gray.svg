@@ -16,10 +16,10 @@
    sodipodi:version="0.32"
    inkscape:version="0.47 r22583"
    version="1.0"
-   sodipodi:docname="system-key.svg"
+   sodipodi:docname="system-key-gray.svg"
    inkscape:output_extension="org.inkscape.output.svg.inkscape"
    sodipodi:modified="true"
-   inkscape:export-filename="system-key.png"
+   inkscape:export-filename="system-key-gray.png"
    inkscape:export-xdpi="90"
    inkscape:export-ydpi="90">
   <defs
@@ -147,7 +147,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title />
+        <dc:title></dc:title>
         <dc:creator>
           <cc:Agent>
             <dc:title>Greeny</dc:title>
@@ -186,7 +186,7 @@
           <path
              id="path1884"
              d="m 13.580636,12.790979 c -4.9497454,-2e-6 -8.9597596,3.988424 -8.9597596,8.920287 3e-7,3.559524 2.0267226,6.694914 5.0521992,8.130884 l 0,1.894573 1.8945724,1.894576 -1.8945724,1.894573 0,1.263052 2.5261014,1.263049 0,1.263049 -2.5261014,1.263052 0,1.263049 1.8945724,1.894572 -1.8945724,1.894577 0,1.263049 3.1576264,2.526101 3.157621,0 1.263053,-1.894577 0,-17.682695 c 2.996493,-1.446741 5.052197,-4.67141 5.052197,-8.209824 0,-4.931862 -3.773193,-8.841347 -8.722937,-8.841347 z m -0.11841,2.526097 c 1.394405,0 2.526097,1.131695 2.526097,2.5261 0,1.394407 -1.131692,2.526099 -2.526097,2.526099 -1.394407,0 -2.526102,-1.131692 -2.526102,-2.526099 0,-1.394405 1.131695,-2.5261 2.526102,-2.5261 z"
-             style="fill:#ffff00;fill-opacity:1;fill-rule:evenodd;stroke:#62645f;stroke-width:1.26304935999999990;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+             style="fill:#808080;fill-opacity:1;fill-rule:evenodd;stroke:#62645f;stroke-width:1.26304935999999990;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
              sodipodi:nodetypes="csccccccccccccccccsccsssc" />
           <path
              d="m 14.0625,13.25 c -4.4619895,-2e-6 -8.03125,3.586817 -8.03125,8.03125 3e-7,3.215666 1.8211214,5.994953 4.53125,7.28125 a 0.96104999,0.96104999 0 0 1 0.5625,0.875 l 0,1.5 1.625,1.625 a 0.96104999,0.96104999 0 0 1 0,1.375 l -1.625,1.625 0,0.3125 2,1 a 0.96104999,0.96104999 0 0 1 0.53125,0.84375 l 0,1.25 A 0.96104999,0.96104999 0 0 1 13.125,39.8125 l -2,1 0,0.3125 1.625,1.625 a 0.96104999,0.96104999 0 0 1 0,1.375 l -1.625,1.625 0,0.4375 2.5,2 2.34375,0 0.84375,-1.25 0,-17.5 a 0.96104999,0.96104999 0 0 1 0.5625,-0.875 c 2.667227,-1.287767 4.5,-4.182391 4.5,-7.375 0,-4.47267 -3.338454,-7.9375 -7.8125,-7.9375 z m -0.09375,0.625 c 1.918226,0 3.5,1.581774 3.5,3.5 0,1.918226 -1.581775,3.5 -3.5,3.5 -1.918226,0 -3.53125,-1.567508 -3.53125,-3.5 0,-1.932492 1.613024,-3.5 3.53125,-3.5 z"
