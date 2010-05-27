@@ -366,6 +366,7 @@ public class DownloadTable extends JDTable implements MouseListener, KeyListener
         pop.setIcon(JDTheme.II("gui.images.configuration", 16, 16));
         pop.add(new ForceDownloadAction(links));
         pop.add(new ResumeAction(links));
+        // pop.add(new StopAction(links));
         pop.add(new ResetAction(links));
         pop.addSeparator();
 

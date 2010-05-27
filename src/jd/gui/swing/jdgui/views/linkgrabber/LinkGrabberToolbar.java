@@ -29,7 +29,7 @@ public class LinkGrabberToolbar extends ViewToolbar {
 
     @Override
     protected String getColConstraints(String[] list) {
-        return "3[left]push[]5[]push[right]3";
+        return "3[]push[]5[]push[]3";
     }
 
     @Override
