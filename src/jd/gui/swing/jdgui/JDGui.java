@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.ToolTipManager;
 
 import jd.OptionalPluginWrapper;
@@ -480,7 +481,11 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         }
 
         final SwitchPanel oldPanel = mainTabbedPane.getSelectedView().getInfoPanel();
-        AddonConfig p = AddonConfig.getInstance(container, "_2", false);
+        JPanel p = AddonConfig.getInstance(container, "_2", false).getPanel();
+        JScrollPane scrollPane = new JScrollPane(p);
+        scrollPane.setBorder(null);
+        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+
         JDCollapser col = new JDCollapser() {
 
             private static final long serialVersionUID = 1L;
@@ -505,7 +510,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
             }
 
         };
-        col.getContent().add(p.getPanel());
+        col.getContent().add(scrollPane, "hmax 300");
         col.setInfos(name, icon);
 
         this.mainTabbedPane.getSelectedView().setInfoPanel(col);

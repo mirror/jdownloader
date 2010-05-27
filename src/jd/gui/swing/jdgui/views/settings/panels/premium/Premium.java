@@ -19,13 +19,10 @@ package jd.gui.swing.jdgui.views.settings.panels.premium;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 
 import javax.swing.JScrollPane;
 import javax.swing.Timer;
 
-import jd.HostPluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
@@ -34,17 +31,11 @@ import jd.controlling.AccountController;
 import jd.controlling.AccountControllerEvent;
 import jd.controlling.AccountControllerListener;
 import jd.gui.UserIO;
-import jd.gui.swing.GuiRunnable;
-import jd.gui.swing.components.linkbutton.JLink;
-import jd.gui.swing.dialog.AccountDialog;
 import jd.gui.swing.jdgui.actions.ThreadedAction;
 import jd.gui.swing.jdgui.views.ViewToolbar;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
-import jd.gui.swing.jdgui.views.settings.JDLabelListRenderer;
 import jd.nutils.JDFlags;
 import jd.plugins.Account;
-import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 public class Premium extends ConfigPanel implements ActionListener, AccountControllerListener {
@@ -100,35 +91,6 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
     }
 
     private void initActions() {
-        new ThreadedAction("action.premiumview.addacc", "gui.images.newlogins") {
-
-            private static final long serialVersionUID = -4407938288408350792L;
-
-            @Override
-            public void initDefaults() {
-            }
-
-            @Override
-            public void init() {
-            }
-
-            @Override
-            public void threadedActionPerformed(final ActionEvent e) {
-                internalTable.editingStopped(null);
-                new GuiRunnable<Object>() {
-                    @Override
-                    public Object runSave() {
-                        if (e.getSource() instanceof PluginForHost) {
-                            AccountDialog.showDialog((PluginForHost) e.getSource());
-                        } else {
-                            AccountDialog.showDialog(null);
-                        }
-
-                        return null;
-                    }
-                }.start();
-            }
-        };
         new ThreadedAction("action.premiumview.removeacc", "gui.images.delete") {
 
             private static final long serialVersionUID = -4407938288408350792L;
@@ -153,49 +115,6 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
                 }
             }
         };
-
-        new ThreadedAction("action.premium.buy", "gui.images.buy") {
-
-            private static final long serialVersionUID = -4407938288408350792L;
-
-            @Override
-            public void initDefaults() {
-            }
-
-            @Override
-            public void init() {
-            }
-
-            @Override
-            public void threadedActionPerformed(ActionEvent e) {
-                internalTable.editingStopped(null);
-                new GuiRunnable<Object>() {
-
-                    @Override
-                    public Object runSave() {
-
-                        ArrayList<HostPluginWrapper> plugins = JDUtilities.getPremiumPluginsForHost();
-                        Collections.sort(plugins, new Comparator<HostPluginWrapper>() {
-                            public int compare(HostPluginWrapper a, HostPluginWrapper b) {
-                                return a.getHost().compareToIgnoreCase(b.getHost());
-                            }
-                        });
-                        HostPluginWrapper[] data = plugins.toArray(new HostPluginWrapper[plugins.size()]);
-                        int selection = UserIO.getInstance().requestComboDialog(0, JDL.L(JDL_PREFIX + "buy.title", "Buy Premium"), JDL.L(JDL_PREFIX + "buy.message", "Which hoster are you interested in?"), data, 0, null, JDL.L(JDL_PREFIX + "continue", "Continue"), null, new JDLabelListRenderer());
-
-                        try {
-                            JLink.openURL(data[selection].getPlugin().getBuyPremiumUrl());
-                        } catch (Exception ex) {
-                        }
-
-                        return null;
-                    }
-
-                }.start();
-
-            }
-        };
-
     }
 
     public JScrollPane getScrollPane() {

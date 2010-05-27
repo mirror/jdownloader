@@ -21,7 +21,10 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 
+import jd.HostPluginWrapper;
 import jd.config.ConfigPropertyListener;
 import jd.config.Configuration;
 import jd.config.Property;
@@ -38,10 +41,14 @@ import jd.event.ControlIDListener;
 import jd.gui.UserIF;
 import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
+import jd.gui.swing.components.linkbutton.JLink;
+import jd.gui.swing.dialog.AccountDialog;
 import jd.gui.swing.jdgui.views.downloads.DownloadLinksPanel;
 import jd.gui.swing.jdgui.views.linkgrabber.LinkGrabberPanel;
+import jd.gui.swing.jdgui.views.settings.JDLabelListRenderer;
 import jd.nutils.JDFlags;
 import jd.plugins.LinkGrabberFilePackage;
+import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.WebUpdate;
 import jd.utils.locale.JDL;
@@ -559,6 +566,74 @@ public class ActionController {
                 } else if (!DownloadLinksPanel.getDownloadLinksPanel().isNotVisible()) {
                     DownloadLinksPanel.getDownloadLinksPanel().move(DownloadController.MOVE_DOWN);
                 }
+            }
+        };
+
+        new ThreadedAction("action.premiumview.addacc", "gui.images.newlogins") {
+
+            private static final long serialVersionUID = -4407938288408350792L;
+
+            @Override
+            public void initDefaults() {
+            }
+
+            @Override
+            public void init() {
+            }
+
+            @Override
+            public void threadedActionPerformed(final ActionEvent e) {
+                new GuiRunnable<Object>() {
+                    @Override
+                    public Object runSave() {
+                        if (e.getSource() instanceof PluginForHost) {
+                            AccountDialog.showDialog((PluginForHost) e.getSource());
+                        } else {
+                            AccountDialog.showDialog(null);
+                        }
+                        return null;
+                    }
+                }.start();
+            }
+        };
+        new ThreadedAction("action.premium.buy", "gui.images.buy") {
+
+            private static final long serialVersionUID = -4407938288408350792L;
+
+            @Override
+            public void initDefaults() {
+            }
+
+            @Override
+            public void init() {
+            }
+
+            @Override
+            public void threadedActionPerformed(ActionEvent e) {
+                new GuiRunnable<Object>() {
+
+                    @Override
+                    public Object runSave() {
+
+                        ArrayList<HostPluginWrapper> plugins = JDUtilities.getPremiumPluginsForHost();
+                        Collections.sort(plugins, new Comparator<HostPluginWrapper>() {
+                            public int compare(HostPluginWrapper a, HostPluginWrapper b) {
+                                return a.getHost().compareToIgnoreCase(b.getHost());
+                            }
+                        });
+                        HostPluginWrapper[] data = plugins.toArray(new HostPluginWrapper[plugins.size()]);
+                        int selection = UserIO.getInstance().requestComboDialog(0, JDL.L(JDL_PREFIX + "buy.title", "Buy Premium"), JDL.L(JDL_PREFIX + "buy.message", "Which hoster are you interested in?"), data, 0, null, JDL.L(JDL_PREFIX + "continue", "Continue"), null, new JDLabelListRenderer());
+
+                        try {
+                            JLink.openURL(data[selection].getPlugin().getBuyPremiumUrl());
+                        } catch (Exception ex) {
+                        }
+
+                        return null;
+                    }
+
+                }.start();
+
             }
         };
     }
