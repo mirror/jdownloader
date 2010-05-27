@@ -123,7 +123,7 @@ public class DuckLoad extends PluginForHost {
             link.setMD5Hash(md5.trim());
         }
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, true, -8);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, true, -2);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.toString().trim().equals("no")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Servererror", 30 * 60 * 1000l);
