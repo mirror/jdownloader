@@ -35,7 +35,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 //http://www.4shared.com/file/<FILEID[a-70-9]>/<FILENAME>.html
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4shared.com" }, urls = { "http://[\\w\\.]*?(4shared|4shared\\-china)\\.com/(get|file|document|photo|video|audio)/.+?/.*" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4shared.com" }, urls = { "http://[\\w\\.]*?4shared(-china)?\\.com/(get|file|document|photo|video|audio)/.+?/.*" }, flags = { 2 })
 public class FourSharedCom extends PluginForHost {
 
     public FourSharedCom(PluginWrapper wrapper) {
@@ -145,20 +145,20 @@ public class FourSharedCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
 
-        String url = br.getRegex("<a href=\"(http://[\\w\\.]*?(4shared|4shared-china)\\.com/get[^\\;\"]*).*?\" class=\".*?dbtn.*?\" tabindex=\"1\"").getMatch(0);
+        String url = br.getRegex("<a href=\"(http://[\\w\\.]*?4shared(-china)?\\.com/get[^\\;\"]*).*?\" class=\".*?dbtn.*?\" tabindex=\"1\"").getMatch(0);
         if (url == null) {
             /* maybe directdownload */
             url = br.getRegex("startDownload.*?window\\.location.*?(http://.*?)\"").getMatch(0);
             if (url == null) {
                 /* maybe picture download */
-                url = br.getRegex("<a href=\"(http://dc\\d+\\.(4shared|4shared-china)\\.com/download/.*?)\" class=\".*?dbtn.*?\" tabindex=\"1\"").getMatch(0);
+                url = br.getRegex("<a href=\"(http://dc\\d+\\.4shared(-china)?\\.com/download/.*?)\" class=\".*?dbtn.*?\" tabindex=\"1\"").getMatch(0);
             }
             if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else {
             br.getPage(url);
 
             url = br.getRegex("id='divDLStart' >.*?<a href='(.*?)'").getMatch(0);
-            if (url == null) url = br.getRegex("('|\")(http://dc[0-9]+\\.(4shared|4shared-china)\\.com/download/\\d+/.*?/.*?)('|\")").getMatch(1);
+            if (url == null) url = br.getRegex("('|\")(http://dc[0-9]+\\.4shared(-china)?\\.com/download/\\d+/.*?/.*?)('|\")").getMatch(1);
             if (url.contains("linkerror.jsp")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             // Ticket Time
             String ttt = br.getRegex(" var c = (\\d+?);").getMatch(0);
@@ -178,11 +178,31 @@ public class FourSharedCom extends PluginForHost {
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_RETRY, error);
         }
+        String pass = downloadLink.getStringProperty("pass");
+        if (!dl.getConnection().isContentDisposition()) {
+            br.followConnection();
+            if (br.containsHTML("enter a password to access")) {
+                Form form = br.getFormbyProperty("name", "theForm");
+                if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+
+                if (pass == null) pass = getUserInput("Password?", downloadLink);
+                form.put("userPass2", pass);
+                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, false, 1);
+                if (br.containsHTML("enter a password to access")) {
+                    downloadLink.setProperty("pass", null);
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "Password wrong");
+                }
+            } else {
+                if (br.containsHTML("(Servers Upgrade|4shared servers are currently undergoing a short-time maintenance)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        }
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
             if (br.containsHTML("(Servers Upgrade|4shared servers are currently undergoing a short-time maintenance)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        downloadLink.setProperty("pass", pass);
         dl.startDownload();
     }
 

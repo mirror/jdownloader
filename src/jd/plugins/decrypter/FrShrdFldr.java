@@ -34,25 +34,25 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4shared.com" }, urls = { "http://[\\w\\.]*?(4shared|4shared\\-china)\\.com/dir/\\d+/\\w+/?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4shared.com" }, urls = { "http://[\\w\\.]*?4shared(-china)?\\.com/dir/\\w+/\\w+/?" }, flags = { 0 })
 public class FrShrdFldr extends PluginForDecrypt {
 
     public FrShrdFldr(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    // scan file in actual directory and put in filepackage with setting correct save directory
+    // scan file in actual directory and put in filepackage with setting correct
+    // save directory
     private void scanFile(ArrayList<DownloadLink> decryptedLinks, String pass, String burl, String name, String path) throws Exception {
         ArrayList<DownloadLink> dL = new ArrayList<DownloadLink>();
         String[] pages = br.getRegex("javascript:pagerShowFiles\\((\\d+)\\);").getColumn(0);
         String[] links;
 
         FilePackage fp = FilePackage.getInstance();
-        fp.setName(name);
-        fp.setDownloadDirectory(fp.getDownloadDirectory() + '\\' + path);
+        fp.setName(name + "-" + path);
 
         // scan
-        links = br.getRegex("<a href=\"(http://[\\w\\.]*?(4shared|4shared\\-china)\\.com/(get|file|document|photo)/.+?/.*?)(\\?dirPwdVerified|.)\"").getColumn(0);
+        links = br.getRegex("<a href=\"(http://[\\w\\.]*?4shared(-china)?\\.com/(get|file|document|photo|video|audio)/.+?/.*?)(\\?dirPwdVerified|.)\"").getColumn(0);
         for (String dl : links) {
             DownloadLink dlink;
             dlink = createDownloadlink(dl);
@@ -67,7 +67,7 @@ public class FrShrdFldr extends PluginForDecrypt {
             br.getPage(url);
 
             // scan
-            links = br.getRegex("<a href=\"(http://[\\w\\.]*?(4shared|4shared\\-china)\\.com/(get|file|document|photo)/.+?/.*?)(\\?dirPwdVerified|.)\"").getColumn(0);
+            links = br.getRegex("<a href=\"(http://[\\w\\.]*?4shared(-china)?\\.com/(get|file|document|photo)/.+?/.*?)(\\?dirPwdVerified|.)\"").getColumn(0);
             for (String dl : links) {
                 DownloadLink dlink;
                 dlink = createDownloadlink(dl);
