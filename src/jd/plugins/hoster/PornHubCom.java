@@ -27,7 +27,7 @@ public class PornHubCom extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink link) throws Exception {
-        this.setBrowserExclusive();
+        requestVideo(link);
         if (dlUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlUrl, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
