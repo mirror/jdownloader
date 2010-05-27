@@ -62,7 +62,6 @@ import jd.gui.swing.jdgui.views.linkgrabber.LinkGrabberPanel;
 import jd.gui.swing.jdgui.views.linkgrabber.LinkgrabberView;
 import jd.gui.swing.jdgui.views.log.LogView;
 import jd.gui.swing.jdgui.views.settings.ConfigurationView;
-import jd.gui.swing.jdgui.views.settings.panels.addons.ConfigPanelAddons;
 import jd.gui.swing.jdgui.views.settings.panels.premium.Premium;
 import jd.gui.swing.jdgui.views.settings.sidebar.AddonConfig;
 import jd.nutils.JDFlags;
@@ -436,14 +435,13 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
                         p.setSelectedAccount((Account) param);
                     }
                     break;
-                case ADDON_MANAGER:
-                    ConfigurationView.getInstance().getSidebar().setSelectedTreeEntry(ConfigPanelAddons.class);
-                    openSettings();
-                    break;
                 case CONFIGPANEL:
                     if (param instanceof ConfigContainer) {
                         if (((ConfigContainer) param).getEntries().isEmpty()) return null;
                         showConfigPanel((ConfigContainer) param);
+                    } else if (param instanceof Class<?>) {
+                        ConfigurationView.getInstance().getSidebar().setSelectedTreeEntry((Class<?>) param);
+                        openSettings();
                     }
                     break;
                 default:

@@ -57,6 +57,7 @@ import jd.gui.swing.jdgui.views.downloads.contextmenu.OpenDirectoryAction;
 import jd.gui.swing.jdgui.views.downloads.contextmenu.OpenInBrowserAction;
 import jd.gui.swing.jdgui.views.downloads.contextmenu.PackageDirectoryAction;
 import jd.gui.swing.jdgui.views.downloads.contextmenu.PackageNameAction;
+import jd.gui.swing.jdgui.views.downloads.contextmenu.PasswordListAction;
 import jd.gui.swing.jdgui.views.downloads.contextmenu.PriorityAction;
 import jd.gui.swing.jdgui.views.downloads.contextmenu.ResetAction;
 import jd.gui.swing.jdgui.views.downloads.contextmenu.ResumeAction;
@@ -348,11 +349,14 @@ public class DownloadTable extends JDTable implements MouseListener, KeyListener
         pop.setIcon(JDTheme.II("gui.images.package", 16, 16));
 
         pop.add(new NewPackageAction(links));
-        pop.add(new SetPasswordAction(links));
         pop.add(new CheckStatusAction(links));
         pop.add(new CreateDLCAction(links));
         pop.add(new CopyURLAction(links));
+        pop.addSeparator();
+
+        pop.add(new SetPasswordAction(links));
         pop.add(new CopyPasswordAction(links));
+        pop.add(new PasswordListAction());
 
         return pop;
     }

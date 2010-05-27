@@ -16,6 +16,11 @@
 
 package jd.gui;
 
+import jd.config.ConfigContainer;
+import jd.gui.swing.jdgui.views.downloads.DownloadView;
+import jd.gui.swing.jdgui.views.linkgrabber.LinkgrabberView;
+import jd.gui.swing.jdgui.views.settings.ConfigPanel;
+import jd.gui.swing.jdgui.views.settings.panels.premium.Premium;
 import jd.gui.userio.NoUserIF;
 
 public abstract class UserIF {
@@ -39,32 +44,26 @@ public abstract class UserIF {
      */
     public static enum Panels {
         /**
-         * REepresents the downloadlist view*
+         * Represents the {@link DownloadView}.
          */
         DOWNLOADLIST,
+
         /**
-         * Represents the linkgrabber view
-         * 
+         * Represents the {@link LinkgrabberView}.
          */
         LINKGRABBER,
+
         /**
-         * Represents a configview. Parameter is the Subconfiguration or
-         * Property instance/ConfigContainer
-         * 
+         * Represents a configview. Parameter is a {@link ConfigContainer} or
+         * the {@link Class} reference to an {@link ConfigPanel}.
          */
         CONFIGPANEL,
 
         /**
-         * Premium configpanel. has account as parameter, if the
-         * accountconfigpanel should be shown, otherwise (parameter == null) the
-         * premiumview is shown
+         * Displays the {@link Premium}-ConfigPanel. The parameter is the
+         * account which should be selected.
          */
-        PREMIUMCONFIG,
-
-        /**
-         * Addon manager panel
-         */
-        ADDON_MANAGER
+        PREMIUMCONFIG
 
     }
 

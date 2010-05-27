@@ -55,11 +55,6 @@ public class Property implements Serializable {
         logger = JDLogger.getLogger();
     }
 
-    public Property(String value, Object obj) {
-        this();
-        setProperty(value, obj);
-    }
-
     /**
      * Returns the saved object casted to the type of the defaultvalue
      * <code>def</code>. So no more casts are necessary.

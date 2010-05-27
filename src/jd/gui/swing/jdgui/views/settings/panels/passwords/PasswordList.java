@@ -32,7 +32,7 @@ public class PasswordList extends ConfigPanel {
     }
 
     public static String getIconKey() {
-        return "gui.images.addons.unrar";
+        return "gui.images.config.passwordlist";
     }
 
     private static final long serialVersionUID = 3383448498625377495L;
