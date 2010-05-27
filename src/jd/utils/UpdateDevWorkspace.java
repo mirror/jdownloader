@@ -14,7 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.utils.dev;
+package jd.utils;
 
 import java.io.File;
 
@@ -22,7 +22,6 @@ import jd.event.MessageEvent;
 import jd.event.MessageListener;
 import jd.nutils.io.JDIO;
 import jd.nutils.svn.Subversion;
-import jd.utils.JDUtilities;
 
 import org.tmatesoft.svn.core.SVNException;
 import org.tmatesoft.svn.core.wc.SVNRevision;
