@@ -48,8 +48,8 @@ public class PremiumColumn extends JDIconColumn {
     protected Icon getIcon(Object value) {
         HostPluginWrapper hpw = ((HostPluginWrapper) value);
         if (!hpw.isLoaded() || !hpw.isPremiumEnabled()) return iconGray;
-        if (controller.getValidAccount(hpw.getHost()) != null) return iconGreen;
-        if (!controller.getAllAccounts(hpw.getHost()).isEmpty()) return iconRed;
+        if (controller.hasValidAccount(hpw.getHost())) return iconGreen;
+        if (!controller.hasAccounts(hpw.getHost())) return iconRed;
         return iconYellow;
     }
 }
