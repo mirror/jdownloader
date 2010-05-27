@@ -51,7 +51,8 @@ public class MangoShareCom extends PluginForHost {
     }
 
     public String brbefore = "";
-    private static final String passwordText = "(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)";
+    private static final String PASSWORDTEXT0 = "<br><b>Password:</b> <input";
+    private static final String PASSWORDTEXT1 = "<br><b>Passwort:</b> <input";
     private static final String COOKIE_HOST = "http://mangoshare.com";
     public boolean nopremium = false;
 
@@ -62,7 +63,7 @@ public class MangoShareCom extends PluginForHost {
         br.setCookie(COOKIE_HOST, "lang", "english");
         br.getPage(link.getDownloadURL());
         doSomething();
-        if (brbefore.contains("(No such file|No such user exist|File not found)")) {
+        if (brbefore.contains("No such file") || brbefore.contains("No such user exist") || brbefore.contains("File not found")) {
             logger.warning("file is 99,99% offline, throwing \"file not found\" now...");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -145,7 +146,7 @@ public class MangoShareCom extends PluginForHost {
         }
         boolean password = false;
         boolean recaptcha = false;
-        if (brbefore.contains(passwordText)) {
+        if (brbefore.contains(PASSWORDTEXT0) || brbefore.contains(PASSWORDTEXT1)) {
             password = true;
             logger.info("The downloadlink seems to be password protected.");
         }
@@ -278,7 +279,7 @@ public class MangoShareCom extends PluginForHost {
 
     public void checkServerErrors() throws NumberFormatException, PluginException {
         if (brbefore.contains("No file")) throw new PluginException(LinkStatus.ERROR_FATAL, "Server error");
-        if (brbefore.contains("(File Not Found|<h1>404 Not Found</h1>)")) {
+        if (brbefore.contains("File Not Found") || brbefore.contains("<h1>404 Not Found</h1>")) {
             logger.warning("Server says link offline, please recheck that!");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -286,7 +287,7 @@ public class MangoShareCom extends PluginForHost {
 
     public void checkErrors(DownloadLink theLink, boolean checkAll, String passCode) throws NumberFormatException, PluginException {
         if (checkAll) {
-            if (brbefore.contains("(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input|Wrong password)")) {
+            if (brbefore.contains("<br><b>Password:</b> <input") || brbefore.contains("<br><b>Passwort:</b> <input") || brbefore.contains("Wrong password")) {
                 logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
                 theLink.setProperty("pass", null);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
@@ -330,7 +331,7 @@ public class MangoShareCom extends PluginForHost {
         if (brbefore.contains("You're using all download slots for IP")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
         if (brbefore.contains("Error happened when generating Download Link")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error!", 10 * 60 * 1000l);
         // Errorhandling for only-premium links
-        if (brbefore.contains("(You can download files up to.*?only|Upgrade your account to download bigger files|This file reached max downloads)")) {
+        if (brbefore.contains("You can download files up to") || brbefore.contains("Upgrade your account to download bigger files") || brbefore.contains("This file reached max downloads")) {
             String filesizelimit = new Regex(brbefore, "You can download files up to(.*?)only").getMatch(0);
             if (filesizelimit != null) {
                 filesizelimit = filesizelimit.trim();
