@@ -414,7 +414,8 @@ public class Rapidshare extends PluginForHost {
                  */
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
             }
-            br.submitForm(forms[0]);
+            /* rs changed form, now second one is free user */
+            br.submitForm(forms[1]);
             handleErrorsFree();
             // Ticketwartezeit wird gesucht
             String ticketTime = br.getRegex(PATTERN_FIND_TICKET_WAITTIME).getMatch(0);
@@ -648,7 +649,7 @@ public class Rapidshare extends PluginForHost {
                 }
                 // Post um Premium auszuwählen
                 Form[] forms = br.getForms();
-                br.submitForm(forms[1]);
+                br.submitForm(forms[0]);
                 handleErrorsPremium(account);
                 String postTarget = getDownloadTarget(downloadLink, br.toString());
                 if (postTarget == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
