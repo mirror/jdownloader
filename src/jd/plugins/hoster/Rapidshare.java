@@ -547,7 +547,7 @@ public class Rapidshare extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, JDL.L("plugin.rapidshare.error.accountnotfound", "Your Premium Account has not been found."), PluginException.VALUE_ID_PREMIUM_DISABLE);
         } else {
             if (account != null) account.setProperty("cookies", null);
-            throw new PluginException(LinkStatus.ERROR_FATAL, dynTranslate(error));
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, dynTranslate(error));
         }
     }
 
@@ -603,7 +603,7 @@ public class Rapidshare extends PluginForHost {
             }
         }
         reportUnknownError(br, 2);
-        throw new PluginException(LinkStatus.ERROR_FATAL, dynTranslate(error));
+        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, dynTranslate(error));
     }
 
     @Override

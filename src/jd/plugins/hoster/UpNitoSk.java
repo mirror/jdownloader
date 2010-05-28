@@ -77,7 +77,7 @@ public class UpNitoSk extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         boolean stillInDevelopment = true;
-        if (stillInDevelopment) throw new PluginException(LinkStatus.ERROR_FATAL, "The free version of this plugin is still in development!!");
+        if (stillInDevelopment) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "The free version of this plugin is still in development!!");
         if (br.containsHTML("Nemozete tolkokrat za sebou stahovat ten isty subor!")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
         Form freeform = br.getFormbyProperty("name", "gdl");
         String verifytext = br.getRegex("id=\"verifytext\" value=\"(.*?)\"").getMatch(0);

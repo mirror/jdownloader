@@ -157,7 +157,7 @@ public class SingleDownloadController extends Thread {
                 linkStatus.setValue(10 * 60 * 1000l);
             } catch (InterruptedException e) {
                 logger.finest("Hoster Plugin Version: " + downloadLink.getPlugin().getVersion());
-                linkStatus.addStatus(LinkStatus.ERROR_FATAL);
+                linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFECT);
                 linkStatus.setErrorMessage(JDL.L("plugins.errors.error", "Error: ") + JDUtilities.convertExceptionReadable(e));
             } catch (Exception e) {
                 logger.finest("Hoster Plugin Version: " + downloadLink.getPlugin().getVersion());
@@ -368,7 +368,7 @@ public class SingleDownloadController extends Thread {
                 return;
             }
         } else {
-            downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_FATAL);
+            downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         DownloadController.getInstance().fireDownloadLinkUpdate(downloadLink);
     }

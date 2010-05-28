@@ -102,7 +102,7 @@ public class SaveTv extends PluginForHost {
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         requestFileInformation(downloadLink);
         boolean pluginBroken = true;
-        if (pluginBroken) throw new PluginException(LinkStatus.ERROR_FATAL, "Plugin still in development!");
+        if (pluginBroken) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Plugin still in development!");
         login(account);
         String addedlink = downloadLink.getDownloadURL();
         if (this.getPluginConfig().getStringProperty("premium", null) != null) {
