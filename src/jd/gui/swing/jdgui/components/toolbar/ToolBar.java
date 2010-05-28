@@ -97,7 +97,7 @@ public class ToolBar extends JToolBar {
         return current;
     }
 
-    private String getColConstraints(String[] list) {
+    protected String getColConstraints(String[] list) {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < list.length; ++i) {
             sb.append("[]2");
@@ -119,11 +119,10 @@ public class ToolBar extends JToolBar {
         if (list == null) return;
         synchronized (list) {
             SwingGui.checkEDT();
-            setLayout(new MigLayout("ins 0, gap 0", getColConstraints(list)));
+            setLayout(new MigLayout("ins 0", getColConstraints(list), "[grow,fill,32!]"));
             AbstractButton ab;
             boolean lastseparator = false;
-            for (int i = 0; i < list.length; i++) {
-                String key = list[i];
+            for (String key : list) {
                 ToolBarAction action = ActionController.getToolBarAction(key);
 
                 if (action == null) {
@@ -142,17 +141,19 @@ public class ToolBar extends JToolBar {
                 }
                 switch (action.getType()) {
                 case NORMAL:
-                    ab = add(action);
+                    add(ab = new JButton(action), "w 32!");
+                    ab.setHideActionText(true);
                     lastseparator = false;
                     break;
                 case SEPARATOR:
                     if (!lastseparator) {
-                        add(new JSeparator(JSeparator.VERTICAL), "height 32,gapleft 10,gapright 10");
+                        add(new JSeparator(JSeparator.VERTICAL), "gapleft 10,gapright 10");
                         lastseparator = true;
                     }
                     break;
                 case TOGGLE:
-                    add(ab = new JToggleButton(action));
+                    add(ab = new JToggleButton(action), "w 32!");
+                    ab.setHideActionText(true);
                     if (JDUtilities.getJavaVersion() < 1.6) {
                         final AbstractButton button = ab;
                         ab.setSelected(action.isSelected());
@@ -183,9 +184,6 @@ public class ToolBar extends JToolBar {
                             }
                         });
                     }
-                    if ((action.getValue(Action.SMALL_ICON) != null || action.getValue(Action.LARGE_ICON_KEY) != null)) {
-                        ab.setText("");
-                    }
                     lastseparator = false;
                     break;
                 }
@@ -209,9 +207,16 @@ public class ToolBar extends JToolBar {
     }
 
     /**
-     * UPdates the toolbar
+     * Overwrite this if you want to add special objects (like speedmeterpanel)
+     * after the updateprocess.
      */
-    public void updateToolbar() {
+    protected void updateSpecial() {
+    }
+
+    /**
+     * Updates the toolbar
+     */
+    private final void updateToolbar() {
         synchronized (UPDATELOCK) {
             new GuiRunnable<Object>() {
                 @Override
@@ -219,7 +224,7 @@ public class ToolBar extends JToolBar {
                     setVisible(false);
                     removeAll();
                     initToolbar(current);
-
+                    updateSpecial();
                     setVisible(true);
                     revalidate();
                     return null;

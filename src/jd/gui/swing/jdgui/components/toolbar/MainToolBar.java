@@ -26,8 +26,9 @@ import jd.gui.swing.jdgui.components.speedmeter.SpeedMeterPanel;
 public class MainToolBar extends ToolBar implements ControlListener {
 
     private static final long serialVersionUID = 922971719957349497L;
-    private SpeedMeterPanel speedmeter;
     private static MainToolBar INSTANCE = null;
+
+    private final SpeedMeterPanel speedmeter;
 
     public static synchronized MainToolBar getInstance() {
         if (INSTANCE == null) INSTANCE = new MainToolBar();
@@ -37,13 +38,8 @@ public class MainToolBar extends ToolBar implements ControlListener {
     private MainToolBar() {
         super();
 
-        INSTANCE = this;
+        speedmeter = new SpeedMeterPanel(true, false);
         JDController.getInstance().addControlListener(this);
-    }
-
-    private void addSpeedMeter() {
-        if (speedmeter == null) speedmeter = new SpeedMeterPanel(true, false);
-        add(speedmeter, "dock east,hidemode 3,height 30!,width 30:200:300");
     }
 
     public void controlEvent(final ControlEvent event) {
@@ -69,21 +65,21 @@ public class MainToolBar extends ToolBar implements ControlListener {
                 }
             }.start();
         }
-
     }
 
-    public void updateToolbar() {
-        super.updateToolbar();
+    @Override
+    protected String getColConstraints(String[] list) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < list.length; ++i) {
+            sb.append("2[]");
+        }
+        sb.append("push[]");
+        return sb.toString();
+    }
 
-        new GuiRunnable<Object>() {
-            @Override
-            public Object runSave() {
-
-                addSpeedMeter();
-
-                return null;
-            }
-        }.waitForEDT();
+    @Override
+    protected void updateSpecial() {
+        add(speedmeter, "hidemode 3,height 30!, width 30:200:300");
     }
 
 }
