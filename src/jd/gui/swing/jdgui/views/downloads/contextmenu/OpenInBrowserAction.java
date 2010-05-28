@@ -1,6 +1,7 @@
 package jd.gui.swing.jdgui.views.downloads.contextmenu;
 
 import java.awt.event.ActionEvent;
+import java.util.ArrayList;
 
 import jd.controlling.JDLogger;
 import jd.gui.swing.components.linkbutton.JLink;
@@ -12,10 +13,10 @@ public class OpenInBrowserAction extends ContextMenuAction {
 
     private static final long serialVersionUID = 7911375550836173693L;
 
-    private final DownloadLink link;
+    private final ArrayList<DownloadLink> links;
 
-    public OpenInBrowserAction(DownloadLink link) {
-        this.link = link;
+    public OpenInBrowserAction(ArrayList<DownloadLink> links) {
+        this.links = links;
 
         init();
     }
@@ -32,12 +33,12 @@ public class OpenInBrowserAction extends ContextMenuAction {
 
     @Override
     public boolean isEnabled() {
-        return link.getLinkType() == DownloadLink.LINKTYPE_NORMAL;
+        return links.size() == 1 && links.get(0).getLinkType() == DownloadLink.LINKTYPE_NORMAL;
     }
 
     public void actionPerformed(ActionEvent e) {
         try {
-            JLink.openURL(link.getBrowserUrl());
+            JLink.openURL(links.get(0).getBrowserUrl());
         } catch (Exception e1) {
             JDLogger.exception(e1);
         }

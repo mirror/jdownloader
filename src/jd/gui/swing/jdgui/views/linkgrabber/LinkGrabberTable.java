@@ -339,7 +339,7 @@ public class LinkGrabberTable extends JDTable implements MouseListener, KeyListe
                 popup.add(new PackageDirectoryAction(sfp));
             } else if (obj instanceof DownloadLink) {
                 popup.add(new CopyURLAction(alllinks));
-                popup.add(new OpenInBrowserAction((DownloadLink) obj));
+                popup.add(new OpenInBrowserAction(alllinks));
             }
             popup.addSeparator();
 

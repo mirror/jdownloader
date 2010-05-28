@@ -328,7 +328,7 @@ public class DownloadTable extends JDTable implements MouseListener, KeyListener
                 popup.add(new PackageDirectoryAction(sfp));
             } else if (obj instanceof DownloadLink) {
                 popup.add(new OpenDirectoryAction(new File(((DownloadLink) obj).getFileOutput()).getParentFile()));
-                popup.add(new OpenInBrowserAction((DownloadLink) obj));
+                popup.add(new OpenInBrowserAction(alllinks));
             }
             popup.addSeparator();
 
