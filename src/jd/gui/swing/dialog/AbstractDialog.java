@@ -74,8 +74,6 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
 
     private JCheckBox dont;
 
-    private JLabel dontlabel;
-
     private JPanel buttonBar;
 
     public AbstractDialog(int flag, String title, ImageIcon icon, String okOption, String cancelOption) {
@@ -84,7 +82,7 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
         this.flag = flag;
         setTitle(title);
 
-        this.icon = (JDFlags.hasAllFlags(flag, UserIO.NO_ICON)) ? null : icon;
+        this.icon = JDFlags.hasAllFlags(flag, UserIO.NO_ICON) ? null : icon;
         this.okOption = (okOption == null) ? JDL.L("gui.btn_ok", "OK") : okOption;
         this.cancelOption = (cancelOption == null) ? JDL.L("gui.btn_cancel", "Cancel") : cancelOption;
     }
@@ -118,9 +116,10 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
         this.buttonBar = new JPanel(new MigLayout("ins 0", "[fill,grow]", "[fill,grow]"));
 
         btnOK = new JButton(this.okOption);
+        btnOK.addActionListener(this);
+
         JButton focus = btnOK;
 
-        btnOK.addActionListener(this);
         btnCancel = new JButton(this.cancelOption);
         btnCancel.addActionListener(this);
         if (icon != null) {
@@ -129,20 +128,20 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
         contentpane = contentInit();
         add(contentpane, "pushx,growx,pushy,growy,spanx,aligny center,wrap");
 
-        add(this.countDownLabel, "split 3,growx");
-
         if ((flag & UserIO.DONT_SHOW_AGAIN) > 0) {
-            dont = new JCheckBox();
-
+            dont = new JCheckBox(JDL.L("gui.dialogs.dontshowthisagain", "Don't show this again"));
             dont.setHorizontalAlignment(JCheckBox.TRAILING);
+            dont.setHorizontalTextPosition(JCheckBox.LEADING);
 
-            add(dontlabel = new JLabel(JDL.L("gui.dialogs.dontshowthisagain", "Don't show this again")));
+            add(countDownLabel, "split 3,growx,hidemode 2");
             add(dont, "alignx right");
+        } else {
+            add(countDownLabel, "split 2,growx,hidemode 2");
         }
+
         add(buttonBar, "alignx right");
         if ((flag & UserIO.NO_OK_OPTION) == 0) {
 
-            // this.getRootPane().setDefaultButton(btnOK);
             getRootPane().setDefaultButton(btnOK);
 
             btnOK.addHierarchyListener(new HierarchyListener() {
@@ -175,20 +174,18 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
         } else {
             countDownLabel.setVisible(false);
         }
+
         if (dont != null) {
             btnOK.addMouseListener(new JDMouseAdapter() {
 
                 public void mouseEntered(MouseEvent e) {
                     if (JDFlags.hasAllFlags(flag, UserIO.DONT_SHOW_AGAIN_IGNORES_OK)) {
                         dont.setEnabled(false);
-                        dontlabel.setEnabled(false);
                     }
-
                 }
 
                 public void mouseExited(MouseEvent e) {
                     dont.setEnabled(true);
-                    dontlabel.setEnabled(true);
                 }
 
             });
@@ -198,19 +195,16 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
                 public void mouseEntered(MouseEvent e) {
                     if (JDFlags.hasAllFlags(flag, UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL)) {
                         dont.setEnabled(false);
-                        dontlabel.setEnabled(false);
                     }
 
                 }
 
                 public void mouseExited(MouseEvent e) {
                     dont.setEnabled(true);
-                    dontlabel.setEnabled(true);
                 }
 
             });
         }
-        // this.setAlwaysOnTop(true);
         this.invalidate();
         this.pack();
         this.setResizable(true);

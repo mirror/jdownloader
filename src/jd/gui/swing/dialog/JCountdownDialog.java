@@ -53,7 +53,7 @@ public abstract class JCountdownDialog extends JDialog {
     }
 
     protected void initCountdown() {
-        this.countDownLabel = new JLabel("no countdown");
+        countDownLabel = new JLabel("");
         countDownLabel.setIcon(JDTheme.II("gui.images.cancel", 16, 16));
         countDownLabel.setToolTipText(JDL.L("gui.dialog.countdown.tooltip", "This dialog closes after a certain time. Click here to stop the countdown"));
         countDownLabel.addMouseListener(new JDMouseAdapter() {
@@ -65,7 +65,6 @@ public abstract class JCountdownDialog extends JDialog {
             }
 
         });
-        setTitle(JDL.L("gui.captchaWindow.askForInput", "Please enter..."));
     }
 
     public void interrupt() {
@@ -82,9 +81,8 @@ public abstract class JCountdownDialog extends JDialog {
         this.countdown = time;
         countdownThread = new Thread() {
 
-            // @Override
+            @Override
             public void run() {
-
                 while (!isVisible()) {
                     try {
                         Thread.sleep(200);
@@ -101,15 +99,13 @@ public abstract class JCountdownDialog extends JDialog {
 
                     new GuiRunnable<Object>() {
 
-                        // @Override
+                        @Override
                         public Object runSave() {
                             countDownLabel.setText(left);
                             return null;
                         }
 
                     }.start();
-                    // if (c <= 3)
-                    // JDSounds.P("sound.captcha.onCaptchaInputEmergency");
 
                     try {
                         Thread.sleep(1000);
@@ -118,17 +114,13 @@ public abstract class JCountdownDialog extends JDialog {
                     }
                     if (countdown < 0) return;
                     if (!isVisible()) return;
-
                 }
                 if (countdown < 0) return;
                 if (!this.isInterrupted()) onCountdown();
-
             }
-
         };
 
         countdownThread.start();
-
     }
 
     /**

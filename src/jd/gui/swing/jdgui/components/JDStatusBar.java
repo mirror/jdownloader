@@ -68,12 +68,12 @@ public class JDStatusBar extends JPanel implements ChangeListener, ControlListen
         spMaxSpeed.setToolTipText(JDL.L("gui.tooltip.statusbar.speedlimiter", "Speed Limit (KiB/s) [0 = Infinite]"));
         colorizeSpinnerSpeed();
 
-        spMaxDls = new JDSpinner(JDL.L("gui.statusbar.sim_ownloads", "Max. Dls."));
+        spMaxDls = new JDSpinner(JDL.L("gui.statusbar.sim_ownloads", "Max. Dls."), "h 20!");
         spMaxDls.getSpinner().setModel(new SpinnerNumberModel(dlConfig.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2), 1, 20, 1));
         spMaxDls.setToolTipText(JDL.L("gui.tooltip.statusbar.simultan_downloads", "Maximum simultaneous Downloads [1..20]"));
         spMaxDls.getSpinner().addChangeListener(this);
 
-        spMaxChunks = new JDSpinner(JDL.L("gui.statusbar.maxChunks", "Max. Con."));
+        spMaxChunks = new JDSpinner(JDL.L("gui.statusbar.maxChunks", "Max. Con."), "h 20!");
         spMaxChunks.getSpinner().setModel(new SpinnerNumberModel(dlConfig.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2), 1, 20, 1));
         spMaxChunks.setToolTipText(JDL.L("gui.tooltip.statusbar.max_chunks", "Max. Connections/File"));
         spMaxChunks.getSpinner().addChangeListener(this);

@@ -178,7 +178,7 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
         lblType.setText(JDL.L("gui.fileinfopanel.linktab.chunks", "Chunks"));
         panel.add(progressBarDownloadLink, "spanx, growx, pushx, split 2, h 18!");
         panel.add(lblSizeDl = new JLabel("0B/0B"), "alignx right");
-        panel.add(lblETA = new JLabel(JDL.LF("gui.fileinfopanel.linktab.eta", "ETA: %s mm:ss", "0")));
+        panel.add(lblETA = new JLabel(JDL.LF("gui.fileinfopanel.linktab.eta2", "ETA: %s", "0")));
         panel.add(lblSpeed = new JLabel(JDL.LF("gui.fileinfopanel.linktab.speed", "Speed: %s/s", "0 kb")), "skip");
         panel.add(new JLabel(JDL.L("gui.fileinfopanel.linktab.name", "Linkname")));
         panel.add(txtNameDl = new JDTextField(true), "growx, spanx");

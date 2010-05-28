@@ -30,7 +30,6 @@ import jd.config.SubConfiguration;
 import jd.gui.UserIO;
 import jd.gui.swing.Factory;
 import jd.gui.swing.components.linkbutton.JLink;
-import jd.gui.swing.dialog.AbstractDialog;
 import jd.nutils.JDImage;
 import jd.nutils.io.JDIO;
 import jd.update.WebUpdater;
@@ -96,8 +95,6 @@ public class AboutDialog extends AbstractDialog {
 
     @Override
     protected void packed() {
-        this.remove(countDownLabel);
-        this.pack();
         this.setDefaultCloseOperation(AbstractDialog.DISPOSE_ON_CLOSE);
     }
 

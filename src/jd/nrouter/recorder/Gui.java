@@ -175,8 +175,6 @@ public class Gui extends AbstractDialog implements ActionListener {
 
         @Override
         public void packed() {
-            remove(countDownLabel);
-            pack();
             setMinimumSize(null);
             setResizable(false);
             setDefaultCloseOperation(AbstractDialog.DO_NOTHING_ON_CLOSE);
