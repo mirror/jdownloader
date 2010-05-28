@@ -34,7 +34,7 @@ public class ResetAction extends ContextMenuAction {
         new Thread() {
             @Override
             public void run() {
-                if (UserIO.isOK(UserIO.getInstance().requestConfirmDialog(0, JDL.L("gui.downloadlist.reset", "Reset selected downloads?") + " (" + JDL.LF("gui.downloadlist.delete.size_packagev2", "%s links", links.size()) + ")"))) {
+                if (UserIO.isOK(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, JDL.L("gui.downloadlist.reset", "Reset selected downloads?") + " (" + JDL.LF("gui.downloadlist.delete.size_packagev2", "%s links", links.size()) + ")"))) {
                     for (DownloadLink link : links) {
                         link.reset();
                     }

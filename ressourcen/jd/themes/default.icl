@@ -21,7 +21,6 @@ gui.images.config.reconnect          = default/view-refresh
 gui.images.config.host               = default/internet-web-browser
 gui.images.config.passwordlist       = default/system-keyring
 gui.images.browse                    = default/internet-web-browser
-gui.images.addons.flashgot           = default/flashgot
 gui.images.addons.unrar              = default/package-x-generic
 gui.images.addons.merge              = default/merge
 gui.images.addons.infobar            = default/mime/x-office-presentation
