@@ -67,8 +67,8 @@ public class OronCom extends PluginForHost {
         br.submitForm(loginform);
         br.getPage("http://oron.com/?op=my_account");
         if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        if (!br.containsHTML("Premium-Account expire") && !br.containsHTML("Upgrade to premium")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        if (!br.containsHTML("Premium-Account expire")) nopremium = true;
+        if (!br.containsHTML("Premium Account expires") && !br.containsHTML("Upgrade to premium")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (!br.containsHTML("Premium Account expires")) nopremium = true;
     }
 
     @Override
@@ -88,7 +88,7 @@ public class OronCom extends PluginForHost {
         String availableTraffic = br.getRegex("<td>Available:</td>.*?<td>(.*?)</td>").getMatch(0);
         if (availableTraffic != null) ai.setTrafficLeft(Regex.getSize(availableTraffic));
         if (!nopremium) {
-            String expire = br.getRegex("<td>Premium-Account expire:</td>.*?<td>(.*?)</td>").getMatch(0);
+            String expire = br.getRegex("<td>Premium Account expires:</td>.*?<td>(.*?)</td>").getMatch(0);
             if (expire == null) {
                 ai.setExpired(true);
                 account.setValid(false);
