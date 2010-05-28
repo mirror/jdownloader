@@ -9,7 +9,7 @@ gui.icons.delete                     = default/edit-delete
 gui.images.barrierfree               = default/preferences-desktop-assistive-technology
 gui.images.toolbar                   = default/window-new
 gui.images.add                       = default/list-add
-gui.images.stopmark                  = default/record
+gui.images.stopmark                  = default/media-record
 gui.images.stopmark.disabled         = default/stop_after_disabled_big
 gui.images.stopmark.enabled          = default/stop_after_enabled_big
 gui.images.cancel                    = default/emblem-unreadable
@@ -46,12 +46,10 @@ gui.images.stopsign                  = default/process-stop
 gui.images.sort                      = default/sort
 gui.images.load                      = default/document-open
 gui.images.flashgot                  = flashgot_logo_0
-gui.images.remove_ok                 = default/remove-ok
 gui.images.remove_files              = default/list-remove-files
 gui.images.remove_packages           = default/list-remove-packages
-gui.images.remove_all                = default/remove-all
-gui.images.remove_dupes              = default/remove-dupes
-gui.images.remove_failed             = default/remove-failed
+gui.images.remove_dupes              = default/list-remove-dupes
+gui.images.remove_failed             = default/list-remove-failed
 gui.images.remove_offline            = default/list-remove-offline
 gui.images.remove_disabled           = default/list-remove_disabled
 gui.images.next                      = default/media-playback-start
@@ -136,10 +134,6 @@ gui.images.enabled                   = default/enabled
 gui.images.disabled                  = default/disabled
 gui.images.filter                    = default/filter
 gui.images.addselected               = default/edit-find
-
-# Old keys
-gui.images.add_all                   = default/folder-open_add
-gui.images.add_package               = default/folder-open
 
 # Cursor. ATTENTION. CURSOR are GIFS!!
 gui.cursor.help                      = default/cursor/help
