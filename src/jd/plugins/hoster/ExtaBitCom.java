@@ -62,6 +62,7 @@ public class ExtaBitCom extends PluginForHost {
         downloadLink.setName(filename.trim());
         if (filesize != null) downloadLink.setDownloadSize(Regex.getSize(filesize));
         if (br.containsHTML(">Only premium users can download files of this size")) downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.ExtaBitCom.errors.Only4Premium", "This file is only available for premium users"));
+        if (br.containsHTML(">File is temporary unavailable<")) downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.ExtaBitCom.errors.TempUnavailable", "This file is temporary unavailable"));
         return AvailableStatus.TRUE;
     }
 
@@ -69,6 +70,7 @@ public class ExtaBitCom extends PluginForHost {
     public void handleFree(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         requestFileInformation(link);
+        if (br.containsHTML(">File is temporary unavailable<")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.ExtaBitCom.errors.TempUnavailable", "This file is temporary unavailable"));
         if (br.containsHTML(">Only premium users can download files of this size")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.ExtaBitCom.errors.Only4Premium", "This file is only available for premium users"));
         String addedlink = br.getURL();
         if (!addedlink.equals(link.getDownloadURL())) link.setUrlDownload(addedlink);

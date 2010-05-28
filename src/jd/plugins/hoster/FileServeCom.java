@@ -227,6 +227,7 @@ public class FileServeCom extends PluginForHost {
                         logger.warning("Fileserve availablecheck is broken!");
                         dl.setAvailable(false);
                     } else if (!status.equals("Available") || filename.equals("--") || filesize.equals("--")) {
+                        filename = fileid;
                         dl.setAvailable(false);
                     } else {
                         dl.setAvailable(true);

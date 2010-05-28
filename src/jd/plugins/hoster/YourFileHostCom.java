@@ -51,7 +51,7 @@ public class YourFileHostCom extends PluginForHost {
             filename = br.getRegex("parent\\.location='linkshare.*?file=(.*?)'").getMatch(0);
             if (filename == null) filename = br.getRegex("\\&file=(.*?)\"").getMatch(0);
         }
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setFinalFileName(filename.trim());
         return AvailableStatus.TRUE;
     }
@@ -59,6 +59,7 @@ public class YourFileHostCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        if (downloadLink.getDownloadURL().contains("media.php?cat=video")) br.getPage(downloadLink.getDownloadURL().replace("media.php?cat=video", "downloadfile.php?cat=video"));
         String dllink = null;
         // Only for files you need to enter captchas, not for videos!
         String captchaOrNot = br.getRegex("\"(/downloadlink\\.php.*?)\"").getMatch(0);
@@ -78,6 +79,7 @@ public class YourFileHostCom extends PluginForHost {
             dllink = br.getRegex("style2\"><a href=\"(http.*?)\"").getMatch(0);
             if (dllink == null) br.getRegex("href=\"(http.*?)\"").getMatch(0);
         } else {
+            // I don't know if this part is still needed
             dllink = br.getRegex("src\" value=\"(http.*?)\"").getMatch(0);
             String sourcelink = br.getRegex("movie\" value=\"(.*?)\"").getMatch(0);
             if (sourcelink == null) sourcelink = br.getRegex("<embed src=\"(.*?)\"").getMatch(0);
