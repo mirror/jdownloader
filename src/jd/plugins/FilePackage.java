@@ -90,7 +90,7 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
 
     private String password2;
 
-    private boolean postProcessing = true;
+    private boolean extractAfterDownload = true;
 
     private long totalBytesLoaded_v2;
 
@@ -235,11 +235,11 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
     }
 
     public boolean isPostProcessing() {
-        return postProcessing;
+        return extractAfterDownload;
     }
 
     public void setPostProcessing(boolean postProcessing) {
-        this.postProcessing = postProcessing;
+        this.extractAfterDownload = postProcessing;
     }
 
     public void addLinksAt(ArrayList<DownloadLink> links, int index) {
