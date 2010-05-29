@@ -20,6 +20,8 @@ import java.io.IOException;
 import java.util.Random;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.nutils.encoding.Encoding;
@@ -33,6 +35,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "save.tv" }, urls = { "http://[\\w\\.]*?(save\\.tv|free\\.save\\.tv)/STV/M/obj/user/usShowVideoArchiveDetail\\.cfm\\?TelecastID=\\d+" }, flags = { 2 })
 public class SaveTv extends PluginForHost {
@@ -40,6 +43,14 @@ public class SaveTv extends PluginForHost {
     public SaveTv(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.save.tv/stv/s/obj/registration/RegPage1.cfm");
+        setConfigElements();
+    }
+
+    private static final String ORIGFILENAME = "";
+
+    private void setConfigElements() {
+        ConfigEntry cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ORIGFILENAME, JDL.L("plugins.hoster.SaveTv.DontModifyFilename", "Dateiname unverändert lassen (kann Probleme verursachen)")).setDefaultValue(false);
+        config.addEntry(cond);
     }
 
     @Override
@@ -101,8 +112,6 @@ public class SaveTv extends PluginForHost {
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         requestFileInformation(downloadLink);
-        boolean pluginBroken = true;
-        if (pluginBroken) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Plugin still in development!");
         login(account);
         String addedlink = downloadLink.getDownloadURL();
         if (this.getPluginConfig().getStringProperty("premium", null) != null) {
@@ -112,19 +121,12 @@ public class SaveTv extends PluginForHost {
         }
         logger.info("Added link = " + addedlink);
         br.getPage(addedlink);
-        String dllink = br.getRegex("document\\.location\\.href='(http.*?)'").getMatch(0);
-        if (dllink == null) {
-            dllink = br.getRegex("'(http://.*?/\\?m=dl)'").getMatch(0);
-            if (dllink == null) {
-                dllink = br.getRegex("reShowStreamOnload\\.cfm\\?sURL=(http.*?)'").getMatch(0);
-                if (dllink != null) {
-                    dllink = Encoding.deepHtmlDecode((dllink));
-                    br.getPage(dllink);
-                    dllink = br.getRegex("video/divx\" src=\"(.*?)\"").getMatch(0);
-                    if (dllink == null) dllink = br.getRegex("\"src\" value=\"(.*?)\"").getMatch(0);
-                }
-            }
-        }
+        // On their page this step is made by java script but leaving some vars
+        // out, it still works :D
+        String postThat = "ajax=true&clientAuthenticationKey=&callCount=1&c0-scriptName=null&c0-methodName=GetDownloadUrl&c0-id=&c0-param0=number:" + new Regex(addedlink, "TelecastID=(\\d+)").getMatch(0) + "&c0-param1=number:0&c0-param2=boolean:false&xml=true&";
+        br.postPage("http://www.save.tv/STV/M/obj/cRecordOrder/croGetDownloadUrl.cfm?null.GetDownloadUrl", postThat);
+        String dllink = br.getRegex("\\[ 'OK','(http://.*?)','").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("'(http://.*?/\\?m=dl)'").getMatch(0);
         if (dllink == null) {
             logger.warning("Final downloadlink (dllink) is null");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -167,7 +169,17 @@ public class SaveTv extends PluginForHost {
                     String filename = br.getRegex("<h2 id=\"archive-detailbox-title\">(.*?)</h2>").getMatch(0);
                     if (filename == null) filename = br.getRegex("id=\"telecast-detail\">.*?<h3>(.*?)</h2>").getMatch(0);
                     if (filename != null) {
-                        dl.setFinalFileName(filename.trim() + new Random().nextInt(10) + ".avi");
+                        filename = filename.trim();
+                        filename = filename.replaceAll("(\r|\n)", "");
+                        String[] unneededSpaces = new Regex(filename, ".*?([ ]{2,}).*?").getColumn(0);
+                        if (unneededSpaces != null && unneededSpaces.length != 0) {
+                            for (String unneededSpace : unneededSpaces) {
+                                filename = filename.replace(unneededSpace, " ");
+                            }
+                        }
+                        boolean dontModifyFilename = getPluginConfig().getBooleanProperty(ORIGFILENAME);
+                        if (!dontModifyFilename) filename = filename + new Random().nextInt(10);
+                        dl.setFinalFileName(filename + ".avi");
                         dl.setAvailable(true);
                     } else {
                         dl.setAvailable(false);
@@ -192,7 +204,7 @@ public class SaveTv extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return 10;
+        return -1;
     }
 
     @Override

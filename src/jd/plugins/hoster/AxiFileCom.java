@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
@@ -28,7 +29,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "axifile.com" }, urls = { "http://[\\w\\.]*?axifile\\.com/\\?\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "axifile.com" }, urls = { "http://[\\w\\.]*?axifile\\.com/(\\?|mydownload\\.php\\?file=)\\d+" }, flags = { 0 })
 public class AxiFileCom extends PluginForHost {
     public AxiFileCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -45,8 +46,16 @@ public class AxiFileCom extends PluginForHost {
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
         if (br.getRedirectLocation() != null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("File download:(.*?)</TITLE>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("Download shared file \\| (.*?)</TITLE>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex(">You have request \"(.*?)\" file").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("content=\"FAST AND SAFE DOWNLOAD (.*?)\">").getMatch(0);
+            }
+        }
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String filesize = br.getRegex(">You have request \".*?\" file \\((.*?)\\)</DIV>").getMatch(0);
+        if (filesize != null) downloadLink.setDownloadSize(Regex.getSize(filesize));
         downloadLink.setName(filename.trim());
         return AvailableStatus.TRUE;
     }
@@ -81,8 +90,8 @@ public class AxiFileCom extends PluginForHost {
             }
         }
         String dllink = br.getRegex("pnlLink1\"><b>.*?</b><br> <A href=\"(.*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\"(http://dl\\d+\\.axifile\\.com/[a-z0-9]+/.*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        sleep(13000l, downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -3);
         /*
          * hoster supported wahlweise 3 files mit 1 chunk oder 1 file mit 3

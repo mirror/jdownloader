@@ -53,7 +53,7 @@ public class SharingMatrixCom extends PluginForHost {
     private static final String WAIT1 = "WAIT1_1";
 
     private void setConfigElements() {
-        ConfigEntry cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), WAIT1, JDL.L("plugins.hoster.SharingMatrixCom.waitInsteadOfReconnect", "Wait 15 minutes instead of reconnecting")).setDefaultValue(true);
+        ConfigEntry cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), WAIT1, JDL.L("plugins.hoster.SharingMatrixCom.waitInsteadOfReconnect", "Wait 15 minutes instead of reconnecting")).setDefaultValue(false);
         config.addEntry(cond);
     }
 
@@ -316,7 +316,7 @@ public class SharingMatrixCom extends PluginForHost {
     }
 
     public void doWait2(DownloadLink downloadLink, int ctjvv) throws Exception {
-        boolean waitReconnecttime = getPluginConfig().getBooleanProperty(WAIT1, true);
+        boolean waitReconnecttime = getPluginConfig().getBooleanProperty(WAIT1, false);
         /* we will wait up to 15 mins */
         if (ctjvv > 80) {
             if (waitReconnecttime && ctjvv < 910)
