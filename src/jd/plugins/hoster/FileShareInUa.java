@@ -106,13 +106,21 @@ public class FileShareInUa extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        String freepage = link.getDownloadURL() + "?free";
+        // Using the link + "?free" we can get to the page with the captcha but
+        // atm we do it without captcha
+        // String freepage = link.getDownloadURL() + "?free";
+        String freepage = link.getDownloadURL();
         br.getPage(freepage);
-        if (br.containsHTML("Возможно, файл был удален по просьбе владельца авторских прав")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = Encoding.htmlDecode(br.getRegex("class=\"dnld_filename\">(.*?)</h1></td>").getMatch(0));
+        if (br.containsHTML("Такой страницы на нашем сайте нет")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<title>скачать (.*?)</title>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("class=\"file_name sr_archive\">[\n\r ]+<span>(.*?)</span>").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("width=\"156px\" height=\"39px\" alt=\"(.*?) на FileShare\\.in\\.ua\"").getMatch(0);
+            }
+        }
         String filesize = br.getRegex("class=\"dnld_size\">.*?<strong>(.*?)</strong>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-
         link.setFinalFileName(filename);
         link.setDownloadSize(Regex.getSize(filesize));
         return AvailableStatus.TRUE;
@@ -122,35 +130,33 @@ public class FileShareInUa extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         if (br.containsHTML("Именно эта ссылка битая. Однако, это не значит, что вам нечего тут искать")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+        String continueLink = br.getRegex("id=\"popunder_lnk\" href=\"(/.*?)\"").getMatch(0);
+        if (continueLink == null) continueLink = br.getRegex("\"(/dl\\d+\\?c=[a-z0-9]+)\"").getMatch(0);
+        if (continueLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        continueLink = "http://fileshare.in.ua" + continueLink;
+        br.getPage(continueLink);
         String captchapart = br.getRegex("id=\"capture\".*?src=\"(.*?)\"").getMatch(0);
         Form captchaForm = br.getForm(2);
-        // This is a pard of the captcha stuff. They always have one big captcha
+        // This is a part of the captcha stuff. They always have one big captcha
         // with random letters (about 10) but only 4 are needed. With this
         // number and an other default number the plugin knows which part of the
         // captcha it needsa
         String captchacut = br.getRegex("<style>.*?margin-[a-z]+:-(\\d+)px;").getMatch(0);
-        if (captchapart == null || captchaForm == null || captchacut == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String captchaurl = "http://fileshare.in.ua" + captchapart;
-        File file = this.getLocalCaptchaFile();
-        Browser.download(file, br.cloneBrowser().openGetConnection(captchaurl));
-        String code = FsIuA.getCode(-Integer.parseInt(captchacut), 100, file);
-        captchaForm.put("capture", code);
-        br.submitForm(captchaForm);
-        if (br.containsHTML("Цифры введены неверно")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        String dllink0 = null;
-        String slowdllink = br.getRegex("href=\"(/get/.*?)\"").getMatch(0);
-        Form dlForm0 = br.getForm(2);
-        if (dlForm0 != null) {
-            br.submitForm(dlForm0);
-            String dlframe = downloadLink.getDownloadURL() + "?fr";
-            br.getPage(dlframe);
-            dllink0 = br.getRegex("href=\"(/get/.*?)\"").getMatch(0);
+        if (captchapart != null && captchaForm != null && captchacut != null) {
+            String captchaurl = "http://fileshare.in.ua" + captchapart;
+            File file = this.getLocalCaptchaFile();
+            Browser.download(file, br.cloneBrowser().openGetConnection(captchaurl));
+            String code = FsIuA.getCode(-Integer.parseInt(captchacut), 100, file);
+            captchaForm.put("capture", code);
+            br.submitForm(captchaForm);
+            if (br.containsHTML("Цифры введены неверно")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
-        if (dllink0 == null && slowdllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        if (dllink0 == null && slowdllink != null) {
-            logger.warning("The plugin seems to be damaged, using the slow downloadlink which is http://fileshare.in.ua" + slowdllink);
-            dllink0 = slowdllink;
-        }
+        String dlframe = downloadLink.getDownloadURL() + "?fr";
+
+        br.getPage(dlframe);
+        String dllink0 = br.getRegex("href=\"(/get/.*?)\"").getMatch(0);
+        if (dllink0 == null) dllink0 = br.getRegex("<span id=\"time_yes\"><a  href=\"(/.*?)\"").getMatch(0);
+        if (dllink0 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage("http://fileshare.in.ua" + dllink0);
         String dllink = br.getRedirectLocation();
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
