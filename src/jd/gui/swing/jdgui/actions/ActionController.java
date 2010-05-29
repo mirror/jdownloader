@@ -99,10 +99,6 @@ public class ActionController {
                 setType(ToolBarAction.Types.SEPARATOR);
             }
 
-            @Override
-            public void init() {
-            }
-
         };
 
         new ThreadedAction("toolbar.control.start", "gui.images.next") {
@@ -110,13 +106,11 @@ public class ActionController {
 
             @Override
             public void initDefaults() {
-                this.setEnabled(true);
+                setEnabled(true);
             }
 
             @Override
-            public void init() {
-                if (inited) return;
-                this.inited = true;
+            public void initAction() {
                 JDUtilities.getController().addControlListener(new ControlIDListener(ControlEvent.CONTROL_DOWNLOAD_START, ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED, ControlEvent.CONTROL_DOWNLOAD_STOP) {
                     @Override
                     public void controlIDEvent(final ControlEvent event) {
@@ -171,15 +165,13 @@ public class ActionController {
 
             @Override
             public void initDefaults() {
-                this.setEnabled(false);
+                setEnabled(false);
                 setType(ToolBarAction.Types.TOGGLE);
                 setToolTipText(JDL.LF("gui.menu.action.break2.desc", "Pause downloads. Limits global speed to %s kb/s", SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_PAUSE_SPEED, 10) + ""));
             }
 
             @Override
-            public void init() {
-                if (inited) return;
-                this.inited = true;
+            public void initAction() {
                 JDUtilities.getController().addControlListener(new ControlIDListener(ControlEvent.CONTROL_DOWNLOAD_START, ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED, ControlEvent.CONTROL_DOWNLOAD_STOP) {
                     @Override
                     public void controlIDEvent(final ControlEvent event) {
@@ -218,13 +210,11 @@ public class ActionController {
 
             @Override
             public void initDefaults() {
-                this.setEnabled(false);
+                setEnabled(false);
             }
 
             @Override
-            public void init() {
-                if (inited) return;
-                this.inited = true;
+            public void initAction() {
                 JDUtilities.getController().addControlListener(new ControlIDListener(ControlEvent.CONTROL_DOWNLOAD_START, ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED, ControlEvent.CONTROL_DOWNLOAD_STOP) {
                     @Override
                     public void controlIDEvent(final ControlEvent event) {
@@ -279,13 +269,11 @@ public class ActionController {
 
             @Override
             public void initDefaults() {
-                this.setEnabled(true);
+                setEnabled(true);
             }
 
             @Override
-            public void init() {
-                if (inited) return;
-                this.inited = true;
+            public void initAction() {
                 JDController.getInstance().addControlListener(new ConfigPropertyListener(Configuration.PARAM_RECONNECT_OKAY) {
                     @Override
                     public void onPropertyChanged(Property source, final String key) {
@@ -331,10 +319,6 @@ public class ActionController {
             }
 
             @Override
-            public void init() {
-            }
-
-            @Override
             public void threadedActionPerformed(ActionEvent e) {
                 WebUpdate.doUpdateCheck(true);
             }
@@ -351,7 +335,7 @@ public class ActionController {
 
             @Override
             public void initDefaults() {
-                this.setEnabled(true);
+                setEnabled(true);
                 setType(ToolBarAction.Types.TOGGLE);
                 boolean b = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, true);
                 setSelected(b);
@@ -359,10 +343,7 @@ public class ActionController {
             }
 
             @Override
-            public void init() {
-                if (inited) return;
-                this.inited = true;
-
+            public void initAction() {
                 this.addPropertyChangeListener(new PropertyChangeListener() {
                     public void propertyChange(PropertyChangeEvent evt) {
                         if (evt.getPropertyName() == SELECTED_KEY) {
@@ -374,11 +355,7 @@ public class ActionController {
                 JDController.getInstance().addControlListener(new ConfigPropertyListener(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE) {
                     @Override
                     public void onPropertyChanged(Property source, final String key) {
-                        if (source.getBooleanProperty(key, true)) {
-                            setSelected(true);
-                        } else {
-                            setSelected(false);
-                        }
+                        setSelected(source.getBooleanProperty(key, true));
                     }
                 });
             }
@@ -394,17 +371,14 @@ public class ActionController {
 
             @Override
             public void initDefaults() {
-                this.setEnabled(true);
+                setEnabled(true);
                 setType(ToolBarAction.Types.TOGGLE);
                 setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true));
                 setIcon(isSelected() ? "gui.images.reconnect_enabled" : "gui.images.reconnect_disabled");
             }
 
             @Override
-            public void init() {
-                if (inited) return;
-                this.inited = true;
-
+            public void initAction() {
                 this.addPropertyChangeListener(new PropertyChangeListener() {
                     public void propertyChange(PropertyChangeEvent evt) {
                         if (evt.getPropertyName() == SELECTED_KEY) {
@@ -416,11 +390,7 @@ public class ActionController {
                 JDController.getInstance().addControlListener(new ConfigPropertyListener(Configuration.PARAM_ALLOW_RECONNECT) {
                     @Override
                     public void onPropertyChanged(Property source, final String key) {
-                        if (source.getBooleanProperty(key, true)) {
-                            setSelected(true);
-                        } else {
-                            setSelected(false);
-                        }
+                        setSelected(source.getBooleanProperty(key, true));
                     }
                 });
             }
@@ -439,10 +409,6 @@ public class ActionController {
 
             @Override
             public void initDefaults() {
-            }
-
-            @Override
-            public void init() {
             }
 
         };
@@ -464,10 +430,6 @@ public class ActionController {
                         }
                     }
                 });
-            }
-
-            @Override
-            public void init() {
             }
 
             @Override
@@ -493,10 +455,6 @@ public class ActionController {
             }
 
             @Override
-            public void init() {
-            }
-
-            @Override
             public void threadedActionPerformed(ActionEvent e) {
                 if (!LinkGrabberPanel.getLinkGrabber().isNotVisible()) {
                     LinkGrabberPanel.getLinkGrabber().move(LinkGrabberController.MOVE_BOTTOM);
@@ -511,10 +469,6 @@ public class ActionController {
 
             @Override
             public void initDefaults() {
-            }
-
-            @Override
-            public void init() {
             }
 
             @Override
@@ -536,10 +490,6 @@ public class ActionController {
             }
 
             @Override
-            public void init() {
-            }
-
-            @Override
             public void threadedActionPerformed(ActionEvent e) {
                 if (!LinkGrabberPanel.getLinkGrabber().isNotVisible()) {
                     LinkGrabberPanel.getLinkGrabber().move(LinkGrabberController.MOVE_UP);
@@ -554,10 +504,6 @@ public class ActionController {
 
             @Override
             public void initDefaults() {
-            }
-
-            @Override
-            public void init() {
             }
 
             @Override
@@ -577,10 +523,6 @@ public class ActionController {
 
             @Override
             public void initDefaults() {
-            }
-
-            @Override
-            public void init() {
             }
 
             @Override
@@ -604,10 +546,6 @@ public class ActionController {
 
             @Override
             public void initDefaults() {
-            }
-
-            @Override
-            public void init() {
             }
 
             @Override
@@ -645,10 +583,6 @@ public class ActionController {
             @Override
             public void onAction(ActionEvent e) {
                 SwingGui.getInstance().requestPanel(UserIF.Panels.CONFIGPANEL, ConfigPanelAddons.class);
-            }
-
-            @Override
-            public void init() {
             }
 
             @Override

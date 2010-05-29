@@ -47,8 +47,4 @@ public class AddContainerAction extends ToolBarAction {
     public void initDefaults() {
     }
 
-    @Override
-    public void init() {
-    }
-
 }

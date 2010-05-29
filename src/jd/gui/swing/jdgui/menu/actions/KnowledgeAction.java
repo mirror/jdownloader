@@ -39,10 +39,6 @@ public class KnowledgeAction extends ToolBarAction {
     }
 
     @Override
-    public void init() {
-    }
-
-    @Override
     public void initDefaults() {
     }
 

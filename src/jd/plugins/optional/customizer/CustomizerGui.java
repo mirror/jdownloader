@@ -75,10 +75,6 @@ public class CustomizerGui extends SwitchPanel {
             }
 
             @Override
-            public void init() {
-            }
-
-            @Override
             public void threadedActionPerformed(final ActionEvent e) {
                 table.editingStopped(null);
                 new GuiRunnable<Object>() {
@@ -103,10 +99,6 @@ public class CustomizerGui extends SwitchPanel {
 
             @Override
             public void initDefaults() {
-            }
-
-            @Override
-            public void init() {
             }
 
             @Override

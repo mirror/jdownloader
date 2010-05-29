@@ -62,7 +62,4 @@ public class AddUrlAction extends ToolBarAction {
     public void initDefaults() {
     }
 
-    @Override
-    public void init() {
-    }
 }

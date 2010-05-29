@@ -122,12 +122,6 @@ public class PremiumMenu extends JMenu implements ActionListener, AccountControl
                 setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true));
             }
 
-            @Override
-            public void init() {
-                if (inited) return;
-                this.inited = true;
-
-            }
         };
     }
 

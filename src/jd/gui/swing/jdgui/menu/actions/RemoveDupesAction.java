@@ -39,10 +39,6 @@ public class RemoveDupesAction extends ThreadedAction {
     }
 
     @Override
-    public void init() {
-    }
-
-    @Override
     public void initDefaults() {
     }
 

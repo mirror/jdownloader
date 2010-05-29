@@ -57,10 +57,6 @@ public class BackupLinkListAction extends ThreadedAction {
     }
 
     @Override
-    public void init() {
-    }
-
-    @Override
     public void initDefaults() {
     }
 

@@ -100,10 +100,6 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
             }
 
             @Override
-            public void init() {
-            }
-
-            @Override
             public void threadedActionPerformed(ActionEvent e) {
                 ArrayList<Account> accs = internalTable.getAllSelectedAccounts();
                 internalTable.editingStopped(null);

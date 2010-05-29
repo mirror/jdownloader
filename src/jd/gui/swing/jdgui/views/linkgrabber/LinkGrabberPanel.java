@@ -155,10 +155,6 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
             }
 
             @Override
-            public void init() {
-            }
-
-            @Override
             public void threadedActionPerformed(ActionEvent e) {
                 if (LGINSTANCE.getPackages().isEmpty() && LGINSTANCE.getFilterPackage().isEmpty()) return;
                 if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_COUNTDOWN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, JDL.L("gui.linkgrabberv2.lg.clear.ask", "Clear linkgrabber list?")), UserIO.RETURN_OK)) {
@@ -183,10 +179,6 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
 
             @Override
             public void initDefaults() {
-            }
-
-            @Override
-            public void init() {
             }
 
             @Override

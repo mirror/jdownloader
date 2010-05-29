@@ -59,10 +59,6 @@ public class RestoreAction extends ToolBarAction {
     }
 
     @Override
-    public void init() {
-    }
-
-    @Override
     public void initDefaults() {
     }
 

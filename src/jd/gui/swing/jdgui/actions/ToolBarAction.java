@@ -35,11 +35,11 @@ public abstract class ToolBarAction extends JDAction {
         TOGGLE, NORMAL, SEPARATOR, CONTAINER
     }
 
-    protected boolean inited = false;
     private static final long serialVersionUID = -7856598906795360922L;
 
     public static final String ID = "ID";
 
+    private boolean inited = false;
     private Types type = Types.NORMAL;
 
     public void setType(Types type) {
@@ -133,7 +133,14 @@ public abstract class ToolBarAction extends JDAction {
     /**
      * Has to be called by gui converter to start the action.
      */
-    public abstract void init();
+    public final void init() {
+        if (inited) return;
+        initAction();
+        inited = true;
+    }
+
+    protected void initAction() {
+    }
 
     /**
      * Sets the tooltip text, or a long description

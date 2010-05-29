@@ -40,19 +40,13 @@ public class MenuAction extends ToolBarAction {
         super(pluginID, icon);
     }
 
-    public MenuAction(Types separator) {
+    public MenuAction(Types type) {
         super();
-        this.setType(separator);
-    }
-
-    @Override
-    public void init() {
-
+        this.setType(type);
     }
 
     @Override
     public void initDefaults() {
-
     }
 
     public void setItems(ArrayList<MenuAction> mis) {
@@ -77,7 +71,7 @@ public class MenuAction extends ToolBarAction {
         getItems().add(m);
         this.setType(Types.CONTAINER);
     }
-    
+
     public JMenuItem toJMenuItem() {
         switch (getType()) {
         case SEPARATOR:
@@ -103,14 +97,14 @@ public class MenuAction extends ToolBarAction {
             JMenu m3 = new JMenu(getTitle());
             m3.setIcon(getIcon());
             JMenuItem c;
-                for (int i = 0; i < this.getSize(); i++) {
-                    c = this.get(i).toJMenuItem();
-                    if (c == null) {
-                        m3.addSeparator();
-                    } else {
-                        m3.add(c);
-                    }
+            for (int i = 0; i < this.getSize(); i++) {
+                c = this.get(i).toJMenuItem();
+                if (c == null) {
+                    m3.addSeparator();
+                } else {
+                    m3.add(c);
                 }
+            }
             return m3;
         }
         return null;
