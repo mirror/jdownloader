@@ -24,7 +24,7 @@ import javax.swing.JMenuItem;
 
 import jd.OptionalPluginWrapper;
 import jd.gui.swing.jdgui.actions.ActionController;
-import jd.gui.swing.jdgui.actions.ToolBarAction;
+import jd.gui.swing.jdgui.actions.ToolBarAction.Types;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 
@@ -51,82 +51,60 @@ public class AddonsMenu extends JMenu {
     }
 
     private void updateMenu() {
-
         this.add(ActionController.getToolBarAction("addonsMenu.configuration"));
 
         ArrayList<JMenuItem> itemsWithSubmenu = new ArrayList<JMenuItem>();
         ArrayList<JMenuItem> itemsToggle = new ArrayList<JMenuItem>();
         ArrayList<JMenuItem> itemsPress = new ArrayList<JMenuItem>();
-        ArrayList<JMenuItem> itemsConfig = new ArrayList<JMenuItem>();
         ArrayList<OptionalPluginWrapper> pluginsOptional = new ArrayList<OptionalPluginWrapper>(OptionalPluginWrapper.getOptionalWrapper());
         Collections.sort(pluginsOptional);
         for (final OptionalPluginWrapper plg : pluginsOptional) {
             if (!plg.isLoaded() || !plg.isEnabled()) continue;
-            boolean config = false;
             ArrayList<MenuAction> mis = plg.getPlugin().createMenuitems();
-            if (mis == null && plg.getPlugin().getConfig() != null && plg.getPlugin().getConfig().getEntries().size() > 0) {
-                mis = new ArrayList<MenuAction>();
-                config = true;
-            }
-            if (mis != null) {
-                if (mis.size() > 1) {
-                    MenuAction m = new MenuAction(plg.getID(), 0);
-                    m.setTitle(plg.getHost());
-                    m.setIcon(JDTheme.II(plg.getPlugin().getIconKey(), 16, 16));
-                    m.setItems(mis);
-                    JMenuItem mi = m.toJMenuItem();
-                    if (mi != null) {
-                        mi.setIcon(m.getIcon());
-                        itemsWithSubmenu.add(mi);
+            if (mis != null && !mis.isEmpty()) {
+                if (mis.size() == 1) {
+                    JMenuItem c = mis.get(0).toJMenuItem();
+                    c.setIcon(JDTheme.II(plg.getPlugin().getIconKey(), 16, 16));
+                    if (mis.get(0).getType() == Types.TOGGLE) {
+                        itemsToggle.add(c);
                     } else {
-                        addSeparator();
+                        itemsPress.add(c);
                     }
                 } else {
-                    for (MenuAction mi : mis) {
-                        JMenuItem c = mi.toJMenuItem();
-                        c.setDisabledIcon(null);
-                        c.setIcon(JDTheme.II(plg.getPlugin().getIconKey(), 16, 16));
-                        c.setSelectedIcon(JDTheme.II(plg.getPlugin().getIconKey(), 16, 16));
-                        c.setDisabledSelectedIcon(null);
-                        if (mi.getType() == ToolBarAction.Types.TOGGLE) {
-                            itemsToggle.add(c);
-                        } else {
-                            if (config) {
-                                itemsConfig.add(c);
-                            } else {
-                                itemsPress.add(c);
-                            }
-                        }
-                        break;
-                    }
+                    MenuAction m = new MenuAction(plg.getID(), plg.getPlugin().getIconKey());
+                    m.setTitle(plg.getHost());
+                    m.setItems(mis);
+
+                    JMenuItem mi = m.toJMenuItem();
+                    itemsWithSubmenu.add(mi);
                 }
             }
         }
-        boolean c = itemsConfig.size() > 0;
-        boolean p = itemsPress.size() > 0;
-        boolean t = itemsToggle.size() > 0;
+
         boolean pre = false;
         for (JMenuItem jmi : itemsWithSubmenu) {
-            if (!pre) addSeparator();
+            if (!pre) {
+                addSeparator();
+                pre = true;
+            }
             add(jmi);
-            pre = true;
         }
 
-        if (pre && (c || p || t)) addSeparator();
-        pre = false;
-        for (JMenuItem jmi : itemsConfig) {
-            add(jmi);
-            pre = true;
-        }
-        if (pre && (p || t)) addSeparator();
         pre = false;
         for (JMenuItem jmi : itemsPress) {
+            if (!pre) {
+                addSeparator();
+                pre = true;
+            }
             add(jmi);
-            pre = true;
         }
+
         pre = false;
-        if (pre && t) addSeparator();
         for (JMenuItem jmi : itemsToggle) {
+            if (!pre) {
+                addSeparator();
+                pre = true;
+            }
             add(jmi);
         }
     }

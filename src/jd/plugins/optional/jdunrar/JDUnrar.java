@@ -63,7 +63,7 @@ public class JDUnrar extends PluginOptional implements UnrarListener, ActionList
 
     private static final String DUMMY_HOSTER = "dum.my";
 
-    private static MenuAction menuAction = null;
+    private MenuAction menuAction = null;
 
     /**
      * Wird als reihe für anstehende extractjobs verwendet
@@ -545,13 +545,8 @@ public class JDUnrar extends PluginOptional implements UnrarListener, ActionList
 
     @Override
     public boolean initAddon() {
-        if (menuAction == null) menuAction = new MenuAction("optional.jdunrar.menu.extract.singlefils", "gui.images.addons.unrar") {
+        menuAction = new MenuAction("optional.jdunrar.menu.extract.singlefils", "gui.images.addons.unrar") {
             private static final long serialVersionUID = -7569522709162921624L;
-
-            @Override
-            public void initDefaults() {
-                this.setEnabled(true);
-            }
 
             @Override
             public void onAction(ActionEvent e) {

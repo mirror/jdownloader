@@ -68,7 +68,11 @@ public class JDHJSplit extends PluginOptional {
     private static final String DUMMY_HOSTER = "dum.my";
     private static final String CONFIG_KEY_OVERWRITE = "OVERWRITE";
 
-    /** Wird als reihe für anstehende extracthjobs verwendet */
+    private MenuAction menuAction = null;
+
+    /**
+     * Wird als reihe für anstehende extracthjobs verwendet
+     */
     private Jobber queue;
 
     public JDHJSplit(PluginWrapper wrapper) {
@@ -96,15 +100,18 @@ public class JDHJSplit extends PluginOptional {
         switch (event.getID()) {
         case ControlEvent.CONTROL_PLUGIN_INACTIVE:
             if (!(event.getSource() instanceof PluginForHost)) return;
-            if (this.getPluginConfig().getBooleanProperty("ACTIVATED", true)) {
-                link = ((SingleDownloadController) event.getParameter()).getDownloadLink();
+            link = ((SingleDownloadController) event.getParameter()).getDownloadLink();
+            /* react if HJSplit is activated or package has flag for autoextract */
+            if (this.getPluginConfig().getBooleanProperty("ACTIVATED", true) || link.getFilePackage().isExtractAfterDownload()) {
                 File file = new File(link.getFileOutput());
 
                 if (link.getLinkStatus().isFinished()) {
-                    file = this.getStartFile(file);
-                    if (file == null) return;
-                    if (this.validateArchive(file)) {
-                        addFileList(new File[] { file });
+                    if (link.getFilePackage().isExtractAfterDownload()) {
+                        file = this.getStartFile(file);
+                        if (file == null) return;
+                        if (this.validateArchive(file)) {
+                            addFileList(new File[] { file });
+                        }
                     }
                 }
             }
@@ -118,22 +125,18 @@ public class JDHJSplit extends PluginOptional {
             if (event.getSource() instanceof DownloadLink) {
                 link = (DownloadLink) event.getSource();
 
-                items.add(m = new MenuAction("optional.jdhjsplit.linkmenu.merge", 1000));
+                m = new MenuAction("optional.jdhjsplit.linkmenu.merge", 1000);
                 m.setIcon("gui.images.addons.merge");
                 m.setActionListener(this);
-                m.setEnabled(false);
-                if (link.getLinkStatus().hasStatus(LinkStatus.FINISHED) && this.isStartVolume(new File(link.getFileOutput()))) m.setEnabled(true);
-                if (new File(link.getFileOutput()).exists() && link.getName().matches(".*rar$")) m.setEnabled(true);
-
+                m.setEnabled(link.getLinkStatus().hasStatus(LinkStatus.FINISHED) && this.isStartVolume(new File(link.getFileOutput())));
                 m.setProperty("LINK", link);
             } else {
-                FilePackage fp = (FilePackage) event.getSource();
-
-                items.add(m = new MenuAction("optional.jdhjsplit.linkmenu.package.merge", 1001));
+                m = new MenuAction("optional.jdhjsplit.linkmenu.package.merge", 1001);
                 m.setIcon("gui.images.addons.merge");
                 m.setActionListener(this);
-                m.setProperty("PACKAGE", fp);
+                m.setProperty("PACKAGE", (FilePackage) event.getSource());
             }
+            items.add(m);
             break;
         }
     }
@@ -141,14 +144,14 @@ public class JDHJSplit extends PluginOptional {
     @Override
     public ArrayList<MenuAction> createMenuitems() {
         ArrayList<MenuAction> menu = new ArrayList<MenuAction>();
+
         MenuAction m;
         menu.add(m = new MenuAction("optional.hjsplit.menu.toggle", 1));
         m.setActionListener(this);
         m.setSelected(this.getPluginConfig().getBooleanProperty("ACTIVATED", true));
         menu.add(new MenuAction(Types.SEPARATOR));
-        menu.add(m = new MenuAction("optional.hjsplit.menu.extract.singlefils", 21));
-        m.setIcon("gui.images.addons.merge");
-        m.setActionListener(this);
+        menu.add(menuAction);
+
         return menu;
     }
 
@@ -166,31 +169,6 @@ public class JDHJSplit extends PluginOptional {
             cfg.setProperty("ACTIVATED", !cfg.getBooleanProperty("ACTIVATED", true));
             cfg.save();
             break;
-        case 21:
-            JDFileChooser fc = new JDFileChooser("_JDHJSPLIT_");
-            fc.setMultiSelectionEnabled(true);
-            FileFilter ff = new FileFilter() {
-                @Override
-                public boolean accept(File pathname) {
-                    if (isStartVolume(pathname)) return true;
-                    if (pathname.isDirectory()) return true;
-                    return false;
-                }
-
-                @Override
-                public String getDescription() {
-                    return JDL.L("plugins.optional.hjsplit.filefilter", "HJSPLIT-Startvolumes");
-                }
-
-            };
-            fc.setFileFilter(ff);
-            if (fc.showOpenDialog(SwingGui.getInstance().getMainFrame()) == JDFileChooser.APPROVE_OPTION) {
-                File[] list = fc.getSelectedFiles();
-                if (list == null) return;
-                addFileList(list);
-            }
-            break;
-
         case 1000:
             File file = new File(((DownloadLink) source.getProperty("LINK")).getFileOutput());
             file = this.getStartFile(file);
@@ -198,7 +176,6 @@ public class JDHJSplit extends PluginOptional {
                 addFileList(new File[] { file });
             }
             break;
-
         case 1001:
             FilePackage fp = (FilePackage) source.getProperty("PACKAGE");
             ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
@@ -577,6 +554,35 @@ public class JDHJSplit extends PluginOptional {
 
     @Override
     public boolean initAddon() {
+        menuAction = new MenuAction("optional.hjsplit.menu.extract.singlefils", "gui.images.addons.merge") {
+            private static final long serialVersionUID = 8740837466603254496L;
+
+            @Override
+            public void onAction(ActionEvent e) {
+                JDFileChooser fc = new JDFileChooser("_JDHJSPLIT_");
+                fc.setMultiSelectionEnabled(true);
+                FileFilter ff = new FileFilter() {
+                    @Override
+                    public boolean accept(File pathname) {
+                        if (isStartVolume(pathname)) return true;
+                        if (pathname.isDirectory()) return true;
+                        return false;
+                    }
+
+                    @Override
+                    public String getDescription() {
+                        return JDL.L("plugins.optional.hjsplit.filefilter", "HJSPLIT-Startvolumes");
+                    }
+
+                };
+                fc.setFileFilter(ff);
+                if (fc.showOpenDialog(SwingGui.getInstance().getMainFrame()) == JDFileChooser.APPROVE_OPTION) {
+                    File[] list = fc.getSelectedFiles();
+                    if (list == null) return;
+                    addFileList(list);
+                }
+            }
+        };
         return true;
     }
 
