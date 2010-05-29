@@ -76,8 +76,6 @@ public class ToolBar extends JToolBar {
         setRollover(true);
         setFloatable(false);
 
-        ActionController.initActions();
-
         current = DEFAULT_LIST.toArray(new String[] {});
     }
 

@@ -41,6 +41,7 @@ import jd.gui.swing.components.linkbutton.JLink;
 import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.JDGuiConstants;
+import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.events.waitcursor.WaitCursorEventQueue;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.http.Browser;
@@ -212,10 +213,8 @@ public class JDInit {
 
     public void initGUI(final JDController controller) {
         LookAndFeelController.setUIManager();
-
-        // Toolkit.getDefaultToolkit().getSystemEventQueue().push(new
-        // EDTEventQueue());
         Toolkit.getDefaultToolkit().getSystemEventQueue().push(new WaitCursorEventQueue());
+        ActionController.initActions();
         SwingGui.setInstance(JDGui.getInstance());
         UserIF.setInstance(SwingGui.getInstance());
         controller.addControlListener(SwingGui.getInstance());

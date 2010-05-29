@@ -38,8 +38,6 @@ import net.miginfocom.swing.MigLayout;
 public class ViewToolbar extends JPanel {
 
     public ViewToolbar(String... actions) {
-        ActionController.initActions();
-
         current = actions;
 
         this.updateToolbar();

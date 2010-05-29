@@ -25,7 +25,6 @@ import jd.PluginWrapper;
 import jd.controlling.LinkGrabberController;
 import jd.controlling.LinkGrabberPackagingEvent;
 import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.actions.ToolBarAction.Types;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelListener;
 import jd.gui.swing.jdgui.menu.MenuAction;
@@ -41,7 +40,6 @@ public class JDPackageCustomizer extends PluginOptional implements LinkGrabberPa
 
     private static final String JDL_PREFIX = "jd.plugins.optional.customizer.JDPackageCustomizer.";
 
-    private static final String PROPERTY_ENABLE = "ENABLE";
     public static final String PROPERTY_SETTINGS = "SETTINGS";
 
     private LinkGrabberController ctrl;
@@ -50,7 +48,6 @@ public class JDPackageCustomizer extends PluginOptional implements LinkGrabberPa
 
     private CustomizerView view;
 
-    private MenuAction enableAction;
     private MenuAction showAction;
 
     public JDPackageCustomizer(PluginWrapper wrapper) {
@@ -72,19 +69,11 @@ public class JDPackageCustomizer extends PluginOptional implements LinkGrabberPa
         ctrl = LinkGrabberController.getInstance();
         ctrl.setCustomizedPackager(this);
 
-        enableAction = new MenuAction("packagecustomizer.enable", 1);
-        enableAction.setActionListener(this);
-        // enableAction.setTitle(JDL.L(JDL_PREFIX + "enabled",
-        // "Enable Customizer"));
-        enableAction.setSelected(getPluginConfig().getBooleanProperty(PROPERTY_ENABLE, true));
-
-        showAction = new MenuAction("packagecustomizer.showGui", 0);
+        showAction = new MenuAction("packagecustomizer", getIconKey());
         showAction.setActionListener(this);
-        // showAction.setTitle(JDL.L(JDL_PREFIX + "settings",
-        // "Show Settings-GUI"));
         showAction.setSelected(false);
 
-        logger.info("Customizer OK");
+        logger.info("Customizer: OK");
         return true;
     }
 
@@ -95,10 +84,7 @@ public class JDPackageCustomizer extends PluginOptional implements LinkGrabberPa
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == enableAction) {
-            getPluginConfig().setProperty(PROPERTY_ENABLE, enableAction.isSelected());
-            getPluginConfig().save();
-        } else if (e.getSource() == showAction) {
+        if (e.getSource() == showAction) {
             if (showAction.isSelected()) {
                 showGui();
             } else {
@@ -138,9 +124,9 @@ public class JDPackageCustomizer extends PluginOptional implements LinkGrabberPa
     @Override
     public ArrayList<MenuAction> createMenuitems() {
         ArrayList<MenuAction> menu = new ArrayList<MenuAction>();
-        menu.add(enableAction);
-        menu.add(new MenuAction(Types.SEPARATOR));
+
         menu.add(showAction);
+
         return menu;
     }
 
@@ -149,39 +135,35 @@ public class JDPackageCustomizer extends PluginOptional implements LinkGrabberPa
     }
 
     public void attachToPackagesSecondStage(DownloadLink link) {
-        if (enableAction.isSelected()) {
-            CustomizeSetting setting = CustomizeSetting.getFirstMatch(link.getName());
-            if (setting != null) {
-                logger.info("Customizer: Using customization of filepackage for link " + link.getName());
-                if (ctrl.isExtensionFiltered(link)) {
-                    ctrl.getFilterPackage().add(link);
-                    return;
-                }
-
-                String packageName = setting.getPackageName();
-                LinkGrabberFilePackage fp;
-                if (packageName == null || packageName.equals("")) {
-                    fp = ctrl.getGeneratedPackage(link);
-                } else {
-                    fp = ctrl.getFPwithName(packageName);
-                    if (fp == null) fp = new LinkGrabberFilePackage(packageName, ctrl);
-                }
-
-                fp.setExtractAfterDownload(setting.isExtract());
-                fp.setDownloadDirectory(setting.getDownloadDir());
-                fp.setUseSubDir(setting.isUseSubDirectory());
-                fp.setPassword(setting.getPassword());
-                fp.add(link);
-                link.setPriority(setting.getDLPriority());
-
-                fp.setCustomIcon(customIcon, String.format(customIconText, setting.getRegex()));
-                link.setCustomIcon(customIcon, String.format(customIconText, setting.getRegex()));
-
-                setting.incMatchCount();
+        CustomizeSetting setting = CustomizeSetting.getFirstMatch(link.getName());
+        if (setting != null) {
+            logger.info("Customizer: Using customization of filepackage for link " + link.getName());
+            if (ctrl.isExtensionFiltered(link)) {
+                ctrl.getFilterPackage().add(link);
                 return;
             }
+
+            String packageName = setting.getPackageName();
+            LinkGrabberFilePackage fp;
+            if (packageName == null || packageName.equals("")) {
+                fp = ctrl.getGeneratedPackage(link);
+            } else {
+                fp = ctrl.getFPwithName(packageName);
+                if (fp == null) fp = new LinkGrabberFilePackage(packageName, ctrl);
+            }
+
+            fp.setExtractAfterDownload(setting.isExtract());
+            fp.setDownloadDirectory(setting.getDownloadDir());
+            fp.setUseSubDir(setting.isUseSubDirectory());
+            fp.setPassword(setting.getPassword());
+            fp.add(link);
+            link.setPriority(setting.getDLPriority());
+
+            fp.setCustomIcon(customIcon, String.format(customIconText, setting.getRegex()));
+            link.setCustomIcon(customIcon, String.format(customIconText, setting.getRegex()));
+
+            setting.incMatchCount();
         }
-        LinkGrabberController.getInstance().attachToPackagesSecondStageInternal(link);
     }
 
 }

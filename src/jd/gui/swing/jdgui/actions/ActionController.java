@@ -41,11 +41,13 @@ import jd.event.ControlIDListener;
 import jd.gui.UserIF;
 import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
+import jd.gui.swing.SwingGui;
 import jd.gui.swing.components.linkbutton.JLink;
 import jd.gui.swing.dialog.AccountDialog;
 import jd.gui.swing.jdgui.views.downloads.DownloadLinksPanel;
 import jd.gui.swing.jdgui.views.linkgrabber.LinkGrabberPanel;
 import jd.gui.swing.jdgui.views.settings.JDLabelListRenderer;
+import jd.gui.swing.jdgui.views.settings.panels.addons.ConfigPanelAddons;
 import jd.nutils.JDFlags;
 import jd.plugins.LinkGrabberFilePackage;
 import jd.plugins.PluginForHost;
@@ -634,6 +636,23 @@ public class ActionController {
 
                 }.start();
 
+            }
+        };
+
+        new ToolBarAction("addonsMenu.configuration", "gui.images.config.packagemanager") {
+            private static final long serialVersionUID = -3613887193435347389L;
+
+            @Override
+            public void onAction(ActionEvent e) {
+                SwingGui.getInstance().requestPanel(UserIF.Panels.CONFIGPANEL, ConfigPanelAddons.class);
+            }
+
+            @Override
+            public void init() {
+            }
+
+            @Override
+            public void initDefaults() {
             }
         };
     }

@@ -16,7 +16,6 @@
 
 package jd.gui.swing.jdgui.menu;
 
-import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.Collections;
 
@@ -24,10 +23,8 @@ import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 
 import jd.OptionalPluginWrapper;
-import jd.gui.UserIF;
-import jd.gui.swing.SwingGui;
+import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
-import jd.gui.swing.jdgui.views.settings.panels.addons.ConfigPanelAddons;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 
@@ -55,23 +52,7 @@ public class AddonsMenu extends JMenu {
 
     private void updateMenu() {
 
-        ToolBarAction cfg = new ToolBarAction("addonsMenu.configuration", 9999) {
-            private static final long serialVersionUID = -3613887193435347389L;
-
-            public void onAction(ActionEvent e) {
-                SwingGui.getInstance().requestPanel(UserIF.Panels.CONFIGPANEL, ConfigPanelAddons.class);
-            }
-
-            @Override
-            public void init() {
-            }
-
-            @Override
-            public void initDefaults() {
-            }
-        };
-        cfg.setIcon(JDTheme.II("gui.images.config.packagemanager", 16, 16));
-        this.add(cfg);
+        this.add(ActionController.getToolBarAction("addonsMenu.configuration"));
 
         ArrayList<JMenuItem> itemsWithSubmenu = new ArrayList<JMenuItem>();
         ArrayList<JMenuItem> itemsToggle = new ArrayList<JMenuItem>();

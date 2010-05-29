@@ -86,6 +86,8 @@ public class ToolbarController extends ConfigPanel {
         WHITELIST.add("infobar");
         WHITELIST.add("gui.jdshutdown.toggle");
         WHITELIST.add("optional.jdunrar.menu.extract.singlefils");
+        WHITELIST.add("packagecustomizer");
+        WHITELIST.add("routereditor");
 
         // removes
         WHITELIST.add("separator");

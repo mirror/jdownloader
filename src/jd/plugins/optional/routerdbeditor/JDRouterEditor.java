@@ -59,7 +59,7 @@ public class JDRouterEditor extends PluginOptional {
     private static final String JDL_PREFIX = "jd.plugins.optional.JDRouterEditor.";
     private Boolean readonly = false;
     private Vector<String> shipped = null;
-    private MenuAction activateAction = null;
+    private MenuAction activateAction;
     private JDRouterEditorView view;
     private SwitchPanel frame;
     private JComboBox fileselector;
@@ -87,19 +87,16 @@ public class JDRouterEditor extends PluginOptional {
 
     @Override
     public boolean initAddon() {
-        if (activateAction == null) {
-            activateAction = new MenuAction("routereditor", 0);
-            activateAction.setActionListener(this);
-            activateAction.setTitle(getHost());
-            activateAction.setIcon(this.getIconKey());
-            activateAction.setSelected(false);
-        }
+        activateAction = new MenuAction("routereditor", getIconKey());
+        activateAction.setActionListener(this);
+        activateAction.setSelected(false);
+
+        logger.info("RouterEditor: OK");
         return true;
     }
 
     @Override
     public void onExit() {
-
     }
 
     @Override
@@ -386,7 +383,6 @@ public class JDRouterEditor extends PluginOptional {
     protected void saveToFile() {
         File file = new File(currentfile);
         JDIO.saveObject(null, router.prepareToSave(), file, null, null, true);
-
     }
 
 }
