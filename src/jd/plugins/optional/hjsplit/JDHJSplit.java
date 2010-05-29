@@ -102,11 +102,11 @@ public class JDHJSplit extends PluginOptional {
             if (!(event.getSource() instanceof PluginForHost)) return;
             link = ((SingleDownloadController) event.getParameter()).getDownloadLink();
             /* react if HJSplit is activated or package has flag for autoextract */
-            if (this.getPluginConfig().getBooleanProperty("ACTIVATED", true) || link.getFilePackage().isExtractAfterDownload()) {
+            if (this.getPluginConfig().getBooleanProperty("ACTIVATED", true) || link.getFilePackage().isPostProcessing()) {
                 File file = new File(link.getFileOutput());
 
                 if (link.getLinkStatus().isFinished()) {
-                    if (link.getFilePackage().isExtractAfterDownload()) {
+                    if (link.getFilePackage().isPostProcessing()) {
                         file = this.getStartFile(file);
                         if (file == null) return;
                         if (this.validateArchive(file)) {

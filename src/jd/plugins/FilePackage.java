@@ -35,7 +35,7 @@ import jd.utils.locale.JDL;
 
 class FilePackageBroadcaster extends JDBroadcaster<FilePackageListener, FilePackageEvent> {
 
-    // @Override
+    @Override
     protected void fireEvent(FilePackageListener listener, FilePackageEvent event) {
         listener.onFilePackageEvent(event);
     }
@@ -49,7 +49,9 @@ class FilePackageBroadcaster extends JDBroadcaster<FilePackageListener, FilePack
  */
 public class FilePackage extends Property implements Serializable, DownloadLinkListener, FilePackageListener {
 
-    // Zählt die instanzierungen durch um eine ID zu erstellen
+    /**
+     * Zählt die instanzierungen durch um eine ID zu erstellen
+     */
     private static int counter = 0;
 
     private static final long serialVersionUID = -8859842964299890820L;
@@ -88,7 +90,7 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
 
     private String password2;
 
-    private boolean extractAfterDownload = true;
+    private boolean postProcessing = true;
 
     private long totalBytesLoaded_v2;
 
@@ -232,12 +234,12 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
         }
     }
 
-    public boolean isExtractAfterDownload() {
-        return extractAfterDownload;
+    public boolean isPostProcessing() {
+        return postProcessing;
     }
 
-    public void setExtractAfterDownload(boolean extractAfterDownload) {
-        this.extractAfterDownload = extractAfterDownload;
+    public void setPostProcessing(boolean postProcessing) {
+        this.postProcessing = postProcessing;
     }
 
     public void addLinksAt(ArrayList<DownloadLink> links, int index) {

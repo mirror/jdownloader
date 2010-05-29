@@ -484,7 +484,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
         fp.setName(fpv2.getName());
         fp.setComment(fpv2.getComment());
         fp.setPassword(fpv2.getPassword());
-        fp.setExtractAfterDownload(fpv2.isExtractAfterDownload());
+        fp.setPostProcessing(fpv2.isPostProcessing());
         addToDownloadDirs(fpv2.getDownloadDirectory(), fpv2.getName());
 
         fp.setDownloadDirectory(fpv2.getDownloadDirectory());

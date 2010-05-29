@@ -92,11 +92,11 @@ public class JDUnrar extends PluginOptional implements UnrarListener, ActionList
             if (!(event.getSource() instanceof PluginForHost)) return;
             link = ((SingleDownloadController) event.getParameter()).getDownloadLink();
             /* react if JDUnrar is activated or package has flag for autoextract */
-            if (this.getPluginConfig().getBooleanProperty("ACTIVATED", true) || link.getFilePackage().isExtractAfterDownload()) {
+            if (this.getPluginConfig().getBooleanProperty("ACTIVATED", true) || link.getFilePackage().isPostProcessing()) {
                 link = findStartLink(link);
                 if (link == null) return;
                 if (link.getLinkStatus().isFinished()) {
-                    if (link.getFilePackage().isExtractAfterDownload()) {
+                    if (link.getFilePackage().isPostProcessing()) {
                         if (isArchiveComplete(link)) {
                             this.addToQueue(link);
                         }
@@ -151,7 +151,7 @@ public class JDUnrar extends PluginOptional implements UnrarListener, ActionList
                 m.setProperty("LINK", link);
                 container.addMenuItem(m = new MenuAction("optional.jdunrar.linkmenu.autoextract", 1005));
                 m.setActionListener(this);
-                m.setSelected(link.getFilePackage().isExtractAfterDownload());
+                m.setSelected(link.getFilePackage().isPostProcessing());
                 m.setProperty("LINK", link);
                 container.addMenuItem(new MenuAction(Types.SEPARATOR));
                 container.addMenuItem(m = new MenuAction("optional.jdunrar.linkmenu.setextract", 1003));
@@ -175,7 +175,7 @@ public class JDUnrar extends PluginOptional implements UnrarListener, ActionList
                 m.setActionListener(this);
                 m.setProperty("PACKAGE", fp);
                 container.addMenuItem(m = new MenuAction("optional.jdunrar.linkmenu.package.autoextract", 1006));
-                m.setSelected(fp.isExtractAfterDownload());
+                m.setSelected(fp.isPostProcessing());
                 m.setActionListener(this);
                 m.setProperty("PACKAGE", fp);
             }
@@ -285,7 +285,7 @@ public class JDUnrar extends PluginOptional implements UnrarListener, ActionList
             dlink.getLinkStatus().setStatus(LinkStatus.FINISHED);
             FilePackage fp = FilePackage.getInstance();
             fp.setDownloadDirectory(link.getFilePackage().getDownloadDirectory());
-            fp.setExtractAfterDownload(link.getFilePackage().isExtractAfterDownload());
+            fp.setPostProcessing(link.getFilePackage().isPostProcessing());
             fp.setPassword(link.getFilePackage().getPassword());
             dlink.setFilePackage(fp);
         }
@@ -532,12 +532,12 @@ public class JDUnrar extends PluginOptional implements UnrarListener, ActionList
         case 1005:
             link = (DownloadLink) source.getProperty("LINK");
             if (link == null) return;
-            link.getFilePackage().setExtractAfterDownload(!link.getFilePackage().isExtractAfterDownload());
+            link.getFilePackage().setPostProcessing(!link.getFilePackage().isPostProcessing());
             break;
         case 1006:
             fp = (FilePackage) source.getProperty("PACKAGE");
             if (fp == null) return;
-            fp.setExtractAfterDownload(!fp.isExtractAfterDownload());
+            fp.setPostProcessing(!fp.isPostProcessing());
             break;
         }
 

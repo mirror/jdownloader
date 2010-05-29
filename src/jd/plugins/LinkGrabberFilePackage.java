@@ -46,7 +46,7 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
     private String downloadDirectory;
     private ArrayList<DownloadLink> downloadLinks = new ArrayList<DownloadLink>();
     private String name = "";
-    private boolean extractAfterDownload = true;
+    private boolean postProcessing = true;
     private boolean useSubDir = true;
     private String comment = "";
     private String password = "";
@@ -86,7 +86,7 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
         useSubDir = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, false);
         OptionalPluginWrapper addon = JDUtilities.getOptionalPlugin("unrar");
         if (addon != null && addon.isEnabled()) {
-            extractAfterDownload = addon.getPluginConfig().getBooleanProperty("ACTIVATED", true);
+            postProcessing = addon.getPluginConfig().getBooleanProperty("ACTIVATED", true);
         }
         broadcaster = new LinkGrabberFilePackageBroadcaster();
         broadcaster.addListener(this);
@@ -266,12 +266,12 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
         }
     }
 
-    public boolean isExtractAfterDownload() {
-        return extractAfterDownload;
+    public boolean isPostProcessing() {
+        return postProcessing;
     }
 
-    public void setExtractAfterDownload(boolean extractAfterDownload) {
-        this.extractAfterDownload = extractAfterDownload;
+    public void setPostProcessing(boolean postProcessing) {
+        this.postProcessing = postProcessing;
     }
 
     public void addAllAt(ArrayList<DownloadLink> links, int index) {

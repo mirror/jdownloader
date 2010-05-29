@@ -23,7 +23,6 @@ import java.awt.event.FocusListener;
 
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
-import javax.swing.SwingConstants;
 
 import jd.config.Configuration;
 import jd.controlling.LinkGrabberController;
@@ -48,7 +47,7 @@ public class LinkGrabberFilePackageInfo extends JDCollapser implements ActionLis
 
     private JDTextField txtPassword;
 
-    private JCheckBox chbExtract;
+    private JCheckBox chbPostProcessing;
 
     private JCheckBox chbUseSubdirectory;
 
@@ -83,7 +82,7 @@ public class LinkGrabberFilePackageInfo extends JDCollapser implements ActionLis
         txtPassword.setText(fp.getPassword());
         txtPassword2.setText(fp.getPasswordAuto().toString());
         brwSaveTo.setText(fp.getDownloadDirectory());
-        chbExtract.setSelected(fp.isExtractAfterDownload());
+        chbPostProcessing.setSelected(fp.isPostProcessing());
         chbUseSubdirectory.setSelected(fp.useSubDir());
         /* neuzeichnen */
         revalidate();
@@ -112,14 +111,15 @@ public class LinkGrabberFilePackageInfo extends JDCollapser implements ActionLis
         txtComment = new JDTextField(true);
         txtComment.addActionListener(this);
         txtComment.addFocusListener(this);
-        chbExtract = new JCheckBox(JDL.L("gui.linkgrabber.packagetab.chb.extractAfterdownload", "Extract"));
-        chbExtract.setSelected(true);
-        chbExtract.setHorizontalTextPosition(SwingConstants.LEFT);
-        chbExtract.addActionListener(this);
+        chbPostProcessing = new JCheckBox(JDL.L("gui.fileinfopanel.packagetab.chb.postProcessing", "Post Processing"));
+        chbPostProcessing.setToolTipText(JDL.L("gui.fileinfopanel.packagetab.chb.postProcessing.toolTip", "Enable Post Processing for this FilePackge, like extracting or merging."));
+        chbPostProcessing.setSelected(true);
+        chbPostProcessing.setHorizontalTextPosition(JCheckBox.LEFT);
+        chbPostProcessing.addActionListener(this);
 
         chbUseSubdirectory = new JCheckBox(JDL.L("gui.linkgrabber.packagetab.chb.useSubdirectory", "Use Subdirectory"));
         chbUseSubdirectory.setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, false));
-        chbUseSubdirectory.setHorizontalTextPosition(SwingConstants.LEFT);
+        chbUseSubdirectory.setHorizontalTextPosition(JCheckBox.LEFT);
         chbUseSubdirectory.addActionListener(this);
 
         content.setLayout(new MigLayout("ins 5, wrap 3", "[]10[grow,fill]10[]", "[]5[]5[]5[]"));
@@ -130,7 +130,7 @@ public class LinkGrabberFilePackageInfo extends JDCollapser implements ActionLis
         content.add(brwSaveTo.getButton(), "pushx, growx");
         content.add(new JLabel(JDL.L("gui.linkgrabber.packagetab.lbl.password", "Archive Password")));
         content.add(txtPassword, "growx");
-        content.add(chbExtract, "alignx right");
+        content.add(chbPostProcessing, "alignx right");
         content.add(new JLabel(JDL.L("gui.linkgrabber.packagetab.lbl.password2", "Archive Password(auto)")));
         content.add(txtPassword2, "growx");
         content.add(chbUseSubdirectory, "alignx right");
@@ -144,7 +144,7 @@ public class LinkGrabberFilePackageInfo extends JDCollapser implements ActionLis
         if (e.getSource() == brwSaveTo) fp.setDownloadDirectory(brwSaveTo.getText());
         if (e.getSource() == txtComment) fp.setComment(txtComment.getText());
         if (e.getSource() == txtPassword) fp.setPassword(txtPassword.getText());
-        if (e.getSource() == chbExtract) fp.setExtractAfterDownload(chbExtract.isSelected());
+        if (e.getSource() == chbPostProcessing) fp.setPostProcessing(chbPostProcessing.isSelected());
         if (e.getSource() == chbUseSubdirectory) fp.setUseSubDir(chbUseSubdirectory.isSelected());
         LinkGrabberController.getInstance().throwRefresh();
     }
@@ -160,7 +160,7 @@ public class LinkGrabberFilePackageInfo extends JDCollapser implements ActionLis
         fp.setComment(txtComment.getText());
         fp.setPassword(txtPassword.getText());
         fp.setDownloadDirectory(brwSaveTo.getText());
-        fp.setExtractAfterDownload(chbExtract.isSelected());
+        fp.setPostProcessing(chbPostProcessing.isSelected());
         fp.setUseSubDir(chbUseSubdirectory.isSelected());
     }
 
@@ -180,7 +180,7 @@ public class LinkGrabberFilePackageInfo extends JDCollapser implements ActionLis
         if (e.getSource() == brwSaveTo) fp.setDownloadDirectory(brwSaveTo.getText());
         if (e.getSource() == txtComment) fp.setComment(txtComment.getText());
         if (e.getSource() == txtPassword) fp.setPassword(txtPassword.getText());
-        if (e.getSource() == chbExtract) fp.setExtractAfterDownload(chbExtract.isSelected());
+        if (e.getSource() == chbPostProcessing) fp.setPostProcessing(chbPostProcessing.isSelected());
         if (e.getSource() == chbUseSubdirectory) fp.setUseSubDir(chbUseSubdirectory.isSelected());
         LinkGrabberController.getInstance().throwRefresh();
     }

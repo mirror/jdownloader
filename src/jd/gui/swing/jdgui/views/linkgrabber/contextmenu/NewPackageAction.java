@@ -44,7 +44,7 @@ public class NewPackageAction extends ContextMenuAction {
 
         LinkGrabberFilePackage nfp = new LinkGrabberFilePackage(newName, controller);
         nfp.setDownloadDirectory(fp.getDownloadDirectory());
-        nfp.setExtractAfterDownload(fp.isExtractAfterDownload());
+        nfp.setPostProcessing(fp.isPostProcessing());
         nfp.setUseSubDir(fp.useSubDir());
         nfp.setComment(fp.getComment());
         for (DownloadLink dlink : links) {

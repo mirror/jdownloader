@@ -20,11 +20,11 @@ import jd.gui.swing.components.table.JDCheckBoxTableColumn;
 import jd.gui.swing.components.table.JDTableModel;
 import jd.plugins.optional.customizer.CustomizeSetting;
 
-public class ExtractColumn extends JDCheckBoxTableColumn {
+public class PostProcessingColumn extends JDCheckBoxTableColumn {
 
     private static final long serialVersionUID = 3755976431978837924L;
 
-    public ExtractColumn(String name, JDTableModel table) {
+    public PostProcessingColumn(String name, JDTableModel table) {
         super(name, table);
     }
 
@@ -45,12 +45,12 @@ public class ExtractColumn extends JDCheckBoxTableColumn {
 
     @Override
     protected boolean getBooleanValue(Object value) {
-        return ((CustomizeSetting) value).isExtract();
+        return ((CustomizeSetting) value).isPostProcessing();
     }
 
     @Override
     protected void setBooleanValue(boolean value, Object object) {
-        ((CustomizeSetting) object).setExtract(value);
+        ((CustomizeSetting) object).setPostProcessing(value);
     }
 
 }

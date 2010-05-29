@@ -42,7 +42,7 @@ public class NewPackageAction extends ContextMenuAction {
         FilePackage nfp = FilePackage.getInstance();
         nfp.setName(string);
         nfp.setDownloadDirectory(fp.getDownloadDirectory());
-        nfp.setExtractAfterDownload(fp.isExtractAfterDownload());
+        nfp.setPostProcessing(fp.isPostProcessing());
         nfp.setComment(fp.getComment());
 
         for (DownloadLink link : links) {

@@ -119,11 +119,11 @@ public class CustomizeSetting implements Serializable, Comparable<CustomizeSetti
         this.downloadDir = downloadDir;
     }
 
-    public boolean isExtract() {
+    public boolean isPostProcessing() {
         return extract;
     }
 
-    public void setExtract(boolean extract) {
+    public void setPostProcessing(boolean extract) {
         this.extract = extract;
     }
 

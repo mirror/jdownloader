@@ -152,7 +152,7 @@ public class JDPackageCustomizer extends PluginOptional implements LinkGrabberPa
                 if (fp == null) fp = new LinkGrabberFilePackage(packageName, ctrl);
             }
 
-            fp.setExtractAfterDownload(setting.isExtract());
+            fp.setPostProcessing(setting.isPostProcessing());
             fp.setDownloadDirectory(setting.getDownloadDir());
             fp.setUseSubDir(setting.isUseSubDirectory());
             fp.setPassword(setting.getPassword());

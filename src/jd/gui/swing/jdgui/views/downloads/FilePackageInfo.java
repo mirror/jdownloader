@@ -25,7 +25,6 @@ import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
-import javax.swing.SwingConstants;
 
 import jd.controlling.DownloadController;
 import jd.gui.swing.components.ComboBrowseFile;
@@ -67,7 +66,7 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
     private JLabel lblETA;
     private JLabel lblSpeed;
     private JLabel lblFiles;
-    private JCheckBox chbExtract;
+    private JCheckBox chbPostProcessing;
     private ComboBrowseFile brwSaveTo;
     private MultiProgressBar progressBarFilePackage;
     private MultiProgressBar progressBarDownloadLink;
@@ -110,7 +109,7 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
         txtPassword.setText(fp.getPassword());
         txtPassword2.setText(fp.getPasswordAuto().toString());
         brwSaveTo.setText(fp.getDownloadDirectory());
-        chbExtract.setSelected(fp.isExtractAfterDownload());
+        chbPostProcessing.setSelected(fp.isPostProcessing());
         /* neuzeichnen */
         revalidate();
     }
@@ -145,11 +144,12 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
         txtComment = new JDTextField(true);
         txtComment.addActionListener(this);
         txtComment.addFocusListener(this);
-        chbExtract = new JCheckBox(JDL.L("gui.fileinfopanel.packagetab.chb.extractAfterdownload", "Extract"));
-        chbExtract.setSelected(true);
-        chbExtract.setHorizontalTextPosition(SwingConstants.LEFT);
-        chbExtract.addActionListener(this);
-        chbExtract.addFocusListener(this);
+        chbPostProcessing = new JCheckBox(JDL.L("gui.fileinfopanel.packagetab.chb.postProcessing", "Post Processing"));
+        chbPostProcessing.setToolTipText(JDL.L("gui.fileinfopanel.packagetab.chb.postProcessing.toolTip", "Enable Post Processing for this FilePackge, like extracting or merging."));
+        chbPostProcessing.setSelected(true);
+        chbPostProcessing.setHorizontalTextPosition(JCheckBox.LEFT);
+        chbPostProcessing.addActionListener(this);
+        chbPostProcessing.addFocusListener(this);
 
         panel = new JPanel(new MigLayout("ins 5, wrap 3", "[]10[grow,fill]10[]", "[]5[]5[]5[]"));
         panel.add(lblFiles = new JLabel(JDL.LF("gui.fileinfopanel.packagetab.lbl.files", "%s File(s)", 0)), "spanx, split 3");
@@ -162,7 +162,7 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
         panel.add(brwSaveTo.getButton(), "pushx, growx");
         panel.add(new JLabel(JDL.L("gui.fileinfopanel.packagetab.lbl.password", "Archive Password")));
         panel.add(txtPassword, "growx");
-        panel.add(chbExtract, "alignx right");
+        panel.add(chbPostProcessing, "alignx right");
         panel.add(new JLabel(JDL.L("gui.fileinfopanel.packagetab.lbl.password2", "Archive Password(auto)")));
         panel.add(txtPassword2, "growx, span 2");
         panel.add(new JLabel(JDL.L("gui.fileinfopanel.packagetab.lbl.comment", "Comment")));
@@ -223,8 +223,8 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
             fp.setComment(txtComment.getText());
         } else if (source == txtPassword) {
             fp.setPassword(txtPassword.getText());
-        } else if (source == chbExtract) {
-            fp.setExtractAfterDownload(chbExtract.isSelected());
+        } else if (source == chbPostProcessing) {
+            fp.setPostProcessing(chbPostProcessing.isSelected());
         }
         DownloadController.getInstance().fireDownloadLinkUpdate(fp.get(0));
     }
@@ -329,7 +329,7 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
         fp.setComment(txtComment.getText());
         fp.setPassword(txtPassword.getText());
         fp.setDownloadDirectory(brwSaveTo.getText());
-        fp.setExtractAfterDownload(chbExtract.isSelected());
+        fp.setPostProcessing(chbPostProcessing.isSelected());
     }
 
     @Override
