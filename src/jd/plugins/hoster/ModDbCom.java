@@ -44,7 +44,7 @@ public class ModDbCom extends PluginForHost {
     private static final String[] servers;
 
     static {
-        servers = new String[] { "fdcservers.net(WORLDWIDE)", "moddb.com #4(TEXAS, US)", "moddb.com #5(COLORADO, US)", "moddb.com #6(COLORADO, US)" };
+        servers = new String[] { "fdcservers.net(WORLDWIDE)", "moddb.com #4(TEXAS, US)", "moddb.com #5(COLORADO, US)", "moddb.com #6(COLORADO, US)", "Mod DB #8 (CALIFORNIA, US)", "Mod DB #10 (NETHERLANDS, EU)", "Mod DB #11 (NETHERLANDS, EU)", "Mod DB #13 (NETHERLANDS, EU)" };
     }
 
     private void setConfigElements() {
@@ -65,6 +65,18 @@ public class ModDbCom extends PluginForHost {
         case 3:
             logger.fine("The server  ismoddb.com #6 configured");
             return 4;
+        case 4:
+            logger.fine("The server  ismoddb.com #8 configured");
+            return 5;
+        case 5:
+            logger.fine("The server  ismoddb.com #10 configured");
+            return 6;
+        case 6:
+            logger.fine("The server  ismoddb.com #11 configured");
+            return 7;
+        case 7:
+            logger.fine("The server  ismoddb.com #13 configured");
+            return 8;
         default:
             logger.fine("No server is configured, returning default server (fdcserver.net)");
             return 1;
@@ -86,10 +98,19 @@ public class ModDbCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    private String FDCCDNREGEX1 = "Mirror provided by FDCCDN.*?<a href=\"(.*?)\"";
+    private String FDCCDNREGEX2 = "http://www\\.fdcservers\\.net.*?<a href=\"(.*?)\"";
+    private String SERVER4REGEX = "Mirror provided by Mod DB #4.*?<a href=\"(.*?)\"";
+    private String SERVER5REGEX = "Mirror provided by Mod DB #5.*?<a href=\"(.*?)\"";
+    private String SERVER6REGEX = "Mirror provided by Mod DB #6.*?<a href=\"(.*?)\"";
+    private String SERVER8REGEX = "Mirror provided by Mod DB #8.*?<a href=\"(.*?)\"";
+    private String SERVER10REGEX = "Mirror provided by Mod DB #10.*?<a href=\"(.*?)\"";
+    private String SERVER11REGEX = "Mirror provided by Mod DB #11.*?<a href=\"(.*?)\"";
+    private String SERVER13REGEX = "Mirror provided by Mod DB #13.*?<a href=\"(.*?)\"";
+
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        String dllink = null;
         int configuredServer = getConfiguredServer();
         // Get pages with the mirror
         String singlemirrorpage = br.getRegex("window\\.open\\('(.*?)'").getMatch(0);
@@ -106,63 +127,7 @@ public class ModDbCom extends PluginForHost {
             String standardmirrorpage = br.getRegex("attr\\(\"href\", \"(.*?)\\&amp;").getMatch(0);
             if (standardmirrorpage != null) br.getPage("http://www.moddb.com" + standardmirrorpage);
         }
-
-        // Try to find the link for the selected servers
-        if (configuredServer == 1) {
-            dllink = br.getRegex("Mirror provided by FDCCDN.*?<a href=\"(.*?)\"").getMatch(0);
-            if (dllink == null) dllink = br.getRegex("http://www\\.fdcservers\\.net.*?<a href=\"(.*?)\"").getMatch(0);
-
-        } else if (configuredServer == 2) {
-            dllink = br.getRegex("Mirror provided by Mod DB #4.*?<a href=\"(.*?)\"").getMatch(0);
-        } else if (configuredServer == 3) {
-            dllink = br.getRegex("Mirror provided by Mod DB #5.*?<a href=\"(.*?)\"").getMatch(0);
-        } else if (configuredServer == 4) {
-            dllink = br.getRegex("Mirror provided by Mod DB #6.*?<a href=\"(.*?)\"").getMatch(0);
-        }
-        // Some servers aren't always available, therefore we got this check,
-        // but it's basically just good for the logger
-        if (dllink.contains("members/register")) {
-            logger.info("The server you tried to use is only available for premium users, using other server...");
-            dllink = null;
-        }
-        // If the link for the selected server couldn't be found the plugin
-        // tries quite
-        // many methods to get *any* other valid link
-        if (dllink == null) {
-            logger.warning("Something is broken here, your selected server hasn't been found so jd will try to find an alternative link");
-            dllink = br.getRegex("Mirror provided by FDCCDN.*?<a href=\"(.*?)\"").getMatch(0);
-            if (dllink.contains("members/register")) dllink = null;
-            if (dllink == null) {
-                dllink = br.getRegex("http://www\\.fdcservers\\.net.*?<a href=\"(.*?)\"").getMatch(0);
-                if (dllink.contains("members/register")) dllink = null;
-                if (dllink == null) {
-                    dllink = br.getRegex("Mirror provided by Mod DB #4.*?<a href=\"(.*?)\"").getMatch(0);
-                    if (dllink.contains("members/register")) dllink = null;
-                    if (dllink == null) {
-                        dllink = br.getRegex("Mirror provided by Mod DB #5.*?<a href=\"(.*?)\"").getMatch(0);
-                        if (dllink.contains("members/register")) dllink = null;
-                        if (dllink == null) {
-                            dllink = br.getRegex("Mirror provided by Mod DB #6.*?<a href=\"(.*?)\"").getMatch(0);
-                            if (dllink.contains("members/register")) dllink = null;
-                            if (dllink == null) {
-                                dllink = br.getRegex("Mirror provided by Mod DB.*?<a href=\"(.*?)\"").getMatch(0);
-                                if (dllink.contains("members/register")) dllink = null;
-                                if (dllink == null) {
-                                    dllink = br.getRegex("Click to <a href=\"(.*?)</a>").getMatch(0);
-                                    if (dllink.contains("members/register")) dllink = null;
-                                    if (dllink == null) {
-                                        if (singlemirrorpage != null) {
-                                            br.getPage("http://www.moddb.com" + singlemirrorpage);
-                                            dllink = br.getRegex("Click to <a href=\"(.*?)</a>").getMatch(0);
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        String dllink = findLink(configuredServer, singlemirrorpage);
         if (dllink == null) {
             logger.info("no final downloadlink (dllink) has been found, the plugin must be defect!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -191,6 +156,91 @@ public class ModDbCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private String findLink(int configuredServer, String singlemirrorpage) throws IOException {
+        String dllink = null;
+        // Try to find the link for the selected servers
+        if (configuredServer == 1) {
+            dllink = br.getRegex(FDCCDNREGEX1).getMatch(0);
+            if (dllink == null) dllink = br.getRegex(FDCCDNREGEX2).getMatch(0);
+
+        } else if (configuredServer == 2) {
+            dllink = br.getRegex(SERVER4REGEX).getMatch(0);
+        } else if (configuredServer == 3) {
+            dllink = br.getRegex(SERVER5REGEX).getMatch(0);
+        } else if (configuredServer == 4) {
+            dllink = br.getRegex(SERVER6REGEX).getMatch(0);
+        } else if (configuredServer == 5) {
+            dllink = br.getRegex(SERVER8REGEX).getMatch(0);
+        } else if (configuredServer == 6) {
+            dllink = br.getRegex(SERVER10REGEX).getMatch(0);
+        } else if (configuredServer == 7) {
+            dllink = br.getRegex(SERVER11REGEX).getMatch(0);
+        } else if (configuredServer == 8) {
+            dllink = br.getRegex(SERVER13REGEX).getMatch(0);
+        }
+        // Some servers aren't always available, therefore we got this check,
+        // but it's basically just good for the logger
+        if (dllink != null && dllink.contains("members/register")) {
+            logger.info("The server you tried to use is only available for premium users, using other server...");
+            dllink = null;
+        }
+        // If the link for the selected server couldn't be found the plugin
+        // tries quite
+        // many methods to get *any* other valid link
+        if (dllink == null) {
+            logger.warning("Something is broken here, your selected server hasn't been found so jd will try to find an alternative link");
+            dllink = br.getRegex(FDCCDNREGEX1).getMatch(0);
+            if (dllink != null && dllink.contains("members/register")) dllink = null;
+            if (dllink == null) {
+                dllink = br.getRegex(FDCCDNREGEX2).getMatch(0);
+                if (dllink != null && dllink.contains("members/register")) dllink = null;
+                if (dllink == null) {
+                    dllink = br.getRegex(SERVER4REGEX).getMatch(0);
+                    if (dllink != null && dllink.contains("members/register")) dllink = null;
+                    if (dllink == null) {
+                        dllink = br.getRegex(SERVER5REGEX).getMatch(0);
+                        if (dllink != null && dllink.contains("members/register")) dllink = null;
+                        if (dllink == null) {
+                            dllink = br.getRegex(SERVER6REGEX).getMatch(0);
+                            if (dllink != null && dllink.contains("members/register")) dllink = null;
+                            if (dllink == null) {
+                                dllink = br.getRegex(SERVER8REGEX).getMatch(0);
+                                if (dllink != null && dllink.contains("members/register")) dllink = null;
+                                if (dllink == null) {
+                                    dllink = br.getRegex(SERVER10REGEX).getMatch(0);
+                                    if (dllink != null && dllink.contains("members/register")) dllink = null;
+                                    if (dllink == null) {
+                                        dllink = br.getRegex(SERVER11REGEX).getMatch(0);
+                                        if (dllink != null && dllink.contains("members/register")) dllink = null;
+                                        if (dllink == null) {
+                                            dllink = br.getRegex(SERVER13REGEX).getMatch(0);
+                                            if (dllink != null && dllink.contains("members/register")) dllink = null;
+                                            if (dllink == null) {
+                                                dllink = br.getRegex("Mirror provided by Mod DB.*?<a href=\"(.*?)\"").getMatch(0);
+                                                if (dllink != null && dllink.contains("members/register")) dllink = null;
+                                                if (dllink == null) {
+                                                    dllink = br.getRegex("Click to <a href=\"(.*?)</a>").getMatch(0);
+                                                    if (dllink != null && dllink.contains("members/register")) dllink = null;
+                                                    if (dllink == null) {
+                                                        if (singlemirrorpage != null) {
+                                                            br.getPage("http://www.moddb.com" + singlemirrorpage);
+                                                            dllink = br.getRegex("Click to <a href=\"(.*?)</a>").getMatch(0);
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return dllink;
     }
 
     @Override

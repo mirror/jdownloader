@@ -37,12 +37,10 @@ public class RomHustlerNet extends PluginForHost {
         super(wrapper);
     }
 
-    // @Override
     public String getAGBLink() {
         return "http://romhustler.net/disclaimer.php";
     }
 
-    // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException {
         try {
             this.setBrowserExclusive();
@@ -57,29 +55,19 @@ public class RomHustlerNet extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
-    // @Override
-    /*
-     * public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, downloadUrl, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadUrl, true, -2);
         dl.startDownload();
     }
 
-    // @Override
     public int getMaxSimultanFreeDownloadNum() {
-        /* TODO: Wert nachprüfen */
-        return 1;
+        return -1;
     }
 
-    // @Override
     public void reset() {
     }
 
-    // @Override
     public void resetPluginGlobals() {
     }
 
