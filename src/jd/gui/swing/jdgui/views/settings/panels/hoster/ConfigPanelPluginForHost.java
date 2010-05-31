@@ -114,7 +114,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == chkUseAll) {
             toggleUseAll();
-        } else {
+        } else if (e.getSource() == btnEdit) {
             editEntry(pluginsForHost.get(table.getSelectedRow()));
         }
     }
@@ -141,14 +141,13 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         btnEdit.addActionListener(this);
         btnEdit.setIcon(JDTheme.II("gui.images.config.home", 16, 16));
 
-        // TODO: implement as tableheader instead of checkbox
+        // TODO: please someone implement as tableheader instead of checkbox
         chkUseAll = new JCheckBox(JDL.L("gui.chk_toggleall", "Use all"));
         chkUseAll.setEnabled(true);
         chkUseAll.addActionListener(this);
 
         if (isAllInUse()) {
             chkUseAll.setSelected(true);
-
         }
 
         JPanel p = new JPanel(new MigLayout("ins 0,wrap 1", "[fill,grow]", "[fill,grow][]"));
@@ -197,6 +196,14 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         return true;
     }
 
+    private void setUseAllStatus() {
+        if (isAllInUse()) {
+            chkUseAll.setSelected(true);
+        } else {
+            chkUseAll.setSelected(false);
+        }
+    }
+
     public void mouseEntered(MouseEvent e) {
     }
 
@@ -207,6 +214,6 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
     }
 
     public void mouseReleased(MouseEvent e) {
+        setUseAllStatus();
     }
-
 }
