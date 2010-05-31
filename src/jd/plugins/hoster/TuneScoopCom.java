@@ -20,7 +20,6 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.parser.Regex;
-import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -28,40 +27,47 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "socifiles.com" }, urls = { "http://[\\w\\.]*?socifiles\\.com/d/[0-9a-z]+" }, flags = { 0 })
-public class SociFilesCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tunescoop.com" }, urls = { "http://[\\w\\.]*?tunescoop\\.com/play/\\d+/" }, flags = { 0 })
+public class TuneScoopCom extends PluginForHost {
 
-    public SociFilesCom(PluginWrapper wrapper) {
+    public TuneScoopCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
     public String getAGBLink() {
-        return "http://about.socifiles.com/terms-of-service";
+        return "http://www.tunescoop.com/terms";
     }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(or was removed|is not existed)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex(">Filename:</span>(.*?)</li>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>Download(.*?)- SociFiles\\.com</title>").getMatch(0);
-        String filesize = br.getRegex(">Size:</span>(.*?)</li>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (!br.containsHTML("class=\"thickbox\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<title>(.*?) - TuneScoop - Free music hosting and Sharing</title>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<div style=\"font-size:24px\"><b>(.*?)</b></div>").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("name=\"description\" content=\"(.*?) - TuneScoop\\.com, enjoy the Tune Sharing - TuneScoop - Free music hosting and Sharing\">").getMatch(0);
+
+                if (filename == null) {
+                    filename = br.getRegex("name=\"keywords\" content=\"(.*?),audio,sharing,script,youtube,clone,TuneScoop - Free music hosting and Sharing\">").getMatch(0);
+                }
+            }
+        }
+        String filesize = br.getRegex("color=\"#000000\"><b>Size:</b>(.*?)</font>").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(filename.trim());
-        link.setDownloadSize(Regex.getSize(filesize));
+        if (filesize != null) link.setDownloadSize(Regex.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        br.setFollowRedirects(false);
-        Form dlform = br.getFormbyProperty("id", "download-form");
-        if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.submitForm(dlform);
-        String dllink = br.getRedirectLocation();
+        br.postPage(downloadLink.getDownloadURL(), "dl=1");
+        String dllink = br.getRegex("<div style=\"color:#000000; font-weight:bold\">Click the \"download\" button to download this Tune</div>[\n\r ]+<br /><br />[\n\r ]+<a href=\"(.*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\"(http://www\\.tunescoop\\.com/download/\\d+/\\d+/[a-z0-9]+/.*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {

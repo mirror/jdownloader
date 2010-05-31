@@ -52,20 +52,24 @@ public class LetitbitTv extends PluginForHost {
                 filename = br.getRegex("class=\"file-property\">Файл</td><td>(.*?)</td>").getMatch(0);
             }
         }
-        String filesize = br.getRegex(">Size:</span>(.*?)</li>").getMatch(0);
-        if (filesize == null) filesize = br.getRegex("class=\"img arch\"></div><span>(.*?)</span>").getMatch(0);
-        if (filesize == null || filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String filesize = br.getRegex("</sub></div></div><div class=\".*?\"><div class=\".*?\"><div class=\".*?\"></div><span>(.*?)</span></div><table").getMatch(0);
+        if (filesize == null) filesize = br.getRegex("\\&raquo;</span></div><div class=\"caption2 grey\"><span class=\"\">.*?</span>\\&nbsp;[\n\r\t ]+<sub>(.*?)</sub></div>").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         filename = Encoding.htmlDecode(filename);
-        filesize = filesize.replace("&nbsp;", "");
-        filesize = filesize.replace(",", ".");
-        filesize = filesize.replace("Г", "G");
-        filesize = filesize.replace("М", "M");
-        filesize = filesize.replace("к", "k");
-        filesize = filesize.replaceAll("(Б|б)", "");
-        filesize = filesize.replace("байт", "byte");
-        filesize = filesize + "b";
         link.setFinalFileName(filename.trim());
-        link.setDownloadSize(Regex.getSize(filesize));
+        if (filesize != null) {
+            filesize = filesize.replace("&nbsp;", "");
+            filesize = filesize.replace(",", ".");
+            filesize = filesize.replace("Г", "G");
+            filesize = filesize.replace("М", "M");
+            filesize = filesize.replace("к", "k");
+            filesize = filesize.replaceAll("(Б|б)", "");
+            filesize = filesize.replace("байт", "byte");
+            filesize = filesize + "b";
+            link.setDownloadSize(Regex.getSize(filesize));
+        } else {
+            logger.warning("Filesize regex could be broken!");
+        }
         return AvailableStatus.TRUE;
     }
 
