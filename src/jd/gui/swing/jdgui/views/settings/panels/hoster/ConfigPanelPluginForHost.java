@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.ListSelectionModel;
@@ -85,8 +86,8 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
 
         @Override
         public void refreshModel() {
+            this.fireTableDataChanged();
         }
-
     }
 
     private static final long serialVersionUID = -5219586497809869375L;
@@ -95,7 +96,11 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
 
     private JDTable table;
 
+    private InternalTableModel tablemodel;
+
     private JButton btnEdit;
+
+    private JCheckBox chkUseAll;
 
     public ConfigPanelPluginForHost() {
         super();
@@ -107,7 +112,11 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
     }
 
     public void actionPerformed(ActionEvent e) {
-        editEntry(pluginsForHost.get(table.getSelectedRow()));
+        if (e.getSource() == chkUseAll) {
+            toggleUseAll();
+        } else {
+            editEntry(pluginsForHost.get(table.getSelectedRow()));
+        }
     }
 
     private void editEntry(HostPluginWrapper hpw) {
@@ -116,7 +125,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
 
     @Override
     protected ConfigContainer setupContainer() {
-        table = new JDTable(new InternalTableModel());
+        table = new JDTable(tablemodel = new InternalTableModel());
         table.addMouseListener(this);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
@@ -132,9 +141,20 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         btnEdit.addActionListener(this);
         btnEdit.setIcon(JDTheme.II("gui.images.config.home", 16, 16));
 
+        // TODO: implement as tableheader instead of checkbox
+        chkUseAll = new JCheckBox(JDL.L("gui.chk_toggleall", "Use all"));
+        chkUseAll.setEnabled(true);
+        chkUseAll.addActionListener(this);
+
+        if (isAllInUse()) {
+            chkUseAll.setSelected(true);
+
+        }
+
         JPanel p = new JPanel(new MigLayout("ins 0,wrap 1", "[fill,grow]", "[fill,grow][]"));
         p.add(new JScrollPane(table));
         p.add(btnEdit, "w pref!");
+        p.add(chkUseAll);
 
         ConfigContainer container = new ConfigContainer();
 
@@ -151,6 +171,30 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
                 editEntry(hpw);
             }
         }
+    }
+
+    private void toggleUseAll() {
+        boolean checkvalue;
+
+        if (isAllInUse()) {
+            checkvalue = false;
+        } else {
+            checkvalue = true;
+        }
+
+        for (HostPluginWrapper plugin : pluginsForHost) {
+            plugin.setEnabled(checkvalue);
+        }
+
+        tablemodel.refreshModel();
+    }
+
+    private boolean isAllInUse() {
+        for (HostPluginWrapper plugin : pluginsForHost) {
+            if (!plugin.isEnabled()) { return false; }
+        }
+
+        return true;
     }
 
     public void mouseEntered(MouseEvent e) {
