@@ -86,7 +86,7 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
             finallink = br.getRegex("onclick=\"NewWindow\\('(http://.*?)'").getMatch(0);
         } else if (parameter.contains("aiotool.net/")) {
             String id = new Regex(parameter, "aiotool\\.net/(\\d+)").getMatch(0);
-            String accessThis = "http://aiotool.net/2-" + id + ".html";
+            String accessThis = "http://aiotool.net/3-" + id + ".html";
             br.getPage(accessThis);
             finallink = br.getRedirectLocation();
         } else if (parameter.contains("chip.de/c1_videos")) {

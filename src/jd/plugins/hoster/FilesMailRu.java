@@ -82,7 +82,7 @@ public class FilesMailRu extends PluginForHost {
                 String finalfilename = downloadLink.getStringProperty("finalFilename", null);
                 if (finalfilename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 String[] linkinformation = br.getRegex("<td class=\"name\">(.*?)<td class=\"do\">").getColumn(0);
-                if (linkinformation.length == 0) {
+                if (linkinformation == null || linkinformation.length == 0) {
                     logger.warning("Critical error : Couldn't get the linkinformation");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }

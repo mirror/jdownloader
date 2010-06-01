@@ -47,7 +47,7 @@ public class FlsMailRu extends PluginForDecrypt {
         // Errorhandling for offline folders
         if (br.containsHTML("(was not found|were deleted by sender|Не найдено файлов, отправленных с кодом|<b>Ошибка</b>)")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         String[] linkinformation = br.getRegex("<td class=\"name\">(.*?)<td class=\"do\">").getColumn(0);
-        if (linkinformation.length == 0) return null;
+        if (linkinformation == null || linkinformation.length == 0) return null;
         for (String info : linkinformation) {
             String directlink = new Regex(info, dllinkRegex).getMatch(0);
             String filename = new Regex(info, "href=\".*?onclick=\"return.*?\">(.*?)<").getMatch(0);

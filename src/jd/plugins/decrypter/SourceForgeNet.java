@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.URLConnectionAdapter;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
@@ -37,9 +38,11 @@ public class SourceForgeNet extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        br.setFollowRedirects(false);
-        br.getPage(parameter);
-        if (br.getRedirectLocation() == null) {
+        br.setFollowRedirects(true);
+        // Test if we already hav a direct link here
+        URLConnectionAdapter con = br.openGetConnection(parameter);
+        if (con.getContentType().contains("html")) {
+            br.followConnection();
             if (br.containsHTML("(Error 404|The page you were looking for cannot be found|could not be found or is not available)")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
             String link = null;
             if (parameter.contains("/files/extras/") || parameter.contains("prdownloads.sourceforge.net")) {
@@ -56,6 +59,7 @@ public class SourceForgeNet extends PluginForDecrypt {
             if (finallink == null) return null;
             decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
         } else {
+            con.disconnect();
             decryptedLinks.add(createDownloadlink("directhttp://" + parameter));
         }
         return decryptedLinks;
