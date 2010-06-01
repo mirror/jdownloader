@@ -31,15 +31,14 @@ public class Jobber {
     private boolean killWorkerAfterQueueFinished = true;
     private boolean running = false;
     private Integer jobsAdded = new Integer(0);
-    boolean debug = false;
-    private Jobber INSTANCE = null;
+    private boolean debug = false;
 
     public int getJobsAdded() {
         return jobsAdded;
     }
 
-    public void setDebug(boolean b) {
-        debug = b;
+    public void setDebug(boolean debug) {
+        this.debug = debug;
     }
 
     private Integer jobsFinished = new Integer(0);
@@ -57,21 +56,20 @@ public class Jobber {
     }
 
     /**
-     * Jobber.class Diese Klasse ermöglicht das paralelle Ausführen mehrere
-     * Jobs. Es ist möglich während der Ausführung neue Jobs hinzuzufügen.
+     * Jobber.class Diese Klasse ermoeglicht das paralelle Ausfuehren mehrere
+     * Jobs. Es ist moeglich waehrend der Ausfuehrung neue Jobs hinzuzufuegen.
      * 
-     * @param i
+     * @param paralellWorkerNum
      *            Anzahl der paralellen Jobs
      */
-    public Jobber(int i) {
-        this.INSTANCE = this;
-        this.paralellWorkerNum = i;
+    public Jobber(int paralellWorkerNum) {
+        this.paralellWorkerNum = paralellWorkerNum;
         this.jobList = new LinkedList<JDRunnable>();
         this.listener = new ArrayList<WorkerListener>();
     }
 
     /**
-     * Gibt zurück ob der JObber noch am leben ist. Falls nicht kann er mit
+     * Gibt zurueck ob der JObber noch am leben ist. Falls nicht kann er mit
      * start() neu gestartet werden. Jobber ist kein Thread, und kann auch
      * wieder neu gestartet werden wenn er mal tot ist.
      */
@@ -89,7 +87,7 @@ public class Jobber {
         synchronized (workerList) {
             workerList = new Vector<Worker>();
             for (int i = 0; i < paralellWorkerNum; i++) {
-                workerList.add(new Worker(i, INSTANCE));
+                workerList.add(new Worker(i, Jobber.this));
             }
         }
         if (debug) System.out.println("created " + paralellWorkerNum + " worker");
@@ -114,7 +112,7 @@ public class Jobber {
         }
     }
 
-    private synchronized void workerdone() {
+    private synchronized void workerDone() {
         int count = 0;
         synchronized (workerList) {
             Vector<Worker> tmp = new Vector<Worker>(workerList);
@@ -131,10 +129,11 @@ public class Jobber {
     private JDRunnable getNextJDRunnable() {
         if (!this.isAlive() || jobList == null) return null;
         synchronized (jobList) {
-            if (jobList.size() == 0) {
+            if (jobList.isEmpty()) {
                 synchronized (listener) {
-                    for (WorkerListener wl : listener)
+                    for (WorkerListener wl : listener) {
                         wl.onJobListFinished(this);
+                    }
                 }
                 return null;
             }
@@ -143,7 +142,8 @@ public class Jobber {
     }
 
     /**
-     * WorkingLIstener werden über den start und stop einzellner jobs informiert
+     * WorkingLIstener werden ueber den start und stop einzellner jobs
+     * informiert
      * 
      * @param wl
      */
@@ -161,28 +161,31 @@ public class Jobber {
 
     private void fireJobFinished(JDRunnable job) {
         synchronized (listener) {
-            for (WorkerListener wl : listener)
+            for (WorkerListener wl : listener) {
                 wl.onJobFinished(this, job);
+            }
         }
     }
 
     private void fireJobException(JDRunnable job, Exception e) {
         synchronized (listener) {
-            for (WorkerListener wl : listener)
+            for (WorkerListener wl : listener) {
                 wl.onJobException(this, job, e);
+            }
         }
     }
 
     private void fireJobStarted(JDRunnable job) {
         synchronized (listener) {
-            for (WorkerListener wl : listener)
+            for (WorkerListener wl : listener) {
                 wl.onJobStarted(this, job);
+            }
         }
     }
 
     /**
-     * Fügt neue Jobs hinzu. Jobs können jedereit hinzugefügt werden. ein
-     * anschließender jobber.start garantiert, dass der Job auch irgendwann mla
+     * Fuegt neue Jobs hinzu. Jobs koennen jedereit hinzugefuegt werden. ein
+     * anschliessender jobber.start garantiert, dass der Job auch irgendwann mla
      * abgearbeitet wird.
      * 
      * @param runnable
@@ -234,36 +237,37 @@ public class Jobber {
      * Ein Worker arbeitet sequentiell jobs ab
      * 
      * @author coalado
-     * 
      */
     public class Worker extends Thread {
 
         private int id;
         private boolean waitFlag = false;
-        private Jobber INSTANCE;
+        private Jobber jobber;
 
         public int getWorkerID() {
             return id;
         }
 
-        public Worker(int i, Jobber instance) {
-            super("JDWorkerThread" + i);
-            INSTANCE = instance;
-            this.id = i;
+        public Worker(int id, Jobber jobber) {
+            super("JDWorkerThread" + id);
+            this.jobber = jobber;
+            this.id = id;
             this.start();
         }
 
+        @Override
         public String toString() {
             return "Worker no." + id;
         }
 
+        @Override
         public void run() {
             while (true) {
                 JDRunnable ra = getNextJDRunnable();
 
                 if (ra == null) {
                     if (killWorkerAfterQueueFinished) {
-                        INSTANCE.workerdone();
+                        jobber.workerDone();
                         return;
                     }
                     if (debug) System.out.println(this + ": Work is done..I'll sleep now.");

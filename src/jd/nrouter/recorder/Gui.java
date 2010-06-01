@@ -20,12 +20,12 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 import javax.swing.ImageIcon;
+import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
-import javax.swing.JTextPane;
 import javax.swing.SwingUtilities;
 
 import jd.config.Configuration;
@@ -46,6 +46,7 @@ import net.miginfocom.swing.MigLayout;
 public class Gui extends AbstractDialog implements ActionListener {
 
     private static final long serialVersionUID = 1L;
+    private static final String JDL_PREFIX = "jd.nrouter.recorder.Gui.";
 
     private JTextField routerip;
     private JCheckBox rawmode;
@@ -70,19 +71,40 @@ public class Gui extends AbstractDialog implements ActionListener {
 
         rawmode = new JCheckBox(JDL.L("gui.config.jdrr.rawmode", "RawMode?"));
         rawmode.setSelected(false);
+        rawmode.setHorizontalTextPosition(JCheckBox.LEADING);
 
-        final JTextPane infolable = new JTextPane();
-        infolable.setEditable(false);
-        infolable.setContentType("text/html");
-        infolable.addHyperlinkListener(JLink.getHyperlinkListener());
-        infolable.setText(JDL.L("gui.config.jdrr.infolabel", "<span color=\"#4682B4\"> Check the IP address of the router and press the Start <br> Web browser window with the home page of the router opens <br> Reconnection after you hit to stop and save. <br> More information is available </span> <a href=\"http://jdownloader.org/knowledge/wiki/reconnect/reconnect-recorder\"> here</a>"));
+        final StringBuilder sb = new StringBuilder();
+        sb.append("<html>");
+        sb.append(JDL.L(JDL_PREFIX + "info1", "Check the IP address of the router and press the Start button"));
+        sb.append("<br>");
+        sb.append(JDL.L(JDL_PREFIX + "info2", "Web browser window with the home page of the router opens"));
+        sb.append("<br>");
+        sb.append(JDL.L(JDL_PREFIX + "info3", "After the Reconnection hit the Stop button and save"));
+        sb.append("</html>");
 
-        final JPanel panel = new JPanel(new MigLayout("wrap 1", "[center]"));
-        panel.add(new JLabel(JDL.L("gui.fengshuiconfig.routerip", "RouterIP") + ":"), "split 3");
+        final JPanel panel = new JPanel(new MigLayout("wrap 3, ins 5", "[][grow]10[]"));
+        panel.add(new JLabel(JDL.L("gui.fengshuiconfig.routerip", "RouterIP") + ":"));
         panel.add(routerip, "growx");
         panel.add(rawmode);
-        panel.add(infolable, "growx");
+        panel.add(new JLabel(sb.toString()), "spanx,growx");
         return panel;
+    }
+
+    @Override
+    protected void addButtons(JPanel buttonBar) {
+        JButton help = new JButton(JDL.L("gui.btn_help", "Help"));
+        help.addActionListener(new ActionListener() {
+
+            public void actionPerformed(ActionEvent e) {
+                try {
+                    JLink.openURL("http://jdownloader.org/knowledge/wiki/reconnect/reconnect-recorder");
+                } catch (Exception e1) {
+                    e1.printStackTrace();
+                }
+            }
+
+        });
+        buttonBar.add(help, "tag help, sizegroup confirms");
     }
 
     private void save() {
@@ -92,8 +114,9 @@ public class Gui extends AbstractDialog implements ActionListener {
             final Configuration configuration = JDUtilities.getConfiguration();
 
             final StringBuilder b = new StringBuilder();
+            final String br = System.getProperty("line.separator");
             for (final String element : ReconnectRecorder.steps) {
-                b.append(element + System.getProperty("line.separator"));
+                b.append(element).append(br);
             }
             methode = b.toString().trim();
 

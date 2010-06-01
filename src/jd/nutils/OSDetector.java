@@ -24,7 +24,7 @@ public final class OSDetector {
     private OSDetector() {
     }
 
-    private static final byte OS_ID; // = -1;
+    private static final byte OS_ID;
     private static final String OS_STRING;
 
     public static final byte OS_LINUX_OTHER = 6;
@@ -39,76 +39,42 @@ public final class OSDetector {
 
     static {
         OS_STRING = System.getProperty("os.name");
-        //final String OS = getOSString().toLowerCase();
         final String OS = OS_STRING.toLowerCase();
-        if (OS.indexOf("windows 7") > -1) {
+        if (OS.contains("windows 7")) {
             OS_ID = OS_WINDOWS_7;
-        } else if (OS.indexOf("windows xp") > -1) {
+        } else if (OS.contains("windows xp")) {
             OS_ID = OS_WINDOWS_XP;
-        } else if (OS.indexOf("windows vista") > -1) {
+        } else if (OS.contains("windows vista")) {
             OS_ID = OS_WINDOWS_VISTA;
-        } else if (OS.indexOf("windows 2000") > -1) {
+        } else if (OS.contains("windows 2000")) {
             OS_ID = OS_WINDOWS_2000;
-        } else if (OS.indexOf("windows 2003") > -1) {
+        } else if (OS.contains("windows 2003")) {
             OS_ID = OS_WINDOWS_2003;
-        } else if (OS.indexOf("nt") > -1) {
+        } else if (OS.contains("nt")) {
             OS_ID = OS_WINDOWS_NT;
-        } else if (OS.indexOf("windows") > -1) {
+        } else if (OS.contains("windows")) {
             OS_ID = OS_WINDOWS_OTHER;
-        } else if (OS.indexOf("mac") > -1) {
+        } else if (OS.contains("mac")) {
             OS_ID = OS_MAC_OTHER;
         } else {
             OS_ID = OS_LINUX_OTHER;
         }
     }
 
-    // private static void getOS() {
-    // final String OS = getOSString().toLowerCase();
-    // if (OS.indexOf("windows 7") > -1) {
-    // OS_ID = OS_WINDOWS_7;
-    // } else if (OS.indexOf("windows xp") > -1) {
-    // OS_ID = OS_WINDOWS_XP;
-    // } else if (OS.indexOf("windows vista") > -1) {
-    // OS_ID = OS_WINDOWS_VISTA;
-    // } else if (OS.indexOf("windows 2000") > -1) {
-    // OS_ID = OS_WINDOWS_2000;
-    // } else if (OS.indexOf("windows 2003") > -1) {
-    // OS_ID = OS_WINDOWS_2003;
-    // } else if (OS.indexOf("nt") > -1) {
-    // OS_ID = OS_WINDOWS_NT;
-    // } else if (OS.indexOf("windows") > -1) {
-    // OS_ID = OS_WINDOWS_OTHER;
-    // } else if (OS.indexOf("mac") > -1) {
-    // OS_ID = OS_MAC_OTHER;
-    // } else {
-    // OS_ID = OS_LINUX_OTHER;
-    // }
-    // }
+    public static String getOSString() {
+        return OS_STRING;
+    }
 
-    // public static byte getOSID() {
-    // if (OS_ID < 0) {
-    // OSDetector.getOS();
-    // }
-    // return OS_ID;
-    // }
     public static byte getOSID() {
         return OS_ID;
     }
 
     public static boolean isLinux() {
-        switch (OSDetector.getOSID()) {
-        case OS_LINUX_OTHER:
-            return true;
-        }
-        return false;
+        return OSDetector.getOSID() == OS_LINUX_OTHER;
     }
 
     public static boolean isMac() {
-        switch (OSDetector.getOSID()) {
-        case OS_MAC_OTHER:
-            return true;
-        }
-        return false;
+        return OSDetector.getOSID() == OS_MAC_OTHER;
     }
 
     public static boolean isWindows() {
@@ -126,55 +92,45 @@ public final class OSDetector {
     }
 
     /**
-     * erkennt gnome.
+     * Is gnome running?
      */
     public static boolean isGnome() {
         if (!isLinux()) return false;
-        // prüft gdm session
+
+        // checks gdm session
         final String gdmSession = System.getenv("GDMSESSION");
-        if (gdmSession != null && gdmSession.toLowerCase().contains("gnome")) { return true; }
+        if (gdmSession != null && gdmSession.toLowerCase().contains("gnome")) return true;
 
-        // prüft desktop session
+        // checks desktop session
         final String desktopSession = System.getenv("DESKTOP_SESSION");
-        if (desktopSession != null && desktopSession.toLowerCase().contains("gnome")) { return true; }
+        if (desktopSession != null && desktopSession.toLowerCase().contains("gnome")) return true;
 
-        // prüft gnome desktop id
+        // checks gnome desktop id
         final String gnomeDesktopSessionId = System.getenv("GNOME_DESKTOP_SESSION_ID");
-        if (gnomeDesktopSessionId != null && gnomeDesktopSessionId.trim().length() > 0) { return true; }
+        if (gnomeDesktopSessionId != null && gnomeDesktopSessionId.trim().length() > 0) return true;
 
         return false;
     }
 
     /**
-     * erkennt KDE.
+     * Is KDE running?
      */
     public static boolean isKDE() {
         if (!isLinux()) return false;
 
-        // prüft gdm session
+        // checks gdm session
         final String gdmSession = System.getenv("GDMSESSION");
-        if (gdmSession != null && gdmSession.toLowerCase().contains("kde")) { return true; }
+        if (gdmSession != null && gdmSession.toLowerCase().contains("kde")) return true;
 
-        // prüft desktop session
+        // checks desktop session
         final String desktopSession = System.getenv("DESKTOP_SESSION");
-        if (desktopSession != null && desktopSession.toLowerCase().contains("kde")) { return true; }
+        if (desktopSession != null && desktopSession.toLowerCase().contains("kde")) return true;
 
-        // prüft window manager
+        // checks window manager
         final String windowManager = System.getenv("WINDOW_MANAGER");
-        if (windowManager != null && windowManager.trim().toLowerCase().endsWith("kde")) { return true; }
+        if (windowManager != null && windowManager.trim().toLowerCase().endsWith("kde")) return true;
 
         return false;
     }
-
-    public static String getOSString() {
-//        if (OS_STRING == null) {
-//            OS_STRING = System.getProperty("os.name");
-//        }
-        return OS_STRING;
-    }
-
-//    public static void setOSString(final String property) {
-//        OS_STRING = property;
-//    }
 
 }
