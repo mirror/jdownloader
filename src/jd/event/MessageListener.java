@@ -22,10 +22,9 @@ import java.util.EventListener;
  * Listener interface for simple messages.
  * 
  * @author thomas
- * 
  */
 public interface MessageListener extends EventListener {
 
-    void onMessage(MessageEvent event);
+    public void onMessage(MessageEvent event);
 
 }

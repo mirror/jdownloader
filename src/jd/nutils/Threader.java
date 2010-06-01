@@ -20,29 +20,28 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 
-import jd.http.download.Broadcaster;
-import jd.http.download.DownloadChunk;
+import jd.event.Broadcaster;
 import jd.nutils.jobber.JDRunnable;
+import jd.nutils.jobber.Jobber;
 
 /**
  * Dieser Klasse kann man beliebig viele Threads hinzufügen. mit der
- * startAndWait() kann anschliesend gewartet werden bis alle beendet sind
+ * startAndWait() kann anschliesend gewartet werden bis alle beendet sind.<br>
+ * TODO: Isn't this the same as the {@link Jobber} ?
  * 
  * @author coalado
- * 
  */
 public class Threader {
 
     private ArrayList<Worker> workerlist;
     private Integer returnedWorker = 0;
     private boolean waitFlag = false;
+    /**
+     * TODO: Why not {@link jd.event.JDBroadcaster}?
+     */
     private Broadcaster<WorkerListener> broadcaster;
     private boolean hasDied = false;
     private boolean hasStarted = false;
-
-    public boolean isHasStarted() {
-        return hasStarted;
-    }
 
     public Threader() {
         broadcaster = new Broadcaster<WorkerListener>();
@@ -62,7 +61,11 @@ public class Threader {
         if (this.hasStarted) worker.start();
     }
 
-    public boolean isHasDied() {
+    public boolean isStarted() {
+        return hasStarted;
+    }
+
+    public boolean isDied() {
         return hasDied;
     }
 
@@ -120,9 +123,9 @@ public class Threader {
                 try {
                     wait();
                 } catch (InterruptedException e) {
-                    for (Worker w : workerlist)
+                    for (Worker w : workerlist) {
                         w.interrupt();
-
+                    }
                     return;
                 }
             }
@@ -130,17 +133,16 @@ public class Threader {
         this.hasDied = true;
     }
 
-    public class Worker extends Thread {
+    private class Worker extends Thread {
 
         private JDRunnable runnable;
         private boolean runnableAlive = false;
 
         public Worker(JDRunnable runnable) {
-
             this.runnable = runnable;
-
         }
 
+        @Override
         public String toString() {
             return "Worker for " + runnable;
         }
@@ -149,6 +151,7 @@ public class Threader {
             return runnable;
         }
 
+        @Override
         public void run() {
             try {
                 for (int i = 0; i < broadcaster.size(); i++) {
@@ -160,13 +163,10 @@ public class Threader {
                 for (int i = 0; i < broadcaster.size(); i++) {
                     broadcaster.get(i).onThreadException(Threader.this, getRunnable(), e);
                 }
-
-                // JDLogger.exception(e);
             } finally {
                 this.runnableAlive = false;
                 onWorkerFinished(this);
             }
-
         }
 
         public boolean isRunnableAlive() {
@@ -186,25 +186,21 @@ public class Threader {
     }
 
     public int size() {
-
         return workerlist.size();
     }
 
     public JDRunnable get(int i) {
-
         return workerlist.get(i).getRunnable();
     }
 
-    public void interrupt(DownloadChunk slowest) {
+    public void interrupt(JDRunnable slowest) {
         for (Worker w : workerlist) {
             if (w.getRunnable() == slowest) {
-                System.err.println("Interruot:, " + w + " - " + w.getRunnable() + "-" + slowest);
+                System.err.println("Interrupt: " + w + " - " + w.getRunnable());
                 w.interrupt();
                 return;
-
             }
         }
-
     }
 
     public void sort(Comparator<Worker> comparator) {

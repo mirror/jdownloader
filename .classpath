@@ -22,7 +22,7 @@
 	<classpathentry kind="lib" path="ressourcen/libs/clink170.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs_ext/junit-4.6.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs_ext/mail.jar"/>
-	<classpathentry kind="lib" path="ressourcen/libs_ext/svnkit.jar" sourcepath="ressourcen/code-ressourcen/org.tmatesoft.svn_1.3.0.src.zip"/>
+	<classpathentry kind="lib" path="ressourcen/libs_ext/svnkit.jar" sourcepath="ressourcen/code-ressourcen/svnkitsrc.zip"/>
 	<classpathentry kind="lib" path="ressourcen/libs_ext/ui.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs_ext/debug-1.0.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs_ext/fest-assert-1.1.jar"/>

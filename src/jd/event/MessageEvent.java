@@ -18,20 +18,16 @@ package jd.event;
 
 public class MessageEvent extends JDEvent {
 
-    private String message;
+    private final String message;
 
-    public String getMessage() {
-        return message;
-    }
+    public MessageEvent(final Object source, final int id, final String message) {
+        super(source, id);
 
-    public void setMessage(final String message) {
         this.message = message;
     }
 
-    public MessageEvent(final Object source, final int ID, final String parameter) {
-        super(source, ID);
-        this.message = parameter;
-        // TODO Auto-generated constructor stub
+    public String getMessage() {
+        return message;
     }
 
 }

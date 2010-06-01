@@ -26,7 +26,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
@@ -42,8 +41,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.logging.Logger;
-import java.util.zip.CRC32;
-import java.util.zip.CheckedInputStream;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.transform.OutputKeys;
@@ -164,7 +161,7 @@ public class JDUtilities {
      * @param weightY
      *            Verteilung von zur Verfuegung stehendem Platz in Y-Richtung
      * @param insets
-     *            Abständer der Komponente
+     *            Abstaende der Komponente
      * @param fill
      *            Verteilung der Komponente innerhalb der zugewiesen Zelle/n
      * @param anchor
@@ -218,7 +215,8 @@ public class JDUtilities {
     }
 
     /**
-     * verschlüsselt string mit der übergebenen encryption (Containerpluginname
+     * verschluesselt string mit der uebergebenen encryption
+     * (Containerpluginname
      * 
      * @param string
      * @param encryption
@@ -276,7 +274,7 @@ public class JDUtilities {
     }
 
     /**
-     * Gibt den verwendeten Controller zurück
+     * Gibt den verwendeten Controller zurueck
      * 
      * @return gerade verwendete CONTROLLER-instanz
      */
@@ -284,26 +282,9 @@ public class JDUtilities {
         return JDController.getInstance();
     }
 
-    public static long getCRC(final File file) {
-        try {
-            // Computer CRC32 checksum
-            final CheckedInputStream cis = new CheckedInputStream(new FileInputStream(file), new CRC32());
-            // fileSize = file.length();
-
-            final byte[] buf = new byte[128];
-            while (cis.read(buf) >= 0) {
-            }
-
-            return cis.getChecksum().getValue();
-        } catch (IOException e) {
-            JDLogger.exception(e);
-            return 0;
-        }
-    }
-
     /**
-     * Gibt das aktuelle Working Directory zurück. Beim FileBrowser etc wird das
-     * gebraucht.
+     * Gibt das aktuelle Working Directory zurueck. Beim FileBrowser etc wird
+     * das gebraucht.
      * 
      * @return
      */
@@ -318,17 +299,17 @@ public class JDUtilities {
     }
 
     /**
-     * Diese Funktion gibt den Pfad zum JAC-Methodenverzeichniss zurück
+     * Diese Funktion gibt den Pfad zum JAC-Methodenverzeichniss zurueck
      * 
      * @author JD-Team
-     * @return gibt den Pfad zu den JAC Methoden zurück
+     * @return gibt den Pfad zu den JAC Methoden zurueck
      */
     public static String getJACMethodsDirectory() {
         return "jd/captcha/methods/";
     }
 
     /**
-     * @return Gibt die verwendete java Version als Double Value zurück. z.B.
+     * @return Gibt die verwendete java Version als Double Value zurueck. z.B.
      *         1.603
      */
     public static Double getJavaVersion() {
@@ -340,7 +321,7 @@ public class JDUtilities {
     }
 
     /**
-     * Liefert einen URLClassLoader zurück, um Dateien aus dem Stammverzeichnis
+     * Liefert einen URLClassLoader zurueck, um Dateien aus dem Stammverzeichnis
      * zu laden
      * 
      * @return URLClassLoader
@@ -350,7 +331,7 @@ public class JDUtilities {
         if (JD_CLASSLOADER == null) {
             final File homeDir = JDUtilities.getJDHomeDirectoryFromEnvironment();
             // String url = null;
-            // Url Encode des pfads für den Classloader
+            // Url Encode des pfads fuer den Classloader
             LOGGER.finest("Create Classloader: for: " + homeDir.getAbsolutePath());
             JD_CLASSLOADER = new JDClassLoader(homeDir.getAbsolutePath(), Thread.currentThread().getContextClassLoader());
 
@@ -359,7 +340,7 @@ public class JDUtilities {
     }
 
     /**
-     * Liefert das Basisverzeichnis für jD zurück.
+     * Liefert das Basisverzeichnis fuer jD zurueck.
      * 
      * @return ein File, dass das Basisverzeichnis angibt
      */
@@ -401,7 +382,7 @@ public class JDUtilities {
     }
 
     /**
-     * Sucht ein passendes Plugin für ein Containerfile
+     * Sucht ein passendes Plugin fuer ein Containerfile
      * 
      * @param container
      *            Der Host, von dem das Plugin runterladen kann
@@ -424,7 +405,7 @@ public class JDUtilities {
     }
 
     /**
-     * Sucht ein passendes Plugin für einen Anbieter Please dont use the
+     * Sucht ein passendes Plugin fuer einen Anbieter Please dont use the
      * returned Plugin to start any function
      * 
      * @param host
@@ -613,7 +594,7 @@ public class JDUtilities {
     }
 
     /**
-     * Gibt ein FileOebject zu einem Resourcstring zurück
+     * Gibt ein FileOebject zu einem Resourcstring zurueck
      * 
      * @author JD-Team
      * @param resource
@@ -648,13 +629,13 @@ public class JDUtilities {
     }
 
     /**
-     * Führt einen Externen befehl aus.
+     * Fuehrt einen Externen befehl aus.
      * 
      * @param command
      * @param parameter
      * @param runIn
      * @param waitForReturn
-     * @return null oder die rückgabe des befehls falls waitforreturn == true
+     * @return null oder die rueckgabe des befehls falls waitforreturn == true
      *         ist
      */
     public static String runCommand(final String command, final String[] parameter, final String runIn, final int waitForReturn) {
@@ -705,7 +686,7 @@ public class JDUtilities {
     }
 
     /**
-     * Setzt das aktuelle woringdirectory für den filebrowser
+     * Setzt das aktuelle woringdirectory fuer den filebrowser
      * 
      * @param f
      * @param id
@@ -804,7 +785,7 @@ public class JDUtilities {
     }
 
     /**
-     * Gibt das Attribut zu key in childNode zurück
+     * Gibt das Attribut zu key in childNode zurueck
      * 
      * @param childNode
      * @param key

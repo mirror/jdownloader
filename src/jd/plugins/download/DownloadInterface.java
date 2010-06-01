@@ -23,10 +23,8 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.ClosedByInterruptException;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.Vector;
 import java.util.Map.Entry;
 import java.util.logging.Logger;
@@ -72,8 +70,6 @@ abstract public class DownloadInterface {
          * verstärkt intervalartigem laden und ist ungewünscht
          */
         public static final long MIN_CHUNKSIZE = 1 * 1024 * 1024;
-
-        private long blockStart = 0;
 
         protected ByteArray buffer = null;
 
@@ -179,35 +175,6 @@ abstract public class DownloadInterface {
          */
         private void addPartBytes(long bytes) {
             totalPartBytes += bytes;
-
-        }
-
-        public void checkTimeout(long timeout) {
-            long timer = blockStart;
-            if (Thread.interrupted() || !isAlive()) { return; }
-            // try {
-            // if (this.inputStream.available() > 0) {
-            // blockStart = -1;
-            // }
-            // } catch (IOException e) {
-            // }
-            if (isExternalyAborted()) {
-                logger.severe("INTERRUPT");
-                error(LinkStatus.ERROR_TIMEOUT_REACHED, "Timeout reached");
-                interrupt();
-            }
-            if (timer <= 0) { return; }
-            long dif = System.currentTimeMillis() - timer;
-            // logger.info(this + " " + dif);
-            if (dif >= timeout) {
-                logger.severe("Timeout or termination detected: interrupt: " + timeout + " - " + dif + " - " + timer);
-                interrupt();
-            } else if (dif >= 5000) {
-                downloadLink.getLinkStatus().setStatusText(JDL.L("download.connection.idle", "Idle"));
-                downloadLink.requestGuiUpdate();
-            } else {
-                downloadLink.getLinkStatus().setStatusText(null);
-            }
         }
 
         /**
@@ -246,12 +213,8 @@ abstract public class DownloadInterface {
                 Map<String, List<String>> request = connection.getRequestProperties();
 
                 if (request != null) {
-                    Set<Entry<String, List<String>>> requestEntries = request.entrySet();
-                    Iterator<Entry<String, List<String>>> it = requestEntries.iterator();
                     String value;
-                    while (it.hasNext()) {
-                        Entry<String, List<String>> next = it.next();
-
+                    for (Entry<String, List<String>> next : request.entrySet()) {
                         value = next.getValue().toString();
                         br.getHeaders().put(next.getKey(), value.substring(1, value.length() - 1));
                     }
@@ -276,14 +239,14 @@ abstract public class DownloadInterface {
                     error(LinkStatus.ERROR_DOWNLOAD_FAILED, "Server: Redirect");
                     return null;
                 }
-                if (speedDebug) {
-                    // logger.finer("Org request headers " + this.getID() + ":"
-                    // + request);
-                    // logger.finer("Coppied request headers " + this.getID() +
-                    // ":" + httpConnection.getRequestProperties());
-                    // logger.finer("Server chunk Headers: " + this.getID() +
-                    // ":" + httpConnection.getHeaderFields());
-                }
+                // if (speedDebug) {
+                // logger.finer("Org request headers " + this.getID() + ":"
+                // + request);
+                // logger.finer("Coppied request headers " + this.getID() +
+                // ":" + httpConnection.getRequestProperties());
+                // logger.finer("Server chunk Headers: " + this.getID() +
+                // ":" + httpConnection.getHeaderFields());
+                // }
                 clonedconnection = true;
                 return con;
 
@@ -488,12 +451,9 @@ abstract public class DownloadInterface {
                 maxSpeed = downloadLink.getSpeedLimit() / getRunningChunks();
                 if (speedDebug) {
                     logger.finer("Def speed: " + downloadLink.getSpeedLimit() + "/" + getRunningChunks() + "=" + maxSpeed);
-                }
-
-                if (speedDebug) {
                     logger.finer("return speed: min " + maxSpeed + " - " + desiredBps * 1.5);
                 }
-                if (desiredBps < 1024) { return maxSpeed; }
+                if (desiredBps < 1024) return maxSpeed;
                 return Math.min(maxSpeed, (int) (desiredBps * 1.3));
             } catch (Exception e) {
                 addException(e);
@@ -599,21 +559,9 @@ abstract public class DownloadInterface {
         public void run0() {
             try {
                 logger.finer("Start Chunk " + getID() + " : " + startByte + " - " + endByte);
-                if (startByte >= endByte && endByte > 0 || startByte >= getFileSize() && endByte > 0) {
-                    // Korrektur Byte
-                    // logger.severe("correct -1 byte");
-                    // addToTotalLinkBytesLoaded(-1);
-                    return;
-                }
+                if (startByte >= endByte && endByte > 0 || startByte >= getFileSize() && endByte > 0) return;
 
                 if (chunkNum > 1) {
-                    // if (getPreBytes(this) > 0) {
-                    // loadPreBytes();
-                    // if (speedDebug) {
-                    // logger.finer("After prebytes: " + startByte + " - " +
-                    // endByte);
-                    // }
-                    // }
                     connection = copyConnection(connection);
 
                     if (connection == null) {
@@ -648,7 +596,7 @@ abstract public class DownloadInterface {
 
                 // Content-Range=[133333332-199999999/200000000]}
                 if (startByte > 0) {
-                    String[][] range = new Regex(connection.getHeaderField("Content-Range"), ".*?(\\d+).*?-.*?(\\d+).*?/.*?(\\d+)").getMatches();
+                    String[] range = new Regex(connection.getHeaderField("Content-Range"), ".*?(\\d+).*?-.*?(\\d+).*?/.*?(\\d+)").getRow(0);
                     if (speedDebug) {
                         logger.finer("Range Header " + connection.getHeaderField("Content-Range"));
                     }
@@ -657,14 +605,14 @@ abstract public class DownloadInterface {
                         if (dl.fakeContentRangeHeader()) {
                             logger.severe("Using fakeContentRangeHeader");
                             // logger.finest(connection.toString());
-                            String[][] fixrange = new Regex(connection.getRequestProperty("Range"), ".*?(\\d+).*?-.*?(\\d+)?").getMatches();
+                            String[] fixrange = new Regex(connection.getRequestProperty("Range"), ".*?(\\d+).*?-.*?(\\d+)?").getRow(0);
 
-                            long gotSB = Formatter.filterLong(fixrange[0][0]);
+                            long gotSB = Formatter.filterLong(fixrange[0]);
                             long gotEB;
-                            if (fixrange[0][1] == null) {
-                                gotEB = Formatter.filterLong(fixrange[0][0]) + connection.getLongContentLength() - 1;
+                            if (fixrange[1] == null) {
+                                gotEB = Formatter.filterLong(fixrange[0]) + connection.getLongContentLength() - 1;
                             } else {
-                                gotEB = Formatter.filterLong(fixrange[0][1]);
+                                gotEB = Formatter.filterLong(fixrange[1]);
                             }
                             if (gotSB != startByte) {
                                 logger.severe("Range Conflict " + gotSB + " - " + gotEB + " wished start: " + 0);
@@ -677,11 +625,9 @@ abstract public class DownloadInterface {
                                 logger.finer("ServerType: RETURN Rangeend-1");
                             } else if (gotEB == endByte + 1) {
                                 logger.finer("ServerType: RETURN exact rangeend");
-                            }
-                            if (gotEB < endByte) {
+                            } else if (gotEB < endByte) {
                                 logger.severe("Range Conflict");
-                            }
-                            if (gotEB > endByte + 1) {
+                            } else if (gotEB > endByte + 1) {
                                 logger.warning("Possible RangeConflict or Servermisconfiguration. wished endByte: " + endByte + " got: " + gotEB);
                             }
 
@@ -712,11 +658,11 @@ abstract public class DownloadInterface {
                             return;
                         }
                     } else if (range != null) {
-                        long gotSB = Formatter.filterLong(range[0][0]);
-                        long gotEB = Formatter.filterLong(range[0][1]);
-                        long gotS = Formatter.filterLong(range[0][2]);
+                        long gotSB = Formatter.filterLong(range[0]);
+                        long gotEB = Formatter.filterLong(range[1]);
+                        long gotS = Formatter.filterLong(range[2]);
                         if (gotSB != startByte) {
-                            logger.severe("Range Conflict " + range[0][0] + " - " + range[0][1] + " wished start: " + 0);
+                            logger.severe("Range Conflict " + range[0] + " - " + range[1] + " wished start: " + 0);
                             // logger.finest(connection.toString());
                         }
 
@@ -727,14 +673,10 @@ abstract public class DownloadInterface {
                             logger.finer("ServerType: RETURN Rangeend-1");
                         } else if (gotEB == endByte + 1) {
                             logger.finer("ServerType: RETURN exact rangeend");
-                        }
-                        if (gotEB < endByte) {
+                        } else if (gotEB < endByte) {
                             logger.severe("Range Conflict " + range[0] + " - " + range[1] + " wishedend: " + endByte);
-                            // logger.finest(connection.toString());
-                        }
-                        if (gotEB > endByte + 1) {
+                        } else if (gotEB > endByte + 1) {
                             logger.warning("Possible RangeConflict or Servermisconfiguration. wished endByte: " + endByte + " got: " + gotEB);
-                            // logger.finest(connection.toString());
                         }
 
                         endByte = Math.min(endByte, gotEB);
@@ -761,9 +703,6 @@ abstract public class DownloadInterface {
                 download();
                 addChunksDownloading(-1);
 
-                if (isInterrupted() || dl.externalDownloadStop()) {
-
-                }
                 logger.finer("Chunk finished " + chunks.indexOf(this) + " " + getBytesLoaded() + " bytes");
             } finally {
                 setChunkStartet();
@@ -790,7 +729,6 @@ abstract public class DownloadInterface {
          */
         public void setMaximalSpeed(int i) {
             maxSpeed = i;
-
         }
 
         public void startChunk() {
@@ -900,11 +838,12 @@ abstract public class DownloadInterface {
 
     private DownloadInterface(PluginForHost plugin, DownloadLink downloadLink) {
         this.downloadLink = downloadLink;
+        this.plugin = plugin;
+
         linkStatus = downloadLink.getLinkStatus();
         linkStatus.setStatusText(JDL.L("download.connection.normal", "Download"));
         browser = plugin.getBrowser().cloneBrowser();
         downloadLink.setDownloadInstance(this);
-        this.plugin = plugin;
         requestTimeout = SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_CONNECT_TIMEOUT, 100000);
         readTimeout = SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_READ_TIMEOUT, 100000);
     }
@@ -912,9 +851,6 @@ abstract public class DownloadInterface {
     public DownloadInterface(PluginForHost plugin, DownloadLink downloadLink, Request request) throws IOException, PluginException {
         this(plugin, downloadLink);
         this.request = request;
-        browser = plugin.getBrowser().cloneBrowser();
-        requestTimeout = SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_CONNECT_TIMEOUT, 100000);
-        readTimeout = SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_READ_TIMEOUT, 100000);
     }
 
     /**
@@ -959,11 +895,6 @@ abstract public class DownloadInterface {
 
         if (this.plugin.getBrowser().isDebug()) logger.finest(request.printHeaders());
 
-        // if (request.getHttpConnection().getResponseCode() != 416) {
-        //
-        // logger.severe("Fake head request failed!!!");
-        //            
-        // }
         request.getHttpConnection().disconnect();
 
         if (this.downloadLink.getFinalFileName() == null && ((request.getHttpConnection() != null && request.getHttpConnection().isContentDisposition()) || this.allowFilenameFromURL)) {
@@ -983,8 +914,6 @@ abstract public class DownloadInterface {
 
     /**
      * Gibt zurück ob die Dateigröße 100% richtig ermittelt werden konnte
-     * 
-     * @return
      */
     public boolean isFileSizeVerified() {
         return fileSizeVerified;
@@ -1016,8 +945,6 @@ abstract public class DownloadInterface {
 
     /**
      * Validiert das Chunk Progress array
-     * 
-     * @return
      */
     protected boolean checkResumabled() {
 
@@ -1114,17 +1041,12 @@ abstract public class DownloadInterface {
             logger.warning("No Chunkload");
             setChunkNum(1);
         } else {
-            if (request.getHttpConnection().getRange()[0] != 0) { throw new IllegalStateException("Range Error. Requested " + request.getHeaders().get("Range") + ". Got range: " + request.getHttpConnection().getHeaderField("Content-Range")); }
-            if (request.getHttpConnection().getRange()[1] < (part - 2)) { throw new IllegalStateException("Range Error. Requested " + request.getHeaders().get("Range") + " Got range: " + request.getHttpConnection().getHeaderField("Content-Range")); }
+            if (request.getHttpConnection().getRange()[0] != 0) throw new IllegalStateException("Range Error. Requested " + request.getHeaders().get("Range") + ". Got range: " + request.getHttpConnection().getHeaderField("Content-Range"));
+            if (request.getHttpConnection().getRange()[1] < (part - 2)) throw new IllegalStateException("Range Error. Requested " + request.getHeaders().get("Range") + " Got range: " + request.getHttpConnection().getHeaderField("Content-Range"));
             if (request.getHttpConnection().getRange()[1] == request.getHttpConnection().getRange()[2] - 1 && getChunkNum() > 1) {
                 logger.warning(" Chunkload Protection.. Requested " + request.getHeaders().get("Range") + " Got range: " + request.getHttpConnection().getHeaderField("Content-Range"));
-
-            } else if (request.getHttpConnection().getRange()[1] > (part - 1)) { throw new IllegalStateException("Range Error. Requested " + request.getHeaders().get("Range") + " Got range: " + request.getHttpConnection().getHeaderField("Content-Range"));
-
-            }
-
+            } else if (request.getHttpConnection().getRange()[1] > (part - 1)) throw new IllegalStateException("Range Error. Requested " + request.getHeaders().get("Range") + " Got range: " + request.getHttpConnection().getHeaderField("Content-Range"));
         }
-
     }
 
     private void connectResumable() throws IOException {
@@ -1175,7 +1097,6 @@ abstract public class DownloadInterface {
      * @param i
      */
     public synchronized void addChunksDownloading(long i) {
-
         chunksDownloading += i;
     }
 
@@ -1192,7 +1113,6 @@ abstract public class DownloadInterface {
 
     protected synchronized void addToTotalLinkBytesLoaded(long block) {
         totaleLinkBytesLoaded += block;
-
     }
 
     /**
@@ -1228,23 +1148,17 @@ abstract public class DownloadInterface {
 
     /**
      * Gibt die Anzahl der verwendeten Chunks zurück
-     * 
-     * @return
      */
     public int getChunkNum() {
-
         return chunkNum;
     }
 
     public Vector<Chunk> getChunks() {
-
         return chunks;
     }
 
     /**
-     * Gibt zurüc wieviele Chunks tatsächlich in der Downloadphase sind
-     * 
-     * @return
+     * Gibt zurück wieviele Chunks tatsächlich in der Downloadphase sind
      */
     public int getChunksDownloading() {
         return chunksDownloading;
@@ -1252,10 +1166,7 @@ abstract public class DownloadInterface {
 
     /**
      * Gibt die aufgetretenen Fehler zurück
-     * 
-     * @return
      */
-
     public Vector<Integer> getErrors() {
         return errors;
     }
@@ -1271,29 +1182,16 @@ abstract public class DownloadInterface {
 
     /**
      * Gibt eine bestmögliche abschätzung der Dateigröße zurück
-     * 
-     * @return
      */
     protected long getFileSize() {
-        if (fileSize > 0) {
-
-        return fileSize; }
-        if (connection != null && connection.getLongContentLength() > 0) {
-
-        return connection.getLongContentLength(); }
-
-        if (downloadLink.getDownloadSize() > 0) {
-
-        return downloadLink.getDownloadSize();
-
-        }
+        if (fileSize > 0) return fileSize;
+        if (connection != null && connection.getLongContentLength() > 0) return connection.getLongContentLength();
+        if (downloadLink.getDownloadSize() > 0) return downloadLink.getDownloadSize();
         return -1;
     }
 
     /**
      * Gibt den aktuellen readtimeout zurück
-     * 
-     * @return
      */
     public int getReadTimeout() {
         return Math.max(10000, readTimeout);
@@ -1301,8 +1199,6 @@ abstract public class DownloadInterface {
 
     /**
      * Gibt den requesttimeout zurück
-     * 
-     * @return
      */
     public int getRequestTimeout() {
         return Math.max(10000, requestTimeout);
@@ -1310,8 +1206,6 @@ abstract public class DownloadInterface {
 
     /**
      * Gibt zurück wieviele Chunks gerade am arbeiten sind
-     * 
-     * @return
      */
     public int getRunningChunks() {
         return chunksInProgress;
@@ -1319,8 +1213,6 @@ abstract public class DownloadInterface {
 
     /**
      * Setzt im Downloadlink und PLugin die entsprechende Fehlerids
-     * 
-     * @return
      */
     public boolean handleErrors() {
         if (externalDownloadStop()) return false;
@@ -1355,8 +1247,6 @@ abstract public class DownloadInterface {
 
     /**
      * Ist resume aktiv?
-     * 
-     * @return
      */
     public boolean isResume() {
         return resume;
@@ -1378,22 +1268,14 @@ abstract public class DownloadInterface {
 
     /**
      * Wird aufgerufen sobald alle Chunks fertig geladen sind
-     * 
-     * @throws DownloadFailedException
      */
     abstract protected void onChunksReady();
 
     /**
      * Gibt die Anzahl der Chunks an die dieser Download verwenden soll. Chu8nks
      * können nur vor dem Downloadstart gesetzt werden!
-     * 
-     * @param num
      */
     public void setChunkNum(int num) {
-        // if (status != STATUS_INITIALIZED) {
-        // logger.severe("CHunks musst be set before starting download");
-        // return;
-        // }
         if (num <= 0) {
             logger.severe("Chunks value must be >=1");
             return;
@@ -1403,8 +1285,6 @@ abstract public class DownloadInterface {
 
     /**
      * Setzt die filesize.
-     * 
-     * @param length
      */
     public void setFilesize(long length) {
         fileSize = length;
@@ -1413,8 +1293,6 @@ abstract public class DownloadInterface {
 
     /**
      * Setzt den aktuellen readtimeout(nur vor dem dl start)
-     * 
-     * @param readTimeout
      */
     public void setReadTimeout(int readTimeout) {
         this.readTimeout = readTimeout;
@@ -1423,8 +1301,6 @@ abstract public class DownloadInterface {
     /**
      * Setzt vor ! dem download dden requesttimeout. Sollte nicht zu niedrig
      * sein weil sonst das automatische kopieren der Connections fehl schlägt.,
-     * 
-     * @param requestTimeout
      */
     public void setRequestTimeout(int requestTimeout) {
         this.requestTimeout = requestTimeout;
@@ -1432,8 +1308,6 @@ abstract public class DownloadInterface {
 
     /**
      * File soll resumed werden
-     * 
-     * @param value
      */
     public void setResume(boolean value) {
         downloadLink.getTransferStatus().setResumeSupport(value);
@@ -1450,9 +1324,6 @@ abstract public class DownloadInterface {
      * Wird aufgerufen um die Chunks zu initialisieren
      * 
      * @throws Exception
-     * 
-     * @throws IOException
-     * 
      */
     abstract protected void setupChunks() throws Exception;
 
@@ -1553,9 +1424,8 @@ abstract public class DownloadInterface {
     private void terminate() {
         if (!externalDownloadStop()) logger.severe("A critical Downloaderror occured. Terminate...");
         synchronized (chunks) {
-            Iterator<Chunk> it = chunks.iterator();
-            while (it.hasNext()) {
-                it.next().interrupt();
+            for (Chunk ch : chunks) {
+                ch.interrupt();
             }
         }
     }
@@ -1571,9 +1441,8 @@ abstract public class DownloadInterface {
                         this.wait(interval);
                     } catch (Exception e) {
                         // logger.log(Level.SEVERE,"Exception occurred",e);
-                        Iterator<Chunk> it = chunks.iterator();
-                        while (it.hasNext()) {
-                            it.next().interrupt();
+                        for (Chunk ch : chunks) {
+                            ch.interrupt();
                         }
                         return;
                     }

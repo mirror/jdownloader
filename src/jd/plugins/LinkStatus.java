@@ -360,7 +360,7 @@ public class LinkStatus implements Serializable {
                 } else {
                     long remainingBytes = downloadLink.getDownloadSize() - downloadLink.getDownloadCurrent();
                     long eta = remainingBytes / speed;
-                    return "ETA " + Formatter.formatSeconds((int) eta) + " @ " + Formatter.formatReadable(speed) + "/s " + chunkString;
+                    return "ETA " + Formatter.formatSeconds((int) eta) + " @ " + Formatter.formatReadable(speed) + "/s" + chunkString;
                 }
             } else {
                 return JDL.L("gui.download.create_connection", "Connecting...") + chunkString;

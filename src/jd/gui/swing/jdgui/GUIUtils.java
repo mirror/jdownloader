@@ -65,8 +65,13 @@ public class GUIUtils {
         if (point != null) {
             if (point.x < 0) point.x = 0;
             if (point.y < 0) point.y = 0;
-            if (point.x > width) point.x = width;
-            if (point.y > height) point.y = height;
+
+            /*
+             * If the saved point isn't on the screen (can happen after
+             * resolution changes) we need to put it back on screen.
+             */
+            if (point.x > width) point.x = width - 50;
+            if (point.y > height) point.y = height - 50;
 
             return point;
         }

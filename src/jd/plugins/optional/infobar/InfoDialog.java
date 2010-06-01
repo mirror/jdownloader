@@ -18,6 +18,7 @@ import javax.swing.SwingUtilities;
 
 import jd.controlling.DownloadInformations;
 import jd.gui.swing.GuiRunnable;
+import jd.gui.swing.SwingGui;
 import jd.gui.swing.components.JDCloseAction;
 import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.jdgui.components.JDProgressBar;
@@ -57,7 +58,7 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
     private JLabel lblHelp;
 
     private InfoDialog(MenuAction action) {
-        super();
+        super(SwingGui.getInstance().getMainFrame());
 
         this.ds = DownloadInformations.getInstance();
         this.action = action;
@@ -65,7 +66,7 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
 
         this.setName("INFODIALOG");
         this.setAlwaysOnTop(true);
-        this.setLocation(GUIUtils.getLastLocation(null, this));
+        this.setLocation(GUIUtils.getLastLocation(SwingGui.getInstance().getMainFrame(), this));
 
         this.addMouseListener(this);
         this.addMouseMotionListener(this);

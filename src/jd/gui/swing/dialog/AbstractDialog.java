@@ -25,6 +25,7 @@ import java.awt.event.HierarchyListener;
 import java.awt.event.MouseEvent;
 
 import javax.swing.AbstractAction;
+import javax.swing.Box;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -109,11 +110,8 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
         }
 
         this.setModal(true);
-
         this.setLayout(new MigLayout("ins 5", "[fill,grow]", "[fill,grow][]"));
-
         this.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
-        this.buttonBar = new JPanel(new MigLayout("ins 0", "[fill,grow]", "[fill,grow]"));
 
         btnOK = new JButton(this.okOption);
         btnOK.addActionListener(this);
@@ -128,20 +126,19 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
         contentpane = contentInit();
         add(contentpane, "pushx,growx,pushy,growy,spanx,aligny center,wrap");
 
+        add(countDownLabel, "split 3,growx,hidemode 2");
         if ((flag & UserIO.DONT_SHOW_AGAIN) > 0) {
             dont = new JCheckBox(JDL.L("gui.dialogs.dontshowthisagain", "Don't show this again"));
             dont.setHorizontalAlignment(JCheckBox.TRAILING);
             dont.setHorizontalTextPosition(JCheckBox.LEADING);
 
-            add(countDownLabel, "split 3,growx,hidemode 2");
             add(dont, "alignx right");
         } else {
-            add(countDownLabel, "split 2,growx,hidemode 2");
+            add(Box.createHorizontalGlue(), "growx,pushx");
         }
 
-        add(buttonBar, "alignx right");
+        buttonBar = new JPanel(new MigLayout("ins 0", "[fill,grow]", "[fill,grow]"));
         if ((flag & UserIO.NO_OK_OPTION) == 0) {
-
             getRootPane().setDefaultButton(btnOK);
 
             btnOK.addHierarchyListener(new HierarchyListener() {
@@ -159,7 +156,6 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
             buttonBar.add(btnOK, "alignx right,tag ok,sizegroup confirms");
         }
         if ((flag & UserIO.NO_CANCEL_OPTION) == 0) {
-
             buttonBar.add(btnCancel, "alignx right,tag cancel,sizegroup confirms");
             if ((flag & UserIO.NO_OK_OPTION) != 0) {
                 this.getRootPane().setDefaultButton(btnCancel);
@@ -167,7 +163,8 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
                 focus = btnCancel;
             }
         }
-        this.addButtons(buttonBar);
+        addButtons(buttonBar);
+        add(buttonBar, "alignx right");
 
         if (JDFlags.hasNoFlags(flag, UserIO.NO_COUNTDOWN)) {
             this.countdown(UserIO.getCountdownTime());
@@ -176,34 +173,37 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
         }
 
         if (dont != null) {
-            btnOK.addMouseListener(new JDMouseAdapter() {
+            if (JDFlags.hasAllFlags(flag, UserIO.DONT_SHOW_AGAIN_IGNORES_OK)) {
+                btnOK.addMouseListener(new JDMouseAdapter() {
 
-                public void mouseEntered(MouseEvent e) {
-                    if (JDFlags.hasAllFlags(flag, UserIO.DONT_SHOW_AGAIN_IGNORES_OK)) {
-                        dont.setEnabled(false);
-                    }
-                }
-
-                public void mouseExited(MouseEvent e) {
-                    dont.setEnabled(true);
-                }
-
-            });
-
-            btnCancel.addMouseListener(new JDMouseAdapter() {
-
-                public void mouseEntered(MouseEvent e) {
-                    if (JDFlags.hasAllFlags(flag, UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL)) {
+                    @Override
+                    public void mouseEntered(MouseEvent e) {
                         dont.setEnabled(false);
                     }
 
-                }
+                    @Override
+                    public void mouseExited(MouseEvent e) {
+                        dont.setEnabled(true);
+                    }
 
-                public void mouseExited(MouseEvent e) {
-                    dont.setEnabled(true);
-                }
+                });
+            }
 
-            });
+            if (JDFlags.hasAllFlags(flag, UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL)) {
+                btnCancel.addMouseListener(new JDMouseAdapter() {
+
+                    @Override
+                    public void mouseEntered(MouseEvent e) {
+                        dont.setEnabled(false);
+                    }
+
+                    @Override
+                    public void mouseExited(MouseEvent e) {
+                        dont.setEnabled(true);
+                    }
+
+                });
+            }
         }
         this.invalidate();
         this.pack();
@@ -279,7 +279,7 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
         dispose();
     }
 
-    // @Override
+    @Override
     protected void onCountdown() {
         setReturnValue(false);
         returnValue |= UserIO.RETURN_COUNTDOWN_TIMEOUT;

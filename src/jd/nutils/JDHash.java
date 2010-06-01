@@ -20,6 +20,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.security.MessageDigest;
+import java.util.zip.CRC32;
+import java.util.zip.CheckedInputStream;
 
 import jd.controlling.JDLogger;
 
@@ -41,7 +43,7 @@ public class JDHash {
      * @return Hashstring
      */
     public static String getFileHash(File arg, String type) {
-        if (arg==null||!arg.exists()||arg.isDirectory()) return null;
+        if (arg == null || !arg.exists() || arg.isDirectory()) return null;
         try {
             MessageDigest md = MessageDigest.getInstance(type);
             byte[] b = new byte[1024];
@@ -104,6 +106,22 @@ public class JDHash {
 
     public static String getSHA1(File arg) {
         return getFileHash(arg, HASH_TYPE_SHA1);
+    }
+
+    public static long getCRC(final File file) {
+        try {
+            // Computer CRC32 checksum
+            final CheckedInputStream cis = new CheckedInputStream(new FileInputStream(file), new CRC32());
+
+            final byte[] buf = new byte[128];
+            while (cis.read(buf) >= 0) {
+            }
+
+            return cis.getChecksum().getValue();
+        } catch (Exception e) {
+            JDLogger.exception(e);
+            return 0;
+        }
     }
 
 }

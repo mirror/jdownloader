@@ -72,50 +72,47 @@ public class RAFDownload extends DownloadInterface {
              * CRC/SFV Check
              */
             if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_DO_CRC, true)) {
+                String hashType = null;
+                boolean success = false;
                 DownloadLink sfv = downloadLink.getFilePackage().getSFV();
                 if (sfv != null && sfv.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
                     downloadLink.getLinkStatus().setStatusText(JDL.LF("system.download.doCRC2", "CRC-Check running(%s)", "CRC32"));
                     downloadLink.requestGuiUpdate();
 
-                    String crc = Long.toHexString(JDUtilities.getCRC(new File(downloadLink.getFileOutput()))).toLowerCase();
                     String sfvText = JDIO.readFileToString(new File(sfv.getFileOutput()));
-                    if (sfvText != null && sfvText.toLowerCase().contains(new File(downloadLink.getFileOutput()).getName().toLowerCase())) {
-                        boolean success = false;
-                        for (String line : Regex.getLines(sfvText)) {
-                            if (line.trim().toLowerCase().endsWith(crc)) {
-                                success = true;
-                                break;
-                            }
-                        }
-                        hashCheckFinished("CRC32", success);
+                    if (sfvText != null) {
+                        /* Delete comments */
+                        sfvText = sfvText.replaceAll(";(.*?)[\r\n]{1,2}", "");
+
+                        File outputFile = new File(downloadLink.getFileOutput());
+                        String crc = Long.toHexString(JDHash.getCRC(outputFile));
+
+                        hashType = "CRC32";
+                        success = new Regex(sfvText, outputFile.getName() + "\\s*" + crc).matches();
                     } else {
                         downloadLink.getLinkStatus().setStatusText(null);
                         downloadLink.requestGuiUpdate();
                     }
                 }
 
-                String linkHash = null;
-                String localHash = null;
-                String hashType = null;
-                if (downloadLink.getMD5Hash() != null) {
-                    downloadLink.getLinkStatus().setStatusText(JDL.LF("system.download.doCRC2", "CRC-Check running(%s)", "MD5"));
-                    downloadLink.requestGuiUpdate();
+                if (hashType == null) {
+                    if (downloadLink.getMD5Hash() != null) {
+                        downloadLink.getLinkStatus().setStatusText(JDL.LF("system.download.doCRC2", "CRC-Check running(%s)", "MD5"));
+                        downloadLink.requestGuiUpdate();
 
-                    localHash = JDHash.getMD5(new File(downloadLink.getFileOutput()));
-                    linkHash = downloadLink.getMD5Hash();
-                    hashType = "MD5";
-                }
-                if (downloadLink.getSha1Hash() != null) {
-                    downloadLink.getLinkStatus().setStatusText(JDL.LF("system.download.doCRC2", "CRC-Check running(%s)", "SHA1"));
-                    downloadLink.requestGuiUpdate();
+                        hashType = "MD5";
+                        success = downloadLink.getMD5Hash().equalsIgnoreCase(JDHash.getMD5(new File(downloadLink.getFileOutput())));
+                    } else if (downloadLink.getSha1Hash() != null) {
+                        downloadLink.getLinkStatus().setStatusText(JDL.LF("system.download.doCRC2", "CRC-Check running(%s)", "SHA1"));
+                        downloadLink.requestGuiUpdate();
 
-                    localHash = JDHash.getSHA1(new File(downloadLink.getFileOutput()));
-                    linkHash = downloadLink.getSha1Hash();
-                    hashType = "SHA1";
+                        hashType = "SHA1";
+                        success = downloadLink.getSha1Hash().equalsIgnoreCase(JDHash.getSHA1(new File(downloadLink.getFileOutput())));
+                    }
                 }
 
                 if (hashType != null) {
-                    hashCheckFinished(hashType, localHash.equalsIgnoreCase(linkHash));
+                    hashCheckFinished(hashType, success);
                 }
             }
         } catch (Exception e) {

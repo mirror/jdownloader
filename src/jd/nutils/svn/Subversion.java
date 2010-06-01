@@ -61,51 +61,38 @@ import org.tmatesoft.svn.core.wc.SVNWCUtil;
 
 public class Subversion implements ISVNEventHandler {
 
-    // private static final String PROPERTY_SVN_ACCESS_USER = null;
     private SVNRepository repository;
     private SVNURL svnurl;
-    private String user;
-    private String pass;
     private ISVNAuthenticationManager authManager;
     private SVNClientManager clientManager;
     private SVNUpdateClient updateClient;
     private SVNCommitClient commitClient;
     private SVNWCClient wcClient;
-    private JDBroadcaster<MessageListener, MessageEvent> broadcaster;
+
+    private final JDBroadcaster<MessageListener, MessageEvent> broadcaster = new JDBroadcaster<MessageListener, MessageEvent>() {
+
+        @Override
+        protected void fireEvent(MessageListener listener, MessageEvent event) {
+            listener.onMessage(event);
+        }
+
+    };
 
     public Subversion(String url) throws SVNException {
         setupType(url);
         checkRoot();
-
-        initBroadcaster();
-    }
-
-    private void initBroadcaster() {
-        this.broadcaster = new JDBroadcaster<MessageListener, MessageEvent>() {
-
-            @Override
-            protected void fireEvent(MessageListener listener, MessageEvent event) {
-                listener.onMessage(event);
-
-            }
-
-        };
-    }
-
-    public JDBroadcaster<MessageListener, MessageEvent> getBroadcaster() {
-        return broadcaster;
     }
 
     public Subversion(String url, String user, String pass) throws SVNException {
         setupType(url);
-        this.user = user;
-        this.pass = pass;
-        authManager = SVNWCUtil.createDefaultAuthenticationManager(this.user, this.pass);
+        authManager = SVNWCUtil.createDefaultAuthenticationManager(user, pass);
         ((DefaultSVNAuthenticationManager) authManager).setAuthenticationForced(true);
         repository.setAuthenticationManager(authManager);
         checkRoot();
+    }
 
-        initBroadcaster();
+    public JDBroadcaster<MessageListener, MessageEvent> getBroadcaster() {
+        return broadcaster;
     }
 
     private void checkRoot() throws SVNException {
@@ -258,11 +245,10 @@ public class Subversion implements ISVNEventHandler {
         return wcClient;
     }
 
-    @SuppressWarnings("deprecation")
     public void showInfo(File wcPath, SVNRevision revision, boolean isRecursive) throws SVNException {
         if (revision == null) revision = SVNRevision.HEAD;
 
-        getWCClient().doInfo(wcPath, revision, isRecursive, new InfoEventHandler());
+        getWCClient().doInfo(wcPath, SVNRevision.UNDEFINED, revision, SVNDepth.getInfinityOrEmptyDepth(isRecursive), null, new InfoEventHandler());
     }
 
     public void resolveConflicts(File file, final ResolveHandler handler) throws SVNException {
@@ -297,7 +283,6 @@ public class Subversion implements ISVNEventHandler {
 
                 public void handleInfo(SVNInfo info) {
                     ret.add(info);
-
                 }
 
             });
@@ -344,9 +329,8 @@ public class Subversion implements ISVNEventHandler {
 
     }
 
-    @SuppressWarnings("deprecation")
     public void showStatus(File wcPath, boolean isRecursive, boolean isRemote, boolean isReportAll, boolean isIncludeIgnored, boolean isCollectParentExternals) throws SVNException {
-        getClientManager().getStatusClient().doStatus(wcPath, isRecursive, isRemote, isReportAll, isIncludeIgnored, isCollectParentExternals, new StatusEventHandler(isRemote));
+        getClientManager().getStatusClient().doStatus(wcPath, SVNRevision.HEAD, SVNDepth.fromRecurse(isRecursive), isRemote, isReportAll, isIncludeIgnored, isCollectParentExternals, new StatusEventHandler(isRemote), null);
     }
 
     private SVNCommitClient getCommitClient() {
@@ -386,7 +370,6 @@ public class Subversion implements ISVNEventHandler {
      */
     public void cleanUp(File dstPath, boolean deleteWCProperties) throws SVNException {
         getWCClient().doCleanup(dstPath, deleteWCProperties);
-
     }
 
     /**
@@ -401,7 +384,6 @@ public class Subversion implements ISVNEventHandler {
         } catch (Exception e) {
             e.printStackTrace();
             cleanUp(dstPath, false);
-
         }
     }
 
@@ -414,7 +396,6 @@ public class Subversion implements ISVNEventHandler {
      */
     public void lock(File dstPath, String message) throws SVNException {
         getWCClient().doLock(new File[] { dstPath }, false, message);
-
     }
 
     /**
@@ -426,7 +407,6 @@ public class Subversion implements ISVNEventHandler {
      */
     public void unlock(File dstPath) throws SVNException {
         getWCClient().doUnlock(new File[] { dstPath }, false);
-
     }
 
     /**
@@ -446,7 +426,6 @@ public class Subversion implements ISVNEventHandler {
              * The item is scheduled for addition.
              */
             broadcaster.fireEvent(new MessageEvent(this, action.getID(), "A     " + event.getFile()));
-
             return;
         } else if (action == SVNEventAction.COPY) {
             /*
@@ -454,20 +433,17 @@ public class Subversion implements ISVNEventHandler {
              * words).
              */
             broadcaster.fireEvent(new MessageEvent(this, action.getID(), "A  +  " + event.getFile()));
-
             return;
         } else if (action == SVNEventAction.DELETE) {
             /*
              * The item is scheduled for deletion.
              */
             broadcaster.fireEvent(new MessageEvent(this, action.getID(), "D     " + event.getFile()));
-
             return;
         } else if (action == SVNEventAction.LOCKED) {
             /*
              * The item is locked.
              */
-
             broadcaster.fireEvent(new MessageEvent(this, action.getID(), "L     " + event.getFile()));
             return;
         } else if (action == SVNEventAction.LOCK_FAILED) {
@@ -475,11 +451,10 @@ public class Subversion implements ISVNEventHandler {
              * Locking operation failed.
              */
             broadcaster.fireEvent(new MessageEvent(this, action.getID(), "failed to lock    " + event.getFile()));
-
             return;
         }
 
-        /* UPdatehandler */
+        /* Updatehandler */
 
         if (action == SVNEventAction.UPDATE_ADD) {
             /*
@@ -523,18 +498,17 @@ public class Subversion implements ISVNEventHandler {
                 pathChangeType = "G";
             }
         } else if (action == SVNEventAction.UPDATE_EXTERNAL) {
-            /* for externals definitions */
-
+            /*
+             * for externals definitions
+             */
             broadcaster.fireEvent(new MessageEvent(this, action.getID(), "Fetching external item into '" + event.getFile().getAbsolutePath() + "'"));
             broadcaster.fireEvent(new MessageEvent(this, action.getID(), "External at revision " + event.getRevision()));
-
             return;
         } else if (action == SVNEventAction.UPDATE_COMPLETED) {
             /*
              * Working copy update is completed. Prints out the revision.
              */
             broadcaster.fireEvent(new MessageEvent(this, action.getID(), "At revision " + event.getRevision()));
-
             return;
         }
 
@@ -584,16 +558,12 @@ public class Subversion implements ISVNEventHandler {
 
         if (action == SVNEventAction.COMMIT_MODIFIED) {
             broadcaster.fireEvent(new MessageEvent(this, action.getID(), "Sending   " + event.getFile()));
-
         } else if (action == SVNEventAction.COMMIT_DELETED) {
             broadcaster.fireEvent(new MessageEvent(this, action.getID(), "Deleting   " + event.getFile()));
-
         } else if (action == SVNEventAction.COMMIT_REPLACED) {
             broadcaster.fireEvent(new MessageEvent(this, action.getID(), "Replacing   " + event.getFile()));
-
         } else if (action == SVNEventAction.COMMIT_DELTA_SENT) {
             broadcaster.fireEvent(new MessageEvent(this, action.getID(), "Transmitting file data...."));
-
         } else if (action == SVNEventAction.COMMIT_ADDED) {
             /*
              * Gets the MIME-type of the item.
@@ -604,10 +574,8 @@ public class Subversion implements ISVNEventHandler {
                  * If the item is a binary file
                  */
                 broadcaster.fireEvent(new MessageEvent(this, action.getID(), "Adding  (bin)  " + event.getFile()));
-
             } else {
                 broadcaster.fireEvent(new MessageEvent(this, action.getID(), "Adding         " + event.getFile()));
-
             }
         }
 
@@ -628,14 +596,11 @@ public class Subversion implements ISVNEventHandler {
      * @return
      */
     public static boolean checkLogin(String url, String user, String pass) {
-
         try {
             new Subversion(url, user, pass);
             return true;
         } catch (SVNException e) {
-
         }
-
         return false;
     }
 
@@ -645,6 +610,6 @@ public class Subversion implements ISVNEventHandler {
         } catch (Exception e) {
             e.printStackTrace();
         }
-
     }
+
 }
