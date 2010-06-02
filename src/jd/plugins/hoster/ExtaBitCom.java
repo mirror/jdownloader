@@ -21,6 +21,8 @@ import java.io.File;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -30,12 +32,15 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "extabit.com" }, urls = { "http://[\\w\\.]*?extabit\\.com/file/[a-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "extabit.com" }, urls = { "http://[\\w\\.]*?extabit\\.com/file/[a-z0-9]+" }, flags = { 2 })
 public class ExtaBitCom extends PluginForHost {
 
     public ExtaBitCom(PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium("http://extabit.com/premium.jsp");
     }
+
+    private static String NOTAVAILABLETEXT = ">File is temporary unavailable<";
 
     @Override
     public String getAGBLink() {
@@ -62,7 +67,7 @@ public class ExtaBitCom extends PluginForHost {
         downloadLink.setName(filename.trim());
         if (filesize != null) downloadLink.setDownloadSize(Regex.getSize(filesize));
         if (br.containsHTML(">Only premium users can download files of this size")) downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.ExtaBitCom.errors.Only4Premium", "This file is only available for premium users"));
-        if (br.containsHTML(">File is temporary unavailable<")) downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.ExtaBitCom.errors.TempUnavailable", "This file is temporary unavailable"));
+        if (br.containsHTML(NOTAVAILABLETEXT)) downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.ExtaBitCom.errors.TempUnavailable", "This file is temporary unavailable"));
         return AvailableStatus.TRUE;
     }
 
@@ -70,7 +75,7 @@ public class ExtaBitCom extends PluginForHost {
     public void handleFree(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         requestFileInformation(link);
-        if (br.containsHTML(">File is temporary unavailable<")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.ExtaBitCom.errors.TempUnavailable", "This file is temporary unavailable"));
+        if (br.containsHTML(NOTAVAILABLETEXT)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.ExtaBitCom.errors.TempUnavailable", "This file is temporary unavailable"));
         if (br.containsHTML(">Only premium users can download files of this size")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.ExtaBitCom.errors.Only4Premium", "This file is only available for premium users"));
         String addedlink = br.getURL();
         if (!addedlink.equals(link.getDownloadURL())) link.setUrlDownload(addedlink);
@@ -127,6 +132,74 @@ public class ExtaBitCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private void login(Account account) throws Exception {
+        this.setBrowserExclusive();
+        br.setCookie("http://extabit.com", "language", "en");
+        br.setFollowRedirects(false);
+        br.postPage("http://extabit.com/login.jsp", "email=" + account.getUser() + "&pass=" + account.getPass() + "&remember=1&auth_submit_login.x=0&auth_submit_login.y=0&auth_submit_login=Enter");
+        if (br.getCookie("http://extabit.com/", "auth_uid") == null || br.getCookie("http://extabit.com/", "auth_hash") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        br.getPage("http://extabit.com/");
+        String expire = br.getRegex("Premium is active till <span class=\"green\"><strong>(.*?)</strong>").getMatch(0);
+        if (expire == null) {
+            ai.setExpired(true);
+            account.setValid(false);
+            return ai;
+        } else {
+            ai.setValidUntil(Regex.getMilliSeconds(expire, "dd.MM.yyyy", null));
+        }
+        ai.setUnlimitedTraffic();
+        ai.setStatus("Premium User");
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(DownloadLink link, Account account) throws Exception {
+        String passCode = null;
+        requestFileInformation(link);
+        login(account);
+        br.setCustomCharset("utf-8");
+        br.setFollowRedirects(false);
+        br.getPage(link.getDownloadURL());
+        String dllink = br.getRedirectLocation();
+        if (br.getRedirectLocation() != null && br.getRedirectLocation().length() <= (link.getDownloadURL().length() + 5)) {
+            link.setUrlDownload(br.getRedirectLocation());
+            logger.info("New link was set, retrying!");
+            throw new PluginException(LinkStatus.ERROR_RETRY);
+        }
+        if (dllink == null) {
+            if (br.containsHTML(NOTAVAILABLETEXT) || br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.ExtaBitCom.errors.TempUnavailable", "This file is temporary unavailable"));
+            dllink = br.getRegex("<div id=\"download_filename\" class=\"df_archive\">3 g i.part1.rar</div>[\n\r\t ]+<a href=\"(http://.*?)\"").getMatch(0);
+            if (dllink == null) dllink = br.getRegex("\"(http://p\\d+\\.extabit\\.com/[a-z0-9]+/.*?)\"").getMatch(0);
+        }
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -10);
+        if (passCode != null) {
+            link.setProperty("pass", passCode);
+        }
+        if (dl.getConnection().getContentType().contains("html")) {
+            logger.warning("The final dllink seems not to be a file!");
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
     }
 
     @Override

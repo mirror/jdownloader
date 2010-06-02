@@ -265,7 +265,6 @@ public class XFileSharingProBasic extends PluginForHost {
     private void login(Account account) throws Exception {
         this.setBrowserExclusive();
         br.setCookie(COOKIE_HOST, "lang", "english");
-        br.setDebug(true);
         br.getPage(COOKIE_HOST + "/login.html");
         Form loginform = br.getForm(0);
         if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

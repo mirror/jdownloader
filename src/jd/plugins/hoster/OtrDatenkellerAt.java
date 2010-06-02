@@ -27,7 +27,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "otr.datenkeller.at" }, urls = { "http://[\\w\\.]*?otr\\.datenkeller\\.at/\\?file=.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "otr.datenkeller.at" }, urls = { "http://[\\w\\.]*?otr\\.datenkeller\\.at/\\?(file|getFile)=.+" }, flags = { 0 })
 public class OtrDatenkellerAt extends PluginForHost {
 
     public OtrDatenkellerAt(PluginWrapper wrapper) {
@@ -37,6 +37,10 @@ public class OtrDatenkellerAt extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://otr.datenkeller.at";
+    }
+
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("getFile", "file"));
     }
 
     @Override
