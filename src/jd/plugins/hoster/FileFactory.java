@@ -133,7 +133,7 @@ public class FileFactory extends PluginForHost {
     }
 
     public String getUrl() throws IOException {
-        String hash = br.getRegex("(hash=.*?)\"").getMatch(0);
+        String hash = br.getRegex("(key=.*?)\"").getMatch(0);
         if (hash != null) br.getPage("http://www.filefactory.com/file/getLink.js?" + hash);
         String varsFound[][] = br.getRegex("var([/ a-zA-Z0-9]+)=[ ]*'(.*?)'[ ]*;").getMatches();
         HashMap<String, String> vars = new HashMap<String, String>();

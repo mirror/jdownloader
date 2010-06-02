@@ -20,12 +20,13 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "depositfiles.com" }, urls = { "http://?[\\w\\.]*?.depositfiles\\.com/([a-z]+/folders/|folders/).*" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "depositfiles.com" }, urls = { "http://?[\\w\\.]*?.depositfiles\\.com/([a-z]+/)?folders/.+" }, flags = { 0 })
 public class DpstFlsCm extends PluginForDecrypt {
 
     public DpstFlsCm(PluginWrapper wrapper) {
@@ -38,7 +39,8 @@ public class DpstFlsCm extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String url = parameter.toString();
         int pagecount = 1;
-
+        String id = new Regex(url, "folders/(.+)").getMatch(0);
+        url = "http://depositfiles.com/de/folders/" + id;
         // Get Pagecount //
         if (url.contains("page")) url = url.split("\\?")[0];
         br.getPage(url);

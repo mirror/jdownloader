@@ -16,11 +16,13 @@
 
 package jd.plugins.decrypter;
 
+import java.awt.Point;
 import java.io.File;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -75,10 +77,12 @@ public class SprdLnkUs extends PluginForDecrypt {
                 File file = this.getLocalCaptchaFile();
                 String url = "http://spreadlink.us/data/module/captcha.php";
                 Browser.download(file, br.cloneBrowser().openGetConnection(url));
-                int[] p = new jd.captcha.specials.GmdMscCm(file).getResult();
+                Point p = UserIO.getInstance().requestClickPositionDialog(file, "relink.us", "Click on open Circle");
+                /* anticaptcha does not work good enough */
+                // int[] p = new jd.captcha.specials.GmdMscCm(file).getResult();
                 if (p == null) throw new DecrypterException(DecrypterException.CAPTCHA);
-                sendData = sendData + "&button.x=" + p[0];
-                sendData = sendData + "&button.y=" + p[1];
+                sendData = sendData + "&button.x=" + p.x;
+                sendData = sendData + "&button.y=" + p.y;
             }
             br.getPage(sendData);
             if (br.containsHTML(captchaWrong) || br.containsHTML(passwordWrong)) continue;

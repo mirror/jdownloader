@@ -40,7 +40,7 @@ public class SharedZipCom extends PluginForHost {
 
     public SharedZipCom(PluginWrapper wrapper) {
         super(wrapper);
-        enablePremium("http://www.sharedzip.com/free132.html");
+        enablePremium("http://www.sharedzip.com/");
     }
 
     public String getAGBLink() {
