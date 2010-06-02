@@ -44,6 +44,7 @@ import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.components.linkbutton.JLink;
 import jd.gui.swing.dialog.AccountDialog;
+import jd.gui.swing.jdgui.components.premiumbar.PremiumStatus;
 import jd.gui.swing.jdgui.views.downloads.DownloadLinksPanel;
 import jd.gui.swing.jdgui.views.linkgrabber.LinkGrabberPanel;
 import jd.gui.swing.jdgui.views.settings.JDLabelListRenderer;
@@ -51,6 +52,7 @@ import jd.gui.swing.jdgui.views.settings.panels.addons.ConfigPanelAddons;
 import jd.nutils.JDFlags;
 import jd.plugins.LinkGrabberFilePackage;
 import jd.plugins.PluginForHost;
+import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.WebUpdate;
 import jd.utils.locale.JDL;
@@ -583,6 +585,65 @@ public class ActionController {
             @Override
             public void onAction(ActionEvent e) {
                 SwingGui.getInstance().requestPanel(UserIF.Panels.CONFIGPANEL, ConfigPanelAddons.class);
+            }
+
+            @Override
+            public void initDefaults() {
+            }
+        };
+        new ToolBarAction("premiumMenu.toggle", "gui.images.premium_enabled") {
+
+            private static final long serialVersionUID = 4276436625882302179L;
+
+            @Override
+            public void onAction(ActionEvent e) {
+                if (!this.isSelected()) {
+                    int answer = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_COUNTDOWN, JDL.L("dialogs.premiumstatus.global.title", "Disable Premium?"), JDL.L("dialogs.premiumstatus.global.message", "Do you really want to disable all premium accounts?"), UserIO.getInstance().getIcon(UserIO.ICON_WARNING), JDL.L("gui.btn_yes", "Yes"), JDL.L("gui.btn_no", "No"));
+                    if (JDFlags.hasAllFlags(answer, UserIO.RETURN_CANCEL) && !JDFlags.hasAllFlags(answer, UserIO.RETURN_DONT_SHOW_AGAIN)) {
+                        this.setSelected(true);
+                        return;
+                    }
+                }
+
+                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, this.isSelected());
+                JDUtilities.getConfiguration().save();
+            }
+
+            @Override
+            public void setIcon(String key) {
+                putValue(SMALL_ICON, JDTheme.II(key, 16, 16));
+                putValue(IMAGE_KEY, key);
+            }
+
+            @Override
+            public void initDefaults() {
+                this.addPropertyChangeListener(new PropertyChangeListener() {
+                    public void propertyChange(PropertyChangeEvent evt) {
+                        if (evt.getPropertyName() == SELECTED_KEY) {
+                            setIcon((Boolean) evt.getNewValue() ? "gui.images.premium_enabled" : "gui.images.premium_disabled");
+                        }
+                    }
+                });
+                JDController.getInstance().addControlListener(new ConfigPropertyListener(Configuration.PARAM_USE_GLOBAL_PREMIUM) {
+                    @Override
+                    public void onPropertyChanged(Property source, String key) {
+                        boolean b = source.getBooleanProperty(key, true);
+                        setSelected(b);
+                        PremiumStatus.getInstance().updateGUI(b);
+                    }
+                });
+
+                setType(ToolBarAction.Types.TOGGLE);
+                setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true));
+            }
+
+        };
+        new ToolBarAction("premiumMenu.configuration", "gui.images.config.premium") {
+            private static final long serialVersionUID = -3613887193435347389L;
+
+            @Override
+            public void onAction(ActionEvent e) {
+                SwingGui.getInstance().requestPanel(UserIF.Panels.PREMIUMCONFIG, null);
             }
 
             @Override
