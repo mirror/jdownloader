@@ -30,7 +30,7 @@ public class PremiumColumn extends JDIconColumn {
 
     private final AccountController controller;
     private final Icon iconYellow;
-    private final Icon iconGray;
+    // private final Icon iconGray;
     private final Icon iconGreen;
     private final Icon iconRed;
 
@@ -39,7 +39,7 @@ public class PremiumColumn extends JDIconColumn {
 
         controller = AccountController.getInstance();
         iconYellow = JDTheme.II("gui.images.premium", 16, 16);
-        iconGray = JDTheme.II("gui.images.premium.nosupport", 16, 16);
+        // iconGray = JDTheme.II("gui.images.premium.nosupport", 16, 16);
         iconGreen = JDTheme.II("gui.images.premium.enabled", 16, 16);
         iconRed = JDTheme.II("gui.images.premium.disabled", 16, 16);
     }
@@ -47,7 +47,7 @@ public class PremiumColumn extends JDIconColumn {
     @Override
     protected Icon getIcon(Object value) {
         HostPluginWrapper hpw = ((HostPluginWrapper) value);
-        if (!hpw.isLoaded() || !hpw.isPremiumEnabled()) return iconGray;
+        if (!hpw.isLoaded() || !hpw.isPremiumEnabled()) return null;
         if (controller.hasValidAccount(hpw.getHost())) return iconGreen;
         if (!controller.hasAccounts(hpw.getHost())) return iconRed;
         return iconYellow;
