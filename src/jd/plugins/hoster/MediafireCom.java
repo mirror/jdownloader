@@ -349,7 +349,7 @@ public class MediafireCom extends PluginForHost {
         String[] ids2 = br.getRegex("<div class=\".*?\" style=\".*?\" id=\"(.*?)\"").getColumn(0);
         br.getPage("http://www.mediafire.com/dynamic/download.php?qk=" + qk + "&pk=" + pk + "&r=" + r);
 
-        String error = br.getRegex("var\\s.*?et=(.*?);").getMatch(0);
+        String error = br.getRegex(";\\s*?eval\\s*?\\([a-zA-Z0-9]+\\)\\s*?;\\s*?[a-zA-Z0-9]+\\s*?=\\s*?(\\d+)\\s*?;").getMatch(0);
         if (error != null && !error.trim().equalsIgnoreCase("15")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
 
         /* now we have to js the functions and find the right js parts */
