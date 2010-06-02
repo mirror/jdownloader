@@ -1297,7 +1297,7 @@ plugins.hoster.gigasizecom.errors.alreadyloading = Denetlenemiyor çünkü zaten
 plugins.hoster.hellsharecom.error.404 = 404 sunucu hatası.Dosya ülkeniz için mevcut olmayabilir!
 plugins.hoster.hellsharecom.error.currentloadis100percent = Şimdiki sunucu yükü 100%
 plugins.hoster.hellsharecom.error.serveruntermaximumload = Sunucu maksimum yükte çalışıyor
-plugins.hoster.hotfilecom.setunlimitedconnectionsforpremium = Premium için dosya başına 5 bağlantıdan fazlasına izin ver (vasrsayılan maksimum=5). Bunu etkinleştirmek problem yaratabilir.
+plugins.hoster.hotfilecom.setunlimitedconnectionsforpremium = Premium için dosya başına 5 bağlantıdan fazlasına izin ver (varsayılan maksimum=5). Bunu etkinleştirmek problem yaratabilir.
 plugins.hoster.httplinks.errors.basicauthneeded = Temel Yetki gerektirir
 plugins.hoster.ifolderru.errors.ticketwait = Bilet için bekleniyor
 plugins.hoster.jamendo = Yüksek Kalitede İndirmeleri Tercih Et
