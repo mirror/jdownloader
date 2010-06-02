@@ -66,7 +66,7 @@ public class AccountDialog extends AbstractDialog {
     private PluginForHost plugin;
 
     public AccountDialog(PluginForHost pluginForHost) {
-        super(UserIO.NO_COUNTDOWN, JDL.L(JDL_PREFIX + "title", "Add new Account"), JDTheme.II("gui.images.premium", 16, 16), null, null);
+        super(UserIO.NO_COUNTDOWN | UserIO.NO_ICON, JDL.L(JDL_PREFIX + "title", "Add new Account"), JDTheme.II("gui.images.premium", 16, 16), null, null);
         this.plugin = pluginForHost;
         init();
     }
@@ -91,8 +91,7 @@ public class AccountDialog extends AbstractDialog {
         }
         hoster.setRenderer(new JDLabelListRenderer());
 
-        panel.add(new JLabel());
-        panel.add(link = new JButton(ActionController.getToolBarAction("action.premium.buy")), "w 200!");
+        panel.add(link = new JButton(ActionController.getToolBarAction("action.premium.buy")), "skip, w 200!");
         link.setIcon(JDTheme.II("gui.images.buy", 16, 16));
 
         panel.add(new JLabel(JDL.L(JDL_PREFIX + "name", "Name:")));

@@ -164,7 +164,7 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
     }
 
     private void initGUI() {
-        this.setLayout(new MigLayout("insets 0", "[left, grow]15px[]", ""));
+        this.setLayout(new MigLayout("ins 0", "[fill,grow]5[]", ""));
 
         cmboInput = new JComboBox(files) {
 
@@ -202,7 +202,7 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
         btnBrowse.addActionListener(this);
 
         this.add(cmboInput, "grow");
-        this.add(btnBrowse, "wrap");
+        this.add(btnBrowse);
     }
 
     public JButton getButton() {

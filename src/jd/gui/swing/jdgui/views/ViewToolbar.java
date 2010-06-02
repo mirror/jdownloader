@@ -37,12 +37,6 @@ import net.miginfocom.swing.MigLayout;
 
 public class ViewToolbar extends JPanel {
 
-    public ViewToolbar(String... actions) {
-        current = actions;
-
-        this.updateToolbar();
-    }
-
     private static String[] defaultlist = new String[] {};
 
     private static final long serialVersionUID = 7533137014274040205L;
@@ -69,6 +63,12 @@ public class ViewToolbar extends JPanel {
     private boolean contentPainted = true;
 
     private boolean textPainted = true;
+
+    public ViewToolbar(String... actions) {
+        current = actions;
+
+        this.updateToolbar();
+    }
 
     public void setList(String[] newlist) {
         if (newlist == current) return;
@@ -106,7 +106,7 @@ public class ViewToolbar extends JPanel {
     protected String getColConstraint(int col, String string) {
         switch (col) {
         case FIRST_COL:
-            return halign == EAST ? "3[grow]5" : "3";
+            return halign == EAST ? "[grow]5" : "";
         case LAST_COL:
             return halign == EAST ? "" : "[grow,fill]";
         default:

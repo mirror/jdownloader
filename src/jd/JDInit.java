@@ -297,18 +297,7 @@ public class JDInit {
     public Configuration loadConfiguration() {
         Object obj = JDUtilities.getDatabaseConnector().getData(Configuration.NAME);
 
-        if (obj == null) {
-            LOG.finest("Fresh install?");
-            // File file = JDUtilities.getResourceFile(JDUtilities.CONFIG_PATH);
-            // if (file.exists()) {
-            // logger.info("Wrapping jdownloader.config");
-            // obj = JDIO.loadObject(null, file, Configuration.saveAsXML);
-            // logger.finest(obj.getClass().getName());
-            // JDUtilities.getDatabaseConnector().saveConfiguration(
-            // "jdownloaderconfig",
-            // obj);
-            // }
-        }
+        if (obj == null) LOG.finest("Fresh install?");
 
         if (!TEST_INSTALLER && obj != null && ((Configuration) obj).getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY) != null) {
             final Configuration configuration = (Configuration) obj;
@@ -344,22 +333,23 @@ public class JDInit {
 
             if (!inst.isAborted()) {
                 final File home = JDUtilities.getResourceFile(".");
-                if (home.canWrite() && !JDUtilities.getResourceFile("noupdate.txt").exists()) {
-                    // try {
-                    // new WebUpdate().doWebupdate(true);
-                    // JDUtilities.getConfiguration().save();
-                    // JDUtilities.getDatabaseConnector().shutdownDatabase();
-                    // logger.info(JDUtilities.runCommand("java", new String[] {
-                    // "-jar", "jdupdate.jar", "/restart", "/rt" +
-                    // JDUtilities.RUNTYPE_LOCAL_JARED },
-                    // home.getAbsolutePath(), 0));
-                    // System.exit(0);
-                    // } catch (Exception e) {
-                    // jd.controlling.JDLogger.getLogger().log(java.util.logging.
-                    // Level.SEVERE,"Exception occurred",e);
-                    // // System.exit(0);
-                    // }
-                }
+                // if (home.canWrite() &&
+                // !JDUtilities.getResourceFile("noupdate.txt").exists()) {
+                // try {
+                // new WebUpdate().doWebupdate(true);
+                // JDUtilities.getConfiguration().save();
+                // JDUtilities.getDatabaseConnector().shutdownDatabase();
+                // logger.info(JDUtilities.runCommand("java", new String[] {
+                // "-jar", "jdupdate.jar", "/restart", "/rt" +
+                // JDUtilities.RUNTYPE_LOCAL_JARED },
+                // home.getAbsolutePath(), 0));
+                // System.exit(0);
+                // } catch (Exception e) {
+                // jd.controlling.JDLogger.getLogger().log(java.util.logging.
+                // Level.SEVERE,"Exception occurred",e);
+                // // System.exit(0);
+                // }
+                // }
                 if (!home.canWrite()) {
                     LOG.severe("INSTALL abgebrochen");
                     UserIO.getInstance().requestMessageDialog(JDL.L("installer.error.noWriteRights", "Error. You do not have permissions to write to the dir"));
