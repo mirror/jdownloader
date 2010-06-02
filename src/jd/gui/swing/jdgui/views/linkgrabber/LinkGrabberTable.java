@@ -52,8 +52,6 @@ import jd.gui.swing.jdgui.views.linkgrabber.contextmenu.CheckStatusAction;
 import jd.gui.swing.jdgui.views.linkgrabber.contextmenu.ContinueLinksAction;
 import jd.gui.swing.jdgui.views.linkgrabber.contextmenu.ContinuePackagesAction;
 import jd.gui.swing.jdgui.views.linkgrabber.contextmenu.DeleteAction;
-import jd.gui.swing.jdgui.views.linkgrabber.contextmenu.DeleteDupsAction;
-import jd.gui.swing.jdgui.views.linkgrabber.contextmenu.DeleteOfflineAction;
 import jd.gui.swing.jdgui.views.linkgrabber.contextmenu.FilterAction;
 import jd.gui.swing.jdgui.views.linkgrabber.contextmenu.NewPackageAction;
 import jd.gui.swing.jdgui.views.linkgrabber.contextmenu.PackageDirectoryAction;
@@ -372,8 +370,8 @@ public class LinkGrabberTable extends JDTable implements MouseListener, KeyListe
             popup.add(new DeleteAction(alllinks));
             popup.addSeparator();
         }
-        popup.add(new DeleteOfflineAction());
-        popup.add(new DeleteDupsAction());
+        popup.add(ActionController.getToolBarAction("action.remove_offline"));
+        popup.add(ActionController.getToolBarAction("action.remove_dupes"));
         popup.addSeparator();
         popup.add(ActionController.getToolBarAction("action.linkgrabber.clearlist"));
         return popup;
