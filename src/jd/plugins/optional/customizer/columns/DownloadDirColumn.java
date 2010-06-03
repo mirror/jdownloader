@@ -38,7 +38,7 @@ public class DownloadDirColumn extends JDTableColumn {
         super(name, table);
         jlr = new JRendererLabel();
         jlr.setBorder(null);
-        file = new BrowseFile(new MigLayout("ins 0", "[grow 100,fill,160:null:null]3[min!]", "[21!]"));
+        file = new BrowseFile(new MigLayout("ins 0", "[fill,grow]2[min!]", "[21!]"));
         file.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
         file.setButtonText("...");
         file.getTextField().setBorder(null);

@@ -31,6 +31,12 @@ import net.miginfocom.swing.MigLayout;
 
 public class BrowseFile extends JPanel implements ActionListener {
 
+    public static final int FILES_ONLY = JFileChooser.FILES_ONLY;
+
+    public static final int DIRECTORIES_ONLY = JFileChooser.DIRECTORIES_ONLY;
+
+    public static final int FILES_AND_DIRECTORIES = JFileChooser.FILES_AND_DIRECTORIES;
+
     private static final long serialVersionUID = 1L;
 
     private String approveButtonText = "OK";
@@ -41,7 +47,7 @@ public class BrowseFile extends JPanel implements ActionListener {
 
     private boolean editable = false;
 
-    private int fileSelectionMode = JFileChooser.FILES_ONLY;
+    private int fileSelectionMode = BrowseFile.FILES_ONLY;
 
     private JTextField txtInput;
 
@@ -50,7 +56,7 @@ public class BrowseFile extends JPanel implements ActionListener {
     }
 
     public BrowseFile(final LayoutManager layout) {
-        super(layout != null ? layout : new MigLayout("ins 0", "[grow 100,fill,160:null:null]3[grow 30,fill]"));
+        super(layout != null ? layout : new MigLayout("ins 0", "[fill,grow]5[]", "[fill]"));
         initGUI();
     }
 
@@ -141,7 +147,7 @@ public class BrowseFile extends JPanel implements ActionListener {
         btnBrowse = new JButton(JDL.L("gui.btn_select", "Browse"));
         btnBrowse.addActionListener(this);
 
-        add(txtInput);
+        add(txtInput, "grow");
         add(btnBrowse);
     }
 

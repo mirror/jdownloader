@@ -22,6 +22,7 @@ import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
+import jd.gui.swing.components.BrowseFile;
 import jd.gui.swing.jdgui.views.settings.sidebar.AddonConfig;
 import jd.nutils.OSDetector;
 import jd.utils.JDUtilities;
@@ -30,13 +31,16 @@ import jd.utils.locale.JDLocale;
 import net.miginfocom.swing.MigLayout;
 
 public class InstallerDialog extends AbstractDialog {
+    public static void main(String[] args) {
+        InstallerDialog.showDialog(null);
+    }
 
-    public static boolean showDialog() {
+    public static boolean showDialog(final File dlFolder) {
         new GuiRunnable<Object>() {
 
             @Override
             public Object runSave() {
-                new InstallerDialog();
+                new InstallerDialog(dlFolder);
                 return null;
             }
 
@@ -47,60 +51,59 @@ public class InstallerDialog extends AbstractDialog {
 
     private static final long serialVersionUID = 1869417100230097511L;
 
-    private final String languageCode;
-    private String dlFolder = null;
+    private String language = null;
+    private final File dlFolder;
 
-    private AddonConfig config;
+    private BrowseFile browseFile;
 
-    private InstallerDialog() {
-        super(UserIO.NO_COUNTDOWN, JDL.L("installer.gui.title", "JDownloader Installation"), null, null, null);
+    private InstallerDialog(File dlFolder) {
+        super(UserIO.NO_COUNTDOWN | UserIO.NO_ICON, JDL.L("installer.gui.title", "JDownloader Installation"), null, null, null);
 
         String countryCode = JDL.getCountryCodeByIP();
-        languageCode = (countryCode != null) ? countryCode.toLowerCase(Locale.getDefault()) : null;
+        String languageCode = (countryCode != null) ? countryCode.toLowerCase(Locale.getDefault()) : null;
+        if (languageCode != null) {
+            for (JDLocale id : JDL.getLocaleIDs()) {
+                if (id.getCountryCode() != null && id.getCountryCode().equalsIgnoreCase(languageCode)) {
+                    language = languageCode;
+                    break;
+                }
+            }
+            if (language == null) {
+                for (JDLocale id : JDL.getLocaleIDs()) {
+                    if (id.getLanguageCode().equalsIgnoreCase(languageCode)) {
+                        language = languageCode;
+                        break;
+                    }
+                }
+            }
+        }
+        if (language == null) language = "en";
+
+        if (dlFolder != null) {
+            this.dlFolder = dlFolder;
+        } else {
+            if (OSDetector.isMac()) {
+                this.dlFolder = new File(System.getProperty("user.home") + "/Downloads");
+            } else if (OSDetector.isWindows() && new File(System.getProperty("user.home") + "/Downloads").exists()) {
+                this.dlFolder = new File(System.getProperty("user.home") + "/Downloads");
+            } else if (OSDetector.isWindows() && new File(System.getProperty("user.home") + "/Download").exists()) {
+                this.dlFolder = new File(System.getProperty("user.home") + "/Download");
+            } else {
+                this.dlFolder = JDUtilities.getResourceFile("downloads");
+            }
+        }
 
         init();
     }
 
     @Override
     public JComponent contentInit() {
-        String def = null;
-        if (languageCode != null) {
-            for (JDLocale id : JDL.getLocaleIDs()) {
-                if (id.getCountryCode() != null && id.getCountryCode().equalsIgnoreCase(languageCode)) {
-                    def = languageCode;
-                    break;
-                }
-            }
-            if (def == null) {
-                for (JDLocale id : JDL.getLocaleIDs()) {
-                    if (id.getLanguageCode().equalsIgnoreCase(languageCode)) {
-                        def = languageCode;
-                        break;
-                    }
-                }
-            }
-        }
-        if (def == null) {
-            def = "en";
-        }
-        final JDLocale sel = SubConfiguration.getConfig(JDL.CONFIG).getGenericProperty(JDL.LOCALE_PARAM_ID, JDL.getInstance(def));
-
+        final JDLocale sel = SubConfiguration.getConfig(JDL.CONFIG).getGenericProperty(JDL.LOCALE_PARAM_ID, JDL.getInstance(language));
         JDL.setLocale(sel);
 
-        final ConfigEntry ce = new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, JDUtilities.getConfiguration(), Configuration.PARAM_DOWNLOAD_DIRECTORY, "");
-        if (dlFolder != null) {
-            ce.setDefaultValue(dlFolder);
-        } else {
-            if (OSDetector.isMac()) {
-                ce.setDefaultValue(new File(System.getProperty("user.home") + "/Downloads").getAbsolutePath());
-            } else if (OSDetector.isWindows() && new File(System.getProperty("user.home") + "/Downloads").exists()) {
-                ce.setDefaultValue(new File(System.getProperty("user.home") + "/Downloads").getAbsolutePath());
-            } else if (OSDetector.isWindows() && new File(System.getProperty("user.home") + "/Download").exists()) {
-                ce.setDefaultValue(new File(System.getProperty("user.home") + "/Download").getAbsolutePath());
-            } else {
-                ce.setDefaultValue(JDUtilities.getResourceFile("downloads").getAbsolutePath());
-            }
-        }
+        browseFile = new BrowseFile();
+        browseFile.setFileSelectionMode(BrowseFile.DIRECTORIES_ONLY);
+        browseFile.setCurrentPath(dlFolder);
 
         final JList list = new JList(JDL.getLocaleIDs().toArray());
         list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
@@ -110,11 +113,9 @@ public class InstallerDialog extends AbstractDialog {
             public void valueChanged(final ListSelectionEvent e) {
                 JDL.setConfigLocale((JDLocale) list.getSelectedValue());
                 JDL.setLocale(JDL.getConfigLocale());
-                SubConfiguration.getConfig(JDL.CONFIG).save();
-                dlFolder = ce.getGuiListener().getText().toString();
 
                 dispose();
-                InstallerDialog.showDialog();
+                InstallerDialog.showDialog(browseFile.getCurrentPath());
             }
 
         });
@@ -123,7 +124,7 @@ public class InstallerDialog extends AbstractDialog {
         container.setGroup(new ConfigGroup(JDL.L("gui.config.gui.language", "Language"), "gui.splash.languages"));
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMPONENT, new JScrollPane(list), "growx,pushx"));
         container.setGroup(new ConfigGroup(JDL.L("gui.config.general.downloaddirectory", "Download directory"), "gui.images.userhome"));
-        container.addEntry(ce);
+        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMPONENT, browseFile, "growx,pushx"));
 
         final JLabel lbl = new JLabel(JDL.L("installer.gui.message", "After Installation, JDownloader will update to the latest version."));
         lbl.setFont(lbl.getFont().deriveFont(lbl.getFont().getStyle() ^ Font.BOLD));
@@ -135,20 +136,16 @@ public class InstallerDialog extends AbstractDialog {
             if (!JDUtilities.getResourceFile("uninstall.exe").exists() && (dir.startsWith("programme\\") || dir.startsWith("program files\\"))) {
                 lbl.setText(JDL.LF("installer.vistaDir.warning", "Warning! JD is installed in %s. This causes errors.", JDUtilities.getResourceFile("downloads")));
                 lbl.setForeground(Color.RED);
-                lbl.setBackground(Color.RED);
             }
             if (!JDUtilities.getResourceFile("tools/tinyupdate.jar").canWrite()) {
                 lbl.setText(JDL.LF("installer.nowriteDir.warning", "Warning! JD cannot write to %s. Check rights!", JDUtilities.getResourceFile("downloads")));
                 lbl.setForeground(Color.RED);
-                lbl.setBackground(Color.RED);
             }
         }
 
-        config = AddonConfig.getInstance(container, "", true);
-
         final JPanel panel = new JPanel(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[]25[grow,fill]push[]"));
         panel.add(lbl, "pushx");
-        panel.add(config.getPanel());
+        panel.add(AddonConfig.getInstance(container, "", true).getPanel());
         panel.add(new JSeparator(), "pushx");
         return panel;
     }
@@ -162,7 +159,9 @@ public class InstallerDialog extends AbstractDialog {
     protected void setReturnValue(final boolean b) {
         super.setReturnValue(b);
 
-        if (b) config.save();
+        if (b) {
+            JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY, browseFile.getText());
+            JDUtilities.getConfiguration().save();
+        }
     }
-
 }

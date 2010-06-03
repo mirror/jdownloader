@@ -55,14 +55,13 @@ public class Installer {
     public Installer() {
         AbstractDialog.setDefaultDimension(new Dimension(550, 400));
 
-        if (!InstallerDialog.showDialog()) {
+        if (!InstallerDialog.showDialog(null)) {
             JDLogger.getLogger().severe("downloaddir not set");
             this.aborted = true;
             return;
         }
 
         askInstallFlashgot();
-        JDUtilities.getConfiguration().save();
         AbstractDialog.setDefaultDimension(null);
 
         if (OSDetector.isWindows()) {
