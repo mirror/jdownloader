@@ -123,7 +123,7 @@ public class ShrLnksBz extends PluginForDecrypt {
                 temp.getDownload(file, "http://share-links.biz" + Captchamap);
 
                 String nexturl = null;
-                if (Integer.parseInt(JDUtilities.getRevision()) < 10000 || !auto) {
+                if (Integer.parseInt(JDUtilities.getRevision().replace(".", "")) < 10000 || !auto) {
                     // no autocaptcha
                     Point p = UserIO.getInstance().requestClickPositionDialog(file, "Share-links.biz", JDL.L("plugins.decrypt.shrlnksbz.desc", "Read the combination in the background and click the corresponding combination in the overview!"));
                     nexturl = getNextUrl(p.x, p.y);
