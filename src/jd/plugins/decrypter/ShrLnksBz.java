@@ -62,7 +62,7 @@ public class ShrLnksBz extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         this.setBrowserExclusive();
-        br.forceDebug(true);
+
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.setFollowRedirects(false);
         br.getPage(parameter);
@@ -179,42 +179,49 @@ public class ShrLnksBz extends PluginForDecrypt {
         }
         if (links.size() == 0) return null;
         progress.setRange(links.size());
+        int waiter = 1000;
         for (String link : links) {
-            link = "http://share-links.biz/get/lnk/" + link;
-            br.getPage(link);
-            String clink0 = br.getRegex("unescape\\(\"(.*?)\"").getMatch(0);
 
-            if (clink0 != null) {
-                clink0 = Encoding.htmlDecode(clink0);
-                // Cookie: PHPSESSID=lupku56cshpe08gbalemd2u8v3;
-                // lastVisit=1275564000; SLlng=de
+            while (true) {
+                link = "http://share-links.biz/get/lnk/" + link;
+                br.getPage(link);
+                String clink0 = br.getRegex("unescape\\(\"(.*?)\"").getMatch(0);
 
-                br.getRequest().setHtmlCode(clink0);
-                String frm = br.getRegex("\"(http://share-links\\.biz/get/frm/.*?)\"").getMatch(0);
-                br.getPage(frm);
+                if (clink0 != null) {
+                    clink0 = Encoding.htmlDecode(clink0);
+                    // Cookie: PHPSESSID=lupku56cshpe08gbalemd2u8v3;
+                    // lastVisit=1275564000; SLlng=de
 
-                final Context cx = ContextFactory.getGlobal().enter();
-                final Scriptable scope = cx.initStandardObjects();
-                final String fun = br.getRegex("eval\\((.*)\\)").getMatch(0);
-                Object result = cx.evaluateString(scope, "function f(){return " + fun + ";} f();", "<cmd>", 1, null);
-                String[] row = new Regex(result + "", "(.*)if\\(parent==window\\).*Main.location.href=(.*?\\))").getRow(0);
-                Object result2 = cx.evaluateString(scope, row[0] + " " + row[1], "<cmd>", 1, null);
+                    br.getRequest().setHtmlCode(clink0);
+                    String frm = br.getRegex("\"(http://share-links\\.biz/get/frm/.*?)\"").getMatch(0);
+                    br.getPage(frm);
 
-                Context.exit();
-                if ((result2 + "").trim().length() != 0) {
+                    final Context cx = ContextFactory.getGlobal().enter();
+                    final Scriptable scope = cx.initStandardObjects();
+                    final String fun = br.getRegex("eval\\((.*)\\)").getMatch(0);
+                    Object result = cx.evaluateString(scope, "function f(){return " + fun + ";} f();", "<cmd>", 1, null);
+                    String[] row = new Regex(result + "", "(.*)if\\(parent==window\\).*Main.location.href=(.*?\\))").getRow(0);
+                    Object result2 = cx.evaluateString(scope, row[0] + " " + row[1], "<cmd>", 1, null);
 
-                    br.setFollowRedirects(false);
-                    br.openGetConnection(result2 + "");
+                    Context.exit();
+                    if ((result2 + "").trim().length() != 0) {
 
-                    DownloadLink dl = createDownloadlink(br.getRedirectLocation());
-                    decryptedLinks.add(dl);
-                    this.sleep(500, param);
-                } else {
+                        br.setFollowRedirects(false);
+                        br.openGetConnection(result2 + "");
 
-                    //
-                    // throw new
-                    // PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    System.out.println("NOTHING");
+                        DownloadLink dl = createDownloadlink(br.getRedirectLocation());
+                        decryptedLinks.add(dl);
+                        this.sleep(waiter, param);
+                        break;
+                    } else {
+
+                        //
+                        // throw new
+                        // PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        System.out.println("NOTHING");
+                        waiter += 500;
+                        if (waiter > 5000) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+                    }
                 }
             }
             progress.increase(1);
@@ -230,8 +237,7 @@ public class ShrLnksBz extends PluginForDecrypt {
         String[] images = br.getRegex("<img.*?src=\"(.*?)\"").getColumn(0);
         ArrayList<String> loaded = new ArrayList<String>();
         Browser clone = br.cloneBrowser();
-        clone.forceDebug(false);
-        clone.setDebug(false);
+
         clone.getHeaders().put("Accept", "Accept: image/png,image/*;q=0.8,*/*;q=0.5");
         for (String image : images) {
             if (loaded.contains(image.trim())) continue;
