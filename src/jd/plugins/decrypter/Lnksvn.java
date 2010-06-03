@@ -18,16 +18,22 @@ package jd.plugins.decrypter;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 
+import jd.OptionalPluginWrapper;
 import jd.PluginWrapper;
 import jd.captcha.specials.Linksave;
 import jd.controlling.ProgressController;
+import jd.gui.swing.components.Balloon;
 import jd.http.Browser;
 import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.nutils.nativeintegration.LocalBrowser;
 import jd.parser.JavaScript;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
@@ -41,16 +47,42 @@ import org.xml.sax.SAXException;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "Linksave.in" }, urls = { "http://[\\w\\.]*?linksave\\.in/(view.php\\?id=)?[\\w]+" }, flags = { 0 })
 public class Lnksvn extends PluginForDecrypt {
+    private static long LATEST_OPENED_CNL_TIME = 0;
+    private static HashMap<String, Boolean> CNL_URL_MAP = new HashMap<String, Boolean>();
 
     public Lnksvn(PluginWrapper wrapper) {
         super(wrapper);
         br.setRequestIntervalLimit(this.getHost(), 1000);
     }
 
+    private static boolean isExternInterfaceActive() {
+        final OptionalPluginWrapper plg = JDUtilities.getOptionalPlugin("externinterface");
+        return (plg != null && plg.isLoaded() && plg.isEnabled());
+    }
+
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         this.setBrowserExclusive();
+        String parameter = param.toString();
+        // http://linksave.in/21341715574afdcd07e69d5
+        String folderID = new Regex(parameter, "linksave\\.in/(view.php\\?id=)?([\\w]+)").getMatch(1);
+        if (folderID != null && isExternInterfaceActive()) {
+            Browser cnlcheck = br.cloneBrowser();
+            cnlcheck.getPage("http://linksave.in/cnl.php?id=" + folderID);
+            // CNL Dummy
+            if (cnlcheck.toString().trim().equals("1") && (System.currentTimeMillis() - LATEST_OPENED_CNL_TIME) > 60 * 1000 && !CNL_URL_MAP.containsKey(parameter)) {
+
+                LATEST_OPENED_CNL_TIME = System.currentTimeMillis();
+
+                LocalBrowser.openDefaultURL(new URL(parameter + "?jd=1"));
+                CNL_URL_MAP.put(parameter, Boolean.TRUE);
+                Balloon.show(JDL.L("jd.controlling.CNL2.checkText.title", "Click'n'Load"), null, JDL.L("jd.controlling.CNL2.checkText.message", "Click'n'Load URL opened"));
+                return decryptedLinks;
+
+            }
+        }
+
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.setCookie("http://linksave.in/", "Linksave_Language", "german");
         br.setRequestIntervalLimit("linksave.in", 1000);
