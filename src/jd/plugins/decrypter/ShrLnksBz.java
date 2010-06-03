@@ -111,7 +111,7 @@ public class ShrLnksBz extends PluginForDecrypt {
         }
         loadContents(br);
         if (br.containsHTML("(/captcha/|captcha_container|\"Captcha\"|id=\"captcha\")")) {
-            boolean auto = false;
+            boolean auto = true;
             int max = 5;
             for (int i = 0; i <= max; i++) {
                 String Captchamap = br.getRegex("\"(/captcha\\.gif\\?d=\\d+.*?PHPSESSID=.*?)\"").getMatch(0);
@@ -123,7 +123,7 @@ public class ShrLnksBz extends PluginForDecrypt {
                 temp.getDownload(file, "http://share-links.biz" + Captchamap);
 
                 String nexturl = null;
-                if (JDUtilities.getRevisionNumber() < 10000 || !auto) {
+                if (Integer.parseInt(JDUtilities.getRevision()) < 10000 || !auto) {
                     // no autocaptcha
                     Point p = UserIO.getInstance().requestClickPositionDialog(file, "Share-links.biz", JDL.L("plugins.decrypt.shrlnksbz.desc", "Read the combination in the background and click the corresponding combination in the overview!"));
                     nexturl = getNextUrl(p.x, p.y);
