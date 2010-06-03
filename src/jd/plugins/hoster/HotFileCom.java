@@ -13,6 +13,11 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//
+//
+//    Este plugin ha sido modificado por el_joker333 <el_joker333@hotmail.com>
+//
+
 
 package jd.plugins.hoster;
 
@@ -37,7 +42,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
-import jd.utils.JDUtilities;
+import jd.plugins.pluginUtils.Recaptcha;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hotfile.com" }, urls = { "http://[\\w\\.]*?hotfile\\.com/dl/\\d+/[0-9a-zA-Z]+/(.*?/|.+)" }, flags = { 2 })
@@ -47,7 +52,7 @@ public class HotFileCom extends PluginForHost {
 
     public HotFileCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://hotfile.com/register.html?reff=274657");
+        this.enablePremium("http://hotfile.com/register.html?reff=1510459");
         setConfigElements();
     }
 
@@ -64,18 +69,30 @@ public class HotFileCom extends PluginForHost {
     }
 
     public void login(Account account) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setDebug(true);
-        br.setCookie("http://hotfile.com", "lang", "en");
-        br.setFollowRedirects(true);
-        br.getPage("http://hotfile.com/");
-        br.postPage("http://hotfile.com/login.php", "returnto=%2F&user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
-        Form form = br.getForm(0);
-        if (form != null && form.containsHTML("<td>Username:")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        if (br.getCookie("http://hotfile.com/", "auth") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        br.getPage("http://hotfile.com/premiuminfo.html");
-        if (!br.containsHTML(">Premium Membership<")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        br.setFollowRedirects(false);
+        if (account.getUser().trim().equalsIgnoreCase("cookie")) {
+            this.setBrowserExclusive();
+            br.setCookie("http://hotfile.com", "lang", "en");
+            br.setCookie("http://hotfile.com", "auth", account.getPass());
+            br.getPage("http://hotfile.com/");
+            if (br.getCookie("http://hotfile.com/", "auth") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+				    br.getPage("http://hotfile.com/premiuminfo.html?lang=en");
+				    if (!br.containsHTML(">Premium Membership<")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+				    br.setFollowRedirects(false);
+        }
+        else{
+				    this.setBrowserExclusive();
+				    br.setDebug(true);
+				    br.setCookie("http://hotfile.com", "lang", "en");
+				    br.setFollowRedirects(true);
+				    br.getPage("http://hotfile.com/");
+				    br.postPage("http://hotfile.com/login.php", "returnto=%2F&user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
+				    Form form = br.getForm(0);
+				    if (form != null && form.containsHTML("<td>Username:")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+				    if (br.getCookie("http://hotfile.com/", "auth") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+				    br.getPage("http://hotfile.com/premiuminfo.html?lang=en");
+				    if (!br.containsHTML(">Premium Membership<")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+				    br.setFollowRedirects(false);
+        }
     }
 
     @Override
@@ -200,8 +217,7 @@ public class HotFileCom extends PluginForHost {
         }
         // captcha
         if (!br.containsHTML("Click here to download")) {
-            PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-            jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+            Recaptcha rc = new Recaptcha(br);
             rc.parse();
             rc.load();
             File cf = rc.downloadCaptcha(getLocalCaptchaFile());
