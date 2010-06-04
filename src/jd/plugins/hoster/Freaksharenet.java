@@ -22,7 +22,6 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -146,10 +145,11 @@ public class Freaksharenet extends PluginForHost {
         if (br.containsHTML("your Traffic is used up for today")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1001);
         if (br.containsHTML("You can Download only 1 File in")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1001);
         if (br.containsHTML("No Downloadserver. Please try again")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No Downloadserver. Please try again later", 15 * 60 * 1000l);
+        br.setFollowRedirects(false);
         Form form = br.getForm(1);
         if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // waittime
-        String ttt = br.getRegex("var time = (\\d+).[0-9];").getMatch(0);
+        String ttt = br.getRegex("var time = (\\d+)\\.[0-9];").getMatch(0);
         int tt = 0;
         if (ttt != null) tt = Integer.parseInt(ttt);
         if (tt > 180) {
@@ -179,9 +179,12 @@ public class Freaksharenet extends PluginForHost {
         } else {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, false, 1);
         }
-        URLConnectionAdapter con = dl.getConnection();
-        if (!con.isContentDisposition()) {
+        if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            if (br.containsHTML("File can not be found")) {
+                logger.info("File for the following is offline (server error): " + downloadLink.getDownloadURL());
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             if (br.containsHTML("bad try")) {
                 logger.warning("Hoster said \"bad try\" which means that jd didn't wait enough time before trying to start the download!");
                 throw new PluginException(LinkStatus.ERROR_RETRY);

@@ -29,7 +29,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wrzuc.to" }, urls = { "http://[\\w\\.]*?wrzuc\\.to/.+(\\.wt|\\.html)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wrzuc.to" }, urls = { "http://[\\w\\.]*?wrzuc\\.to/([a-zA-Z0-9]+(\\.wt|\\.html)|(en/)?linki/[a-zA-Z0-9]+)" }, flags = { 0 })
 public class WrzucTo extends PluginForHost {
 
     public WrzucTo(PluginWrapper wrapper) {
@@ -42,6 +42,11 @@ public class WrzucTo extends PluginForHost {
         return "http://www.wrzuc.to/strona/regulamin";
     }
 
+    public void correctDownloadLink(DownloadLink link) {
+        String linkid = new Regex(link.getDownloadURL(), "/linki/([a-zA-Z0-9]+)").getMatch(0);
+        if (linkid != null) link.setUrlDownload("http://www.wrzuc.to/en/" + linkid + ".wt");
+    }
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
@@ -50,12 +55,12 @@ public class WrzucTo extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         String filesize = br.getRegex(Pattern.compile("class=\"info\">.*?<tr>.*?<td>(.*?)</td>", Pattern.DOTALL)).getMatch(0);
-        filesize = filesize.replace("MiB", "mb");
         String name = br.getRegex(Pattern.compile("id=\"file_info\">.*?<strong>(.*?)</strong>", Pattern.DOTALL)).getMatch(0);
         if (name == null) {
             name = br.getRegex(Pattern.compile("<title>(.*?)</title>", Pattern.DOTALL)).getMatch(0);
         }
         if (name == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        filesize = filesize.replace("MiB", "mb");
         String md5 = br.getRegex("md5: \"(.*?)\"").getMatch(0);
         if (md5 != null) downloadLink.setMD5Hash(md5.trim());
         downloadLink.setName(name.trim());
@@ -66,22 +71,13 @@ public class WrzucTo extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        // String jspage =
-        // br.getRegex("\"(http://static\\.wrzuc\\.to/www2/js/WrzucToAdditionalScripts\\.js\\?v=[0-9]+\\.js)\"").getMatch(0);
-        // Browser br2 = br.cloneBrowser();
-        // br2.getPage(jspage);
-        // String aha = br.getCookie("http://www.wrzuc.to", "WrzucTo");
         String md5 = downloadLink.getMD5Hash();
         String fid = br.getRegex(("file: \"(.*?)\"")).getMatch(0);
         if (md5 == null || fid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        // br.getHeaders().put("Accept", "*/*");
         br.postPage("http://www.wrzuc.to/ajax/server/prepair", "md5=" + Encoding.htmlDecode(md5));
-        // br.getHeaders().put("Accept",
-        // "application/json, text/javascript, */*");
         br.getHeaders().put("Referer", downloadLink.getDownloadURL());
         br.postPage("http://www.wrzuc.to/ajax/server/download_link", "file=" + Encoding.htmlDecode(fid));
-        System.out.print(br.toString());
         String tempid = br.getRegex(("download_link\":\"(.*?)\"")).getMatch(0);
         String server = br.getRegex(("server.*?\":\"(.*?)\"")).getMatch(0);
         if (tempid == null || server == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -90,6 +86,7 @@ public class WrzucTo extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            if (br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
