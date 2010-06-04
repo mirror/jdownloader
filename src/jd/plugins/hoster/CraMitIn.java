@@ -322,7 +322,6 @@ public class CraMitIn extends PluginForHost {
         loginform.put("password", Encoding.urlEncode(account.getPass()));
         br.submitForm(loginform);
         br.getPage(COOKIE_HOST + "/?op=my_account");
-        System.out.print(br.toString());
         if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         if (!br.containsHTML("value=\"Extend Premium Account\"")) {
             logger.info("Entered account is valid and it's a registered account.");
