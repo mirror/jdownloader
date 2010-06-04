@@ -322,8 +322,9 @@ public class CraMitIn extends PluginForHost {
         loginform.put("password", Encoding.urlEncode(account.getPass()));
         br.submitForm(loginform);
         br.getPage(COOKIE_HOST + "/?op=my_account");
+        System.out.print(br.toString());
         if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        if (br.containsHTML("<B>Premium</B>")) {
+        if (!br.containsHTML("value=\"Extend Premium Account\"")) {
             logger.info("Entered account is valid and it's a registered account.");
             nopremium = true;
         }
@@ -360,8 +361,8 @@ public class CraMitIn extends PluginForHost {
             ai.setUnlimitedTraffic();
         }
         if (!nopremium) {
-            String expire = br.getRegex("<td>Premium-Account expire:</td>.*?<td>(.*?)</td>").getMatch(0);
-            if (expire == null) expire = br.getRegex("<TD>Premium-Account expires on:.{1,20}</TD><TD><b>(.*?)</b>").getMatch(0);
+            String expire = br.getRegex("Account expire:</td>.*?<td>(.*?)</td>").getMatch(0);
+            if (expire == null) expire = br.getRegex("Account expires on:.{1,20}</TD><TD><b>(.*?)</b>").getMatch(0);
             if (expire == null) {
                 ai.setExpired(true);
                 account.setValid(false);
