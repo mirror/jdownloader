@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 /**
  * @author typek_pb
  */
-@HostPlugin(revision = "$Revision: XXX$", interfaceVersion = 2, names = { "break.com" }, urls = { "http://[\\w\\.]*?break\\.com/index/.*html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "break.com" }, urls = { "http://[\\w\\.]*?break\\.com/index/.*html" }, flags = { 0 })
 public class BreakCom extends PluginForHost {
 
     private String dlink = null;

@@ -66,6 +66,12 @@ import jd.utils.locale.JDL;
 
 public class JDInit {
 
+    /**
+     * TODO: Change this String to test the changes from plugins with public
+     * static methods instead of annotation, e.g. CMS or Wordpress
+     */
+    private static final String PLUGIN_DUMP = "";
+
     private static final boolean TEST_INSTALLER = false;
 
     private static final Logger LOG = JDLogger.getLogger();
@@ -246,11 +252,8 @@ public class JDInit {
         }
     }
 
-    /**
-     * @param resourceFile
-     */
     private void movePluginUpdates(final File dir) {
-        if (!JDUtilities.getResourceFile("update").exists() || !dir.isDirectory()) { return; }
+        if (!JDUtilities.getResourceFile("update").exists() || !dir.isDirectory()) return;
 
         for (final File f : dir.listFiles()) {
             if (f.isDirectory()) {
@@ -262,7 +265,7 @@ public class JDInit {
                 String n = JDUtilities.getResourceFile("update").getAbsolutePath();
                 n = f.getAbsolutePath().replace(n, "").substring(1);
                 final File newFile = new File(root, n).getAbsoluteFile();
-                LOG.info("./update -> real  " + n + " ->" + newFile.getAbsolutePath());
+                LOG.info("./update -> real  " + n + " -> " + newFile.getAbsolutePath());
                 LOG.info("Exists: " + newFile.exists());
 
                 if (!newFile.getParentFile().exists()) {
@@ -324,32 +327,12 @@ public class JDInit {
             JDUtilities.getDatabaseConnector().saveConfiguration(Configuration.NAME, JDUtilities.getConfiguration());
             installerVisible = true;
             JDUtilities.getController().fireControlEvent(new ControlEvent(this, SplashScreen.SPLASH_FINISH));
-            /**
-             * Workaround to enable JGoodies for MAC oS
-             */
 
             LookAndFeelController.setUIManager();
             final Installer inst = new Installer();
 
             if (!inst.isAborted()) {
                 final File home = JDUtilities.getResourceFile(".");
-                // if (home.canWrite() &&
-                // !JDUtilities.getResourceFile("noupdate.txt").exists()) {
-                // try {
-                // new WebUpdate().doWebupdate(true);
-                // JDUtilities.getConfiguration().save();
-                // JDUtilities.getDatabaseConnector().shutdownDatabase();
-                // logger.info(JDUtilities.runCommand("java", new String[] {
-                // "-jar", "jdupdate.jar", "/restart", "/rt" +
-                // JDUtilities.RUNTYPE_LOCAL_JARED },
-                // home.getAbsolutePath(), 0));
-                // System.exit(0);
-                // } catch (Exception e) {
-                // jd.controlling.JDLogger.getLogger().log(java.util.logging.
-                // Level.SEVERE,"Exception occurred",e);
-                // // System.exit(0);
-                // }
-                // }
                 if (!home.canWrite()) {
                     LOG.severe("INSTALL abgebrochen");
                     UserIO.getInstance().requestMessageDialog(JDL.L("installer.error.noWriteRights", "Error. You do not have permissions to write to the dir"));
@@ -400,6 +383,8 @@ public class JDInit {
     }
 
     public static void loadPluginForDecrypt() {
+        final SubConfiguration cfg = SubConfiguration.getConfig("jd.JDInit.loadPluginForDecrypt");
+
         try {
             for (final Class<?> c : ClassFinder.getClasses("jd.plugins.decrypter", getPluginClassLoader())) {
                 try {
@@ -417,29 +402,24 @@ public class JDInit {
                     int[] flags = help.flags();
                     final String revision = help.revision();
                     LOG.finest("Try to load " + c + " Revision: " + Formatter.getRevision(revision));
-                    /*
-                     * TODO: Change this String to test the changes from plugins
-                     * with public static methods instead of annotation, e.g.
-                     * cms
-                     */
-                    String dump = "";
+
                     // See if there are cached annotations
                     if (names.length == 0) {
-                        final SubConfiguration cfg = SubConfiguration.getConfig("jd.JDInit.loadPluginForDecrypt");
-                        names = cfg.getGenericProperty(c.getName() + "_names_" + dump + revision, names);
-                        patterns = cfg.getGenericProperty(c.getName() + "_pattern_" + dump + revision, patterns);
-                        flags = cfg.getGenericProperty(c.getName() + "_flags_" + dump + revision, flags);
-                    }
-                    // if not, try to load them from static functions
-                    if (names.length == 0) {
-                        names = (String[]) c.getMethod("getAnnotationNames").invoke(null);
-                        patterns = (String[]) c.getMethod("getAnnotationUrls").invoke(null);
-                        flags = (int[]) c.getMethod("getAnnotationFlags").invoke(null);
-                        final SubConfiguration cfg = SubConfiguration.getConfig("jd.JDInit.loadPluginForDecrypt");
-                        cfg.setProperty(c.getName() + "_names_" + revision, names);
-                        cfg.setProperty(c.getName() + "_pattern_" + revision, patterns);
-                        cfg.setProperty(c.getName() + "_flags_" + revision, flags);
-                        cfg.save();
+                        names = cfg.getGenericProperty(c.getName() + "_names_" + PLUGIN_DUMP + revision, names);
+                        patterns = cfg.getGenericProperty(c.getName() + "_pattern_" + PLUGIN_DUMP + revision, patterns);
+                        flags = cfg.getGenericProperty(c.getName() + "_flags_" + PLUGIN_DUMP + revision, flags);
+
+                        // if not, try to load them from static functions
+                        if (names.length == 0) {
+                            names = (String[]) c.getMethod("getAnnotationNames").invoke(null);
+                            patterns = (String[]) c.getMethod("getAnnotationUrls").invoke(null);
+                            flags = (int[]) c.getMethod("getAnnotationFlags").invoke(null);
+
+                            cfg.setProperty(c.getName() + "_names_" + revision, names);
+                            cfg.setProperty(c.getName() + "_pattern_" + revision, patterns);
+                            cfg.setProperty(c.getName() + "_flags_" + revision, flags);
+                            cfg.save();
+                        }
                     }
 
                     for (int i = 0; i < names.length; i++) {
@@ -487,6 +467,8 @@ public class JDInit {
     }
 
     public static void loadPluginForHost() {
+        final SubConfiguration cfg = SubConfiguration.getConfig("jd.JDInit.loadPluginForHost");
+
         try {
             for (final Class<?> c : ClassFinder.getClasses("jd.plugins.hoster", getPluginClassLoader())) {
                 try {
@@ -504,29 +486,24 @@ public class JDInit {
                     int[] flags = help.flags();
                     final String revision = help.revision();
                     LOG.finest("Try to load " + c + " Revision: " + Formatter.getRevision(revision));
-                    /*
-                     * TODO: Change this String to test the changes from plugins
-                     * with public static methods instead of annotation, e.g.
-                     * cms
-                     */
-                    String dump = "";
+
                     // See if there are cached annotations
                     if (names.length == 0) {
-                        final SubConfiguration cfg = SubConfiguration.getConfig("jd.JDInit.loadPluginForHost");
-                        names = cfg.getGenericProperty(c.getName() + "_names_" + dump + revision, names);
-                        patterns = cfg.getGenericProperty(c.getName() + "_pattern_" + dump + revision, patterns);
-                        flags = cfg.getGenericProperty(c.getName() + "_flags_" + dump + revision, flags);
-                    }
-                    // if not, try to load them from static functions
-                    if (names.length == 0) {
-                        names = (String[]) c.getMethod("getAnnotationNames").invoke(null);
-                        patterns = (String[]) c.getMethod("getAnnotationUrls").invoke(null);
-                        flags = (int[]) c.getMethod("getAnnotationFlags").invoke(null);
-                        final SubConfiguration cfg = SubConfiguration.getConfig("jd.JDInit.loadPluginForHost");
-                        cfg.setProperty(c.getName() + "_names_" + revision, names);
-                        cfg.setProperty(c.getName() + "_pattern_" + revision, patterns);
-                        cfg.setProperty(c.getName() + "_flags_" + revision, flags);
-                        cfg.save();
+                        names = cfg.getGenericProperty(c.getName() + "_names_" + PLUGIN_DUMP + revision, names);
+                        patterns = cfg.getGenericProperty(c.getName() + "_pattern_" + PLUGIN_DUMP + revision, patterns);
+                        flags = cfg.getGenericProperty(c.getName() + "_flags_" + PLUGIN_DUMP + revision, flags);
+
+                        // if not, try to load them from static functions
+                        if (names.length == 0) {
+                            names = (String[]) c.getMethod("getAnnotationNames").invoke(null);
+                            patterns = (String[]) c.getMethod("getAnnotationUrls").invoke(null);
+                            flags = (int[]) c.getMethod("getAnnotationFlags").invoke(null);
+
+                            cfg.setProperty(c.getName() + "_names_" + revision, names);
+                            cfg.setProperty(c.getName() + "_pattern_" + revision, patterns);
+                            cfg.setProperty(c.getName() + "_flags_" + revision, flags);
+                            cfg.save();
+                        }
                     }
 
                     for (int i = 0; i < names.length; i++) {

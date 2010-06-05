@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 /**
  * @author typek_pb
  */
-@HostPlugin(revision = "$Revision: XXX$", interfaceVersion = 2, names = { "tangle.com" }, urls = { "http://[\\w\\.]*?tangle\\.com/view_video\\?viewkey=[a-zA-Z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tangle.com" }, urls = { "http://[\\w\\.]*?tangle\\.com/view_video\\?viewkey=[a-zA-Z0-9]+" }, flags = { 0 })
 public class TangleCom extends PluginForHost {
 
     public TangleCom(PluginWrapper wrapper) {

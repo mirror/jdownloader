@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 /**
  * @author typek_pb
  */
-@HostPlugin(revision = "$Revision: XXX$", interfaceVersion = 2, names = { "bluefishtv.com" }, urls = { "http://[\\w\\.]*?bluefishtv\\.com/Store/[_a-zA-Z]+/\\d+/.*" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bluefishtv.com" }, urls = { "http://[\\w\\.]*?bluefishtv\\.com/Store/[_a-zA-Z]+/\\d+/.*" }, flags = { 0 })
 public class BlueFishTvCom extends PluginForHost {
 
     public BlueFishTvCom(PluginWrapper wrapper) {

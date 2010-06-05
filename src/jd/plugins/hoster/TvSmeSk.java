@@ -34,7 +34,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 /**
  * @author typek_pb
  */
-@HostPlugin(revision = "$Revision: XXX$", interfaceVersion = 2, names = { "tv.sme.sk" }, urls = { "http://[\\w\\.]*?tv\\.sme\\.sk/v/[0-9]+/[-a-zA-Z0-9]+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tv.sme.sk" }, urls = { "http://[\\w\\.]*?tv\\.sme\\.sk/v/[0-9]+/[-a-zA-Z0-9]+\\.html" }, flags = { 0 })
 public class TvSmeSk extends PluginForHost {
 
     public TvSmeSk(PluginWrapper wrapper) {
