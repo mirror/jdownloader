@@ -77,11 +77,7 @@ public class PrzeklejPl extends PluginForHost {
             linkurl = "http://www.przeklej.pl" + linkurl;
             br.setFollowRedirects(true);
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, resumable, maxchunks);
-            if (dl.getConnection().getContentType().contains("html")) {
-                br.followConnection();
-                if (br.containsHTML("Podana strona nie istnieje")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
+            handleErrors();
             dl.startDownload();
         } else {
             if (downloadLink.getStringProperty("pass", null) == null) {
@@ -105,8 +101,17 @@ public class PrzeklejPl extends PluginForHost {
                 con.disconnect();
                 downloadLink.setProperty("pass", passCode);
                 dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, resumable, maxchunks);
+                handleErrors();
                 dl.startDownload();
             }
+        }
+    }
+
+    private void handleErrors() throws Exception {
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            if (br.containsHTML("Podana strona nie istnieje")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
     }
 

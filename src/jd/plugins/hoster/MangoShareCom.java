@@ -54,7 +54,8 @@ public class MangoShareCom extends PluginForHost {
     private static final String PASSWORDTEXT0 = "<br><b>Password:</b> <input";
     private static final String PASSWORDTEXT1 = "<br><b>Passwort:</b> <input";
     private static final String COOKIE_HOST = "http://mangoshare.com";
-    public boolean nopremium = false;
+    private static final String MAINTENANCEMODETEXT = "class=\"err\">This server is in maintenance mode";
+    private static final String MAINTENANCEUSERTEXT = "Hoster is in maintenance mode";
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
@@ -66,6 +67,11 @@ public class MangoShareCom extends PluginForHost {
         if (brbefore.contains("No such file") || brbefore.contains("No such user exist") || brbefore.contains("File not found")) {
             logger.warning("file is 99,99% offline, throwing \"file not found\" now...");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (brbefore.contains(MAINTENANCEMODETEXT)) {
+            logger.info("The mangoshare server(s) are currently in maintenance mode. Link = " + link.getDownloadURL());
+            link.getLinkStatus().setStatusText(MAINTENANCEUSERTEXT);
+            return AvailableStatus.UNCHECKABLE;
         }
         String filename = br.getRegex("You have requested.*?http://.*?[a-z0-9]{12}/(.*?)</font>").getMatch(0);
         if (filename == null) {
@@ -109,6 +115,7 @@ public class MangoShareCom extends PluginForHost {
     }
 
     public void doFree(DownloadLink downloadLink) throws Exception, PluginException {
+        if (brbefore.contains(MAINTENANCEMODETEXT)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, MAINTENANCEUSERTEXT);
         String passCode = null;
         boolean resumable = false;
         int maxchunks = 1;

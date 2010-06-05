@@ -16,17 +16,25 @@
 
 package jd.plugins.decrypter;
 
-import jd.PluginWrapper;
-import jd.controlling.ProgressController;
-import jd.parser.Regex;
-import jd.plugins.*;
-
+import java.awt.Color;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import jd.PluginWrapper;
+import jd.controlling.ProgressController;
+import jd.controlling.ProgressControllerEvent;
+import jd.controlling.ProgressControllerListener;
+import jd.parser.Regex;
+import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterPlugin;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.PluginForDecrypt;
+import jd.utils.locale.JDL;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "audiobeats.net" }, urls = { "http://[\\w\\.]*?audiobeats\\.net/(liveset|link|event|artist)\\?id=\\d+" }, flags = { 0 })
-public class DBtsNt extends PluginForDecrypt {
-    
+public class DBtsNt extends PluginForDecrypt implements ProgressControllerListener {
+
     private String fpName;
     private ArrayList<DownloadLink> decryptedLinks;
 
@@ -34,11 +42,14 @@ public class DBtsNt extends PluginForDecrypt {
         super(wrapper);
     }
 
+    private boolean abort = false;
+
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         decryptedLinks = new ArrayList<DownloadLink>();
-
-        //TODO: beim hinzufŸgen von Events oder Artisten etc. sollte der Linkgrabber gleiche links auch als gleiche Links erkennen
+        progress.getBroadcaster().addListener(this);
+        // TODO: beim hinzufï¿½gen von Events oder Artisten etc. sollte der
+        // Linkgrabber gleiche links auch als gleiche Links erkennen
 
         Regex urlInfo = new Regex(parameter, "http://[\\w\\.]*?audiobeats\\.net/(liveset|link|event|artist)\\?id=(\\d+)");
         String type = urlInfo.getMatch(0);
@@ -46,16 +57,16 @@ public class DBtsNt extends PluginForDecrypt {
 
         if (type.equals("link")) {
 
-            progress.increase(1);            
+            progress.increase(1);
             String link = "/link?id=" + id;
             if (!decryptSingleLink(parameter.toString(), progress, decryptedLinks, link)) return null;
-        } else if(type.equals("liveset")) {
+        } else if (type.equals("liveset")) {
 
             if (fpName == null) fpName = br.getRegex("<title>AudioBeats\\.net - (.*?)</title>").getMatch(0);
-            
+
             if (!decryptLiveset(parameter.toString(), progress, decryptedLinks)) return null;
-        } else if(type.equals("event") || type.equals("artist")) {
-            
+        } else if (type.equals("event") || type.equals("artist")) {
+
             br.getPage(parameter.toString());
             String[] allLivesets = br.getRegex("\"(/liveset\\?id=\\d+)\"").getColumn(0);
 
@@ -74,13 +85,14 @@ public class DBtsNt extends PluginForDecrypt {
 
     private boolean decryptLiveset(String parameter, ProgressController progress, ArrayList<DownloadLink> decryptedLinks) throws IOException {
         int i = 0;
-        do{
+        do {
             br.getPage(parameter);
 
-            if(br.containsHTML("Error 403")) {
+            if (br.containsHTML("Error 403")) {
                 try {
                     Thread.sleep(1000);
-                } catch (InterruptedException e) {}
+                } catch (InterruptedException e) {
+                }
             } else {
 
                 String[] allLinks = br.getRegex("\"(/link\\?id=\\d+)\"").getColumn(0);
@@ -88,10 +100,18 @@ public class DBtsNt extends PluginForDecrypt {
                 if (allLinks == null || allLinks.length == 0) return false;
                 progress.setRange(progress.getMax() + allLinks.length);
                 for (String aLink : allLinks) {
+                    if (abort) {
+                        progress.setColor(Color.RED);
+                        progress.setStatusText(progress.getStatusText() + ": " + JDL.L("gui.linkgrabber.aborted", "Aborted"));
+                        logger.info("Decrypter is NOT defect, aborted by user!");
+                        progress.doFinalize(5000l);
+                        return false;
+                    }
                     if (!decryptSingleLink(parameter, progress, decryptedLinks, aLink)) return false;
                     try {
                         Thread.sleep(1000);
-                    } catch (InterruptedException e) {}
+                    } catch (InterruptedException e) {
+                    }
                 }
 
                 String fpName = br.getRegex("<title>AudioBeats\\.net - (.*?)</title>").getMatch(0);
@@ -101,7 +121,7 @@ public class DBtsNt extends PluginForDecrypt {
                 break;
             }
 
-        } while(i<5);
+        } while (i < 5);
 
         return true;
     }
@@ -118,6 +138,13 @@ public class DBtsNt extends PluginForDecrypt {
     private boolean decryptSingleLink(String parameter, ProgressController progress, ArrayList<DownloadLink> decryptedLinks, String aLink) throws IOException {
         br.setFollowRedirects(false);
         br.getPage(aLink);
+        if (abort) {
+            progress.setColor(Color.RED);
+            progress.setStatusText(progress.getStatusText() + ": " + JDL.L("gui.linkgrabber.aborted", "Aborted"));
+            logger.info("Decrypter is NOT defect, aborted by user!");
+            progress.doFinalize(5000l);
+            return false;
+        }
         if (br.getRedirectLocation() == null) {
             logger.warning("Decrypter must be defect, link = " + parameter);
             return false;
@@ -126,6 +153,13 @@ public class DBtsNt extends PluginForDecrypt {
         progress.increase(1);
 
         return true;
+    }
+
+    public void onProgressControllerEvent(ProgressControllerEvent event) {
+        if (event.getID() == ProgressControllerEvent.CANCEL) {
+            abort = true;
+        }
+
     }
 
 }
