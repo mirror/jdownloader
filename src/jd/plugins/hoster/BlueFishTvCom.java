@@ -73,7 +73,7 @@ public class BlueFishTvCom extends PluginForHost {
         if (dlink == null || dlink.trim().isEmpty()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
         filename = filename.trim();
-        link.setFinalFileName("" + filename + ".flv");
+        link.setFinalFileName(filename + ".flv");
         br.setFollowRedirects(true);
         URLConnectionAdapter con = br.openGetConnection(dlink);
         if (!con.getContentType().contains("html"))

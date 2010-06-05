@@ -30,7 +30,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 /**
  * @author typek_pb
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "blip.tv" }, urls = { "http://[\\w\\.]*?blip\\.tv/file/\\d+.*" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "blip.tv" }, urls = { "http://[\\w\\.]*?blip\\.tv/file/\\d+" }, flags = { 0 })
 public class BlipTv extends PluginForHost {
 
     public BlipTv(PluginWrapper wrapper) {

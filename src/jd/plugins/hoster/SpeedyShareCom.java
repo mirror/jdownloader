@@ -75,7 +75,7 @@ public class SpeedyShareCom extends PluginForHost {
         String linkurl = "http://www." + linkpart0 + "download/" + linkpart1;
         /* Datei herunterladen */
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, true, 1);
         URLConnectionAdapter con = dl.getConnection();
         if (con.getResponseCode() != 200 && con.getResponseCode() != 206) {
             con.disconnect();

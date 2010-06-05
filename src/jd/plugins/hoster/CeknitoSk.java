@@ -30,12 +30,16 @@ import jd.plugins.DownloadLink.AvailableStatus;
  * @author typek_pb
  * 
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ceknito.sk" }, urls = { "http://[\\w\\.]*?ceknito\\.sk/video/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ceknito.sk" }, urls = { "http://[\\w\\.]*?ceknito\\.(sk|cz)/video/\\d+" }, flags = { 0 })
 public class CeknitoSk extends PluginForHost {
     private String dlink = null;
 
     public CeknitoSk(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("ceknito.cz", "ceknito.sk"));
     }
 
     @Override

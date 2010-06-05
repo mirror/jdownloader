@@ -69,7 +69,7 @@ public class TvSmeSk extends PluginForHost {
         String filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
         if (null == filename || filename.trim().isEmpty()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
-        String descLink = br.getRegex("s3.addVariable[(]\"file\", escape[(]\"(.*?)\"[)]").getMatch(0);
+        String descLink = br.getRegex("s3\\.addVariable[(]\"file\", escape[(]\"(.*?)\"[)]").getMatch(0);
         if (null == descLink || descLink.trim().isEmpty()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         br.getPage(descLink);
 
