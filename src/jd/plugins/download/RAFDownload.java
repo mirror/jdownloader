@@ -80,11 +80,10 @@ public class RAFDownload extends DownloadInterface {
                     downloadLink.requestGuiUpdate();
 
                     String sfvText = JDIO.readFileToString(new File(sfv.getFileOutput()));
-                    if (sfvText != null) {
-                        /* Delete comments */
-                        sfvText = sfvText.replaceAll(";(.*?)[\r\n]{1,2}", "");
-
-                        File outputFile = new File(downloadLink.getFileOutput());
+                    /* Delete comments */
+                    if (sfvText != null) sfvText = sfvText.replaceAll(";(.*?)[\r\n]{1,2}", "");
+                    File outputFile = new File(downloadLink.getFileOutput());
+                    if (sfvText != null && sfvText.contains(outputFile.getName())) {
                         String crc = Long.toHexString(JDHash.getCRC(outputFile));
 
                         hashType = "CRC32";
@@ -267,9 +266,9 @@ public class RAFDownload extends DownloadInterface {
      * @param request
      *            Verbindung die geladen werden soll
      * @param b
-     *            Resumefähige verbindung
+     *            Resumefaehige verbindung
      * @param i
-     *            max chunks. für negative werte wirden die chunks aus der
+     *            max chunks. fuer negative werte wirden die chunks aus der
      *            config verwendet. Bsp: -3 : Min(3,Configwert);
      * @return
      * @throws IOException

@@ -16,11 +16,18 @@
 
 package jd.gui.swing.jdgui.views.settings.panels.addons;
 
+import java.awt.Font;
 import java.util.ArrayList;
 import java.util.Collections;
 
+import javax.swing.ImageIcon;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JTextPane;
 import javax.swing.ListSelectionModel;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 
 import jd.OptionalPluginWrapper;
 import jd.config.ConfigContainer;
@@ -33,11 +40,12 @@ import jd.gui.swing.jdgui.views.settings.panels.addons.columns.ActivateColumn;
 import jd.gui.swing.jdgui.views.settings.panels.addons.columns.NeedsColumn;
 import jd.gui.swing.jdgui.views.settings.panels.addons.columns.PluginColumn;
 import jd.gui.swing.jdgui.views.settings.panels.addons.columns.VersionColumn;
+import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
+import net.miginfocom.swing.MigLayout;
 
 /**
  * @author JD-Team
- * 
  */
 public class ConfigPanelAddons extends ConfigPanel {
     private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.ConfigPanelAddons.";
@@ -63,7 +71,7 @@ public class ConfigPanelAddons extends ConfigPanel {
 
         @Override
         protected void initColumns() {
-            this.addColumn(new ActivateColumn(JDL.L("gui.column_status", "Activate"), this));
+            this.addColumn(new ActivateColumn(JDL.L("gui.column_status", "Activate"), this, ConfigPanelAddons.this));
             this.addColumn(new PluginColumn(JDL.L("gui.column_plugin", "Plugin"), this));
             this.addColumn(new VersionColumn(JDL.L("gui.column_version", "Version"), this));
             this.addColumn(new NeedsColumn(JDL.L("gui.column_needs", "Needs"), this));
@@ -77,12 +85,19 @@ public class ConfigPanelAddons extends ConfigPanel {
 
     private static final long serialVersionUID = 4145243293360008779L;
 
-    private ArrayList<OptionalPluginWrapper> pluginsOptional;
+    private final ImageIcon defaultIcon;
+    private final ArrayList<OptionalPluginWrapper> pluginsOptional;
 
     private JDTable table;
 
+    private JLabel lblName;
+    private JLabel lblVersion;
+    private JTextPane txtDescription;
+
     public ConfigPanelAddons() {
         super();
+
+        defaultIcon = JDTheme.II(ConfigPanel.getIconKey(), 24, 24);
         pluginsOptional = new ArrayList<OptionalPluginWrapper>(OptionalPluginWrapper.getOptionalWrapper());
         Collections.sort(pluginsOptional);
 
@@ -93,14 +108,55 @@ public class ConfigPanelAddons extends ConfigPanel {
     protected ConfigContainer setupContainer() {
         table = new JDTable(new InternalTableModel());
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        table.getColumnModel().getColumn(0).setMaxWidth(80);
+        table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+            public void valueChanged(ListSelectionEvent e) {
+                updateShowcase();
+            }
+        });
+
+        lblName = new JLabel(defaultIcon);
+        lblName.setFont(lblName.getFont().deriveFont(lblName.getFont().getStyle() ^ Font.BOLD));
+        lblName.setHorizontalAlignment(JLabel.LEADING);
+
+        lblVersion = new JLabel();
+        lblVersion.setVerticalAlignment(JLabel.BOTTOM);
+
+        txtDescription = new JTextPane();
+        txtDescription.setEditable(false);
+        txtDescription.setBackground(null);
+        txtDescription.setOpaque(false);
+        txtDescription.putClientProperty("Synthetica.opaque", Boolean.FALSE);
+
+        table.getSelectionModel().setSelectionInterval(0, 0);
+
+        JPanel showcase = new JPanel(new MigLayout("ins 0, wrap 1", "[grow,fill]"));
+        showcase.add(lblName, "split 2, growx");
+        showcase.add(lblVersion, "growy");
+        showcase.add(new JScrollPane(txtDescription), "h 60!, growx");
 
         ConfigContainer container = new ConfigContainer();
 
         container.setGroup(new ConfigGroup(getTitle(), getIconKey()));
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMPONENT, new JScrollPane(table), "growy, pushy"));
+        container.setGroup(new ConfigGroup(JDL.L(JDL_PREFIX + "showcase", "Showcase"), getIconKey()));
+        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMPONENT, showcase, "growy"));
 
         return container;
+    }
+
+    public void updateShowcase() {
+        if (table.getSelectedRow() < 0) return;
+        OptionalPluginWrapper opw = pluginsOptional.get(table.getSelectedRow());
+        ImageIcon icon;
+        if (opw.isLoaded() && (icon = JDTheme.II(opw.getPlugin().getIconKey(), 24, 24)) != null) {
+            lblName.setIcon(icon);
+        } else {
+            lblName.setIcon(defaultIcon);
+        }
+        lblName.setText(opw.getHost());
+        lblVersion.setText(JDL.LF(JDL_PREFIX + ".version", "Version: %s", opw.getVersion()));
+        txtDescription.setText(opw.getDescription());
+        txtDescription.setCaretPosition(0);
     }
 
 }

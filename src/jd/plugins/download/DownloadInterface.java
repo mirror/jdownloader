@@ -66,8 +66,8 @@ abstract public class DownloadInterface {
         /**
          * Wird durch die Speedbegrenzung ein chunk uter diesen Wert geregelt,
          * so wird er weggelassen. Sehr niedrig geregelte chunks haben einen
-         * kleinen Buffer und eine sehr hohe Intervalzeit. Das führt zu
-         * verstärkt intervalartigem laden und ist ungewünscht
+         * kleinen Buffer und eine sehr hohe Intervalzeit. Das fuehrt zu
+         * verstaerkt intervalartigem laden und ist ungewuenscht
          */
         public static final long MIN_CHUNKSIZE = 1 * 1024 * 1024;
 
@@ -77,8 +77,6 @@ abstract public class DownloadInterface {
 
         private URLConnectionAdapter connection;
 
-        private long desiredBps;
-
         private long endByte;
 
         private int id = -1;
@@ -86,8 +84,6 @@ abstract public class DownloadInterface {
         private MeteredThrottledInputStream inputStream;
 
         private int MAX_BUFFERSIZE = 4 * 1024 * 1024;
-
-        private int maxSpeed;
 
         private long startByte;
 
@@ -169,7 +165,7 @@ abstract public class DownloadInterface {
         }
 
         /**
-         * Darf NUR von Interface.addBytes() aufgerufen werden. Zählt die Bytes
+         * Darf NUR von Interface.addBytes() aufgerufen werden. Zaehlt die Bytes
          * 
          * @param bytes
          */
@@ -394,7 +390,7 @@ abstract public class DownloadInterface {
         }
 
         /**
-         * Gibt die Geladenen ChunkBytes zurück
+         * Gibt die Geladenen ChunkBytes zurueck
          * 
          * @return
          */
@@ -407,24 +403,14 @@ abstract public class DownloadInterface {
         }
 
         /**
-         * Gibt die Aktuelle Endposition in der gesamtfile zurück. Diese Methode
-         * gibt die Endposition unahängig davon an Ob der aktuelle BUffer schon
-         * geschrieben wurde oder nicht.
+         * Gibt die Aktuelle Endposition in der gesamtfile zurueck. Diese
+         * Methode gibt die Endposition unahaengig davon an Ob der aktuelle
+         * BUffer schon geschrieben wurde oder nicht.
          * 
          * @return
          */
         long getCurrentBytesPosition() {
             return startByte + chunkBytesLoaded;
-        }
-
-        /**
-         * Gibt eine Abschätzung zurück wie schnell der Chunk laden könnte wenn
-         * man ihn nicht bremsen würde.
-         * 
-         * @return
-         */
-        public long getDesiredBps() {
-            return desiredBps;
         }
 
         public long getEndByte() {
@@ -441,34 +427,13 @@ abstract public class DownloadInterface {
             return id;
         }
 
-        /**
-         * Gibt die Speedgrenze an.
-         * 
-         * @return
-         */
-        public int getMaximalSpeed() {
-            try {
-                maxSpeed = downloadLink.getSpeedLimit() / getRunningChunks();
-                if (speedDebug) {
-                    logger.finer("Def speed: " + downloadLink.getSpeedLimit() + "/" + getRunningChunks() + "=" + maxSpeed);
-                    logger.finer("return speed: min " + maxSpeed + " - " + desiredBps * 1.5);
-                }
-                if (desiredBps < 1024) return maxSpeed;
-                return Math.min(maxSpeed, (int) (desiredBps * 1.3));
-            } catch (Exception e) {
-                addException(e);
-                error(LinkStatus.ERROR_RETRY, JDUtilities.convertExceptionReadable(e));
-            }
-            return 0;
-        }
-
         public long getStartByte() {
             return startByte;
         }
 
         /**
-         * Gibt die geladenen Partbytes zurück. Das entsüricht bei resumen nicht
-         * den Chunkbytes!!!
+         * Gibt die geladenen Partbytes zurueck. Das entsuericht bei resumen
+         * nicht den Chunkbytes!!!
          * 
          * @return
          */
@@ -477,7 +442,7 @@ abstract public class DownloadInterface {
         }
 
         /**
-         * Gibt die Schreibposition des Chunks in der gesamtfile zurück
+         * Gibt die Schreibposition des Chunks in der gesamtfile zurueck
          * 
          * @throws Exception
          */
@@ -488,7 +453,7 @@ abstract public class DownloadInterface {
         }
 
         /**
-         * Gibt zurück ob der chunk von einem externen eregniss unterbrochen
+         * Gibt zurueck ob der chunk von einem externen eregniss unterbrochen
          * wurde
          * 
          * @return
@@ -566,7 +531,7 @@ abstract public class DownloadInterface {
 
                     if (connection == null) {
 
-                        // workaround für fertigen endchunk
+                        // workaround fuer fertigen endchunk
                         if (startByte >= fileSize && fileSize > 0) {
                             downloadLink.getLinkStatus().removeStatus(LinkStatus.ERROR_DOWNLOAD_FAILED);
                             logger.finer("Is no error. Last chunk is just already finished");
@@ -710,7 +675,7 @@ abstract public class DownloadInterface {
         }
 
         /**
-         * Setzt die anzahl der schon geladenen partbytes. Ist für resume
+         * Setzt die anzahl der schon geladenen partbytes. Ist fuer resume
          * wichtig.
          * 
          * @param loaded
@@ -719,16 +684,6 @@ abstract public class DownloadInterface {
             loaded = Math.max(0, loaded);
             totalPartBytes = loaded;
             addToTotalLinkBytesLoaded(loaded);
-        }
-
-        /**
-         * Gibt dem Chunk sein speedlimit vor. der chunk versucht sich an dieser
-         * Grenze einzuregeln
-         * 
-         * @param i
-         */
-        public void setMaximalSpeed(int i) {
-            maxSpeed = i;
         }
 
         public void startChunk() {
@@ -854,7 +809,7 @@ abstract public class DownloadInterface {
     }
 
     /**
-     * Es wird ein headrequest gemacht um die genaue dateigröße zu ermitteln
+     * Es wird ein headrequest gemacht um die genaue dateigroesse zu ermitteln
      * 
      * @return
      * @throws IOException
@@ -881,9 +836,9 @@ abstract public class DownloadInterface {
 
     /**
      * Diese Funktion macht einen Request mit absichtlich falschen Range
-     * Headern. Es soll ein 416 Fehler Provoziert werden, der die Dateigröße
-     * zurückgibt, aber nicht die daten selbst DieFunktion dient zur ermittlung
-     * der genauen dateigröße
+     * Headern. Es soll ein 416 Fehler Provoziert werden, der die Dateigroesse
+     * zurueckgibt, aber nicht die daten selbst DieFunktion dient zur ermittlung
+     * der genauen dateigroesse
      * 
      * @return
      * @throws IOException
@@ -913,7 +868,7 @@ abstract public class DownloadInterface {
     }
 
     /**
-     * Gibt zurück ob die Dateigröße 100% richtig ermittelt werden konnte
+     * Gibt zurueck ob die Dateigroesse 100% richtig ermittelt werden konnte
      */
     public boolean isFileSizeVerified() {
         return fileSizeVerified;
@@ -928,7 +883,7 @@ abstract public class DownloadInterface {
     }
 
     /**
-     * darf NUR dann auf true gesetzt werden, wenn die dateigröße 100% richtig
+     * darf NUR dann auf true gesetzt werden, wenn die dateigroesse 100% richtig
      * ist!
      * 
      * @param fileSizeVerified
@@ -1011,7 +966,7 @@ abstract public class DownloadInterface {
         connection = request.getHttpConnection();
         if (request.getLocation() != null) throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, DownloadInterface.ERROR_REDIRECTED);
         if (connection.getRange() != null) {
-            // Dateigröße wird aus dem Range-Response gelesen
+            // Dateigroesse wird aus dem Range-Response gelesen
             if (connection.getRange()[2] > 0) {
                 this.setFilesizeCheck(true);
                 this.downloadLink.setDownloadSize(connection.getRange()[2]);
@@ -1050,7 +1005,7 @@ abstract public class DownloadInterface {
     }
 
     private void connectResumable() throws IOException {
-        // TODO: endrange prüfen
+        // TODO: endrange pruefen
 
         long[] chunkProgress = downloadLink.getChunksProgress();
         String start, end;
@@ -1082,7 +1037,7 @@ abstract public class DownloadInterface {
     }
 
     /**
-     * Fügt einen Chunk hinzu und startet diesen
+     * Fuegt einen Chunk hinzu und startet diesen
      * 
      * @param chunk
      */
@@ -1116,8 +1071,8 @@ abstract public class DownloadInterface {
     }
 
     /**
-     * über error() kann ein fehler gemeldet werden. DIe Methode entscheided
-     * dann ob dieser fehler zu einem Abbruch führen muss
+     * ueber error() kann ein fehler gemeldet werden. DIe Methode entscheided
+     * dann ob dieser fehler zu einem Abbruch fuehren muss
      */
     protected synchronized void error(int id, String string) {
         /* if we recieved external stop, then we dont have to handle errors */
@@ -1147,7 +1102,7 @@ abstract public class DownloadInterface {
     }
 
     /**
-     * Gibt die Anzahl der verwendeten Chunks zurück
+     * Gibt die Anzahl der verwendeten Chunks zurueck
      */
     public int getChunkNum() {
         return chunkNum;
@@ -1158,14 +1113,14 @@ abstract public class DownloadInterface {
     }
 
     /**
-     * Gibt zurück wieviele Chunks tatsächlich in der Downloadphase sind
+     * Gibt zurueck wieviele Chunks tatsaechlich in der Downloadphase sind
      */
     public int getChunksDownloading() {
         return chunksDownloading;
     }
 
     /**
-     * Gibt die aufgetretenen Fehler zurück
+     * Gibt die aufgetretenen Fehler zurueck
      */
     public Vector<Integer> getErrors() {
         return errors;
@@ -1181,7 +1136,7 @@ abstract public class DownloadInterface {
     }
 
     /**
-     * Gibt eine bestmögliche abschätzung der Dateigröße zurück
+     * Gibt eine bestmoegliche abschaetzung der Dateigroesse zurueck
      */
     protected long getFileSize() {
         if (fileSize > 0) return fileSize;
@@ -1191,21 +1146,21 @@ abstract public class DownloadInterface {
     }
 
     /**
-     * Gibt den aktuellen readtimeout zurück
+     * Gibt den aktuellen readtimeout zurueck
      */
     public int getReadTimeout() {
         return Math.max(10000, readTimeout);
     }
 
     /**
-     * Gibt den requesttimeout zurück
+     * Gibt den requesttimeout zurueck
      */
     public int getRequestTimeout() {
         return Math.max(10000, requestTimeout);
     }
 
     /**
-     * Gibt zurück wieviele Chunks gerade am arbeiten sind
+     * Gibt zurueck wieviele Chunks gerade am arbeiten sind
      */
     public int getRunningChunks() {
         return chunksInProgress;
@@ -1254,7 +1209,7 @@ abstract public class DownloadInterface {
 
     /**
      * Wartet bis alle Chunks fertig sind, aktuelisiert den downloadlink
-     * regelmäsig und fordert beim Controller eine aktualisierung des links an
+     * regelmaesig und fordert beim Controller eine aktualisierung des links an
      */
     private void onChunkFinished() {
         synchronized (this) {
@@ -1273,7 +1228,7 @@ abstract public class DownloadInterface {
 
     /**
      * Gibt die Anzahl der Chunks an die dieser Download verwenden soll. Chu8nks
-     * können nur vor dem Downloadstart gesetzt werden!
+     * koennen nur vor dem Downloadstart gesetzt werden!
      */
     public void setChunkNum(int num) {
         if (num <= 0) {
@@ -1300,7 +1255,7 @@ abstract public class DownloadInterface {
 
     /**
      * Setzt vor ! dem download dden requesttimeout. Sollte nicht zu niedrig
-     * sein weil sonst das automatische kopieren der Connections fehl schlägt.,
+     * sein weil sonst das automatische kopieren der Connections fehl schlaegt.,
      */
     public void setRequestTimeout(int requestTimeout) {
         this.requestTimeout = requestTimeout;
@@ -1368,7 +1323,7 @@ abstract public class DownloadInterface {
     }
 
     /**
-     * Startet den Download. Nach dem Aufruf dieser Funktion können keine
+     * Startet den Download. Nach dem Aufruf dieser Funktion koennen keine
      * Downlaodparameter mehr gesetzt werden bzw bleiben wirkungslos.
      * 
      * @return
@@ -1463,7 +1418,7 @@ abstract public class DownloadInterface {
     }
 
     /**
-     * Schreibt den puffer eines chunks in die zugehörige Datei
+     * Schreibt den puffer eines chunks in die zugehoerige Datei
      * 
      * @param buffer
      * @param currentBytePosition

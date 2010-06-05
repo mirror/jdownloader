@@ -17,6 +17,8 @@
 package jd.plugins;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -24,7 +26,6 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
-import java.util.Vector;
 
 import jd.config.Property;
 import jd.controlling.DownloadController;
@@ -49,11 +50,6 @@ class FilePackageBroadcaster extends JDBroadcaster<FilePackageListener, FilePack
  */
 public class FilePackage extends Property implements Serializable, DownloadLinkListener, FilePackageListener {
 
-    /**
-     * Zählt die instanzierungen durch um eine ID zu erstellen
-     */
-    private static int counter = 0;
-
     private static final long serialVersionUID = -8859842964299890820L;
 
     private static final long UPDATE_INTERVAL = 2000;
@@ -72,11 +68,6 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
         }
         return FP;
     }
-
-    /**
-     * Eindeutige PaketID
-     */
-    private String id;
 
     private boolean sortasc = false;
 
@@ -114,9 +105,6 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
 
     private long finishedDate = -1l;
 
-    @Deprecated
-    private Vector<DownloadLink> downloadLinks;
-
     public void addListener(FilePackageListener l) {
         broadcaster.addListener(l);
     }
@@ -136,10 +124,8 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
     }
 
     private FilePackage() {
-        links_Disabled = new Integer(0);
+        links_Disabled = Integer.valueOf(0);
         downloadDirectory = JDUtilities.getDefaultDownloadDirectory();
-        counter++;
-        id = System.currentTimeMillis() + "_" + counter;
         downloadLinkList = new ArrayList<DownloadLink>();
         broadcaster = new FilePackageBroadcaster();
         broadcaster.addListener(this);
@@ -147,7 +133,7 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
         finishedDate = -1l;
     }
 
-    private void readObject(java.io.ObjectInputStream stream) throws java.io.IOException, ClassNotFoundException {
+    private void readObject(ObjectInputStream stream) throws IOException, ClassNotFoundException {
         /* nach dem deserialisieren sollen die transienten neu geholt werden */
         stream.defaultReadObject();
         links_Disabled = Integer.valueOf(0);
@@ -292,11 +278,6 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
         return downloadLinkList;
     }
 
-    @Deprecated
-    public Vector<DownloadLink> getDownloadLinks() {
-        return downloadLinks;
-    }
-
     /**
      * Gibt die vorraussichtlich verbleibende Downloadzeit für dieses paket
      * zurück
@@ -309,10 +290,6 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
         }
         if (totalDownloadSpeed_v2 / 1024 == 0) { return -1; }
         return (Math.max(totalBytesLoaded_v2, totalEstimatedPackageSize_v2) - totalBytesLoaded_v2) / (totalDownloadSpeed_v2);
-    }
-
-    public String getId() {
-        return id;
     }
 
     /**
@@ -385,8 +362,7 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
     }
 
     public String getName() {
-        if (name == null) return "";
-        return name;
+        return name == null ? "" : name;
     }
 
     /**
@@ -619,10 +595,7 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
         broadcaster.fireEvent(new FilePackageEvent(this, FilePackageEvent.FILEPACKAGE_UPDATE));
     }
 
-    /**
-     * Alles undokumentiert, da selbsterklärend
-     */
-    // @Override
+    @Override
     public String toString() {
         return this.getName();
     }
@@ -644,29 +617,19 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
                 next = it.next();
 
                 if (next.getDownloadSize() > 0) {
-
                     if (next.isEnabled()) {
                         totalEstimatedPackageSize_v2 += next.getDownloadSize();
                     }
-
                     avg = (i * avg + next.getDownloadSize()) / (i + 1);
-                    // logger.info(i+"+ "+next.getDownloadMax()/1024+" kb
-                    // avg:"+avg+" = +"+totalEstimatedPackageSize);
                     i++;
                 } else {
                     if (it.hasNext()) {
                         if (next.isEnabled()) {
                             totalEstimatedPackageSize_v2 += avg;
                         }
-
-                        // logger.info(i+"+avg "+avg+" kb
-                        // =+"+totalEstimatedPackageSize);
-
                     } else {
                         if (next.isEnabled()) {
                             totalEstimatedPackageSize_v2 += avg / 2;
-                            // logger.info(i+"+avg "+(avg/2)+" kb
-                            // =+"+totalEstimatedPackageSize);
                         }
                     }
                 }
@@ -735,13 +698,6 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
             getHoster();
             break;
         }
-    }
-
-    public void convert() {
-        this.downloadLinkList = new ArrayList<DownloadLink>();
-        this.downloadLinkList.addAll(getDownloadLinks());
-        this.downloadLinks = null;
-
     }
 
 }

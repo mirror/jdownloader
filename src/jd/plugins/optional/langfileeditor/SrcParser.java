@@ -188,7 +188,14 @@ public class SrcParser {
             }
         }
         if (this.currentContent.contains("extends PluginOptional")) {
+            /*
+             * Support for localized plugin names
+             */
             currentContent += "\r\nJDL.L(\"" + cl + "\",\"" + simple + "\");";
+            /*
+             * Support for localized plugin descriptions
+             */
+            currentContent += "\r\nJDL.L(\"" + cl + ".description\",\"" + simple + "\");";
         }
 
     }

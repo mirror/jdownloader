@@ -22,6 +22,7 @@ import jd.gui.UserIO;
 import jd.gui.swing.components.table.JDCheckBoxTableColumn;
 import jd.gui.swing.components.table.JDTableModel;
 import jd.gui.swing.jdgui.menu.AddonsMenu;
+import jd.gui.swing.jdgui.views.settings.panels.addons.ConfigPanelAddons;
 import jd.gui.swing.jdgui.views.settings.sidebar.ConfigSidebar;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
@@ -29,11 +30,14 @@ import jd.utils.locale.JDL;
 public class ActivateColumn extends JDCheckBoxTableColumn {
 
     private static final long serialVersionUID = 658156218405204887L;
-    private Configuration config;
+    private final Configuration config;
+    private final ConfigPanelAddons addons;
 
-    public ActivateColumn(String name, JDTableModel table) {
+    public ActivateColumn(String name, JDTableModel table, ConfigPanelAddons addons) {
         super(name, table);
-        config = JDUtilities.getConfiguration();
+
+        this.config = JDUtilities.getConfiguration();
+        this.addons = addons;
     }
 
     @Override
@@ -82,6 +86,7 @@ public class ActivateColumn extends JDCheckBoxTableColumn {
         }
         AddonsMenu.getInstance().update();
         ConfigSidebar.getInstance(null).updateAddons();
+        addons.updateShowcase();
     }
 
 }

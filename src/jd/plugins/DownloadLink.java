@@ -117,18 +117,11 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     /** Zeigt an, ob dieser Downloadlink aktiviert ist */
     private boolean isEnabled;
 
-    private boolean isMirror = false;
-
-    /** Lokaler Pfad zum letzten captchafile */
-    private File latestCaptchaFile = null;
-
     private LinkStatus linkStatus;
 
     private TransferStatus transferstatus;
 
     private int linkType = LINKTYPE_NORMAL;
-
-    private int globalSpeedLimit = -1;
 
     /** Beschreibung des Downloads */
     private String name;
@@ -478,16 +471,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         return host.toLowerCase();
     }
 
-    /**
-     * Gibt den Pfad zum zuletzt gespeichertem Captchabild für diesen download
-     * zurück
-     * 
-     * @return captcha pfad
-     */
-    public File getLatestCaptchaFile() {
-        return latestCaptchaFile;
-    }
-
     public LinkStatus getLinkStatus() {
         if (linkStatus == null) {
             linkStatus = new LinkStatus(this);
@@ -504,18 +487,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     public int getLinkType() {
         return linkType;
-    }
-
-    /**
-     * Gibt das SpeedLimit zurück! Beachtet das Lokale Speed Limit! in bytes/s
-     * 
-     * @return
-     */
-    public int getSpeedLimit() {
-        if (this.globalSpeedLimit <= 0) {
-            this.globalSpeedLimit = Integer.MAX_VALUE;
-        }
-        return this.globalSpeedLimit;
     }
 
     /**
@@ -602,7 +573,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     public AvailableStatus getAvailableStatus() {
-        if (availableStatus != AvailableStatus.UNCHECKED) { return availableStatus; }
+        if (availableStatus != AvailableStatus.UNCHECKED) return availableStatus;
         int wait = 0;
 
         for (int retry = 0; retry < 5; retry++) {
@@ -638,18 +609,10 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
                     }
                     continue;
                 } else {
-                    // logger.severe("Hoster Plugin Version: " +
-                    // getPlugin().getVersion());
-                    // JDLogger.getLogger().log(java.util.logging.
-                    // Level.SEVERE,"Exception occurred",e);
                     break;
                 }
 
             } catch (Exception e) {
-                // logger.severe("Hoster Plugin Version: " +
-                // getPlugin().getVersion());
-                // JDLogger.getLogger().log(java.util.logging.Level
-                // .SEVERE,"Exception occurred",e);
                 availableStatus = AvailableStatus.UNCHECKABLE;
                 break;
             }
@@ -691,10 +654,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      */
     public static boolean isSpeedLimited() {
         return SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0) != 0;
-    }
-
-    public boolean isMirror() {
-        return isMirror;
     }
 
     public void requestGuiUpdate() {
@@ -776,7 +735,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * @param aborted
      */
     public void setAborted(boolean aborted) {
-        if (aborted == false) return;
+        if (!aborted) return;
         SingleDownloadController dlc = this.getDownloadLinkController();
         if (dlc == null) {
             linkStatus.setInProgress(false);
@@ -803,11 +762,8 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     public void setContainerFile(String containerFile) {
         containerFile = containerFile.replace("\\", "/");
 
-        int index;
-        if ((index = containerFile.indexOf("/container/")) > 0) {
-            containerFile = containerFile.substring(index + 1);
-
-        }
+        int index = containerFile.indexOf("/container/");
+        if (index > 0) containerFile = containerFile.substring(index + 1);
 
         this.containerFile = containerFile;
     }
@@ -887,7 +843,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         if (!isEnabled) {
             setAborted(true);
         }
-        if (isEnabled == true) {
+        if (isEnabled) {
 
             if (host != null && plugin == null) {
                 logger.severe("Es ist kein passendes HostPlugin geladen");
@@ -924,17 +880,8 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         }
     }
 
-    /**
-     * Speichert das zuletzt geladene captchabild für diesen link
-     * 
-     * @param dest
-     */
-    public void setLatestCaptchaFile(File dest) {
-        latestCaptchaFile = dest;
-    }
-
     public void setLinkType(int linktypeContainer) {
-        if (linktypeContainer == linkType) { return; }
+        if (linktypeContainer == linkType) return;
         if (linkType == LINKTYPE_CONTAINER) {
             logger.severe("You are not allowd to Change the Linktype of " + this);
             return;
@@ -959,10 +906,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     public void setLoadedPluginForContainer(PluginsC pluginForContainer) {
         this.pluginForContainer = pluginForContainer;
         container = pluginForContainer.getHost();
-    }
-
-    public void setMirror(boolean isMirror) {
-        this.isMirror = isMirror;
     }
 
     /**
@@ -1011,7 +954,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     private void setIcon(ImageIcon icon) {
         this.icon = icon;
-
     }
 
     public DownloadLink setSourcePluginComment(String sourcePluginComment) {
