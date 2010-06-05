@@ -87,8 +87,6 @@ abstract public class DownloadInterface {
 
         private long startByte;
 
-        private long totalPartBytes = 0;
-
         private DownloadInterface dl;
 
         private boolean connectionclosed = false;
@@ -165,15 +163,6 @@ abstract public class DownloadInterface {
         }
 
         /**
-         * Darf NUR von Interface.addBytes() aufgerufen werden. Zaehlt die Bytes
-         * 
-         * @param bytes
-         */
-        private void addPartBytes(long bytes) {
-            totalPartBytes += bytes;
-        }
-
-        /**
          * Kopiert die Verbindung. Es wird bis auf die Range und timeouts exakt
          * die selbe Verbindung nochmals aufgebaut.
          * 
@@ -235,17 +224,8 @@ abstract public class DownloadInterface {
                     error(LinkStatus.ERROR_DOWNLOAD_FAILED, "Server: Redirect");
                     return null;
                 }
-                // if (speedDebug) {
-                // logger.finer("Org request headers " + this.getID() + ":"
-                // + request);
-                // logger.finer("Coppied request headers " + this.getID() +
-                // ":" + httpConnection.getRequestProperties());
-                // logger.finer("Server chunk Headers: " + this.getID() +
-                // ":" + httpConnection.getHeaderFields());
-                // }
                 clonedconnection = true;
                 return con;
-
             } catch (Exception e) {
                 addException(e);
                 error(LinkStatus.ERROR_RETRY, JDUtilities.convertExceptionReadable(e));
@@ -258,7 +238,7 @@ abstract public class DownloadInterface {
         private void download() {
             int bufferSize = 1;
             if (speedDebug) {
-                logger.finer("resume Chunk with " + totalPartBytes + "/" + getChunkSize() + " at " + getCurrentBytesPosition());
+                logger.finer("Resume Chunk with " + getChunkSize() + " at " + getCurrentBytesPosition());
             }
             try {
                 bufferSize = MAX_BUFFERSIZE;
@@ -310,7 +290,6 @@ abstract public class DownloadInterface {
                     if (miniblock == -1 || isExternalyAborted() || connectionclosed) {
                         break;
                     }
-                    addPartBytes(miniblock);
                     addToTotalLinkBytesLoaded(miniblock);
                     addChunkBytesLoaded(miniblock);
 
@@ -409,7 +388,7 @@ abstract public class DownloadInterface {
          * 
          * @return
          */
-        long getCurrentBytesPosition() {
+        public long getCurrentBytesPosition() {
             return startByte + chunkBytesLoaded;
         }
 
@@ -429,16 +408,6 @@ abstract public class DownloadInterface {
 
         public long getStartByte() {
             return startByte;
-        }
-
-        /**
-         * Gibt die geladenen Partbytes zurueck. Das entsuericht bei resumen
-         * nicht den Chunkbytes!!!
-         * 
-         * @return
-         */
-        public long getTotalPartBytesLoaded() {
-            return totalPartBytes;
         }
 
         /**
@@ -682,7 +651,6 @@ abstract public class DownloadInterface {
          */
         public void setLoaded(long loaded) {
             loaded = Math.max(0, loaded);
-            totalPartBytes = loaded;
             addToTotalLinkBytesLoaded(loaded);
         }
 
@@ -835,39 +803,6 @@ abstract public class DownloadInterface {
     }
 
     /**
-     * Diese Funktion macht einen Request mit absichtlich falschen Range
-     * Headern. Es soll ein 416 Fehler Provoziert werden, der die Dateigroesse
-     * zurueckgibt, aber nicht die daten selbst DieFunktion dient zur ermittlung
-     * der genauen dateigroesse
-     * 
-     * @return
-     * @throws IOException
-     * @throws PluginException
-     */
-    public long headFake(String value) throws IOException, PluginException {
-        request.getHeaders().put("Range", value == null ? "bytes=" : value);
-        browser.openRequestConnection(request);
-
-        if (this.plugin.getBrowser().isDebug()) logger.finest(request.printHeaders());
-
-        request.getHttpConnection().disconnect();
-
-        if (this.downloadLink.getFinalFileName() == null && ((request.getHttpConnection() != null && request.getHttpConnection().isContentDisposition()) || this.allowFilenameFromURL)) {
-            String name = Plugin.getFileNameFromHeader(request.getHttpConnection());
-            this.downloadLink.setFinalFileName(name);
-            if (this.fixWrongContentDispositionHeader) this.downloadLink.setFinalFileName(Encoding.htmlDecode(name));
-        }
-        String range = request.getHttpConnection().getHeaderField("Content-Range");
-        String length = new Regex(range, ".*?\\/(\\d+)").getMatch(0);
-        if (length != null) {
-            long size = Long.parseLong(length);
-            downloadLink.setDownloadSize(fileSize = size);
-            this.setFileSizeVerified(true);
-        }
-        return fileSize;
-    }
-
-    /**
      * Gibt zurueck ob die Dateigroesse 100% richtig ermittelt werden konnte
      */
     public boolean isFileSizeVerified() {
@@ -894,7 +829,6 @@ abstract public class DownloadInterface {
         if (fileSize <= 0 && fileSizeVerified) {
             logger.severe("Downloadsize==0");
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l);
-
         }
     }
 
@@ -902,10 +836,8 @@ abstract public class DownloadInterface {
      * Validiert das Chunk Progress array
      */
     protected boolean checkResumabled() {
+        if (downloadLink.getChunksProgress() == null || downloadLink.getChunksProgress().length == 0) return false;
 
-        if (downloadLink.getChunksProgress() == null || downloadLink.getChunksProgress().length == 0) { return false; }
-
-        long loaded = 0;
         long fileSize = getFileSize();
         int chunks = downloadLink.getChunksProgress().length;
         long part = fileSize / chunks;
@@ -916,16 +848,12 @@ abstract public class DownloadInterface {
             if (dif < 0) return false;
             if (downloadLink.getChunksProgress()[i] <= last) return false;
             last = downloadLink.getChunksProgress()[i];
-            loaded += dif;
         }
         if (chunks > 0) {
-
             setChunkNum(chunks);
-
             return true;
         }
         return false;
-
     }
 
     public URLConnectionAdapter connect(Browser br) throws Exception {
@@ -1014,11 +942,9 @@ abstract public class DownloadInterface {
         if (this.isFileSizeVerified()) {
             start = chunkProgress[0] == 0 ? "0" : (chunkProgress[0] + 1) + "";
             end = (fileSize / chunkProgress.length) + "";
-
         } else {
             start = chunkProgress[0] == 0 ? "0" : (chunkProgress[0] + 1) + "";
             end = chunkProgress.length > 1 ? (chunkProgress[1] + 1) + "" : "";
-
         }
         if (this.isFirstChunkRangeless() && start.equals("0")) {
             request.getHeaders().remove("Range");
@@ -1243,7 +1169,6 @@ abstract public class DownloadInterface {
      */
     public void setFilesize(long length) {
         fileSize = length;
-
     }
 
     /**
@@ -1267,11 +1192,9 @@ abstract public class DownloadInterface {
     public void setResume(boolean value) {
         downloadLink.getTransferStatus().setResumeSupport(value);
         if (checkResumabled()) {
-
             resume = value;
         } else {
             logger.warning("Resumepoint not valid");
-
         }
     }
 

@@ -30,9 +30,7 @@ import java.util.regex.Pattern;
 
 import javax.swing.ImageIcon;
 
-import jd.config.Configuration;
 import jd.config.Property;
-import jd.config.SubConfiguration;
 import jd.controlling.DownloadController;
 import jd.controlling.DownloadWatchDog;
 import jd.controlling.JDLogger;
@@ -102,7 +100,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     private transient SingleDownloadController downloadLinkController;
 
-    /** Maximum der heruntergeladenen Datei (Dateilänge) */
+    /** Maximum der heruntergeladenen Datei (Dateilaenge) */
     private long downloadMax = 0;
 
     private String subdirectory = null;
@@ -126,11 +124,11 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     /** Beschreibung des Downloads */
     private String name;
 
-    /** Das Plugin, das für diesen Download zuständig ist */
+    /** Das Plugin, das fuer diesen Download zustaendig ist */
     private transient PluginForHost plugin;
 
     /**
-     * Falls vorhanden, das Plugin für den Container, aus der dieser Download
+     * Falls vorhanden, das Plugin fuer den Container, aus der dieser Download
      * geladen wurde
      */
     private transient PluginsC pluginForContainer;
@@ -149,7 +147,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     private String urlDownload;
 
     /**
-     * Password welches einem weiteren Decrypter-Plugin übergeben werden soll
+     * Password welches einem weiteren Decrypter-Plugin uebergeben werden soll
      * (zb FolderPassword)
      */
     private String decrypterPassword;
@@ -187,13 +185,13 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * Erzeugt einen neuen DownloadLink
      * 
      * @param plugin
-     *            Das Plugins, das für diesen Download zuständig ist
+     *            Das Plugins, das fuer diesen Download zustaendig ist
      * @param name
      *            Bezeichnung des Downloads
      * @param host
      *            Anbieter, von dem dieser Download gestartet wird
      * @param urlDownload
-     *            Die Download URL (Entschlüsselt)
+     *            Die Download URL (Entschluesselt)
      * @param isEnabled
      *            Markiert diesen DownloadLink als aktiviert oder deaktiviert
      */
@@ -278,9 +276,9 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     /**
-     * Übernimmt das subdirectory von einem anderen Downloadlink. Zum erstellen
+     * Uebernimmt das subdirectory von einem anderen Downloadlink. Zum erstellen
      * eines eigenen subdirectorys steht addSubdirectory(String s) zur
-     * verfügung.
+     * verfuegung.
      * 
      * @param downloadLink
      */
@@ -293,7 +291,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     /**
-     * Gibt ein arry mit den Chunkfortschritten zurück. Dieses Array wird von
+     * Gibt ein arry mit den Chunkfortschritten zurueck. Dieses Array wird von
      * der Downlaodinstanz zu resumezwecken verwendet
      * 
      * @return
@@ -319,7 +317,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     /**
-     * Liefert die bisher heruntergeladenen Bytes zurück
+     * Liefert die bisher heruntergeladenen Bytes zurueck
      * 
      * @return Anzahl der heruntergeladenen Bytes
      */
@@ -340,9 +338,9 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     /**
-     * Die Größe der Datei
+     * Die Groesse der Datei
      * 
-     * @return Die Größe der Datei
+     * @return Die Groesse der Datei
      */
     public long getDownloadSize() {
 
@@ -350,7 +348,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     /**
-     * Gibt die aktuelle Downloadgeschwindigkeit in bytes/sekunde zurück
+     * Gibt die aktuelle Downloadgeschwindigkeit in bytes/sekunde zurueck
      * 
      * @return Downloadgeschwindigkeit in bytes/sekunde
      */
@@ -368,7 +366,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     /**
-     * Liefert die URL zurück, unter der dieser Download stattfinden soll
+     * Liefert die URL zurueck, unter der dieser Download stattfinden soll
      * 
      * @return Die Download URL
      */
@@ -406,12 +404,13 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     /**
-     * Gibt den Darstellbaren Dateinamen zurück. Dabei handelt es sich nicht
-     * zwangsläufig um einen Valid-Filename. Dieser String eignet sich zur
-     * darstellung des link und kann zusatzinformationen wie dateigröße oder
-     * verfügbarkeit haben Diese Zusatzinformationen liefert das zugehörige
-     * Plugin ACHTUNG: Weil der Dateiname kein zuverlässiger Dateiname sein muss
-     * darf diese FUnktion nicht verwendet werden um eine datei zu benennen.
+     * Gibt den Darstellbaren Dateinamen zurueck. Dabei handelt es sich nicht
+     * zwangslaeufig um einen Valid-Filename. Dieser String eignet sich zur
+     * darstellung des link und kann zusatzinformationen wie dateigroesse oder
+     * verfuegbarkeit haben Diese Zusatzinformationen liefert das zugehoerige
+     * Plugin ACHTUNG: Weil der Dateiname kein zuverlaessiger Dateiname sein
+     * muss darf diese FUnktion nicht verwendet werden um eine datei zu
+     * benennen.
      * 
      * @return Erweiterter "Dateiname"
      */
@@ -421,7 +420,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     /**
-     * Liefert die Datei zurück, in die dieser Download gespeichert werden soll
+     * Liefert die Datei zurueck, in die dieser Download gespeichert werden soll
      * 
      * @return Die Datei zum Abspeichern
      */
@@ -449,8 +448,8 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     /**
-     * Gibt das Filepacket des Links zurück. Kann auch null sein!! (Gui
-     * abhängig)
+     * Gibt das Filepacket des Links zurueck. Kann auch null sein!! (Gui
+     * abhaengig)
      * 
      * @return FilePackage
      */
@@ -462,7 +461,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     /**
-     * Gibt den Hoster dieses Links azurück.
+     * Gibt den Hoster dieses Links azurueck.
      * 
      * @return Der Hoster, auf dem dieser Link verweist
      */
@@ -490,8 +489,8 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     /**
-     * Liefert den Datei Namen dieses Downloads zurück. Wurde der Name mit
-     * setfinalFileName(String) festgelegt wird dieser Name zurückgegeben
+     * Liefert den Datei Namen dieses Downloads zurueck. Wurde der Name mit
+     * setfinalFileName(String) festgelegt wird dieser Name zurueckgegeben
      * 
      * @return Name des Downloads
      */
@@ -508,7 +507,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     /**
-     * Liefert das Plugin zurück, daß diesen DownloadLink handhabt
+     * Liefert das Plugin zurueck, dass diesen DownloadLink handhabt
      * 
      * @return Das Plugin
      */
@@ -529,7 +528,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     /**
-     * Gibt den Finalen Downloadnamen zurück. Wird null zurückgegeben, so wird
+     * Gibt den Finalen Downloadnamen zurueck. Wird null zurueckgegeben, so wird
      * der dateiname von den jeweiligen plugins automatisch ermittelt.
      * 
      * @return Statischer Dateiname
@@ -550,21 +549,20 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     /**
-     * Gibt zurück ob Dieser Link schon auf verfügbarkeit getestet wurde.+ Diese
-     * FUnktion führt keinen!! Check durch. Sie prüft nur ob schon geprüft
-     * worden ist. anschießend kann mit isAvailable() die verfügbarkeit
-     * überprüft werden
+     * Gibt zurueck ob Dieser Link schon auf verfuegbarkeit getestet wurde.+
+     * Diese FUnktion fuehrt keinen!! Check durch. Sie prueft nur ob schon
+     * geprueft worden ist. anschiessend kann mit isAvailable() die
+     * verfuegbarkeit ueberprueft werden
      * 
      * @return Link wurde schon getestet (true) nicht getestet(false)
      */
     public boolean isAvailabilityStatusChecked() {
         return availableStatus != AvailableStatus.UNCHECKED;
-
     }
 
     /**
-     * Führt einen verfügbarkeitscheck durch. GIbt true zurück wenn der link
-     * online ist, oder wenn er nicht prüfbar ist
+     * Fuehrt einen verfuegbarkeitscheck durch. GIbt true zurueck wenn der link
+     * online ist, oder wenn er nicht pruefbar ist
      * 
      * @return true/false
      */
@@ -647,20 +645,11 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         return isEnabled;
     }
 
-    /**
-     * Zeigt ob der Speed limitiert ist!
-     * 
-     * @return
-     */
-    public static boolean isSpeedLimited() {
-        return SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0) != 0;
-    }
-
     public void requestGuiUpdate() {
         DownloadController.getInstance().fireDownloadLinkUpdate(this);
     }
 
-    /** Setzt alle DownloadWErte zurück */
+    /** Setzt alle DownloadWErte zurueck */
     public void reset() {
         if (getLinkStatus().isPluginActive()) {
             setAborted(true);
@@ -723,10 +712,9 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         }
     }
 
-    /* returns if partfile or completed file exists on disk */
+    /** returns if partfile or completed file exists on disk */
     public boolean existsFile() {
-        if (new File(this.getFileOutput()).exists() || new File(this.getFileOutput() + ".part").exists()) return true;
-        return false;
+        return new File(this.getFileOutput()).exists() || new File(this.getFileOutput() + ".part").exists();
     }
 
     /**
@@ -751,7 +739,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     /**
      * Die Downloadklasse kann hier ein array mit den Fortschritten der chunks
-     * ablegen. Damit können downloads resumed werden
+     * ablegen. Damit koennen downloads resumed werden
      * 
      * @param is
      */
@@ -792,17 +780,17 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     /**
-     * Setzt die Größe der herunterzuladenden Datei
+     * Setzt die Groesse der herunterzuladenden Datei
      * 
      * @param downloadMax
-     *            Die Größe der Datei
+     *            Die Groesse der Datei
      */
     public void setDownloadSize(long downloadMax) {
         this.downloadMax = downloadMax;
     }
 
     /**
-     * Setzt ein Subdirectory für den DeonloadLink neu
+     * Setzt ein Subdirectory fuer den DeonloadLink neu
      * 
      * @param downloadPath
      *            der neue downloadPfad
@@ -824,7 +812,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     /**
-     * Verändert den Aktiviert-Status Resets ERROR_TEMPORARILY_UNAVAILABLE!!
+     * Veraendert den Aktiviert-Status Resets ERROR_TEMPORARILY_UNAVAILABLE!!
      * 
      * @param isEnabled
      *            Soll dieser DownloadLink aktiviert sein oder nicht
@@ -857,9 +845,9 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     /**
-     * Setzt das FilePackage für diesen Download
+     * Setzt das FilePackage fuer diesen Download
      * 
-     * @param FilePackage
+     * @param filePackage
      */
     public void setFilePackage(FilePackage filePackage) {
 
@@ -890,10 +878,10 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     /**
-     * Setzt nachträglich das Plugin. Wird nur zum Laden der Liste benötigt
+     * Setzt nachtraeglich das Plugin. Wird nur zum Laden der Liste benoetigt
      * 
      * @param plugin
-     *            Das für diesen Download zuständige Plugin
+     *            Das fuer diesen Download zustaendige Plugin
      */
     public void setLoadedPlugin(PluginForHost plugin) {
         this.plugin = plugin;
@@ -970,8 +958,8 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * Setzt den Statischen Dateinamen. Ist dieser wert != null, so wird er zum
      * Speichern der Datei verwendet. ist er == null, so wird der dateiName im
      * Plugin automatisch ermittelt. ACHTUNG: Der angegebene Dateiname ist
-     * endgültig. Diese Funktion sollte nach Möglichkeit nicht von Plugins
-     * verwendet werden. Sie gibt der Gui die Möglichkeit unabhängig von den
+     * endgueltig. Diese Funktion sollte nach Moeglichkeit nicht von Plugins
+     * verwendet werden. Sie gibt der Gui die Moeglichkeit unabhaengig von den
      * Plugins einen Downloadnamen festzulegen. Userinputs>Automatische
      * Erkennung - Plugins sollten {@link #setName(String)} verwenden um den
      * Speichernamen anzugeben.
@@ -1005,10 +993,9 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     /**
-     * Diese Methhode fragt das eigene Plugin welche Informationen über die File
-     * bereit gestellt werden. Der String eignet Sich zur Darstellung in der UI
-     * 
-     * @return STring
+     * Diese Methhode fragt das eigene Plugin welche Informationen ueber die
+     * File bereit gestellt werden. Der String eignet Sich zur Darstellung in
+     * der UI
      */
     @Override
     public String toString() {
@@ -1026,7 +1013,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     /**
-     * Gibt das Password zurück, welches vom Decrypter-Plugin genutzt werden
+     * Gibt das Password zurueck, welches vom Decrypter-Plugin genutzt werden
      * kann (zb. FolderPassword)
      */
     public String getDecrypterPassword() {

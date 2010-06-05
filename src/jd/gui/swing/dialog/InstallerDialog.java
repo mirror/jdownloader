@@ -31,9 +31,6 @@ import jd.utils.locale.JDLocale;
 import net.miginfocom.swing.MigLayout;
 
 public class InstallerDialog extends AbstractDialog {
-    public static void main(String[] args) {
-        InstallerDialog.showDialog(null);
-    }
 
     public static boolean showDialog(final File dlFolder) {
         new GuiRunnable<Object>() {
