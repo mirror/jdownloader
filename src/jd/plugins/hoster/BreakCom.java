@@ -17,7 +17,6 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -30,7 +29,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 /**
  * @author typek_pb
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "break.com" }, urls = { "http://[\\w\\.]*?break\\.com/index/.*html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision: XXX$", interfaceVersion = 2, names = { "break.com" }, urls = { "http://[\\w\\.]*?break\\.com/index/.*html" }, flags = { 0 })
 public class BreakCom extends PluginForHost {
 
     private String dlink = null;
@@ -59,24 +58,9 @@ public class BreakCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         br.getPage(link.getDownloadURL());
-        String filename = br.getRegex("<title>Watch (.*?) Video | Break.com</title>").getMatch(0);
+        String filename = br.getRegex("<meta name=\"title\" content=\"(.*?)\" />").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("content=\"(.*?) video at Break.com.").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("<meta property=\"og:title\" content=\"(.*?) | Break.com\" />").getMatch(0);
-                if (filename == null) {
-                    filename = br.getRegex("<meta name=\"embed_video_title\" id=\"vid_title\" content=\"(.*?)\" />").getMatch(0);
-                    if (filename == null) {
-                        filename = br.getRegex("<meta name=\"title\" content=\"(.*?)\" />").getMatch(0);
-                        if (filename == null) {
-                            filename = br.getRegex("class=\"hd_player_title\">(.*?)</div>").getMatch(0);
-                            if (filename == null) {
-                                filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
-                            }
-                        }
-                    }
-                }
-            }
+            filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
         }
         if (null == filename || filename.trim().length() == 0) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
@@ -106,12 +90,16 @@ public class BreakCom extends PluginForHost {
         filename = filename.trim();
         link.setFinalFileName(filename + ".flv");
         br.setFollowRedirects(true);
-        URLConnectionAdapter con = br.openGetConnection(dlink);
-        if (!con.getContentType().contains("html"))
-            link.setDownloadSize(con.getLongContentLength());
-        else
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        return AvailableStatus.TRUE;
+        try {
+            if (!br.openGetConnection(dlink).getContentType().contains("html")) {
+                link.setDownloadSize(br.getHttpConnection().getLongContentLength());
+                br.getHttpConnection().disconnect();
+                return AvailableStatus.TRUE;
+            }
+        } finally {
+            if (br.getHttpConnection() != null) br.getHttpConnection().disconnect();
+        }
+        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
     @Override

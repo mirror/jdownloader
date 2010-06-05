@@ -17,7 +17,6 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -30,7 +29,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 /**
  * @author typek_pb
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bluefishtv.com" }, urls = { "http://[\\w\\.]*?bluefishtv\\.com/Store/[_a-zA-Z]+/\\d+/.*" }, flags = { 0 })
+@HostPlugin(revision = "$Revision: XXX$", interfaceVersion = 2, names = { "bluefishtv.com" }, urls = { "http://[\\w\\.]*?bluefishtv\\.com/Store/[_a-zA-Z]+/\\d+/.*" }, flags = { 0 })
 public class BlueFishTvCom extends PluginForHost {
 
     public BlueFishTvCom(PluginWrapper wrapper) {
@@ -74,12 +73,16 @@ public class BlueFishTvCom extends PluginForHost {
         filename = filename.trim();
         link.setFinalFileName(filename + ".flv");
         br.setFollowRedirects(true);
-        URLConnectionAdapter con = br.openGetConnection(dlink);
-        if (!con.getContentType().contains("html"))
-            link.setDownloadSize(con.getLongContentLength());
-        else
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        return AvailableStatus.TRUE;
+        try {
+            if (!br.openGetConnection(dlink).getContentType().contains("html")) {
+                link.setDownloadSize(br.getHttpConnection().getLongContentLength());
+                br.getHttpConnection().disconnect();
+                return AvailableStatus.TRUE;
+            }
+        } finally {
+            if (br.getHttpConnection() != null) br.getHttpConnection().disconnect();
+        }
+        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
     @Override

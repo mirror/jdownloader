@@ -24,7 +24,6 @@ import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 
 import jd.PluginWrapper;
-import jd.http.URLConnectionAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -35,7 +34,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 /**
  * @author typek_pb
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tv.sme.sk" }, urls = { "http://[\\w\\.]*?tv\\.sme\\.sk/v/[0-9]+/[-a-zA-Z0-9]+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision: XXX$", interfaceVersion = 2, names = { "tv.sme.sk" }, urls = { "http://[\\w\\.]*?tv\\.sme\\.sk/v/[0-9]+/[-a-zA-Z0-9]+\\.html" }, flags = { 0 })
 public class TvSmeSk extends PluginForHost {
 
     public TvSmeSk(PluginWrapper wrapper) {
@@ -81,12 +80,16 @@ public class TvSmeSk extends PluginForHost {
 
         link.setFinalFileName(filename + ".flv");
         br.setFollowRedirects(true);
-        URLConnectionAdapter con = br.openGetConnection(dlink);
-        if (!con.getContentType().contains("html"))
-            link.setDownloadSize(con.getLongContentLength());
-        else
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        return AvailableStatus.TRUE;
+        try {
+            if (!br.openGetConnection(dlink).getContentType().contains("html")) {
+                link.setDownloadSize(br.getHttpConnection().getLongContentLength());
+                br.getHttpConnection().disconnect();
+                return AvailableStatus.TRUE;
+            }
+        } finally {
+            if (br.getHttpConnection() != null) br.getHttpConnection().disconnect();
+        }
+        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
     /**
