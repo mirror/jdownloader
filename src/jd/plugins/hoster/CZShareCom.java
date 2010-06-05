@@ -111,7 +111,7 @@ public class CZShareCom extends PluginForHost {
         String expires = br.getRegex("Velikost kreditu.*?Platnost do</td>.*?<td>.*?<td>(.*?)</td>").getMatch(0);
         if (expires != null) ai.setValidUntil(Regex.getMilliSeconds(expires, "dd.MM.yy HH:mm", Locale.GERMANY));
         if (trafficleft != null) ai.setTrafficLeft(trafficleft);
-
+        account.setValid(true);
         // Logout
         // br.getPage("http://czshare.com/profi/index.php?odhlasit=ano");
         return ai;
@@ -120,6 +120,17 @@ public class CZShareCom extends PluginForHost {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return simultanpremium;
+    }
+
+    public void checkPremiumIP() throws Exception {
+        /* we have to add ip to list, else we only get slow speed */
+        br.getPage("http://czshare.com/profi/filtr.php");
+        Form form = br.getForm(1);
+        /* check if ip is already added */
+        String ip = form.getVarsMap().get("ip");
+        if (br.containsHTML("smaz=" + ip)) return;
+        /* add current ip to list */
+        br.submitForm(form);
     }
 
     @Override
@@ -131,28 +142,48 @@ public class CZShareCom extends PluginForHost {
         if (profidown == null) br.getFormbyProperty("action", Encoding.urlEncode("http://czshare.com/profi/profi_down.php"));
         if (profidown == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String id = br.getRegex("type=\"hidden\" name=\"id\" value=\"(.*?)\"").getMatch(0);
-        br.submitForm(profidown);
-        Form login = br.getForm(0);
-        login.put("jmeno", Encoding.urlEncode(account.getUser()));
-        login.put("heslo", Encoding.urlEncode(account.getPass()));
-        login.put("trvale", "0");
-        br.submitForm(login);
+        if (id == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        login(account);
+        checkPremiumIP();
+        br.getPage("http://czshare.com/profi/index.php");
         // find premium links
         String[] links = br.getRegex("<td class=\"table2-black\"><a href=\"(.*?)\"").getColumn(0);
-        // choose link with proper ID
+        /* check if file id already in list */
         for (String link : links) {
-            if (link.contains("=" + id + "&")) {
+            if (link.contains("id=" + id)) {
                 linkurl = link;
                 break;
             }
-            if (link.contains("/" + id + "/")) {
-                linkurl = null;
-                br.setFollowRedirects(false);
-                br.getPage(link);
-                linkurl = br.getRedirectLocation();
-                if (linkurl == null) linkurl = link;
-                br.setFollowRedirects(true);
-                break;
+        }
+        if (linkurl == null) {
+            /* link not in list, readd to list and get downloadlink */
+            requestFileInformation(downloadLink);
+            profidown = br.getFormBySubmitvalue("PROFI+download");
+            if (profidown == null) br.getFormbyProperty("action", Encoding.urlEncode("http://czshare.com/profi/profi_down.php"));
+            if (profidown == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            id = br.getRegex("type=\"hidden\" name=\"id\" value=\"(.*?)\"").getMatch(0);
+            if (id == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            br.submitForm(profidown);
+            Form login = br.getForm(0);
+            login.put("jmeno", Encoding.urlEncode(account.getUser()));
+            login.put("heslo", Encoding.urlEncode(account.getPass()));
+            login.put("trvale", "0");
+            br.submitForm(login);
+            links = br.getRegex("<td class=\"table2-black\"><a href=\"(.*?)\"").getColumn(0);
+            for (String link : links) {
+                if (link.contains("=" + id + "&")) {
+                    linkurl = link;
+                    break;
+                }
+                if (link.contains("/" + id + "/")) {
+                    linkurl = null;
+                    br.setFollowRedirects(false);
+                    br.getPage(link);
+                    linkurl = br.getRedirectLocation();
+                    if (linkurl == null) linkurl = link;
+                    br.setFollowRedirects(true);
+                    break;
+                }
             }
         }
 
@@ -165,13 +196,13 @@ public class CZShareCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PREMIUM);
         }
         dl.startDownload();
-        // Remove link if finished
         if (downloadLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
+            // Remove link from list if finished
             String kod = new Regex(linkurl, "kod=([a-zA-Z0-9_]+)&").getMatch(0);
             if (kod != null) br.postPage("http://czshare.com/profi/smazat_profi.php", "smaz%5B%5D=" + kod);
         }
-        // Logout
-        br.getPage("http://czshare.com/profi/index.php?odhlasit=ano");
+        // Logout, why logout?
+        // br.getPage("http://czshare.com/profi/index.php?odhlasit=ano");
 
     }
 
