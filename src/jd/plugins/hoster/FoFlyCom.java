@@ -382,7 +382,7 @@ public class FoFlyCom extends PluginForHost {
 
             while (c != 0) {
                 c--;
-                if (!k[c].isEmpty()) p = p.replaceAll("\\b" + Integer.toString(c, a) + "\\b", k[c]);
+                if (k[c].length() != 0) p = p.replaceAll("\\b" + Integer.toString(c, a) + "\\b", k[c]);
             }
 
             decoded = p;

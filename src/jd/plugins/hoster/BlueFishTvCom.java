@@ -29,7 +29,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 
 /**
  * @author typek_pb
- * 
  */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bluefishtv.com" }, urls = { "http://[\\w\\.]*?bluefishtv\\.com/Store/[_a-zA-Z]+/\\d+/.*" }, flags = { 0 })
 public class BlueFishTvCom extends PluginForHost {
@@ -39,6 +38,11 @@ public class BlueFishTvCom extends PluginForHost {
     }
 
     private String dlink = null;
+
+    @Override
+    public String getCoder() {
+        return "typek_pb";
+    }
 
     @Override
     public String getAGBLink() {
@@ -61,16 +65,16 @@ public class BlueFishTvCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         br.getPage(link.getDownloadURL());
         String filename = br.getRegex("<span class=\"ProductDetails_Title\">(.*?)</span>").getMatch(0);
-        if (null == filename || filename.trim().isEmpty()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filename == null || filename.trim().length() == 0) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
         StringBuilder linkSB = new StringBuilder("http://www.bluefishtv.com");
         String dlinkPart = new Regex(Encoding.htmlDecode(br.toString()), "so.addParam[(]\"flashvars\",\"autoStart=1&f=(.*?)\"[)]").getMatch(0);
-        if (null == dlinkPart || dlinkPart.trim().isEmpty()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (dlinkPart == null || dlinkPart.trim().length() == 0) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         linkSB.append(dlinkPart);
         linkSB.append(".flv");
 
         dlink = linkSB.toString();
-        if (dlink == null || dlink.trim().isEmpty()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (dlink == null || dlink.trim().length() == 0) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
         filename = filename.trim();
         link.setFinalFileName(filename + ".flv");

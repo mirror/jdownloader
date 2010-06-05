@@ -97,6 +97,7 @@ public class ClickPositionDialog extends JCountdownDialog implements ActionListe
             tf.setBackground(null);
             tf.setContentType("text/html");
             tf.setOpaque(false);
+            tf.putClientProperty("Synthetica.opaque", Boolean.FALSE);
             tf.setText(explain);
             tf.setEditable(false);
             add(tf, "");

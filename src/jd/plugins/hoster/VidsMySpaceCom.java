@@ -29,7 +29,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 
 /**
  * @author typek_pb
- * 
  */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vids.myspace.com" }, urls = { "http://vids\\.myspace\\.com/index\\.cfm\\?fuseaction=vids\\.individual&videoid=\\d+" }, flags = { 0 })
 public class VidsMySpaceCom extends PluginForHost {
@@ -39,6 +38,11 @@ public class VidsMySpaceCom extends PluginForHost {
     }
 
     private String dlink = null;
+
+    @Override
+    public String getCoder() {
+        return "typek_pb";
+    }
 
     @Override
     public String getAGBLink() {
@@ -61,22 +65,22 @@ public class VidsMySpaceCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         br.getPage(link.getDownloadURL());
         String filename = br.getRegex("<h1 id=\"tv_tbar_title\">(.*?)</h1>").getMatch(0);
-        if (null == filename || filename.trim().isEmpty()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (null == filename || filename.trim().length() == 0) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
         StringBuilder linkSB = new StringBuilder("http://l3-hl1.videos02.");
         Regex regexp = new Regex(Encoding.htmlDecode(br.toString()), "<link rel=\"image_src\" href=\"http://d\\d+.ac-videos.(.*?)thumb1_(.*?).jpg\" />");
 
         String dlinkPart = regexp.getMatch(0);
-        if (null == dlinkPart || dlinkPart.trim().isEmpty()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (null == dlinkPart || dlinkPart.trim().length() == 0) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         linkSB.append(dlinkPart);
 
         dlinkPart = regexp.getMatch(1);
-        if (null == dlinkPart || dlinkPart.trim().isEmpty()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (null == dlinkPart || dlinkPart.trim().length() == 0) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         linkSB.append(dlinkPart);
         linkSB.append("/vid.flv");
 
         dlink = linkSB.toString();
-        if (dlink == null || dlink.trim().isEmpty()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (dlink == null || dlink.trim().length() == 0) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
         filename = filename.trim();
         link.setFinalFileName(filename + ".flv");

@@ -28,7 +28,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 
 /**
  * @author typek_pb
- * 
  */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ceknito.sk" }, urls = { "http://[\\w\\.]*?ceknito\\.(sk|cz)/video/\\d+" }, flags = { 0 })
 public class CeknitoSk extends PluginForHost {
@@ -38,6 +37,12 @@ public class CeknitoSk extends PluginForHost {
         super(wrapper);
     }
 
+    @Override
+    public String getCoder() {
+        return "typek_pb";
+    }
+
+    @Override
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("ceknito.cz", "ceknito.sk"));
     }
@@ -73,16 +78,16 @@ public class CeknitoSk extends PluginForHost {
                 filename = br.getRegex("<input type=\"hidden\" name=\"subject\" id=\"subject\" value=\"(.*?)\" />").getMatch(0);
             }
         }
-        if (null == filename || filename.trim().isEmpty()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (null == filename || filename.trim().length() == 0) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
         StringBuilder linkSB = new StringBuilder("http://vid.ceknito.sk/shared/");
         String dlinkPart = new Regex(Encoding.htmlDecode(br.toString()), "<param name=\"flashvars\" value=\"fid=(.*?)&").getMatch(0);
-        if (null == dlinkPart || dlinkPart.trim().isEmpty()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (null == dlinkPart || dlinkPart.trim().length() == 0) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         linkSB.append(dlinkPart);
         linkSB.append(".mp4");
 
         dlink = linkSB.toString();
-        if (dlink == null || dlink.trim().isEmpty()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (dlink == null || dlink.trim().length() == 0) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
         filename = filename.trim();
         link.setFinalFileName(filename + ".mp4");

@@ -40,6 +40,11 @@ public class BlipTv extends PluginForHost {
     private String dlink = null;
 
     @Override
+    public String getCoder() {
+        return "typek_pb";
+    }
+
+    @Override
     public String getAGBLink() {
         return "http://blip.tv/tos/";
     }
@@ -60,13 +65,13 @@ public class BlipTv extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         br.getPage(link.getDownloadURL());
         String filename = br.getRegex("player.setPostsTitle[(]\"(.*?)\"[)]").getMatch(0);
-        if (null == filename || filename.trim().isEmpty()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filename == null || filename.trim().length() == 0) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
         dlink = new Regex(Encoding.htmlDecode(br.toString()), "player.setPrimaryMediaUrl[(]\"(.*?)\"[)]").getMatch(0);
-        if (dlink == null || dlink.trim().isEmpty()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (dlink == null || dlink.trim().length() == 0) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
         String ext = new Regex(dlink, "[.]([a-zA-Z0-9]*)[?]").getMatch(0);
-        if (ext == null || ext.trim().isEmpty()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (ext == null || ext.trim().length() == 0) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
         filename = filename.trim();
         link.setFinalFileName(filename + "." + ext);

@@ -29,7 +29,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 
 /**
  * @author typek_pb
- * 
  */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "break.com" }, urls = { "http://[\\w\\.]*?break\\.com/index/.*html" }, flags = { 0 })
 public class BreakCom extends PluginForHost {
@@ -38,6 +37,11 @@ public class BreakCom extends PluginForHost {
 
     public BreakCom(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public String getCoder() {
+        return "typek_pb";
     }
 
     @Override
@@ -79,30 +83,30 @@ public class BreakCom extends PluginForHost {
                 }
             }
         }
-        if (null == filename || filename.trim().isEmpty()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (null == filename || filename.trim().length() == 0) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
         StringBuilder linkSB = new StringBuilder();
         // http part
         String dlinkPart = new Regex(Encoding.htmlDecode(br.toString()), "var videoPath = \"(.*?)\" +").getMatch(0);
-        if (null == dlinkPart || dlinkPart.trim().isEmpty()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (null == dlinkPart || dlinkPart.trim().length() == 0) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         linkSB.append(dlinkPart);
         // dir
         dlinkPart = new Regex(Encoding.htmlDecode(br.toString()), "sGlobalContentFilePath='(.*?)'").getMatch(0);
-        if (null == dlinkPart || dlinkPart.trim().isEmpty()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (null == dlinkPart || dlinkPart.trim().length() == 0) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         linkSB.append(dlinkPart);
         linkSB.append("/");
         // filename
         dlinkPart = new Regex(Encoding.htmlDecode(br.toString()), "sGlobalFileName='(.*?)'").getMatch(0);
-        if (null == dlinkPart || dlinkPart.trim().isEmpty()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (null == dlinkPart || dlinkPart.trim().length() == 0) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         linkSB.append(dlinkPart);
         // post filename
         dlinkPart = new Regex(Encoding.htmlDecode(br.toString()), "flashVars.icon = \"(.*?)\" +").getMatch(0);
-        if (null == dlinkPart || dlinkPart.trim().isEmpty()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (null == dlinkPart || dlinkPart.trim().length() == 0) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         linkSB.append(".flv?");
         linkSB.append(dlinkPart);
 
         dlink = linkSB.toString();
-        if (dlink == null || dlink.trim().isEmpty()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (dlink == null || dlink.trim().length() == 0) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
         filename = filename.trim();
         link.setFinalFileName(filename + ".flv");

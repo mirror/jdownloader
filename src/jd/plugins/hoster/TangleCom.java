@@ -27,7 +27,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 
 /**
  * @author typek_pb
- * 
  */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tangle.com" }, urls = { "http://[\\w\\.]*?tangle\\.com/view_video\\?viewkey=[a-zA-Z0-9]+" }, flags = { 0 })
 public class TangleCom extends PluginForHost {
@@ -37,6 +36,11 @@ public class TangleCom extends PluginForHost {
     }
 
     private String dlink = null;
+
+    @Override
+    public String getCoder() {
+        return "typek_pb";
+    }
 
     @Override
     public String getAGBLink() {
@@ -60,14 +64,14 @@ public class TangleCom extends PluginForHost {
         br.getPage(link.getDownloadURL());
 
         String filename = br.getRegex("<title>(.*?) - posted by .*? - tangle.com</title>").getMatch(0);
-        if (null == filename || filename.trim().isEmpty()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (null == filename || filename.trim().length() == 0) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
         String descLink = br.getRegex("flashvars.playlistPath = '(.*?)'").getMatch(0);
-        if (null == descLink || descLink.trim().isEmpty()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (null == descLink || descLink.trim().length() == 0) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         br.getPage(descLink);
 
         dlink = br.getRegex("<filelocation>(.*?)</filelocation>").getMatch(0);
-        if (null == dlink || dlink.trim().isEmpty()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (null == dlink || dlink.trim().length() == 0) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
         filename = filename.trim();
         link.setFinalFileName(filename + ".flv");
