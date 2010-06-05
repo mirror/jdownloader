@@ -40,7 +40,6 @@ import jd.gui.swing.components.table.JDTable;
 import jd.gui.swing.components.table.JDTableModel;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
 import jd.gui.swing.jdgui.views.settings.panels.hoster.columns.AcceptColumn;
-import jd.gui.swing.jdgui.views.settings.panels.hoster.columns.AuthorColumn;
 import jd.gui.swing.jdgui.views.settings.panels.hoster.columns.HostColumn;
 import jd.gui.swing.jdgui.views.settings.panels.hoster.columns.PremiumColumn;
 import jd.gui.swing.jdgui.views.settings.panels.hoster.columns.SettingsColumn;
@@ -78,7 +77,6 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         protected void initColumns() {
             this.addColumn(new HostColumn(JDL.L("gui.column_host", "Host"), this));
             this.addColumn(new VersionColumn(JDL.L("gui.column_version", "Version"), this));
-            this.addColumn(new AuthorColumn(JDL.L("gui.column_coder", "Coder"), this));
             this.addColumn(new PremiumColumn(JDL.L("gui.column_premium", "Premium"), this));
             this.addColumn(new SettingsColumn(JDL.L("gui.column_settings", "Settings"), this));
             this.addColumn(new AcceptColumn(JDL.L("gui.column_agbchecked", "Accepted"), this));

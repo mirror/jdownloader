@@ -32,21 +32,19 @@ import jd.plugins.DownloadLink.AvailableStatus;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "addat.hu" }, urls = { "http://[\\w\\.]*?addat.hu/.+/.+" }, flags = { 0 })
 public class AddatHu extends PluginForHost {
 
-    String id;
+    private String id;
 
     public AddatHu(PluginWrapper wrapper) {
         super(wrapper);
         this.setStartIntervall(2000l);
     }
 
+    @Override
     public String getAGBLink() {
         return "http://www.addat.hu/";
     }
 
-    public String getCoder() {
-        return "TnS";
-    }
-
+    @Override
     public void correctDownloadLink(DownloadLink link) {
         String url = link.getDownloadURL();
         Regex regex = new Regex(url, ".*addat.hu/(.*)/");
@@ -54,6 +52,7 @@ public class AddatHu extends PluginForHost {
         link.setUrlDownload("http://addat.hu/" + id + "/freedownload");
     }
 
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException {
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
@@ -65,6 +64,7 @@ public class AddatHu extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         br.setFollowRedirects(true);
         requestFileInformation(downloadLink);
@@ -78,26 +78,34 @@ public class AddatHu extends PluginForHost {
         dl.startDownload();
     }
 
+    @Override
     public int getTimegapBetweenConnections() {
         return 500;
     }
 
+    @Override
     public int getMaxConnections() {
         return 1;
     }
 
-    // TODO:This could be set to -1 but the problem is that i dunnu why i can
-    // start that much dls in the browser but not in jd!
+    /**
+     * TODO: This could be set to -1 but the problem is that i dunnu why i can
+     * start that much dls in the browser but not in jd!
+     */
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 4;
     }
 
+    @Override
     public void reset() {
     }
 
+    @Override
     public void resetPluginGlobals() {
     }
 
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 }

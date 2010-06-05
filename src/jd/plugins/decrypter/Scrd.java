@@ -262,7 +262,7 @@ public class Scrd extends PluginForDecrypt {
         super(wrapper);
     }
 
-    // @Override
+    @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -303,12 +303,5 @@ public class Scrd extends PluginForDecrypt {
 
         return decryptedLinks;
     }
-
-    // @Override
-    public String getCoder() {
-        return "olimex, JD-Team";
-    }
-
-    // @Override
 
 }

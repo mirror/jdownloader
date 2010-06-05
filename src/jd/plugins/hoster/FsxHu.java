@@ -43,11 +43,6 @@ public class FsxHu extends PluginForHost {
     }
 
     @Override
-    public String getCoder() {
-        return "dqdb";
-    }
-
-    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());

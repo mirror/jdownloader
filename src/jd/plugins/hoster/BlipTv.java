@@ -40,11 +40,6 @@ public class BlipTv extends PluginForHost {
     private String dlink = null;
 
     @Override
-    public String getCoder() {
-        return "typek_pb";
-    }
-
-    @Override
     public String getAGBLink() {
         return "http://blip.tv/tos/";
     }

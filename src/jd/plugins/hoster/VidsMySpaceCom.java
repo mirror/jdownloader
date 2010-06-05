@@ -40,11 +40,6 @@ public class VidsMySpaceCom extends PluginForHost {
     private String dlink = null;
 
     @Override
-    public String getCoder() {
-        return "typek_pb";
-    }
-
-    @Override
     public String getAGBLink() {
         return "http://www.myspace.com/index.cfm?fuseaction=misc.terms";
     }

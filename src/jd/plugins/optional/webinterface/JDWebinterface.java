@@ -73,11 +73,6 @@ public class JDWebinterface extends PluginOptional {
         return null;
     }
 
-    @Override
-    public String getCoder() {
-        return "jiaz";
-    }
-
     static public int getRefreshRate() {
         SubConfiguration subConfig = SubConfiguration.getConfig("WEBINTERFACE");
         if (subConfig.getBooleanProperty(JDWebinterface.PROPERTY_REFRESH, true)) {

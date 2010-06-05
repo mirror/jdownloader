@@ -30,7 +30,6 @@ import jd.gui.swing.components.table.JDTable;
 import jd.gui.swing.components.table.JDTableModel;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
 import jd.gui.swing.jdgui.views.settings.panels.addons.columns.ActivateColumn;
-import jd.gui.swing.jdgui.views.settings.panels.addons.columns.AuthorColumn;
 import jd.gui.swing.jdgui.views.settings.panels.addons.columns.NeedsColumn;
 import jd.gui.swing.jdgui.views.settings.panels.addons.columns.PluginColumn;
 import jd.gui.swing.jdgui.views.settings.panels.addons.columns.VersionColumn;
@@ -67,7 +66,6 @@ public class ConfigPanelAddons extends ConfigPanel {
             this.addColumn(new ActivateColumn(JDL.L("gui.column_status", "Activate"), this));
             this.addColumn(new PluginColumn(JDL.L("gui.column_plugin", "Plugin"), this));
             this.addColumn(new VersionColumn(JDL.L("gui.column_version", "Version"), this));
-            this.addColumn(new AuthorColumn(JDL.L("gui.column_coder", "Coder"), this));
             this.addColumn(new NeedsColumn(JDL.L("gui.column_needs", "Needs"), this));
         }
 

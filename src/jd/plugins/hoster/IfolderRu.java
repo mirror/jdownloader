@@ -48,11 +48,6 @@ public class IfolderRu extends PluginForHost {
     }
 
     @Override
-    public String getCoder() {
-        return "Void";
-    }
-
-    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException, IOException, InterruptedException {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());

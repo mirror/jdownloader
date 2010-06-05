@@ -38,11 +38,6 @@ public class TangleCom extends PluginForHost {
     private String dlink = null;
 
     @Override
-    public String getCoder() {
-        return "typek_pb";
-    }
-
-    @Override
     public String getAGBLink() {
         return "http://www.tangle.com/support/legal";
     }

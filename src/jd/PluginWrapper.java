@@ -32,7 +32,6 @@ import jd.nutils.Formatter;
 import jd.nutils.JDFlags;
 import jd.plugins.Plugin;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 
 /**
  * A Container for {@link Plugin Plugins}. Plugins usually do not get
@@ -226,15 +225,6 @@ public abstract class PluginWrapper implements Comparable<PluginWrapper> {
      */
     public String getVersion() {
         return revision;
-    }
-
-    /**
-     * 
-     * @return "idle" if the plugin has not been loaded or
-     *         {@link jd.plugins.Plugin#getCoder()}
-     */
-    public String getCoder() {
-        return loadedPlugin != null ? loadedPlugin.getCoder() : JDL.L("plugin.system.notloaded", "idle");
     }
 
     /**

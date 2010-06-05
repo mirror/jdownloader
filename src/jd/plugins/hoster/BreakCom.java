@@ -40,11 +40,6 @@ public class BreakCom extends PluginForHost {
     }
 
     @Override
-    public String getCoder() {
-        return "typek_pb";
-    }
-
-    @Override
     public String getAGBLink() {
         return "http://info.break.com/static/live/v1/pages/terms.html";
     }

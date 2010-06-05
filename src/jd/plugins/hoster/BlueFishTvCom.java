@@ -40,11 +40,6 @@ public class BlueFishTvCom extends PluginForHost {
     private String dlink = null;
 
     @Override
-    public String getCoder() {
-        return "typek_pb";
-    }
-
-    @Override
     public String getAGBLink() {
         return "http://www.bluefishtv.com/Terms_of_Use";
     }

@@ -38,11 +38,6 @@ public class CeknitoSk extends PluginForHost {
     }
 
     @Override
-    public String getCoder() {
-        return "typek_pb";
-    }
-
-    @Override
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("ceknito.cz", "ceknito.sk"));
     }

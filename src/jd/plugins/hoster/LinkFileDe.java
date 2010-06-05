@@ -46,11 +46,6 @@ public class LinkFileDe extends PluginForHost {
     }
 
     @Override
-    public String getCoder() {
-        return "zdolny";
-    }
-
-    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         String url = downloadLink.getDownloadURL();
         br.getPage(url);

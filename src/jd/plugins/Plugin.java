@@ -207,15 +207,6 @@ public abstract class Plugin implements ActionListener {
     }
 
     /**
-     * Hier wird der Author des Plugins ausgelesen
-     * 
-     * @return Der Author des Plugins
-     */
-    public String getCoder() {
-        return "JD-Team";
-    }
-
-    /**
      * Gibt das Konfigurationsobjekt der Instanz zurück. Die Gui kann daraus
      * Dialogelement zaubern
      * 
