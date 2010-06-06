@@ -37,7 +37,7 @@ public class PackageDirectoryAction extends ContextMenuAction {
             @Override
             public Object runSave() {
                 File[] files = UserIO.getInstance().requestFileChooser(null, null, UserIO.DIRECTORIES_ONLY, null, null, new File(packages.get(0).getDownloadDirectory()), null);
-                if (files == null || files.length == 0) return null;
+                if (files == null) return null;
 
                 for (LinkGrabberFilePackage packagee : packages) {
                     packagee.setDownloadDirectory(files[0].getAbsolutePath());

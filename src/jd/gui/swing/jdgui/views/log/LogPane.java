@@ -71,7 +71,7 @@ public class LogPane extends SwitchPanel implements ActionListener, ControlListe
         switch (e.getID()) {
         case LogInfoPanel.ACTION_SAVE:
             File[] files = UserIO.getInstance().requestFileChooser(null, null, null, null, null, null, UserIO.SAVE_DIALOG);
-            if (files == null || files.length == 0) return;
+            if (files == null) return;
 
             String content = toString();
             JDIO.writeLocalFile(files[0], toString());

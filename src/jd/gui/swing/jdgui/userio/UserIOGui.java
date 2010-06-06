@@ -164,7 +164,11 @@ public class UserIOGui extends UserIO {
         if (multiSelection != null) fc.setMultiSelectionEnabled(multiSelection);
         if (startDirectory != null) fc.setCurrentDirectory(startDirectory);
         if (dialogType != null) fc.setDialogType(dialogType);
-        if (fc.showDialog(DummyFrame.getDialogParent(), null) == JDFileChooser.APPROVE_OPTION) return fc.getSelectedFiles();
+        if (fc.showDialog(DummyFrame.getDialogParent(), null) == JDFileChooser.APPROVE_OPTION) {
+            File[] files = fc.getSelectedFiles();
+            if (files.length == 0) files = new File[] { fc.getSelectedFile() };
+            return files;
+        }
         return null;
     }
 

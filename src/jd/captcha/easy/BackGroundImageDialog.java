@@ -254,7 +254,7 @@ public class BackGroundImageDialog implements ActionListener {
             return;
         } else if (e.getSource() == btLoadBackgroundImage) {
             File[] fch = UserIOGui.getInstance().requestFileChooser(null, null, null, new JDFileFilter(null, ".jpg|.png|.gif|.jpeg|.bmp", true), null);
-            if (fch == null || fch.length == 0) return;
+            if (fch == null) return;
 
             File fout = new File(bgim.methode.file, "mask_" + JDHash.getMD5(fch[0]) + "." + JDIO.getFileExtension(fch[0]));
             JDIO.copyFile(fch[0], fout);

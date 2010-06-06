@@ -35,7 +35,7 @@ public class CreateDLCAction extends ContextMenuAction {
 
     public void actionPerformed(ActionEvent e) {
         File[] files = UserIO.getInstance().requestFileChooser("_LOADSAVEDLC", null, null, new JDFileFilter(null, ".dlc", true), null, null, UserIO.SAVE_DIALOG);
-        if (files == null || files.length == 0) return;
+        if (files == null) return;
 
         JDUtilities.getController().saveDLC(files[0], links);
     }

@@ -517,7 +517,7 @@ public class JDUnrar extends PluginOptional implements UnrarListener, ActionList
             }
 
             File[] files = UserIO.getInstance().requestFileChooser("_JDUNRAR_", null, UserIO.DIRECTORIES_ONLY, ff, null, extractto, null);
-            if (files == null || files.length == 0) return;
+            if (files == null) return;
 
             for (DownloadLink l : list) {
                 l.setProperty(JDUnrarConstants.DOWNLOADLINK_KEY_EXTRACTTOPATH, files[0]);
@@ -562,7 +562,7 @@ public class JDUnrar extends PluginOptional implements UnrarListener, ActionList
                 };
 
                 File[] files = UserIO.getInstance().requestFileChooser("_JDUNRAR_", null, null, ff, true, null, null);
-                if (files == null || files.length == 0) return;
+                if (files == null) return;
 
                 DownloadLink link;
                 for (File archiveStartFile : files) {

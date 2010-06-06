@@ -63,7 +63,7 @@ public class BackupLinkListAction extends ThreadedAction {
             out.close();
 
             File[] files = UserIO.getInstance().requestFileChooser("_LOADSAVEDLC", null, null, new JDFileFilter(null, ".jdc", true), null, null, UserIO.SAVE_DIALOG);
-            if (files == null || files.length == 0) return;
+            if (files == null) return;
 
             String defaultpw = SubConfiguration.getConfig("JDC_CONFIG").getStringProperty("password", "jddefault");
             String pw = UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN, JDL.L("jd.gui.swing.jdgui.menu.actions.BackupLinkListAction.password", "Enter Encryption Password"), defaultpw);

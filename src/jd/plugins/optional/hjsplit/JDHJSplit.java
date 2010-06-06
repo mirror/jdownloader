@@ -573,7 +573,7 @@ public class JDHJSplit extends PluginOptional {
 
                 };
                 File[] files = UserIO.getInstance().requestFileChooser("_JDHJSPLIT_", null, UserIO.DIRECTORIES_ONLY, ff, true);
-                if (files == null || files.length == 0) return;
+                if (files == null) return;
 
                 addFileList(files);
             }

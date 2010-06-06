@@ -96,7 +96,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
             importLHScript();
         } else if (e.getSource() == menImportFile) {
             File[] files = UserIO.getInstance().requestFileChooser(null, null, null, new JDFileFilter(JDL.L("plugins.optional.httpliveheaderscripter.gui.desc", "XML-File"), ".xml", true), null);
-            if (files == null || files.length == 0) return;
+            if (files == null) return;
 
             try {
                 Vector<String> save = (Vector<String>) JDIO.loadObject(files[0], true);
@@ -106,7 +106,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
             }
         } else if (e.getSource() == menSave) {
             File[] files = UserIO.getInstance().requestFileChooser(null, null, null, new JDFileFilter(JDL.L("plugins.optional.httpliveheaderscripter.gui.desc", "XML-File"), ".xml", true), null, null, UserIO.SAVE_DIALOG);
-            if (files == null || files.length == 0) return;
+            if (files == null) return;
 
             String manu = UserIO.getInstance().requestInputDialog(0, JDL.L("plugins.optional.httpliveheaderscripter.gui.save.manufacturer", "Manufacturer? (e.g. Siemens)"), null);
             if (manu == null) return;

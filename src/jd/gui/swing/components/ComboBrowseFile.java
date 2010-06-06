@@ -144,7 +144,7 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
 
     private File getPath() {
         File[] files = UserIO.getInstance().requestFileChooser(null, null, fileSelectionMode, fileFilter, null, getDirectoryFromTxtInput(), null);
-        if (files == null || files.length == 0) return null;
+        if (files == null) return null;
         return files[0];
     }
 
