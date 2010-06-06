@@ -17,7 +17,6 @@
 package jd.plugins.optional.improveddock;
 
 import java.awt.Color;
-import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 
@@ -31,6 +30,8 @@ import com.apple.eawt.Application;
 public class MacDockIconChanger extends Thread implements Runnable {
 
     private final BufferedImage dockImage = JDImage.getImage("logo/jd_logo_128_128");
+
+    private final Color frameColor = Color.BLACK;
 
     private final Color backgroundColor = Color.WHITE;
 
@@ -77,20 +78,24 @@ public class MacDockIconChanger extends Thread implements Runnable {
     public void updateDockIconImage(int percentCompleted) {
         Graphics g = dockImage.getGraphics();
 
+        // Draw Border
+        g.setColor(this.frameColor);
+        g.fillRect(0, 96, 128, 15);
+
         // Draw background
         g.setColor(this.backgroundColor);
-        g.fillRect(5, 44, 118, 40);
+        g.fillRect(2, 98, 124, 11);
 
         // Draw foreground
         g.setColor(this.foregroundColor);
         int width = generateWidth(percentCompleted);
-        g.fillRect(10, 49, width, 30);
+        g.fillRect(2, 98, width, 11);
 
         // Draw string
-        g.setColor(this.fontColor);
-        Font font = new Font("Arial", Font.BOLD, 15);
-        g.setFont(font);
-        g.drawString(percentCompleted + " %", 52, 68);
+        // g.setColor(this.fontColor);
+        // Font font = new Font("Arial", Font.BOLD, 15);
+        // g.setFont(font);
+        // g.drawString(percentCompleted + " %", 52, 68);
 
         g.dispose();
 
@@ -102,7 +107,7 @@ public class MacDockIconChanger extends Thread implements Runnable {
     }
 
     private int generateWidth(int percent) {
-        return (int) (108 * (percent / 100.0));
+        return (int) (12.4 * percent);
     }
 
 }
