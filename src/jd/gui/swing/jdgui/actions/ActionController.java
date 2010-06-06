@@ -22,7 +22,6 @@ import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 
 import jd.HostPluginWrapper;
 import jd.config.ConfigPropertyListener;
@@ -40,7 +39,6 @@ import jd.event.ControlEvent;
 import jd.event.ControlIDListener;
 import jd.gui.UserIF;
 import jd.gui.UserIO;
-import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.components.linkbutton.JLink;
 import jd.gui.swing.dialog.AccountDialog;
@@ -112,27 +110,17 @@ public class ActionController {
 
             @Override
             public void initAction() {
-                JDController.getInstance().addControlListener(new ControlIDListener(ControlEvent.CONTROL_DOWNLOAD_START, ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED, ControlEvent.CONTROL_DOWNLOAD_STOP) {
+                JDController.getInstance().addControlListener(new ControlIDListener(ControlEvent.CONTROL_DOWNLOAD_START, ControlEvent.CONTROL_DOWNLOAD_STOP) {
                     @Override
                     public void controlIDEvent(final ControlEvent event) {
-                        new GuiRunnable<Object>() {
-
-                            @Override
-                            public Object runSave() {
-                                switch (event.getID()) {
-                                case ControlEvent.CONTROL_DOWNLOAD_START:
-                                    setEnabled(false);
-                                    break;
-                                case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
-                                case ControlEvent.CONTROL_DOWNLOAD_STOP:
-                                    setEnabled(true);
-                                    break;
-                                }
-                                return null;
-                            }
-
-                        }.start();
-
+                        switch (event.getID()) {
+                        case ControlEvent.CONTROL_DOWNLOAD_START:
+                            setEnabled(false);
+                            break;
+                        case ControlEvent.CONTROL_DOWNLOAD_STOP:
+                            setEnabled(true);
+                            break;
+                        }
                     }
                 });
             }
@@ -173,27 +161,19 @@ public class ActionController {
 
             @Override
             public void initAction() {
-                JDController.getInstance().addControlListener(new ControlIDListener(ControlEvent.CONTROL_DOWNLOAD_START, ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED, ControlEvent.CONTROL_DOWNLOAD_STOP) {
+                JDController.getInstance().addControlListener(new ControlIDListener(ControlEvent.CONTROL_DOWNLOAD_START, ControlEvent.CONTROL_DOWNLOAD_STOP) {
                     @Override
                     public void controlIDEvent(final ControlEvent event) {
-                        new GuiRunnable<Object>() {
-
-                            @Override
-                            public Object runSave() {
-                                switch (event.getID()) {
-                                case ControlEvent.CONTROL_DOWNLOAD_START:
-                                    setEnabled(true);
-                                    setSelected(false);
-                                    break;
-                                case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
-                                case ControlEvent.CONTROL_DOWNLOAD_STOP:
-                                    setEnabled(false);
-                                    setSelected(false);
-                                    break;
-                                }
-                                return null;
-                            }
-                        }.start();
+                        switch (event.getID()) {
+                        case ControlEvent.CONTROL_DOWNLOAD_START:
+                            setEnabled(true);
+                            setSelected(false);
+                            break;
+                        case ControlEvent.CONTROL_DOWNLOAD_STOP:
+                            setEnabled(false);
+                            setSelected(false);
+                            break;
+                        }
                     }
                 });
                 JDController.getInstance().addControlListener(new ConfigPropertyListener(Configuration.PARAM_DOWNLOAD_PAUSE_SPEED) {
@@ -216,25 +196,17 @@ public class ActionController {
 
             @Override
             public void initAction() {
-                JDController.getInstance().addControlListener(new ControlIDListener(ControlEvent.CONTROL_DOWNLOAD_START, ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED, ControlEvent.CONTROL_DOWNLOAD_STOP) {
+                JDController.getInstance().addControlListener(new ControlIDListener(ControlEvent.CONTROL_DOWNLOAD_START, ControlEvent.CONTROL_DOWNLOAD_STOP) {
                     @Override
                     public void controlIDEvent(final ControlEvent event) {
-                        new GuiRunnable<Object>() {
-
-                            @Override
-                            public Object runSave() {
-                                switch (event.getID()) {
-                                case ControlEvent.CONTROL_DOWNLOAD_START:
-                                    setEnabled(true);
-                                    break;
-                                case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
-                                case ControlEvent.CONTROL_DOWNLOAD_STOP:
-                                    setEnabled(false);
-                                    break;
-                                }
-                                return null;
-                            }
-                        }.start();
+                        switch (event.getID()) {
+                        case ControlEvent.CONTROL_DOWNLOAD_START:
+                            setEnabled(true);
+                            break;
+                        case ControlEvent.CONTROL_DOWNLOAD_STOP:
+                            setEnabled(false);
+                            break;
+                        }
                     }
                 });
             }
@@ -291,19 +263,13 @@ public class ActionController {
 
             @Override
             public void threadedActionPerformed(ActionEvent e) {
-                new GuiRunnable<Object>() {
-                    @Override
-                    public Object runSave() {
-                        if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(0, JDL.L("gui.reconnect.confirm", "Do you want to reconnect your internet connection?")), UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
-                            new Thread(new Runnable() {
-                                public void run() {
-                                    Reconnecter.doManualReconnect();
-                                }
-                            }).start();
+                if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(0, JDL.L("gui.reconnect.confirm", "Do you want to reconnect your internet connection?")), UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
+                    new Thread(new Runnable() {
+                        public void run() {
+                            Reconnecter.doManualReconnect();
                         }
-                        return null;
-                    }
-                }.start();
+                    }).start();
+                }
             }
 
         };
@@ -428,25 +394,17 @@ public class ActionController {
                         }
                     }
                 });
-                JDController.getInstance().addControlListener(new ControlIDListener(ControlEvent.CONTROL_DOWNLOAD_START, ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED, ControlEvent.CONTROL_DOWNLOAD_STOP) {
+                JDController.getInstance().addControlListener(new ControlIDListener(ControlEvent.CONTROL_DOWNLOAD_START, ControlEvent.CONTROL_DOWNLOAD_STOP) {
                     @Override
                     public void controlIDEvent(final ControlEvent event) {
-                        new GuiRunnable<Object>() {
-
-                            @Override
-                            public Object runSave() {
-                                switch (event.getID()) {
-                                case ControlEvent.CONTROL_DOWNLOAD_START:
-                                    setEnabled(true);
-                                    break;
-                                case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
-                                case ControlEvent.CONTROL_DOWNLOAD_STOP:
-                                    setEnabled(false);
-                                    break;
-                                }
-                                return null;
-                            }
-                        }.start();
+                        switch (event.getID()) {
+                        case ControlEvent.CONTROL_DOWNLOAD_START:
+                            setEnabled(true);
+                            break;
+                        case ControlEvent.CONTROL_DOWNLOAD_STOP:
+                            setEnabled(false);
+                            break;
+                        }
                     }
                 });
             }
@@ -545,18 +503,12 @@ public class ActionController {
             }
 
             @Override
-            public void threadedActionPerformed(final ActionEvent e) {
-                new GuiRunnable<Object>() {
-                    @Override
-                    public Object runSave() {
-                        if (e.getSource() instanceof PluginForHost) {
-                            AccountDialog.showDialog((PluginForHost) e.getSource());
-                        } else {
-                            AccountDialog.showDialog(null);
-                        }
-                        return null;
-                    }
-                }.start();
+            public void threadedActionPerformed(ActionEvent e) {
+                if (e.getSource() instanceof PluginForHost) {
+                    AccountDialog.showDialog((PluginForHost) e.getSource());
+                } else {
+                    AccountDialog.showDialog(null);
+                }
             }
         };
         new ThreadedAction("action.premium.buy", "gui.images.buy") {
@@ -569,30 +521,16 @@ public class ActionController {
 
             @Override
             public void threadedActionPerformed(ActionEvent e) {
-                new GuiRunnable<Object>() {
+                ArrayList<HostPluginWrapper> plugins = JDUtilities.getPremiumPluginsForHost();
+                Collections.sort(plugins);
+                HostPluginWrapper[] data = plugins.toArray(new HostPluginWrapper[plugins.size()]);
+                int selection = UserIO.getInstance().requestComboDialog(0, JDL.L(JDL_PREFIX + "buy.title", "Buy Premium"), JDL.L(JDL_PREFIX + "buy.message", "Which hoster are you interested in?"), data, 0, null, JDL.L(JDL_PREFIX + "continue", "Continue"), null, new JDLabelListRenderer());
+                if (selection < 0) return;
 
-                    @Override
-                    public Object runSave() {
-
-                        ArrayList<HostPluginWrapper> plugins = JDUtilities.getPremiumPluginsForHost();
-                        Collections.sort(plugins, new Comparator<HostPluginWrapper>() {
-                            public int compare(HostPluginWrapper a, HostPluginWrapper b) {
-                                return a.getHost().compareToIgnoreCase(b.getHost());
-                            }
-                        });
-                        HostPluginWrapper[] data = plugins.toArray(new HostPluginWrapper[plugins.size()]);
-                        int selection = UserIO.getInstance().requestComboDialog(0, JDL.L(JDL_PREFIX + "buy.title", "Buy Premium"), JDL.L(JDL_PREFIX + "buy.message", "Which hoster are you interested in?"), data, 0, null, JDL.L(JDL_PREFIX + "continue", "Continue"), null, new JDLabelListRenderer());
-
-                        try {
-                            JLink.openURL(data[selection].getPlugin().getBuyPremiumUrl());
-                        } catch (Exception ex) {
-                        }
-
-                        return null;
-                    }
-
-                }.start();
-
+                try {
+                    JLink.openURL(data[selection].getPlugin().getBuyPremiumUrl());
+                } catch (Exception ex) {
+                }
             }
         };
 

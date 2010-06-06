@@ -38,7 +38,7 @@ public class MainToolBar extends ToolBar {
         super();
 
         speedmeter = new SpeedMeterPanel(true, false);
-        JDController.getInstance().addControlListener(new ControlIDListener(ControlEvent.CONTROL_DOWNLOAD_START, ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED, ControlEvent.CONTROL_DOWNLOAD_STOP) {
+        JDController.getInstance().addControlListener(new ControlIDListener(ControlEvent.CONTROL_DOWNLOAD_START, ControlEvent.CONTROL_DOWNLOAD_STOP) {
             @Override
             public void controlIDEvent(final ControlEvent event) {
                 new GuiRunnable<Object>() {
@@ -49,7 +49,6 @@ public class MainToolBar extends ToolBar {
                         case ControlEvent.CONTROL_DOWNLOAD_START:
                             speedmeter.start();
                             break;
-                        case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
                         case ControlEvent.CONTROL_DOWNLOAD_STOP:
                             speedmeter.stop();
                             break;

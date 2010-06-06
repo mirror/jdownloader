@@ -141,18 +141,19 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         btnEdit.addActionListener(this);
         btnEdit.setIcon(JDTheme.II("gui.images.config.home", 16, 16));
 
-        // TODO: please someone implement as tableheader instead of checkbox
-        chkUseAll = new JCheckBox(JDL.L("gui.chk_toggleall", "Use all"));
+        /*
+         * TODO: please someone implement as tableheader instead of checkbox
+         */
+        chkUseAll = new JCheckBox(JDL.L(JDL_PREFIX + "useAll", "Use all Hosts"));
         chkUseAll.setEnabled(true);
         chkUseAll.addActionListener(this);
-
-        if (isAllInUse()) {
-            chkUseAll.setSelected(true);
-        }
+        chkUseAll.setHorizontalAlignment(JCheckBox.RIGHT);
+        chkUseAll.setHorizontalTextPosition(JCheckBox.LEADING);
+        chkUseAll.setSelected(isAllInUse());
 
         JPanel p = new JPanel(new MigLayout("ins 0,wrap 1", "[fill,grow]", "[fill,grow][]"));
         p.add(new JScrollPane(table));
-        p.add(btnEdit, "w pref!");
+        p.add(btnEdit, "split 2, w pref!");
         p.add(chkUseAll);
 
         ConfigContainer container = new ConfigContainer();

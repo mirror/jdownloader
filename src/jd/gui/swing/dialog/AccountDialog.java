@@ -31,6 +31,7 @@ import javax.swing.JTextField;
 import jd.HostPluginWrapper;
 import jd.controlling.AccountController;
 import jd.gui.UserIO;
+import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.views.settings.JDLabelListRenderer;
 import jd.nutils.JDFlags;
@@ -43,12 +44,20 @@ import net.miginfocom.swing.MigLayout;
 
 public class AccountDialog extends AbstractDialog {
 
-    public static void showDialog(PluginForHost pluginForHost) {
-        AccountDialog dialog = new AccountDialog(pluginForHost);
-        if (JDFlags.hasAllFlags(dialog.getReturnValue(), UserIO.RETURN_OK)) {
-            Account ac = new Account(dialog.getUsername(), dialog.getPassword());
-            AccountController.getInstance().addAccount(dialog.getHoster().getPlugin(), ac);
-        }
+    public static void showDialog(final PluginForHost pluginForHost) {
+        new GuiRunnable<Object>() {
+
+            @Override
+            public Object runSave() {
+                AccountDialog dialog = new AccountDialog(pluginForHost);
+                if (JDFlags.hasAllFlags(dialog.getReturnValue(), UserIO.RETURN_OK)) {
+                    Account ac = new Account(dialog.getUsername(), dialog.getPassword());
+                    AccountController.getInstance().addAccount(dialog.getHoster().getPlugin(), ac);
+                }
+                return null;
+            }
+
+        };
     }
 
     private static final long serialVersionUID = -2099080199110932990L;

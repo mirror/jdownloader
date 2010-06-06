@@ -60,7 +60,6 @@ public class ImrovedMacOSXDock extends PluginOptional {
                 updateThread.start();
             }
             break;
-        case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
         case ControlEvent.CONTROL_DOWNLOAD_STOP:
             if (updateThread != null) {
                 updateThread.stopUpdating();

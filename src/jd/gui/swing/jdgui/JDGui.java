@@ -71,7 +71,6 @@ import jd.nutils.OSDetector;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
@@ -141,12 +140,12 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
 
     }
 
+    /**
+     * TODO: mal durch ein einheitliches notification system ersetzen, welches
+     * an das eventsystem gekoppelt ist
+     */
     @Override
     public void displayMiniWarning(String shortWarn, String longWarn) {
-        /*
-         * TODO: mal durch ein einheitliches notification system ersetzen,
-         * welches an das eventsystem gekoppelt ist
-         */
         Balloon.show(shortWarn, JDTheme.II("gui.images.warning", 32, 32), longWarn);
     }
 
@@ -321,16 +320,8 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
                     return null;
                 }
             }.start();
-
             break;
-
         case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
-            for (DownloadLink link : DownloadController.getInstance().getAllDownloadLinks()) {
-                if (link.getLinkStatus().hasStatus(LinkStatus.TODO)) {
-                    JDLogger.getLogger().info("Downloads stopped");
-                    return;
-                }
-            }
             JDLogger.getLogger().info("All downloads finished");
             break;
         case ControlEvent.CONTROL_DOWNLOAD_START:
