@@ -107,7 +107,7 @@ public class MacDockIconChanger extends Thread implements Runnable {
     }
 
     private int generateWidth(int percent) {
-        return (int) (12.4 * percent);
+        return (int) (1.24 * percent);
     }
 
 }
