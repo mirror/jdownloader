@@ -101,12 +101,10 @@ public class SingleDownloadController extends Thread {
 
     private void fireControlEvent(ControlEvent controlEvent) {
         JDUtilities.getController().fireControlEvent(controlEvent);
-
     }
 
     private void fireControlEvent(int controlID, Object param) {
         JDUtilities.getController().fireControlEvent(controlID, param);
-
     }
 
     public PluginForHost getCurrentPlugin() {
@@ -148,9 +146,7 @@ public class SingleDownloadController extends Thread {
             } catch (SocketException e) {
                 linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                 linkStatus.setErrorMessage(JDL.L("plugins.errors.disconnect", "Disconnect?"));
-
                 linkStatus.setValue(SubConfiguration.getConfig("CONNECTION_PROBLEMS").getGenericProperty("SocketException", 5 * 60 * 1000l));
-
             } catch (IOException e) {
                 linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                 linkStatus.setErrorMessage(JDL.L("plugins.errors.hosterproblem", "Hoster problem?"));
@@ -292,9 +288,9 @@ public class SingleDownloadController extends Thread {
             ArrayList<DownloadLink> links = DownloadController.getInstance().getAllDownloadLinks();
             for (DownloadLink link : links) {
                 if (downloadLink != link && downloadLink.getFileOutput().equals(link.getFileOutput())) {
-                    link.getLinkStatus().setErrorMessage(JDL.LF("controller.status.fileexists.othersource", "File loaded from %s.", link.getHost()));
+                    link.getLinkStatus().setErrorMessage(JDL.LF("controller.status.fileexists.othersource", "File loaded from %s.", downloadLink.getHost()));
                     link.setEnabled(false);
-                    DownloadController.getInstance().fireDownloadLinkUpdate(downloadLink);
+                    DownloadController.getInstance().fireDownloadLinkUpdate(link);
                 }
             }
         }
