@@ -4,9 +4,8 @@ import java.awt.event.ActionEvent;
 import java.io.File;
 import java.util.ArrayList;
 
+import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
-import jd.gui.swing.SwingGui;
-import jd.gui.swing.components.JDFileChooser;
 import jd.gui.swing.jdgui.interfaces.ContextMenuAction;
 import jd.plugins.FilePackage;
 import jd.utils.locale.JDL;
@@ -37,17 +36,11 @@ public class PackageDirectoryAction extends ContextMenuAction {
         new GuiRunnable<Object>() {
             @Override
             public Object runSave() {
-                JDFileChooser fc = new JDFileChooser();
-                fc.setApproveButtonText(JDL.L("gui.btn_ok", "OK"));
-                fc.setFileSelectionMode(JDFileChooser.DIRECTORIES_ONLY);
-                fc.setCurrentDirectory(new File(packages.get(0).getDownloadDirectory()));
-                if (fc.showOpenDialog(SwingGui.getInstance().getMainFrame()) == JDFileChooser.APPROVE_OPTION) {
-                    File ret = fc.getSelectedFile();
-                    if (ret == null) return null;
+                File[] files = UserIO.getInstance().requestFileChooser(null, null, UserIO.DIRECTORIES_ONLY, null, null, new File(packages.get(0).getDownloadDirectory()), null);
+                if (files == null || files.length == 0) return null;
 
-                    for (FilePackage packagee : packages) {
-                        packagee.setDownloadDirectory(ret.getAbsolutePath());
-                    }
+                for (FilePackage packagee : packages) {
+                    packagee.setDownloadDirectory(files[0].getAbsolutePath());
                 }
                 return null;
             }

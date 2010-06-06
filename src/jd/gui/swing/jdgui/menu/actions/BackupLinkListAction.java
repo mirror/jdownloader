@@ -26,9 +26,6 @@ import jd.config.SubConfiguration;
 import jd.controlling.DownloadController;
 import jd.crypt.JDCrypt;
 import jd.gui.UserIO;
-import jd.gui.swing.GuiRunnable;
-import jd.gui.swing.SwingGui;
-import jd.gui.swing.components.JDFileChooser;
 import jd.gui.swing.jdgui.actions.ThreadedAction;
 import jd.nutils.JDHash;
 import jd.nutils.io.JDFileFilter;
@@ -38,9 +35,6 @@ import jd.utils.JDHexUtils;
 import jd.utils.locale.JDL;
 
 public class BackupLinkListAction extends ThreadedAction {
-    /**
-     * 
-     */
 
     private static final long serialVersionUID = 823930266263085474L;
 
@@ -48,10 +42,6 @@ public class BackupLinkListAction extends ThreadedAction {
         super("action.backuplinklist", "gui.images.save");
     }
 
-    /**
-     * @param requestInputDialog
-     * @return
-     */
     public static byte[] getPWByte(String requestInputDialog) {
         return JDHexUtils.getByteArray(JDHash.getMD5(requestInputDialog));
     }
@@ -72,26 +62,14 @@ public class BackupLinkListAction extends ThreadedAction {
             }
             out.close();
 
-            GuiRunnable<File> temp = new GuiRunnable<File>() {
-                // @Override
-                @Override
-                public File runSave() {
-                    JDFileChooser fc = new JDFileChooser("_LOADSAVEDLC");
-                    fc.setFileFilter(new JDFileFilter(null, ".jdc", true));
-                    if (fc.showSaveDialog(SwingGui.getInstance().getMainFrame()) == JDFileChooser.APPROVE_OPTION) return fc.getSelectedFile();
-                    return null;
-                }
-            };
-            File ret = temp.getReturnValue();
-            if (ret == null) return;
-            if (JDIO.getFileExtension(ret) == null || !JDIO.getFileExtension(ret).equalsIgnoreCase("jdc")) {
-                ret = new File(ret.getAbsolutePath() + ".jdc");
-            }
+            File[] files = UserIO.getInstance().requestFileChooser("_LOADSAVEDLC", null, null, new JDFileFilter(null, ".jdc", true), null, null, UserIO.SAVE_DIALOG);
+            if (files == null || files.length == 0) return;
+
             String defaultpw = SubConfiguration.getConfig("JDC_CONFIG").getStringProperty("password", "jddefault");
             String pw = UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN, JDL.L("jd.gui.swing.jdgui.menu.actions.BackupLinkListAction.password", "Enter Encryption Password"), defaultpw);
             if (pw == null || pw.length() == 0) return;
             byte[] crypted = JDCrypt.encrypt(JDHexUtils.getHexString(bos.toByteArray()), getPWByte(pw));
-            JDIO.saveToFile(ret, crypted);
+            JDIO.saveToFile(files[0], crypted);
         } catch (Exception ew) {
         }
     }

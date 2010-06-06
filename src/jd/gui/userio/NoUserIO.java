@@ -80,7 +80,7 @@ public class NoUserIO extends UserIO {
     }
 
     @Override
-    protected File[] showFileChooser(String id, String title, Integer fileSelectionMode, FileFilter fileFilter, Boolean multiSelection) {
+    protected File[] showFileChooser(String id, String title, Integer fileSelectionMode, FileFilter fileFilter, Boolean multiSelection, File startDirectory, Integer dialogType) {
         System.out.println("NoUserIO set!");
         return null;
     }

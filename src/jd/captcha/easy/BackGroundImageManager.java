@@ -163,7 +163,7 @@ public class BackGroundImageManager {
     private void load() {
         File file = getBgImagesXmlFile();
         if (file.exists())
-            backgroundList = (Vector<BackGroundImage>) JDIO.loadObject(null, file, true);
+            backgroundList = (Vector<BackGroundImage>) JDIO.loadObject(file, true);
         else
             backgroundList = new Vector<BackGroundImage>();
     }
@@ -179,10 +179,11 @@ public class BackGroundImageManager {
             BackGroundImage bgi = iter.next();
             if (bgi == null || bgi.getBackgroundImage() == null || bgi.getBackgroundImage().matches("\\s*")) iter.remove();
         }
-        if (backgroundList.size() == 0)
+        if (backgroundList.isEmpty()) {
             file.delete();
-        else
-            JDIO.saveObject(null, backgroundList, file, null, null, true);
+        } else {
+            JDIO.saveObject(backgroundList, file, true);
+        }
     }
 
     /**

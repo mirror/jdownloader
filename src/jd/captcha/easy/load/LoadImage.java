@@ -136,8 +136,8 @@ public class LoadImage {
         }
         return false;
     }
-    public boolean renameCaptcha(File file, String destination )
-    {
+
+    public boolean renameCaptcha(File file, String destination) {
         long b = 0;
 
         try {
@@ -145,22 +145,24 @@ public class LoadImage {
             Captcha captcha = new JAntiCaptcha("easycaptcha").createCaptcha(ret);
             for (int x = 0; x < captcha.getWidth(); x++) {
                 for (int y = 0; y < captcha.getHeight(); y++) {
-                    Color c =  new Color(captcha.grid[x][y]);
-                    b+=c.getBlue();
+                    Color c = new Color(captcha.grid[x][y]);
+                    b += c.getBlue();
                 }
             }
         } catch (Exception e) {
             // TODO: handle exception
         }
-        File dest = new File(destination, b+"_"+JDHash.getMD5(file)+ getFileType());
+        File dest = new File(destination, b + "_" + JDHash.getMD5(file) + getFileType());
 
-        if(dest.exists())
-        {file.delete(); 
-        return false;}
+        if (dest.exists()) {
+            file.delete();
+            return false;
+        }
         file.renameTo(dest);
-        this.file=dest;
+        this.file = dest;
         return true;
     }
+
     /**
      * läd das Bild direkt in den vorgegebenen Ordner
      * 
@@ -169,7 +171,7 @@ public class LoadImage {
     public boolean directCaptchaLoad(String destination) {
         file = new File(destination, System.currentTimeMillis() + getFileType());
         try {
-			URLConnectionAdapter urlc = br.cloneBrowser().openGetConnection(imageUrl);
+            URLConnectionAdapter urlc = br.cloneBrowser().openGetConnection(imageUrl);
             Browser.download(file, urlc);
             return renameCaptcha(file, destination);
         } catch (Exception e) {
@@ -277,7 +279,7 @@ public class LoadImage {
      * @return
      */
     public static LoadImage loadFile(File file) {
-        if (file.exists()) { return (LoadImage) JDIO.loadObject(null, file, true); }
+        if (file.exists()) { return (LoadImage) JDIO.loadObject(file, true); }
         return null;
     }
 
@@ -301,7 +303,7 @@ public class LoadImage {
     public static void save(LoadImage li, File file) {
         file.getParentFile().mkdirs();
         System.out.println("LoadImage has beens saved under: " + file);
-        JDIO.saveObject(null, li, file, null, null, true);
+        JDIO.saveObject(li, file, true);
     }
 
     /**

@@ -156,13 +156,15 @@ public class UserIOGui extends UserIO {
     }
 
     @Override
-    protected File[] showFileChooser(String id, String title, Integer fileSelectionMode, FileFilter fileFilter, Boolean multiSelection) {
+    protected File[] showFileChooser(String id, String title, Integer fileSelectionMode, FileFilter fileFilter, Boolean multiSelection, File startDirectory, Integer dialogType) {
         JDFileChooser fc = new JDFileChooser(id);
         if (title != null) fc.setDialogTitle(title);
         if (fileSelectionMode != null) fc.setFileSelectionMode(fileSelectionMode);
         if (fileFilter != null) fc.setFileFilter(fileFilter);
         if (multiSelection != null) fc.setMultiSelectionEnabled(multiSelection);
-        if (fc.showOpenDialog(DummyFrame.getDialogParent()) == JDFileChooser.APPROVE_OPTION) return fc.getSelectedFiles();
+        if (startDirectory != null) fc.setCurrentDirectory(startDirectory);
+        if (dialogType != null) fc.setDialogType(dialogType);
+        if (fc.showDialog(DummyFrame.getDialogParent(), null) == JDFileChooser.APPROVE_OPTION) return fc.getSelectedFiles();
         return null;
     }
 

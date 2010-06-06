@@ -22,24 +22,22 @@ import java.awt.event.ActionListener;
 import java.io.File;
 
 import javax.swing.JButton;
-import javax.swing.JFileChooser;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 
+import jd.gui.UserIO;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 public class BrowseFile extends JPanel implements ActionListener {
 
-    public static final int FILES_ONLY = JFileChooser.FILES_ONLY;
+    public static final int FILES_ONLY = UserIO.FILES_ONLY;
 
-    public static final int DIRECTORIES_ONLY = JFileChooser.DIRECTORIES_ONLY;
+    public static final int DIRECTORIES_ONLY = UserIO.DIRECTORIES_ONLY;
 
-    public static final int FILES_AND_DIRECTORIES = JFileChooser.FILES_AND_DIRECTORIES;
+    public static final int FILES_AND_DIRECTORIES = UserIO.FILES_AND_DIRECTORIES;
 
     private static final long serialVersionUID = 1L;
-
-    private String approveButtonText = "OK";
 
     private JButton btnBrowse;
 
@@ -75,13 +73,6 @@ public class BrowseFile extends JPanel implements ActionListener {
                 dispatchEvent(event);
             }
         }
-    }
-
-    /**
-     * @return the approveButtonText
-     */
-    public String getApproveButtonText() {
-        return approveButtonText;
     }
 
     /**
@@ -124,15 +115,9 @@ public class BrowseFile extends JPanel implements ActionListener {
     }
 
     private File getPath() {
-        final JDFileChooser fc = new JDFileChooser();
-        fc.setApproveButtonText(approveButtonText);
-        fc.setFileSelectionMode(fileSelectionMode);
-        fc.setCurrentDirectory(getDirectoryFromTxtInput());
-        if (fc.showOpenDialog(this) == JDFileChooser.APPROVE_OPTION) {
-            return fc.getSelectedFile();
-        } else {
-            return null;
-        }
+        File[] files = UserIO.getInstance().requestFileChooser(null, null, fileSelectionMode, null, null, getDirectoryFromTxtInput(), null);
+        if (files == null || files.length == 0) return null;
+        return files[0];
     }
 
     public String getText() {
@@ -149,14 +134,6 @@ public class BrowseFile extends JPanel implements ActionListener {
 
         add(txtInput, "grow");
         add(btnBrowse);
-    }
-
-    /**
-     * @param approveButtonText
-     *            the approveButtonText to set
-     */
-    public void setApproveButtonText(final String approveButtonText) {
-        this.approveButtonText = approveButtonText;
     }
 
     public void setButtonText(String text) {

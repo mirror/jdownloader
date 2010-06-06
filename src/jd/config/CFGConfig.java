@@ -42,7 +42,7 @@ public class CFGConfig extends SubConfiguration implements Serializable {
     private CFGConfig(final String name) {
         this.name = name;
         final File file = JDUtilities.getResourceFile("config/" + name + ".cfg");
-        final Object props = JDIO.loadObject(null, file, false);
+        final Object props = JDIO.loadObject(file, false);
         file.getParentFile().mkdirs();
         if (props != null) {
             setProperties((HashMap<String, Object>) props);
@@ -50,7 +50,7 @@ public class CFGConfig extends SubConfiguration implements Serializable {
     }
 
     public void save() {
-        JDIO.saveObject(null, getProperties(), JDUtilities.getResourceFile("config/" + name + ".cfg"), null, null, false);
+        JDIO.saveObject(getProperties(), JDUtilities.getResourceFile("config/" + name + ".cfg"), false);
     }
 
     public static CFGConfig getConfig(final String string) {

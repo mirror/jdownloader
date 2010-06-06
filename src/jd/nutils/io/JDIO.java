@@ -16,7 +16,6 @@
 
 package jd.nutils.io;
 
-import java.awt.Component;
 import java.beans.XMLDecoder;
 import java.beans.XMLEncoder;
 import java.io.BufferedInputStream;
@@ -38,8 +37,6 @@ import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
-import javax.swing.JFileChooser;
-
 import jd.controlling.JDLogger;
 import jd.nutils.JDHash;
 import jd.parser.Regex;
@@ -51,11 +48,6 @@ public final class JDIO {
      */
     private JDIO() {
     }
-
-    /**
-     * Das aktuelle Verzeichnis (Laden/Speichern)
-     */
-    private static File currentDirectory;
 
     /**
      * Schreibt content in eine Lokale textdatei
@@ -135,14 +127,11 @@ public final class JDIO {
     /**
      * Speichert ein Objekt
      * 
-     * @param frame
-     *            eine Komponente
      * @param objectToSave
      *            Das zu speichernde Objekt
      * @param fileOutput
      *            Das File, in das geschrieben werden soll. Falls das File ein
-     *            Verzeichnis ist, wird darunter eine Datei erstellt Falls keins
-     *            angegeben wird, soll der Benutzer eine Datei auswählen
+     *            Verzeichnis ist, wird darunter eine Datei erstellt
      * @param name
      *            Dateiname
      * @param extension
@@ -150,63 +139,44 @@ public final class JDIO {
      * @param asXML
      *            Soll das Objekt in eine XML Datei gespeichert werden?
      */
-    public static void saveObject(final Component frame, final Object objectToSave, File fileOutput, final String name, final String extension, final boolean asXML) {
-        if (fileOutput != null) {
-            fileOutput.getParentFile().mkdirs();
+    public static void saveObject(final Object objectToSave, File fileOutput, final boolean asXML) {
+        if (fileOutput == null || fileOutput.isDirectory()) {
+            System.err.println("Schreibfehler: Wrong parameter (" + fileOutput + ")");
+            return;
         }
 
-        if (fileOutput == null) {
-            final JDFileFilter fileFilter = new JDFileFilter(extension, extension, true);
-            final JFileChooser fileChooserSave = new JFileChooser();
-            fileChooserSave.setFileFilter(fileFilter);
-            fileChooserSave.setSelectedFile(new File(((name != null) ? name : "*") + ((extension != null) ? extension : ".*")));
-            if (currentDirectory != null) {
-                fileChooserSave.setCurrentDirectory(currentDirectory);
-            }
-            if (fileChooserSave.showSaveDialog(frame) == JFileChooser.APPROVE_OPTION) {
-                fileOutput = fileChooserSave.getSelectedFile();
-                currentDirectory = fileChooserSave.getCurrentDirectory();
-            }
+        fileOutput.getParentFile().mkdirs();
+
+        JDIO.waitOnObject(fileOutput);
+        JDIO.saveReadObject.add(fileOutput);
+
+        if (fileOutput.exists()) {
+            fileOutput.delete();
         }
-
-        if (fileOutput != null) {
-            if (fileOutput.isDirectory()) {
-                fileOutput = new File(fileOutput, name + extension);
+        try {
+            final FileOutputStream fos = new FileOutputStream(fileOutput);
+            final BufferedOutputStream buff = new BufferedOutputStream(fos);
+            if (asXML) {
+                final XMLEncoder xmlEncoder = new XMLEncoder(buff);
+                xmlEncoder.writeObject(objectToSave);
+                xmlEncoder.close();
+            } else {
+                final ObjectOutputStream oos = new ObjectOutputStream(buff);
+                oos.writeObject(objectToSave);
+                oos.close();
             }
-
-            JDIO.waitOnObject(fileOutput);
-            JDIO.saveReadObject.add(fileOutput);
-
-            if (fileOutput.exists()) {
-                fileOutput.delete();
-            }
-            try {
-                final FileOutputStream fos = new FileOutputStream(fileOutput);
-                final BufferedOutputStream buff = new BufferedOutputStream(fos);
-                if (asXML) {
-                    final XMLEncoder xmlEncoder = new XMLEncoder(buff);
-                    xmlEncoder.writeObject(objectToSave);
-                    xmlEncoder.close();
-                } else {
-                    final ObjectOutputStream oos = new ObjectOutputStream(buff);
-                    oos.writeObject(objectToSave);
-                    oos.close();
-                }
-                buff.close();
-                fos.close();
-            } catch (FileNotFoundException e) {
-                JDLogger.exception(e);
-            } catch (IOException e) {
-                JDLogger.exception(e);
-            }
-            final String hashPost = JDHash.getMD5(fileOutput);
-            if (hashPost == null) {
-                System.err.println("Schreibfehler: " + fileOutput + " Datei wurde nicht erstellt");
-            }
-            JDIO.saveReadObject.remove(fileOutput);
-        } else {
-            System.err.println("Schreibfehler: Fileoutput: null");
+            buff.close();
+            fos.close();
+        } catch (FileNotFoundException e) {
+            JDLogger.exception(e);
+        } catch (IOException e) {
+            JDLogger.exception(e);
         }
+        final String hashPost = JDHash.getMD5(fileOutput);
+        if (hashPost == null) {
+            System.err.println("Schreibfehler: " + fileOutput + " Datei wurde nicht erstellt");
+        }
+        JDIO.saveReadObject.remove(fileOutput);
     }
 
     public static Vector<File> saveReadObject = new Vector<File>();
@@ -226,55 +196,45 @@ public final class JDIO {
     /**
      * Lädt ein Objekt aus einer Datei
      * 
-     * @param frame
-     *            Eine übergeordnete Komponente
      * @param fileInput
      *            Falls das Objekt aus einer bekannten Datei geladen werden
-     *            soll, wird hier die Datei angegeben. Falls nicht, kann der
-     *            Benutzer über einen Dialog eine Datei aussuchen
+     *            soll, wird hier die Datei angegeben.
      * @param asXML
      *            Soll das Objekt von einer XML Datei aus geladen werden?
      * @return Das geladene Objekt
      */
-    public static Object loadObject(final Component frame, File fileInput, final boolean asXML) {
+    public static Object loadObject(File fileInput, final boolean asXML) {
+        if (fileInput == null || fileInput.isDirectory()) {
+            System.err.println("Schreibfehler: Wrong parameter (" + fileInput + ")");
+            return null;
+        }
+
         Object objectLoaded = null;
-        if (fileInput == null) {
-            final JFileChooser fileChooserLoad = new JFileChooser();
-            if (currentDirectory != null) {
-                fileChooserLoad.setCurrentDirectory(currentDirectory);
-            }
-            if (fileChooserLoad.showOpenDialog(frame) == JFileChooser.APPROVE_OPTION) {
-                fileInput = fileChooserLoad.getSelectedFile();
-                currentDirectory = fileChooserLoad.getCurrentDirectory();
-            }
-        }
-        if (fileInput != null) {
 
-            waitOnObject(fileInput);
-            saveReadObject.add(fileInput);
+        waitOnObject(fileInput);
+        saveReadObject.add(fileInput);
 
-            try {
-                final FileInputStream fis = new FileInputStream(fileInput);
-                final BufferedInputStream buff = new BufferedInputStream(fis);
-                if (asXML) {
-                    final XMLDecoder xmlDecoder = new XMLDecoder(new BufferedInputStream(buff));
-                    objectLoaded = xmlDecoder.readObject();
-                    xmlDecoder.close();
-                } else {
-                    ObjectInputStream ois = new ObjectInputStream(buff);
-                    objectLoaded = ois.readObject();
-                    ois.close();
-                }
-                fis.close();
-                buff.close();
-
-                saveReadObject.remove(fileInput);
-                return objectLoaded;
-            } catch (Exception e) {
-                System.err.println(e.getMessage());
+        try {
+            final FileInputStream fis = new FileInputStream(fileInput);
+            final BufferedInputStream buff = new BufferedInputStream(fis);
+            if (asXML) {
+                final XMLDecoder xmlDecoder = new XMLDecoder(new BufferedInputStream(buff));
+                objectLoaded = xmlDecoder.readObject();
+                xmlDecoder.close();
+            } else {
+                ObjectInputStream ois = new ObjectInputStream(buff);
+                objectLoaded = ois.readObject();
+                ois.close();
             }
+            fis.close();
+            buff.close();
+
             saveReadObject.remove(fileInput);
+            return objectLoaded;
+        } catch (Exception e) {
+            JDLogger.exception(e);
         }
+        saveReadObject.remove(fileInput);
         return null;
     }
 

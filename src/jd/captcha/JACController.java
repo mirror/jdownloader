@@ -23,7 +23,6 @@ import java.io.FileFilter;
 
 import javax.swing.JButton;
 import javax.swing.JComboBox;
-import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 
@@ -56,7 +55,7 @@ public class JACController {
         methods = new JComboBox(meths);
         chooser = new BrowseFile();
         if (isTrain) {
-            chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+            chooser.setFileSelectionMode(BrowseFile.DIRECTORIES_ONLY);
         }
         chooser.setEditable(true);
 

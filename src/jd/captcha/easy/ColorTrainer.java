@@ -372,7 +372,7 @@ public class ColorTrainer {
      */
     @SuppressWarnings("unchecked")
     public static Vector<CPoint> load(File file) {
-        if (file.exists()) return (Vector<CPoint>) JDIO.loadObject(null, file, true);
+        if (file.exists()) return (Vector<CPoint>) JDIO.loadObject(file, true);
         return new Vector<CPoint>();
     }
 
@@ -384,7 +384,7 @@ public class ColorTrainer {
      */
     public static void saveColors(Vector<CPoint> cPoints, File file) {
         file.getParentFile().mkdirs();
-        JDIO.saveObject(null, cPoints, file, null, null, true);
+        JDIO.saveObject(cPoints, file, true);
     }
 
 }

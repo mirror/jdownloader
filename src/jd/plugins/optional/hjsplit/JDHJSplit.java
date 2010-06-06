@@ -33,8 +33,7 @@ import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
 import jd.controlling.SingleDownloadController;
 import jd.event.ControlEvent;
-import jd.gui.swing.SwingGui;
-import jd.gui.swing.components.JDFileChooser;
+import jd.gui.UserIO;
 import jd.gui.swing.jdgui.actions.ToolBarAction.Types;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.nutils.Formatter;
@@ -559,8 +558,6 @@ public class JDHJSplit extends PluginOptional {
 
             @Override
             public void onAction(ActionEvent e) {
-                JDFileChooser fc = new JDFileChooser("_JDHJSPLIT_");
-                fc.setMultiSelectionEnabled(true);
                 FileFilter ff = new FileFilter() {
                     @Override
                     public boolean accept(File pathname) {
@@ -575,12 +572,10 @@ public class JDHJSplit extends PluginOptional {
                     }
 
                 };
-                fc.setFileFilter(ff);
-                if (fc.showOpenDialog(SwingGui.getInstance().getMainFrame()) == JDFileChooser.APPROVE_OPTION) {
-                    File[] list = fc.getSelectedFiles();
-                    if (list == null) return;
-                    addFileList(list);
-                }
+                File[] files = UserIO.getInstance().requestFileChooser("_JDHJSPLIT_", null, UserIO.DIRECTORIES_ONLY, ff, true);
+                if (files == null || files.length == 0) return;
+
+                addFileList(files);
             }
         };
         return true;

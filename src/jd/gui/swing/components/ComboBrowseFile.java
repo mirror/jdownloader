@@ -26,24 +26,28 @@ import java.util.Vector;
 
 import javax.swing.JButton;
 import javax.swing.JComboBox;
-import javax.swing.JFileChooser;
 import javax.swing.JPanel;
 import javax.swing.filechooser.FileFilter;
 
 import jd.config.SubConfiguration;
+import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 public class ComboBrowseFile extends JPanel implements ActionListener {
 
+    public static final int FILES_ONLY = UserIO.FILES_ONLY;
+
+    public static final int DIRECTORIES_ONLY = UserIO.DIRECTORIES_ONLY;
+
+    public static final int FILES_AND_DIRECTORIES = UserIO.FILES_AND_DIRECTORIES;
+
     private static final long serialVersionUID = -3852915099917640687L;
 
     private Object LOCK = new Object();
 
     private ArrayList<ActionListener> listenerList = new ArrayList<ActionListener>();
-
-    private String approveButtonText;
 
     private JButton btnBrowse;
 
@@ -53,7 +57,7 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
 
     private Vector<String> files;
 
-    private int fileSelectionMode = JFileChooser.FILES_ONLY;
+    private int fileSelectionMode = UserIO.FILES_ONLY;
 
     private FileFilter fileFilter;
 
@@ -90,13 +94,6 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
                 l.actionPerformed(new ActionEvent(this, e.getID(), e.getActionCommand()));
             }
         }
-    }
-
-    /**
-     * @return the approveButtonText
-     */
-    public String getApproveButtonText() {
-        return approveButtonText;
     }
 
     /**
@@ -146,16 +143,9 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
     }
 
     private File getPath() {
-        final JDFileChooser fc = new JDFileChooser();
-        if (approveButtonText != null) {
-            fc.setApproveButtonText(approveButtonText);
-        }
-        fc.setFileSelectionMode(fileSelectionMode);
-        if (fileFilter != null) {
-            fc.setFileFilter(fileFilter);
-        }
-        fc.setCurrentDirectory(getDirectoryFromTxtInput());
-        return fc.showOpenDialog(this) == JDFileChooser.APPROVE_OPTION ? fc.getSelectedFile() : null;
+        File[] files = UserIO.getInstance().requestFileChooser(null, null, fileSelectionMode, fileFilter, null, getDirectoryFromTxtInput(), null);
+        if (files == null || files.length == 0) return null;
+        return files[0];
     }
 
     public String getText() {
@@ -211,14 +201,6 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
 
     public JComboBox getInput() {
         return cmboInput;
-    }
-
-    /**
-     * @param approveButtonText
-     *            the approveButtonText to set
-     */
-    public void setApproveButtonText(final String approveButtonText) {
-        this.approveButtonText = approveButtonText;
     }
 
     public void setButtonText(final String text) {
@@ -309,13 +291,13 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
      */
     public void setFileSelectionMode(final int fileSelectionMode) {
         this.fileSelectionMode = fileSelectionMode;
-        if (fileSelectionMode == JFileChooser.DIRECTORIES_ONLY) {
+        if (fileSelectionMode == UserIO.DIRECTORIES_ONLY) {
             for (int i = files.size() - 1; i >= 0; --i) {
                 if (!new File(files.get(i)).isDirectory()) {
                     files.remove(i);
                 }
             }
-        } else if (fileSelectionMode == JFileChooser.FILES_ONLY) {
+        } else if (fileSelectionMode == UserIO.FILES_ONLY) {
             for (int i = files.size() - 1; i >= 0; --i) {
                 if (!new File(files.get(i)).isFile()) {
                     files.remove(i);

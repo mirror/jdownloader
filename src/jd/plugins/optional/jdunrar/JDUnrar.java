@@ -38,8 +38,6 @@ import jd.controlling.ProgressController;
 import jd.controlling.SingleDownloadController;
 import jd.event.ControlEvent;
 import jd.gui.UserIO;
-import jd.gui.swing.SwingGui;
-import jd.gui.swing.components.JDFileChooser;
 import jd.gui.swing.jdgui.actions.ToolBarAction.Types;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.nutils.Executer;
@@ -499,9 +497,6 @@ public class JDUnrar extends PluginOptional implements UnrarListener, ActionList
         case 1003:
             link = (DownloadLink) source.getProperty("LINK");
             ArrayList<DownloadLink> list = this.getArchiveList(link);
-            JDFileChooser fc = new JDFileChooser("_JDUNRAR_");
-            fc.setMultiSelectionEnabled(false);
-            fc.setFileSelectionMode(JDFileChooser.DIRECTORIES_ONLY);
             FileFilter ff = new FileFilter() {
 
                 @Override
@@ -516,17 +511,16 @@ public class JDUnrar extends PluginOptional implements UnrarListener, ActionList
                 }
 
             };
-            fc.setFileFilter(ff);
             File extractto = this.getExtractToPath(link);
-            while (extractto != null && !extractto.isDirectory())
+            while (extractto != null && !extractto.isDirectory()) {
                 extractto = extractto.getParentFile();
-            fc.setCurrentDirectory(extractto);
-            if (fc.showOpenDialog(SwingGui.getInstance().getMainFrame()) == JDFileChooser.APPROVE_OPTION) {
-                File dl = fc.getSelectedFile();
-                if (dl == null) { return; }
-                for (DownloadLink l : list) {
-                    l.setProperty(JDUnrarConstants.DOWNLOADLINK_KEY_EXTRACTTOPATH, dl);
-                }
+            }
+
+            File[] files = UserIO.getInstance().requestFileChooser("_JDUNRAR_", null, UserIO.DIRECTORIES_ONLY, ff, null, extractto, null);
+            if (files == null || files.length == 0) return;
+
+            for (DownloadLink l : list) {
+                l.setProperty(JDUnrarConstants.DOWNLOADLINK_KEY_EXTRACTTOPATH, files[0]);
             }
             break;
         case 1005:
@@ -550,8 +544,6 @@ public class JDUnrar extends PluginOptional implements UnrarListener, ActionList
 
             @Override
             public void onAction(ActionEvent e) {
-                JDFileChooser fc = new JDFileChooser("_JDUNRAR_");
-                fc.setMultiSelectionEnabled(true);
                 FileFilter ff = new FileFilter() {
 
                     @Override
@@ -568,26 +560,25 @@ public class JDUnrar extends PluginOptional implements UnrarListener, ActionList
                     }
 
                 };
-                fc.setFileFilter(ff);
-                if (fc.showOpenDialog(SwingGui.getInstance().getMainFrame()) == JDFileChooser.APPROVE_OPTION) {
-                    File[] list = fc.getSelectedFiles();
-                    if (list == null) return;
-                    DownloadLink link;
-                    for (File archiveStartFile : list) {
 
-                        link = findStartLink(archiveStartFile);
-                        if (link == null) {
-                            continue;
-                        }
-                        final DownloadLink finalLink = link;
-                        System.out.print("queued to extract: " + archiveStartFile);
-                        new Thread() {
-                            @Override
-                            public void run() {
-                                addToQueue(finalLink);
-                            }
-                        }.start();
+                File[] files = UserIO.getInstance().requestFileChooser("_JDUNRAR_", null, null, ff, true, null, null);
+                if (files == null || files.length == 0) return;
+
+                DownloadLink link;
+                for (File archiveStartFile : files) {
+
+                    link = findStartLink(archiveStartFile);
+                    if (link == null) {
+                        continue;
                     }
+                    final DownloadLink finalLink = link;
+                    System.out.print("queued to extract: " + archiveStartFile);
+                    new Thread() {
+                        @Override
+                        public void run() {
+                            addToQueue(finalLink);
+                        }
+                    }.start();
                 }
             }
         };

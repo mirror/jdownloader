@@ -20,6 +20,7 @@ import java.awt.Point;
 import java.io.File;
 
 import javax.swing.ImageIcon;
+import javax.swing.JFileChooser;
 import javax.swing.ListCellRenderer;
 import javax.swing.filechooser.FileFilter;
 
@@ -30,6 +31,12 @@ import jd.nutils.JDFlags;
 import jd.utils.locale.JDL;
 
 public abstract class UserIO {
+
+    public static final int FILES_ONLY = JFileChooser.FILES_ONLY;
+    public static final int DIRECTORIES_ONLY = JFileChooser.DIRECTORIES_ONLY;
+    public static final int FILES_AND_DIRECTORIES = JFileChooser.FILES_AND_DIRECTORIES;
+    public static final int OPEN_DIALOG = JFileChooser.OPEN_DIALOG;
+    public static final int SAVE_DIALOG = JFileChooser.SAVE_DIALOG;
 
     /**
      * TO not query user. Try to fill automaticly, or return null
@@ -172,6 +179,10 @@ public abstract class UserIO {
 
     abstract protected String[] showTwoTextFieldDialog(String title, String messageOne, String defOne, String messageTwo, String defTwo);
 
+    public File[] requestFileChooser(final String id, final String title, final Integer fileSelectionMode, final FileFilter fileFilter, final Boolean multiSelection) {
+        return requestFileChooser(id, title, fileSelectionMode, fileFilter, multiSelection, null, null);
+    }
+
     /**
      * Requests a FileChooserDialog.
      * 
@@ -180,21 +191,26 @@ public abstract class UserIO {
      * @param title
      *            dialog-title or null for default
      * @param fileSelectionMode
-     *            mode for selecting files (like JDFileChooser.FILES_ONLY) or
+     *            mode for selecting files (like {@link UserIO#FILES_ONLY}) or
      *            null for default
      * @param fileFilter
      *            filters the choosable files or null for default
      * @param multiSelection
      *            multible files choosable? or null for default
+     * @param startDirectory
+     *            the start directory
+     * @param dialogType
+     *            mode for the dialog type (like {@link UserIO#OPEN_DIALOG}) or
+     *            null for default
      * @return an array of files or null if the user cancel the dialog
      */
-    public File[] requestFileChooser(final String id, final String title, final Integer fileSelectionMode, final FileFilter fileFilter, final Boolean multiSelection) {
+    public File[] requestFileChooser(final String id, final String title, final Integer fileSelectionMode, final FileFilter fileFilter, final Boolean multiSelection, final File startDirectory, final Integer dialogType) {
         synchronized (INSTANCE) {
-            return showFileChooser(id, title, fileSelectionMode, fileFilter, multiSelection);
+            return showFileChooser(id, title, fileSelectionMode, fileFilter, multiSelection, startDirectory, dialogType);
         }
     }
 
-    abstract protected File[] showFileChooser(String id, String title, Integer fileSelectionMode, FileFilter fileFilter, Boolean multiSelection);
+    abstract protected File[] showFileChooser(String id, String title, Integer fileSelectionMode, FileFilter fileFilter, Boolean multiSelection, File startDirectory, Integer dialogType);
 
     public void requestMessageDialog(final String message) {
         requestMessageDialog(0, JDL.L("gui.dialogs.message.title", "Message"), message);

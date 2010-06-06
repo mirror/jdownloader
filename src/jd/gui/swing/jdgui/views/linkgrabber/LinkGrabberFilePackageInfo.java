@@ -28,7 +28,6 @@ import jd.config.Configuration;
 import jd.controlling.LinkGrabberController;
 import jd.gui.swing.components.ComboBrowseFile;
 import jd.gui.swing.components.JDCollapser;
-import jd.gui.swing.components.JDFileChooser;
 import jd.gui.swing.components.JDTextField;
 import jd.plugins.LinkGrabberFilePackage;
 import jd.utils.JDUtilities;
@@ -99,7 +98,7 @@ public class LinkGrabberFilePackageInfo extends JDCollapser implements ActionLis
         txtName.addFocusListener(this);
         brwSaveTo = new ComboBrowseFile("DownloadSaveTo");
         brwSaveTo.setEditable(true);
-        brwSaveTo.setFileSelectionMode(JDFileChooser.DIRECTORIES_ONLY);
+        brwSaveTo.setFileSelectionMode(ComboBrowseFile.DIRECTORIES_ONLY);
         brwSaveTo.setText(JDUtilities.getDefaultDownloadDirectory());
         brwSaveTo.addActionListener(this);
 

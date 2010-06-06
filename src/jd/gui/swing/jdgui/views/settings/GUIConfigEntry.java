@@ -26,7 +26,6 @@ import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
-import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
@@ -116,7 +115,7 @@ public class GUIConfigEntry implements GuiConfigListener, ActionListener, Change
         case ConfigContainer.TYPE_BROWSEFOLDER:
             input = new ComboBrowseFile(configEntry.getPropertyName());
             ((ComboBrowseFile) input).setEditable(true);
-            ((ComboBrowseFile) input).setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+            ((ComboBrowseFile) input).setFileSelectionMode(ComboBrowseFile.DIRECTORIES_ONLY);
             break;
         case ConfigContainer.TYPE_SPINNER:
             input = new JSpinner(new SpinnerNumberModel(configEntry.getStart(), configEntry.getStart(), configEntry.getEnd(), configEntry.getStep()));

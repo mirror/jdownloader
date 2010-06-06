@@ -18,8 +18,6 @@ package jd.plugins.optional.customizer.columns;
 
 import java.awt.Component;
 
-import javax.swing.JFileChooser;
-
 import jd.gui.swing.components.BrowseFile;
 import jd.gui.swing.components.table.JDTableColumn;
 import jd.gui.swing.components.table.JDTableModel;
@@ -39,7 +37,7 @@ public class DownloadDirColumn extends JDTableColumn {
         jlr = new JRendererLabel();
         jlr.setBorder(null);
         file = new BrowseFile(new MigLayout("ins 0", "[fill,grow]2[min!]", "[21!]"));
-        file.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+        file.setFileSelectionMode(BrowseFile.DIRECTORIES_ONLY);
         file.setButtonText("...");
         file.getTextField().setBorder(null);
         setClickstoEdit(2);

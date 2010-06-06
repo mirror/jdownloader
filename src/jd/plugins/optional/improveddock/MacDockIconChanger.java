@@ -37,7 +37,7 @@ public class MacDockIconChanger extends Thread implements Runnable {
 
     private final Color foregroundColor = Color.RED;
 
-    private final Color fontColor = Color.BLACK;
+    // private final Color fontColor = Color.BLACK;
 
     private final DownloadInformations downloadInfo;
 

@@ -105,9 +105,9 @@ public class SrcParser {
         ArrayList<String> filePattern = new ArrayList<String>();
         if (cacheEntries.exists() && cachePattern.exists()) {
             try {
-                fileEntries = (ArrayList<LngEntry>) JDIO.loadObject(null, cacheEntries, false);
+                fileEntries = (ArrayList<LngEntry>) JDIO.loadObject(cacheEntries, false);
 
-                filePattern = (ArrayList<String>) JDIO.loadObject(null, cachePattern, false);
+                filePattern = (ArrayList<String>) JDIO.loadObject(cachePattern, false);
 
                 for (LngEntry entry : fileEntries) {
                     if (!entries.contains(entry)) {
@@ -141,8 +141,8 @@ public class SrcParser {
         }
 
         try {
-            JDIO.saveObject(null, fileEntries, cacheEntries, null, null, false);
-            JDIO.saveObject(null, filePattern, cachePattern, null, null, false);
+            JDIO.saveObject(fileEntries, cacheEntries, false);
+            JDIO.saveObject(filePattern, cachePattern, false);
         } catch (Exception e) {
             e.printStackTrace();
             cacheEntries.delete();

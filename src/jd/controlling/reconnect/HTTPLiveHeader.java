@@ -25,8 +25,6 @@ import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.swing.JFrame;
-
 import jd.config.Configuration;
 import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
@@ -437,7 +435,7 @@ public class HTTPLiveHeader extends ReconnectMethod {
         final ArrayList<String[]> ret = new ArrayList<String[]>();
         for (final File element : list) {
             if (element.isFile() && element.getName().toLowerCase().matches(".*\\.xml$")) {
-                ret.addAll((Collection<? extends String[]>) JDIO.loadObject(new JFrame(), element, true));
+                ret.addAll((Collection<? extends String[]>) JDIO.loadObject(element, true));
             }
         }
 

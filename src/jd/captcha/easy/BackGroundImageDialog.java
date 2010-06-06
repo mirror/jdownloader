@@ -43,8 +43,9 @@ import javax.swing.border.TitledBorder;
 import jd.captcha.gui.ImageComponent;
 import jd.captcha.utils.Utilities;
 import jd.gui.swing.GuiRunnable;
-import jd.gui.swing.components.JDFileChooser;
+import jd.gui.swing.jdgui.userio.UserIOGui;
 import jd.nutils.JDHash;
+import jd.nutils.io.JDFileFilter;
 import jd.nutils.io.JDIO;
 import jd.utils.locale.JDL;
 
@@ -252,29 +253,29 @@ public class BackGroundImageDialog implements ActionListener {
             ret = workingImage;
             return;
         } else if (e.getSource() == btLoadBackgroundImage) {
-            File fch = JDFileChooser.getFile(JDFileChooser.ImagesOnly);
-            if (fch != null) {
-                File fout = new File(bgim.methode.file, "mask_" + JDHash.getMD5(fch) + "." + JDIO.getFileExtension(fch));
-                JDIO.copyFile(fch, fout);
-                workingImage = new BackGroundImage();
-                workingImage.setBackgroundImage(fout.getName());
-                workingImage.setColor(colorChooser.getColor().getRGB());
-                workingImage.setDistance((Integer) thresholdSpinner.getValue());
-                workingImage.setColorDistanceMode(colorMode);
-                bgim.clearCaptchaPreview(workingImage);
-                btPreview.setEnabled(true);
-                final Image image2 = bgim.getScaledCaptchaImage();
+            File[] fch = UserIOGui.getInstance().requestFileChooser(null, null, null, new JDFileFilter(null, ".jpg|.png|.gif|.jpeg|.bmp", true), null);
+            if (fch == null || fch.length == 0) return;
 
-                new GuiRunnable<Object>() {
-                    public Object runSave() {
-                        bgv.image = image2;
-                        bgmask.image = workingImage.getImage(bgim.methode);
-                        bgmask.repaint();
-                        bgv.repaint();
-                        return null;
-                    }
-                }.waitForEDT();
-            }
+            File fout = new File(bgim.methode.file, "mask_" + JDHash.getMD5(fch[0]) + "." + JDIO.getFileExtension(fch[0]));
+            JDIO.copyFile(fch[0], fout);
+            workingImage = new BackGroundImage();
+            workingImage.setBackgroundImage(fout.getName());
+            workingImage.setColor(colorChooser.getColor().getRGB());
+            workingImage.setDistance((Integer) thresholdSpinner.getValue());
+            workingImage.setColorDistanceMode(colorMode);
+            bgim.clearCaptchaPreview(workingImage);
+            btPreview.setEnabled(true);
+            final Image image2 = bgim.getScaledCaptchaImage();
+
+            new GuiRunnable<Object>() {
+                public Object runSave() {
+                    bgv.image = image2;
+                    bgmask.image = workingImage.getImage(bgim.methode);
+                    bgmask.repaint();
+                    bgv.repaint();
+                    return null;
+                }
+            }.waitForEDT();
         } else if (e.getSource() == btCreateBackgroundFilter) {
 
             File fout = BackgroundFilterCreater.create(bgim.methode);
@@ -308,5 +309,4 @@ public class BackGroundImageDialog implements ActionListener {
             }
         }.waitForEDT();
     }
-
 }

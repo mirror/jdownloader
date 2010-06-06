@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.Vector;
 
 import javax.swing.Icon;
-import javax.swing.JFileChooser;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
@@ -32,7 +31,6 @@ import javax.swing.JTextArea;
 import jd.PluginWrapper;
 import jd.gui.UserIO;
 import jd.gui.swing.SwingGui;
-import jd.gui.swing.components.JDFileChooser;
 import jd.gui.swing.components.linkbutton.JLink;
 import jd.gui.swing.dialog.ImportRouterDialog;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
@@ -97,41 +95,31 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
         } else if (e.getSource() == menImportJDLH) {
             importLHScript();
         } else if (e.getSource() == menImportFile) {
-            JDFileChooser fc = new JDFileChooser();
-            fc.setApproveButtonText(JDL.L("plugins.optional.httpliveheaderscripter.gui.openfile", "Open"));
-            fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
-            fc.setFileFilter(new JDFileFilter(JDL.L("plugins.optional.httpliveheaderscripter.gui.desc", "XML-File"), ".xml", true));
-            fc.showSaveDialog(tabbedPanel);
-            File ret = fc.getSelectedFile();
-            if (ret == null || !ret.exists()) { return; }
+            File[] files = UserIO.getInstance().requestFileChooser(null, null, null, new JDFileFilter(JDL.L("plugins.optional.httpliveheaderscripter.gui.desc", "XML-File"), ".xml", true), null);
+            if (files == null || files.length == 0) return;
+
             try {
-                Vector<String> save = (Vector<String>) JDIO.loadObject(tabbedPanel, ret, true);
+                Vector<String> save = (Vector<String>) JDIO.loadObject(files[0], true);
                 textArea.setText(save.get(2));
             } catch (Exception e2) {
-                textArea.setText(JDIO.readFileToString(ret));
+                textArea.setText(JDIO.readFileToString(files[0]));
             }
-
         } else if (e.getSource() == menSave) {
-            JDFileChooser fc = new JDFileChooser();
-            fc.setApproveButtonText(JDL.L("gui.btn_save", "Save"));
-            fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
-            fc.setFileFilter(new JDFileFilter(JDL.L("plugins.optional.httpliveheaderscripter.gui.desc", "XML-File"), ".xml", true));
-            fc.showSaveDialog(tabbedPanel);
-            File ret = fc.getSelectedFile();
-            if (ret == null) { return; }
-            if (JDIO.getFileExtension(ret) == null || !JDIO.getFileExtension(ret).equalsIgnoreCase("xml")) {
-                ret = new File(ret.getAbsolutePath() + ".xml");
-            }
-            ArrayList<String> save = new ArrayList<String>();
+            File[] files = UserIO.getInstance().requestFileChooser(null, null, null, new JDFileFilter(JDL.L("plugins.optional.httpliveheaderscripter.gui.desc", "XML-File"), ".xml", true), null, null, UserIO.SAVE_DIALOG);
+            if (files == null || files.length == 0) return;
+
             String manu = UserIO.getInstance().requestInputDialog(0, JDL.L("plugins.optional.httpliveheaderscripter.gui.save.manufacturer", "Manufacturer? (e.g. Siemens)"), null);
+            if (manu == null) return;
             String model = UserIO.getInstance().requestInputDialog(0, JDL.L("plugins.optional.httpliveheaderscripter.gui.save.model", "Model? (e.g. Gigaset 555 (fw 3.01.05)"), null);
-            if (manu == null || model == null) { return; }
+            if (model == null) return;
+
+            ArrayList<String> save = new ArrayList<String>();
             save.add(manu);
             save.add(model);
             save.add(textArea.getText());
             save.add("?s).*" + manu.toLowerCase() + ".*");
 
-            JDIO.saveObject(tabbedPanel, save, ret, null, null, true);
+            JDIO.saveObject(save, files[0], true);
         } else if (e.getSource() == menEditValidate) {
             if (validate()) {
                 UserIO.getInstance().requestMessageDialog(JDL.L("plugins.optional.httpliveheaderscripter.gui.validate.ok", "Script is Valid."));
@@ -143,12 +131,12 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
             StringBuilder sb = new StringBuilder();
             sb.append(script.substring(0, id).trim());
             sb.append("\r\n");
-            sb.append("     [[[STEP]]]" + "\r\n");
-            sb.append("          [[[REQUEST]]]" + "\r\n\r\n");
-            sb.append("          [[[/REQUEST]]]" + "\r\n");
-            sb.append("     [[[/STEP]]]" + "\r\n");
+            sb.append("     [[[STEP]]]\r\n");
+            sb.append("          [[[REQUEST]]]\r\n\r\n");
+            sb.append("          [[[/REQUEST]]]\r\n");
+            sb.append("     [[[/STEP]]]\r\n");
             sb.append(script.substring(id).trim());
-            textArea.setText(sb + "");
+            textArea.setText(sb.toString());
         } else if (e.getSource() == menEditAddDefine) {
             if (!validate()) { return; }
             String script = textArea.getText();
@@ -156,11 +144,11 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
             StringBuilder sb = new StringBuilder();
             sb.append(script.substring(0, id).trim());
             sb.append("\r\n");
-            sb.append("     [[[STEP]]]" + "\r\n");
-            sb.append("          [[[DEFINE variablename=\"VALUE\"/]]]" + "\r\n");
-            sb.append("     [[[/STEP]]]" + "\r\n");
+            sb.append("     [[[STEP]]]\r\n");
+            sb.append("          [[[DEFINE variablename=\"VALUE\"/]]]\r\n");
+            sb.append("     [[[/STEP]]]\r\n");
             sb.append(script.substring(id).trim());
-            textArea.setText(sb + "");
+            textArea.setText(sb.toString());
         } else if (e.getSource() == menEditAddWait) {
             if (!validate()) { return; }
             String script = textArea.getText();
@@ -168,11 +156,11 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
             StringBuilder sb = new StringBuilder();
             sb.append(script.substring(0, id).trim());
             sb.append("\r\n");
-            sb.append("     [[[STEP]]]" + "\r\n");
-            sb.append("          [[[WAIT seconds=\"3\"/]]]" + "\r\n");
-            sb.append("     [[[/STEP]]]" + "\r\n");
+            sb.append("     [[[STEP]]]\r\n");
+            sb.append("          [[[WAIT seconds=\"3\"/]]]\r\n");
+            sb.append("     [[[/STEP]]]\r\n");
             sb.append(script.substring(id).trim());
-            textArea.setText(sb + "");
+            textArea.setText(sb.toString());
         }
     }
 
@@ -203,8 +191,8 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
             if (f) {
                 continue;
             }
-            sb.append("     [[[STEP]]]" + "\r\n");
-            sb.append("          [[[REQUEST]]]" + "\r\n");
+            sb.append("     [[[STEP]]]\r\n");
+            sb.append("          [[[REQUEST]]]\r\n");
             boolean post = lines[2].trim().toLowerCase().startsWith("post");
             lines: for (int i = 2; i < lines.length; i++) {
                 lines[i] = lines[i].trim();
@@ -223,7 +211,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
                         ips.add(ip);
 
                     }
-                    sb.append("Host: %%%IP" + ips.indexOf(ip) + "%%%" + "\r\n");
+                    sb.append("Host: %%%IP" + ips.indexOf(ip) + "%%%\r\n");
 
                 } else {
                     if (post) {
@@ -234,15 +222,15 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
                     sb.append(lines[i].trim() + "\r\n");
                 }
             }
-            sb.append("          [[[/REQUEST]]]" + "\r\n");
-            sb.append("     [[[/STEP]]]" + "\r\n");
+            sb.append("          [[[/REQUEST]]]\r\n");
+            sb.append("     [[[/STEP]]]\r\n");
         }
 
         int i = 0;
 
         String sc = sb.toString();
         sb = new StringBuilder();
-        sb.append("     [[[STEP]]]" + "\r\n");
+        sb.append("     [[[STEP]]]\r\n");
         sb.append("          [[[DEFINE");
         for (String ip : ips) {
 
@@ -256,17 +244,16 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
             sc = sc.replaceAll(ip, "%%%ip" + i + "%%%");
             i++;
         }
-        sb.append("/]]]" + "\r\n");
-        sb.append("     [[[/STEP]]]" + "\r\n");
+        sb.append("/]]]\r\n");
+        sb.append("     [[[/STEP]]]\r\n");
         i++;
 
         StringBuilder ret = new StringBuilder();
-        ret.append("[[[HSRC]]]" + "\r\n");
+        ret.append("[[[HSRC]]]\r\n");
         ret.append(sb);
         ret.append(sc);
-
         ret.append("[[[/HSRC]]]");
-        return ret + "";
+        return ret.toString();
     }
 
     @Override

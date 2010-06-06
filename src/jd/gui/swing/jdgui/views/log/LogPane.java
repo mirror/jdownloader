@@ -25,7 +25,6 @@ import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
-import javax.swing.JFileChooser;
 import javax.swing.JScrollPane;
 import javax.swing.JTextPane;
 import javax.swing.text.Document;
@@ -37,7 +36,6 @@ import jd.controlling.LogFormatter;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.UserIO;
-import jd.gui.swing.components.JDFileChooser;
 import jd.gui.swing.components.linkbutton.JLink;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.nutils.JDFlags;
@@ -70,21 +68,14 @@ public class LogPane extends SwitchPanel implements ActionListener, ControlListe
     }
 
     public void actionPerformed(ActionEvent e) {
-
         switch (e.getID()) {
-
         case LogInfoPanel.ACTION_SAVE:
-            JDFileChooser fc = new JDFileChooser();
-            fc.setApproveButtonText(JDL.L("gui.btn_save", "Save"));
-            fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
-            if (fc.showOpenDialog(this) == JDFileChooser.APPROVE_OPTION) {
-                File ret = fc.getSelectedFile();
-                if (ret != null) {
-                    String content = toString();
-                    JDIO.writeLocalFile(ret, content);
-                    JDLogger.getLogger().info("Log saved to file: " + ret.getAbsolutePath());
-                }
-            }
+            File[] files = UserIO.getInstance().requestFileChooser(null, null, null, null, null, null, UserIO.SAVE_DIALOG);
+            if (files == null || files.length == 0) return;
+
+            String content = toString();
+            JDIO.writeLocalFile(files[0], toString());
+            JDLogger.getLogger().info("Log saved to file: " + files[0].getAbsolutePath());
             break;
         case LogInfoPanel.ACTION_UPLOAD:
             Level level = JDLogger.getLogger().getLevel();
@@ -93,7 +84,7 @@ public class LogPane extends SwitchPanel implements ActionListener, ControlListe
                 int status = UserIO.getInstance().requestHelpDialog(UserIO.NO_COUNTDOWN, JDL.L("gui.logdialog.loglevelwarning.title", "Wrong Loglevel for Uploading selected!"), JDL.LF("gui.logdialog.loglevelwarning", "The selected loglevel (%s) isn't preferred to upload a log! Please change it to ALL and create a new log!", level.getName()), null, "http://jdownloader.org/knowledge/wiki/support/create-a-jd-log");
                 if (JDFlags.hasSomeFlags(status, UserIO.RETURN_CANCEL, UserIO.RETURN_COUNTDOWN_TIMEOUT)) return;
             }
-            String content = null;
+            content = null;
             synchronized (LOCK) {
                 content = logField.getSelectedText();
                 if (content == null || content.length() == 0) {

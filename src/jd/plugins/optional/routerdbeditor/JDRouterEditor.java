@@ -355,7 +355,7 @@ public class JDRouterEditor extends PluginOptional {
 
     private void loadFile(String filepath) {
         File file = new File(filepath);
-        Vector<?> temp = (Vector<?>) JDIO.loadObject(null, file, true);
+        Vector<?> temp = (Vector<?>) JDIO.loadObject(file, true);
         if (temp != null) router.loadRouter(temp);
         updateTable();
     }
@@ -381,8 +381,7 @@ public class JDRouterEditor extends PluginOptional {
     }
 
     protected void saveToFile() {
-        File file = new File(currentfile);
-        JDIO.saveObject(null, router.prepareToSave(), file, null, null, true);
+        JDIO.saveObject(router.prepareToSave(), new File(currentfile), true);
     }
 
 }

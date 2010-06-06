@@ -29,7 +29,6 @@ import javax.swing.JTabbedPane;
 import jd.controlling.DownloadController;
 import jd.gui.swing.components.ComboBrowseFile;
 import jd.gui.swing.components.JDCollapser;
-import jd.gui.swing.components.JDFileChooser;
 import jd.gui.swing.components.JDTextField;
 import jd.gui.swing.components.multiprogress.MultiProgressBar;
 import jd.nutils.Formatter;
@@ -132,7 +131,7 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
         txtName.addFocusListener(this);
         brwSaveTo = new ComboBrowseFile("DownloadSaveTo");
         brwSaveTo.setEditable(true);
-        brwSaveTo.setFileSelectionMode(JDFileChooser.DIRECTORIES_ONLY);
+        brwSaveTo.setFileSelectionMode(ComboBrowseFile.DIRECTORIES_ONLY);
         brwSaveTo.setText(JDUtilities.getDefaultDownloadDirectory());
         brwSaveTo.addActionListener(this);
         brwSaveTo.addFocusListener(this);

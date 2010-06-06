@@ -105,13 +105,13 @@ public class DatabaseConnector implements Serializable {
 
             PreparedStatement pst = con.prepareStatement("INSERT INTO config VALUES (?,?)");
             logger.finer("Starting database wrapper");
-//cfg file conversion
+            // cfg file conversion
             for (String tmppath : new File(configpath).list()) {
                 try {
                     if (tmppath.endsWith(".cfg")) {
                         logger.finest("Wrapping " + tmppath);
 
-                        Object props = JDIO.loadObject(null, JDUtilities.getResourceFile("config/" + tmppath), false);
+                        Object props = JDIO.loadObject(JDUtilities.getResourceFile("config/" + tmppath), false);
 
                         if (props != null) {
                             pst.setString(1, tmppath.split(".cfg")[0]);
@@ -368,7 +368,7 @@ public class DatabaseConnector implements Serializable {
     public Object getLinks() {
         synchronized (LOCK) {
             if (isDatabaseShutdown()) return null;
-            
+
             Statement statement = null;
             ResultSet rs = null;
 
