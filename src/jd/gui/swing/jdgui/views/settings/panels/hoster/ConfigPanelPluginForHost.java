@@ -38,6 +38,7 @@ import jd.config.ConfigGroup;
 import jd.gui.UserIF;
 import jd.gui.swing.components.table.JDTable;
 import jd.gui.swing.components.table.JDTableModel;
+import jd.gui.swing.jdgui.menu.PremiumMenu;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
 import jd.gui.swing.jdgui.views.settings.panels.hoster.columns.AcceptColumn;
 import jd.gui.swing.jdgui.views.settings.panels.hoster.columns.HostColumn;
@@ -186,6 +187,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
             plugin.setEnabled(checkvalue);
         }
 
+        PremiumMenu.getInstance().update();
         tablemodel.refreshModel();
     }
 
