@@ -98,7 +98,7 @@ public class Installer {
                 JLabel lbl;
 
                 content.add(lbl = new JLabel(JDL.L("installer.gui.message", "After Installation, JDownloader will update to the latest version.")), "pushx");
-                lbl.setFont(lbl.getFont().deriveFont(lbl.getFont().getStyle() ^ Font.BOLD));
+                lbl.setFont(lbl.getFont().deriveFont(Font.BOLD));
                 lbl.setHorizontalAlignment(JLabel.CENTER);
 
                 content.add(lbl = new JLabel(JDL.L("installer.firefox.message", "Do you want to integrate JDownloader to Firefox?")));

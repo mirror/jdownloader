@@ -39,7 +39,7 @@ public class TreeRenderer extends DefaultTreeCellRenderer {
         label.setBackground(null);
 
         orgFont = label.getFont();
-        boldFont = label.getFont().deriveFont(label.getFont().getStyle() ^ Font.BOLD);
+        boldFont = label.getFont().deriveFont(Font.BOLD);
     }
 
     @Override

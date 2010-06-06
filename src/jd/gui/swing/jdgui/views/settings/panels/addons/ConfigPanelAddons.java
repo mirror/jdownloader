@@ -24,7 +24,8 @@ import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.JTextPane;
+import javax.swing.JSeparator;
+import javax.swing.JTextArea;
 import javax.swing.ListSelectionModel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
@@ -92,7 +93,7 @@ public class ConfigPanelAddons extends ConfigPanel {
 
     private JLabel lblName;
     private JLabel lblVersion;
-    private JTextPane txtDescription;
+    private JTextArea txtDescription;
 
     public ConfigPanelAddons() {
         super();
@@ -114,14 +115,14 @@ public class ConfigPanelAddons extends ConfigPanel {
             }
         });
 
-        lblName = new JLabel(defaultIcon);
-        lblName.setFont(lblName.getFont().deriveFont(lblName.getFont().getStyle() ^ Font.BOLD));
+        lblName = new JLabel();
+        lblName.setIcon(defaultIcon);
+        lblName.setFont(lblName.getFont().deriveFont(Font.BOLD));
         lblName.setHorizontalAlignment(JLabel.LEADING);
 
         lblVersion = new JLabel();
-        lblVersion.setVerticalAlignment(JLabel.BOTTOM);
 
-        txtDescription = new JTextPane();
+        txtDescription = new JTextArea();
         txtDescription.setEditable(false);
         txtDescription.setBackground(null);
         txtDescription.setOpaque(false);
@@ -129,17 +130,17 @@ public class ConfigPanelAddons extends ConfigPanel {
 
         table.getSelectionModel().setSelectionInterval(0, 0);
 
-        JPanel showcase = new JPanel(new MigLayout("ins 0, wrap 1", "[grow,fill]"));
-        showcase.add(lblName, "split 2, growx");
-        showcase.add(lblVersion, "growy");
-        showcase.add(new JScrollPane(txtDescription), "h 60!, growx");
+        JPanel panel = new JPanel(new MigLayout("ins 0, wrap 1", "[grow,fill]", "[grow,fill]10[]5[]"));
+        panel.add(new JScrollPane(table), "growy, pushy");
+        panel.add(lblName, "split 3");
+        panel.add(new JSeparator(JSeparator.HORIZONTAL), "growx, pushx, gapleft 10, gapright 10");
+        panel.add(lblVersion);
+        panel.add(new JScrollPane(txtDescription), "h 60!");
 
         ConfigContainer container = new ConfigContainer();
 
         container.setGroup(new ConfigGroup(getTitle(), getIconKey()));
-        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMPONENT, new JScrollPane(table), "growy, pushy"));
-        container.setGroup(new ConfigGroup(JDL.L(JDL_PREFIX + "showcase", "Showcase"), getIconKey()));
-        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMPONENT, showcase, "growy"));
+        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMPONENT, panel, "growy, pushy"));
 
         return container;
     }

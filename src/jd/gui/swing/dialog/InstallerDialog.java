@@ -124,7 +124,7 @@ public class InstallerDialog extends AbstractDialog {
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMPONENT, browseFile, "growx,pushx"));
 
         final JLabel lbl = new JLabel(JDL.L("installer.gui.message", "After Installation, JDownloader will update to the latest version."));
-        lbl.setFont(lbl.getFont().deriveFont(lbl.getFont().getStyle() ^ Font.BOLD));
+        lbl.setFont(lbl.getFont().deriveFont(Font.BOLD));
         lbl.setHorizontalAlignment(JLabel.CENTER);
 
         if (OSDetector.getOSID() == OSDetector.OS_WINDOWS_VISTA || OSDetector.getOSID() == OSDetector.OS_WINDOWS_7) {
