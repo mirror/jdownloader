@@ -16,9 +16,7 @@
 
 package jd.gui.swing;
 
-import javax.swing.JFrame;
-import javax.swing.UIManager;
-import javax.swing.UnsupportedLookAndFeelException;
+import javax.swing.*;
 
 import jd.controlling.JDController;
 import jd.gui.swing.dialog.AboutDialog;
@@ -41,41 +39,5 @@ public class MacOSController extends Application {
         } catch (UnsupportedLookAndFeelException e) {
             e.printStackTrace();
         }
-
-        addApplicationListener(new Handler());
     }
-
-    private class Handler extends ApplicationAdapter {
-
-        @Override
-        public void handleQuit(final ApplicationEvent e) {
-            JDController.getInstance().exit();
-        }
-
-        @Override
-        public void handleAbout(final ApplicationEvent e) {
-            e.setHandled(true);
-            new GuiRunnable<Object>() {
-
-                @Override
-                public Object runSave() {
-                    new AboutDialog();
-                    return null;
-                }
-
-            }.start();
-        }
-
-        @Override
-        public void handleReOpenApplication(final ApplicationEvent e) {
-            final SwingGui swingGui = SwingGui.getInstance();
-            if (swingGui == null || swingGui.getMainFrame() == null) return;
-            final JFrame mainFrame = swingGui.getMainFrame();
-            if (!mainFrame.isVisible()) {
-                mainFrame.setVisible(true);
-            }
-        }
-
-    }
-
 }

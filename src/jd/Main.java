@@ -44,6 +44,7 @@ import jd.controlling.JDLogger;
 import jd.event.ControlEvent;
 import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
+import jd.gui.swing.MacOSApplicationAdapter;
 import jd.gui.swing.MacOSController;
 import jd.gui.swing.components.linkbutton.JLink;
 import jd.gui.swing.jdgui.GUIUtils;
@@ -331,7 +332,12 @@ public class Main {
         }
 
         try {
-            new MacOSController();
+            Application macApplication = Application.getApplication();
+            MacOSApplicationAdapter macAdapter = new MacOSApplicationAdapter();
+            macApplication.addApplicationListener(macAdapter);
+
+            // need to enable the preferences option manually
+            macApplication.setEnabledPreferencesMenu(true);
 
         } catch (Exception e) {
             LOG.info("Error Initializing Look and Feel: " + e);
