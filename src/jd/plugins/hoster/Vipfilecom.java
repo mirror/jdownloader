@@ -20,11 +20,13 @@ import java.io.IOException;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
 import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -56,9 +58,8 @@ public class Vipfilecom extends PluginForHost {
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.getPage(downloadURL);
         if (br.containsHTML("This file not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        // This is made for 2 languages
-        String fileSize = br.getRegex("<span.*?(Size|Ðàçìåð):.*?<b style=.*?>(.*?)</b>").getMatch(1);
-        if (fileSize == null) fileSize = br.getRegex("name=\"sssize\" value=\"(.*?)\"").getMatch(0);
+        String fileSize = br.getRegex("name=\"sssize\" value=\"(.*?)\"").getMatch(0);
+        if (fileSize == null) fileSize = br.getRegex("<p>Size of file: <span>(.*?)</span>").getMatch(0);
         String fileName = br.getRegex("<input type=\"hidden\" name=\"realname\" value=\"(.*?)\" />").getMatch(0);
         if (fileSize == null || fileName == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setDownloadSize(Regex.getSize(fileSize));
@@ -94,21 +95,26 @@ public class Vipfilecom extends PluginForHost {
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         requestFileInformation(downloadLink);
-        Form form = br.getForm(1);
+        Form form = br.getForm(0);
         if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         form.put("pass", Encoding.urlEncode(account.getPass()));
         br.submitForm(form);
-        String url = Encoding.htmlDecode(br.getRegex(Pattern.compile("<a href=(\"|')(http://r.*?vip-file\\.com.*?)(\"|')", Pattern.CASE_INSENSITIVE)).getMatch(1));
+        // Try to find the remaining traffic
+        String trafficLeft = br.getRegex("You can download another: (.*?) with current password").getMatch(0);
+        if (trafficLeft != null) {
+            AccountInfo ai = new AccountInfo();
+            Account aa = AccountController.getInstance().getValidAccount(this);
+            ai.setTrafficLeft(trafficLeft);
+            ai.setStatus("Premium User");
+            aa.setAccountInfo(ai);
+        }
+        String url = Encoding.htmlDecode(br.getRegex(Pattern.compile("Ваша ссылка для скачивания:<br><a href='(http://.*?)'", Pattern.CASE_INSENSITIVE)).getMatch(1));
         if (url == null) url = br.getRegex("(http://[0-9]+\\.[0-9]+\\.[0-9]+\\..*?/downloadp[0-9]+/.*?)'>").getMatch(0);
         if (url == null && br.containsHTML("Wrong password")) {
             logger.info("Downloadpassword seems to be wrong, disabeling account now!");
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
         if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String trafficLeft = br.getRegex("You can download another:(.*?)with current password").getMatch(0);
-        if (trafficLeft != null) {
-            trafficLeft = trafficLeft.replace("GigaByte", "GB").trim();
-        }
         /* we have to wait little because server too buggy */
         sleep(5000, downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 0);
