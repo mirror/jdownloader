@@ -31,7 +31,7 @@ public class ClosableTabHeader extends JPanel {
     private static final long serialVersionUID = 4463352125800695922L;
 
     public ClosableTabHeader(final ClosableView view) {
-        setLayout(new MigLayout("ins 0", "[grow,fill]", "[16!]"));
+        setLayout(new MigLayout("ins 0", "[grow,fill]push[]", "[16!]"));
         setOpaque(false);
         setToolTipText(view.getTooltip());
         addMouseListener(new JDMouseAdapter() {
@@ -83,7 +83,7 @@ public class ClosableTabHeader extends JPanel {
         label.setOpaque(false);
 
         add(label);
-        add(view.getCloseButton(), "dock east, hidemode 3,gapleft 5,height 16!, width 16!");
+        add(view.getCloseButton(), "gapleft 5, h pref!, w pref!");
     }
 
 }

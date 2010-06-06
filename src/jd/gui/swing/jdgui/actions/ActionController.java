@@ -108,12 +108,11 @@ public class ActionController {
 
             @Override
             public void initDefaults() {
-                setEnabled(true);
             }
 
             @Override
             public void initAction() {
-                JDUtilities.getController().addControlListener(new ControlIDListener(ControlEvent.CONTROL_DOWNLOAD_START, ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED, ControlEvent.CONTROL_DOWNLOAD_STOP) {
+                JDController.getInstance().addControlListener(new ControlIDListener(ControlEvent.CONTROL_DOWNLOAD_START, ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED, ControlEvent.CONTROL_DOWNLOAD_STOP) {
                     @Override
                     public void controlIDEvent(final ControlEvent event) {
                         new GuiRunnable<Object>() {
@@ -174,7 +173,7 @@ public class ActionController {
 
             @Override
             public void initAction() {
-                JDUtilities.getController().addControlListener(new ControlIDListener(ControlEvent.CONTROL_DOWNLOAD_START, ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED, ControlEvent.CONTROL_DOWNLOAD_STOP) {
+                JDController.getInstance().addControlListener(new ControlIDListener(ControlEvent.CONTROL_DOWNLOAD_START, ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED, ControlEvent.CONTROL_DOWNLOAD_STOP) {
                     @Override
                     public void controlIDEvent(final ControlEvent event) {
                         new GuiRunnable<Object>() {
@@ -217,10 +216,9 @@ public class ActionController {
 
             @Override
             public void initAction() {
-                JDUtilities.getController().addControlListener(new ControlIDListener(ControlEvent.CONTROL_DOWNLOAD_START, ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED, ControlEvent.CONTROL_DOWNLOAD_STOP) {
+                JDController.getInstance().addControlListener(new ControlIDListener(ControlEvent.CONTROL_DOWNLOAD_START, ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED, ControlEvent.CONTROL_DOWNLOAD_STOP) {
                     @Override
                     public void controlIDEvent(final ControlEvent event) {
-
                         new GuiRunnable<Object>() {
 
                             @Override
@@ -271,7 +269,6 @@ public class ActionController {
 
             @Override
             public void initDefaults() {
-                setEnabled(true);
             }
 
             @Override
@@ -294,7 +291,6 @@ public class ActionController {
 
             @Override
             public void threadedActionPerformed(ActionEvent e) {
-
                 new GuiRunnable<Object>() {
                     @Override
                     public Object runSave() {
@@ -317,7 +313,6 @@ public class ActionController {
 
             @Override
             public void initDefaults() {
-                this.setEnabled(true);
             }
 
             @Override
@@ -337,7 +332,6 @@ public class ActionController {
 
             @Override
             public void initDefaults() {
-                setEnabled(true);
                 setType(ToolBarAction.Types.TOGGLE);
                 boolean b = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, true);
                 setSelected(b);
@@ -373,7 +367,6 @@ public class ActionController {
 
             @Override
             public void initDefaults() {
-                setEnabled(true);
                 setType(ToolBarAction.Types.TOGGLE);
                 setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true));
                 setIcon(isSelected() ? "gui.images.reconnect_enabled" : "gui.images.reconnect_disabled");
@@ -422,14 +415,38 @@ public class ActionController {
             public void initDefaults() {
                 this.setToolTipText(JDL.L(JDL_PREFIX + "toolbar.control.stopmark.tooltip", "Stop after current Downloads"));
                 this.setEnabled(false);
-                setType(ToolBarAction.Types.TOGGLE);
+                this.setType(ToolBarAction.Types.TOGGLE);
                 this.setSelected(false);
-                this.setIcon("gui.images.stopmark.disabled");
+            }
+
+            @Override
+            protected void initAction() {
                 this.addPropertyChangeListener(new PropertyChangeListener() {
                     public void propertyChange(PropertyChangeEvent evt) {
                         if (evt.getPropertyName() == SELECTED_KEY) {
                             setIcon((Boolean) evt.getNewValue() ? "gui.images.stopmark.enabled" : "gui.images.stopmark.disabled");
                         }
+                    }
+                });
+                JDController.getInstance().addControlListener(new ControlIDListener(ControlEvent.CONTROL_DOWNLOAD_START, ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED, ControlEvent.CONTROL_DOWNLOAD_STOP) {
+                    @Override
+                    public void controlIDEvent(final ControlEvent event) {
+                        new GuiRunnable<Object>() {
+
+                            @Override
+                            public Object runSave() {
+                                switch (event.getID()) {
+                                case ControlEvent.CONTROL_DOWNLOAD_START:
+                                    setEnabled(true);
+                                    break;
+                                case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
+                                case ControlEvent.CONTROL_DOWNLOAD_STOP:
+                                    setEnabled(false);
+                                    break;
+                                }
+                                return null;
+                            }
+                        }.start();
                     }
                 });
             }
@@ -617,6 +634,12 @@ public class ActionController {
 
             @Override
             public void initDefaults() {
+                setType(ToolBarAction.Types.TOGGLE);
+                setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true));
+            }
+
+            @Override
+            public void initAction() {
                 this.addPropertyChangeListener(new PropertyChangeListener() {
                     public void propertyChange(PropertyChangeEvent evt) {
                         if (evt.getPropertyName() == SELECTED_KEY) {
@@ -632,9 +655,6 @@ public class ActionController {
                         PremiumStatus.getInstance().updateGUI(b);
                     }
                 });
-
-                setType(ToolBarAction.Types.TOGGLE);
-                setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true));
             }
 
         };

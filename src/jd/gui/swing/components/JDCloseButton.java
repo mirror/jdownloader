@@ -25,8 +25,7 @@ public abstract class JDCloseButton extends JButton implements ActionListener {
     private void init() {
         closeAction = new JDCloseAction(this);
         setAction(closeAction);
-        setContentAreaFilled(false);
-        setBorderPainted(false);
+        setBorder(false);
         addMouseListener(new JDMouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
@@ -44,7 +43,7 @@ public abstract class JDCloseButton extends JButton implements ActionListener {
             }
         });
         setPreferredSize(new Dimension(closeAction.getWidth(), closeAction.getHeight()));
-        if (JDUtilities.getJavaVersion() < 1.6) setHideActionText(true);
+        if (JDUtilities.getJavaVersion() >= 1.6) setHideActionText(true);
     }
 
     private final void setBorder(boolean state) {

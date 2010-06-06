@@ -18,12 +18,11 @@ package jd.gui.swing.jdgui.components.toolbar;
 
 import jd.controlling.JDController;
 import jd.event.ControlEvent;
-import jd.event.ControlListener;
+import jd.event.ControlIDListener;
 import jd.gui.swing.GuiRunnable;
-import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.components.speedmeter.SpeedMeterPanel;
 
-public class MainToolBar extends ToolBar implements ControlListener {
+public class MainToolBar extends ToolBar {
 
     private static final long serialVersionUID = 922971719957349497L;
     private static MainToolBar INSTANCE = null;
@@ -39,32 +38,27 @@ public class MainToolBar extends ToolBar implements ControlListener {
         super();
 
         speedmeter = new SpeedMeterPanel(true, false);
-        JDController.getInstance().addControlListener(this);
-    }
+        JDController.getInstance().addControlListener(new ControlIDListener(ControlEvent.CONTROL_DOWNLOAD_START, ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED, ControlEvent.CONTROL_DOWNLOAD_STOP) {
+            @Override
+            public void controlIDEvent(final ControlEvent event) {
+                new GuiRunnable<Object>() {
 
-    public void controlEvent(final ControlEvent event) {
-        switch (event.getID()) {
-        case ControlEvent.CONTROL_DOWNLOAD_START:
-        case ControlEvent.CONTROL_DOWNLOAD_STOP:
-        case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
-            new GuiRunnable<Object>() {
-                @Override
-                public Object runSave() {
-                    switch (event.getID()) {
-                    case ControlEvent.CONTROL_DOWNLOAD_START:
-                        speedmeter.start();
-                        ActionController.getToolBarAction("toolbar.control.stopmark").setEnabled(true);
-                        break;
-                    case ControlEvent.CONTROL_DOWNLOAD_STOP:
-                    case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
-                        ActionController.getToolBarAction("toolbar.control.stopmark").setEnabled(false);
-                        speedmeter.stop();
-                        break;
+                    @Override
+                    public Object runSave() {
+                        switch (event.getID()) {
+                        case ControlEvent.CONTROL_DOWNLOAD_START:
+                            speedmeter.start();
+                            break;
+                        case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
+                        case ControlEvent.CONTROL_DOWNLOAD_STOP:
+                            speedmeter.stop();
+                            break;
+                        }
+                        return null;
                     }
-                    return null;
-                }
-            }.start();
-        }
+                }.start();
+            }
+        });
     }
 
     @Override
@@ -73,13 +67,13 @@ public class MainToolBar extends ToolBar implements ControlListener {
         for (int i = 0; i < list.length; ++i) {
             sb.append("2[]");
         }
-        sb.append("push[]");
+        sb.append("push[]2");
         return sb.toString();
     }
 
     @Override
     protected void updateSpecial() {
-        add(speedmeter, "hidemode 3,height 30!, width 30:200:300");
+        add(speedmeter, "hidemode 3, width 32:200:300");
     }
 
 }
