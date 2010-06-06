@@ -6,6 +6,7 @@ import jd.gui.swing.jdgui.menu.actions.ExitAction;
 import jd.gui.swing.jdgui.menu.actions.RestartAction;
 import jd.gui.swing.jdgui.menu.actions.RestoreAction;
 import jd.gui.swing.jdgui.menu.actions.SettingsAction;
+import jd.nutils.OSDetector;
 import jd.utils.locale.JDL;
 
 public class FileMenu extends JMenu {
@@ -21,7 +22,10 @@ public class FileMenu extends JMenu {
         addSeparator();
         add(new RestoreAction());
         add(new RestartAction());
-        add(new ExitAction());
+
+        if (!OSDetector.isMac()) {
+            add(new ExitAction());
+        }
     }
 
 }

@@ -34,6 +34,7 @@ import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.apple.eawt.Application;
 import jd.captcha.JACController;
 import jd.captcha.JAntiCaptcha;
 import jd.config.SubConfiguration;
@@ -50,6 +51,7 @@ import jd.gui.swing.jdgui.JDGuiConstants;
 import jd.gui.swing.jdgui.userio.UserIOGui;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.http.Browser;
+import jd.nutils.JDImage;
 import jd.nutils.OSDetector;
 import jd.nutils.OutdatedParser;
 import jd.update.FileUpdate;
@@ -68,7 +70,6 @@ import org.appwork.utils.singleapp.SingleAppInstance;
  * @author JD-Team
  */
 public class Main {
-
     private static Logger LOG;
     private static boolean instanceStarted = false;
     public static SingleAppInstance SINGLE_INSTANCE_CONTROLLER = null;
@@ -80,6 +81,9 @@ public class Main {
     public static void main(String args[]) {
         // Mac OS specific
         if (OSDetector.isMac()) {
+            // Set MacApplicationName
+            // Must be in Main
+            System.setProperty("com.apple.mrj.application.apple.menu.about.name", "JDownloader");
             initMACProperties();
         }
         System.setProperty("file.encoding", "UTF-8");
@@ -308,10 +312,11 @@ public class Main {
      * Sets special Properties for MAC
      */
     private static void initMACProperties() {
-        // set Properties
+        // set DockIcon (most used in Building)
+        Application.getApplication().setDockIconImage(JDImage.getImage("logo/jd_logo_128_128"));
 
-        // MenuName in every LAF
-        System.setProperty("com.apple.mrj.application.apple.menu.about.name", "JDownloader");
+        // Use ScreenMenu in every LAF
+        System.setProperty("apple.laf.useScreenMenuBar", "true");
 
         // native Mac just if User Choose Aqua as Skin
         if (LookAndFeelController.getPlaf().getName().equals("Apple Aqua")) {
@@ -375,6 +380,8 @@ public class Main {
                     try {
                         Thread.sleep(5000);
                     } catch (InterruptedException e) {
+
+                        // TODO: Cant be Empty
                     }
                 }
             }
