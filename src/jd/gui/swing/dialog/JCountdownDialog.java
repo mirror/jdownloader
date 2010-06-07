@@ -24,6 +24,7 @@ import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 
+import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.interfaces.JDMouseAdapter;
 import jd.gui.userio.DummyFrame;
@@ -53,7 +54,7 @@ public abstract class JCountdownDialog extends JDialog {
     }
 
     protected void initCountdown() {
-        countDownLabel = new JLabel("               ");
+        countDownLabel = new JLabel(Formatter.formatSeconds(UserIO.getCountdownTime()));
         countDownLabel.setIcon(JDTheme.II("gui.images.cancel", 16, 16));
         countDownLabel.setToolTipText(JDL.L("gui.dialog.countdown.tooltip", "This dialog closes after a certain time. Click here to stop the countdown"));
         countDownLabel.addMouseListener(new JDMouseAdapter() {
