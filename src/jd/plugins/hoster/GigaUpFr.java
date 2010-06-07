@@ -47,7 +47,7 @@ public class GigaUpFr extends PluginForHost {
         br.setFollowRedirects(true);
         br.setCustomCharset("UTF-8");
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(Le fichier que vous tentez.*?harger.*?existe pas|Le code de vérification entré est incorrecte|Fichier supprimé car non utilisé sur une période trop longue|Le fichier a.*?sign.*?ill.*?gal)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(Le fichier que vous tentez.*?harger.*?existe pas|Le code de vérification entré est incorrecte|Fichier supprimé car non utilisé sur une période trop longue|Le fichier a.*?sign.*?ill.*?gal|Vous ne pouvez télécharger ce fichier car il est \"Supprimé automatiquement\")")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>GigaUP\\.fr \\| (.*?)</title>").getMatch(0);
         if (filename == null) filename = br.getRegex("").getMatch(0);
         String filesize = br.getRegex("<div class=\"text_t\">(.*?)</div>").getMatch(0);
