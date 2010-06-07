@@ -42,7 +42,6 @@ import net.miginfocom.swing.MigLayout;
 import org.jdesktop.swingworker.SwingWorker;
 
 public class Balloon {
-    private static final int GAP = 20;
     private static final int MAX = 5;
     private static ArrayList<JWindow> WINDOWS = null;
     public static int COUNTDOWN = 10 * 1000;
@@ -93,12 +92,10 @@ public class Balloon {
                     public void dispose() {
                         Balloon.remove(this);
                         super.dispose();
-
                     }
 
                     @Override
                     public void setVisible(final boolean b) {
-
                         if (b) {
                             Balloon.add(this);
                             this.timer = new SwingWorker<Object, Object>() {
@@ -143,7 +140,7 @@ public class Balloon {
                     }
                 });
 
-                final JPanel titlePanel = new JPanel(new MigLayout("ins 0", "[grow,fill][]"));
+                final JPanel titlePanel = new JPanel(new MigLayout("ins 0", "[]push[]"));
                 titlePanel.addMouseListener(new JDMouseAdapter() {
                     @Override
                     public void mouseClicked(final MouseEvent e) {
@@ -152,14 +149,14 @@ public class Balloon {
                     }
                 });
                 titlePanel.add(lbl);
-                titlePanel.add(bt, "aligny top,alignx right");
+                titlePanel.add(bt);
 
                 final JPanel container = new JPanel();
                 container.setBorder(BorderFactory.createLineBorder(container.getBackground().darker()));
                 container.setLayout(new MigLayout("ins 5,wrap 1", "[grow,fill]", "[][][grow,fill]"));
                 container.add(titlePanel);
                 container.add(new JSeparator(), "growx,pushx");
-                container.add(panel);
+                container.add(panel, "wmax 338");
 
                 w.setMinimumSize(new Dimension(100, 40));
                 w.setLayout(new MigLayout("ins 0", "[grow,fill]", "[grow,fill]"));
@@ -190,16 +187,17 @@ public class Balloon {
 
     private synchronized static void layout() {
         int width = 0;
+        int height = 0;
         for (final JWindow w : WINDOWS) {
             try {
                 width = Math.max(Math.min((int) w.getPreferredSize().getWidth(), 350), width);
+                height = Math.max(Math.min((int) w.getPreferredSize().getHeight(), 100), height);
             } catch (Exception e) {
-
             }
         }
         for (final JWindow w : WINDOWS) {
             try {
-                w.setSize(width, w.getHeight());
+                w.setSize(width, height);
             } catch (Exception e) {
             }
         }
@@ -222,34 +220,24 @@ public class Balloon {
 
     private static void locate(final JWindow w, final int y) {
         final Point point = Screen.getDockBottomRight(w);
-        point.x -= GAP;
-        point.y -= (GAP + y);
+        point.y -= y;
         w.setLocation(point);
     }
 
-    private static JPanel createDefault(final ImageIcon ii, final String string2) {
-        return new GuiRunnable<JPanel>() {
+    private static JPanel createDefault(final ImageIcon ii, final String string) {
+        final JTextPane textField = new JTextPane();
+        textField.setContentType("text/html");
+        textField.setBorder(null);
+        textField.setOpaque(false);
+        textField.putClientProperty("Synthetica.opaque", Boolean.FALSE);
+        textField.setText(string);
+        textField.setEditable(false);
+        textField.addHyperlinkListener(JLink.getHyperlinkListener());
 
-            @Override
-            public JPanel runSave() {
-                final JPanel p = new JPanel(new MigLayout("ins 0", "[fill,grow]"));
-                if (ii != null) {
-                    p.add(new JLabel(ii), "split 2,alignx left, aligny top");
-                }
-                final JTextPane textField = new JTextPane();
-                p.add(textField, "pushx,growx");
-                textField.setContentType("text/html");
-                textField.setBorder(null);
-                textField.setOpaque(false);
-                // textField.setOpaque(false);
-                textField.putClientProperty("Synthetica.opaque", Boolean.FALSE);
-                textField.setText(string2);
-                textField.setEditable(false);
-                textField.addHyperlinkListener(JLink.getHyperlinkListener());
-                return p;
-            }
-
-        }.getReturnValue();
+        final JPanel p = new JPanel(new MigLayout("ins 0", "[fill,grow]", "[fill,grow]"));
+        if (ii != null) p.add(new JLabel(ii), "split 2, alignx left, aligny top");
+        p.add(textField, "pushx,growx");
+        return p;
     }
 
 }

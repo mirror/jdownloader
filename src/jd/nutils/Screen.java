@@ -24,7 +24,7 @@ import java.awt.Toolkit;
 public class Screen {
 
     /**
-     * Liefert einen Punkt zurück, mit dem eine Komponente auf eine andere
+     * Liefert einen Punkt zurueck, mit dem eine Komponente auf eine andere
      * zentriert werden kann
      * 
      * @param parent
@@ -46,17 +46,15 @@ public class Screen {
             center.x += parent.getWidth() / 2;
             center.y += parent.getHeight() / 2;
         }
-        // Dann Auszurichtende Komponente in die Berechnung einflieÃŸen lassen
+        // Dann Auszurichtende Komponente in die Berechnung einfliessen lassen
         center.x -= child.getWidth() / 2;
         center.y -= child.getHeight() / 2;
         return center;
     }
 
     public static Point getDockBottomRight(Component child) {
-
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-        return new Point((int) (screenSize.getWidth() - child.getWidth()-20), (int) (screenSize.getHeight() - child.getHeight()-60));
-
+        return new Point((int) (screenSize.getWidth() - child.getWidth()), (int) (screenSize.getHeight() - child.getHeight() - 60));
     }
 
 }

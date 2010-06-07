@@ -334,8 +334,9 @@ public class ActionController {
             @Override
             public void initDefaults() {
                 setType(ToolBarAction.Types.TOGGLE);
-                setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true));
-                setIcon(isSelected() ? "gui.images.reconnect_enabled" : "gui.images.reconnect_disabled");
+                boolean b = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true);
+                setSelected(b);
+                setIcon(b ? "gui.images.reconnect_enabled" : "gui.images.reconnect_disabled");
             }
 
             @Override

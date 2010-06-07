@@ -25,7 +25,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
-import javax.swing.JTextArea;
+import javax.swing.JTextPane;
 import javax.swing.ListSelectionModel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
@@ -93,7 +93,7 @@ public class ConfigPanelAddons extends ConfigPanel {
 
     private JLabel lblName;
     private JLabel lblVersion;
-    private JTextArea txtDescription;
+    private JTextPane txtDescription;
 
     public ConfigPanelAddons() {
         super();
@@ -122,11 +122,14 @@ public class ConfigPanelAddons extends ConfigPanel {
 
         lblVersion = new JLabel();
 
-        txtDescription = new JTextArea();
+        txtDescription = new JTextPane();
         txtDescription.setEditable(false);
         txtDescription.setBackground(null);
         txtDescription.setOpaque(false);
         txtDescription.putClientProperty("Synthetica.opaque", Boolean.FALSE);
+
+        JScrollPane scrollPane = new JScrollPane(txtDescription);
+        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 
         table.getSelectionModel().setSelectionInterval(0, 0);
 
@@ -135,7 +138,7 @@ public class ConfigPanelAddons extends ConfigPanel {
         panel.add(lblName, "split 3");
         panel.add(new JSeparator(JSeparator.HORIZONTAL), "growx, pushx, gapleft 10, gapright 10");
         panel.add(lblVersion);
-        panel.add(new JScrollPane(txtDescription), "h 60!");
+        panel.add(scrollPane, "h 60!");
 
         ConfigContainer container = new ConfigContainer();
 
