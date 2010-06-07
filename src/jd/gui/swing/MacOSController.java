@@ -16,27 +16,16 @@
 
 package jd.gui.swing;
 
-import javax.swing.*;
-
-import jd.controlling.JDController;
-import jd.gui.swing.dialog.AboutDialog;
+import javax.swing.UIManager;
 
 import com.apple.eawt.Application;
-import com.apple.eawt.ApplicationAdapter;
-import com.apple.eawt.ApplicationEvent;
 
 public class MacOSController extends Application {
 
     public MacOSController() {
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        } catch (InstantiationException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        } catch (UnsupportedLookAndFeelException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }

@@ -24,7 +24,6 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -38,7 +37,6 @@ import java.util.Vector;
 import java.util.regex.Pattern;
 
 import jd.controlling.JDLogger;
-import jd.nutils.JDHash;
 import jd.parser.Regex;
 import jd.utils.StringUtil;
 
@@ -91,7 +89,7 @@ public final class JDIO {
     }
 
     public static String validateFileandPathName(final String name) {
-        if (name == null) { return null; }
+        if (name == null) return null;
         return name.replaceAll("([\\\\|<|>|\\||\"|:|\\*|\\?|/|\\x00])+", "_");
     }
 
@@ -167,14 +165,8 @@ public final class JDIO {
             }
             buff.close();
             fos.close();
-        } catch (FileNotFoundException e) {
+        } catch (Exception e) {
             JDLogger.exception(e);
-        } catch (IOException e) {
-            JDLogger.exception(e);
-        }
-        final String hashPost = JDHash.getMD5(fileOutput);
-        if (hashPost == null) {
-            System.err.println("Schreibfehler: " + fileOutput + " Datei wurde nicht erstellt");
         }
         JDIO.saveReadObject.remove(fileOutput);
     }
@@ -184,7 +176,7 @@ public final class JDIO {
     public static void waitOnObject(final File file) {
         int c = 0;
         while (saveReadObject.contains(file)) {
-            if (c++ > 1000) { return; }
+            if (c++ > 1000) return;
             try {
                 Thread.sleep(1);
             } catch (InterruptedException e) {
@@ -271,7 +263,7 @@ public final class JDIO {
         }
 
         // Ensure all the bytes have been read in
-        if (offset < bytes.length) { throw new IOException("Could not completely read file " + file.getName()); }
+        if (offset < bytes.length) throw new IOException("Could not completely read file " + file.getName());
 
         // Close the input stream and return bytes
         is.close();
@@ -286,8 +278,8 @@ public final class JDIO {
      * @return File Content als String
      */
     public static String readFileToString(final File file) {
-        if (file == null) { return null; }
-        if (!file.exists()) { return ""; }
+        if (file == null) return null;
+        if (!file.exists()) return "";
         final BufferedReader f;
         try {
             f = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF8"));
@@ -314,17 +306,16 @@ public final class JDIO {
      * @return
      */
     public static String getFileExtension(final File ret) {
-        if (ret == null) { return null; }
+        if (ret == null) return null;
         return getFileExtension(ret.getAbsolutePath());
-
     }
 
     public static String getFileExtension(final String str) {
-        if (str == null) { return null; }
+        if (str == null) return null;
 
         final int i3 = str.lastIndexOf(".");
 
-        if (i3 > 0) { return str.substring(i3 + 1); }
+        if (i3 > 0) return str.substring(i3 + 1);
         return null;
     }
 
@@ -401,7 +392,6 @@ public final class JDIO {
             }
         }
         return ret;
-
     }
 
     /**

@@ -27,6 +27,7 @@ import javax.swing.JPanel;
 
 import jd.gui.swing.jdgui.borders.JDBorderFactory;
 import jd.gui.swing.jdgui.interfaces.DroppedPanel;
+import jd.nutils.JDImage;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
@@ -76,7 +77,12 @@ public abstract class JDCollapser extends DroppedPanel {
 
     public void setInfos(String name, ImageIcon icon) {
         menutitle.setText(name);
-        menutitle.setIcon(icon);
+
+        try {
+            menutitle.setIcon(JDImage.getScaledImageIcon(icon, 16, 16));
+        } catch (Exception e) {
+            menutitle.setIcon(icon);
+        }
 
         closeButton.setToolTipText(JDL.LF("jd.gui.swing.components.JDCollapser.closetooltip", "Close %s", name));
     }

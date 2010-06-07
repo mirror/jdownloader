@@ -187,7 +187,7 @@ public class SrcParser {
                 currentContent += "\r\nJDL.L(\"gui.menu." + k + ".tooltip\",\"gui.menu." + k + ".tooltip\");";
             }
         }
-        if (this.currentContent.contains("extends PluginOptional")) {
+        if (this.currentContent.contains("extends PluginOptional") && !this.currentContent.contains("SrcParser")) {
             /*
              * Support for localized plugin names
              */

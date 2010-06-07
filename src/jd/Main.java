@@ -34,7 +34,6 @@ import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.apple.eawt.Application;
 import jd.captcha.JACController;
 import jd.captcha.JAntiCaptcha;
 import jd.config.SubConfiguration;
@@ -45,7 +44,6 @@ import jd.event.ControlEvent;
 import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.MacOSApplicationAdapter;
-import jd.gui.swing.MacOSController;
 import jd.gui.swing.components.linkbutton.JLink;
 import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.jdgui.JDGuiConstants;
@@ -66,6 +64,8 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.singleapp.AnotherInstanceRunningException;
 import org.appwork.utils.singleapp.InstanceMessageListener;
 import org.appwork.utils.singleapp.SingleAppInstance;
+
+import com.apple.eawt.Application;
 
 /**
  * @author JD-Team
