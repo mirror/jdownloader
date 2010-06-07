@@ -32,19 +32,25 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-//appscene.org by pspzockerscene
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "appscene.org" }, urls = { "http://[\\w\\.]*?appscene\\.org/(download/[0-9a-zA-Z]+|download\\.php\\?id=\\d+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filedude.com" }, urls = { "http://[\\w\\.]*?(appscene\\.org|filedude\\.com)/(download/[0-9a-zA-Z]+|download\\.php\\?id=\\d+)" }, flags = { 2 })
 public class AppSceneOrg extends PluginForHost {
-
+    // TODO: rename the whole class (delete this one and use "FileDudeCom" as
+    // new classname
     public AppSceneOrg(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://www.appscene.org/premium");
+        this.enablePremium("http://www.filedude.com/premium");
+    }
+
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("appscene.org", "filedude.com"));
     }
 
     @Override
     public String getAGBLink() {
-        return "http://www.appscene.org/about.php";
+        return "http://www.filedude.com/terms";
     }
+
+    private String FILEDUDECAPTCHAREGEX = "\"(http://www.filedude\\.com/captcha/.*?\\.jpg)\"";
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
@@ -59,9 +65,10 @@ public class AppSceneOrg extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        boolean failed = true;
         for (int i = 0; i <= 4; i++) {
             Form captchaForm = br.getForm(0);
-            String captchaurl = br.getRegex("\"(http://www.appscene.org/captcha/.*?)\"").getMatch(0);
+            String captchaurl = br.getRegex(FILEDUDECAPTCHAREGEX).getMatch(0);
             if (captchaForm == null || captchaurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             String code;
             if (i > 2) {
@@ -71,16 +78,22 @@ public class AppSceneOrg extends PluginForHost {
             }
             captchaForm.put("captcha", code);
             br.submitForm(captchaForm);
-            if (br.getRedirectLocation().contains("appscene.org/download")) {
+            if (br.getRedirectLocation() != null) {
                 br.getPage(br.getRedirectLocation());
                 continue;
             }
+            failed = false;
             break;
         }
-        String captchaurl = br.getRegex("\"(http://www.appscene.org/captcha/.*?)\"").getMatch(0);
-        if (captchaurl != null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        if (br.getRedirectLocation().contains("appscene.org/download")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        dl = BrowserAdapter.openDownload(br, downloadLink, br.getRedirectLocation(), false, 1);
+        if (failed) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        String dllink = br.getRegex("<div style=\"text-align: center; font-size: 30px;\">[\n\r\t ]+<a href=\"(http://.*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\"(http://srv\\d+\\..*?\\.filedude\\.com/getN/.*?/.*?)\"").getMatch(0);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl.startDownload();
     }
 
@@ -88,8 +101,8 @@ public class AppSceneOrg extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage("http://www.appscene.org/premium");
-        br.postPage("http://www.appscene.org/premium_login", "user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
-        if (!br.containsHTML("Premium Area") || br.getCookie("http://www.appscene.org/", "premium_id") == null || br.getCookie("http://www.appscene.org/", "premium_pass") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        br.postPage("http://www.filedude.com/premium_login", "user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
+        if (!br.containsHTML("Premium Area") || br.getCookie("http://www.filedude.com", "premium_id") == null || br.getCookie("http://www.filedude.com/", "premium_pass") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
     @Override

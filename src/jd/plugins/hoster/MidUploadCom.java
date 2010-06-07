@@ -17,12 +17,15 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -61,8 +64,8 @@ public class MidUploadCom extends PluginForHost {
         if (br.containsHTML("This server is in maintenance mode")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This server is in maintenance mode");
         String passCode = null;
         checkErrors(link, false, passCode);
-        Form form = br.getFormbyProperty("name", "F1");
-        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        Form captchaForm = br.getFormbyProperty("name", "F1");
+        if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // Ticket Time
         String ttt = br.getRegex("countdown\">.*?(\\d+).*?</span>").getMatch(0);
         if (ttt != null) {
@@ -70,15 +73,50 @@ public class MidUploadCom extends PluginForHost {
             int tt = Integer.parseInt(ttt);
             sleep(tt * 1001, link);
         }
-        String captcha = br.getRegex(Pattern.compile("Bitte Code eingeben:</b></td></tr>.*<tr><td align=right>.*<img src=\"(.*?)\">.*class=\"captcha_code\">", Pattern.DOTALL)).getMatch(0);
-        if (captcha == null) captcha = br.getRegex(Pattern.compile("Enter code below:</b></td></tr>.*<tr><td align=right>.*<img src=\"(.*?)\">.*class=\"captcha_code\">", Pattern.DOTALL)).getMatch(0);
-        if (captcha == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String code = getCaptchaCode(captcha, link);
-        form.put("code", code);
-        if (br.containsHTML(passwordText)) {
-            handlePassword(passCode, form, link);
+        if (br.toString().contains(";background:#ccc;text-align")) {
+            logger.info("Detected captcha method \"plaintext captchas\" for this host");
+            // Captcha method by ManiacMansion
+            String[][] letters = new Regex(Encoding.htmlDecode(br.toString()), "<span style='position:absolute;padding-left:(\\d+)px;padding-top:\\d+px;'>(\\d)</span>").getMatches();
+            if (letters == null || letters.length == 0) {
+                logger.warning("plaintext captchahandling broken!");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            SortedMap<Integer, String> capMap = new TreeMap<Integer, String>();
+            for (String[] letter : letters) {
+                capMap.put(Integer.parseInt(letter[0]), letter[1]);
+            }
+            StringBuilder code = new StringBuilder();
+            for (String value : capMap.values()) {
+                code.append(value);
+            }
+            captchaForm.put("code", code.toString());
+            logger.info("Put captchacode " + code.toString() + " obtained by captcha metod \"plaintext captchas\" in the form.");
+        } else if (br.toString().contains("/captchas/")) {
+            logger.info("Detected captcha method \"Standard captcha\" for this host");
+            String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
+            String captchaurl = null;
+            if (sitelinks == null || sitelinks.length == 0) {
+                logger.warning("Standard captcha captchahandling broken!");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            for (String capLink : sitelinks) {
+                if (capLink.contains("/captchas/")) {
+                    captchaurl = capLink;
+                    break;
+                }
+            }
+            if (captchaurl == null) {
+                logger.warning("Standard captcha captchahandling broken!");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            String code = getCaptchaCode(captchaurl, link);
+            captchaForm.put("code", code);
+            logger.info("Put captchacode " + code + " obtained by captcha metod \"Standard captcha\" in the form.");
         }
-        br.submitForm(form);
+        if (br.containsHTML(passwordText)) {
+            handlePassword(passCode, captchaForm, link);
+        }
+        br.submitForm(captchaForm);
         checkErrors(link, true, passCode);
         if (passCode != null) {
             link.setProperty("pass", passCode);

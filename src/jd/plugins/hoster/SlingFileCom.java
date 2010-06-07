@@ -15,21 +15,21 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.File;
 import java.io.IOException;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.nutils.encoding.Encoding;
+import jd.http.RandomUserAgent;
 import jd.parser.Regex;
-import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.utils.JDUtilities;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "slingfile.com" }, urls = { "http://[\\w\\.]*?slingfile\\.com/(file|audio|video)/.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "slingfile.com" }, urls = { "http://[\\w\\.]*?slingfile\\.com/((file|audio|video)/.+|dl/[a-z0-9]+/.*?\\.html)" }, flags = { 0 })
 public class SlingFileCom extends PluginForHost {
 
     public SlingFileCom(PluginWrapper wrapper) {
@@ -41,17 +41,37 @@ public class SlingFileCom extends PluginForHost {
         return "http://www.slingfile.com/pages/tos.html";
     }
 
+    public void correctDownloadLink(DownloadLink link) {
+        String theLink = link.getDownloadURL();
+        theLink = theLink.replaceAll("(audio|video)", "file");
+        link.setUrlDownload(theLink);
+    }
+
+    private static String ERRORREGEX = "class=\"errorbox\"><p><strong>(.*?</a>.</strong>";
+
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
-        /*
-         * cookie settings does not work because hoster checks ip and sets
-         * language then so the regex has to match good enough to find info but
-         * not use words
-         */
-        br.getPage(downloadLink.getDownloadURL().replaceAll("video", "file").replaceAll("audio", "file"));
-        String filename = br.getRegex(Pattern.compile("<p class=\"info8\">.*?alt=\"arrow\".*?<strong>(.*?)<")).getMatch(0);
-        String filesize = br.getRegex(Pattern.compile("<p class=\"info8\">.*?<p class=\"info8\">.*?/>.*? : (.*?)<", Pattern.DOTALL)).getMatch(0);
-        if (filesize == null || filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        br.setFollowRedirects(false);
+        // Prevents having to reconnect too often as their limit-check is a bit
+        // buggy :D
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+        br.getPage(downloadLink.getDownloadURL());
+        // Prevents errors, i don't know why the page sometimes shows this
+        // error!
+        if (br.containsHTML(">Please enable cookies to use this website")) br.getPage(downloadLink.getDownloadURL());
+        if (br.getRedirectLocation() != null) {
+            if (br.getRedirectLocation().equals("http://www.slingfile.com/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (!br.getRedirectLocation().contains("/dl/")) throw new PluginException(LinkStatus.ERROR_FATAL, "Link redirects to a wrong link!");
+            downloadLink.setUrlDownload(br.getRedirectLocation());
+            logger.info("New link was set in the availableCheck, opening page...");
+            br.getPage(downloadLink.getDownloadURL());
+        }
+        String filename = br.getRegex("<title>(.*?) - SlingFile - Free File Hosting \\& Online Storage</title>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("class=\"title\">(.*?)</span>").getMatch(0);
+        }
+        String filesize = br.getRegex("class=\"maintitle\">Downloading</span><span class=\"title\">.*?</span></div>[\n\r\t ]+<p>(.*?)\\. File uploaded ").getMatch(0);
+        if (filesize == null || filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(Regex.getSize(filesize));
         return AvailableStatus.TRUE;
@@ -59,29 +79,27 @@ public class SlingFileCom extends PluginForHost {
 
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        Form downloadForm = br.getFormbyProperty("name", "form1");
-        downloadForm.put("download", "1");
-        br.submitForm(downloadForm);
-        long waittime = 0;
-        try {
-            waittime = Long.parseLong(br.getRegex("var seconds\\=(\\d+)").getMatch(0)) * 1000l;
-        } catch (Exception e) {
+        if (br.containsHTML("class=\"errorbox\"")) {
+            String waitthat = br.getRegex("Please wait for another (\\d+) minutes to download another file").getMatch(0);
+            if (waitthat != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(waitthat) * 60 * 1001l);
+            if (br.containsHTML("Please wait until the download is complete")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 10 * 60 * 1000l);
+            String errorMessage = "";
+            if (br.getRegex(ERRORREGEX).getMatch(0) != null) errorMessage = br.getRegex("ERRORREGEX").getMatch(0);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, errorMessage);
         }
-        if (waittime > 31000) {
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waittime);
-        } else {
-            // this.sleep(waittime, downloadLink);
-        }
-
-        String downloadUrl = br.getRegex(Pattern.compile("<a class=\"link_v3\" href=\"(.*?)\">here</a>")).getMatch(0);
-        if (downloadUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        downloadUrl = Encoding.htmlDecode(downloadUrl);
-        this.sleep(waittime, downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadUrl, true, 0);
-        if (dl.getConnection().getResponseCode() == 410) {
-            dl.getConnection().disconnect();
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-        }
+        br.postPage(downloadLink.getDownloadURL(), "show_captcha=yes");
+        PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+        jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+        rc.parse();
+        rc.load();
+        File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+        String c = getCaptchaCode(cf, downloadLink);
+        rc.setCode(c);
+        if (br.containsHTML("api.recaptcha.net")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        String dllink = br.getRegex("'(http://sf\\d+\\.slingfile\\.com/gdl/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+/.*?)'").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("location\\.href='(http://.*?)'").getMatch(0);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

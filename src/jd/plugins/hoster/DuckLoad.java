@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.util.ArrayList;
+import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
@@ -47,6 +48,7 @@ public class DuckLoad extends PluginForHost {
     }
 
     public String aBrowser = "";
+    private String flnme = "VideoStream" + new Random().nextInt(1000) + ".avi";
 
     @Override
     public void handleFree(DownloadLink link) throws Exception {
@@ -102,7 +104,6 @@ public class DuckLoad extends PluginForHost {
             stream = true;
             sleep(2000l, link);
         }
-        // form.put(applcode, code);
         br.submitForm(form);
         String url = null;
         if (!stream) {
@@ -144,7 +145,7 @@ public class DuckLoad extends PluginForHost {
         if (br.containsHTML("(File was not found!|Die angeforderte Datei konnte nicht gefunden werden)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("Stream Protection")) {
             /* streaming file */
-            parameter.setName("VideoStream.avi");
+            parameter.setName(flnme);
             String filesize = br.getRegex(">Server \\(#\\d+\\) <i.*?\">\\[(.*?)\\]").getMatch(0);
             if (filesize != null)
                 parameter.setDownloadSize(Regex.getSize(filesize.trim()));
@@ -156,7 +157,7 @@ public class DuckLoad extends PluginForHost {
         String filesize = br.getRegex("You want to download the file \".*?\" \\((.*?)\\) !<br>").getMatch(0);
         if (filesize == null) filesize = br.getRegex(">Server \\(#\\d+\\) (<i)?(<span style=\"font-style:italic;\")?(id=\".*?\")?(>)?\\[(.*?)\\](</spa|</i>)?").getMatch(4);
         if (filename == null && filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (filename == null) filename = "VideoStream.avi";
+        if (filename == null) filename = flnme;
         parameter.setName(filename.trim());
         if (filesize != null) parameter.setDownloadSize(Regex.getSize(filesize.trim()));
         return AvailableStatus.TRUE;
