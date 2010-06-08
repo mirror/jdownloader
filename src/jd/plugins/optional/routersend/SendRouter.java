@@ -146,7 +146,7 @@ public class SendRouter extends PluginOptional {
             return false;
         }
         // Collect data
-        int selection = UserIO.getInstance().requestComboDialog(UserIO.NO_COUNTDOWN | UserIO.NO_CANCEL_OPTION, JDL.L(JDL_PREFIX + "manufacturer.list", "Manufacturer"), JDL.L(JDL_PREFIX + "manufacturer.message", "Which manufacturer?"), man.toArray(new String[] {}), 0, null, JDL.L(JDL_PREFIX + "ok", "OK"), null, new DefaultListCellRenderer());
+        int selection = UserIO.getInstance().requestComboDialog(UserIO.NO_COUNTDOWN | UserIO.NO_CANCEL_OPTION, JDL.L(JDL_PREFIX + "manufacturer.list", "Manufacturer"), JDL.L(JDL_PREFIX + "manufacturer.message", "Which manufacturer?"), man.toArray(new String[] {}), 0, null, JDL.L("gui.btn_ok", "OK"), null, new DefaultListCellRenderer());
         String manufacturer = man.get(selection);
         if (manufacturer.equals(other)) {
             manufacturer = UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN | UserIO.NO_CANCEL_OPTION, JDL.L(JDL_PREFIX + "manufacturer.routermanufacturer", "Your router's manufacturer?"), "");
