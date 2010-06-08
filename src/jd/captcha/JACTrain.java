@@ -16,12 +16,10 @@
 
 package jd.captcha;
 
-import java.awt.Toolkit;
 import java.util.logging.Logger;
 
 import jd.captcha.utils.Utilities;
-import jd.gui.swing.GuiRunnable;
-import jd.gui.swing.jdgui.events.EDTEventQueue;
+import jd.gui.swing.jdgui.events.waitcursor.WaitCursorEventQueue;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.utils.JDUtilities;
 
@@ -43,15 +41,8 @@ public class JACTrain {
         final String hoster = "nrdr";
         final JAntiCaptcha jac = new JAntiCaptcha(hoster);
 
-        new GuiRunnable<Object>() {
-            // @Override
-            public Object runSave() {
-                LookAndFeelController.setUIManager();
-                Toolkit.getDefaultToolkit().getSystemEventQueue().push(new EDTEventQueue());
-
-                return null;
-            }
-        }.waitForEDT();
+        LookAndFeelController.setUIManager();
+        WaitCursorEventQueue.initEventQueue();
         jac.trainAllCaptchas(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/captchas/" + hoster);
 
         // jac.saveMTHFile();

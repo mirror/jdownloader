@@ -31,13 +31,12 @@ import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.GUIUtils;
-import jd.gui.swing.jdgui.interfaces.SideBarPanel;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.views.settings.ConfigurationView;
 import jd.gui.swing.laf.LookAndFeelController;
 import net.miginfocom.swing.MigLayout;
 
-public class ConfigSidebar extends SideBarPanel implements ControlListener {
+public class ConfigSidebar extends SwitchPanel implements ControlListener {
 
     private static final long serialVersionUID = 6456662020047832983L;
     private static final String PROPERTY_LAST_PANEL = "LAST_PANEL";

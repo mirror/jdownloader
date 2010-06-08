@@ -34,7 +34,6 @@ import jd.gui.UserIO;
 import jd.gui.swing.Factory;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
-import jd.nutils.JDFlags;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
@@ -60,12 +59,10 @@ public abstract class ConfigPanel extends SwitchPanel {
 
     public void init() {
         for (ConfigEntry cfgEntry : setupContainer().getEntries()) {
-            GUIConfigEntry ce = new GUIConfigEntry(cfgEntry);
-            if (ce != null) addGUIConfigEntry(ce);
+            addConfigEntry(cfgEntry);
         }
 
         this.add(panel);
-
         this.load();
     }
 
@@ -78,8 +75,10 @@ public abstract class ConfigPanel extends SwitchPanel {
         return true;
     }
 
-    private void addGUIConfigEntry(GUIConfigEntry entry) {
-        ConfigGroup group = showGroups() ? entry.getConfigEntry().getGroup() : null;
+    private void addConfigEntry(ConfigEntry entry) {
+        GUIConfigEntry guiEntry = new GUIConfigEntry(entry);
+
+        ConfigGroup group = showGroups() ? entry.getGroup() : null;
         if (currentGroup != group) {
             if (group != null) {
                 panel.add(Factory.createHeader(group), "spanx");
@@ -90,37 +89,37 @@ public abstract class ConfigPanel extends SwitchPanel {
         }
 
         String gapLeft = (group == null) ? "" : "gapleft 37,";
-        if (entry.getDecoration() != null) {
-            switch (entry.getConfigEntry().getType()) {
+        if (guiEntry.getDecoration() != null) {
+            switch (entry.getType()) {
             case ConfigContainer.TYPE_TEXTAREA:
             case ConfigContainer.TYPE_LISTCONTROLLED:
-                panel.add(entry.getDecoration(), gapLeft + "spanx");
+                panel.add(guiEntry.getDecoration(), gapLeft + "spanx");
                 break;
             case ConfigContainer.TYPE_COMPONENT:
-                panel.add(entry.getDecoration(), gapLeft + "spanx," + entry.getConfigEntry().getConstraints());
+                panel.add(guiEntry.getDecoration(), gapLeft + "spanx," + guiEntry.getConfigEntry().getConstraints());
                 break;
             default:
-                panel.add(entry.getDecoration(), gapLeft + (entry.getInput() == null ? "spanx" : ""));
+                panel.add(guiEntry.getDecoration(), gapLeft + (guiEntry.getInput() == null ? "spanx" : ""));
                 break;
             }
         }
 
-        if (entry.getInput() != null) {
-            switch (entry.getConfigEntry().getType()) {
+        if (guiEntry.getInput() != null) {
+            switch (entry.getType()) {
             case ConfigContainer.TYPE_BUTTON:
-                panel.add(entry.getInput(), (entry.getDecoration() == null ? gapLeft + "spanx," : "") + "wmax 250");
+                panel.add(guiEntry.getInput(), (guiEntry.getDecoration() == null ? gapLeft + "spanx," : "") + "wmax 250");
                 break;
             case ConfigContainer.TYPE_TEXTAREA:
             case ConfigContainer.TYPE_LISTCONTROLLED:
-                panel.add(new JScrollPane(entry.getInput()), gapLeft + "spanx, growy, pushy");
+                panel.add(new JScrollPane(guiEntry.getInput()), gapLeft + "spanx, growy, pushy");
                 break;
             default:
-                panel.add(entry.getInput(), entry.getDecoration() == null ? gapLeft + "spanx" : "");
+                panel.add(guiEntry.getInput(), guiEntry.getDecoration() == null ? gapLeft + "spanx" : "");
                 break;
             }
         }
 
-        entries.add(entry);
+        entries.add(guiEntry);
     }
 
     public final void load() {
@@ -135,8 +134,8 @@ public abstract class ConfigPanel extends SwitchPanel {
     }
 
     public final void save() {
-        this.saveSpecial();
         this.saveConfigEntries();
+        this.saveSpecial();
     }
 
     /**
@@ -164,9 +163,7 @@ public abstract class ConfigPanel extends SwitchPanel {
             if (!JDGui.getInstance().isExitRequested()) {
                 int answer = UserIO.getInstance().requestConfirmDialog(0, JDL.L("jd.gui.swing.jdgui.settings.ConfigPanel.restartquestion.title", "Restart required!"), JDL.L("jd.gui.swing.jdgui.settings.ConfigPanel.restartquestion", "This option needs a JDownloader restart."), null, JDL.L("jd.gui.swing.jdgui.settings.ConfigPanel.restartquestion.ok", "Restart NOW!"), null);
 
-                if (JDFlags.hasSomeFlags(answer, UserIO.RETURN_DONT_SHOW_AGAIN | UserIO.RETURN_OK)) {
-                    JDUtilities.restartJD(false);
-                }
+                if (UserIO.isOK(answer)) JDUtilities.restartJD(false);
             }
         }
     }

@@ -188,16 +188,13 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
     }
 
     private void layoutComponents() {
-        JPanel contentPane;
-        mainFrame.setContentPane(contentPane = new JPanel());
-        MigLayout mainLayout = new MigLayout("ins 0 0 0 0,wrap 1", "[grow,fill]", "[grow,fill]0[shrink]");
-        contentPane.setLayout(mainLayout);
-        mainFrame.setJMenuBar(menuBar);
-        mainFrame.add(toolBar, "dock NORTH");
-
+        JPanel contentPane = new JPanel(new MigLayout("ins 0, wrap 1", "[grow,fill]", "[grow,fill]0[shrink]"));
         contentPane.add(mainTabbedPane);
         contentPane.add(statusBar, "dock SOUTH");
 
+        mainFrame.setContentPane(contentPane);
+        mainFrame.setJMenuBar(menuBar);
+        mainFrame.add(toolBar, "dock NORTH");
     }
 
     private void initDefaults() {

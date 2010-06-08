@@ -2,6 +2,7 @@ package jd.gui.swing.jdgui.events.waitcursor;
 
 import java.awt.AWTEvent;
 import java.awt.EventQueue;
+import java.awt.Toolkit;
 import java.awt.event.MouseEvent;
 
 import jd.gui.swing.jdgui.events.ContextMenu;
@@ -14,6 +15,10 @@ import jd.gui.swing.jdgui.events.QuickHelp;
  */
 public class WaitCursorEventQueue extends EventQueue implements DelayTimerCallback {
 
+    public static void initEventQueue() {
+        Toolkit.getDefaultToolkit().getSystemEventQueue().push(new WaitCursorEventQueue());
+    }
+
     private static final int DELAY = 70;
 
     private final DelayTimer waitTimer;
@@ -21,7 +26,7 @@ public class WaitCursorEventQueue extends EventQueue implements DelayTimerCallba
     private final QuickHelp quickHelp;
     private final ContextMenu contextMenu;
 
-    public WaitCursorEventQueue() {
+    private WaitCursorEventQueue() {
         this.waitTimer = new DelayTimer(this, DELAY);
         this.cursorManager = new CursorManager(waitTimer);
         this.quickHelp = new QuickHelp();

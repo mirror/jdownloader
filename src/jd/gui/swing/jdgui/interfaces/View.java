@@ -41,7 +41,7 @@ public abstract class View extends SwitchPanel {
 
     private JPanel rightPane;
     private JScrollPane sidebar;
-    private SideBarPanel sidebarContent;
+    private SwitchPanel sidebarContent;
     private SwitchPanel content;
     private JPanel topContent;
     private JPanel bottomContent;
@@ -157,7 +157,7 @@ public abstract class View extends SwitchPanel {
      * 
      * @param left
      */
-    public void setSideBar(SideBarPanel left) {
+    public void setSideBar(SwitchPanel left) {
         SwingGui.checkEDT();
         if (left == sidebarContent) return;
         if (left == null) {
@@ -173,7 +173,7 @@ public abstract class View extends SwitchPanel {
         if (isShown()) left.setShown();
     }
 
-    public SideBarPanel getSidebar() {
+    public SwitchPanel getSidebar() {
         return sidebarContent;
     }
 

@@ -16,7 +16,6 @@
 
 package jd;
 
-import java.awt.Toolkit;
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.Proxy;
@@ -219,7 +218,7 @@ public class JDInit {
 
     public void initGUI(final JDController controller) {
         LookAndFeelController.setUIManager();
-        Toolkit.getDefaultToolkit().getSystemEventQueue().push(new WaitCursorEventQueue());
+        WaitCursorEventQueue.initEventQueue();
         ActionController.initActions();
         SwingGui.setInstance(JDGui.getInstance());
         UserIF.setInstance(SwingGui.getInstance());
