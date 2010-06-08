@@ -16,49 +16,61 @@
 
 package jd.gui.swing;
 
-import com.apple.eawt.ApplicationAdapter;
-import com.apple.eawt.ApplicationEvent;
+import javax.swing.JFrame;
+import javax.swing.JOptionPane;
+
 import jd.controlling.JDController;
-import jd.gui.swing.GuiRunnable;
-import jd.gui.swing.SwingGui;
 import jd.gui.swing.dialog.AboutDialog;
 
-import javax.swing.*;
-
+import com.apple.eawt.Application;
+import com.apple.eawt.ApplicationAdapter;
+import com.apple.eawt.ApplicationEvent;
 
 public class MacOSApplicationAdapter extends ApplicationAdapter {
 
-        @Override
-        public void handleQuit(final ApplicationEvent e) {
-            JDController.getInstance().exit();
-        }
+    public static void enableMacSpecial() {
+        Application macApplication = Application.getApplication();
+        macApplication.addApplicationListener(new MacOSApplicationAdapter());
 
-        public void handlePreferences(ApplicationEvent e) {
-            e.setHandled(true);
-            JOptionPane.showMessageDialog(null, "Show Preferences dialog here");
-        }
+        // need to enable the preferences option manually
+        macApplication.setEnabledPreferencesMenu(true);
+    }
 
-        @Override
-        public void handleAbout(final ApplicationEvent e) {
-            e.setHandled(true);
-            new GuiRunnable<Object>() {
+    private MacOSApplicationAdapter() {
+    }
 
-                @Override
-                public Object runSave() {
-                    new AboutDialog();
-                    return null;
-                }
+    @Override
+    public void handleQuit(final ApplicationEvent e) {
+        JDController.getInstance().exit();
+    }
 
-            }.start();
-        }
+    public void handlePreferences(ApplicationEvent e) {
+        e.setHandled(true);
+        JOptionPane.showMessageDialog(null, "Show Preferences dialog here");
+    }
 
-        @Override
-        public void handleReOpenApplication(final ApplicationEvent e) {
-            final SwingGui swingGui = SwingGui.getInstance();
-            if (swingGui == null || swingGui.getMainFrame() == null) return;
-            final JFrame mainFrame = swingGui.getMainFrame();
-            if (!mainFrame.isVisible()) {
-                mainFrame.setVisible(true);
+    @Override
+    public void handleAbout(final ApplicationEvent e) {
+        e.setHandled(true);
+        new GuiRunnable<Object>() {
+
+            @Override
+            public Object runSave() {
+                new AboutDialog();
+                return null;
             }
+
+        }.start();
+    }
+
+    @Override
+    public void handleReOpenApplication(final ApplicationEvent e) {
+        final SwingGui swingGui = SwingGui.getInstance();
+        if (swingGui == null || swingGui.getMainFrame() == null) return;
+        final JFrame mainFrame = swingGui.getMainFrame();
+        if (!mainFrame.isVisible()) {
+            mainFrame.setVisible(true);
         }
+    }
+
 }

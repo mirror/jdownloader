@@ -65,8 +65,6 @@ import org.appwork.utils.singleapp.AnotherInstanceRunningException;
 import org.appwork.utils.singleapp.InstanceMessageListener;
 import org.appwork.utils.singleapp.SingleAppInstance;
 
-import com.apple.eawt.Application;
-
 /**
  * @author JD-Team
  */
@@ -314,7 +312,7 @@ public class Main {
      */
     private static void initMACProperties() {
         // set DockIcon (most used in Building)
-        Application.getApplication().setDockIconImage(JDImage.getImage("logo/jd_logo_128_128"));
+        com.apple.eawt.Application.getApplication().setDockIconImage(JDImage.getImage("logo/jd_logo_128_128"));
 
         // Use ScreenMenu in every LAF
         System.setProperty("apple.laf.useScreenMenuBar", "true");
@@ -332,13 +330,7 @@ public class Main {
         }
 
         try {
-            Application macApplication = Application.getApplication();
-            MacOSApplicationAdapter macAdapter = new MacOSApplicationAdapter();
-            macApplication.addApplicationListener(macAdapter);
-
-            // need to enable the preferences option manually
-            macApplication.setEnabledPreferencesMenu(true);
-
+            MacOSApplicationAdapter.enableMacSpecial();
         } catch (Exception e) {
             LOG.info("Error Initializing Look and Feel: " + e);
             e.printStackTrace();
