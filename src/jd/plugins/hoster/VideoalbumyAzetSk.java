@@ -35,7 +35,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 /**
  * @author typek_pb
  */
-@HostPlugin(revision = "$Revision: XXX$", interfaceVersion = 2, names = { "videoalbumy.azet.sk" }, urls = { "http://[\\w\\.]*?videoalbumy\\.azet\\.sk/[-a-z0=9]+/[0-9a-zA-Z]+/" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videoalbumy.azet.sk" }, urls = { "http://[\\w\\.]*?videoalbumy\\.azet\\.sk/[-a-z0=9]+/[0-9a-zA-Z]+/" }, flags = { 0 })
 public class VideoalbumyAzetSk extends PluginForHost {
     private String dlink = null;
 

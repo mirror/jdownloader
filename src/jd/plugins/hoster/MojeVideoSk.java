@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 /**
  * @author typek_pb
  */
-@HostPlugin(revision = "$Revision: XXX$", interfaceVersion = 2, names = { "mojevideo.sk" }, urls = { "http://[\\w\\.]*?mojevideo\\.sk/video/[a-z0-9]+/[_a-z]+.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mojevideo.sk" }, urls = { "http://[\\w\\.]*?mojevideo\\.sk/video/[a-z0-9]+/[_a-z]+.html" }, flags = { 0 })
 public class MojeVideoSk extends PluginForHost {
     private String dlink = null;
 

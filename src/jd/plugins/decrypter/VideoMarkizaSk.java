@@ -34,7 +34,7 @@ import jd.plugins.PluginForDecrypt;
  * @author butkovip
  * 
  */
-@DecrypterPlugin(revision = "$Revision: XXX$", interfaceVersion = 2, urls = { "http://video\\.markiza\\.sk/archiv-tv-markiza/[-a-z0-9]+/[0-9]+", "http://doma\\.markiza\\.sk/archiv-doma/[-a-z0-9]+/[0-9]+", "http://video\\.markiza\\.sk/(mini-music-tv|fun-tv)/[0-9]+/[-a-z0-9]+/[0-9]+" }, flags = { 0, 0, 0 }, names = { "video.markiza.sk", "doma.markiza.sk", "video.markiza.sk" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, urls = { "http://video\\.markiza\\.sk/archiv-tv-markiza/[-a-z0-9]+/[0-9]+", "http://doma\\.markiza\\.sk/archiv-doma/[-a-z0-9]+/[0-9]+", "http://video\\.markiza\\.sk/(mini-music-tv|fun-tv)/[0-9]+/[-a-z0-9]+/[0-9]+" }, flags = { 0, 0, 0 }, names = { "video.markiza.sk", "doma.markiza.sk", "video.markiza.sk" })
 public class VideoMarkizaSk extends PluginForDecrypt {
 
     public VideoMarkizaSk(PluginWrapper wrapper) {
