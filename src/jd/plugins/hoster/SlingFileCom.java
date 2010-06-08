@@ -87,6 +87,8 @@ public class SlingFileCom extends PluginForHost {
             if (br.getRegex(ERRORREGEX).getMatch(0) != null) errorMessage = br.getRegex("ERRORREGEX").getMatch(0);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, errorMessage);
         }
+        // At the moment we can skip their (30 seconds) waittime so if the
+        // plugin is broken this is the first thing to check!
         br.postPage(downloadLink.getDownloadURL(), "show_captcha=yes");
         PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
         jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);

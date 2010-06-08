@@ -54,6 +54,8 @@ public class OronCom extends PluginForHost {
 
     public boolean nopremium = false;
     private static final String COOKIE_HOST = "http://oron.com";
+    private static final String ONLY4PREMIUMERROR0 = "The file status can only be queried by Premium Users";
+    private static final String ONLY4PREMIUMERROR1 = "This file can only be downloaded by Premium Users";
 
     private void login(Account account) throws Exception {
         this.setBrowserExclusive();
@@ -210,7 +212,7 @@ public class OronCom extends PluginForHost {
         String filename = new Regex(brbefore, "div.*?Filename:.*?<.*?>(.*?)<").getMatch(0);
         String filesize = new Regex(brbefore, "Size: (.*?)<").getMatch(0);
         // Handling for links which can only be downloaded by premium users
-        if (brbefore.contains("The file status can only be queried by Premium Users")) {
+        if (brbefore.contains(ONLY4PREMIUMERROR0) || brbefore.contains(ONLY4PREMIUMERROR1)) {
             // return AvailableStatus.UNCHECKABLE;
             link.getLinkStatus().setStatusText(JDL.L("plugins.host.errormsg.only4premium", "Only downloadable for premium users!"));
         }
@@ -221,7 +223,7 @@ public class OronCom extends PluginForHost {
     }
 
     public void doFree(DownloadLink downloadLink) throws Exception, PluginException {
-        if (brbefore.contains("The file status can only be queried by Premium Users")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.host.errormsg.only4premium", "Only downloadable for premium users!"));
+        if (brbefore.contains(ONLY4PREMIUMERROR0) || brbefore.contains(ONLY4PREMIUMERROR1)) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.host.errormsg.only4premium", "Only downloadable for premium users!"));
         br.setFollowRedirects(true);
         // Form um auf free zu "klicken"
         Form DLForm0 = br.getForm(0);
