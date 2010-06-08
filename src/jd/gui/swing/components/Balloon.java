@@ -37,6 +37,7 @@ import jd.gui.swing.jdgui.JDGuiConstants;
 import jd.gui.swing.jdgui.interfaces.JDMouseAdapter;
 import jd.nutils.JDImage;
 import jd.nutils.Screen;
+import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 import org.jdesktop.swingworker.SwingWorker;
@@ -50,33 +51,19 @@ public class Balloon {
     /**
      * Displays only if mainframe is hidden
      */
-    public static void showIfHidden(final String title, final ImageIcon icon, final String htmlmessage) {
+    public static void showIfHidden(final String title, final ImageIcon icon, final String message) {
         final SwingGui swingGui = SwingGui.getInstance();
         if (swingGui != null && !swingGui.getMainFrame().isActive()) {
-            Balloon.show(title, icon, htmlmessage);
+            Balloon.show(title, icon, message);
         }
     }
 
-    public static void show(final String title, final ImageIcon icon, final String htmlmessage) {
-        Balloon.show(title, null, icon, htmlmessage);
-    }
-
-    public static void show(final String title, final ImageIcon ii, final ImageIcon icon, final String htmlmessage) {
-        if (LASTSTRING == null || !LASTSTRING.equals(title + htmlmessage)) {
-            LASTSTRING = title + htmlmessage;
-            show(title, ii, createDefault(icon, htmlmessage));
-        }
-    }
-
-    public static void show(final String title, final ImageIcon ii, final JPanel panel) {
+    public static void show(final String title, final ImageIcon icon, final String message) {
         if (!GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_SHOW_BALLOON, true)) return;
 
-        final ImageIcon icon;
-        if (ii == null) {
-            icon = new ImageIcon(JDImage.getImage("logo/logo_16_16"));
-        } else {
-            icon = ii;
-        }
+        if (LASTSTRING != null && LASTSTRING.equals(title + message)) return;
+
+        LASTSTRING = title + message;
 
         new GuiRunnable<Object>() {
 
@@ -128,35 +115,47 @@ public class Balloon {
 
                 };
 
-                final JLabel lbl = new JLabel(title);
-                lbl.setIcon(icon);
-
-                final JLabel bt = new JLabel("[X]");
-                bt.addMouseListener(new JDMouseAdapter() {
+                final JDMouseAdapter closeAdapter = new JDMouseAdapter() {
                     @Override
                     public void mouseClicked(final MouseEvent e) {
                         w.setVisible(false);
                         w.dispose();
                     }
-                });
+                };
 
-                final JPanel titlePanel = new JPanel(new MigLayout("ins 0", "[]push[]"));
-                titlePanel.addMouseListener(new JDMouseAdapter() {
+                final JLabel lblTitle = new JLabel(title);
+                lblTitle.setIcon(new ImageIcon(JDImage.getImage("logo/logo_16_16")));
+                lblTitle.setToolTipText(JDL.L("jd.gui.swing.components.Balloon.toolTip", "Click here to close this Balloon and open JD"));
+                lblTitle.addMouseListener(new JDMouseAdapter() {
                     @Override
                     public void mouseClicked(final MouseEvent e) {
                         SwingGui.getInstance().getMainFrame().setVisible(true);
                         SwingGui.getInstance().getMainFrame().toFront();
                     }
                 });
-                titlePanel.add(lbl);
-                titlePanel.add(bt);
+                lblTitle.addMouseListener(closeAdapter);
+
+                final JTextPane textField = new JTextPane();
+                textField.setContentType("text/html");
+                textField.setBorder(null);
+                textField.setOpaque(false);
+                textField.putClientProperty("Synthetica.opaque", Boolean.FALSE);
+                textField.setText(message);
+                textField.setEditable(false);
+                textField.addHyperlinkListener(JLink.getHyperlinkListener());
+                textField.addMouseListener(closeAdapter);
+
+                final JPanel panel = new JPanel(new MigLayout("ins 0", "[fill,grow]", "[fill,grow]"));
+                if (icon != null) panel.add(new JLabel(icon), "split 2, alignx left, aligny top");
+                panel.add(textField, "growx, pushx");
 
                 final JPanel container = new JPanel();
                 container.setBorder(BorderFactory.createLineBorder(container.getBackground().darker()));
                 container.setLayout(new MigLayout("ins 5,wrap 1", "[grow,fill]", "[][][grow,fill]"));
-                container.add(titlePanel);
-                container.add(new JSeparator(), "growx,pushx");
+                container.add(lblTitle);
+                container.add(new JSeparator(), "growx, pushx");
                 container.add(panel, "wmax 338");
+                container.addMouseListener(closeAdapter);
 
                 w.setMinimumSize(new Dimension(100, 40));
                 w.setLayout(new MigLayout("ins 0", "[grow,fill]", "[grow,fill]"));
@@ -222,22 +221,6 @@ public class Balloon {
         final Point point = Screen.getDockBottomRight(w);
         point.y -= y;
         w.setLocation(point);
-    }
-
-    private static JPanel createDefault(final ImageIcon ii, final String string) {
-        final JTextPane textField = new JTextPane();
-        textField.setContentType("text/html");
-        textField.setBorder(null);
-        textField.setOpaque(false);
-        textField.putClientProperty("Synthetica.opaque", Boolean.FALSE);
-        textField.setText(string);
-        textField.setEditable(false);
-        textField.addHyperlinkListener(JLink.getHyperlinkListener());
-
-        final JPanel p = new JPanel(new MigLayout("ins 0", "[fill,grow]", "[fill,grow]"));
-        if (ii != null) p.add(new JLabel(ii), "split 2, alignx left, aligny top");
-        p.add(textField, "pushx,growx");
-        return p;
     }
 
 }
