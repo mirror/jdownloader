@@ -263,7 +263,7 @@ public class MediafireCom extends PluginForHost {
         if (ret == null || ret.length != 3) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String id = new Regex(params, "(.*?)\\(").getMatch(0);
 
-        eval = new Regex(brData, "function " + id + "\\(qk,pk,r\\)\\{.*?([a-zA-Z0-9]+\\s*?=\\s*?''\\s*?;\\s*?[a-zA-Z0-9]+\\s*?=\\s*?unes.*?;?)eval\\(['a-zA-Z0-9]+\\);.*?\\}").getMatch(0);
+        eval = new Regex(brData, "function " + id + "\\(qk,pk1,r\\)\\{.*?([a-zA-Z0-9]+\\s*?=\\s*?''\\s*?;\\s*?[a-zA-Z0-9]+\\s*?=\\s*?unes.*?;?)eval\\(['a-zA-Z0-9]+\\);.*?\\}").getMatch(0);
         evalWhat = new Regex(eval, "([a-zA-Z0-9]+)\\s*?=\\s*?''\\s*?;\\s*?[a-zA-Z0-9]+\\s*?=\\s*?unes.*?;?").getMatch(0);
         if (evalWhat == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         eval = eval.replaceAll("\\\\'", "'");
@@ -347,7 +347,7 @@ public class MediafireCom extends PluginForHost {
          */
         String[] ids = new Regex(parameters[4], "\\s*?[0-9a-z]+\\s*?=\\s*?document.getElementById\\s*?\\(\"(.+?)\"\\)").getColumn(0);
         String[] ids2 = br.getRegex("<div class=\".*?\" style=\".*?\" id=\"(.*?)\"").getColumn(0);
-        br.getPage("http://www.mediafire.com/dynamic/download.php?qk=" + qk + "&pk=" + pk + "&r=" + r);
+        br.getPage("http://www.mediafire.com/dynamic/download.php?qk=" + qk + "&pk1=" + pk + "&r=" + r);
 
         String error = br.getRegex(";\\s*?eval\\s*?\\([a-zA-Z0-9]+\\)\\s*?;\\s*?[a-zA-Z0-9]+\\s*?=\\s*?(\\d+)\\s*?;").getMatch(0);
         if (error != null && !error.trim().equalsIgnoreCase("15")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
