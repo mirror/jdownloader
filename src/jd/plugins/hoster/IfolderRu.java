@@ -47,6 +47,9 @@ public class IfolderRu extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replace("files.metalarea.org", "ifolder.ru"));
     }
 
+    private static final String PWTEXT = "type=\"password\" name=\"pswd\"";
+    private static final String CAPTEXT = "/random/images/";
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException, IOException, InterruptedException {
         this.setBrowserExclusive();
@@ -69,7 +72,6 @@ public class IfolderRu extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        boolean do_download = false;
         requestFileInformation(downloadLink);
         /* too many traffic but can we download download with ad? */
         boolean withad = br.containsHTML("Вы можете получить этот файл, только если посетите сайт наших");
@@ -98,12 +100,16 @@ public class IfolderRu extends PluginForHost {
                 br.getPage(watchAd);
             }
         }
+        if (!br.containsHTML(CAPTEXT)) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         for (int retry = 1; retry <= 5; retry++) {
             Form captchaForm = br.getFormbyProperty("name", "form1");
             String captchaurl = br.getRegex("(/random/images/.*?)\"").getMatch(0);
-            String tag = br.getRegex("tag.value = \"(.*?)\"").getMatch(0);
+            String tag = br.getRegex("tag\\.value = \"(.*?)\"").getMatch(0);
             String secret = br.getRegex("var\\s+s=\\s+'(.*?)';").getMatch(0);
-            if (captchaForm == null || captchaurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (captchaForm == null || captchaurl == null) {
+                logger.warning("captchaForm or captchaurl equals null, stopping...");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             if (tag != null && secret != null) {
                 /* first sort of download form */
                 /* ads first, download then */
@@ -136,47 +142,44 @@ public class IfolderRu extends PluginForHost {
             } catch (Exception e) {
                 br.submitForm(captchaForm);
             }
-            String directLink = br.getRegex("id=\"download_file_href\".*?href=\"(.*?)\"").getMatch(0);
-            if (directLink == null) {
-                Form pwform = br.getForm(2);
-                if (pwform != null && !br.getRegex("(/random/images/.*?)\"").matches()) {
-                    if (downloadLink.getStringProperty("pass", null) == null) {
-                        passCode = Plugin.getUserInput("Password?", downloadLink);
-                    } else {
-                        /* gespeicherten PassCode holen */
-                        passCode = downloadLink.getStringProperty("pass", null);
-                    }
-                    pwform.put("pswd", passCode);
-                    br.submitForm(pwform);
-                    directLink = br.getRegex("id=\"download_file_href\".*?href=\"(.*?)\"").getMatch(0);
-                    if (directLink == null) {
-                        downloadLink.setProperty("pass", null);
-                        logger.info("DownloadPW wrong!");
-                        throw new PluginException(LinkStatus.ERROR_RETRY);
-                    }
+            if (!br.containsHTML(CAPTEXT)) break;
+        }
+        /* Is the file password protected ? */
+        if (br.containsHTML(PWTEXT)) {
+            for (int passwordRetry = 1; passwordRetry <= 5; passwordRetry++) {
+                logger.info("This file is password protected");
+                String session = br.getRegex("name=\"session\" value=\"(.*?)\"").getMatch(0);
+                String fileID = new Regex(downloadLink.getDownloadURL(), "ifolder\\.ru/(\\d+)").getMatch(0);
+                if (session == null || fileID == null) {
+                    logger.warning("The string 'session' or 'fileID' equals null, throwing exception...");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
+                if (downloadLink.getStringProperty("pass", null) == null) {
+                    passCode = Plugin.getUserInput("Password?", downloadLink);
+                } else {
+                    /* gespeicherten PassCode holen */
+                    passCode = downloadLink.getStringProperty("pass", null);
+                }
+                String postData = "session=" + session + "&file_id=" + fileID + "&action=1&pswd=" + passCode;
+                br.postPage(br.getURL(), postData);
+                if (!br.containsHTML(PWTEXT)) break;
             }
-            if (directLink != null) {
-                br.setDebug(true);
-                if (passCode != null) downloadLink.setProperty("pass", passCode);
-                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, directLink, true, -2);
-                do_download = true;
-                break;
+            if (br.containsHTML(PWTEXT)) {
+                downloadLink.setProperty("pass", null);
+                logger.info("DownloadPW wrong!");
+                throw new PluginException(LinkStatus.ERROR_RETRY);
             }
         }
-        if (!do_download) {
-            throw new PluginException(LinkStatus.ERROR_CAPTCHA, JDL.L("downloadlink.status.error.captcha_wrong", "Captcha wrong"));
-        } else
-            dl.startDownload();
+        String directLink = br.getRegex("id=\"download_file_href\".*?href=\"(.*?)\"").getMatch(0);
+        if (directLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (passCode != null) downloadLink.setProperty("pass", passCode);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, directLink, true, -2);
+        dl.startDownload();
     }
 
     @Override
     public void reset() {
     }
-
-    /*
-     * public String getVersion() { return getVersion("$Revision$"); }
-     */
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {

@@ -18,7 +18,6 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -34,7 +33,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
-import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "letitbit.net" }, urls = { "http://[\\w\\.]*?letitbit\\.net/download/[0-9a-zA-z/.-]+" }, flags = { 2 })
 public class LetitBitNet extends PluginForHost {
@@ -73,7 +71,10 @@ public class LetitBitNet extends PluginForHost {
         Form[] allforms = br.getForms();
         if (allforms == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         for (Form singleform : allforms) {
-            if (singleform.containsHTML("pass") && singleform.containsHTML("uid5") && singleform.containsHTML("uid") && singleform.containsHTML("name") && singleform.containsHTML("pin") && singleform.containsHTML("realuid") && singleform.containsHTML("realname") && singleform.containsHTML("host") && singleform.containsHTML("ssserver") && singleform.containsHTML("sssize") && singleform.containsHTML("optiondir")) premiumform = singleform;
+            if (singleform.containsHTML("pass") && singleform.containsHTML("uid5") && singleform.containsHTML("uid") && singleform.containsHTML("name") && singleform.containsHTML("pin") && singleform.containsHTML("realuid") && singleform.containsHTML("realname") && singleform.containsHTML("host") && singleform.containsHTML("ssserver") && singleform.containsHTML("sssize") && singleform.containsHTML("optiondir")) {
+                premiumform = singleform;
+                break;
+            }
         }
         if (premiumform == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         premiumform.put("pass", Encoding.urlEncode(account.getPass()));
@@ -99,57 +100,43 @@ public class LetitBitNet extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         String url = null;
-        Form dl1 = br.getFormbyProperty("id", "dvifree");
-        String captchaurl = null;
-        if (dl1 == null) {
-            // first trying to bypass block using webproxy:
-            br.setFollowRedirects(true);
-            String randomain = String.valueOf((int) (Math.random() * 9 + 1));
-            br.getPage("http://www.gur" + randomain + ".info/index.php");
-            br.postPage("http://www.gur" + randomain + ".info/index.php", "q=" + downloadLink.getDownloadURL() + "&hl[include_form]=0&hl[remove_scripts]=0&hl[accept_cookies]=1&hl[show_images]=1&hl[show_referer]=0&hl[strip_meta]=0&hl[strip_title]=0&hl[session_cookies]=0");
-            captchaurl = br.getRegex(Pattern.compile("<div\\sclass=\"cont\\sc2[^>]*>\\s+<br /><br />\\s+<img src=\"(.*?)\"", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
-            // formaction = forms[3].action;
-            if (captchaurl == null) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.letitbitnet.errors.countryblock", "Letitbit forbidden downloading this file in your country"), 60 * 60 * 1000l);
-        } else {
-            String id = dl1.getVarsMap().get("uid");
-            captchaurl = "http://letitbit.net/cap.php?jpg=" + id + ".jpg";
+        Form down = null;
+        Form[] allforms = br.getForms();
+        if (allforms == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        for (Form singleform : allforms) {
+            if (singleform.containsHTML("md5crypt")) {
+                down = singleform;
+                break;
+            }
         }
-        Form down = br.getFormbyProperty("id", "dvifree");
+        String captchaurl = null;
+        if (down == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String captchaId = down.getVarsMap().get("uid");
+        if (captchaId == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        captchaurl = "http://letitbit.net/cap.php?jpg=" + captchaId + ".jpg";
         URLConnectionAdapter con = br.openGetConnection(captchaurl);
         File file = this.getLocalCaptchaFile();
         Browser.download(file, con);
         con.disconnect();
         down.setMethod(Form.MethodType.POST);
-        down.put("frameset", "Download+file");
-        String id2 = null;
-        if (dl1 != null) id2 = dl1.getVarsMap().get("uid");
-        // first trying to bypass captcha
-        down.put("cap", "2f2411");
-        down.put("uid2", "c0862b659695");
-        down.put("fix", "1");
-        br.getPage(downloadLink.getDownloadURL());
+        String code = getCaptchaCode(file, downloadLink);
+        down.put("cap", code);
+        down.put("uid2", captchaId);
         down.setAction("http://letitbit.net/download3.php");
         br.submitForm(down);
-        // if we cannot bypass, ask user for entering captcha code
-        if (!br.containsHTML("<frame")) {
-            String code = getCaptchaCode(file, downloadLink);
-            down.put("cap", code);
-            down.put("uid2", id2);
-            down.setAction("http://letitbit.net/download3.php");
-            br.submitForm(down);
-        }
         if (!br.containsHTML("<frame")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         url = br.getRegex("<frame src=\"http://letitbit.net/tmpl/tmpl_frame_top.php\\?link=(.*?)\" name=\"topFrame\" scrolling=\"No\" noresize=\"noresize\" id=\"topFrame\" title=\"topFrame\" />").getMatch(0);
         if (url == null || url.equals("")) {
             String nextpage = "http://letitbit.net/tmpl/tmpl_frame_top.php";
             br.getPage(nextpage);
             // Ticket Time
+            int waitThat = 60;
             String time = br.getRegex("id=\"errt\">(\\d+)</span>").getMatch(0);
             if (time != null) {
-                sleep((Integer.parseInt(time.trim()) + 5) * 1001, downloadLink);
-            } else {
-                sleep(105 * 1001, downloadLink);
+                logger.info("Waittime found, waittime is " + time + " seconds.");
+                waitThat = Integer.parseInt(time);
             }
+            sleep((waitThat + 5) * 1001, downloadLink);
             br.getPage(nextpage);
             /* letitbit and vipfile share same hosting server ;) */
             /* because there can be another link to a downlodmanager first */
