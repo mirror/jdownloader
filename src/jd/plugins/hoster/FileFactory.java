@@ -18,7 +18,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
@@ -37,6 +36,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
+
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.ContextFactory;
+import org.mozilla.javascript.Scriptable;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filefactory.com" }, urls = { "http://[\\w\\.]*?filefactory\\.com(/|//)file/[\\w]+/?" }, flags = { 2 })
 public class FileFactory extends PluginForHost {
@@ -105,6 +108,11 @@ public class FileFactory extends PluginForHost {
             logger.warning("getUrl is broken!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+
+        if (downloadUrl == null) {
+            logger.warning("getUrl is broken!");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         String wait = br.getRegex("class=\"countdown\">(\\d+)</span>").getMatch(0);
         long waittime = 60 * 1000l;
         if (wait != null) waittime = Long.parseLong(wait) * 1000l;
@@ -133,31 +141,22 @@ public class FileFactory extends PluginForHost {
     }
 
     public String getUrl() throws IOException {
-        String hash = br.getRegex("(key=.*?)\"").getMatch(0);
-        if (hash != null) br.getPage("http://www.filefactory.com/file/getLink.js?" + hash);
-        String varsFound[][] = br.getRegex("var([/ a-zA-Z0-9]+)=[ ]*'(.*?)'[ ]*;").getMatches();
-        HashMap<String, String> vars = new HashMap<String, String>();
-        String urlVar = null;
-        for (String[] var : varsFound) {
-            if (var[1] != null) vars.put(var[0].trim(), var[1].trim());
-            if (var[1] != null && (var[1].contains("'") || var[1].contains("+"))) {
-                urlVar = var[1];
-            }
+        final Context cx = ContextFactory.getGlobal().enter();
+        final Scriptable scope = cx.initStandardObjects();
+        String[] eval = br.getRegex("var (.*?) = (.*?), (.*?) = (.*?)+\"(.*?)\", (.*?) = (.*?), (.*?) = (.*?), (.*?) = (.*?), (.*?) = (.*?), (.*?) = (.*?);").getRow(0);
+        if (eval != null) {
+            // first load js
+            Object result = cx.evaluateString(scope, "function g(){return " + eval[1] + "} g();", "<cmd>", 1, null);
+            String link = "/file" + result + eval[4];
+            br.getPage("http://www.filefactory.com" + link);
+
         }
-        if (urlVar == null) return null;
-        String urlParts[] = urlVar.split("'|\\+");
-        String url = "";
-        for (String urlPart : urlParts) {
-            urlPart = urlPart.trim();
-            if (urlPart.length() == 0) continue;
-            if (vars.get(urlPart) == null) {
-                url = url + urlPart;
-            } else {
-                url = url + vars.get(urlPart).trim();
-            }
-        }
-        if (url.startsWith("http://")) return url;
-        return "http://www.filefactory.com" + url;
+
+        String[] row = br.getRegex("var (.*?) = '';(.*;) (.*?)=(.*?)\\(\\);").getRow(0);
+        Object result = cx.evaluateString(scope, row[1] + row[3] + " ();", "<cmd>", 1, null);
+        if (result.toString().startsWith("http")) return result + "";
+        return "http://www.filefactory.com" + result;
+
     }
 
     @Override
