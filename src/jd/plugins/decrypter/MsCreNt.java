@@ -32,7 +32,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "musicore.net" }, urls = { "http://[\\w\\.]*?musicore\\.net/(forums/index\\.php\\?/topic/\\d+-|\\?id=.*?\\&url=[a-zA-Z0-9=+/]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "musicore.net" }, urls = { "http://[\\w\\.]*?musicore\\.net/(forums/index\\.php\\?/topic/\\d+-|\\?id=.*?\\&url=[a-zA-Z0-9=+/\\-]+)" }, flags = { 0 })
 public class MsCreNt extends PluginForDecrypt {
 
     /* must be static so all plugins share same lock */
@@ -100,7 +100,7 @@ public class MsCreNt extends PluginForDecrypt {
 
     private boolean getUserLogin(String url) throws IOException, DecrypterException {
         br.setFollowRedirects(true);
-        br.getPage(url);
+        // br.getPage(url);
         String username = null;
         String password = null;
         br.getPage("http://musicore.net/forums/index.php?app=core&module=global&section=login");
