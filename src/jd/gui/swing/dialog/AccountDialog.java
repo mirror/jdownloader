@@ -57,7 +57,7 @@ public class AccountDialog extends AbstractDialog {
                 return null;
             }
 
-        };
+        }.start();
     }
 
     private static final long serialVersionUID = -2099080199110932990L;

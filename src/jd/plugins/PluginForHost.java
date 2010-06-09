@@ -38,7 +38,6 @@ import jd.controlling.SingleDownloadController;
 import jd.gui.UserIF;
 import jd.gui.swing.components.linkbutton.JLink;
 import jd.gui.swing.jdgui.actions.ActionController;
-import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.gui.swing.jdgui.actions.ToolBarAction.Types;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.http.Browser;
@@ -58,6 +57,8 @@ import jd.utils.locale.JDL;
  * @author astaldo
  */
 public abstract class PluginForHost extends Plugin {
+
+    private static final String JDL_PREFIX = "jd.plugins.PluginsForHost.";
 
     public PluginForHost(final PluginWrapper wrapper) {
         super(wrapper);
@@ -249,14 +250,14 @@ public abstract class PluginForHost extends Plugin {
                         c++;
                         if (getAccountwithoutUsername()) {
                             if (a.getPass() == null || a.getPass().trim().length() == 0) continue;
-                            account = new MenuAction("account." + getHost() + "." + i, 0);
-                            account.setTitle(i++ + ". " + "Account " + (i - 1));
-                            account.setType(ToolBarAction.Types.CONTAINER);
+                            account = new MenuAction(0);
+                            account.setTitle(i++ + ". " + JDL.L(JDL_PREFIX + "account", "Account"));
+                            account.setType(Types.CONTAINER);
                         } else {
                             if (a.getUser() == null || a.getUser().trim().length() == 0) continue;
-                            account = new MenuAction("account." + getHost() + "." + i, 0);
+                            account = new MenuAction(0);
                             account.setTitle(i++ + ". " + a.getUser());
-                            account.setType(ToolBarAction.Types.CONTAINER);
+                            account.setType(Types.CONTAINER);
                         }
                         m = AccountMenuItemSyncer.getInstance().get(a);
 
