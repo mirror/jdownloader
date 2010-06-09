@@ -265,23 +265,28 @@ public class Srnnks extends PluginForDecrypt {
 
             Thread.sleep(FW_WAIT);
             br.getPage(action);
-
-            String link = br.getRegex("SRC=\"(http://download\\.serienjunkies\\.org.*?)\"").getMatch(0);
-
-            if (link != null) {
-                Thread.sleep(FW_WAIT);
-                br.getPage(link);
-                String loc = br.getRedirectLocation();
-                if (loc != null) {
-                    results.add(createDownloadlink(loc));
-                    return;
-                } else {
-                    throw new Exception("no Redirect found");
-                }
+            if (br.getRedirectLocation() != null) {
+                results.add(createDownloadlink(br.getRedirectLocation()));
             } else {
+                // not sure if there are stil pages that use this old system
 
-                throw new Exception("no Frame found");
+                String link = br.getRegex("SRC=\"(http://download\\.serienjunkies\\.org.*?)\"").getMatch(0);
 
+                if (link != null) {
+                    Thread.sleep(FW_WAIT);
+                    br.getPage(link);
+                    String loc = br.getRedirectLocation();
+                    if (loc != null) {
+                        results.add(createDownloadlink(loc));
+                        return;
+                    } else {
+                        throw new Exception("no Redirect found");
+                    }
+                } else {
+
+                    throw new Exception("no Frame found");
+
+                }
             }
         }
 
