@@ -52,7 +52,7 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
     private static final long serialVersionUID = 7290466989514173719L;
     private static final int BARCOUNT = 15;
     private static final long ACCOUNT_UPDATE_DELAY = 30 * 60 * 1000;
-    private TinyProgressBar[] bars;
+    private final TinyProgressBar[] bars;
 
     private boolean redrawinprogress = false;
     private boolean updating = false;
@@ -68,7 +68,7 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
     }
 
     private PremiumStatus() {
-        super(new MigLayout("ins 0", "3[]0[]", "[20!]"));
+        super(new MigLayout("ins 0 3 0 0", "", "[20!]"));
 
         bars = new TinyProgressBar[BARCOUNT];
         for (int i = 0; i < BARCOUNT; i++) {
@@ -109,10 +109,9 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
     }
 
     public void updateGUI(boolean enabled) {
+        if (bars == null) return;
         for (int i = 0; i < BARCOUNT; i++) {
-            if (bars[i] != null) {
-                bars[i].setEnabled(enabled);
-            }
+            bars[i].setEnabled(enabled);
         }
     }
 
@@ -188,7 +187,6 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
                                 if (!enabled) continue;
                                 bars[ii].setVisible(true);
                                 bars[ii].setIcon(plugin.getHosterIconScaled());
-                                bars[ii].setAlignmentX(RIGHT_ALIGNMENT);
                                 bars[ii].setPlugin(plugin);
 
                                 if (left == 0) {

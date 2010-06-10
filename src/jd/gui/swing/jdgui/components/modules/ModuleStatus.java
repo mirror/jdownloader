@@ -21,21 +21,21 @@ public class ModuleStatus extends JPanel implements ControlListener, MouseListen
 
     private static final long serialVersionUID = 1745881766942067472L;
     private static final int BARCOUNT = 15;
-    private static int TOOLTIP_DELAY = 1000;
-    private ArrayList<ProgressController> controllers = new ArrayList<ProgressController>();
-    private ArrayList<ProgressController> addcontrollers = new ArrayList<ProgressController>();
-    private ArrayList<ProgressController> removecontrollers = new ArrayList<ProgressController>();
-    private ProgressCircle[] circles;
+    private static final int TOOLTIP_DELAY = 1000;
+    private static final int UPDATE_PAUSE = 250;
+
+    private final ArrayList<ProgressController> controllers = new ArrayList<ProgressController>();
+    private final ArrayList<ProgressController> addcontrollers = new ArrayList<ProgressController>();
+    private final ArrayList<ProgressController> removecontrollers = new ArrayList<ProgressController>();
+    private final ProgressCircle[] circles;
     private transient Thread updateThread = null;
     private volatile boolean updateThreadWaiting = false;
     private transient TooltipTimer timer = null;
-    private static final int updateThreadPause = 250;
 
     public ModuleStatus() {
         super(new MigLayout("ins 0", "[fill,grow,align right]", "[::20, center]"));
-        circles = new ProgressCircle[BARCOUNT];
 
-        setName("Module Statusbar");
+        circles = new ProgressCircle[BARCOUNT];
         for (int i = 0; i < BARCOUNT; i++) {
             circles[i] = new ProgressCircle();
             circles[i].setOpaque(false);
@@ -73,7 +73,7 @@ public class ModuleStatus extends JPanel implements ControlListener, MouseListen
                     }
                     try {
                         /* 4 updates per second is enough */
-                        sleep(updateThreadPause);
+                        sleep(UPDATE_PAUSE);
                     } catch (InterruptedException e) {
                     }
                 }
@@ -135,7 +135,7 @@ public class ModuleStatus extends JPanel implements ControlListener, MouseListen
                     if (controllers.get(i).isFinished()) {
                         controllers.get(i).setFinished();
                     } else {
-                        controllers.get(i).increase(updateThreadPause);
+                        controllers.get(i).increase(UPDATE_PAUSE);
                     }
                 }
                 if (controllers.get(i).isInterruptable()) {

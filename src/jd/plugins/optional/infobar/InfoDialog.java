@@ -58,7 +58,7 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
     private JLabel lblHelp;
 
     private InfoDialog(MenuAction action) {
-        super(SwingGui.getInstance().getMainFrame());
+        super();
 
         this.ds = DownloadInformations.getInstance();
         this.action = action;
