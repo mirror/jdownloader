@@ -16,6 +16,8 @@
 
 package jd.gui.swing.dialog;
 
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -100,7 +102,12 @@ public class AccountDialog extends AbstractDialog {
         }
         hoster.setRenderer(new JDLabelListRenderer());
 
-        panel.add(link = new JButton(ActionController.getToolBarAction("action.premium.buy")), "skip, w 200!");
+        panel.add(link = new JButton(JDL.L("gui.menu.action.premium.buy.name", "action.premium.buy")), "skip, w 200!");
+        link.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                ActionController.getToolBarAction("action.premium.buy").actionPerformed(new ActionEvent(getHoster(), 0, "buyaccount"));
+            }
+        });
         link.setIcon(JDTheme.II("gui.images.buy", 16, 16));
 
         panel.add(new JLabel(JDL.L(JDL_PREFIX + "name", "Name:")));

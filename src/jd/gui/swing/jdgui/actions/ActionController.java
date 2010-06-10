@@ -521,10 +521,20 @@ public class ActionController {
 
             @Override
             public void threadedActionPerformed(ActionEvent e) {
+                int index = 0;
                 ArrayList<HostPluginWrapper> plugins = JDUtilities.getPremiumPluginsForHost();
                 Collections.sort(plugins);
                 HostPluginWrapper[] data = plugins.toArray(new HostPluginWrapper[plugins.size()]);
-                int selection = UserIO.getInstance().requestComboDialog(0, JDL.L(JDL_PREFIX + "buy.title", "Buy Premium"), JDL.L(JDL_PREFIX + "buy.message", "Which hoster are you interested in?"), data, 0, null, JDL.L(JDL_PREFIX + "continue", "Continue"), null, new JDLabelListRenderer());
+                if (e.getSource() instanceof HostPluginWrapper) {
+                    for (int i = 0; i < data.length; i++) {
+                        HostPluginWrapper w = data[i];
+                        if (e.getSource() == w) {
+                            index = i;
+                            break;
+                        }
+                    }
+                }
+                int selection = UserIO.getInstance().requestComboDialog(0, JDL.L(JDL_PREFIX + "buy.title", "Buy Premium"), JDL.L(JDL_PREFIX + "buy.message", "Which hoster are you interested in?"), data, index, null, JDL.L(JDL_PREFIX + "continue", "Continue"), null, new JDLabelListRenderer());
                 if (selection < 0) return;
 
                 try {
