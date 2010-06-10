@@ -145,7 +145,6 @@ public class ShrLnksBz extends PluginForDecrypt {
                 pwform.put("password", latestPassword);
                 br.submitForm(pwform);
                 //
-                br = br;
                 if (br.containsHTML("Das eingegebene Passwort ist falsch")) {
                     getPluginConfig().setProperty("PASSWORD", null);
                     getPluginConfig().save();
@@ -283,28 +282,6 @@ public class ShrLnksBz extends PluginForDecrypt {
             progress.increase(1);
         }
         return decryptedLinks;
-    }
-
-    private void loadContents(Browser br) throws IOException {
-        // we would like to be as ressource efficient as possible. But this
-        // Crypter forces us to download images.
-        // the admin may track css, files, js files and more in future. extend
-        // this method if required
-        String[] images = br.getRegex("<img.*?src=\"(.*?)\"").getColumn(0);
-        ArrayList<String> loaded = new ArrayList<String>();
-        Browser clone = br.cloneBrowser();
-
-        clone.getHeaders().put("Accept", "Accept: image/png,image/*;q=0.8,*/*;q=0.5");
-        for (String image : images) {
-            if (loaded.contains(image.trim())) continue;
-            if (image.startsWith("http") && !image.contains("share-links")) continue;
-            loaded.add(image.trim());
-            URLConnectionAdapter loaded2 = clone.openGetConnection(image);
-            loaded2.disconnect();
-            System.out.println("loaded " + image);
-
-        }
-
     }
 
     /** finds the correct shape area for the given point */

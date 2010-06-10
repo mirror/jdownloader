@@ -59,18 +59,26 @@ public class DownloadView extends View {
 
     @Override
     protected void onHide() {
-        ActionController.getToolBarAction("action.downloadview.movetotop").setEnabled(false);
-        ActionController.getToolBarAction("action.downloadview.moveup").setEnabled(false);
-        ActionController.getToolBarAction("action.downloadview.movedown").setEnabled(false);
-        ActionController.getToolBarAction("action.downloadview.movetobottom").setEnabled(false);
+        setActionStatus(false);
     }
 
     @Override
     protected void onShow() {
-        ActionController.getToolBarAction("action.downloadview.movetotop").setEnabled(true);
-        ActionController.getToolBarAction("action.downloadview.moveup").setEnabled(true);
-        ActionController.getToolBarAction("action.downloadview.movedown").setEnabled(true);
-        ActionController.getToolBarAction("action.downloadview.movetobottom").setEnabled(true);
+        setActionStatus(true);
+    }
+
+    private void setActionStatus(boolean enabled) {
+        ActionController.getToolBarAction("action.downloadview.movetotop").setEnabled(enabled);
+        ActionController.getToolBarAction("action.downloadview.moveup").setEnabled(enabled);
+        ActionController.getToolBarAction("action.downloadview.movedown").setEnabled(enabled);
+        ActionController.getToolBarAction("action.downloadview.movetobottom").setEnabled(enabled);
+
+        ActionController.getToolBarAction("action.remove.links").setEnabled(enabled);
+        ActionController.getToolBarAction("action.remove.packages").setEnabled(enabled);
+        ActionController.getToolBarAction("action.remove_dupes").setEnabled(enabled);
+        ActionController.getToolBarAction("action.remove_disabled").setEnabled(enabled);
+        ActionController.getToolBarAction("action.remove_offline").setEnabled(enabled);
+        ActionController.getToolBarAction("action.remove_failed").setEnabled(enabled);
     }
 
     @Override

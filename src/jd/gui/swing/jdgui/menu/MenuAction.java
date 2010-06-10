@@ -32,9 +32,8 @@ public class MenuAction extends ToolBarAction {
     private static final long serialVersionUID = 2731508542740902624L;
     private ArrayList<MenuAction> items;
 
-    public MenuAction(int id) {
+    public MenuAction() {
         super();
-        this.setActionID(id);
     }
 
     public MenuAction(String name, int id) {

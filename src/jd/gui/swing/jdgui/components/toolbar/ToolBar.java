@@ -61,6 +61,7 @@ public class ToolBar extends JToolBar {
         DEFAULT_LIST.add("toolbar.quickconfig.clipboardoberserver");
         DEFAULT_LIST.add("toolbar.quickconfig.reconnecttoggle");
         DEFAULT_LIST.add("toolbar.control.stopmark");
+        DEFAULT_LIST.add("premiumMenu.toggle");
         DEFAULT_LIST.add("toolbar.separator");
         DEFAULT_LIST.add("toolbar.interaction.reconnect");
         DEFAULT_LIST.add("toolbar.interaction.update");

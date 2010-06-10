@@ -103,7 +103,6 @@ public class General extends ConfigPanel {
             }
 
         }, JDL.L("gui.config.gui.resetdialogs.short", "Reset"), JDL.L("gui.config.gui.resetdialogs2", "Reset Dialog Information"), JDTheme.II("gui.images.restart", 16, 16)));
-        ce.setEnabled(SubConfiguration.getConfig(AbstractDialog.DIALOGS_CONFIG).getProperties().size() > 0);
 
         look.setGroup(new ConfigGroup(JDL.L("gui.config.gui.performance", "Performance"), "gui.images.performance"));
         look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDGuiConstants.DECORATION_ENABLED, JDL.L("gui.config.gui.decoration", "Enable Windowdecoration")));

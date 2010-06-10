@@ -25,8 +25,6 @@ import java.util.ArrayList;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
-import javax.swing.JSeparator;
-import javax.swing.JToggleButton;
 import javax.swing.Timer;
 
 import jd.HostPluginWrapper;
@@ -40,7 +38,6 @@ import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.UserIF;
 import jd.gui.swing.GuiRunnable;
-import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.nutils.Formatter;
 import jd.plugins.Account;
@@ -58,7 +55,6 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
     private TinyProgressBar[] bars;
 
     private boolean redrawinprogress = false;
-    private JToggleButton premium;
     private boolean updating = false;
     private Timer updateIntervalTimer;
     private boolean updateinprogress = false;
@@ -72,25 +68,18 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
     }
 
     private PremiumStatus() {
-        super(new MigLayout("ins 0", "", "[::20, center]"));
-        bars = new TinyProgressBar[BARCOUNT];
-        setName("Premium Statusbar");
-        premium = new JToggleButton(ActionController.getToolBarAction("premiumMenu.toggle"));
-        premium.setHideActionText(true);
-        premium.setFocusPainted(false);
-        premium.setContentAreaFilled(false);
-        premium.setBorderPainted(false);
-        add(premium, "hmax 20");
-        add(new JSeparator(JSeparator.VERTICAL), "growy");
+        super(new MigLayout("ins 0", "3[]0[]", "[20!]"));
 
+        bars = new TinyProgressBar[BARCOUNT];
         for (int i = 0; i < BARCOUNT; i++) {
             bars[i] = new TinyProgressBar();
             bars[i].setOpaque(false);
             bars[i].addMouseListener(this);
-            bars[i].setEnabled(premium.isSelected());
             bars[i].setVisible(false);
-            add(bars[i], "hidemode 3, hmax 20");
+            add(bars[i], "hidemode 3");
         }
+        updateGUI(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true));
+
         this.setOpaque(false);
         updateIntervalTimer = new Timer(5000, this);
         updateIntervalTimer.setInitialDelay(5000);
@@ -191,7 +180,8 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
                                                 }
                                             }
                                         } else {
-                                            left = -1;/* left <0 for unlimited */
+                                            /* left < 0 for unlimited */
+                                            left = -1;
                                         }
                                     }
                                 }
@@ -214,7 +204,7 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
                                     bars[ii].setValue(left);
                                     bars[ii].setToolTipText(JDL.LF("gui.premiumstatus.traffic.tooltip", "%s - %s account(s) -- You can download up to %s today.", host, accs.size(), Formatter.formatReadable(left)));
                                 } else {
-                                    /* left <0 for unlimited */
+                                    /* left < 0 for unlimited */
                                     bars[ii].setMaximum(10);
                                     bars[ii].setValue(10);
                                     bars[ii].setToolTipText(JDL.LF("gui.premiumstatus.unlimited_traffic.tooltip", "%s -- Unlimited traffic! You can download as much as you want to.", host));

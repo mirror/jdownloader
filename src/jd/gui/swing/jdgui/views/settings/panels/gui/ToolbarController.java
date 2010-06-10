@@ -76,9 +76,11 @@ public class ToolbarController extends ConfigPanel {
         WHITELIST.add("toolbar.quickconfig.clipboardoberserver");
         WHITELIST.add("toolbar.quickconfig.reconnecttoggle");
         WHITELIST.add("toolbar.control.stopmark");
+        WHITELIST.add("premiumMenu.toggle");
 
         // addons
         WHITELIST.add("separator");
+        WHITELIST.add("addonsMenu.configuration");
         WHITELIST.add("scheduler");
         WHITELIST.add("langfileditor");
         WHITELIST.add("chat");
@@ -108,6 +110,7 @@ public class ToolbarController extends ConfigPanel {
 
         WHITELIST.add("action.opendlfolder");
         WHITELIST.add("action.restore");
+        WHITELIST.add("premiumMenu.configuration");
         WHITELIST.add("action.premiumview.addacc");
         WHITELIST.add("action.premium.buy");
 

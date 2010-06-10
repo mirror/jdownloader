@@ -50,7 +50,6 @@ import jd.gui.swing.jdgui.views.settings.panels.addons.ConfigPanelAddons;
 import jd.nutils.JDFlags;
 import jd.plugins.LinkGrabberFilePackage;
 import jd.plugins.PluginForHost;
-import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.WebUpdate;
 import jd.utils.locale.JDL;
@@ -554,31 +553,23 @@ public class ActionController {
             @Override
             public void onAction(ActionEvent e) {
                 if (!this.isSelected()) {
-                    int answer = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_COUNTDOWN, JDL.L("dialogs.premiumstatus.global.title", "Disable Premium?"), JDL.L("dialogs.premiumstatus.global.message", "Do you really want to disable all premium accounts?"), UserIO.getInstance().getIcon(UserIO.ICON_WARNING), JDL.L("gui.btn_yes", "Yes"), JDL.L("gui.btn_no", "No"));
-                    if (JDFlags.hasAllFlags(answer, UserIO.RETURN_CANCEL) && !JDFlags.hasAllFlags(answer, UserIO.RETURN_DONT_SHOW_AGAIN)) {
+                    int answer = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL | UserIO.NO_COUNTDOWN, JDL.L("dialogs.premiumstatus.global.title", "Disable Premium?"), JDL.L("dialogs.premiumstatus.global.message", "Do you really want to disable all premium accounts?"), UserIO.getInstance().getIcon(UserIO.ICON_WARNING), JDL.L("gui.btn_yes", "Yes"), JDL.L("gui.btn_no", "No"));
+                    if (JDFlags.hasAllFlags(answer, UserIO.RETURN_CANCEL)) {
                         this.setSelected(true);
                         return;
                     }
                 }
-
                 JDUtilities.getConfiguration().setProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, this.isSelected());
                 JDUtilities.getConfiguration().save();
             }
 
             @Override
-            public void setIcon(String key) {
-                putValue(SMALL_ICON, JDTheme.II(key, 16, 16));
-                putValue(IMAGE_KEY, key);
-            }
-
-            @Override
             public void initDefaults() {
                 setType(ToolBarAction.Types.TOGGLE);
-                setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true));
-            }
+                boolean b = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true);
+                setSelected(b);
+                setIcon(b ? "gui.images.premium_enabled" : "gui.images.premium_disabled");
 
-            @Override
-            public void initAction() {
                 this.addPropertyChangeListener(new PropertyChangeListener() {
                     public void propertyChange(PropertyChangeEvent evt) {
                         if (evt.getPropertyName() == SELECTED_KEY) {

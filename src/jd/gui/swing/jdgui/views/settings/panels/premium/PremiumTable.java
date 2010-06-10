@@ -140,20 +140,20 @@ public class PremiumTable extends JDTable implements MouseListener, KeyListener 
         Point point = e.getPoint();
         int row = rowAtPoint(point);
 
-        if (getValueAt(row, 0) == null) {
+        if (this.getModel().getValueAt(row, 0) == null) {
             clearSelection();
-        }
-
-        if (!isRowSelected(row) && e.getButton() == MouseEvent.BUTTON3) {
-            clearSelection();
-            if (getValueAt(row, 0) != null) this.addRowSelectionInterval(row, row);
+            return;
         }
 
         if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
+            if (!isRowSelected(row)) {
+                clearSelection();
+                addRowSelectionInterval(row, row);
+            }
+
             final ArrayList<Account> accs = getAllSelectedAccounts();
-            JPopupMenu popup = new JPopupMenu();
-            JMenuItem tmp;
-            popup.add(tmp = new JMenuItem(JDL.LF(JDL_PREFIX + "refresh", "Refresh Account(s) (%s)", accs.size())));
+
+            JMenuItem tmp = new JMenuItem(JDL.LF(JDL_PREFIX + "refresh", "Refresh Account(s) (%s)", accs.size()));
             tmp.addActionListener(new ActionListener() {
 
                 public void actionPerformed(ActionEvent e) {
@@ -167,6 +167,9 @@ public class PremiumTable extends JDTable implements MouseListener, KeyListener 
                 }
 
             });
+
+            JPopupMenu popup = new JPopupMenu();
+            popup.add(tmp);
             popup.show(this, point.x, point.y);
         }
     }

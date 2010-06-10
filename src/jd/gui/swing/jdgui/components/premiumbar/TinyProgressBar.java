@@ -21,7 +21,6 @@ import java.awt.Cursor;
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.SwingConstants;
 
 import jd.gui.swing.jdgui.components.JDProgressBar;
 import jd.plugins.PluginForHost;
@@ -30,22 +29,28 @@ import net.miginfocom.swing.MigLayout;
 public class TinyProgressBar extends JPanel {
 
     private static final long serialVersionUID = 8385631080915257786L;
-    private JLabel lbl;
-    private JDProgressBar prg;
+    private final JLabel lbl;
+    private final JDProgressBar prg;
     private PluginForHost plugin;
 
     public TinyProgressBar() {
-        this.setLayout(new MigLayout("ins 0", "[grow,fill]1[grow,fill]", "[grow,fill]"));
+        super(new MigLayout("ins 0", "[grow,fill]1[10!]", "[grow,fill]"));
 
-        this.add(lbl = new JLabel());
-        this.add(prg = new JDProgressBar(), "width 10!");
+        lbl = new JLabel();
         lbl.setOpaque(false);
+
+        prg = new JDProgressBar();
         prg.setOpaque(false);
-        prg.setOrientation(SwingConstants.VERTICAL);
+        prg.setOrientation(JDProgressBar.VERTICAL);
         prg.setBorder(null);
+
+        this.add(lbl);
+        this.add(prg);
+
         this.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
     }
 
+    @Override
     public void setEnabled(boolean b) {
         super.setEnabled(b);
         lbl.setEnabled(b);

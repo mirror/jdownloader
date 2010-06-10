@@ -32,6 +32,7 @@ public class CleanupMenu extends JStartMenu {
 
         this.add(new CleanupDownloads());
         this.add(new CleanupPackages());
+        this.addSeparator();
         this.add(new RemoveDupesAction());
         this.add(new RemoveDisabledAction());
         this.add(new RemoveOfflineAction());

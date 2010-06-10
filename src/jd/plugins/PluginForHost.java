@@ -250,12 +250,12 @@ public abstract class PluginForHost extends Plugin {
                         c++;
                         if (getAccountwithoutUsername()) {
                             if (a.getPass() == null || a.getPass().trim().length() == 0) continue;
-                            account = new MenuAction(0);
+                            account = new MenuAction();
                             account.setTitle(i++ + ". " + JDL.L(JDL_PREFIX + "account", "Account"));
                             account.setType(Types.CONTAINER);
                         } else {
                             if (a.getUser() == null || a.getUser().trim().length() == 0) continue;
-                            account = new MenuAction(0);
+                            account = new MenuAction();
                             account.setTitle(i++ + ". " + a.getUser());
                             account.setType(Types.CONTAINER);
                         }

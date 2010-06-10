@@ -16,7 +16,6 @@
 
 package jd.gui.swing.dialog;
 
-import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -53,29 +52,26 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
 
     private static final long serialVersionUID = -169149552591067268L;
 
-    public static final String DIALOGS_CONFIG = "DIALOGS";
-
-    protected JButton btnCancel;
-
-    protected JButton btnOK;
-
-    protected JComponent contentpane;
-    protected static Color BACKGROUND_COLOR = new Color(0xeae9d7);
+    public static final SubConfiguration config = SubConfiguration.getConfig("DIALOGS");
 
     private static Dimension DEFAULT_DIMENSION;
-    protected int flag;
 
-    private int returnValue = 0;
+    protected final int flag;
 
-    private ImageIcon icon;
+    private final ImageIcon icon;
 
-    private String okOption;
+    private final String okOption;
 
-    private String cancelOption;
+    private final String cancelOption;
 
     private JCheckBox dont;
 
     private JPanel buttonBar;
+
+    protected JButton btnOK;
+    protected JButton btnCancel;
+
+    private int returnValue = 0;
 
     public AbstractDialog(int flag, String title, ImageIcon icon, String okOption, String cancelOption) {
         super(DummyFrame.getDialogParent());
@@ -90,10 +86,8 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
 
     public void init() {
         dont: if (JDFlags.hasAllFlags(flag, UserIO.DONT_SHOW_AGAIN)) {
-            SubConfiguration cfg = SubConfiguration.getConfig(DIALOGS_CONFIG);
-            Object value;
-            if ((value = cfg.getProperty(getDontShowAgainKey())) != null && value instanceof Integer) {
-                int i = ((Integer) value).intValue();
+            int i = config.getIntegerProperty(getDontShowAgainKey(), -1);
+            if (i >= 0) {
                 int ret = (i & (UserIO.RETURN_OK | UserIO.RETURN_CANCEL)) | UserIO.RETURN_DONT_SHOW_AGAIN | UserIO.RETURN_SKIPPED_BY_DONT_SHOW;
 
                 // return if the stored values are excluded
@@ -123,8 +117,7 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
         if (icon != null) {
             add(new JLabel(this.icon), "split 2,alignx left,aligny center,shrinkx,gapright 10");
         }
-        contentpane = contentInit();
-        add(contentpane, "pushx,growx,pushy,growy,spanx,aligny center,wrap");
+        add(contentInit(), "pushx,growx,pushy,growy,spanx,aligny center,wrap");
 
         add(countDownLabel, "split 3,growx,hidemode 2");
         if ((flag & UserIO.DONT_SHOW_AGAIN) > 0) {
@@ -132,12 +125,12 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
             dont.setHorizontalAlignment(JCheckBox.TRAILING);
             dont.setHorizontalTextPosition(JCheckBox.LEADING);
 
-            add(dont, "alignx right");
+            add(dont, "growx,pushx,alignx right");
         } else {
             add(Box.createHorizontalGlue(), "growx,pushx");
         }
 
-        buttonBar = new JPanel(new MigLayout("ins 0", "[fill,grow]", "[fill,grow]"));
+        buttonBar = new JPanel(new MigLayout("ins 0", "[grow,fill]", "[fill,grow]"));
         if ((flag & UserIO.NO_OK_OPTION) == 0) {
             getRootPane().setDefaultButton(btnOK);
 
@@ -164,7 +157,7 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
             }
         }
         addButtons(buttonBar);
-        add(buttonBar, "alignx right");
+        add(buttonBar, "shrinkx,alignx right");
 
         if (JDFlags.hasNoFlags(flag, UserIO.NO_COUNTDOWN)) {
             this.countdown(UserIO.getCountdownTime());
@@ -291,9 +284,8 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
         if (JDFlags.hasAllFlags(flag, UserIO.DONT_SHOW_AGAIN)) {
             if (dont.isSelected() && dont.isEnabled()) {
                 returnValue |= UserIO.RETURN_DONT_SHOW_AGAIN;
-                SubConfiguration cfg = SubConfiguration.getConfig(DIALOGS_CONFIG);
-                cfg.setProperty(getDontShowAgainKey(), returnValue);
-                cfg.save();
+                config.setProperty(getDontShowAgainKey(), returnValue);
+                config.save();
             }
         }
     }
@@ -311,8 +303,8 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
     }
 
     public static void resetDialogInformations() {
-        SubConfiguration.getConfig(DIALOGS_CONFIG).getProperties().clear();
-        SubConfiguration.getConfig(DIALOGS_CONFIG).save();
+        config.getProperties().clear();
+        config.save();
     }
 
 }
