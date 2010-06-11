@@ -147,6 +147,7 @@ public class SendspaceCom extends PluginForHost {
         // Password protected links handling
         String passCode = null;
         if (br.containsHTML("name=\"filepassword\"")) {
+            logger.info("This link seems to be püassword protected...");
             for (int i = 0; i < 2; i++) {
                 Form pwform = br.getFormbyKey("filepassword");
                 if (pwform == null) pwform = br.getForm(0);
@@ -172,9 +173,13 @@ public class SendspaceCom extends PluginForHost {
         /* Link holen */
         String script = br.getRegex(Pattern.compile("<script type=\"text/javascript\">(function .*?)</script>", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (script == null) {
+            logger.info("script equals null");
             br.postPage(downloadLink.getDownloadURL(), "download=%C2%A0REGULAR+DOWNLOAD%C2%A0");
             script = br.getRegex(Pattern.compile("<script type=\"text/javascript\">(function .*?)</script>", Pattern.CASE_INSENSITIVE)).getMatch(0);
-            if (script == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (script == null) {
+                logger.warning("script still equals null, stopping...");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         String dec = br.getRegex(Pattern.compile("base64ToText\\('(.*?)'\\)", Pattern.CASE_INSENSITIVE)).getMatch(0);
         script += new Browser().getPage("http://www.sendspace.com/jsc/download.js");
@@ -185,9 +190,15 @@ public class SendspaceCom extends PluginForHost {
         Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
         // Convert the result to a string and print it.
         String linkurl = Context.toString(result);
-        if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (linkurl == null) {
+            logger.warning("linkurl equals null");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         linkurl = new Regex(linkurl, "href=\"(.*?)\"").getMatch(0);
-        if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (linkurl == null) {
+            logger.warning("linkurl2 equals null");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         if (passCode != null) {
             downloadLink.setProperty("pass", passCode);
         }

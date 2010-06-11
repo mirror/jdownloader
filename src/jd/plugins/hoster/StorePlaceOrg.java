@@ -30,8 +30,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-//storeplace by pspzockerscene
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "storeplace.org" }, urls = { "http://[\\w\\.]*?(storeplace\\.org|balkanultimate\\.com)/\\?d=[A-Z|0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "storeplace.org" }, urls = { "http://[\\w\\.]*?storeplace\\.(org|to)/\\?d=[A-Z0-9]+" }, flags = { 0 })
 public class StorePlaceOrg extends PluginForHost {
 
     public StorePlaceOrg(PluginWrapper wrapper) {
@@ -105,7 +104,7 @@ public class StorePlaceOrg extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return -1;
     }
 
     @Override
