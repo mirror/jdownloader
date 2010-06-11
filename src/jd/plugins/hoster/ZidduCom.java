@@ -68,8 +68,7 @@ public class ZidduCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        // Tested up to 15
-        return 15;
+        return -1;
     }
 
     @Override
