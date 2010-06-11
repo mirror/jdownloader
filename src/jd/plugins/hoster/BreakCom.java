@@ -17,8 +17,6 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
-import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -57,36 +55,26 @@ public class BreakCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
-        String filename = br.getRegex("<meta name=\"title\" content=\"(.*?)\" />").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
+        if (br.getRedirectLocation() != null) {
+            if (br.getRedirectLocation().contains("aspxerrorpath=")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (null == filename || filename.trim().length() == 0) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-
-        StringBuilder linkSB = new StringBuilder();
-        // http part
-        String dlinkPart = new Regex(Encoding.htmlDecode(br.toString()), "var videoPath = \"(.*?)\" +").getMatch(0);
-        if (null == dlinkPart || dlinkPart.trim().length() == 0) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        linkSB.append(dlinkPart);
-        // dir
-        dlinkPart = new Regex(Encoding.htmlDecode(br.toString()), "sGlobalContentFilePath='(.*?)'").getMatch(0);
-        if (null == dlinkPart || dlinkPart.trim().length() == 0) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        linkSB.append(dlinkPart);
-        linkSB.append("/");
-        // filename
-        dlinkPart = new Regex(Encoding.htmlDecode(br.toString()), "sGlobalFileName='(.*?)'").getMatch(0);
-        if (null == dlinkPart || dlinkPart.trim().length() == 0) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        linkSB.append(dlinkPart);
-        // post filename
-        dlinkPart = new Regex(Encoding.htmlDecode(br.toString()), "flashVars.icon = \"(.*?)\" +").getMatch(0);
-        if (null == dlinkPart || dlinkPart.trim().length() == 0) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        linkSB.append(".flv?");
-        linkSB.append(dlinkPart);
-
-        dlink = linkSB.toString();
-        if (dlink == null || dlink.trim().length() == 0) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-
+        String filename = br.getRegex("<title>(.*?)\\&nbsp;Video</title>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("id=\"vid_title\" content=\"(.*?)\"").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("id=\"content-title\"><h1>(.*?)</h1>").getMatch(0);
+            }
+        }
+        if (null == filename || filename.trim().length() == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String strangeID = br.getRegex("flashVars\\.icon = \"(.*?)\"").getMatch(0);
+        String urlPart = br.getRegex("sGlobalFileName='(http://.*?)'").getMatch(0);
+        if (urlPart == null) urlPart = br.getRegex("'(http://video\\d+\\.break\\.com/dnet/media/\\d+/\\d+/\\d+/.*?)'").getMatch(0);
+        if (strangeID == null || urlPart == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dlink = urlPart + ".flv?" + strangeID;
         filename = filename.trim();
         link.setFinalFileName(filename + ".flv");
         br.setFollowRedirects(true);

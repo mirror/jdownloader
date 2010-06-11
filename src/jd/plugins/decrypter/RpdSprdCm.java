@@ -21,9 +21,11 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidspread.com" }, urls = { "http://[\\w\\.]*?rapidspread\\.com/file\\.jsp\\?id=\\w+" }, flags = { 0 })
 public class RpdSprdCm extends PluginForDecrypt {
@@ -35,8 +37,8 @@ public class RpdSprdCm extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-
         br.getPage(parameter);
+        if (br.containsHTML("<b>Name: </b><span>File does not exist")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         String[] links = br.getRegex("<a href=\"/redirect\\?(link=\\d+&hash=\\w+)\"").getColumn(0);
         if (links == null || links.length == 0) return null;
         for (String element : links) {

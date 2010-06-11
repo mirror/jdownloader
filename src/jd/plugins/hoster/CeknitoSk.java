@@ -70,7 +70,7 @@ public class CeknitoSk extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         br.getPage(link.getDownloadURL());
-        String filename = br.getRegex("<title>(.*?) - video | ceknito.sk</title>").getMatch(0);
+        String filename = br.getRegex("<title>(.*?) - video \\| ceknito\\.sk</title>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
             if (filename == null) {
