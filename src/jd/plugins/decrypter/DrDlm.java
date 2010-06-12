@@ -32,16 +32,16 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "3dl.am" }, urls = { "http://[\\w\\.]*?3dl\\.am/link/[a-zA-Z0-9]+|http://[\\w\\.]*?3dl\\.am/download/start/[0-9]+/|http://[\\w\\.]*?3dl\\.am/download/[0-9]+/.+\\.html|http://[\\w\\.]*?3dl\\.am/\\?action=entrydetail&entry_id=[0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "drei.to" }, urls = { "http://[\\w\\.]*?drei\\.to/link/[a-zA-Z0-9]+|http://[\\w\\.]*?drei\\.to/download/start/[0-9]+/|http://[\\w\\.]*?drei\\.to/download/[0-9]+/.+\\.html|http://[\\w\\.]*?drei\\.to/\\?action=entrydetail&entry_id=[0-9]+" }, flags = { 0 })
 public class DrDlm extends PluginForDecrypt {
     private String password;
     private CryptedLink link;
-    static public final String DECRYPTER_3DLAM_1 = "http://[\\w\\.]*?3dl\\.am/link/[a-zA-Z0-9]+";
-    static public final String DECRYPTER_3DLAM_2 = "http://[\\w\\.]*?3dl\\.am/download/start/[0-9]+/";
-    static public final String DECRYPTER_3DLAM_3 = "http://[\\w\\.]*?3dl\\.am/download/[0-9]+/.+\\.html";
+    static public final String DECRYPTER_3DLAM_1 = "http://[\\w\\.]*?drei\\.to/link/[a-zA-Z0-9]+";
+    static public final String DECRYPTER_3DLAM_2 = "http://[\\w\\.]*?drei\\.to/download/start/[0-9]+/";
+    static public final String DECRYPTER_3DLAM_3 = "http://[\\w\\.]*?drei\\.to/download/[0-9]+/.+\\.html";
 
     // static public final String DECRYPTER_3DLAM_4 =
-    // "http://[\\w\\.]*?3dl\\.am/\\?action=entrydetail&entry_id=[0-9]+";
+    // "http://[\\w\\.]*?drei\\.to/\\?action=entrydetail&entry_id=[0-9]+";
 
     public DrDlm(PluginWrapper wrapper) {
         super(wrapper);
@@ -62,7 +62,7 @@ public class DrDlm extends PluginForDecrypt {
             Thread.sleep(500);
             String captcha = br.getRegex(Pattern.compile("<img src=\"(/index\\.php\\?action=captcha.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
             if (captcha != null) {
-                String capTxt = getCaptchaCode("3dl.am", "http://3dl.am" + captcha, link);
+                String capTxt = getCaptchaCode("drei.to", "http://drei.to" + captcha, link);
                 Form form = new Form();
                 form.setAction(br.getRegex("<form action=\"(.*?)\" method=\"post\"").getMatch(0));
                 form.setMethod(MethodType.POST);
@@ -91,7 +91,7 @@ public class DrDlm extends PluginForDecrypt {
             String url = br.getRegex(DECRYPTER_3DLAM_3).getMatch(-1);
             decryptFromDownload(url);
         }
-        String[] links = br.getRegex(Pattern.compile("value=\"(http://.*?3dl\\.am/link/.*?/)\"", Pattern.CASE_INSENSITIVE)).getColumn(0);
+        String[] links = br.getRegex(Pattern.compile("value=\"(http://.*?drei\\.to/link/.*?/)\"", Pattern.CASE_INSENSITIVE)).getColumn(0);
         for (String link2 : links) {
             linksReturn.add(link2);
         }
@@ -103,9 +103,9 @@ public class DrDlm extends PluginForDecrypt {
         String parameter = param.toString();
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage("http://3dl.am");
+        br.getPage("http://drei.to");
         Thread.sleep(500);
-        br.postPage("http://3dl.am/?", "set_enter_ts=true");
+        br.postPage("http://drei.to/?", "set_enter_ts=true");
         Thread.sleep(500);
         link = param;
         if (new Regex(parameter, DECRYPTER_3DLAM_2).matches()) {
