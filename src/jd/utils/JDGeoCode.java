@@ -57,9 +57,7 @@ public class JDGeoCode {
             return (languagecode.length() != 2) ? null : new String[] { lngCode, null, null };
         } else if (split.length == 2) {
             final boolean h = COUNTRIES.containsKey(split[1].toUpperCase());
-            if (split[0].trim().length() != 2) {
-                return null;
-            }
+            if (split[0].trim().length() != 2) { return null; }
             return new String[] { split[0].toLowerCase(), h ? split[1].toUpperCase() : null, h ? null : split[1] };
         } else {
             split = lngCode.split("\\-");
@@ -177,6 +175,7 @@ public class JDGeoCode {
         LANGUAGES.put("ml", new String[] { "Malayalam", "മലയാളം" });
         LANGUAGES.put("mn", new String[] { "Mongolian", "Монгол" });
         LANGUAGES.put("mr", new String[] { "Marathi", "मराठी" });
+        LANGUAGES.put("mt", new String[] { "Maltese", "Malti" });
         LANGUAGES.put("ms", new String[] { "Malay", "Malti" });
         LANGUAGES.put("my", new String[] { "Burmese", "ဗမာစာ" });
         LANGUAGES.put("na", new String[] { "Nauru", "Ekakairũ Naoero" });
