@@ -176,7 +176,7 @@ public class JDGeoCode {
         LANGUAGES.put("mn", new String[] { "Mongolian", "Монгол" });
         LANGUAGES.put("mr", new String[] { "Marathi", "मराठी" });
         LANGUAGES.put("mt", new String[] { "Maltese", "Malti" });
-        LANGUAGES.put("ms", new String[] { "Malay", "Malti" });
+        LANGUAGES.put("ms", new String[] { "Malay", "بهاس ملايو" });
         LANGUAGES.put("my", new String[] { "Burmese", "ဗမာစာ" });
         LANGUAGES.put("na", new String[] { "Nauru", "Ekakairũ Naoero" });
         LANGUAGES.put("nb", new String[] { "Norwegian Bokmål", "Norsk bokmål" });
