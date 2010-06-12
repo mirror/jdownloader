@@ -1475,6 +1475,7 @@ plugins.optional.jdlighttray.singleclick = Zmień stan okna pojedynczym kliknię
 plugins.optional.jdlighttray.startminimized = Uruchom zminimalizowane
 plugins.optional.jdlighttray.titleinfo = Pokazuj informacje w pasku zadań podczas minimalizacji
 plugins.optional.jdlighttray.tooltip = Pokazuj podpowiedzi
+plugins.optional.jdscriptlauncher.noscripts = Nie znaleziono skryptów.
 plugins.optional.jdunrar.askforpassword = Hasło dla %s:
 plugins.optional.jdunrar.config.advanced = Ustawienia zaawansowane
 plugins.optional.jdunrar.config.passwordlist = Lista haseł do wypakowywania. Jedno hasło na linie.
