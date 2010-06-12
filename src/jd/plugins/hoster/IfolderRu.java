@@ -86,21 +86,39 @@ public class IfolderRu extends PluginForHost {
             watchAd = br.getRegex("<font size=\"\\+1\"><a href=(.*?)>").getMatch(0);
             // If they take the waittime out this part is optional
             if (watchAd != null) {
-                if (watchAd == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 br.getPage(watchAd);
                 watchAd = br.getRegex("\"f_top\" src=\"(.*?)\"").getMatch(0);
-                if (watchAd == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                watchAd = "http://ints.ifolder.ru" + watchAd;
+                if (watchAd == null) {
+                    logger.info("third watchad equals null, trying to get sessioncode");
+                    String sessioncode = br.getRegex("session=([a-z0-9]+)\"").getMatch(0);
+                    if (sessioncode == null) sessioncode = br.getRegex("type=hidden name=\"session\" value=([a-z0-9]+)>").getMatch(0);
+                    if (sessioncode != null) watchAd = "http://ints.ifolder.ru/?session=" + sessioncode;
+                }
+                if (watchAd == null) {
+                    logger.warning("third watchad equals null");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                if (!watchAd.contains("http://ints.ifolder.ru")) watchAd = "http://ints.ifolder.ru" + watchAd;
                 br.getPage(watchAd);
                 /* Tickettime */
                 String ticketTimeS = br.getRegex("delay = (\\d+)").getMatch(0);
-                if (ticketTimeS == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (ticketTimeS == null) {
+                    logger.warning("ticketTimeS equals null");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 int ticketTime = Integer.parseInt(ticketTimeS) * 1000;
                 this.sleep(ticketTime + 1, downloadLink);
                 br.getPage(watchAd);
+            } else {
+                logger.warning("second watchad equals null");
             }
+        } else {
+            logger.warning("String watchad equals null");
         }
-        if (!br.containsHTML(CAPTEXT)) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (!br.containsHTML(CAPTEXT)) {
+            logger.warning("Browser doesn't contain the captcha-text");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         for (int retry = 1; retry <= 5; retry++) {
             Form captchaForm = br.getFormbyProperty("name", "form1");
             String captchaurl = br.getRegex("(/random/images/.*?)\"").getMatch(0);
@@ -129,8 +147,10 @@ public class IfolderRu extends PluginForHost {
                     captchaForm.remove("activate_ads_free");
                     captchaForm.remove("activate_ads_free");
                     captchaForm.put("activate_ads_free", "0");
-                } else
+                } else {
+                    logger.warning("name or secret equals null");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
             captchaForm.setAction(br.getURL());
             if (!captchaurl.contains(br.getHost())) captchaurl = "http://" + br.getHost() + captchaurl;
@@ -144,6 +164,7 @@ public class IfolderRu extends PluginForHost {
             }
             if (!br.containsHTML(CAPTEXT)) break;
         }
+        if (br.containsHTML(CAPTEXT)) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         /* Is the file password protected ? */
         if (br.containsHTML(PWTEXT)) {
             for (int passwordRetry = 1; passwordRetry <= 5; passwordRetry++) {
@@ -171,9 +192,16 @@ public class IfolderRu extends PluginForHost {
             }
         }
         String directLink = br.getRegex("id=\"download_file_href\".*?href=\"(.*?)\"").getMatch(0);
-        if (directLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (directLink == null) {
+            logger.warning("directLink equals null");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         if (passCode != null) downloadLink.setProperty("pass", passCode);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, directLink, true, -2);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl.startDownload();
     }
 
