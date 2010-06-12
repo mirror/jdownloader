@@ -347,3 +347,5 @@ jd/img/default/flashgot.png
 jd/plugins/hoster/PlikHostPl.class
 jd/plugins/hoster/UploadLu.class
 jd/plugins/hoster/SaveAm.class
+jd/plugins/hoster/FileCruzCom.class
+jd/plugins/decrypter/BlHstT.class

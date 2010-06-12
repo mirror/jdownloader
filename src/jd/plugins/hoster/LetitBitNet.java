@@ -128,7 +128,8 @@ public class LetitBitNet extends PluginForHost {
         url = br.getRegex("<frame src=\"http://letitbit.net/tmpl/tmpl_frame_top.php\\?link=(.*?)\" name=\"topFrame\" scrolling=\"No\" noresize=\"noresize\" id=\"topFrame\" title=\"topFrame\" />").getMatch(0);
         if (url == null || url.equals("")) {
             String nextpage = "http://letitbit.net/tmpl/tmpl_frame_top.php";
-            br.getPage(nextpage);
+            logger.info("Getting nextpage + ?link=");
+            br.getPage(nextpage + "?link=");
             // Ticket Time
             int waitThat = 60;
             String time = br.getRegex("id=\"errt\">(\\d+)</span>").getMatch(0);
