@@ -111,18 +111,28 @@ public class JamendoCom extends PluginForHost {
         }
         if (dlurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlurl, true, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl.startDownload();
     }
 
     private String prepareDownload(String typ, String ID, DownloadLink link) throws IOException, PluginException {
         String dlurl = null;
-        br.getPage("http://www.jamendo.com/en/download/" + typ + "/" + ID + "/do?output=contentonly");
+        String dlPage = "http://www.jamendo.com/en/download/" + typ + "/" + ID + "/do?output=contentonly";
+        br.getPage(dlPage);
         String filename = br.getRegex("encodeURIComponent\\(\"(.*?)\"\\);").getMatch(0);
         String dl_unit = br.getRegex("var dl_unit = \"(.*?)\";").getMatch(0);
-        String dl_serverno = br.getRegex("var dl_serverno = \"(\\d+)\";").getMatch(0);
+        String dl_serverno = br.getRegex("dl_serverno = (\\d+);").getMatch(0);
         String dl_encoding = br.getRegex("var dl_encoding = \"(.*?)\";").getMatch(0);
+        if (filename == null || dl_unit == null || dl_serverno == null || dl_encoding == null) {
+            logger.warning("Error in prepareDownload!");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         for (int i = 0; i < 10; i++) {
-            br.getPage("http://download" + dl_serverno + ".jamendo.com/request/" + dl_unit + "/" + ID + "/" + dl_encoding + "/" + Math.random());
+            String dllpage = "http://download" + dl_serverno + ".jamendo.com/request/" + dl_unit + "/" + ID + "/" + dl_encoding + "/" + Math.random();
+            br.getPage(dllpage);
             String status = br.getRegex("Jamendo_HttpDownloadCallback\\('(.*?)','.*?'\\);").getMatch(0);
             String data = br.getRegex("Jamendo_HttpDownloadCallback\\('.*?','(.*?)'\\);").getMatch(0);
 

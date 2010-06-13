@@ -127,6 +127,7 @@ public class MidUploadCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            checkServerErrors();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -274,10 +275,7 @@ public class MidUploadCom extends PluginForHost {
             if (error == true) {
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection();
-                if (br.containsHTML("File Not Found")) {
-                    logger.warning("Server says link offline, please recheck that!");
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
+                checkServerErrors();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl.startDownload();
@@ -294,6 +292,14 @@ public class MidUploadCom extends PluginForHost {
         pwform.put("password", passCode);
         logger.info("Put password \"" + passCode + "\" entered by user in the DLForm.");
         return passCode;
+    }
+
+    public void checkServerErrors() throws NumberFormatException, PluginException {
+        if (br.containsHTML("No file")) throw new PluginException(LinkStatus.ERROR_FATAL, "Server error");
+        if (br.containsHTML("(File Not Found|<h1>404 Not Found</h1>)")) {
+            logger.warning("Server says link offline, please recheck that!");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
     }
 
     public void checkErrors(DownloadLink theLink, boolean checkAll, String passCode) throws NumberFormatException, PluginException {
