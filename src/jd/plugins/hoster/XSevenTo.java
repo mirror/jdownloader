@@ -66,15 +66,20 @@ public class XSevenTo extends PluginForHost {
             return ai;
         }
         account.setValid(true);
-        String points = br.getRegex("<td>Repeat orders .*?<th><small>([0-9.]+)</small>").getMatch(0);
-        if (points != null) ai.setPremiumPoints(points.replaceAll("\\.", ""));
+        String validUntil = br.getRegex("Premium\\-Mitglied bis (.*)\"").getMatch(0);
+        if (validUntil != null) {
+            ai.setValidUntil(Regex.getMilliSeconds(validUntil.trim(), "yyyy-MM-dd HH:mm:ss", null));
+        } else {
+            ai.setExpired(true);
+        }
         String money = br.getRegex("id=\"balance\">([0-9.]+)").getMatch(0);
         if (money != null) ai.setAccountBalance(money);
-        String remaining = br.getRegex("Remaining</small>.*?<strong style.*?>(.*?)</strong>").getMatch(0);
+        String remaining = br.getRegex("Download\\-Traffic\\: <b>(.*?)</b>").getMatch(0);
         if (remaining != null && remaining.contains("unlimited")) {
             /* unlimited acc */
-        } else {
-            /* TODO */
+        } else if (remaining != null) {
+            ai.setTrafficLeft(remaining);
+
         }
         return ai;
     }
@@ -88,11 +93,16 @@ public class XSevenTo extends PluginForHost {
         if (br.getRedirectLocation() != null) {
             dllink = br.getRedirectLocation();
         } else {
+
+            if (br.containsHTML("img/elem/trafficexh_de.png")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, JDL.L("plugins.hoster.uploadedto.errorso.premiumtrafficreached", "Traffic limit reached"), PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+
+            }
             dllink = br.getRegex("<b>Download</b>.*?href=\"(http://stor.*?)\"").getMatch(0);
             if (dllink == null && br.containsHTML("<b>Stream</b>")) {
                 /* its a streamdownload */
                 dllink = br.getRegex("window\\.location\\.href='(http://stor.*?)'").getMatch(0);
             }
+
         }
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
