@@ -30,8 +30,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cliccami.info", "lempar.co.tv", "mylink4u.info", "linkoculto.com", "urlaxe.net", "dwarfurl.com", "skracaj.org", "l-x.pl", "xlurl.com", "ncane.com", "cbuz.com", "shorten.ws", "smallizer.com", "zi.ma" }, urls = { "http://[\\w\\.]*?cliccami\\.info/[0-9a-z]+", "http://[\\w\\.]*?lempar\\.co\\.tv/[0-9a-z]+", "http://[\\w\\.]*?mylink4u\\.info/[a-z0-9]+", "http://[\\w\\.]*?linkoculto\\.com/[a-z0-9]+", "http://[\\w\\.]*?urlaxe\\.net/[0-9]+", "http://[\\w\\.]*?dwarfurl\\.com/[a-z0-9]+", "http://[\\w\\.]*?skracaj\\.org/[a-z0-9]+", "http://[\\w\\.]*?l-x\\.pl/[a-z0-9]+", "http://[\\w\\.]*?xlurl\\.com/[a-z0-9]+", "http://[\\w\\.]*?ncane\\.com/[a-z0-9]+", "http://[\\w\\.]*?cbuz\\.com/[a-z0-9]+", "http://[\\w\\.]*?shorten\\.ws/[a-z0-9]+", "http://[\\w\\.]*?smallizer\\.com/[a-z0-9]+", "http://[\\w\\.]*?zi\\.ma/[a-z0-9]+" }, flags = {
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cliccami.info", "lempar.co.tv", "mylink4u.info", "linkoculto.com", "urlaxe.net", "dwarfurl.com", "skracaj.org", "l-x.pl", "xlurl.com", "cbuz.com", "shorten.ws", "smallizer.com", "zi.ma" }, urls = { "http://[\\w\\.]*?cliccami\\.info/[0-9a-z]+", "http://[\\w\\.]*?lempar\\.co\\.tv/[0-9a-z]+", "http://[\\w\\.]*?mylink4u\\.info/[a-z0-9]+", "http://[\\w\\.]*?linkoculto\\.com/[a-z0-9]+", "http://[\\w\\.]*?urlaxe\\.net/[0-9]+", "http://[\\w\\.]*?dwarfurl\\.com/[a-z0-9]+", "http://[\\w\\.]*?skracaj\\.org/[a-z0-9]+", "http://[\\w\\.]*?l-x\\.pl/[a-z0-9]+", "http://[\\w\\.]*?xlurl\\.com/[a-z0-9]+", "http://[\\w\\.]*?cbuz\\.com/[a-z0-9]+", "http://[\\w\\.]*?shorten\\.ws/[a-z0-9]+", "http://[\\w\\.]*?smallizer\\.com/[a-z0-9]+", "http://[\\w\\.]*?zi\\.ma/[a-z0-9]+" }, flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
 public class PWProtectedRedirectorsDecrypter extends PluginForDecrypt {
 
     public PWProtectedRedirectorsDecrypter(PluginWrapper wrapper) {
@@ -48,7 +47,7 @@ public class PWProtectedRedirectorsDecrypter extends PluginForDecrypt {
         br.setFollowRedirects(false);
         br.getPage(parameter);
         String domain = new Regex(parameter, "([a-z-]+)\\.").getMatch(0);
-        if (br.containsHTML("(non ci sono URL|There is no such URL in our database|Esa url no se encuentra|Taki skrót <b>nie istnieje|Witaj na l-x.pl|URL proibito|questo URL e' scaduto|This URL expired)") || (br.getRedirectLocation() != null && br.getRedirectLocation().contains(domain)) || (br.getRedirectLocation() == null && parameter.contains("ncane.com") && !br.containsHTML("ADULT CONTENT WARNING"))) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        if (br.containsHTML("(non ci sono URL|There is no such URL in our database|Esa url no se encuentra|Taki skrót <b>nie istnieje|Witaj na l-x.pl|URL proibito|questo URL e' scaduto|This URL expired)") || (br.getRedirectLocation() != null && br.getRedirectLocation().contains(domain)) || (br.getRedirectLocation() == null && !br.containsHTML("ADULT CONTENT WARNING"))) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         String finallink = br.getRedirectLocation();
         if (finallink == null) {
             // For iframe stuff

@@ -25,7 +25,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "forex-fileupload.co.cc", "crazytr.com", "url.tr59.info", "url.bilgiportal.com", "freakinghugeurl.com", "1lik.net", "linkpayout.com" }, urls = { "http://[\\w\\.]*?forex-fileupload\\.co\\.cc/\\?\\w+", "http://[\\w\\.]*?crazytr\\.com/url/\\d+", "http://[\\w\\.]*?url\\.tr59\\.info/[0-9]+", "http://[\\w\\.]*?url\\.bilgiportal\\.com/[0-9]+", "http://[\\w\\.]*?freakinghugeurl\\.com/refer\\.php\\?count=[0-9]+\\&url=[a-zA-Z0-9]+", "http://[\\w\\.]*?1lik\\.net/[0-9]+", "http://[\\w\\.]*?linkpayout\\.com/[0-9a-z]+" }, flags = { 0, 0, 0, 0, 0, 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "crazytr.com", "url.tr59.info", "url.bilgiportal.com", "freakinghugeurl.com", "1lik.net", "linkpayout.com" }, urls = { "http://[\\w\\.]*?crazytr\\.com/url/\\d+", "http://[\\w\\.]*?url\\.tr59\\.info/[0-9]+", "http://[\\w\\.]*?url\\.bilgiportal\\.com/[0-9]+", "http://[\\w\\.]*?freakinghugeurl\\.com/refer\\.php\\?count=[0-9]+\\&url=[a-zA-Z0-9]+", "http://[\\w\\.]*?1lik\\.net/[0-9]+", "http://[\\w\\.]*?linkpayout\\.com/[0-9a-z]+" }, flags = { 0, 0, 0, 0, 0, 0 })
 public class HrfRdrctr extends PluginForDecrypt {
 
     /* Usage: {{regex, getMatch()-Index}, {..., ...}} */
