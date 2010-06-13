@@ -126,8 +126,8 @@ public class LetitBitNet extends PluginForHost {
         br.submitForm(down);
         if (!br.containsHTML("<frame")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         url = br.getRegex("<frame src=\"http://letitbit.net/tmpl/tmpl_frame_top.php\\?link=(.*?)\" name=\"topFrame\" scrolling=\"No\" noresize=\"noresize\" id=\"topFrame\" title=\"topFrame\" />").getMatch(0);
+        String nextpage = "http://letitbit.net/tmpl/tmpl_frame_top.php";
         if (url == null || url.equals("")) {
-            String nextpage = "http://letitbit.net/tmpl/tmpl_frame_top.php";
             logger.info("Getting nextpage + ?link=");
             br.getPage(nextpage + "?link=");
             // Ticket Time
@@ -141,15 +141,21 @@ public class LetitBitNet extends PluginForHost {
             br.getPage(nextpage);
             /* letitbit and vipfile share same hosting server ;) */
             /* because there can be another link to a downlodmanager first */
-            url = br.getRegex("(http://[^/]*?/download.*?/.*?)(\"|').*?(http://[^/]*?/download.*?/.*?)(\"|')").getMatch(2);
-            if (url == null) {
-                url = br.getRegex("(http://[^/]*?/download.*?/.*?)(\"|')").getMatch(0);
-                if (url == null) url = br.getRegex("\"(http://[0-9]{2,3}\\.[0-9]{2,3}\\.[0-9]{2,3}\\.[0-9]{2,3}/download\\d+/.*?)\"").getMatch(0);
-            }
+            url = getUrl();
         }
         if (url == null || url.equals("")) {
             logger.warning("url couldn't be found!");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            String extraWait = br.getRegex("Wait your turn<br /><span id=\"errt\">(\\d+)</span> seconds").getMatch(0);
+            if (extraWait != null) {
+                logger.info("Extra waittime found, waiting...");
+                sleep((Integer.parseInt(extraWait) + 5) * 1001l, downloadLink);
+                br.getPage(nextpage);
+                url = getUrl();
+            }
+            if (url == null) {
+                logger.warning("url still couldn't be found!");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         /* we have to wait little because server too buggy */
         sleep(2000, downloadLink);
@@ -169,6 +175,15 @@ public class LetitBitNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private String getUrl() {
+        String url = br.getRegex("(http://[^/]*?/download.*?/.*?)(\"|').*?(http://[^/]*?/download.*?/.*?)(\"|')").getMatch(2);
+        if (url == null) {
+            url = br.getRegex("(http://[^/]*?/download.*?/.*?)(\"|')").getMatch(0);
+            if (url == null) url = br.getRegex("\"(http://[0-9]{2,3}\\.[0-9]{2,3}\\.[0-9]{2,3}\\.[0-9]{2,3}/download\\d+/.*?)\"").getMatch(0);
+        }
+        return url;
     }
 
     @Override
