@@ -80,7 +80,8 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
     public FilePackageInfo() {
         buildGui();
         fp = null;
-        menutitle.setText(JDL.L("gui.linkgrabber.packagetab.title", "Properties / Package / Filename"));
+        menutitle.setText(JDL.L("gui.table.contextmenu.prop", "Properties"));
+        menutitle.setIcon(JDTheme.II("gui.images.config.tip", 16, 16));
     }
 
     public void setPackage(FilePackage fp) {

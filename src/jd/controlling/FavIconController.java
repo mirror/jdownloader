@@ -104,10 +104,10 @@ public class FavIconController extends SubConfiguration implements Runnable {
             }
             synchronized (LOCK) {
                 /* check if have something to do */
-                if (queue.keySet().size() > 0) {
+                if (!queue.isEmpty()) {
                     Iterator<String> it = queue.keySet().iterator();
                     if (it.hasNext()) {
-                        host = queue.keySet().iterator().next();
+                        host = it.next();
                     } else {
                         host = null;
                     }

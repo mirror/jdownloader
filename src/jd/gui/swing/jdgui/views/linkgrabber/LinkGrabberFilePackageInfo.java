@@ -30,6 +30,7 @@ import jd.gui.swing.components.ComboBrowseFile;
 import jd.gui.swing.components.JDCollapser;
 import jd.gui.swing.components.JDTextField;
 import jd.plugins.LinkGrabberFilePackage;
+import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
@@ -57,7 +58,8 @@ public class LinkGrabberFilePackageInfo extends JDCollapser implements ActionLis
     public LinkGrabberFilePackageInfo() {
         buildGui();
         fp = null;
-        this.menutitle.setText(JDL.L("gui.linkgrabber.packagetab.title", "Properties / Package / Filename"));
+        menutitle.setText(JDL.L("gui.table.contextmenu.prop", "Properties"));
+        menutitle.setIcon(JDTheme.II("gui.images.config.tip", 16, 16));
     }
 
     public void setPackage(LinkGrabberFilePackage fp) {

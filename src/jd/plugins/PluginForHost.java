@@ -161,8 +161,8 @@ public abstract class PluginForHost extends Plugin {
     }
 
     protected int waitForFreeConnection(final DownloadLink downloadLink) throws InterruptedException {
-        int free;
-        while ((free = getMaxConnections() - getCurrentConnections()) <= 0) {
+        int free = getMaxConnections() - getCurrentConnections();
+        while (free <= 0) {
             Thread.sleep(1000);
             downloadLink.getLinkStatus().setStatusText(JDL.LF("download.system.waitForconnection", "Cur. %s/%s connections...waiting", getCurrentConnections() + "", getMaxConnections() + ""));
             downloadLink.requestGuiUpdate();

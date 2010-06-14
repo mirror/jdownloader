@@ -68,24 +68,22 @@ public class AccountDialog extends AbstractDialog {
 
     private JComboBox hoster;
 
-    private JButton link;
-
     private JTextField name;
 
     private JPasswordField pass;
 
-    private PluginForHost plugin;
+    private final PluginForHost plugin;
 
-    public AccountDialog(PluginForHost pluginForHost) {
-        super(UserIO.NO_COUNTDOWN | UserIO.NO_ICON, JDL.L(JDL_PREFIX + "title", "Add new Account"), JDTheme.II("gui.images.premium", 16, 16), null, null);
-        this.plugin = pluginForHost;
+    public AccountDialog(PluginForHost plugin) {
+        super(UserIO.NO_COUNTDOWN | UserIO.NO_ICON, JDL.L(JDL_PREFIX + "title", "Add new Account"), null, null, null);
+
+        this.plugin = plugin;
+
         init();
     }
 
     @Override
     public JComponent contentInit() {
-        JPanel panel = new JPanel(new MigLayout("ins 0, wrap 2"));
-        panel.add(new JLabel(JDL.L(JDL_PREFIX + "hoster", "Hoster:")));
         ArrayList<HostPluginWrapper> plugins = JDUtilities.getPremiumPluginsForHost();
         Collections.sort(plugins, new Comparator<HostPluginWrapper>() {
             public int compare(HostPluginWrapper a, HostPluginWrapper b) {
@@ -93,7 +91,7 @@ public class AccountDialog extends AbstractDialog {
             }
         });
         HostPluginWrapper[] array = plugins.toArray(new HostPluginWrapper[plugins.size()]);
-        panel.add(hoster = new JComboBox(array), "w 200!");
+        hoster = new JComboBox(array);
         if (plugin != null) {
             try {
                 hoster.setSelectedItem(plugin.getWrapper());
@@ -102,19 +100,24 @@ public class AccountDialog extends AbstractDialog {
         }
         hoster.setRenderer(new JDLabelListRenderer());
 
-        panel.add(link = new JButton(JDL.L("gui.menu.action.premium.buy.name", "action.premium.buy")), "skip, w 200!");
+        JButton link = new JButton(JDTheme.II("gui.images.buy", 16, 16));
+        link.setToolTipText(JDL.L("gui.menu.action.premium.buy.name", "action.premium.buy"));
         link.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 ActionController.getToolBarAction("action.premium.buy").actionPerformed(new ActionEvent(getHoster(), 0, "buyaccount"));
             }
         });
-        link.setIcon(JDTheme.II("gui.images.buy", 16, 16));
+
+        JPanel panel = new JPanel(new MigLayout("ins 0, wrap 2", "[][grow,fill]"));
+        panel.add(new JLabel(JDL.L(JDL_PREFIX + "hoster", "Hoster:")));
+        panel.add(hoster, "split 2");
+        panel.add(link);
 
         panel.add(new JLabel(JDL.L(JDL_PREFIX + "name", "Name:")));
-        panel.add(name = new JTextField(), "w 200!");
+        panel.add(name = new JTextField());
 
         panel.add(new JLabel(JDL.L(JDL_PREFIX + "pass", "Pass:")));
-        panel.add(pass = new JPasswordField(), "w 200!");
+        panel.add(pass = new JPasswordField());
         return panel;
     }
 

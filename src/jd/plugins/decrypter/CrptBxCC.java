@@ -29,7 +29,6 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.DirectHTTP;
@@ -42,7 +41,6 @@ public class CrptBxCC extends PluginForDecrypt {
     private static final String CAPTCHA_WRONG_PATTERN = "Sie haben einen falschen Sicherheitscode eingegeben\\.";
     private static final String DOWNLINK_PATTERN = "<br><a href=\"(.*?)\"";
     private static final String DOWNLINK_PATTERN2 = "id=\"ff\" action=\"(.*?)\"";
-    // <br><a href="
     private static final String FIRSTALLURLS_PATTERN = "<table class=\"download\">[\r\n\t ]+<tr>[\r\n\t ]+<td>[\r\n\t ]+<a href='(http://.*?)'";
     private static final String SECONDALLURLS_PATTERN = "'(http://www\\.cryptbox\\.cc/go/.*?)'";
     private static final String FOLDER_NOT_FOUND_PATTERN = "<h3>Fehler!</h3>Dieser Ordner ex[ei]stiert nicht.";
@@ -80,14 +78,16 @@ public class CrptBxCC extends PluginForDecrypt {
             if (failed) throw new DecrypterException(DecrypterException.CAPTCHA);
         }
         String folderId = new Regex(parameter.toString(), "cryptbox.cc/ordner/(.+)").getMatch(0);
-        // TODO:Container handling does not work, please recheck
-        // if (br.containsHTML(">DLC-Container")) {
-        // loadcontainer("http://www.cryptbox.cc/container.php?ordner=" +
-        // folderId + "&type=dlc");
-        // if (decryptedLinks != null && decryptedLinks.size() > 0) return
-        // decryptedLinks;
-        // }
-        // br.getPage(parameter.toString());
+
+        /*
+         * TODO: Container Handling rechecked?
+         */
+        if (br.containsHTML(">DLC-Container")) {
+            decryptedLinks = loadContainer("http://www.cryptbox.cc/container.php?ordner=" + folderId + "&type=dlc");
+            if (decryptedLinks != null && !decryptedLinks.isEmpty()) return decryptedLinks;
+        }
+        br.getPage(parameter.toString());
+
         String[] pages = br.getRegex("seite=(\\d+)\"").getColumn(0);
         if (pages != null) {
             decryptTheStuff(pages.length, progress, folderId);
@@ -122,38 +122,30 @@ public class CrptBxCC extends PluginForDecrypt {
                     }
                     throw new DecrypterException("Decrypter broken!");
                 }
-                DownloadLink dlf = createDownloadlink(finallink);
-                linksGoHere.add(dlf);
+                linksGoHere.add(createDownloadlink(finallink));
                 progress.increase(1);
             }
         }
     }
 
-    private ArrayList<DownloadLink> loadcontainer(String dlclink) throws IOException, PluginException {
+    private ArrayList<DownloadLink> loadContainer(String dlclink) throws IOException {
         ArrayList<DownloadLink> decryptedLinks = null;
         Browser brc = br.cloneBrowser();
-        File file = null;
-        URLConnectionAdapter con = brc.openGetConnection(dlclink);
-        if (con.getResponseCode() == 200) {
-            file = JDUtilities.getResourceFile("tmp/cryptboxccs/" + dlclink.replaceAll("(:|/|\\?|\\&|=)", "") + ".dlc");
-            if (file == null) return null;
-            file.deleteOnExit();
-            brc.downloadConnection(file, con);
-            if (file != null && file.exists() && file.length() > 100) {
-                decryptedLinks = JDUtilities.getController().getContainerLinks(file);
+        URLConnectionAdapter con = null;
+
+        try {
+            con = brc.openGetConnection(dlclink);
+            if (con.getResponseCode() == 200) {
+                File file = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
+                brc.downloadConnection(file, con);
+                if (file != null && file.exists() && file.length() > 100) {
+                    decryptedLinks = JDUtilities.getController().getContainerLinks(file);
+                }
             }
-        } else {
-            con.disconnect();
-            return null;
+        } finally {
+            if (con != null) con.disconnect();
         }
 
-        if (file != null && file.exists() && file.length() > 100) {
-            // decryptedLinks =
-            // JDUtilities.getController().getContainerLinks(file);
-            if (decryptedLinks.size() > 0) return decryptedLinks;
-        } else {
-            return null;
-        }
-        return null;
+        return decryptedLinks;
     }
 }
