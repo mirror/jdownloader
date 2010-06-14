@@ -254,12 +254,14 @@ public class MediafireCom extends PluginForHost {
         for (int i = 0; i < links.getLength(); i++) {
             HTMLLinkElementImpl l = (HTMLLinkElementImpl) links.item(i);
             String inner = l.getInnerHTML();
-            System.out.println(inner);
+
             if (inner.toLowerCase().contains("start download")) {
                 HTMLDivElementImpl div = (HTMLDivElementImpl) l.getParentNode();
+                System.out.println(inner + " - " + div.getOuterHTML());
                 AbstractCSS2Properties s = div.getStyle();
-                if (s.getTop() == null || !s.getTop().equals("-250px")) {
+                if (!"-250px".equalsIgnoreCase(s.getTop()) && !"none".equalsIgnoreCase(s.getDisplay())) {
                     String myURL = l.getAbsoluteHref();
+
                     return myURL;
                 }
 
