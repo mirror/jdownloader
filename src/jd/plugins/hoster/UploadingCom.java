@@ -132,6 +132,7 @@ public class UploadingCom extends PluginForHost {
     }
 
     public void checkErrors() throws PluginException {
+        logger.info("Checking errors");
         if (br.containsHTML("YOU REACHED YOUR COUNTRY DAY LIMIT")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, JDL.L("plugins.hoster.uploadingcom.errors.countrylimitreached", "You reached your country daily limit"), 60 * 60 * 1000l);
         if (br.containsHTML("you have reached your daily download limi")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 1 * 60 * 60 * 1000l);
         if (br.containsHTML("Your IP address is currently downloading a file")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
@@ -146,6 +147,7 @@ public class UploadingCom extends PluginForHost {
     }
 
     private void handleDownloadErrors() throws IOException, PluginException {
+        logger.info("Handling errors");
         if (dl.getConnection().getResponseCode() == 416) {
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 1000l * 60 * 30);
@@ -154,6 +156,7 @@ public class UploadingCom extends PluginForHost {
             String error = dl.getConnection().getRequest().getCookies().get("error").getValue();
             br.followConnection();
             if (error != null && error.contains("wait")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 1000l * 15);
+            logger.warning("dl isn't ContentDisposition, plugin must be broken!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (dl.getConnection().getLongContentLength() == 0) {
@@ -170,7 +173,11 @@ public class UploadingCom extends PluginForHost {
         } catch (InterruptedException e) {
             return;
         }
-        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (form == null) {
+            logger.warning("The first form equals null");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        logger.info("Submitting form");
         br.submitForm(form);
         checkErrors();
         String redirect = getDownloadUrl(br, link);

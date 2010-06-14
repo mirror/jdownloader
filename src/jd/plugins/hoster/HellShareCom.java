@@ -165,7 +165,7 @@ public class HellShareCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        String changetoeng = br.getRegex("(http://download.en\\.hellshare\\.com/--.*?-/.*?)\"").getMatch(0);
+        String changetoeng = br.getRegex("xml:lang=\"en\" href=\"(http://.*?)\"").getMatch(0);
         if (changetoeng == null) {
             // Do NOT throw an exeption here as this part isn't that important
             // but it's bad that the plugin breaks just because of this regex
@@ -179,7 +179,8 @@ public class HellShareCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.HellShareCom.error.CurrentLoadIs100Percent", "The current serverload is 100%"), 15 * 60 * 1000l);
         } else {
             br.setCustomCharset("utf-8");
-            br.getPage(br.getURL() + "/free");
+            String freePage = br.getURL().replace("hellshare.com/serialy/", "hellshare.com/") + "/free";
+            br.getPage(freePage);
             if (br.containsHTML("The server is under the maximum load")) {
                 logger.info(JDL.L("plugins.hoster.HellShareCom.error.ServerUnterMaximumLoad", "Server is under maximum load"));
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.HellShareCom.error.ServerUnterMaximumLoad", "Server is under maximum load"), 10 * 60 * 1000l);
@@ -189,9 +190,10 @@ public class HellShareCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
             }
             if (br.containsHTML("<h1>File not found</h1>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            String captcha = br.getRegex("(http://www\\.(en|cz)\\.hellshare\\.com/antispam\\.php\\?sv=FreeDown:\\d+)\"").getMatch(0);
+            String fileId = new Regex(downloadLink.getDownloadURL(), "/(\\d+)$").getMatch(0);
             Form form = br.getForm(0);
-            if (form == null || captcha == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (form == null || fileId == null || !br.containsHTML("antispam\\.php\\?sv=FreeDown:")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            String captcha = "http://www.en.hellshare.com/antispam.php?sv=FreeDown:" + fileId;
             String code = getCaptchaCode(captcha, downloadLink);
             form.put("captcha", Encoding.urlEncode(code));
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, false, 1);
