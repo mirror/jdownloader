@@ -745,6 +745,7 @@ gui.table.contextmenu.setdlpw = Ορισμός κωδικού λήψης
 gui.table.contextmenu.sort = Ταξινόμηση
 gui.table.contextmenu.stopmark = Διακοπή μετά τη Λήψη
 gui.table.contextmenu.stopmark.set = Διακοπή μετά τη Λήψη
+gui.table.contextmenu.stopmark.unset = Απενεργ. Διακοπής μετά τη Λήψη
 gui.table.contextmenu.tryforce = Επιμονή για τη λήψη
 gui.table.draganddrop.after = Τοποθέτηση μετά το '%s'
 gui.table.draganddrop.before = Τοποθέτηση πριν από το '%s'
