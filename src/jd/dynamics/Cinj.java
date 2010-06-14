@@ -3,6 +3,7 @@ package jd.dynamics;
 import jd.controlling.DynamicPluginInterface;
 import jd.controlling.JDLogger;
 
+import org.mozilla.javascript.ClassShutter;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;
 import org.mozilla.javascript.NativeJavaObject;
@@ -21,7 +22,18 @@ public class Cinj extends DynamicPluginInterface {
         @Override
         protected Context makeContext() {
             Context cx = super.makeContext();
-            cx.setWrapFactory(new SandboxWrapFactory());
+            cx.setClassShutter(new ClassShutter() {
+                public boolean visibleToScripts(String className) {
+                    if (className.startsWith("adapter")) {
+                        return true;
+                    } else {
+
+                        throw new RuntimeException("Security Violation");
+                    }
+
+                }
+            });
+            // cx.setWrapFactory(new SandboxWrapFactory());
             return cx;
         }
     }

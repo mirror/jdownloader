@@ -134,11 +134,15 @@ public class Browser {
     private HashMap<String, String[]> logins = new HashMap<String, String[]>();
 
     /**
-     * Clears all cookies for the given url. URL has to be a valid url
+     * Clears all cookies for the given url. URL has to be a valid url if
+     * url==null,all cookies were cleared
      * 
      * @param url
      */
     public void clearCookies(final String url) {
+        if (url == null) {
+            cookies.clear();
+        }
         final String host = Browser.getHost(url);
         final Iterator<String> it = getCookies().keySet().iterator();
         String check = null;
@@ -513,21 +517,27 @@ public class Browser {
      */
     public Request createFormRequest(final Form form) throws Exception {
         String base = null;
-
+        String action = null;
         if (request != null) {
             base = request.getUrl().toString();
+            action = form.getAction(base);
         }
+
         try {
             // find base in source
             final String sourceBase = this.getRegex("<base.*?href=\"(.+?)\"").getMatch(0).trim();
             // check if valid url
             new URL(sourceBase);
             base = sourceBase;
+            if (form.getAction(null) != null) {
+                action = form.getAction(base);
+            }
+
         } catch (Throwable e) {
 
         }
 
-        String action = form.getAction(base);
+        // action = action;
         switch (form.getMethod()) {
 
         case GET:

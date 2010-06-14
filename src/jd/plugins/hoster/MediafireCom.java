@@ -18,12 +18,13 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
 
 import jd.PluginWrapper;
 import jd.controlling.JDLogger;
 import jd.http.Browser;
+import jd.http.ext.BasicBrowserEnviroment;
+import jd.http.ext.ExtBrowser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -40,9 +41,10 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.ContextFactory;
-import org.mozilla.javascript.Scriptable;
+import org.lobobrowser.html.domimpl.HTMLDivElementImpl;
+import org.lobobrowser.html.domimpl.HTMLLinkElementImpl;
+import org.lobobrowser.html.style.AbstractCSS2Properties;
+import org.w3c.dom.html2.HTMLCollection;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mediafire.com" }, urls = { "http://[\\w\\.]*?mediafire\\.com/(download\\.php\\?|\\?(?!sharekey)|file/).+" }, flags = { 2 })
 public class MediafireCom extends PluginForHost {
@@ -57,6 +59,10 @@ public class MediafireCom extends PluginForHost {
      * available
      */
     private static final int NUMBER_OF_RETRIES = 3;
+    /**
+     * Map to cache the configuration keys
+     */
+    private static final HashMap<Account, String> CONFIGURATION_KEYS = new HashMap<Account, String>();
 
     public MediafireCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -87,6 +93,12 @@ public class MediafireCom extends PluginForHost {
         br.getPage("http://www.mediafire.com/myfiles.php");
         String acc = br.getRegex("Account:.*?style=\"margin.*?\">(.*?)</").getMatch(0);
         if (br.getCookie("http://www.mediafire.com", "user").equals("x") || !acc.equals("MediaPro")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (CONFIGURATION_KEYS.get(account) == null) {
+            br.getPage("http://www.mediafire.com/myaccount/download_options.php");
+            String configurationKey = br.getRegex("Configuration Key:.*? value=\"(.*?)\"").getMatch(0);
+            CONFIGURATION_KEYS.put(account, configurationKey);
+        }
+
     }
 
     @Override
@@ -137,6 +149,13 @@ public class MediafireCom extends PluginForHost {
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         requestFileInformation(downloadLink);
         login(account);
+
+        String fileID = new Regex(downloadLink.getDownloadURL(), "\\?(.*)").getMatch(0);
+        if (fileID == null) {
+            fileID = new Regex(downloadLink.getDownloadURL(), "file/(.*)").getMatch(0);
+        }
+        br.forceDebug(true);
+
         br.getPage(downloadLink.getDownloadURL());
         String url = null;
         if (downloadLink.getStringProperty("type", "").equalsIgnoreCase("direct")) {
@@ -153,6 +172,9 @@ public class MediafireCom extends PluginForHost {
         if (!dl.getConnection().isContentDisposition()) {
             logger.info("Error (4)");
             br.followConnection();
+            if (br.getRequest().getHttpConnection().getResponseCode() == 403) {
+                logger.info("Error (3)");
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -221,223 +243,29 @@ public class MediafireCom extends PluginForHost {
         return status;
     }
 
-    /**
-     * get the parameters for dynamicdownloadpage and id for downloadbutton
-     * 
-     * @return
-     * @throws PluginException
-     */
-    private String[] getParameters() throws Exception {
-        String brData = br.toString();
-        brData = brData.replaceAll("\\\\'", "'");
-        brData = brData.replaceAll("\\\\\"", "\"");
-
-        String eval = null;
-        String evalWhat = null;
-        eval = new Regex(brData, "<script\\s*?type=\"text/javascript\">DoShow\\(\"notloggedin_wrapper\"\\)\\s*?;\\s*?cR\\(\\)\\s*?;\\s*?([a-zA-Z0-9]+)\\s*?\\(\\)\\s*?;\\s*?ap\\(-1\\)\\s*?;\\s*?var\\s*?gV=document.getElementById\\('pagename'\\)").getMatch(0);
-        eval = new Regex(brData, "function\\s*?" + eval + "\\(\\)\\{.*?([a-zA-Z0-9]+\\s*?=\\s*?''\\s*?;\\s*?[a-zA-Z0-9]+\\s*?=\\s*?unes.*?;?)eval\\([a-zA-Z0-9]+\\);.*?\\}").getMatch(0);
-        evalWhat = new Regex(eval, "([a-zA-Z0-9]+)\\s*?=\\s*?''\\s*?;\\s*?[a-zA-Z0-9]+\\s*?=\\s*?unes.*?;?").getMatch(0);
-        if (evalWhat == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        eval = eval.replaceAll("\\\\'", "'");
-        eval = eval.replaceAll("\\\\\"", "\"");
-        String params = null;
-        String fun = null;
-        try {
-            while (true) {
-                fun = "function f(){ var " + evalWhat + "=''; " + eval + " return " + evalWhat + "} f()";
-                Context cx = ContextFactory.getGlobal().enter();
-                Scriptable scope = cx.initStandardObjects();
-                Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
-                params = Context.toString(result);
-                params = params.replaceAll("\\\\'", "'");
-                params = params.replaceAll("\\\\\"", "\"");
-                evalWhat = new Regex(params, "eval\\s*?\\(([a-zA-Z0-9]+)\\)").getMatch(0);
-                eval = new Regex(params, "(" + evalWhat + ".*?)eval\\s*?\\(").getMatch(0);
-                if (eval == null && evalWhat == null) break;
-            }
-        } catch (Exception e) {
-            logger.severe(params + " " + eval);
-            throw e;
-        }
-        String ret[] = new Regex(params, "'(.*?)'").getColumn(0);
-        if (ret == null || ret.length != 3) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String id = new Regex(params, "(.*?)\\(").getMatch(0);
-
-        eval = new Regex(brData, "function " + id + "\\(qk,pk1,r\\)\\{.*?([a-zA-Z0-9]+\\s*?=\\s*?''\\s*?;\\s*?[a-zA-Z0-9]+\\s*?=\\s*?unes.*?;?)eval\\(['a-zA-Z0-9]+\\);.*?\\}").getMatch(0);
-        evalWhat = new Regex(eval, "([a-zA-Z0-9]+)\\s*?=\\s*?''\\s*?;\\s*?[a-zA-Z0-9]+\\s*?=\\s*?unes.*?;?").getMatch(0);
-        if (evalWhat == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        eval = eval.replaceAll("\\\\'", "'");
-        eval = eval.replaceAll("\\\\\"", "\"");
-        params = null;
-        fun = null;
-        try {
-            while (true) {
-                fun = "function f(){ var " + evalWhat + "=''; " + eval + " return " + evalWhat + "} f()";
-                Context cx = ContextFactory.getGlobal().enter();
-                Scriptable scope = cx.initStandardObjects();
-                Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
-                params = Context.toString(result);
-                params = params.replaceAll("\\\\'", "'");
-                params = params.replaceAll("\\\\\"", "\"");
-                evalWhat = new Regex(params, "eval\\s*?\\(([a-zA-Z0-9]+)\\)").getMatch(0);
-                eval = new Regex(params, "(" + evalWhat + ".*?)eval\\s*?\\(").getMatch(0);
-                if (eval == null && evalWhat == null) break;
-            }
-        } catch (Exception e) {
-            logger.severe(params + " " + eval);
-            throw e;
-        }
-
-        String ret2[] = new String[] { ret[0], ret[1], ret[2], id, params };
-        return ret2;
-    }
-
-    /**
-     * evals js script
-     * 
-     * @param input
-     * @return
-     * @throws Exception
-     */
-    private String evalLoop(String input, String varMap) throws Exception {
-        String evalWhat = new Regex(input, "(var\\s*?)?([a-zA-Z0-9]+)").getMatch(1);
-        String eval = new Regex(input, evalWhat + "\\s*?=\\s*?['a-zA-Z0-9]+;(.*?=unes.*?;?)$").getMatch(0);
-
-        if (evalWhat == null || eval == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        eval = eval.replaceAll("\\\\'", "'");
-        eval = eval.replaceAll("\\\\\"", "\"");
-        String params = null;
-        String fun = null;
-        try {
-            while (true) {
-                fun = "function f(){ var " + evalWhat + "='';" + varMap + eval + " return " + evalWhat + "} f()";
-                Context cx = ContextFactory.getGlobal().enter();
-                Scriptable scope = cx.initStandardObjects();
-                Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
-                params = Context.toString(result);
-                // logger.info("params:" + params);
-                params = params.replaceAll("\\\\'", "'");
-                params = params.replaceAll("\\\\\"", "\"");
-                if (new Regex(params, "getElementById\\s*?\\('(.*?)'\\)").matches()) break;
-                evalWhat = new Regex(params, "eval\\s*?\\(([a-zA-Z0-9]+)\\)").getMatch(0);
-                eval = new Regex(params, "(" + evalWhat + ".*?)eval\\s*?\\(").getMatch(0);
-                if (eval == null && evalWhat == null) break;
-            }
-        } catch (Exception e) {
-            logger.severe(params + " " + eval);
-            throw e;
-        }
-        return params;
-    }
-
     private String getDownloadUrl() throws Exception {
-        String url = null;
-        String vars = null;
-        String idmatch = null;
-        String qk = null, pk = null, r = null;
 
-        String[] parameters = getParameters();
+        ExtBrowser eb = new ExtBrowser();
+        eb.setUserAgent(new BasicBrowserEnviroment(new String[] { ".*blank.html", ".*scorecardresearch.*", "http://www.mediafire.com/", "http://www.mediafire.com/.*?/.*?/.*" }, null));
 
-        qk = parameters[0];
-        pk = parameters[1];
-        r = parameters[2];
-        /*
-         * these are our downloadbutton id's, we need them to find the right one
-         * for building downloadurl later
-         */
-        String[] ids = new Regex(parameters[4], "\\s*?[0-9a-z]+\\s*?=\\s*?document.getElementById\\s*?\\(\"(.+?)\"\\)").getColumn(0);
-        String[] ids2 = br.getRegex("<div class=\".*?\" style=\".*?\" id=\"(.*?)\"").getColumn(0);
-        br.getPage("http://www.mediafire.com/dynamic/download.php?qk=" + qk + "&pk1=" + pk + "&r=" + r);
+        eb.eval(br);
 
-        String error = br.getRegex(";\\s*?eval\\s*?\\([a-zA-Z0-9]+\\)\\s*?;\\s*?[a-zA-Z0-9]+\\s*?=\\s*?(\\d+)\\s*?;").getMatch(0);
-        if (error != null && !error.trim().equalsIgnoreCase("15")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
-
-        /* now we have to js the functions and find the right js parts */
-        String brData = br.toString();
-        brData = brData.replaceAll("\\\\'", "'");
-        brData = brData.replaceAll("\\\\\"", "\"");
-
-        String evalsWhat[] = new Regex(brData, "eval\\s*?\\(([a-zA-Z0-9]+)\\)").getColumn(0);
-        ArrayList<String> evals = new ArrayList<String>();
-        for (String evalWhat : evalsWhat) {
-            String evalThis = new Regex(brData, "(" + evalWhat + "\\s*?=\\s*?''\\s*?;\\s*?[a-zA-Z0-9]+\\s*?=\\s*?unes.*?)eval\\(").getMatch(0);
-            if (evalThis != null) evals.add(evalThis);
-        }
-
-        vars = new Regex(brData, "<!--(.*?)function").getMatch(0);
-        if (vars == null) {
-            logger.info("Error (1)");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        vars = vars + evalLoop(evals.get(0), "");
-        evals.remove(0);
-        String[][] tmpvars = new Regex(vars.trim(), "([a-zA-Z0-9]*?)\\s*?=\\s*?'(.*?)';").getMatches();
-        HashMap<String, String> varmap = new HashMap<String, String>();
-        StringBuilder sb = new StringBuilder("");
-        for (String[] tmp : tmpvars) {
-            varmap.put(tmp[0], tmp[1]);
-            if (tmp[1] != null) {
-                sb.append("var " + tmp[0] + "='" + tmp[1] + "';");
-            } else {
-                sb.append("var " + tmp[0] + "='';");
-            }
-        }
-        String varMap = sb.toString();
-
-        /* we try our function id first */
-        if (ids.length == 1) ids2[0] = ids[0];
-        for (String id : ids2) {
-            idmatch = br.getRegex(id + ".*?(http:.*?)\">\\s*?Cl").getMatch(0);
-            if (idmatch != null) {
-                // we found the right id, so lets build our downloadurl
-                while (true) {
-                    String nextreplace = new Regex(idmatch, "\\+\\s*?(.*?)\\s*?(\\+|\")").getMatch(0);
-                    if (nextreplace == null) break;
-                    String match = varmap.get(nextreplace.trim());
-                    if (match != null) {
-                        idmatch = idmatch.replaceFirst("\\+" + nextreplace, match);
-                    } else {
-                        idmatch = idmatch.replaceFirst("\\+" + nextreplace, nextreplace.replaceAll("'", ""));
-                    }
+        HTMLCollection links = eb.getDocument().getLinks();
+        for (int i = 0; i < links.getLength(); i++) {
+            HTMLLinkElementImpl l = (HTMLLinkElementImpl) links.item(i);
+            String inner = l.getInnerHTML();
+            System.out.println(inner);
+            if (inner.toLowerCase().contains("start download")) {
+                HTMLDivElementImpl div = (HTMLDivElementImpl) l.getParentNode();
+                AbstractCSS2Properties s = div.getStyle();
+                if (s.getTop() == null || !s.getTop().equals("-250px")) {
+                    String myURL = l.getAbsoluteHref();
+                    return myURL;
                 }
-                url = idmatch.replaceAll("( |\")", "");
-                break;
+
             }
         }
-        for (String eval : evals) {
-            String evaled = evalLoop(eval, varMap);
-            String searchID = new Regex(evaled, "getElementById\\s*?\\('(.*?)'\\)").getMatch(0);
-            if (searchID == null) continue;
-            for (String id : ids) {
-                if (id.equalsIgnoreCase(searchID)) {
-                    idmatch = new Regex(evaled, "(http:.*?)\">\\s*?Cl").getMatch(0);
-                    if (idmatch == null) continue;
-                    break;
-                }
-            }
-            if (idmatch != null) {
-                // we found the right id, so lets build our downloadurl
-                while (true) {
-                    if (idmatch == null) break;
-                    String nextreplace = new Regex(idmatch, "\\+\\s*?(.*?)\\s*?(\\+|\")").getMatch(0);
-                    if (nextreplace == null) break;
-                    String match = varmap.get(nextreplace.trim());
-                    if (match != null) {
-                        idmatch = idmatch.replaceFirst("\\+" + nextreplace, match);
-                    } else {
-                        idmatch = idmatch.replaceFirst("\\+" + nextreplace, nextreplace.replaceAll("'", ""));
-                    }
-                }
-                if (idmatch != null) url = idmatch.replaceAll(" |\"", "");
-                break;
-            }
-        }
-        /* we need a valid url now, if not then something went wrong */
-        if (url == null) {
-            logger.info("Error (2)");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        return url;
+        throw new PluginException(LinkStatus.ERROR_RETRY);
     }
 
     @Override
@@ -487,6 +315,7 @@ public class MediafireCom extends PluginForHost {
         if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 0);
+
         if (!dl.getConnection().isContentDisposition()) {
             logger.info("Error (3)");
             br.followConnection();

@@ -362,6 +362,8 @@ public class JDClassLoader extends ClassLoader {
                         System.out.println("Loaded class " + name + " from " + element.getName());
                         c = defineClass(name, data, 0, data.length, getClass().getProtectionDomain());
                         if (c == null) throw new ClassNotFoundException(name);
+                    } catch (java.lang.VerifyError e) {
+                        JDLogger.exception(e);
                     } catch (ClassFormatError e) {
                         JDLogger.exception(e);
                     } catch (IOException e) {
