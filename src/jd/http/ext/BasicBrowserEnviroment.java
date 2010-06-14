@@ -4,7 +4,6 @@ import java.security.Policy;
 
 import jd.http.Request;
 import jd.http.ext.interfaces.BrowserEnviroment;
-import jd.http.ext.security.LocalSecurityPolicy;
 
 import org.appwork.utils.Regex;
 
@@ -100,7 +99,7 @@ public class BasicBrowserEnviroment implements BrowserEnviroment {
 
     public Policy getSecurityPolicy() {
         // TODO Auto-generated method stub
-        return LocalSecurityPolicy.getInstance();
+        return null;
     }
 
     public String getVendor() {
