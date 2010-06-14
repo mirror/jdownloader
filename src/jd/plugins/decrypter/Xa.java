@@ -29,7 +29,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "luxport.eu" }, urls = { "http://[\\w\\.]*?(ex\\.ua|luxport\\.eu)/((view|get|load)/[0-9]+|(view/[0-9]+\\?r=[0-9]+|view/[0-9]+\\?r=[0-9,]+))" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "luxport.eu" }, urls = { "http://[\\w\\.]*?(ex\\.ua|luxport\\.eu)/((view|get|load)/[0-9]+(.+)?|(view/[0-9]+\\?r=[0-9]+|view/[0-9]+\\?r=[0-9,]+))" }, flags = { 0 })
 public class Xa extends PluginForDecrypt {
 
     public Xa(PluginWrapper wrapper) {
@@ -40,7 +40,11 @@ public class Xa extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         if (parameter.matches(".*?fs\\d+\\.www\\.ex\\.ua/get/\\d+.*?")) {
-            decryptedLinks.add(createDownloadlink("directhttp://" + parameter));
+            String filename = new Regex(parameter, "ex\\.ua/get/\\d+/(.+)").getMatch(0);
+            String finallink = new Regex(parameter, "(.*?/get/\\d+)").getMatch(0);
+            DownloadLink finalDlLink = createDownloadlink("directhttp://" + finallink);
+            if (filename != null) finalDlLink.setFinalFileName(filename.trim());
+            decryptedLinks.add(finalDlLink);
         } else {
             parameter = parameter.replace("/load/", "/view/").replace("ex.ua", "luxport.eu");
             br.setFollowRedirects(false);
