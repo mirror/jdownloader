@@ -372,7 +372,6 @@ gui.linkgrabber.packagetab.lbl.name = Nome pacchetto
 gui.linkgrabber.packagetab.lbl.password = Password archivio
 gui.linkgrabber.packagetab.lbl.password2 = Password archivio (auto)
 gui.linkgrabber.packagetab.lbl.saveto = Salva in
-gui.linkgrabber.packagetab.title = Pacchetto
 gui.linkgrabber.password = Password?
 gui.linkgrabber.pc.linkgrabber = Cattura collegamenti in corso
 gui.linkgrabber.pc.onlinecheck = Verifica disponibilità online...
