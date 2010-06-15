@@ -67,7 +67,7 @@ public class FrShrdFldr extends PluginForDecrypt {
             br.getPage(url);
 
             // scan
-            links = br.getRegex("<a href=\"(http://[\\w\\.]*?4shared(-china)?\\.com/(get|file|document|photo)/.+?/.*?)(\\?dirPwdVerified|.)\"").getColumn(0);
+            links = br.getRegex("<a href=\"(http://[\\w\\.]*?4shared(-china)?\\.com/(get|file|document|photo|video|audio)/.+?/.*?)(\\?dirPwdVerified|.)\"").getColumn(0);
             for (String dl : links) {
                 DownloadLink dlink;
                 dlink = createDownloadlink(dl);
