@@ -40,7 +40,7 @@ public class LetitBitNet extends PluginForHost {
     public LetitBitNet(PluginWrapper wrapper) {
         super(wrapper);
         this.setAccountwithoutUsername(true);
-        this.setStartIntervall(4000l);
+        this.setStartIntervall(90 * 1000l);
         enablePremium("http://letitbit.net/page/premium.php");
     }
 
@@ -59,7 +59,10 @@ public class LetitBitNet extends PluginForHost {
         String filesize = br.getRegex("<span>Size of file::</span>(.*?)</h1>").getMatch(0);
         if (filesize == null) filesize = br.getRegex("<span>File size::</span>(.*?)</h1>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        downloadLink.setName(filename.trim());
+        // Their names often differ from other file hosting services. I noticed
+        // that when in the filenames from other hosting services there are
+        // "-"'s, letitbit uses "_"'s so let's correct this here ;)
+        downloadLink.setFinalFileName(filename.trim().replace("_", "-"));
         if (filesize != null) downloadLink.setDownloadSize(Regex.getSize(filesize));
         return AvailableStatus.TRUE;
     }
@@ -186,9 +189,10 @@ public class LetitBitNet extends PluginForHost {
         return url;
     }
 
+    // I'am not sure but i think 4 is their actual limit
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return 4;
     }
 
     @Override

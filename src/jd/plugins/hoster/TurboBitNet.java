@@ -33,7 +33,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "turbobit.net" }, urls = { "http://[\\w\\.]*?(bluetooths\\.pp\\.ru|dz-files\\.ru|file\\.alexforum\\.ws|file\\.grad\\.by|file\\.krut-warez\\.ru|filebit\\.org|files\\.best-trainings\\.org\\.ua|files\\.wzor\\.ws|gdefile\\.ru|letitshare\\.ru|mnogofiles\\.com|share\\.uz|sibit\\.net|turbo-bit\\.ru|turbobit\\.net|turbobit\\.ru|upload\\.mskvn\\.by|vipbit\\.ru|files\\.prime-speed\\.ru|filestore\\.net\\.ru|turbobit\\.ru|upload\\.dwmedia\\.ru|upload\\.uz|xrfiles\\.ru|unextfiles\\.com|e-flash\\.com\\.ua|turbobax\\.net|zharabit\\.net)/([a-z0-9]+\\.html|download/free/[a-z0-9]+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "turbobit.net" }, urls = { "http://[\\w\\.]*?(bluetooths\\.pp\\.ru|dz-files\\.ru|file\\.alexforum\\.ws|file\\.grad\\.by|file\\.krut-warez\\.ru|filebit\\.org|files\\.best-trainings\\.org\\.ua|files\\.wzor\\.ws|gdefile\\.ru|letitshare\\.ru|mnogofiles\\.com|share\\.uz|sibit\\.net|turbo-bit\\.ru|turbobit\\.net|turbobit\\.ru|upload\\.mskvn\\.by|vipbit\\.ru|files\\.prime-speed\\.ru|filestore\\.net\\.ru|turbobit\\.ru|upload\\.dwmedia\\.ru|upload\\.uz|xrfiles\\.ru|unextfiles\\.com|e-flash\\.com\\.ua|turbobax\\.net|zharabit\\.net)/(.*?\\.html|download/free/[a-z0-9]+)" }, flags = { 2 })
 public class TurboBitNet extends PluginForHost {
 
     public TurboBitNet(PluginWrapper wrapper) {
@@ -65,13 +65,13 @@ public class TurboBitNet extends PluginForHost {
         br.getPage("http://turbobit.net/en");
         // Little errorhandling in case there we're on the wrong page!
         if (!br.getURL().equals(downloadLink.getDownloadURL())) br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("<div class=\"code-404\">404</div>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(<div class=\"code-404\">404</div>|Файл не найден. Возможно он был удален\\.<br)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String fileName = br.getRegex("Скачать файл(.*?)\\. Скачать бесплатно").getMatch(0);
         if (fileName == null) {
             fileName = br.getRegex("<span class='file-icon.*?'>(.*?)</span>").getMatch(0);
         }
         String fileSize = br.getRegex("<b>(File size|Размер файла):</b>(.*?)</div>").getMatch(1);
-        if (fileName == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (fileName == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         fileSize = fileSize.replace("М", "M");
         fileSize = fileSize.replace("к", "k");
         fileSize = fileSize.replace("Г", "g");
