@@ -501,7 +501,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         scrollPane.setBorder(null);
         scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 
-        col.getContent().add(scrollPane, "hmax 300, h pref!");
+        col.getContent().add(scrollPane, "h min(300, pref)!");
         col.setInfos(name, icon);
 
         mainTabbedPane.getSelectedView().setInfoPanel(col);
