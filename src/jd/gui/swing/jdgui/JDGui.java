@@ -469,10 +469,6 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         }
 
         final SwitchPanel oldPanel = mainTabbedPane.getSelectedView().getInfoPanel();
-        JPanel p = AddonConfig.getInstance(container, "_2", false).getPanel();
-        JScrollPane scrollPane = new JScrollPane(p);
-        scrollPane.setBorder(null);
-        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 
         JDCollapser col = new JDCollapser() {
 
@@ -498,10 +494,17 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
             }
 
         };
-        col.getContent().add(scrollPane, "hmax 300");
+
+        JPanel p = AddonConfig.getInstance(container, "_2", false).getPanel();
+
+        JScrollPane scrollPane = new JScrollPane(p);
+        scrollPane.setBorder(null);
+        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+
+        col.getContent().add(scrollPane, "hmax 300, h pref!");
         col.setInfos(name, icon);
 
-        this.mainTabbedPane.getSelectedView().setInfoPanel(col);
+        mainTabbedPane.getSelectedView().setInfoPanel(col);
     }
 
     @Override

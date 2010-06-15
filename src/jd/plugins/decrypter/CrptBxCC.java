@@ -17,7 +17,6 @@
 package jd.plugins.decrypter;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
@@ -97,7 +96,7 @@ public class CrptBxCC extends PluginForDecrypt {
         return linksGoHere;
     }
 
-    private void decryptTheStuff(int pages, ProgressController progress, String folderId) throws IOException, DecrypterException {
+    private void decryptTheStuff(int pages, ProgressController progress, String folderId) throws Exception {
         logger.info("Found " + pages + " pages.");
         int defectLinksCounter = 1;
         for (int i = 0; pages <= pages; i++) {
@@ -128,7 +127,7 @@ public class CrptBxCC extends PluginForDecrypt {
         }
     }
 
-    private ArrayList<DownloadLink> loadContainer(String dlclink) throws IOException {
+    private ArrayList<DownloadLink> loadContainer(String dlclink) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = null;
         Browser brc = br.cloneBrowser();
         URLConnectionAdapter con = null;

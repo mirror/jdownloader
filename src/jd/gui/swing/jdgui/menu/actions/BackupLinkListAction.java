@@ -37,6 +37,7 @@ import jd.utils.locale.JDL;
 public class BackupLinkListAction extends ThreadedAction {
 
     private static final long serialVersionUID = 823930266263085474L;
+    private static final String JDL_PREFIX = "jd.gui.swing.jdgui.menu.actions.BackupLinkListAction.";
 
     public BackupLinkListAction() {
         super("action.backuplinklist", "gui.images.save");
@@ -66,7 +67,7 @@ public class BackupLinkListAction extends ThreadedAction {
             if (files == null) return;
 
             String defaultpw = SubConfiguration.getConfig("JDC_CONFIG").getStringProperty("password", "jddefault");
-            String pw = UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN, JDL.L("jd.gui.swing.jdgui.menu.actions.BackupLinkListAction.password", "Enter Encryption Password"), defaultpw);
+            String pw = UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN, JDL.L(JDL_PREFIX + "password", "Enter Encryption Password"), defaultpw);
             if (pw == null || pw.length() == 0) return;
             byte[] crypted = JDCrypt.encrypt(JDHexUtils.getHexString(bos.toByteArray()), getPWByte(pw));
             JDIO.saveToFile(files[0], crypted);
