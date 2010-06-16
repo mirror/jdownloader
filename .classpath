@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry kind="src" path="src"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER">
+		<attributes>
+			<attribute name="org.eclipse.jdt.launching.CLASSPATH_ATTR_LIBRARY_PATH_ENTRY" value="jd/ressourcen/libs/dbus"/>
+		</attributes>
+	</classpathentry>
 	<classpathentry kind="lib" path="ressourcen/libs/BrowserLauncher2.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/hsqldb.jar" sourcepath="ressourcen/code-ressourcen/hsqsql_src.zip"/>
 	<classpathentry kind="lib" path="ressourcen/libs/htmlcleaner2_0.jar"/>
@@ -67,5 +71,9 @@
 	<classpathentry kind="lib" path="ressourcen/libs/laf/syntheticaBlackEye.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/laf/syntheticaGreenDream.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/image4j.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/dbus/debug-disable.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/dbus/hexdump.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/dbus/libdbus-java.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/dbus/unix.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

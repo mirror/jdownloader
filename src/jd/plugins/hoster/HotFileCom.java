@@ -26,6 +26,7 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.http.Browser;
+import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -43,8 +44,7 @@ import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hotfile.com" }, urls = { "http://[\\w\\.]*?hotfile\\.com/dl/\\d+/[0-9a-zA-Z]+/(.*?/|.+)" }, flags = { 2 })
 public class HotFileCom extends PluginForHost {
-
-    private boolean skipperFailed = false;
+    private String ua = RandomUserAgent.generate();
 
     public HotFileCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -66,6 +66,7 @@ public class HotFileCom extends PluginForHost {
 
     public void login(Account account) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.getHeaders().put("User-Agent", ua);
         br.setCookie("http://hotfile.com", "lang", "en");
         if (account.getUser().trim().equalsIgnoreCase("cookie")) {
             /* cookie login */
@@ -148,6 +149,7 @@ public class HotFileCom extends PluginForHost {
         /* workaround as server does not send correct encoding information */
         br.setCustomCharset("UTF-8");
         br.setCookie("http://hotfile.com", "lang", "en");
+        br.getHeaders().put("User-Agent", ua);
         br.getPage(parameter.getDownloadURL());
         if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
         String filename = br.getRegex("Downloading <b>(.+?)</b>").getMatch(0);
@@ -189,22 +191,8 @@ public class HotFileCom extends PluginForHost {
         }
         // Reconnect if the waittime is too big!
         if (sleeptime > 100 * 1000l) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, sleeptime);
-        // try to skip waittime, if this fails, fallback to waittime
-        if (!this.skipperFailed) {
-            form.put("tm", "1245072880");
-            form.put("tmhash", "e5b845119f0055c5d8554ee5f2ffc7b2d5ef86d7");
-            form.put("wait", "30");
-            form.put("waithash", "3bf07c5d83f2e652ff22eeaee00a6f08d4d2409a");
-            br.submitForm(form);
-            if (br.containsHTML("name=wait") && !this.skipperFailed) {
-                skipperFailed = true;
-                handleFree(link);
-                return;
-            }
-        } else {
-            this.sleep(sleeptime, link);
-            br.submitForm(form);
-        }
+        this.sleep(sleeptime, link);
+        br.submitForm(form);
         // captcha
         if (!br.containsHTML("Click here to download")) {
             PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
@@ -244,6 +232,7 @@ public class HotFileCom extends PluginForHost {
         try {
             Browser br = new Browser();
             br.setCookiesExclusive(true);
+            br.getHeaders().put("User-Agent", ua);
             br.setCookie("http://hotfile.com", "lang", "en");
             StringBuilder sb = new StringBuilder();
             ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
@@ -299,7 +288,7 @@ public class HotFileCom extends PluginForHost {
                 }
                 if (index == urls.length) break;
             }
-        } catch (Exception e) {
+        } catch (Throwable e) {
             return false;
         }
         return true;
