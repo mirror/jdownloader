@@ -144,7 +144,7 @@ public class BadongoCom extends PluginForHost {
         requestFileInformation(downloadLink);
         if (downloadLink.getStringProperty("type", "single").equalsIgnoreCase("split")) {
             /* Get CaptchaCode */
-            br.getPage(realURL.toString() + "?rs=displayCaptcha&rst=&rsrnd=" + System.currentTimeMillis() + "&rsargs[]=yellow");
+            br.getPage(realURL + "?rs=displayCaptcha&rst=&rsrnd=" + System.currentTimeMillis() + "&rsargs[]=yellow");
             Form form = br.getForm(0);
             String cid = br.getRegex("cid=(\\d+)").getMatch(0);
             String code = getCaptchaCode("http://www.badongo.com/ccaptcha.php?cid=" + cid, downloadLink);
@@ -186,6 +186,8 @@ public class BadongoCom extends PluginForHost {
             }
             dl.startDownload();
         } else {
+            boolean pluginBroken = true;
+            if (pluginBroken) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             /* Single File */
             Browser ajax = br.cloneBrowser();
             ajax.setCookiesExclusive(true);
@@ -193,15 +195,20 @@ public class BadongoCom extends PluginForHost {
             /* Get CaptchaCode */
             ajax.getPage(realURL + "?rs=refreshImage&rst=&rsrnd=" + System.currentTimeMillis());
             String cid = ajax.getRegex("cid=(\\d+)").getMatch(0);
+            String fileID = new Regex(realURL, "(file|vid)/(\\d+)/").getMatch(1);
+            String capSecret = ajax.getRegex("cap_secret value=(.*?)>").getMatch(0);
+            String action = ajax.getRegex("post action=\\\"(.*?)\\\"").getMatch(0);
+            if (cid == null || fileID == null || capSecret == null || action == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             String code = getCaptchaCode("http://www.badongo.com/ccaptcha.php?cid=" + cid, downloadLink);
-            Form captchaForm = ajax.getForm(0);
-            captchaForm.remove(null);
-            captchaForm.put("user_code", code);
-            captchaForm.setAction(ajax.getRegex("action=.\"(.+?).\"").getMatch(0));
-            ajax.submitForm(captchaForm);
+            String postData = "user_code=" + code + "&cap_id=" + cid + "&cap_secret=" + capSecret;
+            ajax.postPage(action, postData);
             /* Errorhandling */
             if (ajax.getRedirectLocation() != null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            ajax.getPage(ajax.getRedirectLocation());
             handleErrors(ajax);
+            // Ab hier gibts packed java script, die aktuelle Wartezeit steht
+            // auch im JS d.h. da sollte sie geregexed werden und unten
+            // entsprechend lange gewartet werden
             /* Waittime */
             sleep(45500, downloadLink);
             /* File or Video Link */
