@@ -34,6 +34,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.ContextFactory;
+import org.mozilla.javascript.Scriptable;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ifile.it" }, urls = { "http://[\\w\\.]*?ifile\\.it/[a-z0-9]+" }, flags = { 2 })
 public class IFileIt extends PluginForHost {
 
@@ -128,7 +132,6 @@ public class IFileIt extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         /* Nochmals das File überprüfen */
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         requestFileInformation(downloadLink);
         doFree(downloadLink);
     }
@@ -137,11 +140,21 @@ public class IFileIt extends PluginForHost {
         br.setDebug(true);
         br.setFollowRedirects(true);
         String downlink = br.getRegex("alias_id.*?=.*?'(.*?)';").getMatch(0);
+        String type = br.getRegex("makeUrl\\(.*?'(.*?)'").getMatch(0);
+        String extra = br.getRegex("makeUrl\\(.*?'.*?,'(.*?)'").getMatch(0);
+        String url = br.getRegex("(\"download:dl_.*?;)").getMatch(0);
+        String add = br.getRegex("kIjs09[ ]*=[ ']*([a-zA-Z0-9]+)").getMatch(0);
+        if (extra == null) extra = "";
+        if (type == null) type = "";
         if (downlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // Example how current links(last updated plugin-links) look(ed)
-        // like
-        // http://ifile.it/download:dl_request?alias_id=3180283&type=na&esn=1
-        String finaldownlink = "http://ifile.it/download:dl_request?alias_id=" + downlink + "&type=na&esn=1";
+
+        Context cx = ContextFactory.getGlobal().enter();
+        Scriptable scope = cx.initStandardObjects();
+        String fun = "function f(){ var kIjs09='" + add + "'; var __alias_id='" + downlink + "'; var extra='" + extra + "'; var type='" + type + "'; \nreturn " + url + "} f()";
+        Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
+        String finaldownlink = "http://ifile.it/" + Context.toString(result);
+        Context.exit();
+
         // Br2 is our xml browser now!
         Browser br2 = br.cloneBrowser();
         br2.setReadTimeout(40 * 1000);
@@ -154,11 +167,15 @@ public class IFileIt extends PluginForHost {
                 String captchacrap = br.getRegex("var.*?x.*?c = '(.*?)'").getMatch(0);
                 if (captchashit == null || captchacrap == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 String code = getCaptchaCode("http://ifile.it/download:captcha?0." + Math.random(), downloadLink);
-                String captchaget = "http://ifile.it/download:dl_request?alias_id=" + downlink + "&type=simple&esn=0&" + captchacrap + "=" + code + "&" + captchashit;
-                logger.info("Captchagetpage = " + captchaget);
-                // Example of the last working captchaget
-                // http://ifile.it/download:dl_request?x65=549427&type=simple&esn=1&8a1e7=9fa&920e4e7d3666c587258c93ef87cb3365=a8c5e3fdae3471388ec44741b41b3c2d&d51500b7a7cd5292d9db0b98dc022447=98f13708210194c475687be6106a3b84
-                xmlrequest(br2, captchaget);
+                type = "simple";
+                extra = "&esn=1&" + captchacrap + "=" + Encoding.urlEncode_light(code) + "&" + captchashit;
+                cx = ContextFactory.getGlobal().enter();
+                scope = cx.initStandardObjects();
+                fun = "function f(){ var kIjs09='" + add + "'; var __alias_id='" + downlink + "'; var extra='" + extra + "'; var type='" + type + "'; \nreturn " + url + "} f()";
+                result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
+                finaldownlink = "http://ifile.it/" + Context.toString(result);
+                Context.exit();
+                xmlrequest(br2, finaldownlink);
                 if (br2.containsHTML("\"retry\":\"retry\"")) continue;
                 break;
             }
@@ -173,8 +190,15 @@ public class IFileIt extends PluginForHost {
                 if (challenge == null || server == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 String captchaAddress = server + "image?c=" + challenge;
                 String code = getCaptchaCode(captchaAddress, downloadLink);
-                String recaptchaget = "http://ifile.it/download:dl_request?alias_id=" + downlink + "&type=recaptcha&esn=1&recaptcha_response_field=" + code + "&recaptcha_challenge_field=" + challenge;
-                xmlrequest(br2, recaptchaget);
+                type = "recaptcha";
+                extra = "&recaptcha_response_field=" + Encoding.urlEncode_light(code) + "&recaptcha_challenge_field=" + challenge;
+                cx = ContextFactory.getGlobal().enter();
+                scope = cx.initStandardObjects();
+                fun = "function f(){ var kIjs09='" + add + "'; var __alias_id='" + downlink + "'; var extra='" + extra + "'; var type='" + type + "'; \nreturn " + url + "} f()";
+                result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
+                finaldownlink = "http://ifile.it/" + Context.toString(result);
+                Context.exit();
+                xmlrequest(br2, finaldownlink);
                 if (br2.containsHTML("\"retry\":1")) {
                     xmlrequest(br2, finaldownlink);
                     continue;
