@@ -28,10 +28,13 @@ import java.util.LinkedList;
 
 import jd.OptionalPluginWrapper;
 import jd.PluginWrapper;
+import jd.config.SubConfiguration;
+import jd.controlling.LinkGrabberController;
 import jd.controlling.ProgressController;
 import jd.gui.UserIO;
 import jd.gui.swing.components.Balloon;
 import jd.http.Browser;
+import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.nativeintegration.LocalBrowser;
@@ -83,7 +86,7 @@ public class ShrLnksBz extends PluginForDecrypt {
         if (folderID == null) {
             folderID = new Regex(parameter, "s2l\\.biz/([0-9a-z]+)").getMatch(0);
         }
-        if (folderID != null && isExternInterfaceActive()) {
+        if (folderID != null && isExternInterfaceActive() && SubConfiguration.getConfig(LinkGrabberController.CONFIG).getBooleanProperty(LinkGrabberController.PARAM_USE_CNL2, true)) {
             Browser cnlcheck = br.cloneBrowser();
             LinkedHashMap<String, String> p = new LinkedHashMap<String, String>();
             p.put("folderCode", folderID);
@@ -107,7 +110,7 @@ public class ShrLnksBz extends PluginForDecrypt {
         // br.getHeaders().setDominant(true);
 
         br.getHeaders().clear();
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows; U; Windows NT 6.1; de; rv:1.9.2) Gecko/20100115 Firefox/3.6");
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
 
         br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
 
@@ -234,10 +237,10 @@ public class ShrLnksBz extends PluginForDecrypt {
         if (links.size() == 0) return null;
         progress.setRange(links.size());
         int waiter = 1000;
-        for (String link : links) {
+        for (String tmplink : links) {
 
             while (true) {
-                link = "http://share-links.biz/get/lnk/" + link;
+                String link = "http://share-links.biz/get/lnk/" + tmplink;
                 this.sleep(waiter, param);
                 br.getPage(link);
                 String clink0 = br.getRegex("unescape\\(\"(.*?)\"").getMatch(0);

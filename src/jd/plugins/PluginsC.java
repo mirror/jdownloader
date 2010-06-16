@@ -362,7 +362,11 @@ public abstract class PluginsC extends Plugin {
             progress = new ProgressController(JDL.L("plugins.container.open", "Open Container"), 10, null);
             progress.increase(1);
             if (bs != null) k = bs;
-            doDecryption(filename);
+            try {
+                doDecryption(filename);
+            } catch (Throwable e) {
+                JDLogger.exception(e);
+            }
             progress.increase(1);
 
             logger.info(filename + " Parse");

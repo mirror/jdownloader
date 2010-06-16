@@ -103,16 +103,20 @@ public class JDExternInterface extends PluginOptional {
         if (jk != null) {
 
             Context cx = ContextFactory.getGlobal().enter();
-            cx.setClassShutter(new ClassShutter() {
-                public boolean visibleToScripts(String className) {
-                    if (className.startsWith("adapter")) {
-                        return true;
-                    } else {
-                        throw new RuntimeException("Security Violation");
-                    }
+            try {
+                cx.setClassShutter(new ClassShutter() {
+                    public boolean visibleToScripts(String className) {
+                        if (className.startsWith("adapter")) {
+                            return true;
+                        } else {
+                            throw new RuntimeException("Security Violation");
+                        }
 
-                }
-            });
+                    }
+                });
+            } catch (java.lang.SecurityException e) {
+                /* in case classshutter already set */
+            }
             Scriptable scope = cx.initStandardObjects();
             String fun = jk + "  f()";
             Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
