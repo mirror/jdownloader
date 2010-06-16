@@ -41,9 +41,9 @@ public class MdfrFldr extends PluginForDecrypt {
         if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
         if (br.containsHTML("The page cannot be found")) return decryptedLinks;
         Thread.sleep(500);
-        String reqlink = br.getRegex(Pattern.compile("script language=\"JavaScript\" src=\"/js/myfiles\\.php/(.*?)\"")).getMatch(0);
+        String reqlink = br.getRegex(Pattern.compile("script language=\"JavaScript\" src=\".*?/js/myfiles\\.php/(.*?)\"")).getMatch(0);
         if (reqlink == null) { return null; }
-        br.getPage("http://www.mediafire.com/js/myfiles.php/" + reqlink);
+        br.getPage("http://myfiles.mediafire.com/js/myfiles.php/" + reqlink);
         String links[][] = br.getRegex(Pattern.compile("[a-z]{2}\\[\\d+\\]=Array\\('\\d+','\\d+',\\d+,'([a-z0-9]*?)','[a-f0-9]*?','(.*?)','(\\d+)'", Pattern.CASE_INSENSITIVE)).getMatches();
         progress.setRange(links.length);
 
