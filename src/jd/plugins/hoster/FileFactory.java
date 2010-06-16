@@ -102,6 +102,15 @@ public class FileFactory extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.getPage(urlWithFilename);
+
+        String wait = br.getRegex("class=\"countdown\">(\\d+)</span>").getMatch(0);
+
+        long waittime;
+        if (wait != null) {
+            waittime = Long.parseLong(wait) * 1000l;
+            if (waittime > 60000) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waittime);
+        }
+
         checkErrors();
         String downloadUrl = getUrl();
         if (downloadUrl == null) {
@@ -113,8 +122,8 @@ public class FileFactory extends PluginForHost {
             logger.warning("getUrl is broken!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        String wait = br.getRegex("class=\"countdown\">(\\d+)</span>").getMatch(0);
-        long waittime = 60 * 1000l;
+        wait = br.getRegex("class=\"countdown\">(\\d+)</span>").getMatch(0);
+        waittime = 60 * 1000l;
         if (wait != null) waittime = Long.parseLong(wait) * 1000l;
         if (waittime > 60000l) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waittime);
         waittime += 1000;
