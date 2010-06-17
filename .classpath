@@ -75,5 +75,6 @@
 	<classpathentry kind="lib" path="ressourcen/libs/dbus/hexdump.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/dbus/libdbus-java.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/dbus/unix.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs_ext/jpathwatch-0-92a.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
