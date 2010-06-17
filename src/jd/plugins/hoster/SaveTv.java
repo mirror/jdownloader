@@ -145,15 +145,12 @@ public class SaveTv extends PluginForHost {
         try {
             Account aa = AccountController.getInstance().getValidAccount(this);
             if (aa.toString().contains("false")) throw new PluginException(LinkStatus.ERROR_FATAL, "Kann Links ohne gültigen Account nicht überprüfen");
-            Regex accdata = new Regex(aa.toString(), "(.*?):(.*?)$");
-            String username = accdata.getMatch(0);
-            String password = accdata.getMatch(1).replace("true", "").trim();
             br.setFollowRedirects(true);
             String acctype = this.getPluginConfig().getStringProperty("premium", null);
             if (acctype != null) {
-                extendedLogin("http://www.save.tv/STV/S/misc/home.cfm?", Encoding.urlEncode(username), Encoding.urlEncode(password));
+                extendedLogin("http://www.save.tv/STV/S/misc/home.cfm?", Encoding.urlEncode(aa.getUser()), Encoding.urlEncode(aa.getPass()));
             } else {
-                extendedLogin("http://free.save.tv", Encoding.urlEncode(username), Encoding.urlEncode(password));
+                extendedLogin("http://free.save.tv", Encoding.urlEncode(aa.getUser()), Encoding.urlEncode(aa.getPass()));
             }
             for (DownloadLink dl : urls) {
                 String addedlink = dl.getDownloadURL();
