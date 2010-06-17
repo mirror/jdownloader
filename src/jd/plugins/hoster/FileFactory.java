@@ -92,6 +92,7 @@ public class FileFactory extends PluginForHost {
         if (br.containsHTML("there are currently no free download slots")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
         if (br.containsHTML(NOT_AVAILABLE)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML(SERVER_DOWN) || br.containsHTML(NO_SLOT)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l);
+        if (br.getRegex("Please wait (\\d+) minutes to download more files, or").getMatch(0) != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(br.getRegex("Please wait (\\d+) minutes to download more files, or").getMatch(0)) * 60 * 1001l);
     }
 
     public void handleFree0(DownloadLink parameter) throws Exception {
