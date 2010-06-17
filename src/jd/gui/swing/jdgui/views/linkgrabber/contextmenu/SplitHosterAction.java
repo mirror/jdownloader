@@ -45,7 +45,7 @@ public class SplitHosterAction extends ContextMenuAction {
                     nfp.setUseSubDir(packagee.useSubDir());
                     nfp.setComment(packagee.getComment());
                     for (DownloadLink dl : links) {
-                        if (dl.getPlugin().getHost().equalsIgnoreCase(host)) {
+                        if (dl.getHost().equalsIgnoreCase(host)) {
                             nfp.add(dl);
                         }
                     }

@@ -643,6 +643,7 @@ public class JDController implements ControlListener {
         synchronized (packages) {
             for (FilePackage fp : packages) {
                 for (DownloadLink nextDownloadLink : fp.getDownloadLinkList()) {
+                    if (nextDownloadLink.getPlugin() == null) continue;
                     if (nextDownloadLink.getPlugin().getClass() == pluginForHost.getClass()) al.add(nextDownloadLink);
                 }
             }

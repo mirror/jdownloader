@@ -81,8 +81,7 @@ public final class Reconnecter {
         configuration.setProperty(Configuration.PARAM_ALLOW_RECONNECT, newState);
         configuration.save();
         if (!newState) {
-            UserIF.getInstance().displayMiniWarning(JDL.L("gui.warning.reconnect.hasbeendisabled", "Reconnection is disabled!"),
-            JDL.L("gui.warning.reconnect.hasbeendisabled.tooltip", "To allow JDownloader to perform automated reconnections, you should enable this feature!"));
+            UserIF.getInstance().displayMiniWarning(JDL.L("gui.warning.reconnect.hasbeendisabled", "Reconnection is disabled!"), JDL.L("gui.warning.reconnect.hasbeendisabled.tooltip", "To allow JDownloader to perform automated reconnections, you should enable this feature!"));
         }
     }
 
@@ -275,7 +274,7 @@ public final class Reconnecter {
         synchronized (packages) {
             for (final FilePackage fp : packages) {
                 for (final DownloadLink nextDownloadLink : fp.getDownloadLinkList()) {
-                    if (nextDownloadLink.getPlugin() != null && nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.ERROR_IP_BLOCKED)) {
+                    if (nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.ERROR_IP_BLOCKED)) {
                         nextDownloadLink.getLinkStatus().setStatus(LinkStatus.TODO);
                         nextDownloadLink.getLinkStatus().resetWaitTime();
                     }

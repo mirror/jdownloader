@@ -150,7 +150,7 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
         ArrayList<DownloadLink> remove = new ArrayList<DownloadLink>();
         synchronized (downloadLinks) {
             for (DownloadLink dl : downloadLinks) {
-                if (!hoster.contains(dl.getPlugin().getHost())) remove.add(dl);
+                if (!hoster.contains(dl.getHost())) remove.add(dl);
             }
         }
         this.remove(remove);

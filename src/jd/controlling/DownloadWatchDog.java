@@ -493,6 +493,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                 for (final FilePackage filePackage : dlc.getPackages()) {
                     for (final Iterator<DownloadLink> it2 = filePackage.getDownloadLinkList().iterator(); it2.hasNext();) {
                         nextDownloadLink = it2.next();
+                        if (nextDownloadLink.getPlugin() == null) continue;
                         if (nextDownloadLink.isEnabled() && !nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE)) {
                             if (nextDownloadLink.getPlugin().isPremiumDownload() || (getRemainingIPBlockWaittime(nextDownloadLink.getHost()) <= 0 && getRemainingTempUnavailWaittime(nextDownloadLink.getHost()) <= 0)) {
                                 if (!isDownloadLinkActive(nextDownloadLink)) {
@@ -523,8 +524,13 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
      * try to force a downloadstart, will ignore maxperhost and maxdownloads
      * limits
      */
-    public void forceDownload(final ArrayList<DownloadLink> links) {
+    public void forceDownload(final ArrayList<DownloadLink> linksForce) {
         synchronized (DownloadLOCK) {
+            ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
+            for (final DownloadLink link : linksForce) {
+                /* remove links without a plugin */
+                if (link.getPlugin() != null) links.add(link);
+            }
             for (final DownloadLink link : links) {
                 if (!link.getPlugin().isAGBChecked()) {
                     try {

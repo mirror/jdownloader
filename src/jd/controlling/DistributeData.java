@@ -257,7 +257,7 @@ public class DistributeData extends Thread {
         /* normal quickcheck */
         ArrayList<DownloadLink> ret = quickHosterCheck(data);
         foundPasswords.addAll(HTMLParser.findPasswords(data));
-        if (ret != null && ret.size() == 1) {
+        if (ret != null && ret.size() == 1 && ret.get(0).getPlugin() != null) {
             /* also check for disabled hosterplugin and filtering here */
             if (!ret.get(0).getPlugin().getWrapper().isEnabled() || LinkGrabberController.isFiltered(ret.get(0))) {
                 ret.clear();

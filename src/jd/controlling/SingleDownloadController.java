@@ -152,7 +152,8 @@ public class SingleDownloadController extends Thread {
                 linkStatus.setErrorMessage(JDL.L("plugins.errors.hosterproblem", "Hoster problem?"));
                 linkStatus.setValue(10 * 60 * 1000l);
             } catch (InterruptedException e) {
-                logger.finest("Hoster Plugin Version: " + downloadLink.getPlugin().getVersion());
+                String rev = downloadLink.getPlugin() == null ? "" : downloadLink.getPlugin().getVersion();
+                logger.finest("Hoster Plugin Version: " + rev);
                 linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFECT);
                 linkStatus.setErrorMessage(JDL.L("plugins.errors.error", "Error: ") + JDUtilities.convertExceptionReadable(e));
             } catch (Exception e) {
@@ -249,7 +250,8 @@ public class SingleDownloadController extends Thread {
     }
 
     private void onErrorPluginDefect(DownloadLink downloadLink2, PluginForHost currentPlugin2) {
-        logger.warning("The Plugin for " + currentPlugin.getHost() + " seems to be out of date(rev" + downloadLink.getPlugin().getVersion() + "). Please inform the Support-team http://jdownloader.org/support.");
+        String rev = downloadLink.getPlugin() == null ? "" : downloadLink.getPlugin().getVersion();
+        logger.warning("The Plugin for " + currentPlugin.getHost() + " seems to be out of date(rev" + rev + "). Please inform the Support-team http://jdownloader.org/support.");
         if (downloadLink2.getLinkStatus().getErrorMessage() != null) logger.warning(downloadLink2.getLinkStatus().getErrorMessage());
         // Dieser Exception deutet meistens auf einen PLuginfehler hin. Deshalb
         // wird in diesem Fall die zuletzt geladene browserseite aufgerufen.
@@ -592,34 +594,37 @@ public class SingleDownloadController extends Thread {
             linkStatus.resetWaitTime();
             logger.info("Start working on " + downloadLink.getName());
             currentPlugin = plugin = downloadLink.getPlugin();
-            fireControlEvent(new ControlEvent(currentPlugin, ControlEvent.CONTROL_PLUGIN_ACTIVE, this));
-            if (downloadLink.getDownloadURL() == null) {
-                downloadLink.getLinkStatus().setStatusText(JDL.L("controller.status.containererror", "Container Error"));
-                downloadLink.getLinkStatus().setErrorMessage(JDL.L("controller.status.containererror", "Container Error"));
-                downloadLink.setEnabled(false);
-                fireControlEvent(new ControlEvent(currentPlugin, ControlEvent.CONTROL_PLUGIN_INACTIVE, this));
-                return;
-            }
-            /* check ob Datei existiert oder bereits geladen wird */
-            synchronized (DUPELOCK) {
-                /*
-                 * dieser sync block dient dazu das immer nur ein link gestartet
-                 * wird und dann der dupe check durchgeführt werden kann
-                 */
-                if (DownloadInterface.preDownloadCheckFailed(downloadLink)) {
-                    onErrorLinkBlock(downloadLink, currentPlugin);
+            if (currentPlugin != null) {
+                fireControlEvent(new ControlEvent(currentPlugin, ControlEvent.CONTROL_PLUGIN_ACTIVE, this));
+                if (downloadLink.getDownloadURL() == null) {
+                    downloadLink.getLinkStatus().setStatusText(JDL.L("controller.status.containererror", "Container Error"));
+                    downloadLink.getLinkStatus().setErrorMessage(JDL.L("controller.status.containererror", "Container Error"));
+                    downloadLink.setEnabled(false);
                     fireControlEvent(new ControlEvent(currentPlugin, ControlEvent.CONTROL_PLUGIN_INACTIVE, this));
                     return;
                 }
-                /*
-                 * setinprogress innerhalb des sync damit keine 2 downloads
-                 * gleichzeitig in progress übergehen können
-                 */
-                linkStatus.setInProgress(true);
+                /* check ob Datei existiert oder bereits geladen wird */
+                synchronized (DUPELOCK) {
+                    /*
+                     * dieser sync block dient dazu das immer nur ein link
+                     * gestartet wird und dann der dupe check durchgeführt
+                     * werden kann
+                     */
+                    if (DownloadInterface.preDownloadCheckFailed(downloadLink)) {
+                        onErrorLinkBlock(downloadLink, currentPlugin);
+                        fireControlEvent(new ControlEvent(currentPlugin, ControlEvent.CONTROL_PLUGIN_INACTIVE, this));
+                        return;
+                    }
+                    /*
+                     * setinprogress innerhalb des sync damit keine 2 downloads
+                     * gleichzeitig in progress übergehen können
+                     */
+                    linkStatus.setInProgress(true);
+                }
+                handlePlugin();
+                fireControlEvent(new ControlEvent(currentPlugin, ControlEvent.CONTROL_PLUGIN_INACTIVE, this));
+                plugin.clean();
             }
-            handlePlugin();
-            fireControlEvent(new ControlEvent(currentPlugin, ControlEvent.CONTROL_PLUGIN_INACTIVE, this));
-            plugin.clean();
             downloadLink.requestGuiUpdate();
         } finally {
             linkStatus.setInProgress(false);

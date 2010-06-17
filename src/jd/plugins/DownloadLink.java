@@ -415,7 +415,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * @return Erweiterter "Dateiname"
      */
     public String getFileInfomationString() {
-
+        if (plugin == null) return "";
         return getPlugin().getFileInformationString(this);
     }
 
@@ -573,49 +573,50 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     public AvailableStatus getAvailableStatus() {
         if (availableStatus != AvailableStatus.UNCHECKED) return availableStatus;
         int wait = 0;
-
-        for (int retry = 0; retry < 5; retry++) {
-            try {
-                long startTime = System.currentTimeMillis();
-                availableStatus = getPlugin().requestFileInformation(this);
-                this.requestTime = System.currentTimeMillis() - startTime;
+        if (plugin != null) {
+            for (int retry = 0; retry < 5; retry++) {
                 try {
-                    getPlugin().getBrowser().getHttpConnection().disconnect();
-                } catch (Exception e) {
-                }
-                break;
-            } catch (UnknownHostException e) {
-                availableStatus = AvailableStatus.UNCHECKABLE;
-                break;
-            } catch (PluginException e) {
-                e.fillLinkStatus(this.getLinkStatus());
-                if (this.getLinkStatus().hasStatus(LinkStatus.ERROR_IP_BLOCKED) || this.getLinkStatus().hasStatus(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE) || this.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE)) {
-                    availableStatus = AvailableStatus.UNCHECKABLE;
-                } else {
-                    availableStatus = AvailableStatus.FALSE;
-                }
-                break;
-            } catch (IOException e) {
-                if (e.getMessage().contains("code: 500")) {
+                    long startTime = System.currentTimeMillis();
+                    availableStatus = getPlugin().requestFileInformation(this);
+                    this.requestTime = System.currentTimeMillis() - startTime;
                     try {
-                        wait += 500;
-                        JDLogger.getLogger().finer("500 Error Code, retrying in " + wait);
-                        Thread.sleep(wait);
-                    } catch (InterruptedException e1) {
+                        getPlugin().getBrowser().getHttpConnection().disconnect();
+                    } catch (Exception e) {
+                    }
+                    break;
+                } catch (UnknownHostException e) {
+                    availableStatus = AvailableStatus.UNCHECKABLE;
+                    break;
+                } catch (PluginException e) {
+                    e.fillLinkStatus(this.getLinkStatus());
+                    if (this.getLinkStatus().hasStatus(LinkStatus.ERROR_IP_BLOCKED) || this.getLinkStatus().hasStatus(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE) || this.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE)) {
                         availableStatus = AvailableStatus.UNCHECKABLE;
+                    } else {
+                        availableStatus = AvailableStatus.FALSE;
+                    }
+                    break;
+                } catch (IOException e) {
+                    if (e.getMessage().contains("code: 500")) {
+                        try {
+                            wait += 500;
+                            JDLogger.getLogger().finer("500 Error Code, retrying in " + wait);
+                            Thread.sleep(wait);
+                        } catch (InterruptedException e1) {
+                            availableStatus = AvailableStatus.UNCHECKABLE;
+                            break;
+                        }
+                        continue;
+                    } else {
                         break;
                     }
-                    continue;
-                } else {
+
+                } catch (Exception e) {
+                    availableStatus = AvailableStatus.UNCHECKABLE;
                     break;
                 }
-
-            } catch (Exception e) {
-                availableStatus = AvailableStatus.UNCHECKABLE;
-                break;
             }
         }
-        if (availableStatus == null) availableStatus = AvailableStatus.UNCHECKABLE;
+        if (availableStatus == null || plugin == null) availableStatus = AvailableStatus.UNCHECKABLE;
         return availableStatus;
     }
 
@@ -1096,8 +1097,8 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     public static Set<String> getHosterList(ArrayList<DownloadLink> links) {
         HashMap<String, String> hosters = new HashMap<String, String>();
         for (DownloadLink dl : links) {
-            if (!hosters.containsKey(dl.getPlugin().getHost())) {
-                hosters.put(dl.getPlugin().getHost(), "");
+            if (!hosters.containsKey(dl.getHost())) {
+                hosters.put(dl.getHost(), "");
             }
         }
         return hosters.keySet();

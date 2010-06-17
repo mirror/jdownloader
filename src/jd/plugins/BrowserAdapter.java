@@ -23,7 +23,7 @@ import jd.plugins.download.RAFDownload;
 
 public class BrowserAdapter {
     public static DownloadInterface openDownload(Browser br, DownloadLink downloadLink, String link) throws Exception {
-
+        if (downloadLink.getPlugin() == null) return null;
         DownloadInterface dl = RAFDownload.download(downloadLink, br.createGetRequest(link));
         try {
             dl.connect(br);
@@ -51,6 +51,7 @@ public class BrowserAdapter {
     }
 
     public static DownloadInterface openDownload(Browser br, DownloadLink downloadLink, String url, String postdata) throws Exception {
+        if (downloadLink.getPlugin() == null) return null;
         DownloadInterface dl = RAFDownload.download(downloadLink, br.createPostRequest(url, postdata));
         try {
             dl.connect(br);
@@ -77,6 +78,7 @@ public class BrowserAdapter {
     }
 
     public static DownloadInterface openDownload(Browser br, DownloadLink downloadLink, String url, String postdata, boolean b, int c) throws Exception {
+        if (downloadLink.getPlugin() == null) return null;
         DownloadInterface dl = RAFDownload.download(downloadLink, br.createPostRequest(url, postdata), b, c);
         try {
             dl.connect(br);
@@ -103,7 +105,7 @@ public class BrowserAdapter {
     }
 
     public static DownloadInterface openDownload(Browser br, DownloadLink downloadLink, String link, boolean b, int c) throws Exception {
-
+        if (downloadLink.getPlugin() == null) return null;
         DownloadInterface dl = RAFDownload.download(downloadLink, br.createRequest(link), b, c);
         try {
             dl.connect(br);
@@ -131,7 +133,7 @@ public class BrowserAdapter {
     }
 
     public static DownloadInterface openDownload(Browser br, DownloadLink downloadLink, Form form, boolean resume, int chunks) throws Exception {
-
+        if (downloadLink.getPlugin() == null) return null;
         DownloadInterface dl = RAFDownload.download(downloadLink, br.createRequest(form), resume, chunks);
         try {
             dl.connect(br);
@@ -159,7 +161,7 @@ public class BrowserAdapter {
     }
 
     public static DownloadInterface openDownload(Browser br, DownloadLink downloadLink, Form form) throws Exception {
-
+        if (downloadLink.getPlugin() == null) return null;
         DownloadInterface dl = RAFDownload.download(downloadLink, br.createRequest(form));
         try {
             dl.connect(br);

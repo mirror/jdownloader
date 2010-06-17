@@ -141,7 +141,7 @@ public class LinkCheck implements ActionListener, ProgressControllerListener {
             DownloadLink link = hosterList.get(0);
 
             long timer = System.currentTimeMillis();
-            boolean ret = link.getPlugin().getWrapper().getNewPluginInstance().checkLinks(hosterList.toArray(new DownloadLink[] {}));
+            boolean ret = link.getPlugin() == null ? false : link.getPlugin().getWrapper().getNewPluginInstance().checkLinks(hosterList.toArray(new DownloadLink[] {}));
 
             if (!ret) {
                 for (int i = 0; i < hosterList.size(); i++) {
@@ -183,6 +183,7 @@ public class LinkCheck implements ActionListener, ProgressControllerListener {
                     /* onlinecheck, multithreaded damit schneller */
                     HashMap<String, ArrayList<DownloadLink>> map = new HashMap<String, ArrayList<DownloadLink>>();
                     for (DownloadLink dl : currentList) {
+                        if (dl.getPlugin() == null) continue;
                         /*
                          * aufteilung in hosterlisten, um schnellere checks zu
                          * ermöglichen

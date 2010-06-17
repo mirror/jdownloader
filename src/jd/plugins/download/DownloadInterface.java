@@ -1212,7 +1212,7 @@ abstract public class DownloadInterface {
         if (block != null) {
             logger.severe("File already is in progress. " + downloadLink.getFileOutput());
             linkstatus.addStatus(LinkStatus.ERROR_ALREADYEXISTS);
-            linkstatus.setStatusText(JDL.LF("system.download.errors.linkisBlocked", "Mirror %s is loading", block.getPlugin().getHost()));
+            if (block.getPlugin() != null) linkstatus.setStatusText(JDL.LF("system.download.errors.linkisBlocked", "Mirror %s is loading", block.getPlugin().getHost()));
             return true;
         }
         File fileOutput = new File(downloadLink.getFileOutput());
