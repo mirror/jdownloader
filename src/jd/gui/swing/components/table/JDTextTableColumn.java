@@ -43,7 +43,9 @@ public abstract class JDTextTableColumn extends JDTableColumn {
 
     @Override
     public final Component myTableCellRendererComponent(JDTableModel table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-        jlr.setText(getStringValue(value));
+        String text = getStringValue(value);
+        jlr.setText(text);
+        jlr.setToolTipText(text);
         return jlr;
     }
 

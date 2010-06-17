@@ -113,7 +113,7 @@ public class LinkGrabberFilePackageInfo extends JDCollapser implements ActionLis
         txtComment.addActionListener(this);
         txtComment.addFocusListener(this);
         chbPostProcessing = new JCheckBox(JDL.L("gui.fileinfopanel.packagetab.chb.postProcessing", "Post Processing"));
-        chbPostProcessing.setToolTipText(JDL.L("gui.fileinfopanel.packagetab.chb.postProcessing.toolTip", "Enable Post Processing for this FilePackge, like extracting or merging."));
+        chbPostProcessing.setToolTipText(JDL.L("gui.fileinfopanel.packagetab.chb.postProcessing.toolTip", "Enable Post Processing for this FilePackage, like extracting or merging."));
         chbPostProcessing.setSelected(true);
         chbPostProcessing.setHorizontalTextPosition(JCheckBox.LEFT);
         chbPostProcessing.addActionListener(this);
