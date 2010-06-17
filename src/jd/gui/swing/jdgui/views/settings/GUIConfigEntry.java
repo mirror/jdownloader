@@ -212,6 +212,10 @@ public class GUIConfigEntry implements GuiConfigListener, ActionListener, Change
         configEntry.valueChanged(getText());
     }
 
+    public void valueChanged(ActionEvent e) {
+        configEntry.valueChanged(getText());
+    }
+
     public void changedUpdate(DocumentEvent e) {
         configEntry.valueChanged(getText());
     }

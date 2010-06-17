@@ -16,6 +16,8 @@
 
 package jd.gui.swing.jdgui.views.settings.panels.downloadandnetwork;
 
+import javax.swing.SwingUtilities;
+
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
@@ -77,10 +79,18 @@ public class Advanced extends ConfigPanel {
                 // database stored one
                 if (newValue == Boolean.TRUE && !warned) {
                     warned = true;
-                    UserIO.getInstance().requestMessageDialog(UserIO.ICON_WARNING, JDL.L("jd.gui.swing.jdgui.settings.panels.downloadandnetwork.advanced.ipcheckdisable.warning.title", "IP-Check disabled!"), JDL.L("jd.gui.swing.jdgui.settings.panels.downloadandnetwork.advanced.ipcheckdisable.warning.message", "You disabled the IP-Check. This will increase the reconnection times dramatically!\r\n\r\nSeveral further modules like Reconnect Recorder are disabled."));
+                    SwingUtilities.invokeLater(new Runnable() {
+
+                        public void run() {
+                            UserIO.getInstance().requestMessageDialog(UserIO.ICON_WARNING, JDL.L("jd.gui.swing.jdgui.settings.panels.downloadandnetwork.advanced.ipcheckdisable.warning.title", "IP-Check disabled!"), JDL.L("jd.gui.swing.jdgui.settings.panels.downloadandnetwork.advanced.ipcheckdisable.warning.message", "You disabled the IP-Check. This will increase the reconnection times dramatically!\r\n\r\nSeveral further modules like Reconnect Recorder are disabled."));
+                        }
+
+                    });
+
                 } else if (newValue == Boolean.FALSE) {
                     warned = false;
                 }
+
             }
         });
         cond.setDefaultValue(false);
@@ -123,5 +133,4 @@ public class Advanced extends ConfigPanel {
         ce.setDefaultValue(500);
         return container;
     }
-
 }
