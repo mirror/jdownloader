@@ -117,10 +117,10 @@ public class OronCom extends PluginForHost {
         } else {
             String dllink = br.getRedirectLocation();
             if (dllink == null) {
-                if (br.containsHTML("You have reached the download-limit")) {
-                    String errormessage = "You have reached the download-limit!";
-                    if (br.getRegex("class=\"err\">(.*?)<br>").getMatch(0) != null) errormessage = br.getRegex("class=\"err\">(.*?)<br>").getMatch(0);
-                    logger.warning(errormessage);
+                if (br.containsHTML("You have reached the download")) {
+                    String errormessage = "You have reached the download limit!";
+                    errormessage = br.getRegex("class=\"err\">(.*?)<br>").getMatch(0);
+                    if (errormessage != null) logger.warning(errormessage);
                     link.getLinkStatus().setStatusText(errormessage);
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, errormessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 }
@@ -172,13 +172,15 @@ public class OronCom extends PluginForHost {
                 }
             }
             if (dllink == null) {
+                if (br.containsHTML("You have reached the download")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 logger.warning("Final downloadlink (String is \"dllink\" regex didn't match!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            logger.info("Final downloadlink = " + dllink + " starting the download...");
+            // logger.info("Final downloadlink = " + dllink +
+            // " starting the download...");
             // Hoster allows up to 10 Chunks but then you can only start one
             // download...
-            jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
             if (passCode != null) {
                 link.setProperty("pass", passCode);
             }
