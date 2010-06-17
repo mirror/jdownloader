@@ -263,7 +263,7 @@ public class FolderWatch extends PluginOptional {
             // view.setContent(gui);
             // view.setInfoPanel(gui.getInfoPanel());
         }
-        http: // www.studivz.net/Friends/All/sVGtt9dlW7NtXaWVqHjWlbTiVcX1sXgmC_fhjR1UKo8/tid/103
+
         showGuiAction.setSelected(true);
         JDGui.getInstance().setContent(view);
     }
