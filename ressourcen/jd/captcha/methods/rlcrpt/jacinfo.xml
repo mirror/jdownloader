@@ -1,4 +1,4 @@
 <jDownloader>
-<method name="urlcryptBROKEN" author="DwD" services="urlcrypt.comBROKEN"/>
+<method name="urlcrypt.com" author="DwD" services="urlcrypt.com"/>
 <format type="jpg" letterNum="4" />
 </jDownloader>
