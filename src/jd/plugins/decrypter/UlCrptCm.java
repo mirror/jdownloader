@@ -43,6 +43,9 @@ public class UlCrptCm extends PluginForDecrypt {
         super(wrapper);
     }
 
+    private static final String PASSWORDFAILED = "geben Sie bitte jetzt das Passwort ein";
+    private static final String CAPTCHAFAILED = "Sicherheitsabfrage";
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -58,30 +61,43 @@ public class UlCrptCm extends PluginForDecrypt {
         /* Error handling */
         if (br.containsHTML("Ordner nicht gefunden")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
 
-        if (br.containsHTML("geben Sie bitte jetzt das Passwort ein") || br.containsHTML("Sicherheitsabfrage")) {
-            Form captchaForm = br.getForm(0);
-            if (captchaForm == null) return null;
-            String passCode = null;
-            // Captcha handling
-            if (br.containsHTML("Sicherheitsabfrage")) {
-                String captchalink = null;
-                if (parameter.contains("urlcrypt.com"))
-                    captchalink = "http://www.urlcrypt.com/captcha.php?ImageWidth=120&ImageHeight=37&FontSize=19&CordX=10&CordY=24";
-                else
-                    captchalink = "http://www.xeem.in/captcha.php?ImageWidth=120&ImageHeight=37&FontSize=19&CordX=10&CordY=24";
-                String code = getCaptchaCode(captchalink, param);
-                captchaForm.put("strCaptcha", code);
+        if (br.containsHTML(PASSWORDFAILED) || br.containsHTML(CAPTCHAFAILED)) {
+            for (int i = 0; i <= 5; i++) {
+                Form captchaForm = br.getForm(0);
+                if (captchaForm == null) return null;
+                String passCode = null;
+                // Captcha handling
+                if (br.containsHTML("Sicherheitsabfrage")) {
+                    String captchalink = null;
+                    if (parameter.contains("urlcrypt.com"))
+                        captchalink = "http://www.urlcrypt.com/captcha.php?ImageWidth=120&ImageHeight=37&FontSize=19&CordX=10&CordY=24";
+                    else
+                        captchalink = "http://www.xeem.in/captcha.php?ImageWidth=120&ImageHeight=37&FontSize=19&CordX=10&CordY=24";
+                    String code = getCaptchaCode(captchalink, param);
+                    captchaForm.put("strCaptcha", code);
+                }
+                // Password handling
+                if (br.containsHTML("geben Sie bitte jetzt das Passwort ein")) {
+                    passCode = Plugin.getUserInput("Password?", param);
+                    captchaForm.put("strPassword", passCode);
+                }
+                br.submitForm(captchaForm);
+                // Password errorhandling
+                if (br.containsHTML(PASSWORDFAILED)) {
+                    logger.info("Password wasn't entered correctly.");
+                    continue;
+                }
+                // Captcha errorhandling
+                if (br.containsHTML(CAPTCHAFAILED)) {
+                    logger.info("Wrong captcha was entered.");
+                    continue;
+                }
+                break;
             }
-            // Password handling
-            if (br.containsHTML("geben Sie bitte jetzt das Passwort ein")) {
-                passCode = Plugin.getUserInput("Password?", param);
-                captchaForm.put("strPassword", passCode);
-            }
-            br.submitForm(captchaForm);
             // Password errorhandling
-            if (br.containsHTML("geben Sie bitte jetzt das Passwort ein")) throw new DecrypterException(DecrypterException.PASSWORD);
+            if (br.containsHTML(PASSWORDFAILED)) throw new DecrypterException(DecrypterException.PASSWORD);
             // Captcha errorhandling
-            if (br.containsHTML("Sicherheitsabfrage")) throw new DecrypterException(DecrypterException.CAPTCHA);
+            if (br.containsHTML(CAPTCHAFAILED)) throw new DecrypterException(DecrypterException.CAPTCHA);
         }
 
         /* Password handling */

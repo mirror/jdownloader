@@ -40,6 +40,7 @@ public class MangaTradersCom extends PluginForHost {
     }
 
     private boolean weAreAlreadyLoggedIn = false;
+    private static final String ACCESSBLOCK = "<p>You have attempted to download this file within the last 10 seconds.</p>";
 
     @Override
     public String getAGBLink() {
@@ -79,10 +80,14 @@ public class MangaTradersCom extends PluginForHost {
         if (!weAreAlreadyLoggedIn) login(account);
         br.getPage(downloadLink.getDownloadURL());
         String dllink = br.getRedirectLocation();
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            if (br.containsHTML(ACCESSBLOCK)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error, wait some minutes!", 5 * 60 * 1999l);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            if (br.containsHTML(ACCESSBLOCK)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error, wait some minutes!", 5 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
