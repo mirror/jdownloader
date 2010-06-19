@@ -27,7 +27,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidgator.net" }, urls = { "http://[\\w\\.]*?rapidgator.net/([0-9]+/|\\?file=[0-9]+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidgator.net" }, urls = { "http://[\\w\\.]*?rapidgator\\.net/\\d+/.*?\\.html" }, flags = { 0 })
 public class RapidGatorNet extends PluginForHost {
 
     public RapidGatorNet(PluginWrapper wrapper) {
@@ -52,17 +52,6 @@ public class RapidGatorNet extends PluginForHost {
         link.setName(filename.trim());
         link.setDownloadSize(Regex.getSize(filesize));
         return AvailableStatus.TRUE;
-    }
-
-    @Override
-    public void correctDownloadLink(DownloadLink dl) {
-        Regex rg = new Regex(dl.getDownloadURL(), "http://[\\w\\.]*?rapidgator.net/([0-9]+)/");
-
-        if (rg.matches()) {
-            String fileid = rg.getMatch(0);
-            String newDownloadLinkURL = dl.getDownloadURL().replaceAll("/[0-9]+/", "/?file=" + fileid);
-            dl.setUrlDownload(newDownloadLinkURL);
-        }
     }
 
     @Override

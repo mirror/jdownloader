@@ -41,6 +41,7 @@ public class MangaTradersCom extends PluginForHost {
 
     private boolean weAreAlreadyLoggedIn = false;
     private static final String ACCESSBLOCK = "<p>You have attempted to download this file within the last 10 seconds.</p>";
+    private static final String FILEOFFLINE = ">Download Manager Error - Invalid Fileid";
 
     @Override
     public String getAGBLink() {
@@ -74,13 +75,15 @@ public class MangaTradersCom extends PluginForHost {
 
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
-        requestFileInformation(downloadLink);
+        // Don't check the links because the download will then fail ;)
+        // requestFileInformation(downloadLink);
         // Usually JD is already logged in after the linkcheck so if JD is
         // logged in we don't have to log in again here
         if (!weAreAlreadyLoggedIn) login(account);
         br.getPage(downloadLink.getDownloadURL());
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
+            if (br.containsHTML(FILEOFFLINE)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             if (br.containsHTML(ACCESSBLOCK)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error, wait some minutes!", 5 * 60 * 1999l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

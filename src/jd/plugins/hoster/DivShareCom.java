@@ -87,7 +87,7 @@ public class DivShareCom extends PluginForHost {
             String dllink = br.getRegex("If it doesn't, <a href=\"(http://.*?)\"").getMatch(0);
             if (dllink == null) dllink = br.getRegex("\"(http://storagestart\\.divshare\\.com/launch\\.php\\?f=\\d+\\&s=[a-z0-9]+\"").getMatch(0);
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
             dl.startDownload();
 
         }
