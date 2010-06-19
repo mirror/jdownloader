@@ -8,10 +8,14 @@ RequestExecutionLevel user
 !define URL http://www.jdownloader.org
 !define APPNAME "JDownloader"
 !define APPNAME_SHORT "JDownloader" # Name without spaces etc (Jay Downloader -> JayDownloader)
+#Advertising plugins might overwrite this!
+!define LICENSE ".\res\license.txt"
+SetCompressor lzma #TODO: try out several compression algos
 
 #Advertising
-!include ".\advertising\kikin\kikin.nsh"
-#!include ".\advertising\OpenCandy\OpenCandy.nsh"
+#!include ".\advertising\template.nsh"
+#!include ".\advertising\kikin\kikin.nsh"
+!include ".\advertising\OpenCandy\OpenCandy.nsh"
 
 #Disable version display for JD (Autoupdate)
 #VERSION2 is needed for VIAddVersionKey
@@ -51,7 +55,7 @@ Var ADMINATINSTALL
 
 # Installer pages
 !insertmacro MUI_PAGE_WELCOME
-!insertmacro MUI_PAGE_LICENSE .\res\license.txt
+!insertmacro MUI_PAGE_LICENSE ${LICENSE}
 #!insertmacro MUI_PAGE_COMPONENTS
 !insertmacro MUI_PAGE_DIRECTORY
 !insertmacro CUSTOM_PAGE_JREINFO
@@ -223,6 +227,18 @@ Function .onInit
     ${EndIf}
     
     !insertmacro ADVERTISING_ONINIT
+FunctionEnd
+
+Function .onInstSuccess
+    !insertmacro ADVERTISING_ONINSTSUCCESS
+FunctionEnd
+
+Function .onInstFailed
+    !insertmacro ADVERTISING_ONINSTFAILED
+FunctionEnd
+
+Function .onGUIEnd
+    !insertmacro ADVERTISING_ONGUIEND
 FunctionEnd
 
 # Uninstaller functions

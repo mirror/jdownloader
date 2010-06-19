@@ -1,3 +1,5 @@
+#Kikin Advertising plugin
+
 !macro ADVERTISING_PAGE
 Page custom KikinPage
 !macroend
@@ -93,4 +95,13 @@ FunctionEnd
     ${Else} 
         WriteINIStr "$PLUGINSDIR\kikin_dialog.en.ini" "Field 1" "Text" "$PLUGINSDIR\kikin_installer_en.bmp"
     ${EndIf}
+!macroend
+
+!macro ADVERTISING_ONINSTSUCCESS
+!macroend
+
+!macro ADVERTISING_ONINSTFAILED
+!macroend
+
+!macro ADVERTISING_ONGUIEND
 !macroend
