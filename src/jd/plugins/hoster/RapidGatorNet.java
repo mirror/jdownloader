@@ -45,39 +45,33 @@ public class RapidGatorNet extends PluginForHost {
         br.setCustomCharset("UTF-8");
         br.setCookie("http://rapidgator.net/", "language", "en");
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("_notfound")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<h1>FILE DOWNLOAD</h1>.*?<p class=.*?>(.*?)<fon").getMatch(0);
-        String filesize = br.getRegex("\">\\|(.*?)</font").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(<h3>File not found</h3>|<h1>Error 404</h1>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<p><b>(.*?)</b>").getMatch(0);
+        if (filename == null) filename = br.getRegex("onclick=\"initPremiumDl\\(\\&#039;/files/dlpremium/\\d+/(.*?)\\.html\\&#039;\\);\"").getMatch(0);
+        String filesize = br.getRegex("style=\"color:#8E908F;\">(.*?)</font>").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(filename.trim());
-        link.setDownloadSize(Regex.getSize(filesize));
+        if (filesize != null) link.setDownloadSize(Regex.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        br.setFollowRedirects(false);
-        br.getPage(downloadLink.getDownloadURL() + "&s=queue");
-        // Ticket Time
-        String ttt = br.getRegex("var time =.*?(\\d+);").getMatch(0);
-        int tt = 60;
-        if (ttt != null) tt = Integer.parseInt(ttt);
-        sleep(tt * 1001, downloadLink);
-        br.getPage(downloadLink.getDownloadURL() + "&s=download");
-        if (br.containsHTML("(Sorry, there is no download slots at this moment|Please try to download your file later)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
-        if (br.containsHTML("Our aim is to have loyal customers who choose RapidGator with conviction")) {
-            logger.warning("Unknown error for link: " + downloadLink.getDownloadURL());
-            logger.warning(br.toString());
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown error occured!");
-        }
-        String dllink = br.getRegex("<p>Your link: <a href=\"(http.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://dl\\.rapidgator\\.net/\\?dlsession=.*?)\"").getMatch(0);
+        Regex someImportantStuff = br.getRegex("onclick=\"initCountdown\\(\\&#039;(.*?)\\&#039;, \\&#039;(.*?)\\&#039;, (.*?)\\&#039;, \\&#039;(.*?)\\&#039;, (.*?)\\&#039;/ajax/initdl\\&#\\d+;\\);\"");
+        String fileid = someImportantStuff.getMatch(0);
+        String file_hash = someImportantStuff.getMatch(1);
+        String old_sid = someImportantStuff.getMatch(3);
+        if (fileid == null || file_hash == null || old_sid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        String postData = "file_id=" + fileid + "&file_hash=" + file_hash + "&mode=free&old_sid=" + old_sid;
+        br.postPage("http://rapidgator.net/ajax/initdl", postData);
+        String dllink = br.getRegex("<b>Ссылка для скачивания:</b>[\r\t\n <td><tr></tr></td>]+<a href=\"(.*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\"(http://dl\\d+\\.rapidgator\\.net/api/index\\.php\\?sid=[a-z0-9]+)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.containsHTML("Sorry, old link")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -89,7 +83,7 @@ public class RapidGatorNet extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return -1;
     }
 
     @Override

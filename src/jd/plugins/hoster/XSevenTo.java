@@ -49,7 +49,6 @@ public class XSevenTo extends PluginForHost {
         this.setBrowserExclusive();
         /* have to call this in order so set language */
         br.getPage("http://x7.to/lang/en");
-        br.getPage("http://x7.to/");
         br.postPage("http://x7.to/james/login", "id=" + Encoding.urlEncode(account.getUser()) + "&pw=" + Encoding.urlEncode(account.getPass()));
         if (br.getCookie("http://x7.to/", "login") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         br.getPage("http://x7.to/my");
@@ -66,7 +65,7 @@ public class XSevenTo extends PluginForHost {
             return ai;
         }
         account.setValid(true);
-        String validUntil = br.getRegex("Premium\\-Mitglied bis (.*)\"").getMatch(0);
+        String validUntil = br.getRegex("Premium-Mitglied bis (.*?)\"").getMatch(0);
         if (validUntil != null) {
             ai.setValidUntil(Regex.getMilliSeconds(validUntil.trim(), "yyyy-MM-dd HH:mm:ss", null));
         } else {
@@ -79,7 +78,6 @@ public class XSevenTo extends PluginForHost {
             /* unlimited acc */
         } else if (remaining != null) {
             ai.setTrafficLeft(remaining);
-
         }
         return ai;
     }
