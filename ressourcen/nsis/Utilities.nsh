@@ -57,10 +57,10 @@ done${UNSECTION_ID}:
     StrLen $R1 "\${APPNAME_SHORT}"
     StrCpy $R0 $INSTDIR "" -$R1
     StrCmp $R0 "\${APPNAME_SHORT}" +3
-        MessageBox MB_YESNO|MB_ICONQUESTION "Unrecognised uninstall path. Continue anyway?" IDYES +2
+        MessageBox MB_YESNO|MB_ICONQUESTION $(UnrecognisedInstallPath) IDYES +2
         Abort
     IfFileExists "$INSTDIR\JDownloader.exe" +3
-        MessageBox MB_YESNO|MB_ICONQUESTION "JDownloader.exe not found in uninstall path. Continue anyway?" IDYES +2
+        MessageBox MB_YESNO|MB_ICONQUESTION $(JDExeNotFound) IDYES +2
         Abort
 !macroend
 

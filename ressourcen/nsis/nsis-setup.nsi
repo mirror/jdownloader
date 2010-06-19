@@ -139,12 +139,14 @@ SectionEnd
 
 #This section provides mandatory install functionality
 Section -post SecPostInstall
-    WriteRegStr SHELL_CONTEXT "${REGKEY}" Path $INSTDIR
+    #Write uninstaller
     SetOutPath $INSTDIR
     WriteUninstaller $INSTDIR\uninstall.exe
     SetOutPath "$SMPROGRAMS\$(^Name)"
     CreateShortcut "$SMPROGRAMS\$(^Name)\$(^UninstallLink).lnk" "$INSTDIR\uninstall.exe"
     
+    #Write registry
+    WriteRegStr SHELL_CONTEXT "${REGKEY}" "Path" $INSTDIR
     #Add uninstall information to Add/Remove Programs in windows
     #see http://nsis.sourceforge.net/Add_uninstall_information_to_Add/Remove_Programs
     WriteRegStr SHELL_CONTEXT "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME_SHORT}" DisplayName "$(^Name)"
@@ -160,14 +162,16 @@ SectionEnd
 
 # Uninstaller sections
 Section /o "-un.$(SecJDMain_TITLE)" UNSecJDMain
+    #Remove files
     Push $INSTDIR
     Push "downloads"
     Call un.RmButOne
     RMDir $INSTDIR\downloads #won't delete if not empty
     RMDir $INSTDIR
     
-    Delete /REBOOTOK $DESKTOP\JDownloader.lnk
-    Delete /REBOOTOK "$SMPROGRAMS\$(^Name)\JDownloader Support.lnk"
+    Delete /REBOOTOK "$SMPROGRAMS\$(^Name)\$(^Name).lnk"
+    Delete /REBOOTOK "$SMPROGRAMS\$(^Name)\$(^HelpLink).lnk"
+    Delete /REBOOTOK "$DESKTOP\$(^Name).lnk"
 
     DeleteRegValue SHELL_CONTEXT "${REGKEY}\Components" SecJDMain
 SectionEnd
@@ -190,15 +194,17 @@ Section /o "-un.$(SecAssociateFiles_TITLE)" UNSecAssociateFiles
 SectionEnd
 
 Section -un.post UNSecPostInstall
-    Delete /REBOOTOK "$SMPROGRAMS\$(^Name)\$(^UninstallLink).lnk"
+    #Delete uninstaller
     Delete /REBOOTOK "$INSTDIR\uninstall.exe"
+    Delete /REBOOTOK "$SMPROGRAMS\$(^Name)\$(^UninstallLink).lnk"
+    RmDir /REBOOTOK "$SMPROGRAMS\$(^Name)"
     
-    DeleteRegKey SHELL_CONTEXT "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME_SHORT}"
+    #Remove entries from registry
     DeleteRegValue SHELL_CONTEXT "${REGKEY}" "Path"
     DeleteRegKey /IfEmpty SHELL_CONTEXT "${REGKEY}\Components"
     DeleteRegKey /IfEmpty SHELL_CONTEXT "${REGKEY}"
-
-    RmDir /REBOOTOK "$SMPROGRAMS\$(^Name)"
+    #Remove uninstall information
+    DeleteRegKey SHELL_CONTEXT "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME_SHORT}"
 SectionEnd
 
 # Installer functions
@@ -225,6 +231,7 @@ Function un.onInit
     !insertmacro determineInstallDir
     !insertmacro SELECT_UNSECTION SecJDMain ${UNSecJDMain}
     !insertmacro SELECT_UNSECTION SecAssociateFiles ${UNSecAssociateFiles}
+    !insertmacro SELECT_UNSECTION SecAdvertising ${UNSecAdvertising}
 FunctionEnd
 
 # Sections not displayed

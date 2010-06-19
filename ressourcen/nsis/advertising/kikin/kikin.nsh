@@ -19,7 +19,7 @@ ReserveFile "advertising\kikin\kikin_dialog.de.ini"
 ReserveFile "advertising\kikin\kikin_installer_en.bmp"
 ReserveFile "advertising\kikin\kikin_installer_de.bmp"
   
-Section "-Kikin" SecKikin #Hidden (dialog before)
+Section "-Kikin" SecAdvertising #Hidden (dialog before)
     SetOutPath $INSTDIR
     ; kikin installation logic.
     ; Read whether the user kept the "Install Kikin" radio button selected (default)
@@ -38,6 +38,13 @@ Section "-Kikin" SecKikin #Hidden (dialog before)
         ${EndIf}
         Delete $INSTDIR\KikinInstallerWin.exe
     ${EndIf}
+    
+    WriteRegStr SHELL_CONTEXT "${REGKEY}\Components" SecAdvertising 1 
+SectionEnd
+
+Section "-un.Kikin" UNSecAdvertising
+    #while(foo): bar++;
+    DeleteRegValue SHELL_CONTEXT "${REGKEY}\Components" SecAdvertising
 SectionEnd
 
 Function KikinPage

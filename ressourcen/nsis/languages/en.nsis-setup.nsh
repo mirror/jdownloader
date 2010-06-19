@@ -4,6 +4,8 @@ LangString ^UninstallLink ${LANG_ENGLISH} "Uninstall $(^Name)"
 LangString ^Name ${LANG_ENGLISH} "${APPNAME}"
 LangString HelpLink ${LANG_ENGLISH} "${APPNAME} Support"
 LangString InstalledAsAdmin ${LANG_ENGLISH} "You're trying to uninstall a product you might have installed with admin rights! Software might not be removed completely after uninstall. Continue anyway?"
+LangString UnrecognisedInstallPath ${LANG_ENGLISH} "Unrecognised install path (Portable version?). Continue anyway?"
+LangString JDExeNotFound ${LANG_ENGLISH} "JDownloader.exe not found in uninstall path. Continue anyway?"
 
 #Sections
 LangString SecJDMain_TITLE ${LANG_ENGLISH} "JDownloader (required)"
