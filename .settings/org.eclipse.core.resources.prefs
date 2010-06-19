@@ -1,5 +1,8 @@
-#Sun May 09 22:32:56 CEST 2010
+#Sat Jun 19 21:39:03 CEST 2010
 eclipse.preferences.version=1
 encoding//ressourcen/browserintegration/chrome/src/_locales/de/messages.json=UTF-8
 encoding//ressourcen/browserintegration/chrome/src/_locales/en/messages.json=UTF-8
+encoding//ressourcen/nsis/advertising/kikin/kikin_dialog.de.ini=Cp1252
+encoding//ressourcen/nsis/advertising/kikin/kikin_dialog.en.ini=Cp1252
+encoding//ressourcen/nsis/languages=Cp1252
 encoding/<project>=UTF-8
