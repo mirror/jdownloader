@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -117,8 +118,9 @@ public class UploadingCom extends PluginForHost {
                     simultanpremium++;
                 }
             }
-            fileCheck(link);
+            requestFileInformation(link);
         }
+        br.getPage(link.getDownloadURL());
         if (free) {
             handleFree0(link);
             return;
@@ -189,33 +191,6 @@ public class UploadingCom extends PluginForHost {
         dl.startDownload();
     }
 
-    public AvailableStatus fileCheck(DownloadLink downloadLink) throws PluginException, IOException {
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("but due to abuse or through deletion by")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML("file was removed")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-
-        String filesize = br.getRegex("File size: <b>(.*?)</b>").getMatch(0);
-        String filename = br.getRegex(">Download(.*?)for free on uploading.com").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex(">File download</h2><br/>.*?<h2>(.*?)</h2>").getMatch(0);
-            if (filename == null) {
-                // Last try to get the filename, if this
-                String fname = new Regex(downloadLink.getDownloadURL(), "uploading\\.com/files/\\w+/([a-zA-Z0-9 ._]+)").getMatch(0);
-                fname = fname.replace(" ", "_");
-                if (br.containsHTML(fname)) {
-                    filename = fname;
-                }
-
-            }
-        }
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        downloadLink.setName(filename.trim());
-        if (filesize != null) {
-            downloadLink.setDownloadSize(Regex.getSize(filesize.trim()));
-        }
-        return AvailableStatus.TRUE;
-    }
-
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
@@ -225,13 +200,88 @@ public class UploadingCom extends PluginForHost {
         br.setCookie("http://www.uploading.com/", "language", "1");
         br.setCookie("http://www.uploading.com/", "setlang", "en");
         br.setCookie("http://www.uploading.com/", "_lang", "en");
-        return fileCheck(downloadLink);
+        checkLinks(new DownloadLink[] { downloadLink });
+        if (!downloadLink.isAvailabilityStatusChecked()) {
+            downloadLink.setAvailableStatus(AvailableStatus.UNCHECKABLE);
+        }
+        return downloadLink.getAvailableStatus();
+    }
+
+    public boolean checkLinks(DownloadLink[] urls) {
+        if (urls == null || urls.length == 0) { return false; }
+        try {
+            ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
+            int index = 0;
+            StringBuilder sb = new StringBuilder();
+            while (true) {
+                sb.delete(0, sb.capacity());
+                sb.append("urls=");
+                links.clear();
+                while (true) {
+                    /* we test 100 links at once */
+                    if (index == urls.length || links.size() > 100) break;
+                    links.add(urls[index]);
+                    index++;
+                }
+                int c = 0;
+                for (DownloadLink dl : links) {
+                    /*
+                     * append fake filename, because api will not report
+                     * anything else
+                     */
+                    if (c > 0) sb.append("%0D%0A");
+                    sb.append(Encoding.urlEncode(dl.getDownloadURL()));
+                    c++;
+                }
+                br.postPage("http://uploading.com/files/checker/?JsHttpRequest=" + System.currentTimeMillis() + "-xml", sb.toString());
+                String correctedHTML = br.toString().replace("\\", "");
+                for (DownloadLink dl : links) {
+                    String fileid = new Regex(dl.getDownloadURL(), "uploading\\.com/files/(.+)").getMatch(0);
+                    if (fileid == null) {
+                        logger.warning("Uploading.com availablecheck is broken!");
+                        return false;
+                    }
+                    String regexForThisLink = "(\">http://uploading\\.com/files/" + fileid + "/.*?/</a></td>ntttt<td>(Aktiv|active|Gelöscht|Deleted)</td>ntttt<td>.*?</td>)";
+                    String theData = new Regex(correctedHTML, regexForThisLink).getMatch(0);
+                    if (theData == null) {
+                        if (br.containsHTML("\"js\": \\{ \"checker_result\": \"\" \\}, \"text\": \"\" \\}")) {
+                            dl.setAvailable(false);
+                            continue;
+                        } else {
+                            logger.warning("Uploading.com availablecheck is broken!");
+                            return false;
+                        }
+                    }
+                    Regex allMatches = new Regex(theData, "\">http://uploading\\.com/files/" + fileid + "/(.*?)/</a></td>ntttt<td>(Aktiv|active|Gelöscht|Deleted)</td>ntttt<td>(.*?)</td>");
+                    String status = allMatches.getMatch(1);
+                    String filename = allMatches.getMatch(0);
+                    String filesize = allMatches.getMatch(2);
+                    if (filename == null || filesize == null) {
+                        logger.warning("Uploading.com availablecheck is broken!");
+                        dl.setAvailable(false);
+                    } else if (!status.matches("(Aktiv|active)")) {
+                        dl.setAvailable(false);
+                    } else {
+                        dl.setAvailable(true);
+                    }
+                    filename = Encoding.htmlDecode(filename);
+                    filename = Encoding.urlDecode(filename, false);
+                    dl.setName(filename);
+                    dl.setDownloadSize(Regex.getSize(filesize));
+                }
+                if (index == urls.length) break;
+            }
+        } catch (Exception e) {
+            return false;
+        }
+        return true;
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
+        br.getPage(downloadLink.getDownloadURL());
         handleFree0(downloadLink);
     }
 

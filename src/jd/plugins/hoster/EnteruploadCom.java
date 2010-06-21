@@ -76,6 +76,8 @@ public class EnteruploadCom extends PluginForHost {
         br.setFollowRedirects(false);
         Form DLForm = br.getFormbyProperty("name", "F1");
         if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        DLForm.remove(null);
+        DLForm.remove("method_premium");
         // Ticket Time
         String ttt = br.getRegex("countdown\">.*?(\\d+).*?</span>").getMatch(0);
         if (ttt == null) ttt = br.getRegex("id=\"countdown_str\".*?<span id=\".*?\">.*?(\\d+).*?</span").getMatch(0);
@@ -208,7 +210,8 @@ public class EnteruploadCom extends PluginForHost {
                         if (dllink == null) {
                             dllink = br.getRegex("\"(http://server\\d+\\.enterupload\\.com.*?files/.*?)\"").getMatch(0);
                             if (dllink == null) {
-                                dllink = br.getRegex("\"(http://serv\\d+\\.enterupload\\.com:\\d+/d/[a-z0-9]+/.*?)\"").getMatch(0);
+                                dllink = br.getRegex("\"(http://serv(er)?\\d+\\.enterupload\\.com:\\d+/d/[a-z0-9]+/.*?)\"").getMatch(0);
+                                if (dllink == null) dllink = br.getRegex("<br><br><br>[\r\n\t ]+<br />[\r\n\t ]+<a href=\"(http://.*?)\"").getMatch(0);
                             }
                         }
                     }

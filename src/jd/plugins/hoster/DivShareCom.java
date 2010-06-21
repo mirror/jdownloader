@@ -84,10 +84,14 @@ public class DivShareCom extends PluginForHost {
             }
             String infolink2 = infolink.replaceAll("divshare\\.com/(download|image)", "divshare.com/download/launch");
             br.getPage(infolink2);
-            String dllink = br.getRegex("If it doesn't, <a href=\"(http://.*?)\"").getMatch(0);
-            if (dllink == null) dllink = br.getRegex("\"(http://storagestart\\.divshare\\.com/launch\\.php\\?f=\\d+\\&s=[a-z0-9]+\"").getMatch(0);
+            String dllink = br.getRegex("</object>[\r\n\t ]+</div>[\r\n\t ]+<br />[\r\n\t ]+<center>[\r\n\t ]+<a href=\"(http://.*?)\"").getMatch(0);
+            if (dllink == null) dllink = br.getRegex("\"(http://storagestart\\.divshare\\.com/launch\\.php\\?f=\\d+\\&s=[a-z0-9]+)\"").getMatch(0);
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
+            if (dl.getConnection().getContentType().contains("html")) {
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             dl.startDownload();
 
         }
