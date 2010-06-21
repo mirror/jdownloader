@@ -120,7 +120,6 @@ public class JDInfoBar extends PluginOptional {
     @Override
     public boolean initAddon() {
         activateAction = new MenuAction("infobar", 0);
-        activateAction.setTitle(getHost());
         activateAction.setActionListener(this);
         activateAction.setIcon(this.getIconKey());
         activateAction.setSelected(false);

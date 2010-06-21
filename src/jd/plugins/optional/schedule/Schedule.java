@@ -62,7 +62,6 @@ public class Schedule extends PluginOptional {
         initModules();
         activateAction = new MenuAction("scheduler", 0);
         activateAction.setActionListener(this);
-        activateAction.setTitle(getHost());
         activateAction.setIcon(this.getIconKey());
         activateAction.setSelected(false);
     }

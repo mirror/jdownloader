@@ -269,7 +269,6 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
     public boolean initAddon() {
         action = new MenuAction("livescripter", 0);
         action.setActionListener(this);
-        action.setTitle(getHost());
         action.setIcon(this.getIconKey());
         action.setSelected(false);
         return true;

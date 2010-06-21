@@ -117,7 +117,6 @@ public class LecturnityDownloader extends PluginOptional {
         logger.finest("Lecturnity: Loaded Host-Plugin!");
 
         inputAction = new MenuAction("lecturnity", 0);
-        inputAction.setTitle(getHost());
         inputAction.setActionListener(this);
         inputAction.setIcon(this.getIconKey());
 

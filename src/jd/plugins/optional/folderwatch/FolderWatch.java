@@ -169,7 +169,7 @@ public class FolderWatch extends PluginOptional {
 
         }
 
-        logger.info("FolderWatch OK");
+        logger.info("FolderWatch: OK");
         return true;
     }
 
@@ -197,17 +197,13 @@ public class FolderWatch extends PluginOptional {
     public ArrayList<MenuAction> createMenuitems() {
         ArrayList<MenuAction> menu = new ArrayList<MenuAction>();
 
-        toggleAction = new MenuAction("folderwatch", 0);
-        toggleAction.setTitle(JDL.L(JDL_PREFIX + "menu.toggle", "Activated"));
+        toggleAction = new MenuAction("folderwatch.toggle", 0);
         toggleAction.setActionListener(this);
         toggleAction.setSelected(this.isEnabled);
-        // toggleAction.setIcon(this.getIconKey());
 
-        showGuiAction = new MenuAction("folderwatch", 1);
-        showGuiAction.setTitle(JDL.L(JDL_PREFIX + "menu.history", "Show history"));
+        showGuiAction = new MenuAction("folderwatch.history", 1);
         showGuiAction.setActionListener(this);
         showGuiAction.setType(Types.TOGGLE);
-        // showGuiAction.setIcon(this.getIconKey());
 
         menu.add(toggleAction);
         menu.add(new MenuAction(Types.SEPARATOR));
@@ -308,7 +304,6 @@ public class FolderWatch extends PluginOptional {
                     file.delete();
                 }
             }
-
             return true;
         }
 
@@ -320,8 +315,7 @@ public class FolderWatch extends PluginOptional {
     }
 
     private boolean isContainer(String path) {
-        if (path.matches(".+\\.(dlc|ccf|rsdf)")) { return true; }
-
-        return false;
+        return path.matches(".+\\.(dlc|ccf|rsdf)");
     }
+
 }

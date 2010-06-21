@@ -90,7 +90,6 @@ public class JDRemoteControl extends PluginOptional {
         boolean enabled = subConfig.getBooleanProperty(PARAM_ENABLED, true);
 
         activate = new MenuAction("remotecontrol", 0);
-        activate.setTitle(getHost());
         activate.setActionListener(this);
         activate.setIcon(this.getIconKey());
         activate.setSelected(enabled);

@@ -835,13 +835,12 @@ public class JDChat extends PluginOptional {
     public boolean initAddon() {
         NAMES = new ArrayList<User>();
         sb = new StringBuilder();
-        if (activateAction == null) {
-            activateAction = new MenuAction("chat", 0);
-            activateAction.setActionListener(this);
-            activateAction.setTitle(getHost());
-            activateAction.setIcon(this.getIconKey());
-            activateAction.setSelected(false);
-        }
+
+        activateAction = new MenuAction("chat", 0);
+        activateAction.setActionListener(this);
+        activateAction.setIcon(this.getIconKey());
+        activateAction.setSelected(false);
+
         return true;
     }
 

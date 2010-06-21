@@ -151,10 +151,10 @@ public class LangFileEditor extends PluginOptional {
     @Override
     public boolean initAddon() {
         activateAction = new MenuAction("langfileditor", 0);
-        activateAction.setTitle(getHost());
         activateAction.setActionListener(this);
         activateAction.setIcon(this.getIconKey());
         activateAction.setSelected(false);
+
         return true;
     }
 

@@ -2,12 +2,14 @@ package jd.http.ext;
 
 public class ExtBrowserException extends Exception {
 
-    public ExtBrowserException(String string) {
-        super(string);
+    private static final long serialVersionUID = -2957611433056761360L;
+
+    public ExtBrowserException(String message) {
+        super(message);
     }
 
-    public ExtBrowserException(Exception e) {
-        super(e);
+    public ExtBrowserException(Throwable cause) {
+        super(cause);
     }
 
 }

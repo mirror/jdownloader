@@ -7,9 +7,10 @@ import org.lobobrowser.html.domimpl.HTMLFrameElementImpl;
 import org.lobobrowser.html.domimpl.HTMLIFrameElementImpl;
 
 public class ExtHTMLFrameImpl implements ExtHTMLFrameElement {
+
     public static enum Type {
         IFRAME, FRAME
-    };
+    }
 
     private HTMLElementImpl _impl;
     private Type type;
@@ -24,7 +25,6 @@ public class ExtHTMLFrameImpl implements ExtHTMLFrameElement {
     }
 
     public String getFrameBorder() {
-        // TODO Auto-generated method stub
         if (type == Type.FRAME) {
             return ((HTMLFrameElementImpl) _impl).getFrameBorder();
         } else {
@@ -49,7 +49,6 @@ public class ExtHTMLFrameImpl implements ExtHTMLFrameElement {
     }
 
     public HTMLElementImpl getImpl() {
-        // TODO Auto-generated method stub
         return _impl;
     }
 
@@ -110,7 +109,7 @@ public class ExtHTMLFrameImpl implements ExtHTMLFrameElement {
     }
 
     public HTMLDocumentImpl getDocument() {
-        // TODO Auto-generated method stub
         return this.getHtmlFrameController().getDocument();
     }
+
 }
