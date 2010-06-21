@@ -79,7 +79,7 @@ public class ClickPositionDialog extends JCountdownDialog implements ActionListe
 
         int size = SubConfiguration.getConfig("JAC").getIntegerProperty(Configuration.PARAM_CAPTCHA_SIZE, 100);
         if (size != 100) {
-            imageIcon = new ImageIcon(imageIcon.getImage().getScaledInstance(imageIcon.getIconWidth() * (size / 100), imageIcon.getIconHeight() * (size / 100), Image.SCALE_SMOOTH));
+            imageIcon = new ImageIcon(imageIcon.getImage().getScaledInstance((int) (imageIcon.getIconWidth() * (size / 100.0f)), (int) (imageIcon.getIconHeight() * (size / 100.0f)), Image.SCALE_SMOOTH));
         }
 
         btnBAD = new JButton(JDL.L("gui.btn_cancel", "Cancel"));
@@ -155,7 +155,7 @@ public class ClickPositionDialog extends JCountdownDialog implements ActionListe
         this.result = e.getPoint();
         int size = SubConfiguration.getConfig("JAC").getIntegerProperty(Configuration.PARAM_CAPTCHA_SIZE, 100);
         if (size != 100) {
-            this.result.setLocation(this.result.getX() / (size / 100), this.result.getY() / (size / 100));
+            this.result.setLocation(this.result.getX() / (size / 100.0f), this.result.getY() / (size / 100.0f));
         }
         dispose();
     }

@@ -16,6 +16,7 @@
 
 package jd.plugins.hoster;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Locale;
@@ -35,6 +36,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.mozilla.javascript.Context;
@@ -97,7 +99,12 @@ public class FileFactory extends PluginForHost {
 
     public void handleFree0(DownloadLink parameter) throws Exception {
         checkErrors();
-        String urlWithFilename = getUrl();
+        String urlWithFilename = null;
+        if (br.containsHTML("recaptcha_ajax.js")) {
+            urlWithFilename = handleRecaptcha(br, parameter);
+        } else {
+            urlWithFilename = getUrl();
+        }
         if (urlWithFilename == null) {
             logger.warning("getUrl is broken!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -105,13 +112,11 @@ public class FileFactory extends PluginForHost {
         br.getPage(urlWithFilename);
 
         String wait = br.getRegex("class=\"countdown\">(\\d+)</span>").getMatch(0);
-
         long waittime;
         if (wait != null) {
             waittime = Long.parseLong(wait) * 1000l;
             if (waittime > 60000) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waittime);
         }
-
         checkErrors();
         String downloadUrl = getUrl();
         if (downloadUrl == null) {
@@ -150,6 +155,27 @@ public class FileFactory extends PluginForHost {
         }
     }
 
+    public String handleRecaptcha(Browser br, DownloadLink link) throws Exception {
+        PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+        jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+        String id = br.getRegex("Recaptcha\\.create\\(\"(.*?)\"").getMatch(0);
+        rc.setId(id);
+        Form form = new Form();
+        form.setAction("/file/checkCaptcha.php");
+        String check = br.getRegex("check:'(.*?)'").getMatch(0);
+        form.put("check", check);
+        rc.setForm(form);
+        rc.load();
+        File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+        String c = getCaptchaCode(cf, link);
+        rc.setCode(c);
+        if (!br.containsHTML("status:\"ok")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        String url = br.getRegex("path:\"(.*?)\"").getMatch(0);
+        if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (url.startsWith("http")) return url;
+        return "http://www.filefactory.com" + url;
+    }
+
     public String getUrl() throws IOException {
         final Context cx = ContextFactory.getGlobal().enter();
         final Scriptable scope = cx.initStandardObjects();
@@ -161,7 +187,6 @@ public class FileFactory extends PluginForHost {
             br.getPage("http://www.filefactory.com" + link);
 
         }
-
         String[] row = br.getRegex("var (.*?) = '';(.*;) (.*?)=(.*?)\\(\\);").getRow(0);
         Object result = cx.evaluateString(scope, row[1] + row[3] + " ();", "<cmd>", 1, null);
         if (result.toString().startsWith("http")) return result + "";

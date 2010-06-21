@@ -96,7 +96,7 @@ public class CaptchaDialog extends JCountdownDialog implements ActionListener, K
 
         int size = SubConfiguration.getConfig("JAC").getIntegerProperty(Configuration.PARAM_CAPTCHA_SIZE, 100);
         if (size != 100) {
-            imageIcon = new ImageIcon(imageIcon.getImage().getScaledInstance(imageIcon.getIconWidth() * (size / 100), imageIcon.getIconHeight() * (size / 100), Image.SCALE_SMOOTH));
+            imageIcon = new ImageIcon(imageIcon.getImage().getScaledInstance((int) (imageIcon.getIconWidth() * (size / 100.0f)), (int) (imageIcon.getIconHeight() * (size / 100.0f)), Image.SCALE_SMOOTH));
         }
 
         textField = new JTextField(10);

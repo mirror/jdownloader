@@ -56,7 +56,7 @@ public class ConfigPanelCaptcha extends ConfigPanel {
         ce2.setEnabledCondidtion(ce1, false);
 
         container.setGroup(new ConfigGroup(JDL.L("gui.config.gui.barrierfree", "Barrier-Free"), "gui.images.barrierfree"));
-        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, SubConfiguration.getConfig("JAC"), Configuration.PARAM_CAPTCHA_SIZE, JDL.L(JDL_PREFIX + "captchaSize", "Size of Captcha in percent:"), 100, 200, 5).setDefaultValue(100));
+        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, SubConfiguration.getConfig("JAC"), Configuration.PARAM_CAPTCHA_SIZE, JDL.L(JDL_PREFIX + "captchaSize", "Size of Captcha in percent:"), 50, 200, 5).setDefaultValue(100));
 
         return container;
     }
