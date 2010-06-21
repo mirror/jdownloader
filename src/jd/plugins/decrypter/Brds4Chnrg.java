@@ -28,7 +28,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "boards.4chan.org" }, urls = { "http://[\\w\\.]*?boards\\.4chan\\.org/[0-9a-z]{1,3}/res/[0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {"boards.4chan.org"}, urls = {"http://[\\w\\.]*?boards\\.4chan\\.org/[0-9a-z]{1,3}/(res/[0-9]+)?"}, flags = {0})
 public class Brds4Chnrg extends PluginForDecrypt {
 
     public Brds4Chnrg(PluginWrapper wrapper) {
@@ -41,28 +41,35 @@ public class Brds4Chnrg extends PluginForDecrypt {
         FilePackage fp = FilePackage.getInstance();
         String parameter = param.toString();
         br.getPage(parameter);
-        String[] images = br.getRegex("(http://[\\w\\.]*?images.4chan\\.org/[0-9a-z]{1,3}/src/[0-9]+\\.(?i:(gif|jpg|png)))").getColumn(0);
-
-        if (br.containsHTML("404 - Not Found")) {
-            fp.setName("4chan - 404 - Not Found");
-            br.getPage("http://www.4chan.org/error/404/rid.php");
-            String image404 = br.getRegex("(http://.+)").getMatch(0);
-            DownloadLink dl = createDownloadlink(image404);
-            dl.setAvailableStatus(AvailableStatus.TRUE);
-            dl.setFilePackage(fp);
-            decryptedLinks.add(dl);
-        } else if (images.length == 0) {
-            return null;
+        if (parameter.matches("http://[\\w\\.]*?boards\\.4chan\\.org/[0-9a-z]{1,3}/[0-9]*")) {
+            String[] threads = br.getRegex("<span id=\"nothread([0-9]+)\"><a href=\"res/").getColumn(0);
+            for (String thread : threads) {
+                decryptedLinks.add(createDownloadlink(parameter+ "res/" + thread));
+            }
         } else {
-            String domain = "4chan.org";
-            String cat = br.getRegex("<div class=\"logo\">.*?<span>/[0-9a-z]{1,3}/ - (.*?)</span>").getMatch(0);
-            String date = new Date().toString();
-            fp.setName(domain + " - " + cat + " - " + date);
-            for (String image : images) {
-                DownloadLink dl = createDownloadlink(image);
+            String[] images = br.getRegex("(http://[\\w\\.]*?images.4chan\\.org/[0-9a-z]{1,3}/src/[0-9]+\\.(?i:(gif|jpg|png)))").getColumn(0);
+            
+            if (br.containsHTML("404 - Not Found")) {
+                fp.setName("4chan - 404 - Not Found");
+                br.getPage("http://www.4chan.org/error/404/rid.php");
+                String image404 = br.getRegex("(http://.+)").getMatch(0);
+                DownloadLink dl = createDownloadlink(image404);
                 dl.setAvailableStatus(AvailableStatus.TRUE);
                 dl.setFilePackage(fp);
                 decryptedLinks.add(dl);
+            } else if (images.length == 0) {
+                return null;
+            } else {
+                String domain = "4chan.org";
+                String cat = br.getRegex("<div class=\"logo\">.*?<span>/.{1,3}/ - (.*?)</span>").getMatch(0).replace("&amp;", "&");
+                String date = new Date().toString();
+                fp.setName(domain + " - " + cat + " - " + date);
+                for (String image : images) {
+                    DownloadLink dl = createDownloadlink(image);
+                    dl.setAvailableStatus(AvailableStatus.TRUE);
+                    dl.setFilePackage(fp);
+                    decryptedLinks.add(dl);
+                }
             }
         }
         return decryptedLinks;
