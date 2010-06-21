@@ -148,17 +148,7 @@ public class LetitBitNet extends PluginForHost {
         }
         if (url == null || url.equals("")) {
             logger.warning("url couldn't be found!");
-            String extraWait = br.getRegex("Wait your turn<br /><span id=\"errt\">(\\d+)</span> seconds").getMatch(0);
-            if (extraWait != null) {
-                logger.info("Extra waittime found, waiting...");
-                sleep((Integer.parseInt(extraWait) + 5) * 1001l, downloadLink);
-                br.getPage(nextpage);
-                url = getUrl();
-            }
-            if (url == null) {
-                logger.warning("url still couldn't be found!");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         /* we have to wait little because server too buggy */
         sleep(2000, downloadLink);
