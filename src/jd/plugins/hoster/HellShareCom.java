@@ -179,8 +179,9 @@ public class HellShareCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.HellShareCom.error.CurrentLoadIs100Percent", "The current serverload is 100%"), 15 * 60 * 1000l);
         } else {
             br.setCustomCharset("utf-8");
-            String freePage = br.getURL().replace("hellshare.com/serialy/", "hellshare.com/") + "/free";
+            String freePage = br.getURL().replace("hellshare.com/serialy/", "hellshare.com/").replace("/pop/", "/") + "/free";
             br.getPage(freePage);
+            System.out.print(br.toString());
             if (br.containsHTML("The server is under the maximum load")) {
                 logger.info(JDL.L("plugins.hoster.HellShareCom.error.ServerUnterMaximumLoad", "Server is under maximum load"));
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.HellShareCom.error.ServerUnterMaximumLoad", "Server is under maximum load"), 10 * 60 * 1000l);
