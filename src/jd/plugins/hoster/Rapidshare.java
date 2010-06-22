@@ -28,6 +28,7 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
+import jd.controlling.DownloadWatchDog;
 import jd.http.Browser;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
@@ -1071,4 +1072,13 @@ public class Rapidshare extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
+    @Override
+    public boolean isPremiumDownload() {
+        /*
+         * this plugin must take care of HOST_TEMP_UNAVAIL status even in
+         * premium mode
+         */
+        if (DownloadWatchDog.getInstance().getRemainingTempUnavailWaittime(getHost()) > 0) return false;
+        return super.isPremiumDownload();
+    }
 }
