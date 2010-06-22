@@ -50,17 +50,19 @@ public class DnbShareCom extends PluginForHost {
         file = br.getRegex("document.write\\('<input type=hidden name=\"file\" value=\"(.*?)\" />'\\);").getMatch(0);
         payload = br.getRegex("document.write\\('<input type=hidden name=\"payload\" value=\"(.*?)\" />'\\);").getMatch(0);
         if (file == null || payload == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-
         Form dlform = new Form();
-
         dlform.setMethod(MethodType.POST);
         dlform.put("file", file);
         dlform.put("payload", payload);
         dlform.put("submit", "Starting download..");
         br.setFollowRedirects(false);
         br.submitForm(dlform);
-
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, br.getRedirectLocation(), true, -20);
+        if (br.getRedirectLocation() == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, br.getRedirectLocation(), true, -3);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl.startDownload();
 
     }

@@ -25,7 +25,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "Rapidshark.net" }, urls = { "http://[\\w\\.]*?rapidshark\\.net/(safe\\.php\\?id=)?.+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidshark.net" }, urls = { "http://[\\w\\.]*?rapidshark\\.net/(safe\\.php\\?id=)?.+" }, flags = { 0 })
 public class Rpdshrknt extends PluginForDecrypt {
 
     public Rpdshrknt(PluginWrapper wrapper) {
@@ -35,7 +35,6 @@ public class Rpdshrknt extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-
         if (parameter.indexOf("safe.php?") < 0) {
             parameter = "http://rapidshark.net/safe.php?id=" + parameter.substring(parameter.lastIndexOf("/") + 1);
         }
@@ -43,7 +42,6 @@ public class Rpdshrknt extends PluginForDecrypt {
         String finallink = br.getRegex("src=\"(.*)\"></iframe>").getMatch(0);
         if (finallink == null) return null;
         decryptedLinks.add(createDownloadlink(finallink));
-
         return decryptedLinks;
     }
 }

@@ -43,12 +43,12 @@ public class Hundred63PanCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("<font>系统提示</font>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("您访问的地址不正确\\!")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("class=\"font_w\">(.*?)<img").getMatch(0);
         if (filename == null) filename = br.getRegex("id=\"FileName\" value=\"(.*?)\"").getMatch(0);
         String filesize = br.getRegex("span>文件大小：</span>(.*?)\\(").getMatch(0);
         if (filesize == null) filesize = br.getRegex("\\(([0-9,]+ 字节)\\)").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(filename.trim());
         filesize = filesize.replace("字节", "bytes").replace(",", "");
         link.setDownloadSize(Regex.getSize(filesize));
@@ -63,8 +63,8 @@ public class Hundred63PanCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.getPage(downloadLink.getDownloadURL().replace("/files/", "/download/"));
-        String dllink = br.getRegex("oncontextmenu='Flashget_SetHref_js\\(.*?\\);'></a> -->.*?<a href=\"(.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://www\\.163pan\\.com/download/index/id=[a-z0-9]+\\&hash=[a-z0-9]+\\&tt=\\d+/www\\.163pan\\.com.*?)\"").getMatch(0);
+        String dllink = br.getRegex("class=\"btn_pt\" onclick=\"location\\.href='(http://.*?)'\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("('|\")(http://www\\.163pan\\.com/download/index/[a-z0-9]+/.*?\\?hash=[a-z0-9]+\\&tt=\\d+)('|\")").getMatch(1);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
