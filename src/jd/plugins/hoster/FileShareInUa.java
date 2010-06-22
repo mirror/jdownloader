@@ -119,8 +119,8 @@ public class FileShareInUa extends PluginForHost {
                 filename = br.getRegex("width=\"156px\" height=\"39px\" alt=\"(.*?) на FileShare\\.in\\.ua\"").getMatch(0);
             }
         }
-        String filesize = br.getRegex("class=\"dnld_size\">.*?<strong>(.*?)</strong>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filesize = br.getRegex("Размер: <b>(.*?)</b>").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setFinalFileName(filename);
         link.setDownloadSize(Regex.getSize(filesize));
         return AvailableStatus.TRUE;
