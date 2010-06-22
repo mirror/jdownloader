@@ -5,6 +5,7 @@ import java.util.ArrayList;
 
 import jd.HostPluginWrapper;
 import jd.PluginWrapper;
+import jd.controlling.JDLogger;
 import jd.controlling.LinkGrabberController;
 import jd.gui.UserIO;
 import jd.gui.swing.jdgui.menu.MenuAction;
@@ -34,13 +35,16 @@ public class LecturnityDownloader extends PluginOptional {
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == inputAction) {
             String url = UserIO.getInstance().requestInputDialog("Type in URL of the Lecturnity-Webplayer! (Could take a few seconds!)");
-            if (url == null) return;
+            if (url == null || url.trim().length() == 0) return;
             try {
                 url = url.trim();
                 String name = url.substring(url.substring(0, url.length() - 1).lastIndexOf('/') + 1, url.length() - 1);
 
-                LinkGrabberController.getInstance().addLinks(listFiles(name, name + "/", url), true, false);
+                ArrayList<DownloadLink> links = listFiles(name, name + "/", url);
+                LinkGrabberController.getInstance().addLinks(links, true, false);
+                UserIO.getInstance().requestMessageDialog("Successfully added " + links.size() + " links to downloadlist!");
             } catch (Exception e1) {
+                JDLogger.exception(e1);
                 UserIO.getInstance().requestMessageDialog("An error occured while parsing the site!\r\n(" + url + ")");
             }
         }
