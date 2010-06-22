@@ -37,7 +37,6 @@ import jd.parser.Regex;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDTheme;
@@ -205,10 +204,19 @@ public class DistributeData extends Thread {
                                 /* Das Plugin konnte arbeiten */
                                 coulddecrypt = true;
                                 if (dLinks != null && !dLinks.isEmpty()) {
-                                    // Reicht die Passwörter weiter
+
                                     for (final DownloadLink dLink : dLinks) {
+                                        /* forward passwords */
                                         dLink.addSourcePluginPasswordList(link.getSourcePluginPasswordList());
+                                        /*
+                                         * forward parent filepackage if set and
+                                         * child does not have custom one
+                                         */
+                                        if (!link.isDefaultFilePackage() && dLink.isDefaultFilePackage()) {
+                                            dLink.setFilePackage(link.getFilePackage());
+                                        }
                                     }
+
                                     synchronized (newdecryptedLinks) {
                                         newdecryptedLinks.addAll(dLinks);
                                     }
@@ -351,7 +359,7 @@ public class DistributeData extends Thread {
         for (final HostPluginWrapper pHost : pHostAll) {
             try {
                 if (pHost.canHandle(decrypted.getDownloadURL())) {
-                    final ArrayList<DownloadLink> dLinks = pHost.getPlugin().getDownloadLinks(decrypted.getDownloadURL(), decrypted.getFilePackage() != FilePackage.getDefaultFilePackage() ? decrypted.getFilePackage() : null);
+                    final ArrayList<DownloadLink> dLinks = pHost.getPlugin().getDownloadLinks(decrypted.getDownloadURL(), decrypted.isDefaultFilePackage() ? null : decrypted.getFilePackage());
                     gothost = true;
                     if (!pHost.isEnabled()) {
                         break;
@@ -363,6 +371,7 @@ public class DistributeData extends Thread {
                         dl.addSourcePluginPasswordList(decrypted.getSourcePluginPasswordList());
                         dl.setSourcePluginComment(decrypted.getSourcePluginComment());
                         dl.setName(decrypted.getName());
+                        dl.forceFileName(decrypted.getForcedFileName());
                         dl.setFinalFileName(decrypted.getFinalFileName());
                         dl.setBrowserUrl(decrypted.getBrowserUrl());
                         if (decrypted.isAvailabilityStatusChecked()) {
@@ -384,6 +393,11 @@ public class DistributeData extends Thread {
         return gothost;
     }
 
+    /**
+     * this function scans data for valid links of hoster plugins
+     * 
+     * @param links
+     */
     private void useHoster(final ArrayList<DownloadLink> links) {
         for (final HostPluginWrapper pHost : HostPluginWrapper.getHostWrapper()) {
             if (pHost.canHandle(data)) {

@@ -79,7 +79,7 @@ public class JDGrowlNotification extends PluginOptional {
             if (!(event.getSource() instanceof PluginForHost)) return;
             DownloadLink lastLink = ((SingleDownloadController) event.getParameter()).getDownloadLink();
             if (lastLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
-                growlNotification(JDL.L(JDL_PREFIX + "finished", "Download stopped"), lastLink.getFinalFileName(), "Download complete");
+                growlNotification(JDL.L(JDL_PREFIX + "finished", "Download stopped"), lastLink.getName(), "Download complete");
             }
             break;
         }

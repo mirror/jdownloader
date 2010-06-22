@@ -122,6 +122,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     private int linkType = LINKTYPE_NORMAL;
 
     /** Beschreibung des Downloads */
+    /* kann sich noch ändern, NICHT final */
     private String name;
 
     /** Das Plugin, das fuer diesen Download zustaendig ist */
@@ -139,11 +140,19 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     /**
      * Wird dieser Wert gesetzt, so wird der Download unter diesem Namen (nicht
-     * Pfad) abgespeichert.
+     * Pfad) abgespeichert. (z.b. Plugins, DownloadSystem)
      */
     private String finalFileName;
 
-    /** Von hier soll der Download stattfinden */
+    /**
+     * if filename is set by jd (eg autorename) or user (manual rename of
+     * filename), then this filename has highest priority
+     */
+    private String forcedFileName = null;
+
+    /**
+     * /** Von hier soll der Download stattfinden
+     */
     private String urlDownload;
 
     /**
@@ -432,18 +441,14 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         String sfo = this.getStringProperty(DownloadLink.STATIC_OUTPUTFILE, null);
         if (getFilePackage() == FilePackage.getDefaultFilePackage() && sfo != null && new File(sfo).exists()) return sfo;
 
-        if (subdirectory != null) {
-            if (getFilePackage() != null && getFilePackage().getDownloadDirectory() != null && getFilePackage().getDownloadDirectory().length() > 0) {
+        if (getFilePackage() != null && getFilePackage().getDownloadDirectory() != null && getFilePackage().getDownloadDirectory().length() > 0) {
+            if (subdirectory != null) {
                 return new File(new File(getFilePackage().getDownloadDirectory(), File.separator + subdirectory), getName()).getAbsolutePath();
             } else {
-                return null;
+                return new File(new File(getFilePackage().getDownloadDirectory()), getName()).getAbsolutePath();
             }
         } else {
-            if (getFilePackage() != null && getFilePackage().getDownloadDirectory() != null && getFilePackage().getDownloadDirectory().length() > 0) {
-                return new File(new File(getFilePackage().getDownloadDirectory()), getName()).getAbsolutePath();
-            } else {
-                return null;
-            }
+            return null;
         }
     }
 
@@ -458,6 +463,10 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
             setFilePackage(FilePackage.getDefaultFilePackage());
         }
         return filePackage;
+    }
+
+    public boolean isDefaultFilePackage() {
+        return (filePackage == null || filePackage == FilePackage.getDefaultFilePackage());
     }
 
     /**
@@ -496,14 +505,15 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      */
     public String getName() {
         String urlName;
-        if (getFinalFileName() == null) {
-            try {
-                return name == null ? ((urlName = new File(new URL(this.getDownloadURL()).toURI()).getName()) != null ? urlName : UNKNOWN_FILE_NAME) : name;
-            } catch (Exception e) {
-                return UNKNOWN_FILE_NAME;
-            }
+        String ret = this.getForcedFileName();
+        if (ret != null) return ret;
+        ret = this.getFinalFileName();
+        if (ret != null) return ret;
+        try {
+            return name == null ? ((urlName = new File(new URL(this.getDownloadURL()).toURI()).getName()) != null ? urlName : UNKNOWN_FILE_NAME) : name;
+        } catch (Exception e) {
+            return UNKNOWN_FILE_NAME;
         }
-        return getFinalFileName();
     }
 
     /**
@@ -535,6 +545,10 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      */
     public String getFinalFileName() {
         return finalFileName;
+    }
+
+    public String getForcedFileName() {
+        return forcedFileName;
     }
 
     /**
@@ -910,6 +924,18 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         this.setIcon(null);
 
         setPart(name);
+    }
+
+    /*
+     * use this function to force a name, it has highest priority
+     */
+    public void forceFileName(String name) {
+        if (name == null || name.length() == 0) {
+            this.forcedFileName = null;
+        } else {
+            setFinalFileName(name);
+            this.forcedFileName = finalFileName;
+        }
     }
 
     /**

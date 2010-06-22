@@ -438,14 +438,14 @@ public class SingleDownloadController extends Thread {
             try {
                 String[] num = new Regex(name, "(.*)_(\\d+)").getRow(0);
                 copy = Integer.parseInt(num[1]) + 1;
-                downloadLink.setFinalFileName(name + "_" + copy + "." + extension);
+                downloadLink.forceFileName(name + "_" + copy + "." + extension);
                 while (new File(downloadLink.getFileOutput()).exists()) {
                     copy++;
-                    downloadLink.setFinalFileName(name + "_" + copy + "." + extension);
+                    downloadLink.forceFileName(name + "_" + copy + "." + extension);
                 }
             } catch (Exception e) {
                 copy = 2;
-                downloadLink.setFinalFileName(name + "_" + copy + "." + extension);
+                downloadLink.forceFileName(name + "_" + copy + "." + extension);
             }
 
             break;
