@@ -55,7 +55,7 @@ import org.mozilla.javascript.Scriptable;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidshare.com" }, urls = { "http://[\\w\\.]*?rapidshare\\.com/files/\\d+/.+" }, flags = { 2 })
 public class Rapidshare extends PluginForHost {
-
+    private static final int API_ID = 0;
     private static final Pattern PATTERM_MATCHER_ALREADY_LOADING = Pattern.compile("(Warten Sie bitte, bis der Download abgeschlossen ist)", Pattern.CASE_INSENSITIVE);
 
     private static final Pattern PATTERN_FIND_DOWNLOAD_POST_URL = Pattern.compile("<form name=\"dl[f]?\" action=\"(.*?)\" method=\"post\"");
@@ -394,6 +394,8 @@ public class Rapidshare extends PluginForHost {
             }
             // RS URL wird aufgerufen
             br.getPage(link);
+
+            checkAPIID();
             if (br.getRedirectLocation() != null) {
                 logger.info("Direct Download for Free Users");
                 this.handlePremium(downloadLink, dummyAccount);
@@ -508,6 +510,28 @@ public class Rapidshare extends PluginForHost {
             if (!downloadLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
                 selectedServer = null;
             }
+        }
+    }
+
+    private void checkAPIID() throws PluginException {
+        try {
+            // check for plgref
+
+            String plgRef = br.getRegex("<\\!\\-\\-\\s*pref:(\\d+)\\s*\\-\\-\\>").getMatch(0);
+            if (plgRef != null) {
+                int desiredRevision = Integer.parseInt(plgRef);
+
+                if (desiredRevision > API_ID) {
+                    //
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugin.host.rapidshare.status.outdated", "Plugin Outdated."), 10 * 60 * 1000l);
+
+                }
+            }
+        } catch (PluginException e) {
+            e.printStackTrace();
+            throw e;
+        } catch (Exception e) {
+
         }
     }
 
@@ -628,7 +652,7 @@ public class Rapidshare extends PluginForHost {
                 link = link.replaceFirst("http:", "https:");
             }
             br.getPage(link);
-
+            checkAPIID();
             String directurl = br.getRedirectLocation();
 
             if (directurl == null) {
