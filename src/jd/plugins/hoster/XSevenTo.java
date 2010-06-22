@@ -69,7 +69,11 @@ public class XSevenTo extends PluginForHost {
         if (validUntil != null) {
             ai.setValidUntil(Regex.getMilliSeconds(validUntil.trim(), "yyyy-MM-dd HH:mm:ss", null));
         } else {
-            ai.setExpired(true);
+            if (br.containsHTML("img/sym/crown.png.*?unbegrenzt.*?img/sym/crown.png")) {
+
+            } else {
+                ai.setExpired(true);
+            }
         }
         String money = br.getRegex("id=\"balance\">([0-9.]+)").getMatch(0);
         if (money != null) ai.setAccountBalance(money);
