@@ -860,6 +860,10 @@ public class Megauploadcom extends PluginForHost {
 
     }
 
+    /*
+     * TODO: remove with next major update, DownloadWatchDog/AccountController
+     * handle blocked accounts now
+     */
     @Override
     public boolean isPremiumDownload() {
         /* free user accounts are no premium accounts */

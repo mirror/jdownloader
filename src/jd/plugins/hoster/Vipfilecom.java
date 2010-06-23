@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.controlling.AccountController;
 import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -102,11 +101,9 @@ public class Vipfilecom extends PluginForHost {
         // Try to find the remaining traffic
         String trafficLeft = br.getRegex("You can download another: (.*?) with current password").getMatch(0);
         if (trafficLeft != null) {
-            AccountInfo ai = new AccountInfo();
-            Account aa = AccountController.getInstance().getValidAccount(this);
+            AccountInfo ai = account.getAccountInfo();
             ai.setTrafficLeft(trafficLeft);
             ai.setStatus("Premium User");
-            aa.setAccountInfo(ai);
         }
         String url = Encoding.htmlDecode(br.getRegex(Pattern.compile("Ваша ссылка для скачивания:<br><a href='(http://.*?)'", Pattern.CASE_INSENSITIVE)).getMatch(1));
         if (url == null) url = br.getRegex("(http://[0-9]+\\.[0-9]+\\.[0-9]+\\..*?/downloadp[0-9]+/.*?)'>").getMatch(0);

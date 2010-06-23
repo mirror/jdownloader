@@ -411,7 +411,8 @@ public abstract class PluginForHost extends Plugin {
 
     public boolean isPremiumDownload() {
         if (!enablePremium || !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)) return false;
-        if (AccountController.getInstance().getValidAccount(this) == null) return false;
+        final Account acc = AccountController.getInstance().getValidAccount(this);
+        if (acc == null || AccountController.getInstance().isAccountBlocked(acc)) return false;
         return true;
     }
 
@@ -461,9 +462,11 @@ public abstract class PluginForHost extends Plugin {
         Account account = null;
         if (enablePremium) {
             account = AccountController.getInstance().getValidAccount(this);
+            if (AccountController.getInstance().isAccountBlocked(account)) account = null;
         }
         if (account != null) {
             final long before = downloadLink.getDownloadCurrent();
+            boolean blockAccount = false;
             try {
                 transferStatus.usePremium(true);
                 handlePremium(downloadLink, account);
@@ -477,6 +480,9 @@ public abstract class PluginForHost extends Plugin {
                 e.fillLinkStatus(downloadLink.getLinkStatus());
                 if (e.getLinkStatus() == LinkStatus.ERROR_PLUGIN_DEFECT) logger.info(JDLogger.getStackTrace(e));
                 logger.info(downloadLink.getLinkStatus().getLongErrorMessage());
+                if (downloadLink.getLinkStatus().hasStatus(LinkStatus.ERROR_IP_BLOCKED) || downloadLink.getLinkStatus().hasStatus(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE)) {
+                    blockAccount = true;
+                }
             }
 
             final long traffic = Math.max(0, downloadLink.getDownloadCurrent() - before);
@@ -484,6 +490,7 @@ public abstract class PluginForHost extends Plugin {
             final AccountInfo accountInfo = account.getAccountInfo();
             synchronized (AccountController.ACCOUNT_LOCK) {
                 final AccountInfo ai = accountInfo;
+                /* check traffic of account (eg traffic limit reached) */
                 if (traffic > 0 && ai != null && !ai.isUnlimitedTraffic()) {
                     long left = Math.max(0, ai.getTrafficLeft() - traffic);
                     ai.setTrafficLeft(left);
@@ -494,6 +501,11 @@ public abstract class PluginForHost extends Plugin {
                         account.setTempDisabled(true);
                     }
                     throwupdate = true;
+                }
+                /* check blocked account(eg free user accounts with waittime) */
+                if (blockAccount) {
+                    logger.severe("Account: " + account.getUser() + " is blocked, temp. disabling it!");
+                    AccountController.getInstance().addAccountBlocked(account);
                 }
             }
             if (throwupdate) {

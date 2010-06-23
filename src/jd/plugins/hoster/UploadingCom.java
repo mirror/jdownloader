@@ -349,6 +349,10 @@ public class UploadingCom extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
+    /*
+     * TODO: remove with next major update, DownloadWatchDog/AccountController
+     * handle blocked accounts now
+     */
     @Override
     public boolean isPremiumDownload() {
         /* free user accounts are no premium accounts */

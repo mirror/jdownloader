@@ -305,6 +305,8 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                     if (this.getActiveDownloads() > 0) abort();
                     /* clear Status */
                     clearDownloadListStatus();
+                    /* clear blocked Accounts */
+                    AccountController.getInstance().removeAccountBlocked((String) null);
                     pauseDownloads(false);
                     /* remove stopsign if it is reached */
                     if (reachedStopMark()) setStopMark(nostopMark);
@@ -670,6 +672,13 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                                             if (linkStatus.getRemainingWaittime() == 0) {
                                                 /* reset if waittime is over */
                                                 linkStatus.reset();
+                                                /*
+                                                 * clear blocked accounts for
+                                                 * this host
+                                                 */
+                                                if (linkStatus.hasStatus(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE)) {
+                                                    AccountController.getInstance().removeAccountBlocked(link.getHost());
+                                                }
                                             } else if (linkStatus.getRemainingWaittime() > 0) {
                                                 /*
                                                  * we have temp. unavail links
@@ -683,6 +692,11 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                                             if (linkStatus.getRemainingWaittime() == 0) {
                                                 /* reset if waittime is over */
                                                 linkStatus.reset();
+                                                /*
+                                                 * clear blocked accounts for
+                                                 * this host
+                                                 */
+                                                AccountController.getInstance().removeAccountBlocked(link.getHost());
                                             } else if (linkStatus.getRemainingWaittime() > 0) {
                                                 /*
                                                  * we request a reconnect if

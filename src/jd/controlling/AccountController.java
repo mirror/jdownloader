@@ -45,6 +45,8 @@ public class AccountController extends SubConfiguration implements ActionListene
 
     private static TreeMap<String, ArrayList<Account>> hosteraccounts = null;
 
+    private static TreeMap<String, ArrayList<Account>> blockedAccounts = new TreeMap<String, ArrayList<Account>>();
+
     private static AccountController INSTANCE = new AccountController();
 
     private JDBroadcaster<AccountControllerListener, AccountControllerEvent> broadcaster = new JDBroadcaster<AccountControllerListener, AccountControllerEvent>() {
@@ -215,6 +217,44 @@ public class AccountController extends SubConfiguration implements ActionListene
         // if (pluginForHost == null) return new ArrayList<Account>();
         // return this.getAllAccounts(pluginForHost.getHost());
         return (pluginForHost == null) ? new ArrayList<Account>() : getAllAccounts(pluginForHost.getHost());
+    }
+
+    public boolean isAccountBlocked(final Account account) {
+        synchronized (blockedAccounts) {
+            return blockedAccounts.containsValue(account);
+        }
+    }
+
+    public void addAccountBlocked(final Account account) {
+        synchronized (blockedAccounts) {
+            if (isAccountBlocked(account)) return;
+            String host = this.getHosterName(account);
+            ArrayList<Account> ar = blockedAccounts.get(host);
+            if (ar == null) {
+                ar = new ArrayList<Account>();
+                blockedAccounts.put(host, ar);
+            }
+            ar.add(account);
+        }
+    }
+
+    public void removeAccountBlocked(final Account account) {
+        synchronized (blockedAccounts) {
+            if (!isAccountBlocked(account)) return;
+            String host = this.getHosterName(account);
+            ArrayList<Account> ar = blockedAccounts.get(host);
+            if (ar != null) ar.remove(account);
+        }
+    }
+
+    public void removeAccountBlocked(final String host) {
+        synchronized (blockedAccounts) {
+            if (host == null) {
+                blockedAccounts.clear();
+            } else {
+                blockedAccounts.remove(host);
+            }
+        }
     }
 
     public ArrayList<Account> getAllAccounts(final String host) {

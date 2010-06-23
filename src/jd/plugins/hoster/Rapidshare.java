@@ -160,6 +160,7 @@ public class Rapidshare extends PluginForHost {
     }
 
     private String selectedServer;
+    private static boolean updateNeeded = false;
 
     public Rapidshare(PluginWrapper wrapper) {
         super(wrapper);
@@ -516,22 +517,20 @@ public class Rapidshare extends PluginForHost {
     private void checkAPIID() throws PluginException {
         try {
             // check for plgref
-
             String plgRef = br.getRegex("<\\!\\-\\-\\s*pref:(\\d+)\\s*\\-\\-\\>").getMatch(0);
             if (plgRef != null) {
                 int desiredRevision = Integer.parseInt(plgRef);
-
                 if (desiredRevision > API_ID) {
-                    //
+                    updateNeeded = true;
                     throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugin.host.rapidshare.status.outdated", "Plugin Outdated."), 10 * 60 * 1000l);
-
+                } else {
+                    updateNeeded = false;
                 }
             }
         } catch (PluginException e) {
             e.printStackTrace();
             throw e;
         } catch (Exception e) {
-
         }
     }
 
@@ -1096,13 +1095,14 @@ public class Rapidshare extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
+    /* DO NOT REMOVE, ANTI DDOS PROTECTION */
     @Override
     public boolean isPremiumDownload() {
         /*
          * this plugin must take care of HOST_TEMP_UNAVAIL status even in
          * premium mode
          */
-        if (DownloadWatchDog.getInstance().getRemainingTempUnavailWaittime(getHost()) > 0) return false;
+        if (updateNeeded && DownloadWatchDog.getInstance().getRemainingTempUnavailWaittime(getHost()) > 0) return false;
         return super.isPremiumDownload();
     }
 }
