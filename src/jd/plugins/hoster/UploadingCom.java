@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -125,7 +124,7 @@ public class UploadingCom extends PluginForHost {
             handleFree0(link);
             return;
         }
-        String redirect = getDownloadUrl(br, link);
+        String redirect = getDownloadUrl(link);
         br.setFollowRedirects(false);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, redirect, true, 0);
         handleDownloadErrors();
@@ -182,7 +181,7 @@ public class UploadingCom extends PluginForHost {
         logger.info("Submitting form");
         br.submitForm(form);
         checkErrors();
-        String redirect = getDownloadUrl(br, link);
+        String redirect = getDownloadUrl(link);
         br.setFollowRedirects(false);
         br.setDebug(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, redirect, true, 1);
@@ -285,7 +284,7 @@ public class UploadingCom extends PluginForHost {
         handleFree0(downloadLink);
     }
 
-    public String getDownloadUrl(Browser br, DownloadLink downloadLink) throws Exception {
+    public String getDownloadUrl(DownloadLink downloadLink) throws Exception {
         String timead = br.getRegex("timead_counter\">(\\d+)<").getMatch(0);
         if (timead != null) {
             Form form = br.getForm(0);
@@ -299,7 +298,9 @@ public class UploadingCom extends PluginForHost {
         }
         br.setFollowRedirects(false);
         String fileID = br.getRegex("file_id: (\\d+)").getMatch(0);
+        if (fileID == null) fileID = br.getRegex("name=\"file_id\" value=\"(\\d+)\"").getMatch(0);
         String code = br.getRegex("code: \"(.*?)\"").getMatch(0);
+        if (code == null) code = br.getRegex("name=\"code\" value=\"(.*?)\"").getMatch(0);
         if (fileID == null || code == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String starttimer = br.getRegex("start_timer\\((\\d+)\\);").getMatch(0);
         String redirect = null;

@@ -94,7 +94,7 @@ public class U115Com extends PluginForHost {
         if (filesize == null) filesize = br.getRegex("文件大小：(.*?)</td>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         filesize = filesize.replace(",", "");
-        link.setName(filename);
+        link.setFinalFileName(filename);
         link.setDownloadSize(Regex.getSize(filesize));
         String sh1 = br.getRegex("nsha1：([A-Z0-9]+)\\\\r\\\\n").getMatch(0);
         if (sh1 == null) sh1 = br.getRegex("colspan=\"4\">SHA1：(A-Z0-9]+)").getMatch(0);
