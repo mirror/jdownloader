@@ -163,6 +163,8 @@ public class JDPackageCustomizer extends PluginOptional implements LinkGrabberPa
             link.setCustomIcon(customIcon, String.format(customIconText, setting.getRegex()));
 
             setting.incMatchCount();
+        } else {
+            ctrl.attachToPackagesSecondStageInternal(link);
         }
     }
 
