@@ -436,6 +436,7 @@ public abstract class Request {
         String line;
         final StringBuilder htmlCode = new StringBuilder();
         /* workaround for premature eof */
+        /* added "Corrupt GZIP trailer" for CamWinsCom */
         try {
             while ((line = rd.readLine()) != null) {
                 htmlCode.append(line + "\r\n");
@@ -443,7 +444,7 @@ public abstract class Request {
         } catch (EOFException e) {
             jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Try workaround for ", e);
         } catch (IOException e) {
-            if (e.toString().contains("end of ZLIB") || e.toString().contains("Premature")) {
+            if (e.toString().contains("end of ZLIB") || e.toString().contains("Premature") || e.toString().contains("Corrupt GZIP trailer")) {
                 jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Try workaround for ", e);
             } else
                 throw e;

@@ -29,7 +29,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "camwins.com" }, urls = { "http://[\\w\\.]*?camwins\\.com/video/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "camwins.com" }, urls = { "http://[\\w\\.]*?camwins\\.com/video/\\d+/+?" }, flags = { 0 })
 public class CamWinsCom extends PluginForHost {
 
     public CamWinsCom(PluginWrapper wrapper) {
@@ -46,11 +46,8 @@ public class CamWinsCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
-        boolean pluginUnfinished = true;
-        if (pluginUnfinished) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Plugin unfinished");
         br.setFollowRedirects(false);
-        // G-Zip browser error when accessing that page...
-        br.getPage("http://www.camwins.com/enter.php");
+        br.setCookie("http://www.camwins.com", "splash", "1");
         br.getPage(downloadLink.getDownloadURL());
         if (br.getRedirectLocation() != null) {
             if (br.getRedirectLocation().contains("error/video_missing")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -59,7 +56,7 @@ public class CamWinsCom extends PluginForHost {
         String filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
         if (filename == null) filename = br.getRegex("<meta name=\"description\" content=\"(.*?)\"").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dllink = downloadLink.getProperty("dllink").toString();
+        // dllink = downloadLink.getProperty("dllink").toString();
         if (dllink == null) {
             String vidKey = new Regex(downloadLink.getDownloadURL(), "camwins\\.com/video/(\\d+)").getMatch(0);
             br.getPage("http://www.camwins.com/media/player/config.php?vkey=" + vidKey);
