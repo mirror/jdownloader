@@ -195,7 +195,7 @@ public class TbCm extends PluginForDecrypt {
                         break;
                     case 35:
                         if (br.openGetConnection(dlLink).getResponseCode() == 200) {
-                            addtopos(ConversionMode.VIDEOMP4, dlLink, br.getHttpConnection().getLongContentLength(), "(35,720p/HQ)", format);
+                            addtopos(ConversionMode.VIDEOFLV, dlLink, br.getHttpConnection().getLongContentLength(), "(35,720p/HQ)", format);
                             br.getHttpConnection().disconnect();
                         }
                         break;
