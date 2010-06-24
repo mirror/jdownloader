@@ -470,19 +470,24 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
 
         final SwitchPanel oldPanel = mainTabbedPane.getSelectedView().getInfoPanel();
 
+        final AddonConfig addonConfig = AddonConfig.getInstance(container, "_2", false);
+
         JDCollapser col = new JDCollapser() {
 
             private static final long serialVersionUID = 1L;
 
             @Override
             public void onClosed() {
-                // Show the old info panel if it isn't a closable JDCollapser
-                // (e.g. used for config panels)
+                /*
+                 * Show the old info panel if it isn't a closable JDCollapser
+                 * (e.g. used for config panels)
+                 */
                 if (oldPanel != null && oldPanel instanceof JDCollapser) {
                     mainTabbedPane.getSelectedView().setInfoPanel(null);
                 } else {
                     mainTabbedPane.getSelectedView().setInfoPanel(oldPanel);
                 }
+                addonConfig.onHide();
             }
 
             @Override
@@ -495,9 +500,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
 
         };
 
-        JPanel p = AddonConfig.getInstance(container, "_2", false).getPanel();
-
-        JScrollPane scrollPane = new JScrollPane(p);
+        JScrollPane scrollPane = new JScrollPane(addonConfig.getPanel());
         scrollPane.setBorder(null);
         scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 
