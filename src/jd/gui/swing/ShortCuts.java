@@ -26,8 +26,6 @@
 package jd.gui.swing;
 
 import java.awt.event.KeyEvent;
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 
 import javax.swing.KeyStroke;
 
@@ -47,7 +45,7 @@ public class ShortCuts {
         if (ks.getKeyCode() == KeyEvent.VK_UNDEFINED) {
             return builder.append(ks.getKeyChar()).toString();
         } else {
-            return builder.append(getVKText(ks.getKeyCode())).toString();
+            return builder.append(KeyEvent.getKeyText(ks.getKeyCode())).toString();
         }
     }
 
@@ -100,34 +98,6 @@ public class ShortCuts {
         }
 
         return buf.toString();
-    }
-
-    /**
-     * Taken from {@link java.awt.AWTKeyStroke}
-     * 
-     * 
-     * @(#)AWTKeyStroke.java 1.28 06/02/06
-     * 
-     *                       Copyright 2006 Sun Microsystems, Inc. All rights
-     *                       reserved. SUN PROPRIETARY/CONFIDENTIAL. Use is
-     *                       subject to license terms.
-     * 
-     * 
-     *                       Modified with translation code by JDTEam
-     *                       Translation uses dynamic keys. this is not
-     *                       recommended, but there is not better solution
-     * 
-     */
-    private static String getVKText(final int keyCode) {
-        final int expected_modifiers = (Modifier.PUBLIC | Modifier.STATIC | Modifier.FINAL);
-        final Field[] fields = KeyEvent.class.getDeclaredFields();
-        for (final Field field : fields) {
-            try {
-                if (field.getModifiers() == expected_modifiers && field.getType() == Integer.TYPE && field.getName().startsWith("VK_") && field.getInt(KeyEvent.class) == keyCode) { return JDL.L(JDL_PREFIX + field.getName(), field.getName().substring(3)); }
-            } catch (IllegalAccessException e) {
-            }
-        }
-        return "UNKNOWN";
     }
 
 }
