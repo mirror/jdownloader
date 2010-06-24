@@ -29,7 +29,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "camwins.com" }, urls = { "http://[\\w\\.]*?camwins\\.com/video/\\d+/+?" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "camwins.com" }, urls = { "http://[\\w\\.]*?camwins\\.com/video/\\d+" }, flags = { 0 })
 public class CamWinsCom extends PluginForHost {
 
     public CamWinsCom(PluginWrapper wrapper) {
@@ -56,16 +56,12 @@ public class CamWinsCom extends PluginForHost {
         String filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
         if (filename == null) filename = br.getRegex("<meta name=\"description\" content=\"(.*?)\"").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // dllink = downloadLink.getProperty("dllink").toString();
-        if (dllink == null) {
-            String vidKey = new Regex(downloadLink.getDownloadURL(), "camwins\\.com/video/(\\d+)").getMatch(0);
-            br.getPage("http://www.camwins.com/media/player/config.php?vkey=" + vidKey);
-            dllink = br.getRegex("<src>(.*?)</src>").getMatch(0);
-            if (dllink == null) dllink = br.getRegex("(http://media\\d+\\.camwins\\.com/media/videos/flv/\\d+\\.flv)").getMatch(0);
-            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            dllink = dllink.trim();
-            downloadLink.setProperty("dllink", dllink);
-        }
+        String vidKey = new Regex(downloadLink.getDownloadURL(), "camwins\\.com/video/(\\d+)").getMatch(0);
+        br.getPage("http://www.camwins.com/media/player/config.php?vkey=" + vidKey);
+        dllink = br.getRegex("<src>(.*?)</src>").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("(http://media\\d+\\.camwins\\.com/media/videos/flv/\\d+\\.flv)").getMatch(0);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dllink = dllink.trim();
         filename = filename.trim();
         downloadLink.setFinalFileName(filename + ".flv");
         Browser br2 = br.cloneBrowser();
