@@ -1216,6 +1216,7 @@ plugin.host.rapidshare.status.filenotfound = Το αρχείο δεν βρέθη
 plugin.host.rapidshare.status.inuse = Όλες οι ελεύθερες θέσεις λήψης είναι κατειλημμένες
 plugin.host.rapidshare.status.inuselong = Όλες οι διαθέσιμες θέσεις λήψης χρησιμοποιούνται: Προσπαθήστε ξανά σε 2 λεπτά
 plugin.host.rapidshare.status.ipblock = Μια λήψη από την IP σας είναι ήδη σε εξέλιξη!
+plugin.host.rapidshare.status.outdated = Το plugin έχει λήξει
 plugin.host.rapidshare.status.servernotavailable = Ο Εξυπηρετητής είναι προσωρινά μη διαθέσιμος. Προσπαθήστε ξανά αργότερα!
 plugin.host.rapidshare.status.toomany = Λαμβάνουν πολλοί χρήστες το συγκεκριμένο αρχείο αυτή τη στιγμή
 plugin.hoster.milledrive.com.rtmpvideo = Το JD δεν μπορεί να λάβει RTMP streams αυτή τη στιγμή!
