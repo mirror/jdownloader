@@ -69,9 +69,7 @@ public class XSevenTo extends PluginForHost {
         if (validUntil != null) {
             ai.setValidUntil(Regex.getMilliSeconds(validUntil.trim(), "yyyy-MM-dd HH:mm:ss", null));
         } else {
-            if (br.containsHTML("img/sym/crown.png.*?unbegrenzt.*?img/sym/crown.png")) {
-
-            } else {
+            if (!br.containsHTML("img/sym/crown.png")) {
                 ai.setExpired(true);
             }
         }
