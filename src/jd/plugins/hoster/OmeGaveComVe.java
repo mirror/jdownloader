@@ -39,18 +39,16 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ForDevsToPlayWith.com" }, urls = { "http://[\\w\\.]*?ForDevsToPlayWith\\.com/[a-z0-9]{12}" }, flags = { 0 })
-public class XFileSharingProBasic extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "omegave.com.ve" }, urls = { "http://[\\w\\.]*?omegave\\.com\\.ve/[a-z0-9]{12}" }, flags = { 2 })
+public class OmeGaveComVe extends PluginForHost {
 
-    public XFileSharingProBasic(PluginWrapper wrapper) {
+    public OmeGaveComVe(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium(COOKIE_HOST + "/premium.html");
+        this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
-    // XfileSharingProBasic Version 1.8
-    // This is only for developers to easily implement hosters using the
-    // "xfileshare(pro)" script (more informations can be found on
-    // xfilesharing.net)!
+    // XfileSharingProBasic Version 1.8, new filesize regex, modified login
+    // check, modified expire regex
     @Override
     public String getAGBLink() {
         return COOKIE_HOST + "/tos.html";
@@ -59,7 +57,7 @@ public class XFileSharingProBasic extends PluginForHost {
     public String brbefore = "";
     private static final String PASSWORDTEXT0 = "<br><b>Password:</b> <input";
     private static final String PASSWORDTEXT1 = "<br><b>Passwort:</b> <input";
-    private static final String COOKIE_HOST = "http://ForDevsToPlayWith.com";
+    private static final String COOKIE_HOST = "http://omegave.com.ve";
     public boolean nopremium = false;
 
     @Override
@@ -94,6 +92,7 @@ public class XFileSharingProBasic extends PluginForHost {
             filesize = new Regex(brbefore, "<small>\\((.*?)\\)</small>").getMatch(0);
             if (filesize == null) {
                 filesize = new Regex(brbefore, "</font>[ ]+\\((.*?)\\)(.*?)</font>").getMatch(0);
+                if (filesize == null) filesize = new Regex(brbefore, "style=\"font-size:20px;\"><b>http://omegave\\.com\\.ve/[a-z0-9]{12}.*? </b>\\((.*?)\\)</font>").getMatch(0);
             }
         }
         if (filename == null || filename.equals("")) {
@@ -114,23 +113,23 @@ public class XFileSharingProBasic extends PluginForHost {
     }
 
     public void doFree(DownloadLink downloadLink) throws Exception, PluginException {
-        String passCode = null;
-        boolean resumable = true;
-        int maxchunks = 0;
-        // If the filesize regex above doesn't match you can copy this part into
-        // the available status (and delete it here)
+        Form[] allForms = br.getForms();
+        if (allForms == null || allForms.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         Form freeform = br.getFormBySubmitvalue("Kostenloser+Download");
-        if (freeform == null) {
-            freeform = br.getFormBySubmitvalue("Free+Download");
-            if (freeform == null) {
-                freeform = br.getFormbyKey("download1");
+        for (Form singleForm : allForms) {
+            if (singleForm.containsHTML("download1")) {
+                freeform = singleForm;
+                break;
             }
         }
-        if (freeform != null) {
-            freeform.remove("method_premium");
-            br.submitForm(freeform);
-            doSomething();
-        }
+        String passCode = null;
+        boolean resumable = false;
+        int maxchunks = 1;
+        // If the filesize regex above doesn't match you can copy this part into
+        // the available status (and delete it here)
+        freeform.remove("method_premium");
+        br.submitForm(freeform);
+        doSomething();
         checkErrors(downloadLink, false, passCode);
         String md5hash = new Regex(brbefore, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
         if (md5hash != null) {
@@ -279,9 +278,9 @@ public class XFileSharingProBasic extends PluginForHost {
         br.submitForm(loginform);
         br.getPage(COOKIE_HOST + "/?op=my_account");
         doSomething();
-        if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        if (!brbefore.contains("Premium-Account expire") && !brbefore.contains("Upgrade to premium") && !br.containsHTML(">Renew premium<")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        if (!brbefore.contains("Premium-Account expire") && !br.containsHTML(">Renew premium<")) nopremium = true;
+        if (br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (!brbefore.contains(">Renovar Premiun</a>") && !brbefore.contains(">Actualizar a Premiun</a>")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (!brbefore.contains(">Renovar Premiun</a>")) nopremium = true;
     }
 
     @Override
@@ -313,7 +312,7 @@ public class XFileSharingProBasic extends PluginForHost {
             ai.setUnlimitedTraffic();
         }
         if (!nopremium) {
-            String expire = new Regex(brbefore, "<td>Premium-Account expire:</td>.*?<td>(.*?)</td>").getMatch(0);
+            String expire = new Regex(brbefore, "Tu Cuenta Premium es v.lida hasta el <b>(.*?)</b>").getMatch(0);
             if (expire == null) {
                 ai.setExpired(true);
                 account.setValid(false);
