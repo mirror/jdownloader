@@ -20,6 +20,8 @@ import java.awt.event.ActionEvent;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 
 import jd.PluginWrapper;
@@ -54,34 +56,34 @@ public class Schedule extends PluginOptional {
 
     public Schedule(PluginWrapper wrapper) {
         super(wrapper);
-        actions = this.getPluginConfig().getGenericProperty("Scheduler_Actions", new ArrayList<Actions>());
-        if (actions == null) {
-            actions = new ArrayList<Actions>();
-            saveActions();
-        }
-        initModules();
-        activateAction = new MenuAction("scheduler", 0);
-        activateAction.setActionListener(this);
-        activateAction.setIcon(this.getIconKey());
-        activateAction.setSelected(false);
     }
 
     private void initModules() {
         modules = new ArrayList<SchedulerModuleInterface>();
         try {
+            ArrayList<String> added = new ArrayList<String>();
             for (final Class<?> c : ClassFinder.getClasses("jd.plugins.optional.schedule.modules", JDUtilities.getJDClassLoader())) {
                 try {
                     final SchedulerModule help = c.getAnnotation(SchedulerModule.class);
                     if (help == null) {
                         logger.info("Scheduler: Skipped " + c + " due to missing annotation!");
                         continue;
+                    } else if (added.contains(c.toString())) {
+                        logger.info("Scheduler: Skipped " + c + " because its already loaded!");
+                        continue;
                     }
+                    added.add(c.toString());
 
                     modules.add((SchedulerModuleInterface) c.getConstructor().newInstance());
                 } catch (Throwable e) {
                     JDLogger.exception(e);
                 }
             }
+            Collections.sort(modules, new Comparator<SchedulerModuleInterface>() {
+                public int compare(SchedulerModuleInterface o1, SchedulerModuleInterface o2) {
+                    return o1.getTranslation().compareToIgnoreCase(o2.getTranslation());
+                }
+            });
         } catch (Throwable e) {
             JDLogger.exception(e);
         }
@@ -176,6 +178,19 @@ public class Schedule extends PluginOptional {
 
     @Override
     public boolean initAddon() {
+        actions = this.getPluginConfig().getGenericProperty("Scheduler_Actions", new ArrayList<Actions>());
+        if (actions == null) {
+            actions = new ArrayList<Actions>();
+            saveActions();
+        }
+
+        initModules();
+
+        activateAction = new MenuAction("scheduler", 0);
+        activateAction.setActionListener(this);
+        activateAction.setIcon(this.getIconKey());
+        activateAction.setSelected(false);
+
         logger.info("Schedule Init: OK");
         running = true;
         sc = new Schedulercheck();

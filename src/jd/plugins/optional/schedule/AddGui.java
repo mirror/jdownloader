@@ -47,7 +47,9 @@ import net.miginfocom.swing.MigLayout;
 import org.jdesktop.swingx.JXTable;
 
 public class AddGui extends JPanel implements ActionListener, ChangeListener, DocumentListener, MouseListener {
+
     private static final long serialVersionUID = 8080132393187788526L;
+
     private MainGui gui;
     private Schedule schedule;
     private MyTableModel tableModel;
@@ -59,21 +61,21 @@ public class AddGui extends JPanel implements ActionListener, ChangeListener, Do
     private JButton delete;
     private JTextField name;
     private JRadioButton optDate;
+    private JRadioButton optHourly;
     private JRadioButton optDaily;
+    private JRadioButton optWeekly;
+    private JRadioButton optSpecific;
+    private JSpinner repeathour;
+    private JSpinner repeatminute;
     private JSpinner day;
     private JSpinner month;
     private JSpinner year;
     private JSpinner hour;
     private JSpinner minute;
-    private JPanel datepre;
     private JButton cancel;
     private JButton save;
     private JLabel problems;
-    private JRadioButton optHourly;
-    private JRadioButton optWeekly;
-    private JRadioButton optSpecific;
-    private JSpinner repeathour;
-    private JSpinner repeatminute;
+
     private boolean edit;
     private Actions editact;
 
@@ -94,56 +96,45 @@ public class AddGui extends JPanel implements ActionListener, ChangeListener, Do
 
         setLayout(new MigLayout("wrap 1, fill", "[fill, grow]"));
 
-        JPanel main = new JPanel(new MigLayout("ins 5, wrap 1", "[fill, grow]", "[fill, grow][]"));
-
-        JPanel date = new JPanel();
-        date.setLayout(new MigLayout("ins 5, wrap 2", "[fill, grow]10[fill, grow]"));
+        JPanel date = new JPanel(new MigLayout("ins 5, wrap 2", "[]10[fill, grow]", "[]10[]"));
         date.setBorder(BorderFactory.createLineBorder(getBackground().darker()));
 
         date.add(new JLabel(JDL.L("plugin.optional.scheduler.add.name", "Name")));
 
         name = new JTextField(act.getName());
         name.getDocument().addDocumentListener(this);
-        date.add(name, "w 20%");
+        date.add(name);
 
-        JPanel repeats = new JPanel();
-        repeats.setLayout(new MigLayout("wrap 2", "[fill, grow][fill, grow]"));
+        JPanel repeats = new JPanel(new MigLayout("ins 0", "[]push[]push[]push[]push[]5[]"));
 
         optDate = new JRadioButton(JDL.L("plugin.optional.scheduler.add.once", "Only once"));
         optDate.setSelected(true);
-        repeats.add(optDate, "split 4");
+        repeats.add(optDate);
 
         optHourly = new JRadioButton(JDL.L("plugin.optional.scheduler.add.hourly", "Hourly"));
-        repeats.add(optHourly, "");
+        repeats.add(optHourly);
 
         optDaily = new JRadioButton(JDL.L("plugin.optional.scheduler.add.daily", "Daily"));
-        repeats.add(optDaily, "");
+        repeats.add(optDaily);
 
         optWeekly = new JRadioButton(JDL.L("plugin.optional.scheduler.add.weekly", "Weekly"));
-        repeats.add(optWeekly, "");
+        repeats.add(optWeekly);
 
-        optSpecific = new JRadioButton(JDL.L("plugin.optional.scheduler.add.specific", "Choose interval"));
+        optSpecific = new JRadioButton(JDL.L("plugin.optional.scheduler.add.specific", "Choose interval") + ":");
         optSpecific.addChangeListener(this);
-        repeats.add(optSpecific, "newline");
+        repeats.add(optSpecific);
 
-        JPanel specpre = new JPanel();
-        specpre.setLayout(new MigLayout("", "[left]"));
+        repeats.add(new JLabel(JDL.L("plugin.optional.scheduler.add.hour", "Hour:")));
 
-        specpre.add(new JLabel(JDL.L("plugin.optional.scheduler.add.hour", "Hour: ")));
-
-        repeathour = new JSpinner();
-        repeathour.setModel(new SpinnerNumberModel(01, 00, 23, 1));
+        repeathour = new JSpinner(new SpinnerNumberModel(01, 00, 23, 1));
         repeathour.setEnabled(false);
-        specpre.add(repeathour);
+        repeats.add(repeathour);
 
-        specpre.add(new JLabel(JDL.L("plugin.optional.scheduler.add.minute", "Minute: ")));
+        repeats.add(new JLabel(JDL.L("plugin.optional.scheduler.add.minute", "Minute:")));
 
-        repeatminute = new JSpinner();
-        repeatminute.setModel(new SpinnerNumberModel(00, 00, 59, 1));
+        repeatminute = new JSpinner(new SpinnerNumberModel(00, 00, 59, 1));
         repeatminute.setEnabled(false);
-        specpre.add(repeatminute);
-
-        repeats.add(specpre);
+        repeats.add(repeatminute);
 
         ButtonGroup grp = new ButtonGroup();
         grp.add(optDate);
@@ -155,44 +146,36 @@ public class AddGui extends JPanel implements ActionListener, ChangeListener, Do
         date.add(new JLabel(JDL.L("plugin.optional.scheduler.add.repeats", "Repeats")));
         date.add(repeats);
 
-        datepre = new JPanel();
-        datepre.setLayout(new MigLayout("ins 0", "[][]10[][]10[][]"));
-        datepre.add(new JLabel(JDL.L("plugin.optional.scheduler.add.day", "Day: ")));
+        JPanel datepre = new JPanel(new MigLayout("ins 0", "[][]5[][]5[][]20[][]5[][]"));
+        datepre.add(new JLabel(JDL.L("plugin.optional.scheduler.add.day", "Day:")));
 
-        day = new JSpinner();
-        day.setModel(new SpinnerNumberModel(Calendar.getInstance().get(Calendar.DAY_OF_MONTH), 1, 31, 1));
+        day = new JSpinner(new SpinnerNumberModel(Calendar.getInstance().get(Calendar.DAY_OF_MONTH), 1, 31, 1));
         datepre.add(day, "sizegroup spinner");
 
-        datepre.add(new JLabel(JDL.L("plugin.optional.scheduler.add.month", "Month: ")));
+        datepre.add(new JLabel(JDL.L("plugin.optional.scheduler.add.month", "Month:")));
 
-        month = new JSpinner();
-        month.setModel(new SpinnerNumberModel(Calendar.getInstance().get(Calendar.MONTH) + 1, 1, 12, 1));
+        month = new JSpinner(new SpinnerNumberModel(Calendar.getInstance().get(Calendar.MONTH) + 1, 1, 12, 1));
         datepre.add(month, "sizegroup spinner");
 
-        datepre.add(new JLabel(JDL.L("plugin.optional.scheduler.add.year", "Year: ")));
+        datepre.add(new JLabel(JDL.L("plugin.optional.scheduler.add.year", "Year:")));
 
-        year = new JSpinner();
-        year.setModel(new SpinnerNumberModel(Calendar.getInstance().get(Calendar.YEAR), 2009, 2015, 1));
+        year = new JSpinner(new SpinnerNumberModel(Calendar.getInstance().get(Calendar.YEAR), 2010, 2015, 1));
         datepre.add(year, "sizegroup spinner");
 
-        datepre.add(new JLabel(JDL.L("plugin.optional.scheduler.add.hour", "Hour: ")), "newline");
+        datepre.add(new JLabel(JDL.L("plugin.optional.scheduler.add.hour", "Hour:")));
 
-        hour = new JSpinner();
-        hour.setModel(new SpinnerNumberModel(Calendar.getInstance().get(Calendar.HOUR_OF_DAY), 00, 23, 1));
+        hour = new JSpinner(new SpinnerNumberModel(Calendar.getInstance().get(Calendar.HOUR_OF_DAY), 00, 23, 1));
         datepre.add(hour, "sizegroup spinner");
 
-        datepre.add(new JLabel(JDL.L("plugin.optional.scheduler.add.minute", "Minute: ")));
+        datepre.add(new JLabel(JDL.L("plugin.optional.scheduler.add.minute", "Minute:")));
 
-        minute = new JSpinner();
-        minute.setModel(new SpinnerNumberModel(Calendar.getInstance().get(Calendar.MINUTE), 00, 59, 1));
+        minute = new JSpinner(new SpinnerNumberModel(Calendar.getInstance().get(Calendar.MINUTE), 00, 59, 1));
         datepre.add(minute, "sizegroup spinner");
 
-        date.add(new JLabel(JDL.L("plugin.optional.scheduler.add.date", "Date")));
-        date.add(datepre, "spany 2");
-        date.add(new JLabel(JDL.L("plugin.optional.scheduler.add.time", "Time")));
+        date.add(new JLabel(JDL.L("plugin.optional.scheduler.add.date2", "Date/Time")));
+        date.add(datepre);
 
-        JPanel actions = new JPanel();
-        actions.setLayout(new MigLayout("ins 5, wrap 2", "[fill, grow]10[fill, grow]"));
+        JPanel actions = new JPanel(new MigLayout("ins 5, wrap 2", "[fill, grow][fill, grow]"));
         actions.setBorder(BorderFactory.createLineBorder(getBackground().darker()));
 
         cboActions = new JComboBox();
@@ -216,19 +199,19 @@ public class AddGui extends JPanel implements ActionListener, ChangeListener, Do
         table = new JXTable(tableModel);
         table.addMouseListener(this);
 
-        JPanel control = new JPanel(new MigLayout("wrap 3", "[grow, fill, right][right][right]"));
+        JPanel control = new JPanel(new MigLayout("ins 0, wrap 3", "[grow, fill, right][right][right]"));
 
         problems = new JLabel();
         problems.setForeground(Color.RED);
         control.add(problems);
 
-        cancel = new JButton(JDL.L("plugin.optional.scheduler.add.cancel", "Cancel"));
-        cancel.addActionListener(this);
-        control.add(cancel, "align right,tag cancel");
-
         save = new JButton(JDL.L("plugin.optional.scheduler.add.save", "Save"));
         save.addActionListener(this);
         control.add(save, "align right,tag save");
+
+        cancel = new JButton(JDL.L("plugin.optional.scheduler.add.cancel", "Cancel"));
+        cancel.addActionListener(this);
+        control.add(cancel, "align right,tag cancel");
 
         if (edit) {
             Calendar c = Calendar.getInstance();
@@ -264,12 +247,11 @@ public class AddGui extends JPanel implements ActionListener, ChangeListener, Do
 
         fillComboBox();
 
-        main.add(date);
-        main.add(actions);
-        main.add(new JScrollPane(table), "hmin 100");
-        main.add(control);
-
-        add(main);
+        setLayout(new MigLayout("ins 5, wrap 1", "[fill, grow]", "[fill, grow][]"));
+        add(date);
+        add(actions);
+        add(new JScrollPane(table), "hmin 100");
+        add(control);
     }
 
     private class MyTableModel extends AbstractTableModel {

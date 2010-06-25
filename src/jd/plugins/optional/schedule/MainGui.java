@@ -68,10 +68,10 @@ public class MainGui extends SwitchPanel implements ActionListener, MouseListene
         edit.addActionListener(this);
         edit.setEnabled(false);
 
-        JPanel buttons = new JPanel();
-        buttons.add(add);
-        buttons.add(delete);
-        buttons.add(edit);
+        JPanel buttons = new JPanel(new MigLayout("ins 0"));
+        buttons.add(add, "sizegroup buttons");
+        buttons.add(delete, "sizegroup buttons");
+        buttons.add(edit, "sizegroup buttons");
 
         JPanel p = new JPanel(new MigLayout("ins 5,wrap 1", "[fill,grow]", "[fill,grow][]"));
         p.add(new JScrollPane(table));
