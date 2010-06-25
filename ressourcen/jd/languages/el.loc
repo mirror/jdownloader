@@ -1228,6 +1228,7 @@ plugin.optional.scheduler.add.column.executions.name = Όνομα
 plugin.optional.scheduler.add.column.executions.parameter = Παράμετρος
 plugin.optional.scheduler.add.daily = Καθημερινά
 plugin.optional.scheduler.add.date = Ημερομηνία
+plugin.optional.scheduler.add.date2 = Ημερομηνία/Ώρα
 plugin.optional.scheduler.add.day = Ημέρα:
 plugin.optional.scheduler.add.hour = Ώρα:
 plugin.optional.scheduler.add.hourly = Ωριαία
