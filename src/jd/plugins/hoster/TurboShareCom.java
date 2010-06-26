@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
@@ -40,23 +41,24 @@ public class TurboShareCom extends PluginForHost {
     }
 
     // Made with XFileSharingProBasic Version 1.2
-    // XFileSharingProBasic is for developers to easily implement hosters using
-    // the "xfileshare(pro)" script
     @Override
     public String getAGBLink() {
         return "http://www.turboshare.com/tos.html";
     }
+
+    private String brbefore = "";
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setCookie("http://www.turboshare.com", "lang", "english");
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("You have reached the download-limit")) {
+        doSomething();
+        if (brbefore.contains("You have reached the download-limit")) {
             logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
             return AvailableStatus.UNCHECKABLE;
         }
-        if (br.containsHTML("(No such file|No such user exist|File not found)")) {
+        if (brbefore.contains("(No such file|No such user exist|File not found|File Not Found|<li>The file expired)")) {
             logger.warning("file is 99,99% offline, throwing \"file not found\" now...");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -105,7 +107,10 @@ public class TurboShareCom extends PluginForHost {
                 freeform = br.getFormbyKey("download1");
             }
         }
-        if (freeform != null) br.submitForm(freeform);
+        if (freeform != null) {
+            br.submitForm(freeform);
+            doSomething();
+        }
         String md5hash = br.getRegex("<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
         if (md5hash != null) {
             md5hash = md5hash.trim();
@@ -131,11 +136,11 @@ public class TurboShareCom extends PluginForHost {
             boolean recaptcha = false;
             // The String "loginpw" is only made for fileop.com
             loginpw = br.getRegex("value=\"login\">(.*?)value=\" Login\"").getMatch(0);
-            if (br.containsHTML("name=\"password\"") && !(loginpw != null && loginpw.contains("password"))) {
+            if (brbefore.contains("name=\"password\"") && !(loginpw != null && loginpw.contains("password"))) {
                 password = true;
                 logger.info("The downloadlink seems to be password protected.");
             }
-            if (br.containsHTML("background:#ccc;text-align")) {
+            if (brbefore.contains("background:#ccc;text-align")) {
                 logger.info("Detected captcha method \"plaintext captchas\" for this host");
                 // Captcha method by ManiacMansion
                 String[][] letters = br.getRegex("<span style='position:absolute;padding-left:(\\d+)px;padding-top:\\d+px;'>(\\d)</span>").getMatches();
@@ -153,7 +158,7 @@ public class TurboShareCom extends PluginForHost {
                 }
                 DLForm.put("code", code.toString());
                 logger.info("Put captchacode " + code.toString() + " obtained by captcha metod\"plaintext captchas\" in the form.");
-            } else if (br.containsHTML("/captchas/")) {
+            } else if (brbefore.contains("/captchas/")) {
                 logger.info("Detected captcha method \"Standard captcha\" for this host");
                 String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
                 String captchaurl = null;
@@ -208,16 +213,17 @@ public class TurboShareCom extends PluginForHost {
         }
         if (br.getRedirectLocation() != null || error == true) {
             br.followConnection();
+            doSomething();
             logger.info("followed connection...");
             String dllink = br.getRedirectLocation();
             if (dllink == null) {
                 checkErrors(downloadLink);
-                if (br.containsHTML("(name=\"password\"|Wrong password)") && !(loginpw != null && loginpw.contains("password"))) {
+                if (brbefore.contains("(name=\"password\"|Wrong password)") && !(loginpw != null && loginpw.contains("password"))) {
                     logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
                     downloadLink.setProperty("pass", null);
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
-                if (br.containsHTML("Wrong captcha")) {
+                if (brbefore.contains("Wrong captcha")) {
                     logger.warning("Wrong captcha or wrong password!");
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 }
@@ -254,7 +260,8 @@ public class TurboShareCom extends PluginForHost {
         if (error2 == true) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
-            if (br.containsHTML("File Not Found")) {
+            doSomething();
+            if (brbefore.contains("File Not Found")) {
                 logger.warning("Server says link offline, please recheck that!");
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -265,7 +272,7 @@ public class TurboShareCom extends PluginForHost {
 
     public void checkErrors(DownloadLink theLink) throws NumberFormatException, PluginException {
         // Errorhandling for only-premium links
-        if (br.containsHTML("(You can download files up to.*?only|Upgrade your account to download bigger files|This file reached max downloads)")) {
+        if (brbefore.contains("(You can download files up to.*?only|Upgrade your account to download bigger files|This file reached max downloads)")) {
             String filesizelimit = br.getRegex("You can download files up to(.*?)only").getMatch(0);
             if (filesizelimit != null) {
                 filesizelimit = filesizelimit.trim();
@@ -277,8 +284,8 @@ public class TurboShareCom extends PluginForHost {
             }
         }
         // Some waittimes...
-        if (br.containsHTML("You're using all download slots for IP")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
-        if (br.containsHTML("You have to wait")) {
+        if (brbefore.contains("You're using all download slots for IP")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
+        if (brbefore.contains("You have to wait")) {
             int minutes = 0, seconds = 0, hours = 0;
             String tmphrs = br.getRegex("You have to wait.*?\\s+(\\d+)\\s+hours?").getMatch(0);
             if (tmphrs != null) hours = Integer.parseInt(tmphrs);
@@ -290,7 +297,7 @@ public class TurboShareCom extends PluginForHost {
             logger.info("Detected waittime #1, waiting " + waittime + "milliseconds");
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
         }
-        if (br.containsHTML("You have reached the download-limit")) {
+        if (brbefore.contains("You have reached the download-limit")) {
             String tmphrs = br.getRegex("\\s+(\\d+)\\s+hours?").getMatch(0);
             String tmpmin = br.getRegex("\\s+(\\d+)\\s+minutes?").getMatch(0);
             String tmpsec = br.getRegex("\\s+(\\d+)\\s+seconds?").getMatch(0);
@@ -307,6 +314,27 @@ public class TurboShareCom extends PluginForHost {
                 logger.info("Detected waittime #2, waiting " + waittime + "milliseconds");
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
             }
+        }
+    }
+
+    // Removed fake messages which can kill the plugin
+    public void doSomething() throws NumberFormatException, PluginException {
+        brbefore = br.toString();
+        ArrayList<String> someStuff = new ArrayList<String>();
+        ArrayList<String> regexStuff = new ArrayList<String>();
+        regexStuff.add("<!(--.*?--)>");
+        regexStuff.add("(div style=\"display:none;\">.*?</div>)");
+        regexStuff.add("(visibility:hidden>.*?<)");
+        for (String aRegex : regexStuff) {
+            String lolz[] = br.getRegex(aRegex).getColumn(0);
+            if (lolz != null) {
+                for (String dingdang : lolz) {
+                    someStuff.add(dingdang);
+                }
+            }
+        }
+        for (String fun : someStuff) {
+            brbefore = brbefore.replace(fun, "");
         }
     }
 
