@@ -34,6 +34,8 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
         super(wrapper);
     }
 
+    private static final String NEWSREGEX = "<div id='prep2'( style='display:none;')?><a  href='(.*?)'";
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -102,12 +104,12 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
             br.setFollowRedirects(true);
             String id = new Regex(parameter, "nbanews\\.us/(\\d+)").getMatch(0);
             br.getPage("http://www.nbanews.us/index.php?id=" + id + "&d=1");
-            finallink = br.getRegex("<div id='prep2' style='display:none;'><a  href='(.*?)'").getMatch(0);
+            finallink = br.getRegex(NEWSREGEX).getMatch(1);
         } else if (parameter.contains("wwenews.us/")) {
             br.setFollowRedirects(true);
             String id = new Regex(parameter, "wwenews\\.us/(\\d+)").getMatch(0);
             br.getPage("http://www.wwenews.us/index.php?id=" + id + "&d=1");
-            finallink = br.getRegex("<div id='prep2'( style='display:none;')?><a  href='(.*?)'").getMatch(1);
+            finallink = br.getRegex(NEWSREGEX).getMatch(1);
         } else if (parameter.contains("top2tech.com/")) {
             String id = new Regex(parameter, "top2tech\\.com/(\\d+)").getMatch(0);
             br.getPage("http://top2tech.com/2-" + id);
