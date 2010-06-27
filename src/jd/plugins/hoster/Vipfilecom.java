@@ -25,7 +25,6 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
-import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -99,12 +98,13 @@ public class Vipfilecom extends PluginForHost {
         form.put("pass", Encoding.urlEncode(account.getPass()));
         br.submitForm(form);
         // Try to find the remaining traffic
-        String trafficLeft = br.getRegex("You can download another: (.*?) with current password").getMatch(0);
-        if (trafficLeft != null) {
-            AccountInfo ai = account.getAccountInfo();
-            ai.setTrafficLeft(trafficLeft);
-            ai.setStatus("Premium User");
-        }
+        // String trafficLeft =
+        // br.getRegex("You can download another: (.*?) with current password").getMatch(0);
+        // if (trafficLeft != null) {
+        // AccountInfo ai = account.getAccountInfo();
+        // ai.setTrafficLeft(trafficLeft.replace("GigaByte", "GB"));
+        // ai.setStatus("Premium User");
+        // }
         String url = Encoding.htmlDecode(br.getRegex(Pattern.compile("Ваша ссылка для скачивания:<br><a href='(http://.*?)'", Pattern.CASE_INSENSITIVE)).getMatch(1));
         if (url == null) url = br.getRegex("(http://[0-9]+\\.[0-9]+\\.[0-9]+\\..*?/downloadp[0-9]+/.*?)'>").getMatch(0);
         if (url == null && br.containsHTML("Wrong password")) {

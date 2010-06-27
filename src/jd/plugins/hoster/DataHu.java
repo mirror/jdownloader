@@ -48,6 +48,10 @@ public class DataHu extends PluginForHost {
         return "http://data.hu/adatvedelem.php";
     }
 
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace(".html", ""));
+    }
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();

@@ -56,7 +56,7 @@ public class XFileSharingProBasic extends PluginForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
-    public String brbefore = "";
+    private String brbefore = "";
     private static final String PASSWORDTEXT0 = "<br><b>Password:</b> <input";
     private static final String PASSWORDTEXT1 = "<br><b>Passwort:</b> <input";
     private static final String COOKIE_HOST = "http://ForDevsToPlayWith.com";
