@@ -45,15 +45,17 @@ public class FilesMonsterCom extends PluginForHost {
         this.enablePremium("http://filesmonster.com/service.php");
     }
 
-    public void login(Account account) throws Exception {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.postPage("http://filesmonster.com/login.php", "act=login&user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass() + "&login="));
-        if (!br.containsHTML("<p>Your membership type: <span class=\"green\">Premium</span>") || br.containsHTML("Username/Password can not be found in our database") || br.containsHTML("Try to recover your password by 'Password reminder'")) throw new PluginException(LinkStatus.ERROR_PREMIUM);
-    }
-
     private void setConfigElements() {
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), PROPERTY_NO_SLOT_WAIT_TIME, JDL.L("plugins.hoster.filesmonstercom.noslotwaittime", "No slot wait time (seconds)"), 30, 86400).setDefaultValue(60).setStep(30));
+    }
+
+    public void login(Account account) throws Exception {
+        this.setBrowserExclusive();
+
+        br.setFollowRedirects(true);
+        br.postPage("http://filesmonster.com/login.php", "act=login&user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&login=");
+        if (!br.containsHTML("<p>Your membership type: <span class=\"green\">Premium</span>") || br.containsHTML("Username/Password can not be found in our database") || br.containsHTML("Try to recover your password by 'Password reminder'")) throw new PluginException(LinkStatus.ERROR_PREMIUM);
+
     }
 
     @Override
@@ -61,6 +63,7 @@ public class FilesMonsterCom extends PluginForHost {
         AccountInfo ai = new AccountInfo();
         try {
             login(account);
+
         } catch (PluginException e) {
             account.setValid(false);
             return ai;
@@ -72,20 +75,31 @@ public class FilesMonsterCom extends PluginForHost {
             ai.setTrafficLeft(Regex.getSize(trafficleft));
         }
         String expires = br.getRegex("Membership period ends.*?([0-9]{1,2}/[0-9]{1,2}/[0-9]{1,2} [0-9]{1,2}:[0-9]{1,2}) ").getMatch(0);
+
+        long ms = 0;
+        if (expires == null) {
+
+            expires = br.getRegex("<span style=color:#[0-9a-z]+>.*?([0-9]{1,2}/[0-9]{1,2}/[0-9]{1,2} [0-9]{1,2}:[0-9]{1,2}).*?</span>").getMatch(0);
+
+        }
+        if (expires == null) {
+
+            expires = br.getRegex("\\(valid until (.*?)\\)").getMatch(0);
+
+        }
+
         if (expires != null) {
-            ai.setValidUntil(Regex.getMilliSeconds(expires, "MM/dd/yy HH:mm", null));
+            ms = Regex.getMilliSeconds(expires, "MM/dd/yy HH:mm", null);
+            if (ms <= 0) {
+                ms = Regex.getMilliSeconds(expires, "MM/dd/yy", null);
+            }
+
+            ai.setValidUntil(ms);
             account.setValid(true);
             return ai;
         } else {
-            expires = br.getRegex("<span style=color:#[0-9a-z]+>.*?([0-9]{1,2}/[0-9]{1,2}/[0-9]{1,2} [0-9]{1,2}:[0-9]{1,2}).*?</span>").getMatch(0);
-            if (expires != null) {
-                ai.setValidUntil(Regex.getMilliSeconds(expires, "MM/dd/yy HH:mm", null));
-                account.setValid(true);
-                return ai;
-            } else {
-                account.setValid(false);
-                return ai;
-            }
+            account.setValid(false);
+            return ai;
         }
     }
 
