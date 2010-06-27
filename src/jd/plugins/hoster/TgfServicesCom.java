@@ -20,7 +20,6 @@ import java.io.File;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
@@ -77,10 +76,10 @@ public class TgfServicesCom extends PluginForHost {
         File cf = rc.downloadCaptcha(getLocalCaptchaFile());
         String c = getCaptchaCode(cf, downloadLink);
         // Those requests seem to be wrong anybee
-        String postURL = "http://tgf-services.com/pages/checkCapture.php?start=1&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&PHPSESSID=" + br.getCookie("http://tgf-services.com", "PHPSESSID") + "&" + System.currentTimeMillis() * 10 + "-xml";
+        String postURL = "http://tgf-services.com/pages/checkCapture.php?start=1&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c.replace(" ", "%20") + "&PHPSESSID=" + br.getCookie("http://tgf-services.com", "PHPSESSID") + "&" + System.currentTimeMillis() * 10 + "-xml";
         br.postPage(postURL, "dump=1");
-        if (!br.containsHTML("'responce_result': 'GOOD\\!\\!\\!\\!\\!'")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         System.out.print(br.toString());
+        if (!br.containsHTML("'responce_result': 'GOOD\\!\\!\\!\\!\\!'")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // Ticket Time
         int tt = 50;
         if (waittime != null) {
