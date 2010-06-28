@@ -23,33 +23,53 @@ import jd.controlling.AccountController;
 import jd.gui.swing.components.table.JDIconColumn;
 import jd.gui.swing.components.table.JDTableModel;
 import jd.utils.JDTheme;
+import jd.utils.locale.JDL;
 
 public class PremiumColumn extends JDIconColumn {
 
     private static final long serialVersionUID = 7674821108904765680L;
+    private static final String JDL_PREFIX = "jd.gui.swing.jdgui.views.settings.panels.hoster.columns.PremiumColumn.";
 
     private final AccountController controller;
+
     private final Icon iconYellow;
-    // private final Icon iconGray;
     private final Icon iconGreen;
     private final Icon iconRed;
+
+    private final String stringNoAccount;
+    private final String stringValidAccount;
+    private final String stringExpiredAccount;
 
     public PremiumColumn(String name, JDTableModel table) {
         super(name, table);
 
         controller = AccountController.getInstance();
+
         iconYellow = JDTheme.II("gui.images.premium", 16, 16);
-        // iconGray = JDTheme.II("gui.images.premium.nosupport", 16, 16);
         iconGreen = JDTheme.II("gui.images.premium.enabled", 16, 16);
         iconRed = JDTheme.II("gui.images.premium.disabled", 16, 16);
+
+        stringNoAccount = JDL.L(JDL_PREFIX + "noAccount", "You have no accounts for this host!");
+        stringValidAccount = JDL.L(JDL_PREFIX + "valid", "You have a valid account for this host.");
+        stringExpiredAccount = JDL.L(JDL_PREFIX + "expired", "All accounts for this host are expired!");
     }
 
     @Override
     protected Icon getIcon(Object value) {
         HostPluginWrapper hpw = ((HostPluginWrapper) value);
-        if (!hpw.isLoaded() || !hpw.isPremiumEnabled()) return null;
+        if (!hpw.isPremiumEnabled()) return null;
         if (controller.hasValidAccount(hpw.getHost())) return iconGreen;
         if (!controller.hasAccounts(hpw.getHost())) return iconRed;
         return iconYellow;
     }
+
+    @Override
+    protected String getToolTip(Object value) {
+        HostPluginWrapper hpw = ((HostPluginWrapper) value);
+        if (!hpw.isPremiumEnabled()) return null;
+        if (controller.hasValidAccount(hpw.getHost())) return stringValidAccount;
+        if (!controller.hasAccounts(hpw.getHost())) return stringExpiredAccount;
+        return stringNoAccount;
+    }
+
 }

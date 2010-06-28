@@ -27,6 +27,16 @@ public abstract class JDIconColumn extends JDTableColumn {
      */
     abstract protected Icon getIcon(Object o1);
 
+    /**
+     * Overwrite this when you want to have a special tooltip for the icon.
+     * 
+     * @param o1
+     * @return
+     */
+    protected String getToolTip(Object o1) {
+        return null;
+    }
+
     @Override
     public Object getCellEditorValue() {
         return null;
@@ -64,6 +74,7 @@ public abstract class JDIconColumn extends JDTableColumn {
     @Override
     public Component myTableCellRendererComponent(JDTableModel table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
         label.setIcon(getIcon(value));
+        label.setToolTipText(getToolTip(value));
         return label;
     }
 
