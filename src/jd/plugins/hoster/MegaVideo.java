@@ -31,11 +31,11 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megavideo.com" }, urls = { "http://[\\w\\.]*?megavideo\\.com/(.*?(v|d)=|v/)[a-zA-Z0-9]+" }, flags = { 2 })
 public class MegaVideo extends PluginForHost {
@@ -189,10 +189,9 @@ public class MegaVideo extends PluginForHost {
             if (name.length() < 2) name = null;
         }
         if (name == null) {
-            name = "MegaVideoClip_" + System.currentTimeMillis() + "";
+            name = "MegaVideoClip_" + System.currentTimeMillis();
         }
 
-        if (name == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("flashvars.hd = \"1\";")) {
             name = name + " (HD)";
         } else {

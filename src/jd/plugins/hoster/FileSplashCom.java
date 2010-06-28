@@ -21,11 +21,11 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesplash.com" }, urls = { "http://[\\w\\.]*?(filesplash|hitlisted)\\.com/[0-9a-z]{12}" }, flags = { 0 })
 public class FileSplashCom extends PluginForHost {
@@ -62,16 +62,6 @@ public class FileSplashCom extends PluginForHost {
         String dllink = br.getRegex("\"(http://cherryload\\.us/files/.*?)\"").getMatch(0);
         if (dllink == null) dllink = br.getRegex("<br>.*?<br>.*?<a href=\"(http.*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String passCode = null;
-        // if (br.containsHTML("name=\"password\"")) {
-        // if (downloadLink.getStringProperty("pass", null) == null) {
-        // passCode = Plugin.getUserInput("Password?", downloadLink);
-        // } else {
-        // /* gespeicherten PassCode holen */
-        // passCode = downloadLink.getStringProperty("pass", null);
-        // }
-        // DLForm.put("password", passCode);
-        // }
         // Ticket Time
         String ttt = br.getRegex("countdown\">.*?(\\d+).*?</span>").getMatch(0);
         if (ttt != null) {
@@ -88,9 +78,6 @@ public class FileSplashCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (passCode != null) {
-            downloadLink.setProperty("pass", passCode);
         }
         dl.startDownload();
     }

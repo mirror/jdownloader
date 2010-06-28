@@ -31,11 +31,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -124,10 +124,6 @@ public class FileFactory extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
 
-        if (downloadUrl == null) {
-            logger.warning("getUrl is broken!");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
         wait = br.getRegex("class=\"countdown\">(\\d+)</span>").getMatch(0);
         waittime = 60 * 1000l;
         if (wait != null) waittime = Long.parseLong(wait) * 1000l;

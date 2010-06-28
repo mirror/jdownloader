@@ -29,12 +29,12 @@ import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "midupload.com" }, urls = { "http://[\\w\\.]*?midupload\\.com/[0-9a-z]{12}" }, flags = { 2 })
 public class MidUploadCom extends PluginForHost {
@@ -114,7 +114,7 @@ public class MidUploadCom extends PluginForHost {
             logger.info("Put captchacode " + code + " obtained by captcha metod \"Standard captcha\" in the form.");
         }
         if (br.containsHTML(passwordText)) {
-            handlePassword(passCode, captchaForm, link);
+            passCode = handlePassword(passCode, captchaForm, link);
         }
         br.submitForm(captchaForm);
         checkErrors(link, true, passCode);

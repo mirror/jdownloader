@@ -23,11 +23,11 @@ import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wrzuc.to" }, urls = { "http://[\\w\\.]*?wrzuc\\.to/([a-zA-Z0-9]+(\\.wt|\\.html)|(en/)?linki/[a-zA-Z0-9]+)" }, flags = { 0 })
 public class WrzucTo extends PluginForHost {
@@ -82,7 +82,6 @@ public class WrzucTo extends PluginForHost {
         String server = br.getRegex(("server.*?\":\"(.*?)\"")).getMatch(0);
         if (tempid == null || server == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String dllink = "http://" + server + ".wrzuc.to/pobierz/" + tempid;
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
