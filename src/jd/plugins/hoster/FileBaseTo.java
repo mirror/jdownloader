@@ -57,16 +57,11 @@ public class FileBaseTo extends PluginForHost {
         this.setBrowserExclusive();
         br.setCookie("http://filebase.to", "fb_language", "de");
         br.setFollowRedirects(false);
-        br.getPage("http://filebase.to/user/");
-        Form loginform = br.getFormbyKey("fb_password");
-        loginform.put("fb_username", Encoding.urlEncode(account.getUser()));
-        loginform.put("fb_password", Encoding.urlEncode(account.getPass()));
-        loginform.put("fb_cookie", "fb_cookie");
-        br.submitForm(loginform);
+        br.postPage("http://filebase.to/index.php", "fb_username=" + Encoding.urlEncode(account.getUser()) + "&fb_password=" + Encoding.urlEncode(account.getPass()) + "&login_submit=login");
         if (br.getCookie("http://filebase.to/", "fb_username") == null || br.getCookie("http://filebase.to/", "fb_passwort") == null || br.containsHTML("Falscher Username/Passwort")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         br.getPage("http://filebase.to/user/premium/");
-        String type = br.getRegex("Account-Typ:.*?color=.*?>.*?>(.*?)<").getMatch(0);
-        if (type == null || !type.equalsIgnoreCase("Premium")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        String type = br.getRegex("Account Typ:[\n\r\t ]+</td>[\n\r\t ]+<td width=\"\\d+%\">[\n\r\t ]+<font color=\"green\"><b>(Premium)</b></font>").getMatch(0);
+        if (type == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
@@ -77,17 +72,14 @@ public class FileBaseTo extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        String hostedFiles = br.getRegex("Ihre Dateien.*?<strong>(\\d+)</strong></td>").getMatch(0);
-        if (hostedFiles != null) ai.setFilesNum(Long.parseLong(hostedFiles));
-        String usedspace = br.getRegex("Belegter Speicher.*?<strong>(.*?)</strong></td>").getMatch(0);
-        if (usedspace != null) ai.setUsedSpace(usedspace.trim());
-        String points = br.getRegex("Ihr Punktestand.*?<strong>(\\d+)</strong></td>").getMatch(0);
-        if (points != null) ai.setPremiumPoints(Long.parseLong(points));
+        String points = br.getRegex("Ihr Punktestand:[\r\t\n ]+</td>[\r\t\n ]+<td>(.*?)</td>").getMatch(0);
+        if (points != null) ai.setPremiumPoints(points);
         String expires = null;
-        String date = br.getRegex("Gueltig bis.*?<td width=.*?<b>(.*?)um.*?Uhr.*?\\(.*?</b>").getMatch(0);
-        String time = br.getRegex("Gueltig bis.*?<td width=.*?<b>.*?um(.*?)Uhr.*?\\(.*?</b>").getMatch(0);
-        if (date != null || time != null) expires = date.trim() + "|" + time.trim();
-        if (expires != null) {
+        Regex dateAndTime = br.getRegex("<b>(\\d+\\.\\d+\\.\\d+) um (\\d+:\\d+) Uhr");
+        String date = dateAndTime.getMatch(0);
+        String time = dateAndTime.getMatch(1);
+        if (date != null || time != null) {
+            expires = date.trim() + "|" + time.trim();
             ai.setValidUntil(Regex.getMilliSeconds(expires, "dd.MM.yyyy|HH:mm", null));
             account.setValid(true);
             return ai;
