@@ -25,8 +25,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "files.mail.ru" }, urls = { "http://[\\w\\.]*?wge4zu4rjfsdehehztiuxw/.*?/[a-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "files.mail.ru" }, urls = { "http://[\\w\\.]*?(wge4zu4rjfsdehehztiuxw/.*?/[a-z0-9]+|indirectwge4zu4rjfsdehehztiuxw/[A-Z0-9]{6})" }, flags = { 0 })
 public class FilesMailRu extends PluginForHost {
 
     public FilesMailRu(PluginWrapper wrapper) {
@@ -40,11 +41,14 @@ public class FilesMailRu extends PluginForHost {
 
     public void correctDownloadLink(DownloadLink link) {
         // Rename the decrypted links to make them work
-        link.setUrlDownload(link.getDownloadURL().replace("wge4zu4rjfsdehehztiuxw", "files.mail.ru"));
+        link.setUrlDownload(link.getDownloadURL().replaceAll("(wge4zu4rjfsdehehztiuxw|indirectwge4zu4rjfsdehehztiuxw)", "files.mail.ru"));
     }
 
     public boolean iHaveToWait = false;
-    public String finalLinkRegex = "\"(http://[a-z0-9]+\\.files\\.mail\\.ru/.*?/.*?)\"";
+    private static final String DLLINKREGEX = "\"(http://[a-z0-9]+\\.files\\.mail\\.ru/.*?/.*?)\"";
+    private static final String UNAVAILABLE1 = ">В обработке<";
+    private static final String UNAVAILABLE2 = ">In process<";
+    private static final String INFOREGEX = "<td class=\"name\">(.*?<td class=\"do\">.*?)</td>";
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
@@ -81,7 +85,7 @@ public class FilesMailRu extends PluginForHost {
                 // redirects to the folder it comes from
                 String finalfilename = downloadLink.getStringProperty("finalFilename", null);
                 if (finalfilename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                String[] linkinformation = br.getRegex("<td class=\"name\">(.*?)<td class=\"do\">").getColumn(0);
+                String[] linkinformation = br.getRegex(INFOREGEX).getColumn(0);
                 if (linkinformation == null || linkinformation.length == 0) {
                     logger.warning("Critical error : Couldn't get the linkinformation");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -89,7 +93,11 @@ public class FilesMailRu extends PluginForHost {
                 for (String info : linkinformation) {
                     if (info.contains(finalfilename)) {
                         // regex the new downloadlink and save it!
-                        String directlink = new Regex(info, finalLinkRegex).getMatch(0);
+                        String directlink = new Regex(info, DLLINKREGEX).getMatch(0);
+                        if ((info.contains(UNAVAILABLE1) || info.contains(UNAVAILABLE2)) && directlink == null) {
+                            logger.info("File " + downloadLink.getStringProperty("folderID", null) + " is still uploading (temporary unavailable)!");
+                            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.FilesMailRu.InProcess", "Datei steht noch im Upload"));
+                        }
                         if (directlink == null) {
                             logger.warning("Critical error occured: The final downloadlink couldn't be found in the available check!");
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -101,6 +109,7 @@ public class FilesMailRu extends PluginForHost {
                         logger.info("Set new UrlDownload, link = " + downloadLink.getDownloadURL() + " waittime is enabled!");
                         String filesize = new Regex(info, "<td>(.*?{1,15})</td>").getMatch(0);
                         String filename = new Regex(info, "href=\".*?onclick=\"return.*?\">(.*?)<").getMatch(0);
+                        if (filename == null) filename = new Regex(info, "class=\"str\">(.*?)</div>").getMatch(0);
                         if (filesize == null || filename == null) {
                             logger.warning("filename and filesize regex of linkinformation seem to be broken!");
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -139,7 +148,7 @@ public class FilesMailRu extends PluginForHost {
                 // Because we are renewing the link we have to sleep here
                 goToSleep(downloadLink);
             }
-            String finallink = br.getRegex(finalLinkRegex).getMatch(0);
+            String finallink = br.getRegex(DLLINKREGEX).getMatch(0);
             if (finallink == null) {
                 logger.warning("Critical error occured: The final downloadlink couldn't be found in handleFree!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

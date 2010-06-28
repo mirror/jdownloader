@@ -28,14 +28,17 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "files.mail.ru" }, urls = { "http://[\\w\\.]*?files\\.mail\\.ru/[A-Z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "files.mail.ru" }, urls = { "http://[\\w\\.]*?files\\.mail\\.ru/[A-Z0-9]{6}" }, flags = { 0 })
 public class FlsMailRu extends PluginForDecrypt {
 
     public FlsMailRu(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    public String dllinkRegex = "\"(http://[a-z0-9]+\\.files\\.mail\\.ru/.*?/.*?)\"";
+    private static final String DLLINKREGEX = "\"(http://[a-z0-9]+\\.files\\.mail\\.ru/.*?/.*?)\"";
+    private static final String UNAVAILABLE1 = ">В обработке<";
+    private static final String UNAVAILABLE2 = ">In process<";
+    private static final String INFOREGEX = "<td class=\"name\">(.*?<td class=\"do\">.*?)</td>";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -46,14 +49,24 @@ public class FlsMailRu extends PluginForDecrypt {
         br.getPage(parameter);
         // Errorhandling for offline folders
         if (br.containsHTML("(was not found|were deleted by sender|Не найдено файлов, отправленных с кодом|<b>Ошибка</b>)")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-        String[] linkinformation = br.getRegex("<td class=\"name\">(.*?)<td class=\"do\">").getColumn(0);
+        String[] linkinformation = br.getRegex(INFOREGEX).getColumn(0);
         if (linkinformation == null || linkinformation.length == 0) return null;
         for (String info : linkinformation) {
-            String directlink = new Regex(info, dllinkRegex).getMatch(0);
+            String statusText = "";
+            String replace = "wge4zu4rjfsdehehztiuxw";
+            String directlink = new Regex(info, DLLINKREGEX).getMatch(0);
+            if ((info.contains(UNAVAILABLE1) || info.contains(UNAVAILABLE2)) && directlink == null) {
+                directlink = parameter;
+                replace = "indirect" + replace;
+                statusText = JDL.L("plugins.hoster.FilesMailRu.InProcess", "Datei steht noch im Upload");
+            }
             String filename = new Regex(info, "href=\".*?onclick=\"return.*?\">(.*?)<").getMatch(0);
+            if (filename == null) filename = new Regex(info, "class=\"str\">(.*?)</div>").getMatch(0);
             if (directlink == null || filename == null) return null;
             String filesize = new Regex(info, "<td>(.*?{1,15})</td>").getMatch(0);
-            DownloadLink finallink = createDownloadlink(directlink.replace("files.mail.ru", "wge4zu4rjfsdehehztiuxw"));
+
+            DownloadLink finallink = createDownloadlink(directlink.replace("files.mail.ru", replace));
+            finallink.getLinkStatus().setStatusText(statusText);
             // Maybe that helps id jd gets the english version of the site!
             if (filesize != null) {
                 if (!filesize.contains("MB")) {
