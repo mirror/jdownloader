@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -49,6 +50,7 @@ public class FileServeCom extends PluginForHost {
     }
 
     public String FILEIDREGEX = "fileserve\\.com/file/([a-zA-Z0-9]+)";
+    private boolean isFree = false;
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
@@ -71,9 +73,15 @@ public class FileServeCom extends PluginForHost {
         setBrowserExclusive();
         br.setFollowRedirects(true);
         br.postPage("http://fileserve.com/login.php", "loginUserName=" + Encoding.urlEncode(account.getUser()) + "&loginUserPassword=" + Encoding.urlEncode(account.getPass()) + "&autoLogin=on&loginFormSubmit=Login");
-        String isPremium = br.getRegex("<h5>Account type:</h5>[\r\n ]+<h3>(Premium)</h3>").getMatch(0);
-        if (isPremium == null) isPremium = br.getRegex("<h4>Account Type</h4></td> <td><h5 class=\"inline\">(Premium)([ ]+)?</h5>").getMatch(0);
-        if (br.getCookie("http://fileserve.com", "cookie") == null || isPremium == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        String accType = br.getRegex("<h5>Account type:</h5>[\r\n ]+<h3>(Premium|Free)</h3>").getMatch(0);
+        if (accType == null) accType = br.getRegex("<h4>Account Type</h4></td> <td><h5 class=\"inline\">(Premium|Free)([ ]+)?</h5>").getMatch(0);
+        if (br.getCookie("http://fileserve.com", "cookie") == null || accType == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (!accType.equals("Premium")) {
+            account.setProperty("type", "free");
+            isFree = true;
+        } else {
+            account.setProperty("type", null);
+        }
     }
 
     @Override
@@ -88,7 +96,10 @@ public class FileServeCom extends PluginForHost {
         String uploadedFiles = br.getRegex("<h5>Files uploaded:</h5>\r\n[ ]+<h3>(\\d+)<span>").getMatch(0);
         if (uploadedFiles != null) ai.setFilesNum(Integer.parseInt(uploadedFiles));
         ai.setUnlimitedTraffic();
-        ai.setStatus("Premium User");
+        if (isFree)
+            ai.setStatus("Registered (free) User");
+        else
+            ai.setStatus("Premium User");
         account.setValid(true);
         return ai;
     }
@@ -96,27 +107,35 @@ public class FileServeCom extends PluginForHost {
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         requestFileInformation(link);
         login(account);
-        br.setFollowRedirects(false);
-        br.postPage(link.getDownloadURL(), "download=premium");
-        String dllink = br.getRedirectLocation();
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (isFree) {
+            br.getPage(link.getDownloadURL());
+            doFree(link);
+        } else {
+            br.setFollowRedirects(false);
+            br.postPage(link.getDownloadURL(), "download=premium");
+            String dllink = br.getRedirectLocation();
+            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
+            if (dl.getConnection().getContentType().contains("html")) {
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl.startDownload();
         }
-        dl.startDownload();
     }
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+        int maxdls = -1;
+        try {
+            if (AccountController.getInstance().getValidAccount(this).getStringProperty("type").toString() != null) maxdls = 1;
+        } catch (Exception e) {
+
+        }
+        return maxdls;
     }
 
-    @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        br.getPage(downloadLink.getDownloadURL());
+    public void doFree(DownloadLink downloadLink) throws Exception, PluginException {
         String fileId = br.getRegex("fileserve\\.com/file/([a-zA-Z0-9]+)").getMatch(0);
         br.setFollowRedirects(false);
         Browser br2 = br.cloneBrowser();
@@ -174,6 +193,13 @@ public class FileServeCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        requestFileInformation(downloadLink);
+        br.getPage(downloadLink.getDownloadURL());
+        doFree(downloadLink);
     }
 
     public boolean checkLinks(DownloadLink[] urls) {

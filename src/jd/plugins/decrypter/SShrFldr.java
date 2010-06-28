@@ -40,7 +40,7 @@ public class SShrFldr extends PluginForDecrypt {
         String parameter = param.toString();
         br.setCookie("http://www.easy-share.com", "language", "en");
         br.getPage(parameter);
-        if (br.containsHTML("Folder not found")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        if (br.containsHTML("(Folder not found|No files in this folder)")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         String fpName = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
         if (fpName == null) fpName = br.getRegex("<title>Download(.*?), upload").getMatch(0);
         String[] links = br.getRegex("\"(http://www\\.easy-share\\.com/[0-9]+).*?\"").getColumn(0);

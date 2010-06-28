@@ -41,7 +41,7 @@ public class IFolderFolder extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
-        if (br.containsHTML("Запрашиваемая вами папка не существует или у вас нет прав для просмотра данной папки")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        if (br.containsHTML("Запрашиваемая вами папка не существует или у вас нет прав для просмотра данной папки") || !br.containsHTML("\"<a href=")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         String fpName = br.getRegex("Название: <b>(.*?)</b>").getMatch(0);
         // Get the links of the first page
         String collectedlinks1[] = getLinks();
