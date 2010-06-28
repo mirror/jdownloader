@@ -1,5 +1,9 @@
 #Kikin Advertising plugin
 
+#!undef LICENSE
+#!define LICENSE ".\res\license_sample.txt"
+OutFile .\dist\JDownloaderSetup_Kikin.exe
+
 !macro ADVERTISING_PAGE
 Page custom KikinPage
 !macroend

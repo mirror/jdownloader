@@ -1,0 +1,6 @@
+This is the JDownloader Installer-Unittest.
+Follow these Steps:
+1) Select a directory for unittest output
+2) Start unit test
+3) Rename output files properly (current installation status)
+4) Repeat these steps everytime the current state of your JDownloader installation changes.

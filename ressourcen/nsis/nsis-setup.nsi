@@ -4,12 +4,13 @@ RequestExecutionLevel user
 
 # Config
 
-!define COMPANY "AppWork UG (haftungsbeschrï¿½nkt)"
+!define COMPANY "AppWork UG (haftungsbeschränkt)"
 !define URL http://www.jdownloader.org
 !define APPNAME "JDownloader"
 !define APPNAME_SHORT "JDownloader" # Name without spaces etc (Jay Downloader -> JayDownloader)
 #Advertising plugins might overwrite this!
 !define LICENSE ".\res\license.txt"
+OutFile .\dist\JDownloaderSetup.exe
 SetCompressor lzma #TODO: try out several compression algos
 
 #Advertising
@@ -76,7 +77,6 @@ Var ADMINATINSTALL
 !insertmacro ADVERTISING_GENERAL
 
 # Installer attributes
-OutFile .\dist\JDownloaderSetup.exe
 CRCCheck on
 XPStyle on
 ShowInstDetails  hide
