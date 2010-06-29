@@ -27,7 +27,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidgator.net" }, urls = { "http://[\\w\\.]*?rapidgator\\.net/\\d+/.*?\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidgator.net" }, urls = { "http://[\\w\\.]*?rapidgator\\.net/(files/dl/)?\\d+/.*?\\.html" }, flags = { 0 })
 public class RapidGatorNet extends PluginForHost {
 
     public RapidGatorNet(PluginWrapper wrapper) {
@@ -37,6 +37,10 @@ public class RapidGatorNet extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://rapidgator.net/?content=terms";
+    }
+
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("files/dl/", ""));
     }
 
     @Override
