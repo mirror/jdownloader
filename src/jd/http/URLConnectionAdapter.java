@@ -26,7 +26,7 @@ import java.util.Map;
 
 public interface URLConnectionAdapter {
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings("rawtypes")
     Map getHeaderFields();
 
     String getHeaderField(String string);

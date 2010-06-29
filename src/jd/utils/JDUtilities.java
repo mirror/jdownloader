@@ -35,7 +35,6 @@ import java.net.URL;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -93,8 +92,6 @@ public class JDUtilities {
     public static Configuration CONFIGURATION = null;
 
     private static DatabaseConnector DB_CONNECT = null;
-
-    private static HashMap<String, PluginsC> CONTAINER_PLUGINS = new HashMap<String, PluginsC>();
 
     /**
      * Ein URLClassLoader, um Dateien aus dem HomeVerzeichnis zu holen

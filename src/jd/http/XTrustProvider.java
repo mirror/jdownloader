@@ -54,11 +54,10 @@ public final class XTrustProvider extends java.security.Provider {
     private final static String INFO = "XTrust JSSE Provider (implements trust factory with truststore validation disabled)";
     private final static double VERSION = 1.0D;
 
-    @SuppressWarnings("unchecked")
     public XTrustProvider() {
         super(NAME, VERSION, INFO);
 
-        AccessController.doPrivileged(new PrivilegedAction() {
+        AccessController.doPrivileged(new PrivilegedAction<Object>() {
             public Object run() {
                 put("TrustManagerFactory." + TrustManagerFactoryImpl.getAlgorithm(), TrustManagerFactoryImpl.class.getName());
                 return null;

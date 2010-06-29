@@ -35,7 +35,7 @@ public class JDUnderlinedText extends JDMouseAdapter {
         this.comp = comp;
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     @Override
     public void mouseEntered(MouseEvent evt) {
         originalFont = comp.getFont();

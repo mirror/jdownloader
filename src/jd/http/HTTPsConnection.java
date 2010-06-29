@@ -283,7 +283,7 @@ public class HTTPsConnection extends HTTPConnection {
      * @return a Map of header fields
      * @since 1.4
      */
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings("rawtypes")
     public Map getHeaderFields() {
         return delegate.getHeaderFields();
     }

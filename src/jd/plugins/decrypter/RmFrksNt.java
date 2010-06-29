@@ -75,7 +75,6 @@ public class RmFrksNt extends PluginForDecrypt {
                 if (code == null) continue;
                 String[] codep = code.split(":");
                 Point p = new Point(Integer.parseInt(codep[0]), Integer.parseInt(codep[1]));
-                if (p == null) continue;
                 captchaForm.put("button.x", p.x + "");
                 captchaForm.put("button.y", p.y + "");
                 br.submitForm(captchaForm);

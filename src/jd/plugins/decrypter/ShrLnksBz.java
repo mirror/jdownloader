@@ -140,8 +140,9 @@ public class ShrLnksBz extends PluginForDecrypt {
                 String latestPassword = this.getPluginConfig().getStringProperty("PASSWORD", null);
 
                 Form pwform = br.getForm(0);
-                pwform.setAction(parameter);
                 if (pwform == null) return null;
+                pwform.setAction(parameter);
+
                 // First try the stored password, if that doesn't work, ask the
                 // user to enter it
                 if (latestPassword == null) latestPassword = Plugin.getUserInput("Password " + getHost() + "?", param);

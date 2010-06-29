@@ -166,7 +166,6 @@ public class Config {
         }
     }
 
-    @SuppressWarnings("unchecked")
     private void createMap(final HashMap<?, ?> hashMap, final ArrayList<String> keys, final ArrayList<Object> values, String pre) {
         pre = (pre.length() > 0) ? pre + "/" : "";
         for (final Entry<?, ?> next : hashMap.entrySet()) {
@@ -175,7 +174,7 @@ public class Config {
             keys.add(key);
             values.add(value);
             if (value instanceof HashMap<?, ?>) {
-                createMap((HashMap) value, keys, values, key);
+                createMap((HashMap<?, ?>) value, keys, values, key);
             }
         }
     }
@@ -264,7 +263,7 @@ public class Config {
 
                                 if (next instanceof HashMap<?, ?>) {
                                     System.out.println("sub Hashmap " + k);
-                                    props = (HashMap) next;
+                                    props = (HashMap<String, Object>) next;
                                 } else {
                                     System.out.println("create sub Hashmap " + k);
                                     props.put(k, props = new HashMap<String, Object>());
@@ -312,7 +311,7 @@ public class Config {
                                 final Object next = props.get(k);
                                 if (next instanceof HashMap<?, ?>) {
                                     System.out.println("sub Hashmap " + k);
-                                    props = (HashMap) next;
+                                    props = (HashMap<String, Object>) next;
                                 } else {
                                     myKey = k;
                                     System.out.println("Save Object to key " + k);
@@ -357,7 +356,7 @@ public class Config {
                         final Object next = props.get(k);
                         if (next instanceof HashMap<?, ?>) {
                             System.out.println("sub Hashmap " + k);
-                            props = (HashMap) next;
+                            props = (HashMap<String, Object>) next;
                         } else if (k != keys[keysLength - 1]) {
                             System.out.println("error key " + k);
                             return;

@@ -140,7 +140,6 @@ public class CrptTo extends PluginForDecrypt {
         Browser brc = br.cloneBrowser();
         String dlclink = param.toString().replace("/fid,", "/container,") + "," + format;
         logger.info("Containerlink = " + dlclink);
-        if (dlclink == null) return null;
         String test0 = Encoding.htmlDecode(dlclink);
         String test = test0.replaceFirst("dlc", "http");
         File file = null;

@@ -1263,13 +1263,13 @@ public class Browser {
             if (LOGGER != null) LOGGER.info("Use local proxy: " + proxy);
         }
 
-        PROXIES.put(proxy.getHost() + ":" + proxy.getPort(), proxy);
-
         if (proxy == null) {
             System.err.println("Browser:No proxy");
             this.proxy = null;
             return;
         }
+
+        PROXIES.put(proxy.getHost() + ":" + proxy.getPort(), proxy);
 
         this.proxy = proxy;
     }

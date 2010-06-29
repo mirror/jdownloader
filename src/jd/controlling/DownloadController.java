@@ -229,7 +229,7 @@ public class DownloadController implements FilePackageListener, DownloadControll
     @SuppressWarnings("unchecked")
     private ArrayList<FilePackage> loadDownloadLinks() throws Exception {
         final Object obj = JDUtilities.getDatabaseConnector().getLinks();
-        if (obj != null && obj instanceof ArrayList && (((ArrayList) obj).size() == 0 || ((ArrayList) obj).size() > 0 && ((ArrayList) obj).get(0) instanceof FilePackage)) {
+        if (obj != null && obj instanceof ArrayList && (((ArrayList<?>) obj).size() == 0 || ((ArrayList<?>) obj).size() > 0 && ((ArrayList<?>) obj).get(0) instanceof FilePackage)) {
             final ArrayList<FilePackage> packages = (ArrayList<FilePackage>) obj;
             final Iterator<FilePackage> iterator = packages.iterator();
             DownloadLink localLink;

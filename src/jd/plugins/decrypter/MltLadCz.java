@@ -52,7 +52,6 @@ public class MltLadCz extends PluginForDecrypt {
                 if (!link.contains("multiload.cz")) allinks.add(link);
             }
         }
-        if (allinks == null) return null;
         for (String finallink : allinks) {
             decryptedLinks.add(createDownloadlink(finallink));
         }

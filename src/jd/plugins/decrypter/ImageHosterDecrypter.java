@@ -42,7 +42,6 @@ public class ImageHosterDecrypter extends PluginForDecrypt {
         br.setFollowRedirects(false);
         br.getPage(parameter);
         String finallink = null;
-        String filename = null;
         if (parameter.contains("imagebam.com")) {
             /* Error handling */
             if (br.containsHTML("Image not found")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
@@ -62,7 +61,6 @@ public class ImageHosterDecrypter extends PluginForDecrypt {
         if (finallink == null) return null;
         finallink = "directhttp://" + finallink;
         DownloadLink dl = createDownloadlink(finallink);
-        if (filename != null) dl.setFinalFileName(filename);
         decryptedLinks.add(dl);
         return decryptedLinks;
     }

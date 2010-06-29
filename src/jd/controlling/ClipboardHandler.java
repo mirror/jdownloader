@@ -263,11 +263,11 @@ public class ClipboardHandler extends Thread implements ControlListener {
                              * fileListFlavors occur in Windows, we use only
                              * those files we have Plugins for
                              */
-                            final List list = (List) cur.getTransferData(fileListFlavor);
-                            final ListIterator it = list.listIterator();
+                            final List<File> list = (List<File>) cur.getTransferData(fileListFlavor);
+                            final ListIterator<File> it = list.listIterator();
                             final StringBuilder sb = new StringBuilder("");
                             while (it.hasNext()) {
-                                final File f = (File) it.next();
+                                final File f = it.next();
                                 if (DistributeData.hasContainerPluginFor(f.toString())) {
                                     sb.append(f.toString());
                                     sb.append("\r\n");

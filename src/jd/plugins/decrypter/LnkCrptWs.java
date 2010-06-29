@@ -94,28 +94,12 @@ public class LnkCrptWs extends PluginForDecrypt {
                     valid = false;
                     File file = this.getLocalCaptchaFile();
                     String id = url.replaceFirst(".*id=", "");
-                    // System.out.println(url);
-                    // System.out.println(id);
-                    // br.cloneBrowser().getDownload(file, url);
                     br.cloneBrowser().getDownload(file, "http://linkcrypt.ws/captx.php?id=" + id);
 
-                    // Browser.download(file,
-                    // br.cloneBrowser().openGetConnection(url));
-                    // redr System.out.println(url);
-                    Point p;
-                    // if (url.contains("captx.php")) {
                     String code = getCaptchaCode("lnkcrptwsCircles", file, param);
                     if (code == null) continue;
                     String[] codep = code.split(":");
-                    p = new Point(Integer.parseInt(codep[0]), Integer.parseInt(codep[1]));
-
-                    // } else
-                    // p = UserIO.getInstance().requestClickPositionDialog(file,
-                    // JDL.L("plugins.decrypt.stealthto.captcha.title",
-                    // "Captcha"),
-                    // JDL.L("plugins.decrypt.stealthto.captcha",
-                    // "Please click on the Circle with a gap"));
-                    if (p == null) throw new DecrypterException(DecrypterException.CAPTCHA);
+                    Point p = new Point(Integer.parseInt(codep[0]), Integer.parseInt(codep[1]));
                     captcha.put("x", p.x + "");
                     captcha.put("y", p.y + "");
                     br.submitForm(captcha);
