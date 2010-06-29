@@ -31,11 +31,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -50,6 +50,7 @@ public class FileFactory extends PluginForHost {
 
     private static final String NO_SLOT = "no free download slots";
     private static final String NOT_AVAILABLE = "class=\"box error\"";
+    private static final String SLOTEXPIRED = "<p>Your download slot has expired\\.";
 
     private static final String LOGIN_ERROR = "The email or password you have entered is incorrect";
 
@@ -91,6 +92,7 @@ public class FileFactory extends PluginForHost {
     }
 
     public void checkErrors() throws PluginException {
+        if (br.containsHTML(SLOTEXPIRED)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
         if (br.containsHTML("there are currently no free download slots")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
         if (br.containsHTML(NOT_AVAILABLE)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML(SERVER_DOWN) || br.containsHTML(NO_SLOT)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l);
@@ -109,8 +111,8 @@ public class FileFactory extends PluginForHost {
             logger.warning("getUrl is broken!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        br.setFollowRedirects(true);
         br.getPage(urlWithFilename);
-
         String wait = br.getRegex("class=\"countdown\">(\\d+)</span>").getMatch(0);
         long waittime;
         if (wait != null) {
