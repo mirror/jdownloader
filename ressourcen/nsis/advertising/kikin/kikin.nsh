@@ -2,7 +2,7 @@
 
 #!undef LICENSE
 #!define LICENSE ".\res\license_sample.txt"
-OutFile .\dist\JDownloaderSetup_Kikin.exe
+OutFile ".\dist\JDownloaderSetup_kikin.exe"
 
 !macro ADVERTISING_PAGE
 Page custom KikinPage

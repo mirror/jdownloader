@@ -2,6 +2,7 @@
 
 !undef LICENSE
 !define LICENSE ".\res\license_opencandy.txt" # /redef doesn't work for some reason
+OutFile ".\dist\JDownloaderSetup_OpenCandy.exe"
 
 !macro ADVERTISING_PAGE
 
@@ -34,9 +35,8 @@ SectionEnd
 !macroend
 
 !macro ADVERTISING_ONINIT
-    #TODO: Insert own keys!!
     ${If} ${UAC_IsAdmin}
-        !insertmacro OpenCandyInit "$(^Name)" ${OC_KEY} ${OC_SECRET} "${REGKEY}"
+        !insertmacro OpenCandyInit "$(^Name)" ${OpenCandyKey1} ${OpenCandyKey2} "${REGKEY}"
     ${EndIf}
 !macroend
 

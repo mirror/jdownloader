@@ -11,7 +11,7 @@ RequestExecutionLevel user
 #Advertising plugins might overwrite this!
 !define LICENSE ".\res\license.txt"
 OutFile .\dist\JDownloaderSetup.exe
-SetCompressor lzma #TODO: try out several compression algos
+SetCompressor lzma
 
 #Advertising
 #!include ".\advertising\template.nsh"

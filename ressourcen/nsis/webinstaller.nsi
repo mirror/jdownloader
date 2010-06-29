@@ -39,7 +39,8 @@ Section
     StrCpy $0 $HWNDPARENT
     System::Call "user32::ShowWindow(i r0, i 0)"
     #http://nsis.sourceforge.net/Inetc_plug-in
-    inetc::get /caption $(DownloadCaption) /popup "JDownloaderSetup.exe" /translate $(inetc_url) $(inetc_downloading) $(inetc_connecting) $(inetc_file_name) $(inetc_received) $(inetc_file_size) $(inetc_remaining_time) $(inetc_total_time) "http://www.wayaround.org/TestSetup2.exe" "$TEMP\JDownloaderSetup.exe"
+    #TODO Change URL!
+    inetc::get /caption $(DownloadCaption) /popup "JDownloaderSetup.exe" /translate $(inetc_url) $(inetc_downloading) $(inetc_connecting) $(inetc_file_name) $(inetc_received) $(inetc_file_size) $(inetc_remaining_time) $(inetc_total_time) "http://www.jdownloader.org/advert/dist/JDownloaderSetup.exe" "$TEMP\JDownloaderSetup.exe"
     Pop $1
     StrCmp "OK" $1 0 +2
     Exec '"$TEMP\JDownloaderSetup.exe"'
