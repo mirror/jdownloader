@@ -65,7 +65,7 @@ public class XSevenTo extends PluginForHost {
             return ai;
         }
         account.setValid(true);
-        String validUntil = br.getRegex("Premium-Mitglied bis (.*?)\"").getMatch(0);
+        String validUntil = br.getRegex("Premium member until (.*?)\"").getMatch(0);
         if (validUntil != null) {
             ai.setValidUntil(Regex.getMilliSeconds(validUntil.trim(), "yyyy-MM-dd HH:mm:ss", null));
         } else {
@@ -94,9 +94,8 @@ public class XSevenTo extends PluginForHost {
             dllink = br.getRedirectLocation();
         } else {
 
-            if (br.containsHTML("img/elem/trafficexh_de.png")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, JDL.L("plugins.hoster.uploadedto.errorso.premiumtrafficreached", "Traffic limit reached"), PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            if (br.containsHTML("img/elem/trafficexh_de.png")) throw new PluginException(LinkStatus.ERROR_PREMIUM, JDL.L("plugins.hoster.uploadedto.errorso.premiumtrafficreached", "Traffic limit reached"), PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
 
-            }
             dllink = br.getRegex("<b>Download</b>.*?href=\"(http://stor.*?)\"").getMatch(0);
             if (dllink == null && br.containsHTML("<b>Stream</b>")) {
                 /* its a streamdownload */

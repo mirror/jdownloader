@@ -35,6 +35,7 @@ import jd.http.Browser.BrowserException;
 import jd.nutils.Formatter;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
@@ -72,6 +73,8 @@ public class SingleDownloadController extends Thread {
 
     private long startTime;
 
+    private Account account = null;
+
     /**
      * Erstellt einen Thread zum Start des Downloadvorganges
      * 
@@ -80,12 +83,13 @@ public class SingleDownloadController extends Thread {
      * @param dlink
      *            Link, der heruntergeladen werden soll
      */
-    public SingleDownloadController(DownloadLink dlink) {
+    public SingleDownloadController(DownloadLink dlink, Account account) {
         super("JD-StartDownloads");
         downloadLink = dlink;
         linkStatus = downloadLink.getLinkStatus();
         setPriority(Thread.MIN_PRIORITY);
         downloadLink.setDownloadLinkController(this);
+        this.account = account;
     }
 
     /**
@@ -125,7 +129,7 @@ public class SingleDownloadController extends Thread {
             currentPlugin.init();
             try {
                 try {
-                    currentPlugin.handle(downloadLink);
+                    currentPlugin.handle(downloadLink, account);
                 } catch (BrowserException e) {
                     /* damit browserexceptions korrekt weitergereicht werden */
                     e.closeConnection();

@@ -1100,7 +1100,7 @@ public class Rapidshare extends PluginForHost {
     public boolean isPremiumDownload() {
         /*
          * this plugin must take care of HOST_TEMP_UNAVAIL status even in
-         * premium mode
+         * premium mode, can be removed with next major update TODO
          */
         if (updateNeeded && DownloadWatchDog.getInstance().getRemainingTempUnavailWaittime(getHost()) > 0) return false;
         return super.isPremiumDownload();

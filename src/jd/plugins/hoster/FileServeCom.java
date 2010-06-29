@@ -77,6 +77,11 @@ public class FileServeCom extends PluginForHost {
         if (accType == null) accType = br.getRegex("<h4>Account Type</h4></td> <td><h5 class=\"inline\">(Premium|Free)([ ]+)?</h5>").getMatch(0);
         if (br.getCookie("http://fileserve.com", "cookie") == null || accType == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         if (!accType.equals("Premium")) {
+            try {
+                account.setMaxSimultanDownloads(1);
+            } catch (Throwable e) {
+                /* not available in 0.9xxx */
+            }
             account.setProperty("type", "free");
             isFree = true;
         } else {

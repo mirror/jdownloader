@@ -181,6 +181,7 @@ public class AccountController extends SubConfiguration implements ActionListene
      * return hostername if account is under controll of AccountController
      */
     public String getHosterName(final Account account) {
+        if (account == null) return null;
         if (account.getHoster() != null) { return account.getHoster(); }
         synchronized (hosteraccounts) {
             for (String host : hosteraccounts.keySet()) {
@@ -448,7 +449,7 @@ public class AccountController extends SubConfiguration implements ActionListene
             final int accountsSize = accounts.size();
             for (int i = 0; i < accountsSize; i++) {
                 final Account next = accounts.get(i);
-                if (!next.isTempDisabled() && next.isEnabled() && next.isValid()) {
+                if (!next.isTempDisabled() && next.isEnabled() && next.isValid() && !isAccountBlocked(next)) {
                     ret = next;
                     break;
                 }

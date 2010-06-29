@@ -198,7 +198,7 @@ public class SingleHoster {
             if (dlink.getAvailableStatus() != AvailableStatus.TRUE) {
                 fail(TestUtils.log("Downloadlink " + url + " is marked as NOT AVAILABLE"));
             }
-            SingleDownloadController download = new SingleDownloadController(dlink);
+            SingleDownloadController download = new SingleDownloadController(dlink, null);
 
             dlink.getLinkStatus().setActive(true);
             if (new File(dlink.getFileOutput()).delete()) {

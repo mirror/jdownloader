@@ -115,6 +115,7 @@ public class HotFileCom extends PluginForHost {
         if (br.getRedirectLocation() != null) {
             finalUrl = br.getRedirectLocation();
         } else {
+            if (br.containsHTML("span>Free</span")) throw new PluginException(LinkStatus.ERROR_PREMIUM, "ISP blocked by Hotfile, Premium not possible", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             finalUrl = br.getRegex("<h3 style='margin-top: 20px'><a href=\"(.*?hotfile.*?)\">Click here to download</a></h3>").getMatch(0);
             if (finalUrl == null) finalUrl = br.getRegex("table id=\"download_file\".*?<a href=\"(.*?)\"").getMatch(0);/* polish */
         }

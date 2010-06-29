@@ -101,7 +101,6 @@ public class MtLnk extends PluginForDecrypt {
                 pgk.setName(attributes.getValue("name"));
                 dLink = new DownloadLink(null, null, null, null, true);
                 dLink.setFinalFileName(attributes.getValue("name"));
-
             }
             if (qName.equals("publisher")) {
 
@@ -129,6 +128,11 @@ public class MtLnk extends PluginForDecrypt {
 
             } else if (path.equalsIgnoreCase(".metalink.files.file.resources.url")) {
                 DownloadLink downloadLink = createDownloadlink(text.toString().trim());
+                try {
+                    downloadLink.forceFileName(dLink.getFinalFileName());
+                } catch (Throwable e) {
+                    /* forceFileName not available in 0.957 public */
+                }
                 downloadLink.setFinalFileName(dLink.getFinalFileName());
                 downloadLink.setFilePackage(pgk);
                 downloadLink.setDownloadSize(dLink.getDownloadSize());

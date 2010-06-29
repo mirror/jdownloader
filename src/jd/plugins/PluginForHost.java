@@ -28,7 +28,6 @@ import javax.swing.ImageIcon;
 
 import jd.HostPluginWrapper;
 import jd.PluginWrapper;
-import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.controlling.CaptchaController;
@@ -47,7 +46,6 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.DownloadInterface;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 /**
@@ -398,21 +396,31 @@ public abstract class PluginForHost extends Plugin {
         return -1;
     }
 
-    public int getMaxSimultanDownloadNum() {
+    public int getMaxSimultanDownload(final Account account) {
         int max;
-        if (isPremiumDownload()) {
-            max = getMaxSimultanPremiumDownloadNum();
-        } else {
+        if (account == null) {
             max = getMaxSimultanFreeDownloadNum();
+        } else {
+            max = account.getMaxSimultanDownloads();
+            if (max < 0) {
+                return Integer.MAX_VALUE;
+            } else if (max == 0) {
+                max = getMaxSimultanPremiumDownloadNum();
+            } else {
+                return max;
+            }
         }
-        if (max < 0) return Integer.MAX_VALUE;
+        if (max <= 0) return Integer.MAX_VALUE;
         return max;
     }
 
+    public boolean hasAccountSupport() {
+        return enablePremium;
+    }
+
+    /* TODO: remove with next major update */
+    @Deprecated
     public boolean isPremiumDownload() {
-        if (!enablePremium || !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)) return false;
-        final Account acc = AccountController.getInstance().getValidAccount(this);
-        if (acc == null || AccountController.getInstance().isAccountBlocked(acc)) return false;
         return true;
     }
 
@@ -442,7 +450,7 @@ public abstract class PluginForHost extends Plugin {
 
     public abstract void handleFree(DownloadLink link) throws Exception;
 
-    public void handle(final DownloadLink downloadLink) throws Exception {
+    public void handle(final DownloadLink downloadLink, final Account account) throws Exception {
         final TransferStatus transferStatus = downloadLink.getTransferStatus();
         transferStatus.usePremium(false);
         transferStatus.setResumeSupport(false);
@@ -459,12 +467,8 @@ public abstract class PluginForHost extends Plugin {
             return;
         }
 
-        Account account = null;
-        if (enablePremium) {
-            account = AccountController.getInstance().getValidAccount(this);
-            if (AccountController.getInstance().isAccountBlocked(account)) account = null;
-        }
         if (account != null) {
+            /* with account */
             final long before = downloadLink.getDownloadCurrent();
             boolean blockAccount = false;
             try {
@@ -534,6 +538,7 @@ public abstract class PluginForHost extends Plugin {
                 }
             }
         } else {
+            /* without account */
             try {
                 handleFree(downloadLink);
                 if (dl != null && dl.getConnection() != null) {

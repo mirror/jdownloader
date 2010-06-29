@@ -38,6 +38,8 @@ public class Account extends Property {
 
     private long updatetime = 0;
 
+    private int maxDownloads = 0;
+
     /**
      * 
      * @param string
@@ -57,6 +59,19 @@ public class Account extends Property {
         this.pass = trim(pass);
         // this.hoster = null;
         this.setTmpDisabledIntervalv3(10 * 60 * 1000l);
+    }
+
+    public int getMaxSimultanDownloads() {
+        return maxDownloads;
+    }
+
+    /*-1 = unlimited, 0 = use deprecated getMaxSimultanPremiumDownloadNum/getMaxSimultanFreeDownloadNum,>1 = use this*/
+    public void setMaxSimultanDownloads(int max) {
+        if (max < 0) {
+            maxDownloads = -1;
+        } else {
+            maxDownloads = max;
+        }
     }
 
     public String getPass() {
