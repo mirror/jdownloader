@@ -86,17 +86,28 @@ public class SpeedMeterCache extends Thread implements Runnable {
     @Override
     public void run() {
         long nextCacheEntry = 0;
+        long tempValue = 0;
+        long tempTime = 0;
         while (!this.isInterrupted()) {
             broadcaster.fireEvent(new SpeedMeterEvent(this, SpeedMeterEvent.UPDATED));
 
             if (nextCacheEntry < System.currentTimeMillis()) {
-                cache[index] = (int) DownloadWatchDog.getInstance().getConnectionManager().getIncommingBandwidthUsage();
+                if (tempValue == 0) {
+                    cache[index] = 0;
+                } else {
+                    cache[index] = (int) (tempValue / tempTime);
+                }
+                tempValue = 0;
+                tempTime = 0;
                 index++;
                 index = index % cache.length;
                 nextCacheEntry = System.currentTimeMillis() + ((window * 1000) / CAPACITY);
+            } else {
+                tempValue += DownloadWatchDog.getInstance().getConnectionManager().getIncommingBandwidthUsage();
+                tempTime += 1;
             }
             try {
-                Thread.sleep(2000);
+                Thread.sleep(1000);
             } catch (InterruptedException e) {
                 return;
             }

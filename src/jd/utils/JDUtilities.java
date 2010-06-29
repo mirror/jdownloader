@@ -65,6 +65,7 @@ import jd.nutils.Executer;
 import jd.nutils.Formatter;
 import jd.nutils.OSDetector;
 import jd.nutils.io.JDIO;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
@@ -389,19 +390,25 @@ public class JDUtilities {
      * @param containerPath
      * @return Ein passendes Plugin oder null
      */
-    public static PluginsC getPluginForContainer(final String container, final String containerPath) {
-        if (containerPath != null && CONTAINER_PLUGINS.containsKey(containerPath)) { return CONTAINER_PLUGINS.get(containerPath); }
-        PluginsC ret = null;
+    public static PluginsC getPluginForContainer(final String container) {
+        if (container == null) return null;
         for (final CPluginWrapper act : CPluginWrapper.getCWrapper()) {
-            if (act.getHost().equalsIgnoreCase(container)) {
-                ret = (PluginsC) act.getNewPluginInstance();
-                if (containerPath != null) {
-                    CONTAINER_PLUGINS.put(containerPath, ret);
-                }
-                return ret;
-            }
+            if (act.getHost().equalsIgnoreCase(container)) return (PluginsC) act.getNewPluginInstance();
         }
         return null;
+    }
+
+    public static String getContainerExtensions(final String filter) {
+        StringBuilder sb = new StringBuilder("");
+        for (final CPluginWrapper act : CPluginWrapper.getCWrapper()) {
+            if (filter != null && !new Regex(act.getHost(), filter).matches()) continue;
+            String exs[] = new Regex(act.getPattern().pattern(), "\\.([a-zA-Z0-9]+)").getColumn(0);
+            for (String ex : exs) {
+                if (sb.length() > 0) sb.append("|");
+                sb.append(".").append(ex);
+            }
+        }
+        return sb.toString();
     }
 
     /**

@@ -48,7 +48,6 @@ public abstract class PluginsC extends Plugin {
 
     public PluginsC(final PluginWrapper wrapper) {
         super(wrapper);
-        // TODO Auto-generated constructor stub
     }
 
     private static final HashMap<String, ArrayList<DownloadLink>> CONTAINER = new HashMap<String, ArrayList<DownloadLink>>();
@@ -99,10 +98,8 @@ public abstract class PluginsC extends Plugin {
     private void decryptLinkProtectorLinks() {
         final ArrayList<DownloadLink> tmpDlink = new ArrayList<DownloadLink>();
         final ArrayList<String> tmpURL = new ArrayList<String>();
-
         int i = 0;
         int c = 0;
-
         progress.addToMax(dlU.size());
         for (String string : dlU) {
             progress.increase(1);
@@ -121,14 +118,10 @@ public abstract class PluginsC extends Plugin {
                 tmpDlink.add(next);
                 tmpURL.add(next.getDownloadURL());
 
-                next.setContainerFile(srcLink.getContainerFile());
-                next.setContainerIndex(c++);
-                next.setName(srcLink.getName());
-
-                if (next.getDownloadSize() < 10) {
-                    next.setDownloadSize(srcLink.getDownloadSize());
+                if (srcLink.getContainerFile() != null) {
+                    next.setContainerFile(srcLink.getContainerFile());
+                    next.setContainerIndex(c++);
                 }
-
                 next.getSourcePluginPasswordList().addAll(srcLink.getSourcePluginPasswordList());
                 String comment = "";
                 if (srcLink.getSourcePluginComment() != null) {
@@ -143,15 +136,39 @@ public abstract class PluginsC extends Plugin {
                 }
                 next.setSourcePluginComment(comment);
                 next.setLoadedPluginForContainer(this);
-                next.setFilePackage(srcLink.getFilePackage());
-                next.setUrlDownload(null);
-                next.setLinkType(DownloadLink.LINKTYPE_CONTAINER);
+                /* forward custom package */
+                if (!srcLink.isDefaultFilePackage()) next.setFilePackage(srcLink.getFilePackage());
+                /* hide links? */
+                if (hideLinks()) {
+                    next.setLinkType(DownloadLink.LINKTYPE_CONTAINER);
+                    next.setUrlDownload(null);
+                } else {
+                    next.setLinkType(DownloadLink.LINKTYPE_NORMAL);
+                }
+                if (links.size() == 1) {
+                    /* only set those variables on 1:1 mapping */
+                    next.setName(srcLink.getName());
+                    if (srcLink.getForcedFileName() != null) next.forceFileName(srcLink.getForcedFileName());
+                    if (srcLink.getDownloadSize() > 0) {
+                        next.setDownloadSize(srcLink.getDownloadSize());
+                    }
+                    if (srcLink.isAvailabilityStatusChecked()) {
+                        next.setAvailableStatus(srcLink.getAvailableStatus());
+                    }
+                }
+                if (srcLink.gotBrowserUrl()) {
+                    next.setBrowserUrl(srcLink.getBrowserUrl());
+                }
             }
             i++;
         }
         cls = tmpDlink;
         dlU = tmpURL;
-        // logger.info("downloadLinksURL: "+downloadLinksURL);
+    }
+
+    /* hide links by default */
+    public boolean hideLinks() {
+        return true;
     }
 
     /**
@@ -348,7 +365,6 @@ public abstract class PluginsC extends Plugin {
                     it.next().setLinkType(DownloadLink.LINKTYPE_CONTAINER);
                 }
             }
-
             dlU = CONTAINERLINKS.get(filename);
             return;
         }

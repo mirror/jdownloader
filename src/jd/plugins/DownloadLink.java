@@ -763,6 +763,10 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     public void setContainerFile(String containerFile) {
+        if (containerFile == null) {
+            this.containerFile = null;
+            return;
+        }
         containerFile = containerFile.replace("\\", "/");
 
         int index = containerFile.indexOf("/container/");

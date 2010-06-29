@@ -24,6 +24,7 @@ import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
 import jd.PluginWrapper;
+import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -41,17 +42,22 @@ public class MtLnk extends PluginForDecrypt {
 
     private ArrayList<DownloadLink> decryptedLinks;
 
+    /* we use identity as package name if available */
+    private String packageName = null;
+
+    private String publisherName = null;
+
+    private String publisherURL = null;
+
     public MtLnk(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
-
         br.setFollowRedirects(true);
         String metalink = br.getPage(parameter.getCryptedUrl());
         return decryptString(metalink);
-
     }
 
     public ArrayList<DownloadLink> decryptString(String metalink) {
@@ -63,57 +69,48 @@ public class MtLnk extends PluginForDecrypt {
             // Parse the input
             SAXParser saxParser = factory.newSAXParser();
             StringReader input = new StringReader(metalink);
-
             saxParser.parse(new InputSource(input), handler);
-
         } catch (Throwable t) {
-            t.printStackTrace();
+            JDLogger.exception(t);
         }
 
-        // decryptedLinks.add(createDownloadlink(link));
-
+        if (packageName != null) {
+            FilePackage pgk = FilePackage.getInstance();
+            pgk.setName(packageName);
+            if (publisherName != null && publisherURL != null) {
+                pgk.setComment(publisherName + " (" + publisherURL + ")");
+            } else if (publisherName != null) {
+                pgk.setComment(publisherName);
+            } else if (publisherURL != null) {
+                pgk.setComment(publisherURL);
+            }
+            pgk.addLinks(decryptedLinks);
+        }
         return decryptedLinks;
     }
 
     public class MetalinkSAXHandler extends DefaultHandler {
         private CharArrayWriter text = new CharArrayWriter();
-
-        // public enum ElementType { FILE, HASH}
         Attributes atr;
         String path = "";
-        private DownloadLink dLink;
-
-        private String publisherName;
-
-        private String publisherURL;
-
-        private FilePackage pgk;
+        private DownloadLink dLink = null;
 
         public MetalinkSAXHandler() {
-
         }
 
         public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
-            // Set current name and copy attributes
-
             if (qName.equals("file")) {
-                pgk = FilePackage.getInstance();
-                pgk.setName(attributes.getValue("name"));
+                /* new file begins */
                 dLink = new DownloadLink(null, null, null, null, true);
-                dLink.setFinalFileName(attributes.getValue("name"));
-            }
-            if (qName.equals("publisher")) {
-
             }
             path += "." + qName;
-
             this.atr = attributes;
-
         }
 
         public void endElement(String uri, String localName, String qName) throws SAXException {
-
-            if (path.equalsIgnoreCase(".metalink.publisher.name")) {
+            if (path.equalsIgnoreCase(".metalink.identity")) {
+                packageName = text.toString().trim();
+            } else if (path.equalsIgnoreCase(".metalink.publisher.name")) {
                 publisherName = text.toString().trim();
             } else if (path.equalsIgnoreCase(".metalink.publisher.url")) {
                 publisherURL = text.toString().trim();
@@ -125,37 +122,27 @@ public class MtLnk extends PluginForDecrypt {
                 } else if (atr.getValue("type").equalsIgnoreCase("sha1")) {
                     dLink.setSha1Hash(text.toString().trim());
                 }
-
             } else if (path.equalsIgnoreCase(".metalink.files.file.resources.url")) {
                 DownloadLink downloadLink = createDownloadlink(text.toString().trim());
                 try {
+                    /* needed to avoid rename by plugin */
                     downloadLink.forceFileName(dLink.getFinalFileName());
                 } catch (Throwable e) {
                     /* forceFileName not available in 0.957 public */
                 }
                 downloadLink.setFinalFileName(dLink.getFinalFileName());
-                downloadLink.setFilePackage(pgk);
                 downloadLink.setDownloadSize(dLink.getDownloadSize());
                 downloadLink.setMD5Hash(dLink.getMD5Hash());
                 downloadLink.setSha1Hash(dLink.getSha1Hash());
                 if (publisherName != null && publisherURL != null) {
-                    pgk.setComment(publisherName + " (" + publisherURL + ")");
                     downloadLink.setSourcePluginComment(publisherName + " (" + publisherURL + ")");
                 } else if (publisherName != null) {
-                    pgk.setComment(publisherName);
                     downloadLink.setSourcePluginComment(publisherName);
                 } else if (publisherURL != null) {
                     downloadLink.setSourcePluginComment(publisherURL);
-                    pgk.setComment(publisherURL);
                 }
                 decryptedLinks.add(downloadLink);
             }
-            // else if
-            // (path.equalsIgnoreCase(".metalink.files.file.verification.pieces.hash"))
-            // {
-            // /** define chunk hashes..... TODO */
-            //
-            // }
             path = path.substring(0, path.length() - qName.length() - 1);
             text.reset();
         }

@@ -273,7 +273,7 @@ public class DownloadController implements FilePackageListener, DownloadControll
                         // wird ein passendes Plugin gesucht
                         try {
                             if (localLink.getContainer() != null) {
-                                pluginForContainer = JDUtilities.getPluginForContainer(localLink.getContainer(), localLink.getContainerFile());
+                                pluginForContainer = JDUtilities.getPluginForContainer(localLink.getContainer());
                                 if (pluginForContainer == null) {
                                     localLink.setEnabled(false);
                                 }
