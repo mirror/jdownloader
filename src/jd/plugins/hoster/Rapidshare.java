@@ -29,8 +29,10 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
+import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.controlling.DownloadWatchDog;
+import jd.gui.UserIO;
 import jd.gui.swing.jdgui.actions.ToolBarAction.Types;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.http.Browser;
@@ -116,7 +118,9 @@ public class Rapidshare extends PluginForHost {
 
     private static long RS_API_WAIT = 0;
 
+    private static Object menuLock = new Object();
     private static MenuAction happyHourAction = null;
+    private static HashMap<Integer, MenuAction> menuActionMap = new HashMap<Integer, MenuAction>();
 
     private static HashMap<Account, ArrayList<DownloadLink>> trafficCheck = new HashMap<Account, ArrayList<DownloadLink>>();
 
@@ -155,6 +159,7 @@ public class Rapidshare extends PluginForHost {
     private static final String PROPERTY_AUTO_UPGRADE = "AUTO_UPGRADE";
     private static final String PROPERTY_ONLY_HAPPYHOUR = "PROPERTY_ONLY_HAPPYHOUR";
     private static final String PROPERTY_RESET_PACKAGE_TO = "RESET_PACKAGE_TO";
+    private static final String ACCOUNT_DONT_UPGRADE = "ACCOUNT_DONT_UPGRADE";
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
@@ -185,6 +190,7 @@ public class Rapidshare extends PluginForHost {
         setConfigElements();
         enablePremium("http://rapidshare.com/premium.html");
         this.setMaxConnections(30);
+        setupMenuItems();
     }
 
     @Override
@@ -705,16 +711,43 @@ public class Rapidshare extends PluginForHost {
                     long countedSize = (long) (downloadSize / (happyhour ? 0.1f : 1.0f));
                     /* get needed infos for packagemanaging */
                     long trafficLeft = Long.parseLong(account.getStringProperty("tskb")) * 1024;
-                    long rapids = Long.parseLong(account.getStringProperty("rapids"));
-                    int rapidPackage = Integer.parseInt(account.getStringProperty("rperday"));
+                    // long rapids =
+                    // Long.parseLong(account.getStringProperty("rapids"));
+                    // int rapidPackage =
+                    // Integer.parseInt(account.getStringProperty("rperday"));
                     /* packagemanagement */
                     boolean upgradeRequired = countedSize > trafficLeft;
-                    // if (upgradeRequired) {
-                    // int i = 1;
-                    // account.setTempDisabled(true);
-                    // throw new PluginException(LinkStatus.ERROR_PREMIUM,
-                    // PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                    // }
+                    if (upgradeRequired) {
+                        logger.info("Account: " + account.getUser() + " needs upgrade in order to continue downloading");
+                        /*
+                         * TODO: we need to know what package currently is set!
+                         * without this information we cannot do automatic
+                         * upgrade management
+                         */
+                        /* we have to upgrade package, not enough traffic left */
+                        boolean allowUpgrade;
+                        if (!isBooleanSet(account, ACCOUNT_DONT_UPGRADE, false)) {
+                            /* no decision made for this account,ask user */
+                            int ret = UserIO.getInstance().requestConfirmDialog(0, JDL.LF("plugins.host.rapidshare.askupgrade.title", "Package Upgrade for RapidShare Account %s required", account.getUser()), JDL.LF("plugins.host.rapidshare.askupgrade.message", "To download this file, you have to upgrade your RapidShare Package. Do you want to upgrade now?"));
+                            allowUpgrade = UserIO.isOK(ret);
+                            logger.info("Account: " + account.getUser() + " needs upgrade in order to continue downloading: user answer -> " + allowUpgrade);
+                            /* save decision for this account */
+                            account.setProperty(ACCOUNT_DONT_UPGRADE, allowUpgrade);
+                        } else {
+                            /*
+                             * decision already made for this account
+                             */
+                            allowUpgrade = isBooleanSet(account, ACCOUNT_DONT_UPGRADE, true);
+                        }
+                        if (!allowUpgrade) {
+                            /*
+                             * temp disable the account, no upgrade allowed for
+                             * this account
+                             */
+                            account.setTempDisabled(true);
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Package upgrade required but forbidden by user!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                        }
+                    }
                     // boolean canUpgrade = false;
                     // int costs = 0;
                     // switch (rapidPackage) {
@@ -771,14 +804,6 @@ public class Rapidshare extends PluginForHost {
                     //
                     // throw new PluginException(LinkStatus.ERROR_PREMIUM,
                     // PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    //
-                    // }
-                    // }
-                    //
-                    // // }
-                    // if
-                    // (!this.getPluginConfig().getBooleanProperty("ASKEDFORNEWSYSTEMCONFIGS",
-                    // false)) {
                     //
                     // }
                     // }
@@ -865,6 +890,7 @@ public class Rapidshare extends PluginForHost {
             }
             dl.startDownload();
         } finally {
+            /* TODO: auto downgrade place here */
             if (account != dummyAccount) {
                 /* update trafficCheck map */
                 synchronized (LOCK) {
@@ -1273,33 +1299,92 @@ public class Rapidshare extends PluginForHost {
     @Override
     public ArrayList<MenuAction> createMenuitems() {
         ArrayList<MenuAction> ret = super.createMenuitems();
-        if (ret != null) {
-            for (MenuAction a : ret) {
-                if (a.getType() == Types.CONTAINER) {
-                    // a.addMenuItem(new MenuAction("bla", 555));
+        int i = 0;
+        synchronized (menuLock) {
+            if (ret != null) {
+                for (MenuAction a : ret) {
+                    if (a.getType() == Types.CONTAINER) {
+                        for (MenuAction aa : a.getItems()) {
+                            /* all accounts here */
+                            if (aa.getType() == Types.CONTAINER) {
+                                /*
+                                 * we have to save instance of MenuAction to be
+                                 * able to change it in future, cause menu is
+                                 * temp saved and used in menubar
+                                 */
+                                MenuAction upgradeBlock = menuActionMap.get(1000 + i);
+                                if (upgradeBlock == null) {
+                                    /* create new donotupgrade action */
+                                    upgradeBlock = new MenuAction(JDL.L("plugins.hoster.rapidshare.com.dontupgrade", "Do not upgrade to next RapidModel"), 1000 + i);
+                                    upgradeBlock.setType(Types.TOGGLE);
+                                    upgradeBlock.setActionListener(this);
+                                    upgradeBlock.setSelected(isBooleanSet(getPremiumAccounts().get(i), ACCOUNT_DONT_UPGRADE, true));
+                                    menuActionMap.put(1000 + i, upgradeBlock);
+                                    aa.addMenuItem(upgradeBlock);
+                                } else if (!aa.getItems().contains(upgradeBlock)) {
+                                    /* backwards compatibility to 0.95xx */
+                                    /*
+                                     * old version did only create account menu
+                                     * once per jd session
+                                     */
+                                    aa.addMenuItem(upgradeBlock);
+                                }
+                                i++;
+                            }
+                        }
+                    }
                 }
+                /* here we can add it every time */
+                ret.add(happyHourAction);
             }
-            if (happyHourAction == null) {
-                /* needed to sync all menuitems */
-                happyHourAction = new MenuAction("Wait for Happy Hour?", 32767);
-                happyHourAction.setType(Types.TOGGLE);
-                happyHourAction.setActionListener(this);
-                happyHourAction.setSelected(getPluginConfig().getBooleanProperty(PROPERTY_ONLY_HAPPYHOUR, false));
-            }
-            ret.add(happyHourAction);
         }
         return ret;
     }
 
+    /*
+     * returns boolean property if valueORset = true or false/true if the value
+     * is set at all
+     */
+    private boolean isBooleanSet(Property item, String prop, boolean valueORset) {
+        Object ret = item.getProperty(prop, null);
+        /* property is not set! */
+        if (ret == null) return false;
+        if (!(ret instanceof Boolean)) return false;
+        /* only return if property is set */
+        if (valueORset == false) return true;
+        /* return boolean */
+        return (Boolean) ret;
+    }
+
+    /* setup static menuactions here */
+    private void setupMenuItems() {
+        if (happyHourAction == null) {
+            happyHourAction = new MenuAction(JDL.L("plugins.hoster.rapidshare.com.happyhour", "Only use Premium while Happy Hour?"), 32767);
+            happyHourAction.setType(Types.TOGGLE);
+            happyHourAction.setActionListener(this);
+            happyHourAction.setSelected(getPluginConfig().getBooleanProperty(PROPERTY_ONLY_HAPPYHOUR, false));
+        }
+    }
+
     @Override
     public void actionPerformed(final ActionEvent e) {
-        if (e.getID() == 32767) {
+        if (e.getID() >= 1000 && e.getID() < 2000) {
+            MenuAction upgradeBlock = menuActionMap.get(e.getID());
+            /*
+             * get menuaction and change its selected state, also change
+             * property of account
+             */
+            if (upgradeBlock != null) {
+                int i = e.getID() - 1000;
+                getPremiumAccounts().get(i).setProperty(ACCOUNT_DONT_UPGRADE, !isBooleanSet(getPremiumAccounts().get(i), ACCOUNT_DONT_UPGRADE, true));
+                upgradeBlock.setSelected(getPremiumAccounts().get(i).getBooleanProperty(ACCOUNT_DONT_UPGRADE, false));
+            }
+        } else if (e.getID() == 32767) {
+            /* sync menuaction and property */
             getPluginConfig().setProperty(PROPERTY_ONLY_HAPPYHOUR, !getPluginConfig().getBooleanProperty(PROPERTY_ONLY_HAPPYHOUR, false));
-            /* needed to sync all menuitems */
             happyHourAction.setSelected(getPluginConfig().getBooleanProperty(PROPERTY_ONLY_HAPPYHOUR, false));
         } else {
             super.actionPerformed(e);
         }
-
     }
 }
