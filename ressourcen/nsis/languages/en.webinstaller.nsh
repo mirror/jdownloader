@@ -1,5 +1,6 @@
 LangString ^Name ${LANG_ENGLISH} "${APPNAME}"
 LangString DownloadCaption ${LANG_ENGLISH} "Downloading JDownloader Setup..."
+LangString WebInstallFailed ${LANG_ENGLISH} "Webinstallation failed, cannot download files. Please check your internet connection and try again. Alternatively, you can download our offline installation files. Our download website will open as soon as you close this window. (Error message: $1)"
 
 LangString inetc_url ${LANG_ENGLISH} "File"
 LangString inetc_downloading ${LANG_ENGLISH} " "
