@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map.Entry;
 import java.util.logging.Level;
@@ -29,6 +30,7 @@ import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.DownloadWatchDog;
+import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
@@ -137,6 +139,14 @@ public class Rapidshare extends PluginForHost {
     }
 
     private static final Account dummyAccount = new Account("TRAFSHARE", "TRAFSHARE");
+
+    private static final int SMALL = 4;
+    private static final int MEDIUM = 20;
+    private static final int BIG = 78;
+    private static final int SUPERSIZE = 229;
+    private static final int BUSINESS = 449;
+    private static final String PROPERTY_AUTO_UPGRADE = "AUTO_UPGRADE";
+    private static final String PROPERTY_RESET_PACKAGE_TO = "RESET_PACKAGE_TO";
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
@@ -486,6 +496,9 @@ public class Rapidshare extends PluginForHost {
             /** TODO: Umbauen auf jd.plugins.BrowserAdapter.openDownload(br,...) **/
             // Download
             dl = new RAFDownload(this, downloadLink, request);
+            dl.setFilesize(downloadLink.getDownloadSize());
+            dl.setFileSizeVerified(true);
+
             URLConnectionAdapter con;
             try {
                 // connect() throws an exception if there is a location header
@@ -496,6 +509,8 @@ public class Rapidshare extends PluginForHost {
                     con.disconnect();
                     request = br.createGetRequest(con.getHeaderField("Location"));
                     dl = new RAFDownload(this, downloadLink, request);
+                    dl.setFilesize(downloadLink.getDownloadSize());
+                    dl.setFileSizeVerified(true);
                     con = dl.connect();
                 } else {
                     throw e;
@@ -633,14 +648,86 @@ public class Rapidshare extends PluginForHost {
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         try {
+            br.forceDebug(true);
+
             String freeOrPremiumSelectPostURL = null;
             Request request = null;
 
-            // long startTime = System.currentTimeMillis();
-            if (account == dummyAccount) {
-                br = new Browser();
-            } else {
-                br = login(account, true);
+            // // long startTime = System.currentTimeMillis();
+            // if (account == dummyAccount) {
+            // br = new Browser();
+            // } else {
+            // lock to account
+            synchronized (account) {
+                br = login(account);
+            }
+
+            Date date = new Date(Long.parseLong(account.getStringProperty("servertime")) * 1000l);
+
+            // perhaps the user has disabled filecheck
+            if (downloadLink.getDownloadSize() <= 0) {
+                this.requestFileInformation(downloadLink);
+            }
+
+            boolean happyhour = date.getHours() > 0 && date.getHours() <= 1;
+            long countedSize = downloadLink.getDownloadSize() / (happyhour ? 10 : 1);
+
+            long spaceLeft = Long.parseLong(account.getStringProperty("tskb"));
+            long rapids = Long.parseLong(account.getStringProperty("rapids"));
+            int rapidPackage = Integer.parseInt(account.getStringProperty("rperday"));
+            boolean upgradeRequired = countedSize > spaceLeft;
+            boolean canUpgrade = false;
+            int costs = 0;
+            switch (rapidPackage) {
+            case SMALL:
+                canUpgrade = rapids >= MEDIUM;
+                costs = MEDIUM - rapidPackage;
+                break;
+            case MEDIUM:
+                canUpgrade = rapids >= BIG;
+                costs = BIG - rapidPackage;
+                break;
+            case BIG:
+                canUpgrade = rapids >= SUPERSIZE;
+                costs = SUPERSIZE - rapidPackage;
+                break;
+            case SUPERSIZE:
+                canUpgrade = rapids >= BUSINESS;
+                costs = BUSINESS - rapidPackage;
+                break;
+
+            }
+            if (upgradeRequired && canUpgrade) {
+                switch (this.getPluginConfig().getIntegerProperty(PROPERTY_AUTO_UPGRADE, 0)) {
+                case 0:
+                    // auto
+                    break;
+
+                case 1:
+                    int ret = UserIO.getInstance().requestConfirmDialog(0, JDL.LF("plugins.host.rapidshare.askupgrade.title", "Package Upgrade for RapidShare Account %s required", account.getUser()), JDL.LF("plugins.host.rapidshare.askupgrade.message", "To download this file, you have to upgrade to %s. This would cost you %s Rapids.\r\n You currently have %s Rapids.\r\n\r\n Do you want to upgrade?", account.getStringProperty("PACKAGENAME"), costs, rapids));
+
+                    if (UserIO.isOK(ret)) {
+
+                    } else {
+                        // disable account.
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+
+                    }
+                    // ask
+                    break;
+
+                case 2:
+
+                    // no upgrtade
+
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+
+                }
+            }
+
+            // }
+            if (!this.getPluginConfig().getBooleanProperty("ASKEDFORNEWSYSTEMCONFIGS", false)) {
+
             }
 
             br.setFollowRedirects(false);
@@ -652,6 +739,7 @@ public class Rapidshare extends PluginForHost {
             }
             br.getPage(link);
             checkAPIID();
+
             String directurl = br.getRedirectLocation();
 
             if (directurl == null) {
@@ -685,6 +773,9 @@ public class Rapidshare extends PluginForHost {
             /** TODO: Umbauen auf jd.plugins.BrowserAdapter.openDownload(br,...) **/
             // Download
             dl = new RAFDownload(this, downloadLink, request);
+            dl.setFilesize(downloadLink.getDownloadSize());
+            dl.setFilesize(downloadLink.getDownloadSize());
+            dl.setFileSizeVerified(true);
             // Premiumdownloads sind resumefähig
             dl.setResume(true);
             // Premiumdownloads erlauben chunkload
@@ -698,6 +789,8 @@ public class Rapidshare extends PluginForHost {
                 logger.info("Load from " + request.getUrl().toString().substring(0, 35));
                 // Download
                 dl = new RAFDownload(this, downloadLink, request);
+                dl.setFilesize(downloadLink.getDownloadSize());
+                dl.setFileSizeVerified(true);
                 // Premiumdownloads sind resumefähig
                 dl.setResume(true);
                 // Premiumdownloads erlauben chunkload
@@ -939,6 +1032,10 @@ public class Rapidshare extends PluginForHost {
      * Erzeugt den Configcontainer für die Gui
      */
     private void setConfigElements() {
+        //
+        ConfigEntry ce;
+        ConfigEntry cond;
+        //
         ArrayList<String> m1 = new ArrayList<String>();
         ArrayList<String> m2 = new ArrayList<String>();
         ArrayList<String> m3 = new ArrayList<String>();
@@ -966,10 +1063,9 @@ public class Rapidshare extends PluginForHost {
         m5.add(JDL.L("plugins.hoster.rapidshare.com.preferedserver.random", "Random"));
 
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, JDL.L("plugins.hoster.rapidshare.com.preferedserver", "Prefered server mirror")));
-        ConfigEntry cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PROPERTY_USE_PRESELECTED, JDL.L("plugins.hoster.rapidshare.com.preselection", "Use preselection")).setDefaultValue(true);
+        cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PROPERTY_USE_PRESELECTED, JDL.L("plugins.hoster.rapidshare.com.preselection", "Use preselection")).setDefaultValue(true);
         config.addEntry(cond);
 
-        ConfigEntry ce;
         config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getPluginConfig(), PROPERTY_SELECTED_SERVER1, m1.toArray(new String[] {}), "#1").setDefaultValue("Cognet #1"));
         ce.setEnabledCondidtion(cond, false);
         config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getPluginConfig(), PROPERTY_SELECTED_SERVER2, m2.toArray(new String[] {}), "#2").setDefaultValue("Cognet #1"));
@@ -989,36 +1085,46 @@ public class Rapidshare extends PluginForHost {
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), PROPERTY_INCREASE_TICKET, JDL.L("plugins.hoster.rapidshare.com.increaseTicketTime", "Increase Ticketwaittime (0%-500%)"), 0, 500).setDefaultValue(0).setStep(1));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), WAIT_HOSTERFULL, JDL.L("plugins.hoster.rapidshare.com.waithosterfull", "Wait if all FreeUser Slots are full")).setDefaultValue(true));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getPluginConfig(), PROPERTY_RESET_PACKAGE_TO, new String[] { JDL.L("plugins.hoster.rapidshare.com.resetpackage.disabled", "Disabled"), "RapidSmall", "RapidMedium", "RapidBig", "RapidSuperSize", "RapidBusiness" }, JDL.L("plugins.hoster.rapidshare.com.basepackage", "Reset Package (Saves traffic)")).setDefaultValue("RapidSmall"));
+
+        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getPluginConfig(), PROPERTY_AUTO_UPGRADE, new String[] { JDL.L("plugins.hoster.rapidshare.com.autoupgrade.withoutasking", "Without asking"), JDL.L("plugins.hoster.rapidshare.com.autoupgrade.askbeforeupgrad", "Ask before upgrade"), JDL.L("plugins.hoster.rapidshare.com.autoupgrade.noupgrade", "Do not upgrade") }, JDL.L("plugins.hoster.rapidshare.com.autoupgrade", "Auto-Package-Upgrade")).setDefaultValue(JDL.L("plugins.hoster.rapidshare.com.autoupgrade.askbeforeupgrad", "Ask before upgrade")));
+
     }
 
     @SuppressWarnings("unchecked")
-    private Browser login(Account account, boolean usesavedcookie) throws Exception {
+    private Browser login(Account account) throws Exception {
         synchronized (LOCK) {
             Browser br = new Browser();
             br.setDebug(true);
             br.setCookiesExclusive(true);
             br.clearCookies(this.getHost());
 
-            HashMap<String, String> cookies = (HashMap<String, String>) account.getProperty("cookies");
-
-            if (usesavedcookie && cookies != null) {
-                if (cookies.get("enc") != null && cookies.get("enc").length() != 0) {
-                    logger.finer("Cookie Login");
-                    for (Entry<String, String> cookie : cookies.entrySet()) {
-                        br.setCookie("http://rapidshare.com", cookie.getKey(), cookie.getValue());
-                    }
-                    return br;
-                } else {
-                    account.setProperty("cookies", null);
-                }
-            }
+            // HashMap<String, String> cookies = (HashMap<String, String>)
+            // account.getProperty("cookies");
+            //
+            // if (usesavedcookie && cookies != null) {
+            // if (cookies.get("enc") != null && cookies.get("enc").length() !=
+            // 0) {
+            // logger.finer("Cookie Login");
+            // for (Entry<String, String> cookie : cookies.entrySet()) {
+            // br.setCookie("http://rapidshare.com", cookie.getKey(),
+            // cookie.getValue());
+            // }
+            // return br;
+            // } else {
+            // account.setProperty("cookies", null);
+            // }
+            // }
             String req = "http://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=getaccountdetails_v1&withcookie=1&type=prem&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass());
             queryAPI(br, req);
-            try {
-                Thread.sleep(2000);
-            } catch (InterruptedException e) {
-                return br;
-            }
+
+            // try {
+            // Thread.sleep(2000);
+            // } catch (InterruptedException e) {
+            // return br;
+            // }
+
             if (br.containsHTML("Login failed")) {
                 account.setProperty("cookies", null);
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -1042,6 +1148,12 @@ public class Rapidshare extends PluginForHost {
                 account.setProperty("cookies", null);
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
+            // put all accountproperties
+            for (String[] m : br.getRegex("(\\w+)=([^\r^\n]+)").getMatches()) {
+                account.setProperty(m[0].trim(), m[1].trim());
+                System.out.println(m[0].trim() + " = " + m[1].trim());
+            }
+
             HashMap<String, String> map = new HashMap<String, String>();
             map.put("enc", cookie);
             account.setProperty("cookies", map);
@@ -1052,10 +1164,7 @@ public class Rapidshare extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
-        /*
-         * rs has specialtraffic: trafficshare, pointconverting
-         */
-        ai.setSpecialTraffic(true);
+
         String api = "http://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=getaccountdetails_v1&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&type=prem";
         queryAPI(br, api);
         String error = br.getRegex("ERROR:(.*)").getMatch(0);
@@ -1068,13 +1177,34 @@ public class Rapidshare extends PluginForHost {
         try {
             String[][] matches = br.getRegex("(\\w+)=([^\r^\n]+)").getMatches();
             HashMap<String, String> data = getMap(matches);
-            ai.setTrafficLeft((long) (Long.parseLong(data.get("premkbleft")) / 1000.0) * 1024l * 1024l);
-            ai.setTrafficMax(25 * 1000 * 1000 * 1000l);
+            ai.setTrafficLeft((long) (Long.parseLong(data.get("tskb")) / 1000.0) * 1024l * 1024l);
+            int type = Integer.parseInt(data.get("rperday"));
+            switch (type) {
+            case SMALL:
+                ai.setTrafficMax(1 * 1000 * 1000 * 1000l);
+                break;
+            case MEDIUM:
+                ai.setTrafficMax(5 * 1000 * 1000 * 1000l);
+                break;
+            case BIG:
+                ai.setTrafficMax(20 * 1000 * 1000 * 1000l);
+                break;
+            case SUPERSIZE:
+                ai.setTrafficMax(60 * 1000 * 1000 * 1000l);
+                break;
+            case BUSINESS:
+                ai.setTrafficMax(120 * 1000 * 1000 * 1000l);
+                break;
+            default:
+                logger.severe("Unknown Package type:" + type);
+                ai.setTrafficMax(ai.getTrafficLeft());
+            }
+
             ai.setFilesNum(Long.parseLong(data.get("curfiles")));
-            ai.setPremiumPoints(Long.parseLong(data.get("fpoints")));
+            ai.setPremiumPoints(Long.parseLong(data.get("rapids")));
             ai.setUsedSpace(Long.parseLong(data.get("curspace")));
-            ai.setTrafficShareLeft((long) (Long.parseLong(data.get("bodkb")) / 1000.0) * 1024l * 1024l);
-            ai.setValidUntil(Long.parseLong(data.get("validuntil")) * 1000);
+
+            ai.setValidUntil(System.currentTimeMillis() + (ai.getPremiumPoints() / type) * 24 * 60 * 60 * 1000l);
             if (ai.getValidUntil() < System.currentTimeMillis()) {
                 ai.setExpired(true);
             }
