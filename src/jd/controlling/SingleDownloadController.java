@@ -262,12 +262,10 @@ public class SingleDownloadController extends Thread {
         try {
             logger.finest(currentPlugin2.getBrowser().getRequest().getHttpConnection() + "");
         } catch (Exception e) {
-            JDLogger.exception(e);
         }
         try {
             logger.finest(currentPlugin2.getBrowser() + "");
         } catch (Exception e) {
-            JDLogger.exception(e);
         }
         downloadLink2.getLinkStatus().setErrorMessage(JDL.L("controller.status.plugindefective", "Plugin out of date"));
         downloadLink.requestGuiUpdate();
