@@ -16,6 +16,7 @@
 
 package jd.plugins.hoster;
 
+import java.awt.event.ActionEvent;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -30,6 +31,8 @@ import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.DownloadWatchDog;
+import jd.gui.swing.jdgui.actions.ToolBarAction.Types;
+import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.http.Browser;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
@@ -112,6 +115,8 @@ public class Rapidshare extends PluginForHost {
     final static private Boolean HTMLWORKAROUND = new Boolean(false);
 
     private static long RS_API_WAIT = 0;
+
+    private static MenuAction happyHourAction = null;
 
     private static HashMap<Account, ArrayList<DownloadLink>> trafficCheck = new HashMap<Account, ArrayList<DownloadLink>>();
 
@@ -1263,5 +1268,38 @@ public class Rapidshare extends PluginForHost {
          */
         if (updateNeeded && DownloadWatchDog.getInstance().getRemainingTempUnavailWaittime(getHost()) > 0) return false;
         return super.isPremiumDownload();
+    }
+
+    @Override
+    public ArrayList<MenuAction> createMenuitems() {
+        ArrayList<MenuAction> ret = super.createMenuitems();
+        if (ret != null) {
+            for (MenuAction a : ret) {
+                if (a.getType() == Types.CONTAINER) {
+                    // a.addMenuItem(new MenuAction("bla", 555));
+                }
+            }
+            if (happyHourAction == null) {
+                /* needed to sync all menuitems */
+                happyHourAction = new MenuAction("Wait for Happy Hour?", 32767);
+                happyHourAction.setType(Types.TOGGLE);
+                happyHourAction.setActionListener(this);
+                happyHourAction.setSelected(getPluginConfig().getBooleanProperty(PROPERTY_ONLY_HAPPYHOUR, false));
+            }
+            ret.add(happyHourAction);
+        }
+        return ret;
+    }
+
+    @Override
+    public void actionPerformed(final ActionEvent e) {
+        if (e.getID() == 32767) {
+            getPluginConfig().setProperty(PROPERTY_ONLY_HAPPYHOUR, !getPluginConfig().getBooleanProperty(PROPERTY_ONLY_HAPPYHOUR, false));
+            /* needed to sync all menuitems */
+            happyHourAction.setSelected(getPluginConfig().getBooleanProperty(PROPERTY_ONLY_HAPPYHOUR, false));
+        } else {
+            super.actionPerformed(e);
+        }
+
     }
 }
