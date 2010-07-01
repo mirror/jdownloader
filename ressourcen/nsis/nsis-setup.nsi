@@ -14,10 +14,16 @@ OutFile .\..\..\dist\JDownloaderSetup.exe
 SetCompressor lzma
 
 #Advertising
-!include ".\advertising\template.nsh"
-#!include ".\advertising\kikin\kikin.nsh"
-#!include ".\advertising\OpenCandy\OpenCandy.nsh"
-
+!ifdef ADVERTISING_KIKIN
+  !include ".\advertising\kikin\kikin.nsh"
+!else
+  !ifdef ADVERTISING_OPENCANDY
+    !include ".\advertising\OpenCandy\OpenCandy.nsh"
+  !else
+    !include ".\advertising\template.nsh"
+  !endif
+!endif
+    
 #Disable version display for JD (Autoupdate)
 #VERSION2 is needed for VIAddVersionKey
 #!define VERSION 1.0
@@ -38,7 +44,7 @@ SetCompressor lzma
 # Java Check
 !define JRE_VERSION "1.6"
 !define JRE_SILENT 0
-!define JRE_URL "http://javadl.sun.com/webapps/download/AutoDL?BundleId=36668"
+!define JRE_URL "http://javadl.sun.com/webapps/download/AutoDL?BundleId=39502"
 
 # Included files
 !AddPluginDir plugins
@@ -105,7 +111,7 @@ Section $(SecJDMain_TITLE) SecJDMain
     #Copy files
     SetOutPath $INSTDIR    
     SetOverwrite on
-    File /r .\files\*    
+    File /r .\..\..\dist\JDownloader\*
     
     #Create shortcuts
     SetOutPath "$SMPROGRAMS\$(^Name)"

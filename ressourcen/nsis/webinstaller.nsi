@@ -1,5 +1,5 @@
 Name "JDownloader"
-OutFile ".\dist\WebInstaller.exe"
+OutFile ".\..\..\dist\WebInstaller.exe"
 CRCCheck on
 XPStyle on
 SetCompressor zlib #Don't use lzma here as filesize doesn't matter as long as it's <1MB

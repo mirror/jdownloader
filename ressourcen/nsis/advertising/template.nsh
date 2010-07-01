@@ -2,7 +2,7 @@
 
 #!undef LICENSE
 #!define LICENSE ".\res\license_sample.txt"
-#OutFile .\dist\JDownloaderSetup_Ad.exe
+#OutFile .\..\..\dist\JDownloaderSetup_Ad.exe
 
 !macro ADVERTISING_PAGE
 !macroend

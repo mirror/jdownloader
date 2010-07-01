@@ -2,7 +2,7 @@
 
 !undef LICENSE
 !define LICENSE ".\res\license_opencandy.txt" # /redef doesn't work for some reason
-OutFile ".\dist\JDownloaderSetup_OpenCandy.exe"
+OutFile ".\..\..\dist\JDownloaderSetup_OpenCandy.exe"
 
 !macro ADVERTISING_PAGE
 
