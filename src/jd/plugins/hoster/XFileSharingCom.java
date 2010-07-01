@@ -72,6 +72,7 @@ public class XFileSharingCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
+        br.forceDebug(true);
         requestFileInformation(link);
         if (br.containsHTML("value=\"Free Users\"")) br.postPage(link.getDownloadURL(), "Free=Free+Users");
         String passCode = null;
@@ -130,7 +131,7 @@ public class XFileSharingCom extends PluginForHost {
         if (br.containsHTML("You have got max allowed bandwidth size per hour")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
         String finalLink = findLink();
         if (finalLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, finalLink, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, finalLink, true, 3);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

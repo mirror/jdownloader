@@ -129,7 +129,18 @@ public class BadongoCom extends PluginForHost {
         if (link == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, link, true, 0);
         if (!dl.getConnection().isContentDisposition()) {
-            String page = br.loadConnection(dl.getConnection());
+
+            String page = br.loadConnection(dl.getConnection()) + "";// +"" due
+                                                                     // to
+                                                                     // refaktor
+                                                                     // compatibilities.
+                                                                     // old
+                                                                     // <ref10000
+                                                                     // returns
+                                                                     // String.
+                                                                     // else
+                                                                     // Request
+                                                                     // INstance
             br.getRequest().setHtmlCode(page);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -179,8 +190,18 @@ public class BadongoCom extends PluginForHost {
             if (br.getRedirectLocation() == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.getRedirectLocation(), true, 1);
             if (!dl.getConnection().isContentDisposition()) {
-                String page = br.loadConnection(dl.getConnection());
-                br.getRequest().setHtmlCode(page);
+                String page = br.loadConnection(dl.getConnection()) + "";// +""
+                                                                         // due
+                                                                         // to
+                                                                         // refaktor
+                                                                         // compatibilities.
+                                                                         // old
+                                                                         // <ref10000
+                                                                         // returns
+                                                                         // String.
+                                                                         // else
+                                                                         // Request
+                                                                         // INstance
                 dl.getConnection().disconnect();
                 handleErrors(br);
             }
@@ -233,7 +254,18 @@ public class BadongoCom extends PluginForHost {
 
             dl = BrowserAdapter.openDownload(ajax, downloadLink, ajax.getRedirectLocation(), true, 1);
             if (!dl.getConnection().isContentDisposition()) {
-                String page = ajax.loadConnection(dl.getConnection());
+                String page = ajax.loadConnection(dl.getConnection()) + "";// +""
+                                                                           // due
+                                                                           // to
+                                                                           // refaktor
+                                                                           // compatibilities.
+                                                                           // old
+                                                                           // <ref10000
+                                                                           // returns
+                                                                           // String.
+                                                                           // else
+                                                                           // Request
+                                                                           // INstance
                 ajax.getRequest().setHtmlCode(page);
                 dl.getConnection().disconnect();
                 handleErrors(ajax);

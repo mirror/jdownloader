@@ -76,7 +76,17 @@ public class XupIn extends PluginForHost {
         jd.plugins.BrowserAdapter.openDownload(br, downloadLink, download);
 
         if (!dl.getConnection().isContentDisposition()) {
-            String page = br.loadConnection(dl.getConnection());
+            String page = br.loadConnection(dl.getConnection()) + "";// +"" due
+                                                                     // to
+                                                                     // refaktor
+                                                                     // compatibilities.
+                                                                     // old
+                                                                     // <ref10000
+                                                                     // returns
+                                                                     // String.
+                                                                     // else
+                                                                     // Request
+                                                                     // INstance
             if (page.contains("richtige Passwort erneut ein")) {
                 downloadLink.setProperty("pass", null);
                 throw new PluginException(LinkStatus.ERROR_RETRY, JDL.L("plugins.hoster.xupin.errors.passwrong", "Password wrong"));

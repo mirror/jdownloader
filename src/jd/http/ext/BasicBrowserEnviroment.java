@@ -6,19 +6,31 @@ import jd.http.Request;
 import jd.http.ext.interfaces.BrowserEnviroment;
 
 import org.appwork.utils.Regex;
+import org.lobobrowser.html.domimpl.HTMLScriptElementImpl;
 
 public class BasicBrowserEnviroment implements BrowserEnviroment {
 
     private String[] blackList = null;
     private String[] whiteList = null;
+    private AdBlockerInterface adblocker;
 
     public BasicBrowserEnviroment(String[] blackList, String[] whitelist) {
         this.blackList = blackList;
         this.whiteList = whitelist;
+        this.setAdblocker(AdBlocker.getInstance());
 
     }
 
+    private void setAdblocker(AdBlockerInterface instance) {
+        adblocker = instance;
+    }
+
+    public AdBlockerInterface getAdblocker() {
+        return adblocker;
+    }
+
     public boolean doLoadContent(Request request) {
+
         boolean ret = false;
         if (whiteList != null) {
             for (String b : whiteList) {
@@ -31,6 +43,7 @@ public class BasicBrowserEnviroment implements BrowserEnviroment {
             }
         }
         if (!ret) {
+            if (adblocker.doBlockRequest(request)) return false;
             ret = true;
             if (blackList != null) {
 
@@ -50,9 +63,13 @@ public class BasicBrowserEnviroment implements BrowserEnviroment {
     }
 
     public void prepareContents(Request request) {
-        // TODO Auto-generated method stub
-        request.setHtmlCode(request.getHtmlCode().replaceAll("(filter: progid:DXImageTransform\\.Microsoft\\..*?;)", "/* CSSParserFilter $1*/"));
+        try {
+            if (request.getHtmlCode() != null) {
+                request.setHtmlCode(request.getHtmlCode().replaceAll("(filter: progid:DXImageTransform\\.Microsoft\\..*?;)", "/* CSSParserFilter $1*/"));
+            }
+        } catch (Exception e) {
 
+        }
     }
 
     public boolean isImageLoadingEnabled() {
@@ -119,6 +136,11 @@ public class BasicBrowserEnviroment implements BrowserEnviroment {
     public boolean isScriptingEnabled() {
         // TODO Auto-generated method stub
         return true;
+    }
+
+    public String doScriptFilter(HTMLScriptElementImpl htmlScriptElementImpl, String text) {
+        if (getAdblocker() == null) return text;
+        return getAdblocker().prepareScript(text, htmlScriptElementImpl.getSrc());
     }
 
 }

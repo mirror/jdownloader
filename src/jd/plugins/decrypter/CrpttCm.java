@@ -60,7 +60,9 @@ public class CrpttCm extends PluginForDecrypt {
         URLConnectionAdapter con = br.openGetConnection(parameter);
 
         if (con.getContentType().indexOf("text/html") >= 0) {
-            logger.info(br.loadConnection(con));
+            // +"" due to refaktor compatibilities. old <ref10000 returns
+            // String. else Request INstance
+            logger.info(br.loadConnection(con) + "");
             if (br.containsHTML(PATTERN_PW)) {
                 String pass = getUserInput(JDL.L("plugins.hoster.general.passwordprotectedinput", "The links are protected by a password. Please enter the password:"), param.getDecrypterPassword(), param);
                 String postData = "a=pw&pw=" + Encoding.urlEncode(pass);

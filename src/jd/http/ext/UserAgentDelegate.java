@@ -9,6 +9,7 @@ import jd.http.Cookies;
 import org.appwork.utils.logging.Log;
 import org.lobobrowser.html.HttpRequest;
 import org.lobobrowser.html.UserAgentContext;
+import org.lobobrowser.html.domimpl.HTMLScriptElementImpl;
 
 public class UserAgentDelegate implements UserAgentContext {
 
@@ -26,23 +27,23 @@ public class UserAgentDelegate implements UserAgentContext {
     }
 
     public String getAppCodeName() {
-        return browser.getUserAgent().getAppCodeName();
+        return browser.getBrowserEnviroment().getAppCodeName();
 
     }
 
     public String getAppMinorVersion() {
-        return browser.getUserAgent().getAppMinorVersion();
+        return browser.getBrowserEnviroment().getAppMinorVersion();
 
     }
 
     public String getAppName() {
-        return browser.getUserAgent().getAppName();
+        return browser.getBrowserEnviroment().getAppName();
 
     }
 
     public String getAppVersion() {
         // TODO Auto-generated method stub
-        return browser.getUserAgent().getAppVersion();
+        return browser.getBrowserEnviroment().getAppVersion();
 
     }
 
@@ -68,11 +69,11 @@ public class UserAgentDelegate implements UserAgentContext {
 
     public String getPlatform() {
         // TODO Auto-generated method stub
-        return browser.getUserAgent().getPlatform();
+        return browser.getBrowserEnviroment().getPlatform();
     }
 
     public String getProduct() {
-        return browser.getUserAgent().getProduct();
+        return browser.getBrowserEnviroment().getProduct();
     }
 
     public int getScriptingOptimizationLevel() {
@@ -84,16 +85,16 @@ public class UserAgentDelegate implements UserAgentContext {
      * code is untrusted.
      */
     public Policy getSecurityPolicy() {
-        return browser.getUserAgent().getSecurityPolicy();
+        return browser.getBrowserEnviroment().getSecurityPolicy();
     }
 
     public String getUserAgent() {
         // TODO Auto-generated method stub
-        return browser.getCommContext().getHeaders().get("User-Agent");
+        return browser.getCommContext().getRequest().getHeaders().get("User-Agent");
     }
 
     public String getVendor() {
-        return browser.getUserAgent().getVendor();
+        return browser.getBrowserEnviroment().getVendor();
     }
 
     public boolean isCookieEnabled() {
@@ -105,7 +106,7 @@ public class UserAgentDelegate implements UserAgentContext {
 
     public boolean isExternalCSSEnabled() {
         // TODO Auto-generated method stub
-        return browser.getUserAgent().isExternalCSSEnabled();
+        return browser.getBrowserEnviroment().isExternalCSSEnabled();
     }
 
     public boolean isMedia(String arg0) {
@@ -116,18 +117,28 @@ public class UserAgentDelegate implements UserAgentContext {
 
     public boolean isScriptingEnabled() {
         // TODO Auto-generated method stub
-        return browser.getUserAgent().isScriptingEnabled();
+        return browser.getBrowserEnviroment().isScriptingEnabled();
     }
 
+    /**
+     * gets called if js sets a cookie
+     */
     public void setCookie(URL arg0, String arg1) {
-        RuntimeException e = new RuntimeException("Not implemented");
-        Log.exception(e);
-        throw e;
+        // date is null..since js time is localtime anyway
+        Cookies cookies = Cookies.parseCookies(arg1, arg0.getHost(), null);
+        // cookies = cookies;
+        browser.getCommContext().getCookies(arg0.toString()).add(cookies);
+
     }
 
     public boolean isInternalCSSEnabled() {
         // TODO Auto-generated method stub
-        return browser.getUserAgent().isInternalCSSEnabled();
+        return browser.getBrowserEnviroment().isInternalCSSEnabled();
+    }
+
+    public String doScriptFilter(HTMLScriptElementImpl htmlScriptElementImpl, String text) {
+        // TODO Auto-generated method stub
+        return browser.getBrowserEnviroment().doScriptFilter(htmlScriptElementImpl, text);
     }
 
 }

@@ -64,7 +64,9 @@ public class Upload {
             r.addFormData(new FormData("password", pass));
             br.openRequestConnection(r);
 
-            String code = r.read();
+            String code = r.read() + "";// +"" due to refaktor compatibilities.
+                                        // old <ref10000 returns String. else
+                                        // Request INstance;
             System.out.println(code);
             String[] lines = Regex.getLines(code);
             return lines[1];

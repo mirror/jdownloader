@@ -3,6 +3,8 @@ package jd.http.ext;
 import java.awt.Image;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.charset.CharacterCodingException;
+import java.util.ArrayList;
 
 import jd.http.Browser;
 import jd.http.Request;
@@ -16,10 +18,19 @@ public class ExtHTTPRequest implements HttpRequest {
 
     private ExtBrowser browser;
 
+    private ArrayList<ReadyStateChangeListener> listener;
+
+    private int readyState = NetworkRequest.STATE_UNINITIALIZED;
+
+    private Request request;
+
+    private boolean asyncFlag;
+
     private Browser br;
 
     public ExtHTTPRequest(ExtBrowser browser) {
         this.browser = browser;
+        listener = new ArrayList<ReadyStateChangeListener>();
     }
 
     public void abort() {
@@ -30,9 +41,7 @@ public class ExtHTTPRequest implements HttpRequest {
     }
 
     public void addReadyStateChangeListener(ReadyStateChangeListener listener) {
-        RuntimeException e = new RuntimeException("Not implemented");
-        Log.exception(e);
-        throw e;
+        this.listener.add(listener);
 
     }
 
@@ -43,36 +52,47 @@ public class ExtHTTPRequest implements HttpRequest {
 
     }
 
+    private void changeReadyState(int newState) {
+        boolean dif = newState > 0 && newState != readyState;
+        if (newState > 0) {
+            this.readyState = newState;
+        }
+        if (dif) {
+            for (ReadyStateChangeListener l : listener) {
+                l.readyStateChanged();
+            }
+        }
+
+    }
+
     public int getReadyState() {
-        RuntimeException e = new RuntimeException("Not implemented");
-        Log.exception(e);
-        throw e;
+
+        return readyState;
 
     }
 
     public byte[] getResponseBytes() {
-        RuntimeException e = new RuntimeException("Not implemented");
-        Log.exception(e);
-        throw e;
+        return request.getResponseBytes();
 
     }
 
     public String getResponseHeader(String headerName) {
-        RuntimeException e = new RuntimeException("Not implemented");
-        Log.exception(e);
-        throw e;
+        return request.getResponseHeader(headerName);
 
     }
 
     public Image getResponseImage() {
-        RuntimeException e = new RuntimeException("Not implemented");
-        Log.exception(e);
-        throw e;
+        return request.getResponseImage();
 
     }
 
     public String getResponseText() {
-        return br.getRequest().getHtmlCode();
+        try {
+            return request.getHtmlCode();
+        } catch (CharacterCodingException e) {
+            Log.exception(e);
+            return null;
+        }
 
     }
 
@@ -85,8 +105,8 @@ public class ExtHTTPRequest implements HttpRequest {
 
     public int getStatus() {
         try {
-            if (br == null) return 403;
-            return br.getRequest().getHttpConnection().getResponseCode();
+            if (request == null || request.getHttpConnection() == null) return 403;
+            return request.getHttpConnection().getResponseCode();
         } catch (IOException e) {
             Log.exception(e);
             return 511;
@@ -120,8 +140,10 @@ public class ExtHTTPRequest implements HttpRequest {
 
     }
 
-    public void open(String method, String url, boolean asyncFlag) throws IOException {
-        Request request = null;
+    public void open(final String method, final String url, final boolean asyncFlag) throws IOException {
+        // TODO use threadpool for asynch
+
+        this.asyncFlag = asyncFlag;
         if (method.equalsIgnoreCase("GET")) {
             br = browser.getCommContext().cloneBrowser();
             request = br.createGetRequest(url);
@@ -131,13 +153,8 @@ public class ExtHTTPRequest implements HttpRequest {
             Log.exception(e);
             throw e;
         }
-        if (request != null) {
-            if (browser.getUserAgent().doLoadContent(request)) {
-                br.openGetConnection(url);
-                return;
-            }
-        }
-        br = null;
+
+        this.changeReadyState(NetworkRequest.STATE_LOADING);
 
     }
 
@@ -156,10 +173,38 @@ public class ExtHTTPRequest implements HttpRequest {
     }
 
     public void send(String content) throws IOException {
+        if (browser.getBrowserEnviroment().doLoadContent(request)) {
+            if (asyncFlag) {
+                // use pool
+                new Thread("Asynchloader") {
+                    public void run() {
+                        try {
+                            br.openRequestConnection(request);
 
-        if (br != null) {
-            br.loadConnection(null);
-            browser.getUserAgent().prepareContents(br.getRequest());
+                            br.loadConnection(null);
+                            browser.getBrowserEnviroment().prepareContents(br.getRequest());
+                            changeReadyState(NetworkRequest.STATE_LOADED);
+                            changeReadyState(NetworkRequest.STATE_INTERACTIVE);
+                            changeReadyState(NetworkRequest.STATE_COMPLETE);
+                        } catch (IOException e) {
+                            // TODO Auto-generated catch block
+                            e.printStackTrace();
+                        }
+
+                    }
+                }.start();
+            } else {
+                br.openRequestConnection(request);
+
+                changeReadyState(NetworkRequest.STATE_LOADED);
+                br.loadConnection(null);
+                browser.getBrowserEnviroment().prepareContents(br.getRequest());
+
+                changeReadyState(NetworkRequest.STATE_INTERACTIVE);
+                changeReadyState(NetworkRequest.STATE_COMPLETE);
+
+            }
+
         }
 
     }

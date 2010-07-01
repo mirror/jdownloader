@@ -146,7 +146,7 @@ public class Netloadin extends PluginForHost {
         }
     }
 
-    private void handleErrors(DownloadLink downloadLink) throws PluginException {
+    private void handleErrors(DownloadLink downloadLink) throws Exception {
         if (br.containsHTML(FILE_NOT_FOUND)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("Im Link ist ein Schreibfehler")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML(FILE_DAMAGED)) {

@@ -154,6 +154,11 @@ public class MediafireCom extends PluginForHost {
         if (fileID == null) {
             fileID = new Regex(downloadLink.getDownloadURL(), "file/(.*)").getMatch(0);
         }
+
+        // br.postPageRaw("http://www.mediafire.com/basicapi/premiumapi.php",
+        // "premium_key=" + CONFIGURATION_KEYS.get(account) + "&files=" +
+        // fileID);
+
         br.forceDebug(true);
 
         br.getPage(downloadLink.getDownloadURL());

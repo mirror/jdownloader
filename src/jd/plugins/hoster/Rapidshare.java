@@ -25,6 +25,8 @@ import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.regex.Pattern;
 
+import javax.swing.JPanel;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -33,6 +35,7 @@ import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.controlling.DownloadWatchDog;
 import jd.gui.UserIO;
+import jd.gui.swing.dialog.ContainerDialog;
 import jd.gui.swing.jdgui.actions.ToolBarAction.Types;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.http.Browser;
@@ -54,6 +57,8 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.RAFDownload;
 import jd.utils.locale.JDL;
+
+import net.miginfocom.swing.MigLayout;
 
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;
@@ -160,7 +165,6 @@ public class Rapidshare extends PluginForHost {
     private static final String PROPERTY_AUTO_UPGRADE = "AUTO_UPGRADE";
     private static final String PROPERTY_ONLY_HAPPYHOUR = "PROPERTY_ONLY_HAPPYHOUR";
     private static final String PROPERTY_RESET_PACKAGE_TO = "RESET_PACKAGE_TO";
-    private static final String ACCOUNT_DONT_UPGRADE = "ACCOUNT_DONT_UPGRADE";
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
@@ -1329,12 +1333,12 @@ public class Rapidshare extends PluginForHost {
                                 MenuAction upgradeBlock = menuActionMap.get(1000 + i);
                                 if (upgradeBlock == null) {
                                     /* create new donotupgrade action */
-                                    upgradeBlock = new MenuAction(JDL.L("plugins.hoster.rapidshare.com.dontupgrade", "Do not upgrade to next RapidModel"), 1000 + i);
-                                    upgradeBlock.setType(Types.TOGGLE);
+                                    upgradeBlock = new MenuAction(JDL.L("plugins.hoster.rapidshare.com.upgrade", "Upgradesettings"), 1000 + i);
+
                                     upgradeBlock.setActionListener(this);
-                                    upgradeBlock.setSelected(isBooleanSet(getPremiumAccounts().get(i), ACCOUNT_DONT_UPGRADE, true));
                                     menuActionMap.put(1000 + i, upgradeBlock);
                                 }
+
                                 if (!aa.getItems().contains(upgradeBlock)) {
                                     /* backwards compatibility to 0.95xx */
                                     /*
@@ -1388,8 +1392,17 @@ public class Rapidshare extends PluginForHost {
              */
             if (upgradeBlock != null) {
                 int i = e.getID() - 1000;
-                getPremiumAccounts().get(i).setProperty(ACCOUNT_DONT_UPGRADE, !isBooleanSet(getPremiumAccounts().get(i), ACCOUNT_DONT_UPGRADE, true));
-                upgradeBlock.setSelected(getPremiumAccounts().get(i).getBooleanProperty(ACCOUNT_DONT_UPGRADE, false));
+                
+               JPanel content = new JPanel(new MigLayout("ins 5,debug, wrap 1", "[grow,fill]", "[][][][][][][]"));
+                
+               super(UserIO.NO_ICON, JDL.LF("jd.plugins.hoster.Rapidshare.UpgradeDialog.title", "Upgrade &Downgrade Settings for %s", account.getUser()), CONTENT = new JPanel(new MigLayout("ins 5,debug, wrap 1", "[grow,fill]", "[][][][][][][]")), null, JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.save", "Save"), null);
+               
+               new ContainerDialaog(){
+                   
+               }
+                
+                
+                new UpgradeDialog(getPremiumAccounts().get(i));
             }
         } else if (e.getID() == 32767) {
             MenuAction happyHourAction = menuActionMap.get(e.getID());
@@ -1410,4 +1423,5 @@ public class Rapidshare extends PluginForHost {
             super.actionPerformed(e);
         }
     }
+
 }

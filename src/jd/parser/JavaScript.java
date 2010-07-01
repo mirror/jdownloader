@@ -48,7 +48,7 @@ public final class JavaScript {
     public Browser br;
     private ArrayList<String> executed = new ArrayList<String>();
     private WritableLineReader wis;
-    public boolean debug = false;
+    public boolean debug = true;
     private Context cx;
     private Scriptable scope;
     private Document d;
@@ -123,6 +123,7 @@ public final class JavaScript {
         for (int i = 0; i < reg.length; i++) {
             if (reg[i][0].toLowerCase().contains("javascript")) {
                 if (reg[i].length == 3 && reg[i][2] != null && reg[i][2].length() > 0 && !executed.contains(reg[i][2])) {
+                    String pre = d.getInnerHTML();
                     try {
                         cx.evaluateString(scope, parseJS(reg[i][2]), "<cmd>", 1, null);
                     } catch (Exception e) {
@@ -133,6 +134,9 @@ public final class JavaScript {
                     }
                     String data2 = d.getInnerHTML().replaceAll("(?is)((?<!<script [^>]{0,100}>\\s{0,30})<!--.*?-->)", "");
                     executed.add(reg[i][2]);
+                    if (!data2.equals(pre)) {
+                        System.out.println("");
+                    }
                     runString(d.getContent());
                     // System.out.println(data2);
                     if (!data2.equals(data) && !d.getContent().equals(data)) {

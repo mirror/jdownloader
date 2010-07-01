@@ -4,18 +4,19 @@ import java.net.URL;
 import java.util.ArrayList;
 
 import jd.http.Browser;
+import jd.http.Request;
 import jd.http.ext.interfaces.BrowserEnviroment;
 import jd.http.ext.security.JSPermissionRestricter;
 import jd.parser.Regex;
 
 import org.appwork.utils.logging.Log;
 import org.lobobrowser.html.UserAgentContext;
-import org.lobobrowser.html.domimpl.HTMLDivElementImpl;
 import org.lobobrowser.html.domimpl.HTMLDocumentImpl;
+import org.lobobrowser.html.domimpl.HTMLFormElementImpl;
 import org.lobobrowser.html.domimpl.HTMLFrameElementImpl;
 import org.lobobrowser.html.domimpl.HTMLIFrameElementImpl;
-import org.lobobrowser.html.domimpl.HTMLLinkElementImpl;
-import org.lobobrowser.html.style.AbstractCSS2Properties;
+import org.lobobrowser.html.domimpl.HTMLSpanElementImpl;
+import org.w3c.dom.Element;
 import org.w3c.dom.html2.HTMLCollection;
 
 public class ExtBrowser {
@@ -30,32 +31,49 @@ public class ExtBrowser {
 
     }
 
+    @SuppressWarnings("all")
     public static void main(String args[]) throws ExtBrowserException {
-        ExtBrowser br = new ExtBrowser();
 
-        br.setUserAgent(new BasicBrowserEnviroment(new String[] { ".*blank.html", ".*scorecardresearch.*", "http://www.mediafire.com/", "http://www.mediafire.com/.*?/.*?/.*" }, null));
+        ExtBrowser br = new ExtBrowser();
+        br.setUserAgent(new FullBrowserEnviroment() {
+            public void prepareContents(Request req) {
+
+                req = req;
+
+            }
+
+        });
 
         Browser.init();
         Browser.setLogger(Log.L);
         Browser.setVerbose(true);
         br.getCommContext().forceDebug(true);
 
-        br.getPage("http://jdownloader.org/advert/jstest.html");
+        br.getPage("http://ifile.it/uvkog7y");
+        // br.getPage("http://jdownloader.net:8081/advert/jstest.html");
+        ArrayList<HTMLFormElementImpl> forms = br.getForms(null);
+        String text = br.getHtmlText();
+        HTMLSpanElementImpl button = (HTMLSpanElementImpl) br.getElementByID(null, "req_btn2");
+        br.getInputController().click(button);
+        // br.getInputController().mouseClick(button, null, 1, 4);
 
-        HTMLCollection links = br.getDocument().getLinks();
-        for (int i = 0; i < links.getLength(); i++) {
-            HTMLLinkElementImpl l = (HTMLLinkElementImpl) links.item(i);
-
-            if (l.toString().startsWith("http://download")) {
-                HTMLDivElementImpl div = (HTMLDivElementImpl) l.getParentNode();
-                AbstractCSS2Properties s = div.getStyle();
-                if (s.getTop() == null || !s.getTop().equals("-250px")) {
-                    String myURL = l.getAbsoluteHref();
-                    System.out.println("\r\n\r\n" + myURL);
-                }
-
-            }
-        }
+        br = br;
+        // String str = br.getHtmlText();
+        // str = str;
+        // HTMLCollection links = br.getDocument().getLinks();
+        // for (int i = 0; i < links.getLength(); i++) {
+        // HTMLLinkElementImpl l = (HTMLLinkElementImpl) links.item(i);
+        //
+        // if (l.toString().startsWith("http://download")) {
+        // HTMLDivElementImpl div = (HTMLDivElementImpl) l.getParentNode();
+        // AbstractCSS2Properties s = div.getStyle();
+        // if (s.getTop() == null || !s.getTop().equals("-250px")) {
+        // String myURL = l.getAbsoluteHref();
+        // System.out.println("\r\n\r\n" + myURL);
+        // }
+        //
+        // }
+        // }
 
         // for (int i = 0; i < frames.getLength(); i++) {
         // Node frame = frames.item(i);
@@ -66,6 +84,33 @@ public class ExtBrowser {
         //
         // }
 
+    }
+
+    private InputController getInputController() {
+
+        return this.inputController;
+    }
+
+    private Element getElementByID(ExtHTMLFrameElement frame, String id) {
+        if (frame == null) frame = this.getHtmlFrameController();
+        Element ret = frame.getDocument().getElementById(id);
+        return ret;
+
+    }
+
+    private ArrayList<HTMLFormElementImpl> getForms(ExtHTMLFrameElement frame) {
+        if (frame == null) frame = this.getHtmlFrameController();
+        HTMLCollection forms = frame.getDocument().getForms();
+        return getList(forms, new ArrayList<HTMLFormElementImpl>());
+
+    }
+
+    @SuppressWarnings("unchecked")
+    private <E> ArrayList<E> getList(HTMLCollection forms, ArrayList<E> arrayList) {
+        for (int i = 0; i < forms.getLength(); i++) {
+            arrayList.add((E) forms.item(i));
+        }
+        return arrayList;
     }
 
     /**
@@ -92,6 +137,7 @@ public class ExtBrowser {
     private UserAgentDelegate uac;
     private Browser commContext;
     private String url;
+    private InputController inputController;
 
     public ExtBrowser() {
 
@@ -103,7 +149,12 @@ public class ExtBrowser {
         commContext = new Browser();
         commContext.setFollowRedirects(true);
         commContext.setCookiesExclusive(true);
+        inputController = new InputController();
 
+    }
+
+    public void setInputController(InputController inputController) {
+        this.inputController = inputController;
     }
 
     public Regex getRegex(final String pattern) {
@@ -119,6 +170,7 @@ public class ExtBrowser {
         commContext = br.cloneBrowser();
         commContext.setFollowRedirects(true);
         commContext.setCookiesExclusive(true);
+        inputController = new InputController();
     }
 
     public void getPage(String url) throws ExtBrowserException {
@@ -141,14 +193,14 @@ public class ExtBrowser {
     // return document;
     // }
 
-    private BrowserEnviroment userAgent = new BasicBrowserEnviroment(null, null);
+    private BrowserEnviroment browserEnviroment = new BasicBrowserEnviroment(null, null);
 
-    public BrowserEnviroment getUserAgent() {
-        return userAgent;
+    public BrowserEnviroment getBrowserEnviroment() {
+        return browserEnviroment;
     }
 
     public void setUserAgent(BrowserEnviroment userAgent) {
-        this.userAgent = userAgent;
+        this.browserEnviroment = userAgent;
 
         commContext.setCookiesExclusive(false);
         commContext.setCookiesExclusive(true);
@@ -203,6 +255,11 @@ public class ExtBrowser {
             }
         }
         return ret;
+
+    }
+
+    public String getScriptableVariable(String string) {
+        return this.getHtmlFrameController().getScriptableVariable(string);
 
     }
 

@@ -26,4 +26,5 @@ public interface ExtHTMLFrameElement {
     public HtmlFrameController getHtmlFrameController();
 
     public HTMLElementImpl getImpl();
+
 }

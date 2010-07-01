@@ -16,11 +16,14 @@
 
 package jd.plugins;
 
+import java.nio.charset.CharacterCodingException;
+
 import jd.gui.UserIO;
 import jd.gui.swing.components.Balloon;
 import jd.http.Browser;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.logging.Log;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;
 import org.mozilla.javascript.Scriptable;
@@ -52,16 +55,22 @@ public class PluginUtils {
         final String regex = "eval\\((.*?\\,\\{\\}\\))\\)";
         final String[] containers = br.getRegex(regex).getColumn(0);
 
-        String htmlcode = br.getRequest().getHtmlCode();
-        for (String c : containers) {
-            final Context cx = ContextFactory.getGlobal().enter();
-            final Scriptable scope = cx.initStandardObjects();
-            c = c.replaceAll("return p\\}\\(", " return p}  f(").replaceAll("function\\s*\\(p\\,a\\,c\\,k\\,e\\,d\\)", "function f(p,a,c,k,e,d)");
-            final Object result = cx.evaluateString(scope, c, "<cmd>", 1, null);
-            final String code = Context.toString(result);
-            htmlcode = htmlcode.replaceFirst(regex, code);
+        String htmlcode;
+        try {
+            htmlcode = br.getRequest().getHtmlCode();
+
+            for (String c : containers) {
+                final Context cx = ContextFactory.getGlobal().enter();
+                final Scriptable scope = cx.initStandardObjects();
+                c = c.replaceAll("return p\\}\\(", " return p}  f(").replaceAll("function\\s*\\(p\\,a\\,c\\,k\\,e\\,d\\)", "function f(p,a,c,k,e,d)");
+                final Object result = cx.evaluateString(scope, c, "<cmd>", 1, null);
+                final String code = Context.toString(result);
+                htmlcode = htmlcode.replaceFirst(regex, code);
+            }
+            br.getRequest().setHtmlCode(htmlcode);
+        } catch (CharacterCodingException e) {
+            Log.exception(e);
         }
-        br.getRequest().setHtmlCode(htmlcode);
     }
 
 }

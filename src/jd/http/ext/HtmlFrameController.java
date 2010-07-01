@@ -2,7 +2,11 @@ package jd.http.ext;
 
 import java.awt.event.MouseEvent;
 import java.io.StringReader;
+import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
 
 import jd.http.Request;
 import jd.http.ext.events.HtmlFrameControllerEventsender;
@@ -21,6 +25,12 @@ import org.lobobrowser.html.domimpl.HTMLDocumentImpl;
 import org.lobobrowser.html.domimpl.HTMLElementImpl;
 import org.lobobrowser.html.domimpl.HTMLFrameElementImpl;
 import org.lobobrowser.html.io.WritableLineReader;
+import org.lobobrowser.html.js.Executor;
+import org.lobobrowser.html.js.Window;
+import org.lobobrowser.html.js.event.BasicEvent;
+import org.lobobrowser.html.js.event.JSEventListener;
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.Scriptable;
 import org.w3c.dom.html2.HTMLCollection;
 import org.w3c.dom.html2.HTMLElement;
 import org.w3c.dom.html2.HTMLLinkElement;
@@ -36,15 +46,30 @@ import org.w3c.dom.html2.HTMLLinkElement;
  */
 public class HtmlFrameController implements HtmlRendererContext, ExtHTMLFrameElement {
 
+    private static final String DOM_CONTENT_LOADED = "DOMContentLoaded";
     private ExtBrowser extBrowser;
     private HTMLDocumentImpl htmlDocument;
     private HtmlFrameController parentFrameController;
 
     private HtmlFrameControllerEventsender eventSender;
+    private ExtHTMLFrameImpl frame = null;
+    private HashMap<String, ArrayList<JSEventListener>> listenerMap = new HashMap<String, ArrayList<JSEventListener>>();
+
+    public ExtHTMLFrameImpl getFrame() {
+        return frame;
+    }
 
     public HtmlFrameController(ExtBrowser extBrowser) {
         this.extBrowser = extBrowser;
         eventSender = new HtmlFrameControllerEventsender();
+
+    }
+
+    public HtmlFrameController(ExtBrowser extBrowser, ExtHTMLFrameImpl f) {
+        this.extBrowser = extBrowser;
+        eventSender = new HtmlFrameControllerEventsender();
+
+        frame = f;
 
     }
 
@@ -139,10 +164,11 @@ public class HtmlFrameController implements HtmlRendererContext, ExtHTMLFrameEle
     }
 
     public String getName() {
-        // TODO Auto-generated method stub
-        RuntimeException e = new RuntimeException("Not implemented");
-        Log.exception(e);
-        throw e;
+        if (frame == null) {
+            return "";
+        } else {
+            return frame.getName();
+        }
     }
 
     public String getNextURL() {
@@ -211,7 +237,7 @@ public class HtmlFrameController implements HtmlRendererContext, ExtHTMLFrameEle
 
     public boolean isImageLoadingEnabled() {
         // TODO Auto-generated method stub
-        return extBrowser.getUserAgent().isImageLoadingEnabled();
+        return extBrowser.getBrowserEnviroment().isImageLoadingEnabled();
     }
 
     public boolean isVisitedLink(HTMLLinkElement arg0) {
@@ -358,9 +384,10 @@ public class HtmlFrameController implements HtmlRendererContext, ExtHTMLFrameEle
             if (actualMethod.equals("GET")) {
                 if (formInputs == null || formInputs.length == 0) {
                     Request request = extBrowser.getCommContext().createGetRequest(action + "");
-                    if (extBrowser.getUserAgent().doLoadContent(request)) {
+                    if (extBrowser.getBrowserEnviroment().doLoadContent(request)) {
                         extBrowser.getCommContext().openRequestConnection(request);
                         extBrowser.getCommContext().loadConnection(null);
+                        extBrowser.getBrowserEnviroment().prepareContents(extBrowser.getCommContext().getRequest());
                     } else {
                         return;
                     }
@@ -383,7 +410,7 @@ public class HtmlFrameController implements HtmlRendererContext, ExtHTMLFrameEle
                     }
 
                     Request request = extBrowser.getCommContext().createFormRequest(form);
-                    if (extBrowser.getUserAgent().doLoadContent(request)) {
+                    if (extBrowser.getBrowserEnviroment().doLoadContent(request)) {
                         extBrowser.getCommContext().openRequestConnection(request);
                         extBrowser.getCommContext().loadConnection(null);
                     } else {
@@ -415,14 +442,32 @@ public class HtmlFrameController implements HtmlRendererContext, ExtHTMLFrameEle
 
         try {
             htmlDocument.load();
-
-            if (extBrowser.getUserAgent().isAutoProcessSubFrames()) {
+            if (this.frame != null) {
+                if (frame.getSrc() != null && frame.getSrc().length() > 0) {
+                    dispatch(new BasicEvent("load", frame.getImpl()));
+                }
+            } else {
+                dispatch(new BasicEvent("DOMContentLoaded", this.getDocument()));
+                dispatch(new BasicEvent("load", Window.getWindow(this)));
+            }
+            if (extBrowser.getBrowserEnviroment().isAutoProcessSubFrames()) {
                 processFrames();
             }
 
         } catch (Exception e) {
             throw new ExtBrowserException(e);
         }
+    }
+
+    private synchronized ArrayList<JSEventListener> getListenerList(String eventName) {
+
+        ArrayList<JSEventListener> ret = listenerMap.get(eventName);
+        if (ret == null) {
+            ret = new ArrayList<JSEventListener>();
+            listenerMap.put(eventName, ret);
+        }
+        return ret;
+
     }
 
     public void processFrames() throws ExtBrowserException {
@@ -434,7 +479,7 @@ public class HtmlFrameController implements HtmlRendererContext, ExtHTMLFrameEle
 
     public ExtHTMLFrameImpl processFrame(ExtHTMLFrameImpl f) throws ExtBrowserException {
         if (f.getSrc() != null) {
-            HtmlFrameController rContext = new HtmlFrameController(this.extBrowser);
+            HtmlFrameController rContext = new HtmlFrameController(this.extBrowser, f);
             rContext.parentFrameController = this;
             try {
                 rContext.submitForm("GET", new URL(extBrowser.getCommContext().getURL(f.getSrc())), null, null, null);
@@ -497,5 +542,89 @@ public class HtmlFrameController implements HtmlRendererContext, ExtHTMLFrameEle
         // TODO Auto-generated method stub
         return null;
     }
+
+    public Scriptable getScriptableScope() {
+        return Window.getWindow(this).getWindowScope();
+
+    }
+
+    public String evalAndReturn(String script) throws ExtBrowserException {
+        Scriptable scope = getScriptableScope();
+        Context cx;
+        try {
+            cx = Executor.createContext(new URL(this.getDocument().getURL()), extBrowser.getUserAgentContext());
+
+            Object result = cx.evaluateString(scope, "function qwertfbkdsiebdfia432hjfd83j(){return " + script + ";} qwertfbkdsiebdfia432hjfd83j();", "<cmd>", 1, null);
+            String ret = Context.toString(result);
+            Context.exit();
+            return ret;
+        } catch (MalformedURLException e) {
+            // TODO Auto-generated catch block
+            throw new ExtBrowserException(e);
+        }
+    }
+
+    public String getScriptableVariable(String string) {
+
+        Scriptable scope = getScriptableScope();
+        return (String) scope.get(string, scope);
+    }
+
+    public void addEventListener(JSEventListener jsEventListener) {
+        System.out.println("Listener " + jsEventListener);
+        removeEventListener(jsEventListener);
+        this.getListenerList(jsEventListener.getName()).add(jsEventListener);
+    }
+
+    public void removeEventListener(JSEventListener jsEventListener) {
+        ArrayList<JSEventListener> listener = this.getListenerList(jsEventListener.getName());
+        for (Iterator<JSEventListener> it = listener.iterator(); it.hasNext();) {
+            JSEventListener l = it.next();
+            if (l.getName().equals(jsEventListener.getName()) && (l.getCallback() == jsEventListener.getCallback()) && l.getOwner() == jsEventListener.getOwner()) {
+                it.remove();
+                return;
+            }
+        }
+
+    }
+
+    public void removeEventListeners(String name) {
+        this.getListenerList(name).clear();
+    }
+
+    @SuppressWarnings("unchecked")
+    public boolean dispatch(BasicEvent basicEvent) {
+        ArrayList<JSEventListener> listener = (ArrayList<JSEventListener>) this.getListenerList(basicEvent.getType()).clone();
+        boolean ret = false;
+        for (Iterator<JSEventListener> it = listener.iterator(); it.hasNext();) {
+            ret |= it.next().dispatch(basicEvent);
+            // how to handle ret value?
+
+        }
+        return ret;
+    }
+
+    // public void addEventListener(Object nodeImpl, String type, BaseFunction
+    // listener, Object useCapture) {
+    //
+    // System.out.println("Registered event " + type + " on " + nodeImpl +
+    // ": \r\n" + listener);
+    // removeEventListener(nodeImpl, type, listener, useCapture);
+    // this.getEventListener(type).add(new DOMEventListener(this, nodeImpl,
+    // type, listener, useCapture));
+    //
+    // }
+    //
+    // public void removeEventListener(Object htmlElementImpl, String type,
+    // BaseFunction listener, Object useCapture) {
+    // ArrayList<DOMEventListener> list = getEventListener(type);
+    // for (Iterator<DOMEventListener> it = list.iterator(); it.hasNext();) {
+    // DOMEventListener next = it.next();
+    // if (next.getAction() == listener && next.getNode() == htmlElementImpl) {
+    // it.remove();
+    // }
+    // }
+    //
+    // }
 
 }

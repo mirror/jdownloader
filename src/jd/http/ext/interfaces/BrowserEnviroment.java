@@ -4,6 +4,8 @@ import java.security.Policy;
 
 import jd.http.Request;
 
+import org.lobobrowser.html.domimpl.HTMLScriptElementImpl;
+
 public interface BrowserEnviroment {
 
     public boolean doLoadContent(Request request);
@@ -35,5 +37,7 @@ public interface BrowserEnviroment {
     public boolean isScriptingEnabled();
 
     public boolean isInternalCSSEnabled();
+
+    public String doScriptFilter(HTMLScriptElementImpl htmlScriptElementImpl, String text);
 
 }

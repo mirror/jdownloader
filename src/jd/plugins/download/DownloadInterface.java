@@ -1013,6 +1013,7 @@ abstract public class DownloadInterface {
 
         if (errors.indexOf(id) < 0) errors.add(id);
         if (fatalErrorOccured) return;
+
         linkStatus.addStatus(id);
 
         linkStatus.setErrorMessage(string);
