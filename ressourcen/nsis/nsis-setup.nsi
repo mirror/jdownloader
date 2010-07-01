@@ -10,13 +10,13 @@ RequestExecutionLevel user
 !define APPNAME_SHORT "JDownloader" # Name without spaces etc (Jay Downloader -> JayDownloader)
 #Advertising plugins might overwrite this!
 !define LICENSE ".\res\license.txt"
-OutFile .\dist\JDownloaderSetup.exe
+OutFile .\..\..\dist\JDownloaderSetup.exe
 SetCompressor lzma
 
 #Advertising
-#!include ".\advertising\template.nsh"
+!include ".\advertising\template.nsh"
 #!include ".\advertising\kikin\kikin.nsh"
-!include ".\advertising\OpenCandy\OpenCandy.nsh"
+#!include ".\advertising\OpenCandy\OpenCandy.nsh"
 
 #Disable version display for JD (Autoupdate)
 #VERSION2 is needed for VIAddVersionKey

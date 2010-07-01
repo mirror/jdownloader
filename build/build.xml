@@ -1,28 +1,92 @@
-<project default="standardBuild" basedir=".">
-
-	<property name="src" value="src" />
-	<property name="cls" value="bin" />
-	<property name="dist" value="dist" />
-	<property name="res" value="ressourcen" />
+<project default="buildPackages" basedir=".">
+	
+	<!--	Targets:
+			compile				Compiles the code
+			make				Builds the standard executable programm
+			jarWebupdater		Builds the updater
+			jarRestarter		Builds the restarter
+			jarOptionals		Builds all optional plugins
+			buildAll			Executes make, jarWebupdater, jarRestarter, jarOptionals
+			standardBuild		buildAll with prepare and zip for the platform packages
+			dlcEnabledBuild		standardBuild with DLC
+			signedBuild			standardBuild with signed jars
+	-->
+	
+	<property name="src" value="../src" />
+	<property name="cls" value="../bin" />
+	<property name="dist" value="../dist" />
+	<property name="jd" value="${dist}/JDownloader" />
+	<property name="res" value="../ressourcen" />
+	<property name="pluginres" value="${dist}/pluginressourcen"/>
 	<property name="keystore" value="/home/coalado/Desktop/jDownloader.keystore" />
 	<!-- plugins that serialize own classes have to be put in the classpath -->
 	<property name="class-path" value="libs/image4j.jar libs/appworkutilities.jar libs/Filters.jar libs/JTattoo.jar plugins/JDPackageCustomizer.jar plugins/schedule.jar libs/jna.jar libs/JDGUI.jar libs/JDHttp.jar libs/JAntiCaptcha.jar libs/JDUtils.jar libs/BrowserLauncher2.jar libs/clink170.jar libs/cobra.jar libs/hsqldb.jar libs/htmlcleaner2_0.jar libs/irclib.jar libs/js.jar libs/looks.jar libs/mail.jar libs/miglayout.jar libs/savemytube.jar libs/laf/substance-swingx.jar libs/laf/substance.jar libs/svnkit.jar libs/swingworker.jar libs/swingx.jar libs/ui.jar libs/laf/synthetica.jar libs/laf/syntheticaBatik.jar libs/laf/syntheticaBlackMoon.jar libs/laf/syntheticaBlackStar.jar libs/laf/syntheticaBlueIce.jar libs/laf/syntheticaBlueMoon.jar libs/laf/syntheticaBlueSteel.jar libs/laf/syntheticaGreenDream.jar libs/laf/syntheticaMauveMetallic.jar libs/laf/syntheticaOrangeMetallic.jar libs/laf/syntheticaBlackEye.jar libs/laf/syntheticaGreenDream.jar libs/laf/syntheticaSilverMoon.jar libs/laf/syntheticaSimple2D.jar libs/laf/syntheticaSkyMetallic.jar libs/laf/syntheticaWhiteVision.jar" />
+	
+	<property name="zip.multios.name" value="JDownloader_multi.zip" />
+	<property name="zip.windows.name" value="JDownloader_windows.zip" />
+	<property name="zip.linux.name" value="JDownloader_linux.zip" />
+	<property name="zip.mac.name" value="JDownloader_mac.zip" />
+	
+	<property name="exe.windows.script" value="${res}/nsis/nsis-setup.nsi" />
 
+	<path id="classpath">
+		<fileset dir="${res}/libs" includes="*.jar" />
+		<fileset dir="${res}/libs/dbus" includes="*.jar" />
+		<fileset dir="${res}/libs/laf" includes="*.jar" />
+		<fileset dir="${res}/libs_ext" includes="*.jar" />
+	</path>
+	
+	<!-- Compiles the code -->
 	<target name="compile">
 		<mkdir dir="${cls}" />
-		<javac srcdir="${src}" destdir="${cls}" encoding="UTF-8" source="1.5" target="1.5" />
+		<javac srcdir="${src}" destdir="${cls}" encoding="UTF-8" source="1.5" target="1.5">
+			<classpath refid="classpath"/>
+		</javac>
+	</target>
+	
+	<!-- Deletes the old build -->
+	<target name="init">
+		<delete dir="${dist}" />
+		<mkdir dir="${dist}" />
+		<mkdir dir="${dist}" />
+	</target>
+	
+	<!-- Copies all the additional ressources -->
+	<target name="copy_res" depends="init">
+		<copy todir="${jd}/jd">
+			<fileset dir="${res}/jd" includes="**/*" />
+		</copy>
+		
+		<copy todir="${jd}/libs">
+			<fileset dir="${res}/libs" includes="**/*" />
+		</copy>
+			
+		<copy todir="${jd}/licenses">
+			<fileset dir="${res}/licenses" includes="**/*" />
+		</copy>
+		
+		<copy todir="${jd}/tools">
+			<fileset dir="${res}/tools" includes="**/*" />
+		</copy>
+		
+		<copy todir="${jd}">
+			<fileset dir="${res}" includes="*.txt" />
+		</copy>
+		
+		<delete dir="${jd}/jd/osx" />
+		
+		<mkdir dir="${jd}/tmp/"/>
 	</target>
 
-	<!-- JDownloader -->
-	<target name="jar">
+	<!-- Make the default jar -->
+	<target name="make" depends="compile">
 		<manifest file="Manifest.MF">
 			<attribute name="Created-By" value="JD-Team and AppWork UG" />
 			<attribute name="Main-Class" value="jd.Main" />
 			<attribute name="Class-Path" value="${class-path}" />
 		</manifest>
-
-		<mkdir dir="${dist}" />
-		<jar jarfile="${dist}/JDownloader.jar" manifest="Manifest.MF">
+	
+		<jar file="${jd}/JDownloader.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="**/*.class" />
 				<exclude name="jd/captcha/**" />
@@ -50,29 +114,28 @@
 			<attribute name="Class-Path" value="${class-path}" />
 		</manifest>
 
-		<mkdir dir="${dist}/libs" />
-		<jar jarfile="${dist}/libs/JDHttp.jar" manifest="Manifest.MF">
+		<mkdir dir="${jd}/libs" />
+		<jar file="${jd}/libs/JDHttp.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/http/**" />
 				<include name="sun/net/www/protocol/**" />
 			</fileset>
 		</jar>
 
-		<jar jarfile="${dist}/libs/JDGUI.jar" manifest="Manifest.MF">
+		<jar file="${jd}/libs/JDGUI.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/gui/**" />
 			</fileset>
 		</jar>
 
-		<jar jarfile="${dist}/libs/JAntiCaptcha.jar" manifest="Manifest.MF">
+		<jar file="${jd}/libs/JAntiCaptcha.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/captcha/**" />
 				<exclude name="jd/captcha/methods/**" />
 			</fileset>
-
 		</jar>
 
-		<jar jarfile="${dist}/libs/JDUtils.jar" manifest="Manifest.MF">
+		<jar file="${jd}/libs/JDUtils.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/nutils/**" />
 			</fileset>
@@ -81,13 +144,13 @@
 	</target>
 
 	<!--Webupdater-->
-	<target name="jarWebupdater">
+	<target name="jarWebupdater" depends="compile" >
 		<manifest file="Manifest.MF">
 			<attribute name="Created-By" value="coalado" />
 			<attribute name="Main-Class" value="jd.update.Main" />
 		</manifest>
 
-		<jar jarfile="${dist}/jdupdate.jar" manifest="Manifest.MF">
+		<jar file="${jd}/jdupdate.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/update/*.class" />
 				<include name="jd/config/*.class" />
@@ -102,19 +165,19 @@
 				<include name="jd/parser/Regex.class" />
 				<include name="sun/net/www/protocol/jdp/*.class" />
 			</fileset>
-			<zipfileset src="ressourcen/libs/hsqldb.jar" excludes="META-INF/*" />
+			<zipfileset src="${res}/libs/hsqldb.jar" excludes="META-INF/*" />
 		</jar>
 		<delete file="Manifest.MF" failonerror="false" />
 	</target>
 
 	<!-- Restarter -->
-	<target name="jarRestarter" >
+	<target name="jarRestarter" depends="compile" >
 		<manifest file="Manifest.MF">
 			<attribute name="Created-By" value="coalado" />
 			<attribute name="Main-Class" value="jd.update.Restarter" />
 		</manifest>
 
-		<jar jarfile="${dist}/tinyupdate.jar" manifest="Manifest.MF">
+		<jar file="${jd}/tinyupdate.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/update/Restarter*.class" />
 				<include name="jd/nutils/OutdatedParser*.class" />
@@ -127,6 +190,10 @@
 		</jar>
 		<delete file="Manifest.MF" failonerror="false" />
 	</target>
+	
+	<target name="jarRestarterForBuild" depends="jarRestarter">
+		<copy file="${jd}/tinyupdate.jar" tofile="${jd}/tools/tinyupdate.jar" />
+	</target>
 
 	<!-- Use this to build an addon -->
 	<macrodef name="buildAddon" description="Function for creating an optional addon">
@@ -134,8 +201,8 @@
 		<attribute name="package" />
 		<sequential>
 			<echo message="Creating @{package}" />
-			<mkdir dir="${dist}/pluginressourcen/@{number}__@{package}/plugins" />
-			<jar jarfile="${dist}/pluginressourcen/@{number}__@{package}/plugins/@{package}.jar" manifest="Manifest.MF">
+			<mkdir dir="${pluginres}/@{number}__@{package}/plugins" />
+			<jar jarfile="${pluginres}/@{number}__@{package}/plugins/@{package}.jar" manifest="Manifest.MF">
 				<fileset dir="${cls}">
 					<include name="jd/plugins/optional/@{package}/**" />
 				</fileset>
@@ -144,132 +211,132 @@
 	</macrodef>
 
 	<!-- Optional Plugins -->
-	<target name="jarOptionals" description="Creates the Optional Plugins">
+	<target name="jarOptionals" depends="compile" description="Creates the Optional Plugins">
 		<manifest file="Manifest.MF">
 			<attribute name="Created-By" value="JD-Team" />
 		</manifest>
 
-		<mkdir dir="${dist}/pluginressourcen/100__JDChat/plugins" />
-		<jar jarfile="${dist}/pluginressourcen/100__JDChat/plugins/JDChat.jar" manifest="Manifest.MF">
+		<mkdir dir="${pluginres}/100__JDChat/plugins" />
+		<jar jarfile="${pluginres}/100__JDChat/plugins/JDChat.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/plugins/optional/jdchat/**" />
 			</fileset>
 		</jar>
 
-		<mkdir dir="${dist}/pluginressourcen/101__JDwebinterface/plugins" />
-		<jar jarfile="${dist}/pluginressourcen/101__JDwebinterface/plugins/JDWebinterface.jar" manifest="Manifest.MF">
+		<mkdir dir="${pluginres}/101__JDwebinterface/plugins" />
+		<jar jarfile="${pluginres}/101__JDwebinterface/plugins/JDWebinterface.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/plugins/optional/webinterface/**" />
 			</fileset>
 		</jar>
 
-		<mkdir dir="${dist}/pluginressourcen/104__JDRemoteControl/plugins" />
-		<jar jarfile="${dist}/pluginressourcen/104__JDRemoteControl/plugins/JDRemoteControl.jar" manifest="Manifest.MF">
+		<mkdir dir="${pluginres}/104__JDRemoteControl/plugins" />
+		<jar jarfile="${pluginres}/104__JDRemoteControl/plugins/JDRemoteControl.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/plugins/optional/remotecontrol/**" />
 			</fileset>
 		</jar>
 
-		<mkdir dir="${dist}/pluginressourcen/105__JDScheduler/plugins" />
-		<jar jarfile="${dist}/pluginressourcen/105__JDScheduler/plugins/schedule.jar" manifest="Manifest.MF">
+		<mkdir dir="${pluginres}/105__JDScheduler/plugins" />
+		<jar jarfile="${pluginres}/105__JDScheduler/plugins/schedule.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/plugins/optional/schedule/**" />
 			</fileset>
 		</jar>
 
-		<mkdir dir="${dist}/pluginressourcen/106__JDShutdown/plugins" />
-		<jar jarfile="${dist}/pluginressourcen/106__JDShutdown/plugins/JDShutdown.jar" manifest="Manifest.MF">
+		<mkdir dir="${pluginres}/106__JDShutdown/plugins" />
+		<jar jarfile="${pluginres}/106__JDShutdown/plugins/JDShutdown.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/plugins/optional/JDShutdown*" />
 			</fileset>
 		</jar>
 
-		<mkdir dir="${dist}/pluginressourcen/117__JDHttpLiveScripter/plugins" />
-		<jar jarfile="${dist}/pluginressourcen/117__JDHttpLiveScripter/plugins/JDHTTPLiveHeaderScripter.jar" manifest="Manifest.MF">
+		<mkdir dir="${pluginres}/117__JDHttpLiveScripter/plugins" />
+		<jar jarfile="${pluginres}/117__JDHttpLiveScripter/plugins/JDHTTPLiveHeaderScripter.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/plugins/optional/HTTPLiveHeaderScripter*" />
 			</fileset>
 		</jar>
 
-		<mkdir dir="${dist}/pluginressourcen/120__JDLangFileEditor/plugins" />
-		<jar jarfile="${dist}/pluginressourcen/120__JDLangFileEditor/plugins/JDLangFileEditor.jar" manifest="Manifest.MF">
+		<mkdir dir="${pluginres}/120__JDLangFileEditor/plugins" />
+		<jar jarfile="${pluginres}/120__JDLangFileEditor/plugins/JDLangFileEditor.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/plugins/optional/langfileeditor/**" />
 			</fileset>
 		</jar>
 
-		<mkdir dir="${dist}/pluginressourcen/122__JDInfoFileWriter/plugins" />
-		<jar jarfile="${dist}/pluginressourcen/122__JDInfoFileWriter/plugins/JDInfoFileWriter.jar" manifest="Manifest.MF">
+		<mkdir dir="${pluginres}/122__JDInfoFileWriter/plugins" />
+		<jar jarfile="${pluginres}/122__JDInfoFileWriter/plugins/JDInfoFileWriter.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/plugins/optional/JDInfoFileWriter*" />
 			</fileset>
 		</jar>
 
-		<mkdir dir="${dist}/pluginressourcen/123__JDUnrar/plugins" />
-		<jar jarfile="${dist}/pluginressourcen/123__JDUnrar/plugins/JDUnrar.jar" manifest="Manifest.MF">
+		<mkdir dir="${pluginres}/123__JDUnrar/plugins" />
+		<jar jarfile="${pluginres}/123__JDUnrar/plugins/JDUnrar.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/plugins/optional/jdunrar/**" />
 			</fileset>
 		</jar>
 
-		<mkdir dir="${dist}/pluginressourcen/127__JDHJMerge/plugins" />
-		<jar jarfile="${dist}/pluginressourcen/127__JDHJMerge/plugins/JDHJMerge.jar" manifest="Manifest.MF">
+		<mkdir dir="${pluginres}/127__JDHJMerge/plugins" />
+		<jar jarfile="${pluginres}/127__JDHJMerge/plugins/JDHJMerge.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/plugins/optional/hjsplit/**" />
 			</fileset>
 		</jar>
 
-		<mkdir dir="${dist}/pluginressourcen/128__JDTray/plugins" />
-		<jar jarfile="${dist}/pluginressourcen/128__JDTray/plugins/JDTray.jar" manifest="Manifest.MF">
+		<mkdir dir="${pluginres}/128__JDTray/plugins" />
+		<jar jarfile="${pluginres}/128__JDTray/plugins/JDTray.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/plugins/optional/jdtrayicon/**" />
 			</fileset>
 		</jar>
 
-		<mkdir dir="${dist}/pluginressourcen/129__ExternInterface/plugins" />
-		<jar jarfile="${dist}/pluginressourcen/129__ExternInterface/plugins/JDExternInterface.jar" manifest="Manifest.MF">
+		<mkdir dir="${pluginres}/129__ExternInterface/plugins" />
+		<jar jarfile="${pluginres}/129__ExternInterface/plugins/JDExternInterface.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/plugins/optional/interfaces/**" />
 			</fileset>
 		</jar>
 
-		<mkdir dir="${dist}/pluginressourcen/130__JDPremium/plugins" />
-		<jar jarfile="${dist}/pluginressourcen/130__JDPremium/plugins/JDPremium.jar" manifest="Manifest.MF">
+		<mkdir dir="${pluginres}/130__JDPremium/plugins" />
+		<jar jarfile="${pluginres}/130__JDPremium/plugins/JDPremium.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/plugins/optional/premcol/**" />
 			</fileset>
 		</jar>
 
-		<mkdir dir="${dist}/pluginressourcen/131__JDGrowl/plugins" />
-		<jar jarfile="${dist}/pluginressourcen/131__JDGrowl/plugins/JDGrowl.jar" manifest="Manifest.MF">
+		<mkdir dir="${pluginres}/131__JDGrowl/plugins" />
+		<jar jarfile="${pluginres}/131__JDGrowl/plugins/JDGrowl.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/plugins/optional/JDGrowlNotification*" />
 			</fileset>
 		</jar>
 
-		<mkdir dir="${dist}/pluginressourcen/132__Customizer/plugins" />
-		<jar jarfile="${dist}/pluginressourcen/132__Customizer/plugins/JDPackageCustomizer.jar" manifest="Manifest.MF">
+		<mkdir dir="${pluginres}/132__Customizer/plugins" />
+		<jar jarfile="${pluginres}/132__Customizer/plugins/JDPackageCustomizer.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/plugins/optional/customizer/**" />
 			</fileset>
 		</jar>
 
-		<mkdir dir="${dist}/pluginressourcen/133__AntiShutdown/plugins" />
-		<jar jarfile="${dist}/pluginressourcen/133__AntiShutdown/plugins/JDAntiShutdown.jar" manifest="Manifest.MF">
+		<mkdir dir="${pluginres}/133__AntiShutdown/plugins" />
+		<jar jarfile="${pluginres}/133__AntiShutdown/plugins/JDAntiShutdown.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/plugins/optional/antistandby/**" />
 			</fileset>
 		</jar>
 
-		<mkdir dir="${dist}/pluginressourcen/134__RouterDBEditor/plugins" />
-		<jar jarfile="${dist}/pluginressourcen/134__RouterDBEditor/plugins/JDRouterDBEditor.jar" manifest="Manifest.MF">
+		<mkdir dir="${pluginres}/134__RouterDBEditor/plugins" />
+		<jar jarfile="${pluginres}/134__RouterDBEditor/plugins/JDRouterDBEditor.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/plugins/optional/routerdbeditor/**" />
 			</fileset>
 		</jar>
 
-		<mkdir dir="${dist}/pluginressourcen/135__RouterSend/plugins" />
-		<jar jarfile="${dist}/pluginressourcen/135__RouterSend/plugins/RouterSend.jar" manifest="Manifest.MF">
+		<mkdir dir="${pluginres}/135__RouterSend/plugins" />
+		<jar jarfile="${pluginres}/135__RouterSend/plugins/RouterSend.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/plugins/optional/routersend/**" />
 			</fileset>
@@ -278,23 +345,63 @@
 		<buildAddon number="136" package="proxyrot" />
 		<buildAddon number="137" package="scriptlauncher" />
 		<buildAddon number="102" package="infobar" />
-		<buildAddon number="103" package="lecturnity" />
+		<!-- <buildAddon number="103" package="lecturnity" /> -->
 		<buildAddon number="107" package="improveddock" />
-
+	</target>
+	
+	<target name="copyJarOptimals" depends="jarOptionals">
+		<mkdir dir="${jd}/plugins"/>
+		<copy todir="${jd}/plugins" flatten="yes">
+			<fileset dir="${pluginres}" includes="**/*.jar" />
+		</copy>
+		<copy todir="${jd}/plugins/">
+			<fileset dir="${res}/pluginressourcen/100__JDChat/plugins" includes="jdchat/**" />
+			<fileset dir="${res}/pluginressourcen/101__JDwebinterface/plugins" includes="webinterface/**" />
+			<fileset dir="${res}/pluginressourcen/106__JDShutdown/plugins" includes="jdshutdown/**" />
+		</copy>
+	</target>
+	
+	<!-- Copies compiled classes(hoster, decrypter, dynamics -->
+	<target name="copy_compiled" depends="init, compile">
+		<mkdir dir="${jd}/jd/plugins/hoster/"/>
+		<copy todir="${jd}/jd/plugins/hoster/">
+			<fileset dir="${cls}/jd/plugins/hoster/">
+				<include name="**/*" />
+			</fileset>
+		</copy>
+		
+		<mkdir dir="${jd}/jd/plugins/decrypter/"/>
+		<copy todir="${jd}/jd/plugins/decrypter/">
+			<fileset dir="${cls}/jd/plugins/decrypter/">
+				<include name="**/*" />
+			</fileset>
+		</copy>
+		
+		<mkdir dir="${jd}/jd/dynamics/"/>
+		<copy todir="${jd}/jd/dynamics/">
+			<fileset dir="${cls}/jd/dynamics/">
+				<include name="*.class" />
+			</fileset>
+		</copy>
 	</target>
 
+	<!-- Signs the jars -->
 	<target name="sign">
 		<signjar keystore="${keystore}" alias="jDownloader" storepass="jDownloader">
 			<path>
-				<fileset dir="${dist}" includes="**/*.jar" />
+				<fileset dir="${jd}" includes="**/*.jar" />
 			</path>
 		</signjar>
 	</target>
 
+	<!-- obfuscates some the JDownloader.jar -->
 	<target name="cryptContainer">
-		<taskdef name="yguard" classname="com.yworks.yguard.YGuardTask" />
+		<taskdef name="yguard" classname="com.yworks.yguard.YGuardTask">
+			<classpath location="yguard-2.2.0/lib/yguard.jar"/>
+		</taskdef>
+		
 		<yguard>
-			<inoutpair in="${dist}/JDownloader.jar" out="${dist}/JDownloader_obfuscated.jar" />
+			<inoutpair in="${jd}/JDowner.jar" out="${jd}/JDownloader_obfuscated.jar" />
 			<rename>
 				<keep>
 					<field name="serialVersionUID" />
@@ -308,18 +415,89 @@
 					<class classes="public" methods="public" fields="public" />
 				</keep>
 			</rename>
-		</yguard>
-		<delete file="${dist}/JDownloader.jar" failonerror="no" />
-		<move file="${dist}/JDownloader_obfuscated.jar" tofile="${dist}/JDownloader.jar" />
+		</yguard>		<delete file="${jd}/JDownloader.jar" failonerror="no" />
+		<move file="${jd}/JDownloader_obfuscajar" tofile="${jd}/JDownloader.jar" />
 	</target>
-
-	<target name="standardBuild" depends="compile,jar,jarOptionals,jarWebupdater,jarRestarter">
+	
+	<target name="buildPackages" depends="buildMulti, buildLinux, buildMac, buildWindows" />
+	
+	<target name="buildMulti">
+		<zip destfile="${dist}/${zip.multios.name}">
+			<zipfileset prefix="JDownloader" dir="${jd}" />
+		</zip>
 	</target>
-
-	<target name="dlcEnabledBuild" depends="standardBuild,cryptContainer,sign">
+	
+	<target name="buildWindows">
+		<delete dir="${jd}/tools/"/>
+		
+		<copy todir="${jd}/tools">
+			<fileset dir="${res}/tools" includes="flashgot*" />
+		</copy>
+			
+		<copy todir="${jd}/tools/windows">			<fileset dir="${res}/tools/windows" includes="**/*" />
+		</copy>
+		
+		<copy todir="${jd}">
+			<fileset dir="${res}" includes="*.bat" />
+			<fileset dir="${res}" includes="*.exe" />
+		</copy>
+			
+		<zip destfile="${dist}/${zip.windows.name}">
+			<zipfileset prefix ="JDownloader" dir="${jd}" />
+		</zip>
+		
+		<taskdef name="nsis" classname="net.sf.nsisant.Task">
+	        <classpath location="nsisant-1.2.jar" />
+		</taskdef>
+		
+		<nsis script="${exe.windows.script}" />
 	</target>
-
-	<target name="signedBuild" depends="standardBuild,sign">
+	
+	<target name="buildLinux">
+		<delete dir="${jd}/tools/"/>
+		
+		<copy todir="${jd}/tools">
+			<fileset dir="${res}/tools" includes="flashgot*" />
+		</copy>
+			
+		<copy todir="${jd}/tools/linux">
+			<fileset dir="${res}/tools/linux" includes="**/*" />
+		</copy>
+			
+		<zip destfile="${dist}/${zip.linux.name}">
+			<zipfileset prefix="JDownloader" dir="${jd}" />
+		</zip>
 	</target>
+	
+	<target name="buildMac">
+		<delete dir="${jd}/tools/" />
+		
+		<copy todir="${jd}/tools">
+			<fileset dir="${res}/tools" includes="flashgot*" />
+		</copy>
+		
+		<copy todir="${jd}/tools/mac">
+			<fileset dir="${res}/tools/mac" includes="*" />
+		</copy>
+		
+		<zip destfile="${dist}/${zip.mac.name}">
+			<zipfileset prefix="JDownloader" dir="${jd}" />
+		</zip>
+	</target>
+	
+	<target name="buildAll" depends="copy_res, make, copy_compiled, copyJarOptimals, jarWebupdater, jarRestarterForBuild"/>
 
+	<target name="standardBuild" depends="buildAll" />
+
+	<target name="dlcEnabledBuild" depends="buildAll,cryptContainer,sign" />
+
+	<target name="signedBuild" depends="buildAll, standardBuild, sign" />
+	
+	<!-- Creates the javadocs -->
+	<target name="doc">
+		<javadoc destdir="${dist}/javadoc" useexternalfile="yes" maxmemory="256m" Encoding="UTF-8" >
+			 <fileset dir="${src}" />
+			 <link href="http://java.sun.com/j2se/1.5.0/docs/api/"/>
+		</javadoc>
+	</target>
 </project>
