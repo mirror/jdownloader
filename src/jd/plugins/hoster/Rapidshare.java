@@ -16,6 +16,7 @@
 
 package jd.plugins.hoster;
 
+import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -25,7 +26,11 @@ import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.regex.Pattern;
 
+import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JSeparator;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -57,7 +62,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.RAFDownload;
 import jd.utils.locale.JDL;
-
 import net.miginfocom.swing.MigLayout;
 
 import org.mozilla.javascript.Context;
@@ -162,9 +166,24 @@ public class Rapidshare extends PluginForHost {
     private static final int BIG = 78;
     private static final int SUPERSIZE = 229;
     private static final int BUSINESS = 449;
-    private static final String PROPERTY_AUTO_UPGRADE = "AUTO_UPGRADE";
+
     private static final String PROPERTY_ONLY_HAPPYHOUR = "PROPERTY_ONLY_HAPPYHOUR";
-    private static final String PROPERTY_RESET_PACKAGE_TO = "RESET_PACKAGE_TO";
+
+    protected static final String ASK_BEFORE_UPGRADE = "ASK_BEFORE_UPGRADE";
+    protected static final String UPGRADEPROTECTION = "UPGRADEPROTECTION";
+    protected static final String DOWNGRADETO = "DOWNGRADETO";
+
+    public static final int UPGRADEPROTECTION_DISABLED = 0;
+    public static final int UPGRADEPROTECTION_SMALL = 1;
+    public static final int UPGRADEPROTECTION_MEDIUM = 2;
+    public static final int UPGRADEPROTECTION_BIG = 3;
+    public static final int UPGRADEPROTECTION_SUPERSIZE = 4;
+    public static final int UPGRADEPROTECTION_UNLIMITED = 5;
+    public static final int DOWNGRADETO_SMALL = 0;
+    public static final int DOWNGRADETO_MEDIUM = 1;
+    public static final int DOWNGRADETO_BIG = 2;
+    public static final int DOWNGRADETO_SUPERSIZE = 3;
+    public static final int DOWNGRADETO_DISABLED = 4;
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
@@ -741,30 +760,44 @@ public class Rapidshare extends PluginForHost {
                          */
                         /* we have to upgrade package, not enough traffic left */
                         boolean allowUpgrade;
-                        if (!isBooleanSet(account, ACCOUNT_DONT_UPGRADE, false)) {
-                            /* no decision made for this account,ask user */
-                            int ret = UserIO.getInstance().requestConfirmDialog(0, JDL.LF("plugins.host.rapidshare.askupgrade.title", "Package Upgrade for RapidShare Account %s required", account.getUser()), JDL.LF("plugins.host.rapidshare.askupgrade.message", "To download this file, you have to upgrade your RapidShare Package. Do you want to upgrade now?"));
-                            allowUpgrade = UserIO.isOK(ret);
-                            logger.info("Account: " + account.getUser() + " needs upgrade in order to continue downloading: user answer -> " + allowUpgrade);
-                            /* save decision for this account */
-                            account.setProperty(ACCOUNT_DONT_UPGRADE, allowUpgrade);
-                        } else {
-                            /*
-                             * decision already made for this account
-                             */
-                            allowUpgrade = isBooleanSet(account, ACCOUNT_DONT_UPGRADE, true);
-                        }
-                        if (!allowUpgrade) {
-                            synchronized (resetWaitingAccounts) {
-                                if (!resetWaitingAccounts.contains(account)) resetWaitingAccounts.add(account);
-                            }
-                            /*
-                             * temp disable the account, no upgrade allowed for
-                             * this account
-                             */
-                            account.setTempDisabled(true);
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Package upgrade required but forbidden by user!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                        }
+                        // if (!isBooleanSet(account, ACCOUNT_DONT_UPGRADE,
+                        // false)) {
+                        // /* no decision made for this account,ask user */
+                        // int ret =
+                        // UserIO.getInstance().requestConfirmDialog(0,
+                        // JDL.LF("plugins.host.rapidshare.askupgrade.title",
+                        // "Package Upgrade for RapidShare Account %s required",
+                        // account.getUser()),
+                        // JDL.LF("plugins.host.rapidshare.askupgrade.message",
+                        // "To download this file, you have to upgrade your RapidShare Package. Do you want to upgrade now?"));
+                        // allowUpgrade = UserIO.isOK(ret);
+                        // logger.info("Account: " + account.getUser() +
+                        // " needs upgrade in order to continue downloading: user answer -> "
+                        // + allowUpgrade);
+                        // /* save decision for this account */
+                        // account.setProperty(ACCOUNT_DONT_UPGRADE,
+                        // allowUpgrade);
+                        // } else {
+                        // /*
+                        // * decision already made for this account
+                        // */
+                        // allowUpgrade = isBooleanSet(account,
+                        // ACCOUNT_DONT_UPGRADE, true);
+                        // }
+                        // if (!allowUpgrade) {
+                        // synchronized (resetWaitingAccounts) {
+                        // if (!resetWaitingAccounts.contains(account))
+                        // resetWaitingAccounts.add(account);
+                        // }
+                        // /*
+                        // * temp disable the account, no upgrade allowed for
+                        // * this account
+                        // */
+                        // account.setTempDisabled(true);
+                        // throw new PluginException(LinkStatus.ERROR_PREMIUM,
+                        // "Package upgrade required but forbidden by user!",
+                        // PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                        // }
                     }
                     // boolean canUpgrade = false;
                     // int costs = 0;
@@ -1182,10 +1215,7 @@ public class Rapidshare extends PluginForHost {
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), PROPERTY_INCREASE_TICKET, JDL.L("plugins.hoster.rapidshare.com.increaseTicketTime", "Increase Ticketwaittime (0%-500%)"), 0, 500).setDefaultValue(0).setStep(1));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), WAIT_HOSTERFULL, JDL.L("plugins.hoster.rapidshare.com.waithosterfull", "Wait if all FreeUser Slots are full")).setDefaultValue(true));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getPluginConfig(), PROPERTY_RESET_PACKAGE_TO, new String[] { JDL.L("plugins.hoster.rapidshare.com.resetpackage.disabled", "Disabled"), "RapidSmall", "RapidMedium", "RapidBig", "RapidSuperSize", "RapidBusiness" }, JDL.L("plugins.hoster.rapidshare.com.basepackage", "Reset Package (Saves traffic)")).setDefaultValue("RapidSmall"));
-
-        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getPluginConfig(), PROPERTY_AUTO_UPGRADE, new String[] { JDL.L("plugins.hoster.rapidshare.com.autoupgrade.withoutasking", "Without asking"), JDL.L("plugins.hoster.rapidshare.com.autoupgrade.askbeforeupgrad", "Ask before upgrade"), JDL.L("plugins.hoster.rapidshare.com.autoupgrade.noupgrade", "Do not upgrade") }, JDL.L("plugins.hoster.rapidshare.com.autoupgrade", "Auto-Package-Upgrade")).setDefaultValue(JDL.L("plugins.hoster.rapidshare.com.autoupgrade.askbeforeupgrad", "Ask before upgrade")));
+        ;
 
     }
 
@@ -1392,17 +1422,53 @@ public class Rapidshare extends PluginForHost {
              */
             if (upgradeBlock != null) {
                 int i = e.getID() - 1000;
-                
-               JPanel content = new JPanel(new MigLayout("ins 5,debug, wrap 1", "[grow,fill]", "[][][][][][][]"));
-                
-               super(UserIO.NO_ICON, JDL.LF("jd.plugins.hoster.Rapidshare.UpgradeDialog.title", "Upgrade &Downgrade Settings for %s", account.getUser()), CONTENT = new JPanel(new MigLayout("ins 5,debug, wrap 1", "[grow,fill]", "[][][][][][][]")), null, JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.save", "Save"), null);
-               
-               new ContainerDialaog(){
-                   
-               }
-                
-                
-                new UpgradeDialog(getPremiumAccounts().get(i));
+
+                JPanel content = new JPanel(new MigLayout("ins 5, wrap 1", "[grow,fill]", "[][][][][][][]"));
+                // getPremiumAccounts().get(i)
+                final Account account = getPremiumAccounts().get(i);
+                JLabel lbl;
+                lbl = new JLabel(JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.upgradelimit.title", "Upgrade Protection"));
+                lbl.setFont(lbl.getFont().deriveFont(Font.BOLD));
+                content.add(lbl, "split 2");
+                content.add(new JSeparator());
+                content.add(new JLabel(JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.upgradelimit.desc", "Control the usage of your Rapids.")));
+                final JComboBox combo = new JComboBox(new String[] { JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.upgradelimit.none", "Disable Upgrade protection"), JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.upgradelimit.limitsmall", "At most to RapidSmall(1GB daily)"), JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.upgradelimit.limitmedium", "At most to RapidMedium(5GB daily)"), JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.upgradelimit.limitBig", "At most to RapidBig(20GB daily)"), JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.upgradelimit.limitSuperSize", "At most to RapidSuperSize(60GB daily)"), JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.upgradelimit.limitBusiness", "Unlimited(120GB daily)"), });
+
+                content.add(combo);
+                final JCheckBox ask = new JCheckBox(JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.upgradelimit.ask", "Ask before each Upgrade"));
+                content.add(ask);
+
+                lbl = new JLabel(JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.downgrade.title", "Auto-Downgrade Options"));
+                lbl.setFont(lbl.getFont().deriveFont(Font.BOLD));
+                content.add(lbl, "split 2");
+                content.add(new JSeparator());
+                content.add(new JLabel(JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.downgrade.desc", "Save Rapids and Money by downgrading automaticly to a cheap package every day.")));
+                final JComboBox combo2 = new JComboBox(new String[] { JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.downgrade.small", "Downgrade to RapidSmall"), JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.downgrade.medium", "Downgrade to RapidMedium"), JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.downgrade.Big", "Downgrade to RapidBig"), JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.downgrade.SuperSize", "Downgrade to RapidSuperSize"), JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.downgrade.none", "Disable Auto-Downgrade") });
+
+                content.add(combo2);
+
+                ask.setSelected(account.getBooleanProperty(ASK_BEFORE_UPGRADE, true));
+                combo.setSelectedIndex(account.getIntegerProperty(UPGRADEPROTECTION, UPGRADEPROTECTION_MEDIUM));
+                // TODO: ask on first use.
+                combo2.setSelectedIndex(account.getIntegerProperty(DOWNGRADETO, DOWNGRADETO_DISABLED));
+                new ContainerDialog(UserIO.NO_ICON | UserIO.NO_COUNTDOWN, JDL.LF("jd.plugins.hoster.Rapidshare.UpgradeDialog.title", "Upgrade &Downgrade Settings for %s", account.getUser()), content, null, JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.save", "Save"), null) {
+                    /**
+                     * 
+                     */
+                    private static final long serialVersionUID = -6731126041686901174L;
+
+                    @Override
+                    protected void setReturnValue(final boolean b) {
+                        super.setReturnValue(b);
+                        if (b) {
+                            account.setProperty(ASK_BEFORE_UPGRADE, ask.isSelected());
+                            account.setProperty(UPGRADEPROTECTION, combo.getSelectedIndex());
+                            account.setProperty(DOWNGRADETO, combo2.getSelectedIndex());
+                        }
+
+                    }
+                }.getReturnValue();
+
             }
         } else if (e.getID() == 32767) {
             MenuAction happyHourAction = menuActionMap.get(e.getID());
@@ -1423,5 +1489,4 @@ public class Rapidshare extends PluginForHost {
             super.actionPerformed(e);
         }
     }
-
 }
