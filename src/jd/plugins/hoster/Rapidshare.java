@@ -800,22 +800,19 @@ public class Rapidshare extends PluginForHost {
                             //
 
                             allowUpgrade = Dialog.isOK(UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN | UserIO.DONT_SHOW_AGAIN, JDL.LF("jd.plugins.hoster.Rapidshare.handlePremium.allowUpgrade.title", "Upgrade RapidShare Account %s?", account.getUser()), JDL.LF("jd.plugins.hoster.Rapidshare.handlePremium.allowUpgrade.message", "If you want continue downloading today, you have to upgrade your RapidShare Account to %s for %s Rapids. \r\n\r\nUpgrade now?", nextName, next - pckg)));
-                        }
 
-                        // if (!allowUpgrade) {
-                        // synchronized (resetWaitingAccounts) {
-                        // if (!resetWaitingAccounts.contains(account))
-                        // resetWaitingAccounts.add(account);
-                        // }
-                        // /*
-                        // * temp disable the account, no upgrade allowed for
-                        // * this account
-                        // */
-                        // account.setTempDisabled(true);
-                        // throw new PluginException(LinkStatus.ERROR_PREMIUM,
-                        // "Package upgrade required but forbidden by user!",
-                        // PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                        // }
+                            if (!allowUpgrade) {
+                                synchronized (resetWaitingAccounts) {
+                                    if (!resetWaitingAccounts.contains(account)) resetWaitingAccounts.add(account);
+                                }
+                                /*
+                                 * temp disable the account, no upgrade allowed
+                                 * for this account
+                                 */
+                                account.setTempDisabled(true);
+                                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Package upgrade required but forbidden by user!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                            }
+                        }
 
                     }
 
