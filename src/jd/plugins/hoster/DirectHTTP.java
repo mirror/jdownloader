@@ -50,6 +50,11 @@ public class DirectHTTP extends PluginForHost {
 
     public static final String ENDINGS = "\\.(3gp|7zip|7z|abr|ac3|ai|aiff|aif|aifc|au|avi|bin|bz2|cbr|cbz|ccf|cue|deb|divx|djvu|dlc|dmg|doc|docx|dot|eps|exe|ff|flv|gif|gz|iwd|iso|java|jar|jpg|jpeg|jdeatme|load|m4v|m4a|mkv|mp2|mp3|mp4|mov|movie|mpeg|mpe|mpg|msi|msu|nfo|oga|ogg|ogv|otrkey|pkg|png|pdf|ppt|pptx|pps|ppz|pot|psd|qt|rmvb|rar|r\\d+|rpm|run|rsdf|rtf|sh|srt|snd|sfv|swf|tar|tif|tiff|ts|txt|viv|vivo|vob|wav|wmv|xla|xls|xpi|zip|z\\d+|_[_a-z]{2}|\\d+)";
 
+    public static final String NORESUME = "nochunkload";
+    public static final String NOCHUNKS = "nochunk";
+    public static final String FORCE_NORESUME = "forcenochunkload";
+    public static final String FORCE_NOCHUNKS = "forcenochunk";
+
     /**
      * Returns the annotations names array
      */
@@ -133,8 +138,12 @@ public class DirectHTTP extends PluginForHost {
                 br.getHeaders().put(header[0], header[1]);
             }
         }
-        if (downloadLink.getStringProperty("referer", null) != null) br.getHeaders().put("Referer", downloadLink.getStringProperty("referer", null));
-        if (downloadLink.getStringProperty("cookies", null) != null) br.getCookies(downloadLink.getDownloadURL()).add(Cookies.parseCookies(downloadLink.getStringProperty("cookies", null), Browser.getHost(downloadLink.getDownloadURL()), null));
+        if (downloadLink.getStringProperty("referer", null) != null) {
+            br.getHeaders().put("Referer", downloadLink.getStringProperty("referer", null));
+        }
+        if (downloadLink.getStringProperty("cookies", null) != null) {
+            br.getCookies(downloadLink.getDownloadURL()).add(Cookies.parseCookies(downloadLink.getStringProperty("cookies", null), Browser.getHost(downloadLink.getDownloadURL()), null));
+        }
     }
 
     private URLConnectionAdapter prepareConnection(Browser br, DownloadLink downloadLink) throws IOException {
@@ -240,13 +249,20 @@ public class DirectHTTP extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        String auth = br.getHeaders().get("Authorization");
+        /*
+         * replace with br.setCurrentURL(null); in future (after 0.9)
+         */
+        br = new Browser();/* needed to clean referer */
+        if (auth != null) br.getHeaders().put("Authorization", auth);
+        /* workaround to clear referer */
         br.setFollowRedirects(true);
         br.setDebug(true);
         boolean resume = true;
         int chunks = 0;
 
-        if (downloadLink.getBooleanProperty("nochunkload", false) == true) resume = false;
-        if (downloadLink.getBooleanProperty("nochunk", false) == true || resume == false) {
+        if (downloadLink.getBooleanProperty(NORESUME, false) || downloadLink.getBooleanProperty(FORCE_NORESUME, false)) resume = false;
+        if (downloadLink.getBooleanProperty(NOCHUNKS, false) || downloadLink.getBooleanProperty(FORCE_NOCHUNKS, false) || resume == false) {
             chunks = 1;
         }
         setCustomHeaders(br, downloadLink);
@@ -256,16 +272,16 @@ public class DirectHTTP extends PluginForHost {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), resume, chunks);
         }
         if (!dl.startDownload()) {
-            if (downloadLink.getLinkStatus().getErrorMessage() != null && downloadLink.getLinkStatus().getErrorMessage().startsWith(JDL.L("download.error.message.rangeheaderparseerror", "Unexpected rangeheader format:"))) {
-                if (downloadLink.getBooleanProperty("nochunk", false) == false) {
-                    downloadLink.setProperty("nochunk", Boolean.valueOf(true));
+            if (downloadLink.getLinkStatus().getErrorMessage() != null && downloadLink.getLinkStatus().getErrorMessage().startsWith(JDL.L("download.error.message.rangeheaders", "Server does not support chunkload"))) {
+                if (downloadLink.getBooleanProperty(NORESUME, false) == false) {
+                    downloadLink.setChunksProgress(null);
+                    downloadLink.setProperty(NORESUME, Boolean.valueOf(true));
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
-            }
-            if (downloadLink.getLinkStatus().getErrorMessage() != null && downloadLink.getLinkStatus().getErrorMessage().startsWith(JDL.L("download.error.message.rangeheaders", "Server does not support chunkload"))) {
-                if (downloadLink.getBooleanProperty("nochunkload", false) == false) {
-                    downloadLink.setChunksProgress(null);
-                    downloadLink.setProperty("nochunkload", Boolean.valueOf(true));
+            } else {
+                /* unknown error, we disable multiple chunks */
+                if (downloadLink.getBooleanProperty(NOCHUNKS, false) == false) {
+                    downloadLink.setProperty(NOCHUNKS, Boolean.valueOf(true));
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
             }
@@ -287,8 +303,8 @@ public class DirectHTTP extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
-        link.setProperty("nochunkload", false);
-        link.setProperty("nochunk", false);
+        link.setProperty(NORESUME, false);
+        link.setProperty(NOCHUNKS, false);
     }
 
     @Override

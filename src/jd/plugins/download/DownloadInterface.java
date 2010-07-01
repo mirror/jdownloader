@@ -191,6 +191,8 @@ abstract public class DownloadInterface {
             // connection.disconnect();
 
             try {
+                /* only forward referer if referer already has been sent! */
+                boolean forwardReferer = plugin.getBrowser().getHeaders().contains("Referer");
                 Browser br = plugin.getBrowser().cloneBrowser();
                 br.setReadTimeout(getReadTimeout());
                 br.setConnectTimeout(getRequestTimeout());
@@ -204,7 +206,10 @@ abstract public class DownloadInterface {
                         br.getHeaders().put(next.getKey(), value.substring(1, value.length() - 1));
                     }
                 }
-
+                if (!forwardReferer) {
+                    /* only forward referer if referer already has been sent! */
+                    br.setCurrentURL(null);
+                }
                 br.getHeaders().put("Range", "bytes=" + start + "-" + end);
                 URLConnectionAdapter con;
                 if (connection.getDoOutput()) {

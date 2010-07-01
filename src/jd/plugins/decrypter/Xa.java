@@ -39,11 +39,17 @@ public class Xa extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        if (parameter.matches(".*?fs\\d+\\.www\\.ex\\.ua/get/\\d+.*?")) {
-            String filename = new Regex(parameter, "ex\\.ua/get/\\d+/(.+)").getMatch(0);
+        if (parameter.matches(".*?fs\\d+.*?(ex\\.ua|luxport\\.eu)/get/\\d+.*?")) {
+            String filename = new Regex(parameter, "/get/\\d+/(.+)").getMatch(0);
             String finallink = new Regex(parameter, "(.*?/get/\\d+)").getMatch(0);
             DownloadLink finalDlLink = createDownloadlink("directhttp://" + finallink);
             if (filename != null) finalDlLink.setFinalFileName(filename.trim());
+            /*
+             * hosts only allow 1 chunk (max 2 but not with 0.95xx
+             * downloadsystem
+             */
+            /* see DirectHTTP for possible properties */
+            finalDlLink.setProperty("forcenochunk", true);
             decryptedLinks.add(finalDlLink);
         } else {
             parameter = parameter.replace("/load/", "/view/").replace("ex.ua", "luxport.eu");
@@ -74,7 +80,7 @@ public class Xa extends PluginForDecrypt {
                         br.getPage("http://www.luxport.eu" + cryptedlink);
                         String finallink = br.getRedirectLocation();
                         if (finallink == null) return null;
-                        DownloadLink decryptedlink = createDownloadlink("directhttp://" + finallink);
+                        DownloadLink decryptedlink = createDownloadlink(finallink);
                         if (md5hash != null) {
                             decryptedlink.setMD5Hash(md5hash.trim());
                         }
@@ -94,7 +100,7 @@ public class Xa extends PluginForDecrypt {
                         br.getPage("http://luxport.eu" + cryptedlink);
                         String finallink = br.getRedirectLocation();
                         if (finallink == null) return null;
-                        decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
+                        decryptedLinks.add(createDownloadlink(finallink));
                         progress.increase(1);
                     }
                 }

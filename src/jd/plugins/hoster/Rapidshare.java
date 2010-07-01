@@ -118,9 +118,8 @@ public class Rapidshare extends PluginForHost {
 
     private static long RS_API_WAIT = 0;
 
-    private static Object menuLock = new Object();
-    private static MenuAction happyHourAction = null;
-    private static HashMap<Integer, MenuAction> menuActionMap = new HashMap<Integer, MenuAction>();
+    private static final Object menuLock = new Object();
+    private static final HashMap<Integer, MenuAction> menuActionMap = new HashMap<Integer, MenuAction>();
 
     private static HashMap<Account, ArrayList<DownloadLink>> trafficCheck = new HashMap<Account, ArrayList<DownloadLink>>();
 
@@ -190,7 +189,6 @@ public class Rapidshare extends PluginForHost {
         setConfigElements();
         enablePremium("http://rapidshare.com/premium.html");
         this.setMaxConnections(30);
-        setupMenuItems();
     }
 
     @Override
@@ -1320,8 +1318,8 @@ public class Rapidshare extends PluginForHost {
                                     upgradeBlock.setActionListener(this);
                                     upgradeBlock.setSelected(isBooleanSet(getPremiumAccounts().get(i), ACCOUNT_DONT_UPGRADE, true));
                                     menuActionMap.put(1000 + i, upgradeBlock);
-                                    aa.addMenuItem(upgradeBlock);
-                                } else if (!aa.getItems().contains(upgradeBlock)) {
+                                }
+                                if (!aa.getItems().contains(upgradeBlock)) {
                                     /* backwards compatibility to 0.95xx */
                                     /*
                                      * old version did only create account menu
@@ -1335,6 +1333,14 @@ public class Rapidshare extends PluginForHost {
                     }
                 }
                 /* here we can add it every time */
+                MenuAction happyHourAction = menuActionMap.get(32767);
+                if (happyHourAction == null) {
+                    happyHourAction = new MenuAction(JDL.L("plugins.hoster.rapidshare.com.happyhour", "Only use Premium while Happy Hour?"), 32767);
+                    happyHourAction.setType(Types.TOGGLE);
+                    happyHourAction.setActionListener(this);
+                    happyHourAction.setSelected(getPluginConfig().getBooleanProperty(PROPERTY_ONLY_HAPPYHOUR, false));
+                    menuActionMap.put(32767, happyHourAction);
+                }
                 ret.add(happyHourAction);
             }
         }
@@ -1356,16 +1362,6 @@ public class Rapidshare extends PluginForHost {
         return (Boolean) ret;
     }
 
-    /* setup static menuactions here */
-    private void setupMenuItems() {
-        if (happyHourAction == null) {
-            happyHourAction = new MenuAction(JDL.L("plugins.hoster.rapidshare.com.happyhour", "Only use Premium while Happy Hour?"), 32767);
-            happyHourAction.setType(Types.TOGGLE);
-            happyHourAction.setActionListener(this);
-            happyHourAction.setSelected(getPluginConfig().getBooleanProperty(PROPERTY_ONLY_HAPPYHOUR, false));
-        }
-    }
-
     @Override
     public void actionPerformed(final ActionEvent e) {
         if (e.getID() >= 1000 && e.getID() < 2000) {
@@ -1380,9 +1376,12 @@ public class Rapidshare extends PluginForHost {
                 upgradeBlock.setSelected(getPremiumAccounts().get(i).getBooleanProperty(ACCOUNT_DONT_UPGRADE, false));
             }
         } else if (e.getID() == 32767) {
+            MenuAction happyHourAction = menuActionMap.get(e.getID());
             /* sync menuaction and property */
-            getPluginConfig().setProperty(PROPERTY_ONLY_HAPPYHOUR, !getPluginConfig().getBooleanProperty(PROPERTY_ONLY_HAPPYHOUR, false));
-            happyHourAction.setSelected(getPluginConfig().getBooleanProperty(PROPERTY_ONLY_HAPPYHOUR, false));
+            if (happyHourAction != null) {
+                getPluginConfig().setProperty(PROPERTY_ONLY_HAPPYHOUR, !getPluginConfig().getBooleanProperty(PROPERTY_ONLY_HAPPYHOUR, false));
+                happyHourAction.setSelected(getPluginConfig().getBooleanProperty(PROPERTY_ONLY_HAPPYHOUR, false));
+            }
         } else {
             super.actionPerformed(e);
         }

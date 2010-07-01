@@ -609,7 +609,14 @@ public class Browser {
         this.request = request;
         if (this.doRedirects && request.getLocation() != null) {
             if (request.getLocation().toLowerCase().startsWith("ftp://")) throw new BrowserException("Cannot redirect to FTP");
-            this.openGetConnection(null);
+            String org = request.getUrl().toExternalForm();
+            String red = request.getLocation();
+            if (org.equalsIgnoreCase(red)) {
+                /* prevent buggy redirect loops */
+                /* source==dest */
+            } else {
+                this.openGetConnection(null);
+            }
         } else {
             currentURL = request.getUrl();
         }
@@ -943,8 +950,13 @@ public class Browser {
         this.connectTimeout = connectTimeout;
     }
 
+    /* sets current URL, if null we dont send referer! */
     public void setCurrentURL(final String string) throws MalformedURLException {
-        currentURL = new URL(string);
+        if (string == null || string.length() == 0) {
+            currentURL = null;
+        } else {
+            currentURL = new URL(string);
+        }
     }
 
     public void setFollowRedirects(final boolean b) {
