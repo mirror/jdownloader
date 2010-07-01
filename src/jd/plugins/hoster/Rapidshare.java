@@ -114,6 +114,8 @@ public class Rapidshare extends PluginForHost {
 
     final static private Object LOCK = new Object();
 
+    final static private ArrayList<Account> resetWaitingAccounts = new ArrayList<Account>();
+
     final static private Boolean HTMLWORKAROUND = new Boolean(false);
 
     private static long RS_API_WAIT = 0;
@@ -684,7 +686,12 @@ public class Rapidshare extends PluginForHost {
                      * accout got tempdisabled by another plugin instance, no
                      * need to check again
                      */
-                    if (account.isTempDisabled()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                    if (account.isTempDisabled()) {
+                        synchronized (resetWaitingAccounts) {
+                            if (!resetWaitingAccounts.contains(account)) resetWaitingAccounts.add(account);
+                        }
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                    }
                     br = login(account);
                     /* get ServerTime for happy hour check */
                     Calendar cal = Calendar.getInstance();
@@ -694,9 +701,15 @@ public class Rapidshare extends PluginForHost {
                         requestFileInformation(downloadLink);
                     }
                     /* check for happy hour, between 2 and 10 oclock */
-                    boolean happyhour = cal.get(Calendar.HOUR_OF_DAY) >= 2 && cal.get(Calendar.HOUR_OF_DAY) <= 10;
+                    boolean happyhour = cal.get(Calendar.HOUR_OF_DAY) >= 2 && cal.get(Calendar.HOUR_OF_DAY) < 10;
                     /* only download while happyHour */
-                    if (!happyhour && getPluginConfig().getBooleanProperty(PROPERTY_ONLY_HAPPYHOUR, false)) throw new PluginException(LinkStatus.ERROR_PREMIUM, "Wait for Happy Hour!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                    if (!happyhour && getPluginConfig().getBooleanProperty(PROPERTY_ONLY_HAPPYHOUR, false)) {
+                        synchronized (resetWaitingAccounts) {
+                            if (!resetWaitingAccounts.contains(account)) resetWaitingAccounts.add(account);
+                        }
+                        account.setTempDisabled(true);
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Wait for Happy Hour!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                    }
                     /*
                      * check needed traffic for running downloads on this
                      * accounts
@@ -738,6 +751,9 @@ public class Rapidshare extends PluginForHost {
                             allowUpgrade = isBooleanSet(account, ACCOUNT_DONT_UPGRADE, true);
                         }
                         if (!allowUpgrade) {
+                            synchronized (resetWaitingAccounts) {
+                                if (!resetWaitingAccounts.contains(account)) resetWaitingAccounts.add(account);
+                            }
                             /*
                              * temp disable the account, no upgrade allowed for
                              * this account
@@ -1381,6 +1397,14 @@ public class Rapidshare extends PluginForHost {
             if (happyHourAction != null) {
                 getPluginConfig().setProperty(PROPERTY_ONLY_HAPPYHOUR, !getPluginConfig().getBooleanProperty(PROPERTY_ONLY_HAPPYHOUR, false));
                 happyHourAction.setSelected(getPluginConfig().getBooleanProperty(PROPERTY_ONLY_HAPPYHOUR, false));
+                if (getPluginConfig().getBooleanProperty(PROPERTY_ONLY_HAPPYHOUR, false) == false) {
+                    synchronized (resetWaitingAccounts) {
+                        for (Account acc : resetWaitingAccounts) {
+                            acc.setTempDisabled(false);
+                        }
+                        resetWaitingAccounts.clear();
+                    }
+                }
             }
         } else {
             super.actionPerformed(e);
