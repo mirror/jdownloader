@@ -62,6 +62,10 @@ public class FilefrogTo extends PluginForHost {
         for (String[] entry : data) {
             dat.put(entry[0], entry[1]);
         }
+        if (dat.get("traffic") == null) {
+            account.setValid(false);
+            return ai;
+        }
         ai.setTrafficLeft(Regex.getSize(dat.get("traffic")));
         ai.setValidUntil(Regex.getMilliSeconds(dat.get("premium_until"), "yyyy-MM-dd", null));
         return ai;

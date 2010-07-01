@@ -130,12 +130,13 @@ public class CobraShareSk extends PluginForHost {
         if (points != null) {
             ai.setPremiumPoints(Integer.parseInt(points.trim()));
         }
-        if (validUntil != null)
+        if (validUntil != null) {
             ai.setValidUntil(Regex.getMilliSeconds(validUntil, "dd.MM.yyyy HH:mm", null));
-        else
+            ai.setStatus("Premium User");
+            account.setValid(true);
+        } else {
             account.setValid(false);
-        ai.setStatus("Premium User");
-        account.setValid(true);
+        }
         return ai;
     }
 

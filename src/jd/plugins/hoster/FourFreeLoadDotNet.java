@@ -188,12 +188,13 @@ public class FourFreeLoadDotNet extends PluginForHost {
             ai.setPremiumPoints(Integer.parseInt(points));
         }
 
-        if (nopremium)
+        if (nopremium) {
             ai.setStatus("Registered (free) User");
-        else
+            account.setValid(true);
+        } else {
             ai.setStatus("Premium User");
-        account.setValid(true);
-
+            account.setValid(true);
+        }
         return ai;
     }
 
