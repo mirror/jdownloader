@@ -43,17 +43,6 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
         br.setFollowRedirects(false);
         br.setReadTimeout(60 * 1000);
         String finallink = null;
-        if (parameter.contains("agaleradodownload.com")) {
-            String url = new Regex(parameter, "download.*?\\?(.+)").getMatch(0);
-            if (url != null) {
-                char[] temp = url.toCharArray();
-                StringBuilder sb = new StringBuilder("");
-                for (int i = url.length() - 1; i >= 0; i--) {
-                    sb.append(temp[i]);
-                }
-                finallink = sb.toString();
-            }
-        }
         if (!parameter.contains("imageto.net/") && !parameter.contains("musicloud.fm/dl") && !parameter.contains("yourfileplace.com/") && !parameter.contains("oneclickmoviez.com/dwnl/") && !parameter.contains("1tool.biz")) br.getPage(parameter);
         if (parameter.contains("adf.ly"))
             finallink = br.getRegex("var target_url = '(http.*?)'").getMatch(0);
@@ -140,6 +129,16 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
             String id = new Regex(parameter, "1tool\\.biz/(\\d+)").getMatch(0);
             br.getPage("http://1tool.biz/2.php?id=" + id);
             finallink = br.getRegex("onclick=\"NewWindow\\('(.*?)','").getMatch(0);
+        } else if (parameter.contains("agaleradodownload.com")) {
+            String url = new Regex(parameter, "download.*?\\?(.+)").getMatch(0);
+            if (url != null) {
+                char[] temp = url.toCharArray();
+                StringBuilder sb = new StringBuilder("");
+                for (int i = url.length() - 1; i >= 0; i--) {
+                    sb.append(temp[i]);
+                }
+                finallink = sb.toString();
+            }
         }
         if (finallink == null) {
             logger.info("DecrypterForRedirectServicesWithoutDirectRedirects says \"Out of date\" for link: " + parameter);

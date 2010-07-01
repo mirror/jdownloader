@@ -159,8 +159,11 @@ public class FourSharedCom extends PluginForHost {
         } else {
             br.getPage(url);
 
-            url = br.getRegex("id='divDLStart' >.*?<a href='(.*?)'").getMatch(0);
-            if (url == null) url = br.getRegex("('|\")(http://dc[0-9]+\\.4shared(-china)?\\.com/download/\\d+/.*?/.*?)('|\")").getMatch(1);
+            url = br.getRegex("id='divDLStart'( )?>.*?<a href='(.*?)'").getMatch(1);
+            url = null;
+            System.out.print(br.toString());
+            if (url == null) url = br.getRegex("('|\")(http://dc[0-9]+\\.4shared(-china)?\\.com/download/[a-zA-Z0-9]+/.*?\\?tsid=\\d+-\\d+-[a-z0-9]+)('|\")").getMatch(1);
+            if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             if (url.contains("linkerror.jsp")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             // Ticket Time
             String ttt = br.getRegex(" var c = (\\d+?);").getMatch(0);
