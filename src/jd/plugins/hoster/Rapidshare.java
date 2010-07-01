@@ -899,7 +899,6 @@ public class Rapidshare extends PluginForHost {
             }
             dl.startDownload();
         } finally {
-
             /* TODO: auto downgrade place here */
             if (account != dummyAccount) {
                 /* update trafficCheck map */
@@ -913,7 +912,6 @@ public class Rapidshare extends PluginForHost {
             }
             downloadLink.getLinkStatus().setStatusText(JDL.LF("plugins.host.rapidshare.loadedvia", "Loaded via %s", account.getUser()));
         }
-
     }
 
     private int getCurrentPackage(Account account) throws Exception {
@@ -1247,13 +1245,13 @@ public class Rapidshare extends PluginForHost {
             HashMap<String, String> map = new HashMap<String, String>();
             map.put("enc", cookie);
             account.setProperty("cookies", map);
+            updateAccountInfo(account, br);
             return br;
         }
     }
 
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
         String api = "http://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=getaccountdetails_v1&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&type=prem";
         queryAPI(br, api);
         String error = br.getRegex("ERROR:(.*)").getMatch(0);
@@ -1263,9 +1261,21 @@ public class Rapidshare extends PluginForHost {
              * column
              */
             account.setProperty("cookies", null);
+            AccountInfo ai = new AccountInfo();
             ai.setStatus(JDL.LF("plugins.host.rapidshare.apierror", "Rapidshare reports that %s", error.trim()));
             account.setValid(false);
             return ai;
+        }
+        updateAccountInfo(account, br);
+        return account.getAccountInfo();
+    }
+
+    private void updateAccountInfo(Account account, Browser br) {
+        if (account == null || br == null) return;
+        AccountInfo ai = account.getAccountInfo();
+        if (ai == null) {
+            ai = new AccountInfo();
+            account.setAccountInfo(ai);
         }
         try {
             String[][] matches = br.getRegex("(\\w+)=([^\r^\n]+)").getMatches();
@@ -1311,7 +1321,6 @@ public class Rapidshare extends PluginForHost {
         } catch (Exception e) {
             logger.severe("RS-API change detected, please inform support!");
         }
-        return ai;
     }
 
     private HashMap<String, String> getMap(String[][] matches) {
@@ -1492,7 +1501,6 @@ public class Rapidshare extends PluginForHost {
                                 account.setProperty(ASK_BEFORE_UPGRADE, ask.isSelected());
                                 int rmin = 0;
                                 int rmax = 0;
-
                                 switch (combo.getSelectedIndex()) {
                                 case 0:
                                     rmax = SMALL;
