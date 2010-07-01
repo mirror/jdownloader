@@ -1,4 +1,4 @@
-<project default="buildPackages" basedir=".">
+<project default="standardBuild" basedir=".">
 	
 	<!--	Targets:
 			compile				Compiles the code
@@ -7,7 +7,7 @@
 			jarRestarter		Builds the restarter
 			jarOptionals		Builds all optional plugins
 			buildAll			Executes make, jarWebupdater, jarRestarter, jarOptionals
-			standardBuild		buildAll with prepare and zip for the platform packages
+			standardBuild		buildAll with prepare and zip for the platform packages. You need an installed NSIS with makensis in the PATH for building the installable windows file.
 			dlcEnabledBuild		standardBuild with DLC
 			signedBuild			standardBuild with signed jars
 	-->
