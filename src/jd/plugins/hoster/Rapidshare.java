@@ -744,7 +744,7 @@ public class Rapidshare extends PluginForHost {
                     /* how much bytes rs will calculate */
                     long countedSize = (long) (downloadSize / (happyhour ? 0.1f : 1.0f));
                     /* get needed infos for packagemanaging */
-                    long trafficLeft = Long.parseLong(account.getStringProperty("tskb")) * 1024;
+                    long trafficLeft = Long.parseLong(account.getStringProperty("tskb")) * 1000;
                     // long rapids =
                     // Long.parseLong(account.getStringProperty("rapids"));
                     // int rapidPackage =

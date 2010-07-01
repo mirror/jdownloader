@@ -273,7 +273,7 @@ public class TbCm extends PluginForDecrypt {
         /* new site layout */
         String data = br.getRegex("swfHTML.*?\" : \"(.*?)\";").getMatch(0);
         // data = Encoding.urlDecode(data, true);
-        String linksData[][] = new Regex(data, "(\\d+)%7C(http.*?)(&|%2C)").getMatches();
+        String linksData[][] = new Regex(data, "(\\d+)%7C(http.*?)(&|%2C|%7C%7C)").getMatches();
         for (String linkData[] : linksData) {
             if (!links.containsKey(linkData[0])) links.put(Integer.parseInt(linkData[0]), Encoding.htmlDecode(Encoding.urlDecode(linkData[1], true)));
         }

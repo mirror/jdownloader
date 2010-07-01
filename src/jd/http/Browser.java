@@ -604,17 +604,20 @@ public class Browser {
                 LOGGER.finest("\r\n" + request.printHeaders());
             }
         }
-
         updateCookies(request);
         this.request = request;
         if (this.doRedirects && request.getLocation() != null) {
             if (request.getLocation().toLowerCase().startsWith("ftp://")) throw new BrowserException("Cannot redirect to FTP");
             String org = request.getUrl().toExternalForm();
             String red = request.getLocation();
-            if (org.equalsIgnoreCase(red)) {
+            if (!org.equalsIgnoreCase(red)) {
                 /* prevent buggy redirect loops */
                 /* source==dest */
-            } else {
+                try {
+                    /* close old connection, because we follow redirect */
+                    request.httpConnection.disconnect();
+                } catch (Exception e) {
+                }
                 this.openGetConnection(null);
             }
         } else {

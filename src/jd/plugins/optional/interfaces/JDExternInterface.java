@@ -68,6 +68,7 @@ public class JDExternInterface extends PluginOptional {
 
     private RequestHandler handler;
     private HttpServer server = null;
+    private final static String LOCALONLY = "localonly";
     private static String jdpath = JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/JDownloader.jar";
 
     public JDExternInterface(PluginWrapper wrapper) {
@@ -184,6 +185,7 @@ public class JDExternInterface extends PluginOptional {
             }
 
         }, JDL.L("jd.plugins.optional.interfaces.JDExternInterface.flashgot", "Install"), JDL.L("jd.plugins.optional.interfaces.JDExternInterface.flashgot.long", "Install Firefox integration"), JDTheme.II("gui.images.flashgot", 16, 16)));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), LOCALONLY, JDL.L("jd.plugins.optional.interfaces.JDExternInterface.localonly", "Listen only on localhost?")).setDefaultValue(true));
     }
 
     @Override
@@ -195,7 +197,7 @@ public class JDExternInterface extends PluginOptional {
             Installer.askInstallFlashgot();
         }
         try {
-            server = new HttpServer(this.getPluginConfig().getIntegerProperty("INTERFACE_PORT", 9666), handler, true);
+            server = new HttpServer(this.getPluginConfig().getIntegerProperty("INTERFACE_PORT", 9666), handler, getPluginConfig().getBooleanProperty(LOCALONLY, true));
             server.start();
         } catch (Exception e) {
             return false;

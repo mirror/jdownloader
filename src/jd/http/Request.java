@@ -26,9 +26,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.nio.ByteBuffer;
 import java.nio.charset.CharacterCodingException;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -39,7 +37,6 @@ import java.util.zip.GZIPInputStream;
 
 import javax.imageio.ImageIO;
 
-import jd.captcha.gui.BasicWindow;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 
@@ -97,7 +94,7 @@ public abstract class Request {
     private JDProxy proxy;
     private URL orgURL;
     private String customCharset = null;
-    private ByteBuffer byteBuffer;
+    private byte[] byteArray;
     private BufferedImage image;
 
     private static String http2JDP(final String string) {
@@ -260,27 +257,37 @@ public abstract class Request {
 
     public String getHtmlCode() throws CharacterCodingException {
         String ct = httpConnection.getContentType();
-
+        /* check for image content type */
         if (ct != null && Pattern.compile("images?/\\w*", Pattern.CASE_INSENSITIVE | Pattern.DOTALL).matcher(ct).matches()) throw new IllegalStateException("Content-Type: " + ct);
-
-        if (htmlCode == null && this.byteBuffer != null) {
-
-            String cs = customCharset == null ? this.httpConnection.getCharset() : customCharset;
+        if (htmlCode == null && byteArray != null) {
+            /* use custom charset or charset from httpconnection */
+            String useCS = customCharset == null ? this.httpConnection.getCharset() : customCharset;
             try {
-                htmlCode = bufferToString(byteBuffer, cs != null ? Charset.forName(cs.toUpperCase()) : Charset.forName("ISO-8859-1"));
-                byteBuffer = null;
-            } catch (IllegalStateException e) {
-                Log.exception(e);
+                try {
+                    try {
+                        if (useCS != null) {
+                            /* try to use wanted charset */
+                            htmlCode = new String(byteArray, useCS.toUpperCase());
+                            byteArray = null;
+                            return htmlCode;
+                        }
+                    } catch (Exception e) {
+                    }
+                    htmlCode = new String(byteArray, "ISO-8859-1");
+                    byteArray = null;
+                    return htmlCode;
+                } catch (Exception e) {
+                    Log.getLogger().severe("could neither charset: " + useCS + " nor default charset");
+                    /* fallback to default charset in error case */
+                    htmlCode = new String(byteArray);
+                    byteArray = null;
+                    return htmlCode;
+                }
+            } catch (Exception e) {
+                /* in case of error we do not reset byteArray */
             }
-
         }
-        return htmlCode;
-    }
-
-    public static String bufferToString(ByteBuffer byteBuffer, Charset charset) throws CharacterCodingException {
-
-        return charset.newDecoder().decode(byteBuffer).toString();
-
+        return null;
     }
 
     public URLConnectionAdapter getHttpConnection() {
@@ -415,20 +422,16 @@ public abstract class Request {
     public Request read() throws IOException {
         long tima = System.currentTimeMillis();
         httpConnection.setCharset(this.customCharset);
-        byteBuffer = read(httpConnection);
+        byteArray = read(httpConnection);
         readTime = System.currentTimeMillis() - tima;
         return this;
     }
 
-    public static ByteBuffer read(final URLConnectionAdapter con) throws IOException {
-
+    public static byte[] read(final URLConnectionAdapter con) throws IOException {
         BufferedInputStream is = null;
-
         if (con.getInputStream() != null) {
             if (con.getHeaderField("Content-Encoding") != null && con.getHeaderField("Content-Encoding").equalsIgnoreCase("gzip")) {
-
                 is = new BufferedInputStream(new GZIPInputStream(con.getInputStream()));
-
             } else {
                 is = new BufferedInputStream(con.getInputStream());
             }
@@ -461,15 +464,19 @@ public abstract class Request {
         } finally {
             try {
                 is.close();
+            } catch (Exception e) {
+            }
+            try {
                 tmpOut.close();
             } catch (Exception e) {
             }
+            try {
+                /* disconnect connection */
+                con.disconnect();
+            } catch (Exception e) {
+            }
         }
-
-        byte[] array = tmpOut.toByteArray();
-
-        return ByteBuffer.wrap(array);
-
+        return tmpOut.toByteArray();
     }
 
     private void requestConnection() throws IOException {
@@ -502,26 +509,21 @@ public abstract class Request {
     // @Override
     public String toString() {
         if (!requested) { return "Request not sent yet"; }
-
         try {
             getHtmlCode();
-
             if (htmlCode == null || htmlCode.length() == 0) {
                 if (getLocation() != null) { return "Not HTML Code. Redirect to: " + getLocation(); }
                 return "No htmlCode read";
             }
-
         } catch (Exception e) {
             return "NOTEXT: " + e.getMessage();
         }
-
         return this.htmlCode;
     }
 
     public void setHtmlCode(final String htmlCode) {
         // set bytebuffer to null... user works with htmlcode
-        this.byteBuffer = null;
-
+        this.byteArray = null;
         this.htmlCode = htmlCode;
     }
 
@@ -556,7 +558,7 @@ public abstract class Request {
      * @return
      */
     public byte[] getResponseBytes() {
-        if (this.byteBuffer != null && byteBuffer.hasArray()) { return byteBuffer.array(); }
+        if (byteArray != null) return byteArray.clone();
         return null;
     }
 
@@ -567,50 +569,21 @@ public abstract class Request {
      */
     public Image getResponseImage() {
         String ct = httpConnection.getContentType();
-
+        /* check for image content */
         if (ct != null && !Pattern.compile("images?/\\w*", Pattern.CASE_INSENSITIVE | Pattern.DOTALL).matcher(ct).matches()) { throw new IllegalStateException("Content-Type: " + ct); }
-        // TODO Auto-generated method stub
         // TODO..this is just quick and dirty.. may result in memory leaks
-
-        if (image == null && byteBuffer != null) {
-
-            InputStream fake;
-            if (byteBuffer.hasArray()) {
-                fake = new ByteArrayInputStream(this.byteBuffer.array());
-
-            } else {
-                fake = getInputStream(this.byteBuffer);
-            }
-
+        if (image == null && byteArray != null) {
+            InputStream fake = new ByteArrayInputStream(byteArray);
             try {
                 image = ImageIO.read(fake);
-                BasicWindow.showImage(image);
+                // BasicWindow.showImage(image);
                 // its an immage;
-                byteBuffer = null;
-            } catch (IOException e) {
+                byteArray = null;
+            } catch (Exception e) {
                 Log.exception(e);
             }
-
         }
-
         return image;
-
-    }
-
-    private static InputStream getInputStream(final ByteBuffer buf) {
-
-        return new InputStream() {
-            public synchronized int read() throws IOException {
-                return buf.hasRemaining() ? buf.get() : -1;
-            }
-
-            public synchronized int read(byte[] bytes, int off, int len) throws IOException {
-                int rv = Math.min(len, buf.remaining());
-                buf.get(bytes, off, rv);
-                return rv == 0 ? -1 : rv;
-            }
-        };
-
     }
 
 }
