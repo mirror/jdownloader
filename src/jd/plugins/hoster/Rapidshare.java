@@ -1277,6 +1277,8 @@ public class Rapidshare extends PluginForHost {
             ai = new AccountInfo();
             account.setAccountInfo(ai);
         }
+        /* let hoster report traffic limit reached! */
+        ai.setSpecialTraffic(true);
         try {
             String[][] matches = br.getRegex("(\\w+)=([^\r^\n]+)").getMatches();
             HashMap<String, String> data = getMap(matches);
