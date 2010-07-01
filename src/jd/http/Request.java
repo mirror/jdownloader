@@ -16,13 +16,19 @@
 
 package jd.http;
 
-import java.io.BufferedReader;
+import java.awt.Image;
+import java.awt.image.BufferedImage;
+import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.ByteBuffer;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -31,8 +37,13 @@ import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 
+import javax.imageio.ImageIO;
+
+import jd.captcha.gui.BasicWindow;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+
+import org.appwork.utils.logging.Log;
 
 public abstract class Request {
     // public static int MAX_REDIRECTS = 30;
@@ -86,6 +97,8 @@ public abstract class Request {
     private JDProxy proxy;
     private URL orgURL;
     private String customCharset = null;
+    private ByteBuffer byteBuffer;
+    private BufferedImage image;
 
     private static String http2JDP(final String string) {
         if (string.startsWith("http")) { return ("jdp" + string.substring(4)); }
@@ -169,8 +182,8 @@ public abstract class Request {
         return this;
     }
 
-    public boolean containsHTML(final String html) {
-        return (htmlCode == null) ? false : htmlCode.contains(html);
+    public boolean containsHTML(final String html) throws CharacterCodingException {
+        return (getHtmlCode() == null) ? false : getHtmlCode().contains(html);
     }
 
     public void setCookies(final Cookies cookies) {
@@ -238,8 +251,36 @@ public abstract class Request {
         return headers;
     }
 
-    public String getHtmlCode() {
+    /**
+     * Will replace #getHtmlCode() with next release
+     */
+    public String getResponseText() throws CharacterCodingException {
+        return getHtmlCode();
+    }
+
+    public String getHtmlCode() throws CharacterCodingException {
+        String ct = httpConnection.getContentType();
+
+        if (ct != null && Pattern.compile("images?/\\w*", Pattern.CASE_INSENSITIVE | Pattern.DOTALL).matcher(ct).matches()) throw new IllegalStateException("Content-Type: " + ct);
+
+        if (htmlCode == null && this.byteBuffer != null) {
+
+            String cs = customCharset == null ? this.httpConnection.getCharset() : customCharset;
+            try {
+                htmlCode = bufferToString(byteBuffer, cs != null ? Charset.forName(cs.toUpperCase()) : Charset.forName("ISO-8859-1"));
+                byteBuffer = null;
+            } catch (IllegalStateException e) {
+                Log.exception(e);
+            }
+
+        }
         return htmlCode;
+    }
+
+    public static String bufferToString(ByteBuffer byteBuffer, Charset charset) throws CharacterCodingException {
+
+        return charset.newDecoder().decode(byteBuffer).toString();
+
     }
 
     public URLConnectionAdapter getHttpConnection() {
@@ -330,29 +371,10 @@ public abstract class Request {
 
     public String load() throws IOException {
         requestConnection();
-        return htmlCode;
-    }
-
-    public boolean matches(final Pattern pat) {
-        return new Regex(htmlCode, pat).matches();
-    }
-
-    public boolean matches(final String pat) {
-        return new Regex(htmlCode, pat).matches();
+        return getHtmlCode();
     }
 
     private void openConnection() throws IOException {
-
-        // if (request.getHttpConnection().getResponseCode() == 401 &&
-        // logins.containsKey(request.getUrl().getHost())) {
-        // this.getHeaders().put("Authorization", "Basic " +
-        // Encoding.Base64Encode(logins.get(request.getUrl().getHost())[0] + ":"
-        // + logins.get(request.getUrl().getHost())[1]));
-        //
-        // request.getHttpConnection().disconnect();
-        // return this.getPage(string);
-        //
-        // }
 
         long tima = System.currentTimeMillis();
 
@@ -390,56 +412,44 @@ public abstract class Request {
 
     abstract public void preRequest(URLConnectionAdapter httpConnection) throws IOException;
 
-    public String read() throws IOException {
+    public Request read() throws IOException {
         long tima = System.currentTimeMillis();
         httpConnection.setCharset(this.customCharset);
-        this.htmlCode = read(httpConnection);
+        byteBuffer = read(httpConnection);
         readTime = System.currentTimeMillis() - tima;
-        return htmlCode;
+        return this;
     }
 
-    public static String read(final URLConnectionAdapter con) throws IOException {
-        BufferedReader rd;
-        InputStreamReader isr;
-        InputStream is = null;
-        if (con.getHeaderField("Content-Encoding") != null && con.getHeaderField("Content-Encoding").equalsIgnoreCase("gzip")) {
-            if (con.getInputStream() != null) {
-                is = new GZIPInputStream(con.getInputStream());
-            }
-        } else {
-            if (con.getInputStream() != null) {
-                is = con.getInputStream();
-            }
-        }
-        if (is == null) return null;
-        String cs = con.getCharset();
-        if (cs == null) {
-            /* default encoding ist ISO-8859-1, falls nicht anders angegeben */
-            isr = new InputStreamReader(is, "ISO-8859-1");
-        } else {
-            cs = cs.toUpperCase();
-            try {
-                isr = new InputStreamReader(is, cs);
-            } catch (Exception e) {
-                // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,
-                // "Could not Handle Charset " + cs, e);
-                try {
-                    isr = new InputStreamReader(is, cs.replace("-", ""));
-                } catch (Exception e2) {
-                    // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,
-                    // "Could not Handle Charset " + cs, e);
-                    isr = new InputStreamReader(is);
-                }
+    public static ByteBuffer read(final URLConnectionAdapter con) throws IOException {
+
+        BufferedInputStream is = null;
+
+        if (con.getInputStream() != null) {
+            if (con.getHeaderField("Content-Encoding") != null && con.getHeaderField("Content-Encoding").equalsIgnoreCase("gzip")) {
+
+                is = new BufferedInputStream(new GZIPInputStream(con.getInputStream()));
+
+            } else {
+                is = new BufferedInputStream(con.getInputStream());
             }
         }
-        rd = new BufferedReader(isr);
-        String line;
-        final StringBuilder htmlCode = new StringBuilder();
-        /* workaround for premature eof */
+        if (is == null) {
+            // TODO: check if we have t close con here
+            return null;
+        }
+        ByteArrayOutputStream tmpOut;
+        int contentLength = con.getContentLength();
+        if (contentLength != -1) {
+            tmpOut = new ByteArrayOutputStream(contentLength);
+        } else {
+            tmpOut = new ByteArrayOutputStream(16384);
+        }
         /* added "Corrupt GZIP trailer" for CamWinsCom */
         try {
-            while ((line = rd.readLine()) != null) {
-                htmlCode.append(line + "\r\n");
+            final byte[] b = new byte[1024];
+            int len;
+            while ((len = is.read(b)) != -1) {
+                tmpOut.write(b, 0, len);
             }
         } catch (EOFException e) {
             jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Try workaround for ", e);
@@ -450,16 +460,21 @@ public abstract class Request {
                 throw e;
         } finally {
             try {
-                rd.close();
+                is.close();
+                tmpOut.close();
             } catch (Exception e) {
             }
         }
-        return htmlCode.toString();
+
+        byte[] array = tmpOut.toByteArray();
+
+        return ByteBuffer.wrap(array);
+
     }
 
     private void requestConnection() throws IOException {
         connect();
-        htmlCode = read();
+        read();
     }
 
     public void setConnectTimeout(final int connectTimeout) {
@@ -488,15 +503,25 @@ public abstract class Request {
     public String toString() {
         if (!requested) { return "Request not sent yet"; }
 
-        if (htmlCode == null || htmlCode.length() == 0) {
-            if (getLocation() != null) { return "Not HTML Code. Redirect to: " + getLocation(); }
-            return "No htmlCode read";
+        try {
+            getHtmlCode();
+
+            if (htmlCode == null || htmlCode.length() == 0) {
+                if (getLocation() != null) { return "Not HTML Code. Redirect to: " + getLocation(); }
+                return "No htmlCode read";
+            }
+
+        } catch (Exception e) {
+            return "NOTEXT: " + e.getMessage();
         }
 
-        return htmlCode;
+        return this.htmlCode;
     }
 
     public void setHtmlCode(final String htmlCode) {
+        // set bytebuffer to null... user works with htmlcode
+        this.byteBuffer = null;
+
         this.htmlCode = htmlCode;
     }
 
@@ -523,6 +548,69 @@ public abstract class Request {
 
     public Request cloneRequest() {
         return null;
+    }
+
+    /**
+     * Returns the loaded bytes
+     * 
+     * @return
+     */
+    public byte[] getResponseBytes() {
+        if (this.byteBuffer != null && byteBuffer.hasArray()) { return byteBuffer.array(); }
+        return null;
+    }
+
+    /**
+     * tries to generate an image out of the loaded bytes
+     * 
+     * @return
+     */
+    public Image getResponseImage() {
+        String ct = httpConnection.getContentType();
+
+        if (ct != null && !Pattern.compile("images?/\\w*", Pattern.CASE_INSENSITIVE | Pattern.DOTALL).matcher(ct).matches()) { throw new IllegalStateException("Content-Type: " + ct); }
+        // TODO Auto-generated method stub
+        // TODO..this is just quick and dirty.. may result in memory leaks
+
+        if (image == null && byteBuffer != null) {
+
+            InputStream fake;
+            if (byteBuffer.hasArray()) {
+                fake = new ByteArrayInputStream(this.byteBuffer.array());
+
+            } else {
+                fake = getInputStream(this.byteBuffer);
+            }
+
+            try {
+                image = ImageIO.read(fake);
+                BasicWindow.showImage(image);
+                // its an immage;
+                byteBuffer = null;
+            } catch (IOException e) {
+                Log.exception(e);
+            }
+
+        }
+
+        return image;
+
+    }
+
+    private static InputStream getInputStream(final ByteBuffer buf) {
+
+        return new InputStream() {
+            public synchronized int read() throws IOException {
+                return buf.hasRemaining() ? buf.get() : -1;
+            }
+
+            public synchronized int read(byte[] bytes, int off, int len) throws IOException {
+                int rv = Math.min(len, buf.remaining());
+                buf.get(bytes, off, rv);
+                return rv == 0 ? -1 : rv;
+            }
+        };
+
     }
 
 }

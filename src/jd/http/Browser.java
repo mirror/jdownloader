@@ -344,7 +344,7 @@ public class Browser {
 
     public String getPage(final String string) throws IOException {
         this.openRequestConnection(this.createGetRequest(string));
-        return this.loadConnection(null);
+        return loadConnection(null).getHtmlCode();
     }
 
     /**
@@ -918,7 +918,7 @@ public class Browser {
      */
     public String postPage(final String url, final LinkedHashMap<String, String> post) throws IOException {
         openPostConnection(url, post);
-        return loadConnection(null);
+        return loadConnection(null).getHtmlCode();
     }
 
     /**
@@ -939,7 +939,7 @@ public class Browser {
             request.setPostDataString(post);
         }
         this.openRequestConnection(request);
-        return this.loadConnection(null);
+        return this.loadConnection(null).getHtmlCode();
     }
 
     public void setAcceptLanguage(final String acceptLanguage) {
@@ -998,7 +998,7 @@ public class Browser {
     public String submitForm(final Form form) throws Exception {
         this.openFormConnection(form);
         checkContentLengthLimit(request);
-        return request.read();
+        return request.read().getHtmlCode();
     }
 
     public String toString() {
@@ -1027,16 +1027,39 @@ public class Browser {
      * @return
      * @throws IOException
      */
-    public String loadConnection(URLConnectionAdapter con) throws IOException {
-        String ret = null;
+    public Request loadConnection(URLConnectionAdapter con) throws IOException {
+
+        Request requ;
+        if (con == null) {
+            requ = request;
+        } else {
+
+            requ = new Request(con) {
+
+                @Override
+                public void postRequest(URLConnectionAdapter httpConnection) throws IOException {
+                    // TODO Auto-generated method stub
+
+                }
+
+                @Override
+                public void preRequest(URLConnectionAdapter httpConnection) throws IOException {
+                    // TODO Auto-generated method stub
+
+                }
+
+            };
+            checkContentLengthLimit(requ);
+            con = requ.getHttpConnection();
+            requ.read();
+
+        }
+
         try {
-            if (con == null) {
-                checkContentLengthLimit(request);
-                con = request.getHttpConnection();
-                ret = request.read();
-            } else {
-                ret = Request.read(con);
-            }
+            checkContentLengthLimit(requ);
+            con = requ.getHttpConnection();
+            requ.read();
+
         } catch (BrowserException e) {
             throw e;
         } catch (IOException e) {
@@ -1044,10 +1067,10 @@ public class Browser {
         }
         if (isVerbose()) {
             if (LOGGER != null) {
-                LOGGER.finest("\r\n" + ret + "\r\n");
+                LOGGER.finest("\r\n" + requ + "\r\n");
             }
         }
-        return ret;
+        return requ;
     }
 
     public URLConnectionAdapter getHttpConnection() {
@@ -1202,7 +1225,7 @@ public class Browser {
             return null;
         }
         checkContentLengthLimit(request);
-        return request.read();
+        return request.read().getHtmlCode();
     }
 
     public boolean isDebug() {

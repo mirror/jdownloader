@@ -96,7 +96,7 @@ public class Cookies {
         return cookies.isEmpty();
     }
 
-    public static Cookies parseCookies(final String cookieString, final String host, final String Date) {
+    public static Cookies parseCookies(final String cookieString, final String host, final String serverTime) {
         final Cookies cookies = new Cookies();
 
         final String header = cookieString;
@@ -118,7 +118,7 @@ public class Cookies {
                 break;
             }
             /* Key and Value */
-            final String st2[] = new Regex(cookieelement, "(.*?)=(.+)").getRow(0);
+            final String st2[] = new Regex(cookieelement, "(.*?)=(.*)").getRow(0);
             if (st2 == null || st2.length == 0) {
                 key = null;
             } else if (st2.length == 1) {
@@ -126,6 +126,7 @@ public class Cookies {
             } else if (st2.length == 2) {
                 key = st2[0].trim();
                 value = st2[1].trim();
+
             }
 
             if (key != null) {
@@ -157,7 +158,7 @@ public class Cookies {
                 cookie.setExpires(expires);
                 cookie.setValue(next.getValue());
                 cookie.setKey(next.getKey());
-                cookie.setHostTime(Date);
+                cookie.setHostTime(serverTime);
             }
         }
 
