@@ -96,7 +96,7 @@ public class HosterColumn extends JDTableColumn {
             if (dLink.getPlugin() == null) {
                 statuspanel.setText("plugin missing", null);
             } else {
-                String s = dLink.getPlugin().getHost() + dLink.getPlugin().getSessionInfo();
+                String s = dLink.getPlugin().getSessionInfo();
                 statuspanel.setText(s, null);
                 statuspanel.setIcon(-1, dLink.getPlugin().getHosterIconScaled(), null, strLoadingFrom + dLink.getPlugin().getHost());
             }

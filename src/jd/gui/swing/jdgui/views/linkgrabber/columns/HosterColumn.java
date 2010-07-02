@@ -66,7 +66,7 @@ public class HosterColumn extends JDTableColumn {
             dLink = (DownloadLink) value;
             if (dLink.getPlugin() != null) {
                 jlr.setToolTipText(strLoadingFrom + dLink.getPlugin().getHost());
-                jlr.setText(dLink.getPlugin().getHost() + dLink.getPlugin().getSessionInfo());
+                jlr.setText(dLink.getPlugin().getSessionInfo());
                 jlr.setIcon(dLink.getPlugin().getHosterIconScaled());
             } else {
                 jlr.setToolTipText("no plugin found");

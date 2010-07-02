@@ -32,6 +32,8 @@ import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.controlling.CaptchaController;
 import jd.controlling.DownloadController;
+import jd.controlling.FavIconController;
+import jd.controlling.FavIconRequestor;
 import jd.controlling.JDLogger;
 import jd.controlling.SingleDownloadController;
 import jd.gui.UserIF;
@@ -54,7 +56,7 @@ import jd.utils.locale.JDL;
  * 
  * @author astaldo
  */
-public abstract class PluginForHost extends Plugin {
+public abstract class PluginForHost extends Plugin implements FavIconRequestor {
 
     private static final String JDL_PREFIX = "jd.plugins.PluginsForHost.";
 
@@ -139,7 +141,8 @@ public abstract class PluginForHost extends Plugin {
 
     private String premiumurl = null;
 
-    protected ImageIcon hosterIcon;
+    protected ImageIcon hosterIcon = null;
+    protected boolean hosterIconRequested = false;
     private DownloadLink link = null;
 
     public boolean checkLinks(final DownloadLink[] urls) {
@@ -675,19 +678,40 @@ public abstract class PluginForHost extends Plugin {
      * @return
      */
     public String getSessionInfo() {
-        return "";
-    }
-
-    public ImageIcon getHosterIcon() {
-        return null;
+        return getHost();
     }
 
     public ImageIcon getHosterIconUnscaled() {
+        if (hosterIcon == null && getCustomFavIconURL() != null && !hosterIconRequested) {
+            hosterIcon = FavIconController.getFavIcon(getCustomFavIconURL(), this, true);
+            hosterIconRequested = true;
+        }
+        if (hosterIcon != null) return hosterIcon;
         return getWrapper().getIconUnscaled();
     }
 
     public final ImageIcon getHosterIconScaled() {
+        if (hosterIcon == null && getCustomFavIconURL() != null && !hosterIconRequested) {
+            hosterIcon = FavIconController.getFavIcon(getCustomFavIconURL(), this, true);
+            hosterIconRequested = true;
+        }
+        if (hosterIcon != null) return JDImage.getScaledImageIcon(getHosterIconUnscaled(), 16, -1);
         return getWrapper().getIconScaled();
+    }
+
+    /* override this to use customized favicons */
+    public String getCustomFavIconURL() {
+        return null;
+    }
+
+    /* reset customized favicon */
+    public void resetFavIcon() {
+        hosterIconRequested = false;
+        hosterIcon = null;
+    }
+
+    public void setFavIcon(ImageIcon icon) {
+        this.hosterIcon = icon;
     }
 
     public void setDownloadLink(DownloadLink link) {

@@ -78,9 +78,7 @@ public class DirectHTTP extends PluginForHost {
 
     private String contentType = "";
 
-    // TODO: uncomment with next big update of core
-    // private String host = null;
-    // private ImageIcon icon = null;
+    private String customFavIconHost = null;
 
     public DirectHTTP(PluginWrapper wrapper) {
         super(wrapper);
@@ -159,6 +157,10 @@ public class DirectHTTP extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException {
+        try {
+            customFavIconHost = Browser.getHost(new URL(downloadLink.getDownloadURL()));
+        } catch (Throwable e) {
+        }
         this.setBrowserExclusive();
         /* disable gzip, because current downloadsystem cannot handle it correct */
         br.getHeaders().put("Accept-Encoding", "");
@@ -311,28 +313,15 @@ public class DirectHTTP extends PluginForHost {
     public void resetPluginGlobals() {
     }
 
-    // TODO: uncomment with next big update of core
-    // @Override
-    // public String getSessionInfo() {
-    // if (getDownloadLink() == null) return "";
-    // if (host != null) return host;
-    // host = ": " + Browser.getHost(getDownloadLink().getDownloadURL());
-    // return host;
-    // }
-    //
-    // @Override
-    // public ImageIcon getHosterIcon() {
-    // if (getDownloadLink() == null) return super.getHosterIcon();
-    // if (icon != null) return icon;
-    // icon = FavIconController.getFavIcon(getDownloadLink().getDownloadURL(),
-    // this, false);
-    // return icon;
-    // }
-    //
-    // @Override
-    // public void setFavIcon(ImageIcon icon) {
-    // this.icon = icon;
-    // }
+    public String getCustomFavIconURL() {
+        if (customFavIconHost != null) return customFavIconHost;
+        return null;
+    }
+
+    public String getSessionInfo() {
+        if (customFavIconHost != null) return customFavIconHost;
+        return "";
+    }
 
     /**
      * TODO: can be removed with next major update cause of recaptcha change
