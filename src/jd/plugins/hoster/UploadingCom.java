@@ -105,6 +105,7 @@ public class UploadingCom extends PluginForHost {
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         free = false;
         br.setDebug(true);
+        requestFileInformation(link);
         synchronized (PREMLOCK) {
             login(account);
             if (!isPremium()) {
@@ -117,7 +118,6 @@ public class UploadingCom extends PluginForHost {
                     simultanpremium++;
                 }
             }
-            requestFileInformation(link);
         }
         br.getPage(link.getDownloadURL());
         if (free) {
