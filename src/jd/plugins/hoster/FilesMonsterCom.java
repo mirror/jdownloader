@@ -21,17 +21,17 @@ import java.io.File;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
-import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -113,19 +113,11 @@ public class FilesMonsterCom extends PluginForHost {
         if (premlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage(premlink);
         if (br.containsHTML("but it has exceeded the daily limit download in total")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-        Form DLForm1 = br.getForm(0);
-        DLForm1.setMethod(Form.MethodType.POST);
-        DLForm1.setAction("http://filesmonster.com/ajax.php");
-        br.submitForm(DLForm1);
-        String ticketID = br.getRegex("text\":\"(.*?)\"").getMatch(0);
-        if (ticketID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        DLForm1 = new Form();
-        DLForm1.setMethod(Form.MethodType.POST);
-        DLForm1.setAction("http://filesmonster.com/ajax.php");
-        DLForm1.put("act", "getdl");
-        DLForm1.put("data", ticketID);
-        br.submitForm(DLForm1);
-        String dllink = br.getRegex("url\":\"(http:.*?)\"").getMatch(0);
+        String ajaxurl = br.getRegex("get_link\\(\"(.*?)\"\\)").getMatch(0);
+        Browser ajax = br.cloneBrowser();
+        ajax.getPage(ajaxurl);
+
+        String dllink = ajax.getRegex("url\":\"(http:.*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dllink = dllink.replaceAll("\\\\/", "/");
         /* max chunks to 1 , because each chunk gets calculated full size */
