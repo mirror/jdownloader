@@ -283,7 +283,7 @@ gui.config.reloadcontainer = JDownloader ile indirilen Konteyner otomatik yükle
 gui.config.routeripfinder.featchip = Yönlendirici host adı aranıyor...
 gui.config.routeripfinder.notfound = Yönlendirici'nizin sunucu adı bulunamadı
 gui.config.routeripfinder.ready = IP bulundu: %s
-gui.config.showcontaineronloadinfo = JDownloader ile yüklenen Konteyner hakkında detaylı bilgi göster
+gui.config.showcontaineronloadinfo = JDownloader ile yüklenen Konteyner hakkında ayrıntılı bilgi göster
 gui.config.unrar.ask_path = Bilinmeyen parolaları sor?
 gui.config.unrar.cmd = UnRAR Komutu
 gui.config.unrar.deep_extract = Derin-Çıkartma
@@ -292,7 +292,7 @@ gui.config.unrar.path = Buraya çıkart :
 gui.config.unrar.remove_after_extract = Başarılı çıkartmadan sonra arşivleri sil
 gui.config.unrar.remove_infofile = Çıkartmadan sonra bilgi dosyasını sil
 gui.config.unrar.subpath = Alt-Dizin
-gui.config.unrar.subpath_minnum = Alt-Dizin sadece arşiv X dosyadan fazla olduğunda kullanılsın (0=etkisiz)
+gui.config.unrar.subpath_minnum = Alt-Dizin sadece arşiv X dosyadan fazla olduğunda kullanılsın (0=Etkisiz)
 gui.config.unrar.use_extractto = Buraya çıkart (seçilirse varsayılan indirme dizinine çıkartmaz, kendiniz belirlersiniz)
 gui.config.unrar.use_subpath = Alt-Dizin kullanılsın (indiği yerde X klasörü yaratır ve oraya çıkartır) X=paket adı
 gui.dialog.addurl.message = URL(leri) ekleyin. JD bunları ilave linkler için yükleyecek ve ayrıştıracak.
