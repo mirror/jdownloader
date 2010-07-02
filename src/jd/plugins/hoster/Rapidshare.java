@@ -20,9 +20,7 @@ import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.HashMap;
-import java.util.TimeZone;
 import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.regex.Pattern;
@@ -48,6 +46,7 @@ import jd.http.Browser;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.http.Browser.BrowserException;
+import jd.nutils.Formatter;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.encoding.HTMLEntities;
@@ -614,8 +613,11 @@ public class Rapidshare extends PluginForHost {
         if (Regex.matches(error, Pattern.compile("(Betrugserkennung)"))) { throw new PluginException(LinkStatus.ERROR_PREMIUM, JDL.L("plugin.rapidshare.error.fraud", "Fraud detected: This Account has been illegally used by several users."), PluginException.VALUE_ID_PREMIUM_DISABLE); }
         if (Regex.matches(error, Pattern.compile("(expired|abgelaufen)"))) { throw new PluginException(LinkStatus.ERROR_PREMIUM, dynTranslate(error), PluginException.VALUE_ID_PREMIUM_DISABLE); }
         if (Regex.matches(error, Pattern.compile("(You have exceeded the download limit|Sie haben heute das Limit)"))) {
-
-        throw new PluginException(LinkStatus.ERROR_PREMIUM, JDL.L("plugin.rapidshare.error.limitexeeded", "You have exceeded the download limit."), PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE); }
+            synchronized (resetWaitingAccounts) {
+                if (!resetWaitingAccounts.contains(account)) resetWaitingAccounts.add(account);
+            }
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, JDL.L("plugin.rapidshare.error.limitexeeded", "You have exceeded the download limit."), PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+        }
         if (Regex.matches(error, Pattern.compile("IP"))) { throw new PluginException(LinkStatus.ERROR_PREMIUM, dynTranslate(error), PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE); }
         if (Regex.matches(error, Pattern.compile("Der Server .*? ist momentan nicht verf.*"))) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.LF("plugin.rapidshare.error.serverunavailable", "The Server %s is currently unavailable.", error.substring(11, error.indexOf(" ist"))), 3600 * 1000l); }
         if (Regex.matches(error, Pattern.compile("(Ihr Cookie wurde nicht erkannt)"))) {
@@ -722,17 +724,12 @@ public class Rapidshare extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                     }
                     br = login(account);
-                    /* get ServerTime for happy hour check */
-                    Calendar cal = Calendar.getInstance();
-                    TimeZone tz = TimeZone.getTimeZone("CEST");
-                    cal.setTimeZone(tz);
-                    cal.setTimeInMillis(Long.parseLong(account.getStringProperty("servertime")) * 1000l);
                     /* we need file size to calculate left traffic */
                     if (downloadLink.getDownloadSize() <= 0) {
                         requestFileInformation(downloadLink);
                     }
-                    /* check for happy hour, between 2 and 10 oclock */
-                    boolean happyhour = cal.get(Calendar.HOUR_OF_DAY) >= 2 && cal.get(Calendar.HOUR_OF_DAY) < 10;
+                    /* check for happy hour */
+                    boolean happyhour = Integer.parseInt(account.getStringProperty("happyhours", "0")) == 1 ? true : false;
                     /* only download while happyHour */
                     if (!happyhour && getPluginConfig().getBooleanProperty(PROPERTY_ONLY_HAPPYHOUR, false)) {
                         synchronized (resetWaitingAccounts) {
@@ -753,11 +750,6 @@ public class Rapidshare extends PluginForHost {
                     long countedSize = (long) (downloadSize / (happyhour ? 0.1f : 1.0f));
                     /* get needed infos for packagemanaging */
                     long trafficLeft = Long.parseLong(account.getStringProperty("tskb")) * 1000;
-                    // long rapids =
-                    // Long.parseLong(account.getStringProperty("rapids"));
-                    // int rapidPackage =
-                    // Integer.parseInt(account.getStringProperty("rperday"));
-                    /* packagemanagement */
                     boolean upgradeRequired = countedSize > trafficLeft;
                     int pckg = getCurrentPackage(account);
                     if (upgradeRequired) {
@@ -768,7 +760,6 @@ public class Rapidshare extends PluginForHost {
                          * upgrade management
                          */
                         /* we have to upgrade package, not enough traffic left */
-
                         int next = -1;
                         String nextName = null;
                         switch (pckg) {
@@ -792,11 +783,9 @@ public class Rapidshare extends PluginForHost {
                             next = -1;
                             break;
                         }
-
                         boolean ask = account.getBooleanProperty(ASK_BEFORE_UPGRADE, true);
                         boolean allowUpgrade = Integer.parseInt(account.getStringProperty("maxrperday")) >= next;
                         if (ask && allowUpgrade) {
-
                             //
 
                             allowUpgrade = Dialog.isOK(UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN | UserIO.DONT_SHOW_AGAIN, JDL.LF("jd.plugins.hoster.Rapidshare.handlePremium.allowUpgrade.title", "Upgrade RapidShare Account %s?", account.getUser()), JDL.LF("jd.plugins.hoster.Rapidshare.handlePremium.allowUpgrade.message", "If you want continue downloading today, you have to upgrade your RapidShare Account to %s for %s Rapids. \r\n\r\nUpgrade now?", nextName, next - pckg)));
@@ -813,9 +802,7 @@ public class Rapidshare extends PluginForHost {
                                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "Package upgrade required but forbidden by user!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                             }
                         }
-
                     }
-
                 }
             }
             br.setFollowRedirects(false);
@@ -1267,6 +1254,27 @@ public class Rapidshare extends PluginForHost {
             return ai;
         }
         updateAccountInfo(account, br);
+        if (!br.containsHTML("type=prem")) {
+            /* no premium account */
+            account.setValid(false);
+            AccountInfo ai = account.getAccountInfo();
+            if (ai == null) ai = new AccountInfo();
+            ai.setStatus("No PremiumAccount");
+            return ai;
+        }
+        String lastBillTime = br.getRegex("lastbilltime=(\\d+)").getMatch(0);
+        String serverTime = br.getRegex("servertime=(\\d+)").getMatch(0);
+        if (lastBillTime != null && serverTime != null) {
+            /* next billing in */
+            long iDiff = Long.parseLong(lastBillTime) - Long.parseLong(serverTime) + 86400;
+            String left = Formatter.formatSeconds(iDiff, false);
+            AccountInfo ai = account.getAccountInfo();
+            if (ai == null) {
+                ai = new AccountInfo();
+                account.setAccountInfo(ai);
+            }
+            ai.setStatus(ai.getStatus() + " (Next billing in " + left + ")");
+        }
         return account.getAccountInfo();
     }
 
@@ -1437,7 +1445,8 @@ public class Rapidshare extends PluginForHost {
                     content.add(lbl, "split 2");
                     content.add(new JSeparator());
                     content.add(new JLabel(JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.upgradelimit.desc", "Control the usage of your Rapids & set the max. Package for Autoupgrade")));
-                    final JComboBox combo = new JComboBox(new String[] { JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.upgradelimit.limitsmall", "At most to RapidSmall(1GB daily)"), JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.upgradelimit.limitmedium", "At most to RapidMedium(5GB daily)"), JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.upgradelimit.limitBig", "At most to RapidBig(20GB daily)"), JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.upgradelimit.limitSuperSize", "At most to RapidSuperSize(60GB daily)"), JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.upgradelimit.limitBusiness", "Unlimited(120GB daily)"), });
+                    /* max */
+                    final JComboBox combo = new JComboBox(new String[] { JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.upgradelimit.unlimited", "Unlimited"), JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.upgradelimit.limitsmall", "At most to RapidSmall(1GB daily)"), JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.upgradelimit.limitmedium", "At most to RapidMedium(5GB daily)"), JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.upgradelimit.limitBig", "At most to RapidBig(20GB daily)"), JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.upgradelimit.limitSuperSize", "At most to RapidSuperSize(60GB daily)"), JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.upgradelimit.limitBusiness", "At most to Business(120GB daily)"), });
 
                     content.add(combo);
                     final JCheckBox ask = new JCheckBox(JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.upgradelimit.ask", "Ask before each Upgrade"));
@@ -1448,46 +1457,51 @@ public class Rapidshare extends PluginForHost {
                     content.add(lbl, "split 2");
                     content.add(new JSeparator());
                     content.add(new JLabel(JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.downgrade.desc", "Save Rapids and Money by downgrading automaticly to a cheap package every day.")));
-                    final JComboBox combo2 = new JComboBox(new String[] { JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.downgrade.small", "Downgrade to RapidSmall"), JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.downgrade.medium", "Downgrade to RapidMedium"), JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.downgrade.Big", "Downgrade to RapidBig"), JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.downgrade.SuperSize", "Downgrade to RapidSuperSize"), JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.downgrade.none", "Disable Auto-Downgrade") });
+                    /* min */
+                    final JComboBox combo2 = new JComboBox(new String[] { JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.downgrade.lowest", "Lowest possible package"), JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.downgrade.small", "Downgrade to RapidSmall"), JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.downgrade.medium", "Downgrade to RapidMedium"), JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.downgrade.Big", "Downgrade to RapidBig"), JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.downgrade.SuperSize", "Downgrade to RapidSuperSize"), JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.downgrade.Business", "Downgrade to Business") });
 
                     content.add(combo2);
                     switch (Integer.parseInt(account.getStringProperty("maxrperday"))) {
-                    case SMALL:
+                    case 0:
                         combo.setSelectedIndex(0);
                         break;
-                    case MEDIUM:
+                    case SMALL:
                         combo.setSelectedIndex(1);
                         break;
-                    case BIG:
+                    case MEDIUM:
                         combo.setSelectedIndex(2);
                         break;
-                    case SUPERSIZE:
+                    case BIG:
                         combo.setSelectedIndex(3);
                         break;
-                    case BUSINESS:
-                    case 0:
+                    case SUPERSIZE:
                         combo.setSelectedIndex(4);
+                        break;
+                    case BUSINESS:
+                        combo.setSelectedIndex(5);
                         break;
                     }
                     ask.setSelected(account.getBooleanProperty(ASK_BEFORE_UPGRADE, true));
 
                     // TODO: ask on first use.
                     switch (Integer.parseInt(account.getStringProperty("minrperday"))) {
-                    case SMALL:
+                    case 0:
                         combo2.setSelectedIndex(0);
                         break;
-                    case MEDIUM:
+                    case SMALL:
                         combo2.setSelectedIndex(1);
                         break;
-                    case BIG:
+                    case MEDIUM:
                         combo2.setSelectedIndex(2);
                         break;
-                    case SUPERSIZE:
+                    case BIG:
                         combo2.setSelectedIndex(3);
                         break;
-                    case BUSINESS:
-                    case 0:
+                    case SUPERSIZE:
                         combo2.setSelectedIndex(4);
+                        break;
+                    case BUSINESS:
+                        combo2.setSelectedIndex(5);
                         break;
                     }
                     new ContainerDialog(UserIO.NO_ICON | UserIO.NO_COUNTDOWN, JDL.LF("jd.plugins.hoster.Rapidshare.UpgradeDialog.title", "Upgrade & Downgrade Settings for %s", account.getUser()), content, null, JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.save", "Save"), null) {
@@ -1505,38 +1519,42 @@ public class Rapidshare extends PluginForHost {
                                 int rmax = 0;
                                 switch (combo.getSelectedIndex()) {
                                 case 0:
+                                    rmax = 0;
+                                    break;
+                                case 1:
                                     rmax = SMALL;
                                     break;
-
-                                case 1:
+                                case 2:
                                     rmax = MEDIUM;
                                     break;
-                                case 2:
+                                case 3:
                                     rmax = BIG;
                                     break;
-                                case 3:
+                                case 4:
                                     rmax = SUPERSIZE;
                                     break;
-                                case 4:
+                                case 5:
                                     rmax = BUSINESS;
                                     break;
                                 }
 
                                 switch (combo2.getSelectedIndex()) {
                                 case 0:
+                                    rmin = 0;
+                                    break;
+                                case 1:
                                     rmin = SMALL;
                                     break;
-
-                                case 1:
+                                case 2:
                                     rmin = MEDIUM;
                                     break;
-                                case 2:
+                                case 3:
                                     rmin = BIG;
                                     break;
-                                case 3:
+                                case 4:
                                     rmin = SUPERSIZE;
                                     break;
-                                case 4:
+                                case 5:
                                     rmin = BUSINESS;
                                     break;
                                 }
@@ -1549,6 +1567,14 @@ public class Rapidshare extends PluginForHost {
                                             if (mail == null) return;
                                             queryAPI(browser, "http://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=setaccountdetails_v1&email=" + mail + "&cookie=" + account.getStringProperty("cookie") + "&minrperday=" + rmin + "&maxrperday=" + rmax);
                                         } else if (!browser.containsHTML("OK")) {
+                                            if (browser.containsHTML("minrperday is bigger")) {
+                                                UserIO.getInstance().requestMessageDialog("Error:\r\nCurrent selected RapidShare package is bigger than your wished minimal package!");
+                                                return;
+                                            }
+                                            if (browser.containsHTML("rperday is bigger")) {
+                                                UserIO.getInstance().requestMessageDialog("Error:\r\nCurrent selected RapidShare package is bigger than your wished maximal package!");
+                                                return;
+                                            }
                                             logger.severe("RapidShare Setter failed: " + browser);
                                             UserIO.getInstance().requestMessageDialog("Failed. Please Upload Log and contact JDownloader Support: " + browser);
                                             return;

@@ -60,7 +60,7 @@ public class Formatter {
             if (ret.length() != 0) ret.append(':');
             ret.append(Formatter.fillInteger(minutes, 2, "0")).append('m');
         }
-        if (showsec || ret.length() != 0) {
+        if (showsec) {
             if (ret.length() != 0) ret.append(':');
             ret.append(Formatter.fillInteger(seconds, 2, "0")).append('s');
         }
