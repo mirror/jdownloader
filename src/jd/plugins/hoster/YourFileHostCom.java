@@ -74,7 +74,6 @@ public class YourFileHostCom extends PluginForHost {
                 String code = getCaptchaCode("http://www.yourfilehost.com/" + captchaid, downloadLink);
                 captchaform.put("verify", code);
                 br.submitForm(captchaform);
-                System.out.print(br.toString());
                 if (br.containsHTML(CAPTCHAFAILEDTEXTS)) continue;
                 break;
             }
