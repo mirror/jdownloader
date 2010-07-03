@@ -23,8 +23,6 @@ import java.util.HashMap;
 import jd.PluginWrapper;
 import jd.controlling.JDLogger;
 import jd.http.Browser;
-import jd.http.ext.BasicBrowserEnviroment;
-import jd.http.ext.ExtBrowser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -41,10 +39,10 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.lobobrowser.html.domimpl.HTMLDivElementImpl;
-import org.lobobrowser.html.domimpl.HTMLLinkElementImpl;
-import org.lobobrowser.html.style.AbstractCSS2Properties;
-import org.w3c.dom.html2.HTMLCollection;
+//import org.lobobrowser.html.domimpl.HTMLDivElementImpl;
+//import org.lobobrowser.html.domimpl.HTMLLinkElementImpl;
+//import org.lobobrowser.html.style.AbstractCSS2Properties;
+//import org.w3c.dom.html2.HTMLCollection;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mediafire.com" }, urls = { "http://[\\w\\.]*?mediafire\\.com/(download\\.php\\?|\\?(?!sharekey)|file/).+" }, flags = { 2 })
 public class MediafireCom extends PluginForHost {
@@ -249,21 +247,21 @@ public class MediafireCom extends PluginForHost {
     }
 
     private String getDownloadUrl() throws Exception {
-
-        ExtBrowser eb = new ExtBrowser();
-        eb.setUserAgent(new BasicBrowserEnviroment(new String[] { ".*blank.html", ".*scorecardresearch.*", "http://www.mediafire.com/", "http://www.mediafire.com/.*?/.*?/.*" }, null));
+        if (Integer.parseInt(JDUtilities.getRevision().replace(".", "")) < 10000) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Use Nightly"); }
+        jd.http.ext.ExtBrowser eb = new jd.http.ext.ExtBrowser();
+        eb.setUserAgent(new jd.http.ext.BasicBrowserEnviroment(new String[] { ".*blank.html", ".*scorecardresearch.*", "http://www.mediafire.com/", "http://www.mediafire.com/.*?/.*?/.*" }, null));
 
         eb.eval(br);
 
-        HTMLCollection links = eb.getDocument().getLinks();
+        org.w3c.dom.html2.HTMLCollection links = eb.getDocument().getLinks();
         for (int i = 0; i < links.getLength(); i++) {
-            HTMLLinkElementImpl l = (HTMLLinkElementImpl) links.item(i);
+            org.lobobrowser.html.domimpl.HTMLLinkElementImpl l = (org.lobobrowser.html.domimpl.HTMLLinkElementImpl) links.item(i);
             String inner = l.getInnerHTML();
 
             if (inner.toLowerCase().contains("start download")) {
-                HTMLDivElementImpl div = (HTMLDivElementImpl) l.getParentNode();
+                org.lobobrowser.html.domimpl.HTMLDivElementImpl div = (org.lobobrowser.html.domimpl.HTMLDivElementImpl) l.getParentNode();
                 System.out.println(inner + " - " + div.getOuterHTML());
-                AbstractCSS2Properties s = div.getStyle();
+                org.lobobrowser.html.style.AbstractCSS2Properties s = div.getStyle();
                 if (!"-250px".equalsIgnoreCase(s.getTop()) && !"none".equalsIgnoreCase(s.getDisplay())) {
                     String myURL = l.getAbsoluteHref();
 
@@ -272,7 +270,7 @@ public class MediafireCom extends PluginForHost {
 
             }
         }
-        throw new PluginException(LinkStatus.ERROR_RETRY);
+        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
     @Override
