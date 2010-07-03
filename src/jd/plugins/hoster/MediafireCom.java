@@ -250,25 +250,28 @@ public class MediafireCom extends PluginForHost {
         if (Integer.parseInt(JDUtilities.getRevision().replace(".", "")) < 10000) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Use Nightly"); }
         jd.http.ext.ExtBrowser eb = new jd.http.ext.ExtBrowser();
         eb.setUserAgent(new jd.http.ext.BasicBrowserEnviroment(new String[] { ".*blank.html", ".*scorecardresearch.*", "http://www.mediafire.com/", "http://www.mediafire.com/.*?/.*?/.*" }, null));
+        try {
+            eb.eval(br);
 
-        eb.eval(br);
+            org.w3c.dom.html2.HTMLCollection links = eb.getDocument().getLinks();
+            for (int i = 0; i < links.getLength(); i++) {
+                org.lobobrowser.html.domimpl.HTMLLinkElementImpl l = (org.lobobrowser.html.domimpl.HTMLLinkElementImpl) links.item(i);
+                String inner = l.getInnerHTML();
 
-        org.w3c.dom.html2.HTMLCollection links = eb.getDocument().getLinks();
-        for (int i = 0; i < links.getLength(); i++) {
-            org.lobobrowser.html.domimpl.HTMLLinkElementImpl l = (org.lobobrowser.html.domimpl.HTMLLinkElementImpl) links.item(i);
-            String inner = l.getInnerHTML();
+                if (inner.toLowerCase().contains("start download")) {
+                    org.lobobrowser.html.domimpl.HTMLDivElementImpl div = (org.lobobrowser.html.domimpl.HTMLDivElementImpl) l.getParentNode();
+                    System.out.println(inner + " - " + div.getOuterHTML());
+                    org.lobobrowser.html.style.AbstractCSS2Properties s = div.getStyle();
+                    if (!"-250px".equalsIgnoreCase(s.getTop()) && !"none".equalsIgnoreCase(s.getDisplay())) {
+                        String myURL = l.getAbsoluteHref();
 
-            if (inner.toLowerCase().contains("start download")) {
-                org.lobobrowser.html.domimpl.HTMLDivElementImpl div = (org.lobobrowser.html.domimpl.HTMLDivElementImpl) l.getParentNode();
-                System.out.println(inner + " - " + div.getOuterHTML());
-                org.lobobrowser.html.style.AbstractCSS2Properties s = div.getStyle();
-                if (!"-250px".equalsIgnoreCase(s.getTop()) && !"none".equalsIgnoreCase(s.getDisplay())) {
-                    String myURL = l.getAbsoluteHref();
+                        return myURL;
+                    }
 
-                    return myURL;
                 }
-
             }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
