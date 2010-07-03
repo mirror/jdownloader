@@ -40,6 +40,7 @@ public class MangaTradersCom extends PluginForHost {
     }
 
     private boolean weAreAlreadyLoggedIn = false;
+    private static final String COOKIENAME = "SMFCookie232";
     private static final String ACCESSBLOCK = "<p>You have attempted to download this file within the last 10 seconds.</p>";
     private static final String FILEOFFLINE = ">Download Manager Error - Invalid Fileid";
 
@@ -55,7 +56,7 @@ public class MangaTradersCom extends PluginForHost {
         br.getHeaders().put("Referer", "");
         br.setFollowRedirects(false);
         br.postPage("http://www.mangatraders.com/login/processlogin", "login-user=" + Encoding.urlEncode(account.getUser()) + "&login-pass=" + Encoding.urlEncode(account.getPass()) + "&rememberme=on");
-        if (br.getCookie("http://www.mangatraders.com/", "SMFCookie232") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (br.getCookie("http://www.mangatraders.com/", COOKIENAME) == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         weAreAlreadyLoggedIn = true;
     }
 
@@ -79,7 +80,7 @@ public class MangaTradersCom extends PluginForHost {
         // requestFileInformation(downloadLink);
         // Usually JD is already logged in after the linkcheck so if JD is
         // logged in we don't have to log in again here
-        if (!weAreAlreadyLoggedIn) login(account);
+        if (!weAreAlreadyLoggedIn || br.getCookie("http://www.mangatraders.com/", COOKIENAME) == null) login(account);
         br.getPage(downloadLink.getDownloadURL());
         String dllink = br.getRedirectLocation();
         if (dllink == null) {

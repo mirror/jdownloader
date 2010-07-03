@@ -54,7 +54,7 @@ public class MhfScriptBasic extends PluginForHost {
     private static final String COOKIE_HOST = "http://Only4Devs2Test.com";
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL() + "?setlang=en");
+        link.setUrlDownload(link.getDownloadURL() + "&setlang=en");
     }
 
     @Override

@@ -56,6 +56,8 @@ public class YourFileHostCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    private static final String CAPTCHAFAILEDTEXTS = "(Hit your browsers REFRESH BUTTON|enter the correct code|Please also make sure browser cookies are enabled|Please fill out the marked fields correctly and try again\\.)";
+
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
@@ -64,18 +66,19 @@ public class YourFileHostCom extends PluginForHost {
         // Only for files you need to enter captchas, not for videos!
         String captchaOrNot = br.getRegex("\"(/downloadlink\\.php.*?)\"").getMatch(0);
         if (captchaOrNot != null) {
+            br.getPage("http://www.yourfilehost.com" + captchaOrNot);
             for (int i = 0; i <= 3; i++) {
-                br.getPage("http://www.yourfilehost.com" + captchaOrNot);
                 Form captchaform = br.getForm(0);
                 String captchaid = br.getRegex("\"(captcha\\.php.*?)\"").getMatch(0);
                 if (captchaform == null || captchaid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 String code = getCaptchaCode("http://www.yourfilehost.com/" + captchaid, downloadLink);
                 captchaform.put("verify", code);
                 br.submitForm(captchaform);
-                if (br.containsHTML("(Hit your browsers REFRESH BUTTON|enter the correct code|Please also make sure browser cookies are enabled)")) continue;
+                System.out.print(br.toString());
+                if (br.containsHTML(CAPTCHAFAILEDTEXTS)) continue;
                 break;
             }
-            if (br.containsHTML("(Hit your browsers REFRESH BUTTON|enter the correct code|Please also make sure browser cookies are enabled)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            if (br.containsHTML(CAPTCHAFAILEDTEXTS)) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             dllink = br.getRegex("style2\"><a href=\"(http.*?)\"").getMatch(0);
             if (dllink == null) br.getRegex("href=\"(http.*?)\"").getMatch(0);
         } else {

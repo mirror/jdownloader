@@ -179,10 +179,9 @@ public class LetitBitNet extends PluginForHost {
         return url;
     }
 
-    // I'am not sure but i think 4 is their actual limit
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 4;
+        return -1;
     }
 
     @Override

@@ -41,6 +41,8 @@ public class FileRackCom extends PluginForHost {
         return "http://www.file-rack.com/tos.html";
     }
 
+    private static final String CAPTCHAFAILED = "<b>Verification Code doesn't match </b>";
+
     @Override
     public void handleFree(DownloadLink link) throws Exception {
         br.setReadTimeout(30000);
@@ -67,25 +69,26 @@ public class FileRackCom extends PluginForHost {
         }
         int sleep = Integer.parseInt(wait);
         sleep(sleep * 1001, link);
-        int retry = 0;
         String dllink = null;
-        do {
-            if (retry == 5) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            form = br.getForms();
-            String curl = br.getRegex("<td><img src='vimage/img.php\\?size=(.*?)'></td>").getMatch(0);
+        for (int i = 0; i <= 3; i++) {
+            Form captchaForm = br.getForm(0);
+            if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            captchaForm.remove(null);
+            String curl = br.getRegex("align=\"left\"><b>Verification Code:</b></div></td>[\n\t\r ]+<td><img src='(http://.*?)' /></td>").getMatch(0);
+            if (curl == null) curl = br.getRegex("('|\")(http://www\\.file-rack\\.com/includes/3rdParty/vimage/img\\.php\\?size=\\d+)('|\")").getMatch(1);
             if (curl != null) {
-                String captchaUrl = "http://www.file-rack.com/vimage/img.php?size=" + curl;
-                String captchaCode = getCaptchaCode(captchaUrl, link);
-                form[0].put("vImageCodP", captchaCode);
+                String captchaCode = getCaptchaCode(curl, link);
+                captchaForm.put("vImageCodP", captchaCode);
             }
-            br.submitForm(form[0]);
+            br.submitForm(captchaForm);
             if (br.containsHTML("p><b>There is active downloads from your")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads started");
+            if (br.containsHTML(CAPTCHAFAILED)) continue;
             dllink = br.getRegex(Pattern.compile("<span id=\"btn_download2\">.*<a href=\"(.*?)\" onclick=\"disableimg\\(\\)\">", Pattern.DOTALL)).getMatch(0);
-            if (dllink != null) break;
-            retry++;
-        } while (br.containsHTML("<b>Verification Code doesn't match </b>"));
+            break;
+        }
+        if (br.containsHTML(CAPTCHAFAILED)) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         if (dllink == null) {
-            logger.warning("Failed on step 2");
+            logger.warning("Failed on step 2, dllink equals null");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.setDebug(true);
@@ -108,6 +111,7 @@ public class FileRackCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
+        br.setCustomCharset("utf-8");
         br.getPage(parameter.getDownloadURL());
         // Sometimes links are being replaces with new ones, the following 5
         // lines find the new link and set it if there is a new link!

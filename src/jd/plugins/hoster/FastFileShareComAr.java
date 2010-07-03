@@ -19,8 +19,11 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -28,12 +31,15 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fastfileshare.com.ar" }, urls = { "http://[\\w\\.]*?fastfileshare\\.com\\.ar/index\\.php\\?p=download\\&hash=[A-Za-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fastfileshare.com.ar" }, urls = { "http://[\\w\\.]*?fastfileshare\\.com\\.ar/index\\.php\\?p=download\\&hash=[A-Za-z0-9]+" }, flags = { 2 })
 public class FastFileShareComAr extends PluginForHost {
 
     public FastFileShareComAr(PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium("http://fastfileshare.com.ar/index.php?p=fastpass&");
     }
+
+    private static final String COOKIE_HOST = "http://fastfileshare.com.ar";
 
     @Override
     public String getAGBLink() {
@@ -90,6 +96,73 @@ public class FastFileShareComAr extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    public void login(Account account) throws Exception {
+        setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.setCookie(COOKIE_HOST, "mfh_mylang", "en");
+        br.setCookie(COOKIE_HOST, "yab_mylang", "en");
+        br.getPage(COOKIE_HOST + "/index.php?p=login&langSwitch=english&");
+        Form form = br.getFormbyProperty("name", "lOGIN");
+        if (form == null) form = br.getForm(0);
+        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        form.put("username", Encoding.urlEncode(account.getUser()));
+        form.put("password", Encoding.urlEncode(account.getPass()));
+        // If the referer is still in the form (and if it is a valid
+        // downloadlink) the download starts directly after logging in so we
+        // MUST remove it!
+        form.remove("refer_url");
+        form.put("autologin", "0");
+        br.submitForm(form);
+        br.getPage(COOKIE_HOST + "/index.php?p=points&langSwitch=english&");
+        if (!br.containsHTML("Your Account Expires on")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        String expires = br.getRegex("Your Account Expires on (.*?, \\d+), ").getMatch(0);
+        expires = null;
+        if (expires != null) {
+            // Your Account Expires on July 3, 2010, 1:26 pm<br>
+            ai.setValidUntil(Regex.getMilliSeconds(expires, "MMMM d, yyyy", null));
+        }
+        ai.setStatus("Premium User");
+        account.setValid(true);
+
+        return ai;
+    }
+
+    public void handlePremium(DownloadLink parameter, Account account) throws Exception {
+        requestFileInformation(parameter);
+        login(account);
+        br.setFollowRedirects(false);
+        br.setCookie(COOKIE_HOST, "mfh_mylang", "en");
+        br.getPage(parameter.getDownloadURL());
+        Form dlform = br.getForm(0);
+        if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.submitForm(dlform);
+        String finalLink = br.getRegex("<code>Your Download Link: <a href=\"(http://.*?)\"").getMatch(0);
+        if (finalLink == null) finalLink = br.getRegex("\"(http://d\\d+\\.fastfileshare\\.com\\.ar:\\d+/index\\.php\\?p=.*?\\&link=\\d+&name=.*?)\"").getMatch(0);
+        if (finalLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, finalLink, true, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
     }
 
     @Override
