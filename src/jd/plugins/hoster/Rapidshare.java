@@ -124,7 +124,7 @@ public class Rapidshare extends PluginForHost {
 
     final static private Object LOCK = new Object();
 
-    final static private ArrayList<Account> resetWaitingAccounts = new ArrayList<Account>();
+    final static private ArrayList<Account> RESET_WAITING_ACCOUNTS = new ArrayList<Account>();
 
     final static private Boolean HTMLWORKAROUND = new Boolean(false);
 
@@ -718,8 +718,10 @@ public class Rapidshare extends PluginForHost {
                      * need to check again
                      */
                     if (account.isTempDisabled()) {
-                        synchronized (resetWaitingAccounts) {
-                            if (!resetWaitingAccounts.contains(account)) resetWaitingAccounts.add(account);
+                        synchronized (RESET_WAITING_ACCOUNTS) {
+                            if (!RESET_WAITING_ACCOUNTS.contains(account)) {
+                                RESET_WAITING_ACCOUNTS.add(account);
+                            }
                         }
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                     }
@@ -732,8 +734,10 @@ public class Rapidshare extends PluginForHost {
                     boolean happyhour = Integer.parseInt(account.getStringProperty("happyhours", "0")) == 1 ? true : false;
                     /* only download while happyHour */
                     if (!happyhour && getPluginConfig().getBooleanProperty(PROPERTY_ONLY_HAPPYHOUR, false)) {
-                        synchronized (resetWaitingAccounts) {
-                            if (!resetWaitingAccounts.contains(account)) resetWaitingAccounts.add(account);
+                        synchronized (RESET_WAITING_ACCOUNTS) {
+                            if (!RESET_WAITING_ACCOUNTS.contains(account)) {
+                                RESET_WAITING_ACCOUNTS.add(account);
+                            }
                         }
                         account.setTempDisabled(true);
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "Wait for Happy Hour!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
@@ -791,8 +795,10 @@ public class Rapidshare extends PluginForHost {
                             allowUpgrade = Dialog.isOK(UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN | UserIO.DONT_SHOW_AGAIN, JDL.LF("jd.plugins.hoster.Rapidshare.handlePremium.allowUpgrade.title", "Upgrade RapidShare Account %s?", account.getUser()), JDL.LF("jd.plugins.hoster.Rapidshare.handlePremium.allowUpgrade.message", "If you want continue downloading today, you have to upgrade your RapidShare Account to %s for %s Rapids. \r\n\r\nUpgrade now?", nextName, next - pckg)));
 
                             if (!allowUpgrade) {
-                                synchronized (resetWaitingAccounts) {
-                                    if (!resetWaitingAccounts.contains(account)) resetWaitingAccounts.add(account);
+                                synchronized (RESET_WAITING_ACCOUNTS) {
+                                    if (!RESET_WAITING_ACCOUNTS.contains(account)) {
+                                        RESET_WAITING_ACCOUNTS.add(account);
+                                    }
                                 }
                                 /*
                                  * temp disable the account, no upgrade allowed
@@ -1534,7 +1540,7 @@ public class Rapidshare extends PluginForHost {
                                     rmax = SUPERSIZE;
                                     break;
                                 case 5:
-                                    rmax = BUSINESS;
+                                    rmax = 0;
                                     break;
                                 }
 
@@ -1555,7 +1561,7 @@ public class Rapidshare extends PluginForHost {
                                     rmin = SUPERSIZE;
                                     break;
                                 case 5:
-                                    rmin = BUSINESS;
+                                    rmin = 0;
                                     break;
                                 }
                                 try {
@@ -1605,11 +1611,11 @@ public class Rapidshare extends PluginForHost {
                 getPluginConfig().setProperty(PROPERTY_ONLY_HAPPYHOUR, !getPluginConfig().getBooleanProperty(PROPERTY_ONLY_HAPPYHOUR, false));
                 happyHourAction.setSelected(getPluginConfig().getBooleanProperty(PROPERTY_ONLY_HAPPYHOUR, false));
                 if (getPluginConfig().getBooleanProperty(PROPERTY_ONLY_HAPPYHOUR, false) == false) {
-                    synchronized (resetWaitingAccounts) {
-                        for (Account acc : resetWaitingAccounts) {
+                    synchronized (RESET_WAITING_ACCOUNTS) {
+                        for (Account acc : RESET_WAITING_ACCOUNTS) {
                             acc.setTempDisabled(false);
                         }
-                        resetWaitingAccounts.clear();
+                        RESET_WAITING_ACCOUNTS.clear();
                     }
                 }
             }

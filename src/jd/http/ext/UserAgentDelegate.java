@@ -77,7 +77,7 @@ public class UserAgentDelegate implements UserAgentContext {
     }
 
     public int getScriptingOptimizationLevel() {
-        return 0;
+        return 9;
     }
 
     /**
