@@ -287,7 +287,7 @@ public abstract class Request {
                 /* in case of error we do not reset byteArray */
             }
         }
-        return null;
+        return htmlCode;
     }
 
     public URLConnectionAdapter getHttpConnection() {
