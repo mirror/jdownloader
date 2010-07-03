@@ -4,6 +4,8 @@ RequestExecutionLevel user
 
 # Config
 
+#TODO Better UAC Handling http://nsis.sourceforge.net/UAC_plug-in
+
 !define COMPANY "AppWork UG (haftungsbeschränkt)"
 !define URL http://www.jdownloader.org
 !define APPNAME "JDownloader"
@@ -116,7 +118,7 @@ Section $(SecJDMain_TITLE) SecJDMain
     #Create shortcuts
     SetOutPath "$SMPROGRAMS\$(^Name)"
     CreateShortcut "$SMPROGRAMS\$(^Name)\$(^Name).lnk" $INSTDIR\JDownloader.exe
-    CreateShortcut "$SMPROGRAMS\$(^Name)\$(^HelpLink).lnk" "http://jdownloader.org/knowledge/index"
+    CreateShortcut "$SMPROGRAMS\$(^Name)\$(HelpLink).lnk" "http://jdownloader.org/knowledge/index"
     SetOutPath $DESKTOP
     CreateShortcut "$DESKTOP\$(^Name).lnk" $INSTDIR\JDownloader.exe
     
@@ -180,7 +182,7 @@ Section /o "-un.$(SecJDMain_TITLE)" UNSecJDMain
     RMDir $INSTDIR
     
     Delete /REBOOTOK "$SMPROGRAMS\$(^Name)\$(^Name).lnk"
-    Delete /REBOOTOK "$SMPROGRAMS\$(^Name)\$(^HelpLink).lnk"
+    Delete /REBOOTOK "$SMPROGRAMS\$(^Name)\$(HelpLink).lnk"
     Delete /REBOOTOK "$DESKTOP\$(^Name).lnk"
 
     DeleteRegValue SHELL_CONTEXT "${REGKEY}\Components" SecJDMain

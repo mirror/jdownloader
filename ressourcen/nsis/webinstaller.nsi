@@ -35,7 +35,6 @@ VIProductVersion "${VERSION}"
 VIAddVersionKey /LANG=${LANG_ENGLISH} FileVersion "${VERSION}"
 VIAddVersionKey /LANG=${LANG_ENGLISH} ProductVersion "${VERSION}"
 
-# default section start; every NSIS script has at least one section.
 Section
     StrCpy $0 $HWNDPARENT
     System::Call "user32::ShowWindow(i r0, i 0)"

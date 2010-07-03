@@ -1,5 +1,7 @@
 #Kikin Advertising plugin
 
+#TODO Opt-In Mechanism like OC
+
 #!undef LICENSE
 #!define LICENSE ".\res\license_sample.txt"
 OutFile ".\..\..\dist\JDownloaderSetup_kikin.exe"
