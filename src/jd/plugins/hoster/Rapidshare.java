@@ -751,7 +751,7 @@ public class Rapidshare extends PluginForHost {
                         downloadSize += trafficLink.getDownloadSize() - trafficLink.getDownloadCurrent();
                     }
                     /* how much bytes rs will calculate */
-                    long countedSize = (long) (downloadSize / (happyhour ? 0.1f : 1.0f));
+                    long countedSize = (long) (downloadSize * (happyhour ? 0.1f : 1.0f));
                     /* get needed infos for packagemanaging */
                     long trafficLeft = Long.parseLong(account.getStringProperty("tskb")) * 1000;
                     boolean upgradeRequired = countedSize > trafficLeft;
@@ -1588,7 +1588,6 @@ public class Rapidshare extends PluginForHost {
                                             break;
                                         }
                                     }
-
                                     account.setTempDisabled(false);
                                 } catch (Exception e) {
                                     // TODO Auto-generated catch block

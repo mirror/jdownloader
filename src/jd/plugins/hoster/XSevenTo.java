@@ -47,12 +47,14 @@ public class XSevenTo extends PluginForHost {
 
     public void login(Account account) throws Exception {
         this.setBrowserExclusive();
-        /* have to call this in order so set language */
-        br.getPage("http://x7.to/lang/en");
+        br.getPage("http://x7.to");
         br.postPage("http://x7.to/james/login", "id=" + Encoding.urlEncode(account.getUser()) + "&pw=" + Encoding.urlEncode(account.getPass()));
         if (br.getCookie("http://x7.to/", "login") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         br.getPage("http://x7.to/my");
         if (!br.containsHTML("id=\"status\" value=\"premium\"")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        /* have to call this in order so set language */
+        br.getPage("http://x7.to/lang/en");
+        br.getPage("http://x7.to/my");
     }
 
     @Override
@@ -73,9 +75,14 @@ public class XSevenTo extends PluginForHost {
                 ai.setExpired(true);
             }
         }
+        String points = br.getRegex("upoints\".*?>([0-9.]*?)<").getMatch(0);
+        if (points != null) {
+            long p = Long.parseLong(points.replaceFirst("\\.", ""));
+            ai.setPremiumPoints(p);
+        }
         String money = br.getRegex("id=\"balance\">([0-9.]+)").getMatch(0);
         if (money != null) ai.setAccountBalance(money);
-        String remaining = br.getRegex("Download\\-Traffic\\: <b>(.*?)</b>").getMatch(0);
+        String remaining = br.getRegex("class=\"aT aR\">.*?\">(.*?)<").getMatch(0);
         if (remaining != null && remaining.contains("unlimited")) {
             /* unlimited acc */
         } else if (remaining != null) {
