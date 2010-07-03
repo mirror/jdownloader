@@ -31,6 +31,7 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.controlling.AccountController;
 import jd.controlling.JDLogger;
 import jd.http.Browser;
 import jd.http.RandomUserAgent;
@@ -66,7 +67,6 @@ public class Megauploadcom extends PluginForHost {
     private static int simultanpremium = 1;
     private boolean onlyapi = false;
     private String wait = null;
-    private static boolean free = false;
 
     private static String agent = RandomUserAgent.generate();
 
@@ -200,7 +200,7 @@ public class Megauploadcom extends PluginForHost {
 
     @Override
     public void handlePremium(DownloadLink parameter, Account account) throws Exception {
-        free = false;
+        boolean free = false;
         STATUS filestatus = null;
         synchronized (PREMLOCK) {
             filestatus = getFileStatus(parameter);
@@ -867,9 +867,18 @@ public class Megauploadcom extends PluginForHost {
     @Override
     public boolean isPremiumDownload() {
         /* free user accounts are no premium accounts */
-        boolean ret = super.isPremiumDownload();
-        if (ret && free) ret = false;
-        return ret;
+        Account acc = AccountController.getInstance().getValidAccount(this);
+        if (acc != null) {
+            /* acc type is known */
+            if (acc.getBooleanProperty("typeknown", false)) {
+                /* return true in case acc is premium */
+                return acc.getBooleanProperty("ispremium", false);
+            } else {
+                /* unknown so lets try */
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
