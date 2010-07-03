@@ -613,8 +613,8 @@ public class Rapidshare extends PluginForHost {
         if (Regex.matches(error, Pattern.compile("(Betrugserkennung)"))) { throw new PluginException(LinkStatus.ERROR_PREMIUM, JDL.L("plugin.rapidshare.error.fraud", "Fraud detected: This Account has been illegally used by several users."), PluginException.VALUE_ID_PREMIUM_DISABLE); }
         if (Regex.matches(error, Pattern.compile("(expired|abgelaufen)"))) { throw new PluginException(LinkStatus.ERROR_PREMIUM, dynTranslate(error), PluginException.VALUE_ID_PREMIUM_DISABLE); }
         if (Regex.matches(error, Pattern.compile("(You have exceeded the download limit|Sie haben heute das Limit)"))) {
-            synchronized (resetWaitingAccounts) {
-                if (!resetWaitingAccounts.contains(account)) resetWaitingAccounts.add(account);
+            synchronized (RESET_WAITING_ACCOUNTS) {
+                if (!RESET_WAITING_ACCOUNTS.contains(account)) RESET_WAITING_ACCOUNTS.add(account);
             }
             throw new PluginException(LinkStatus.ERROR_PREMIUM, JDL.L("plugin.rapidshare.error.limitexeeded", "You have exceeded the download limit."), PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
         }
