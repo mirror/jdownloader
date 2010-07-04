@@ -1210,22 +1210,26 @@ public class Rapidshare extends PluginForHost {
              * package upgrade. we dont need live traffic stats here
              */
             HashMap<String, String> cookies = null;
-            try {
-                cookies = (HashMap<String, String>) account.getProperty("cookies");
-            } catch (Throwable e) {
-                cookies = null;
-            }
-            if (!account.getBooleanProperty(ASK_BEFORE_UPGRADE, true) && cookies != null) {
-                if (cookies.get("enc") != null && cookies.get("enc").length() != 0) {
-                    logger.finer("Cookie Login");
-                    for (Entry<String, String> cookie : cookies.entrySet()) {
-                        br.setCookie("http://rapidshare.com", cookie.getKey(), cookie.getValue());
-                    }
-                    return br;
-                } else {
-                    account.setProperty("cookies", null);
-                }
-            }
+            // try {
+            // cookies = (HashMap<String, String>)
+            // account.getProperty("cookies");
+            // } catch (Throwable e) {
+            // cookies = null;
+            // }
+            // if (!account.getBooleanProperty(ASK_BEFORE_UPGRADE, true) &&
+            // cookies != null) {
+            // if (cookies.get("enc") != null && cookies.get("enc").length() !=
+            // 0) {
+            // logger.finer("Cookie Login");
+            // for (Entry<String, String> cookie : cookies.entrySet()) {
+            // br.setCookie("http://rapidshare.com", cookie.getKey(),
+            // cookie.getValue());
+            // }
+            // return br;
+            // } else {
+            // account.setProperty("cookies", null);
+            // }
+            // }
 
             String req = "http://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=getaccountdetails_v1&withcookie=1&type=prem&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass());
             queryAPI(br, req);
