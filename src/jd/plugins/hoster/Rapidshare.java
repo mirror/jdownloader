@@ -129,6 +129,8 @@ public class Rapidshare extends PluginForHost {
 
     private static long RS_API_WAIT = 0;
 
+    private static final String COOKIEPROP = "cookiesv2";
+
     private static final Object menuLock = new Object();
     private static final HashMap<Integer, MenuAction> menuActionMap = new HashMap<Integer, MenuAction>();
 
@@ -620,18 +622,18 @@ public class Rapidshare extends PluginForHost {
         if (Regex.matches(error, Pattern.compile("IP"))) { throw new PluginException(LinkStatus.ERROR_PREMIUM, dynTranslate(error), PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE); }
         if (Regex.matches(error, Pattern.compile("Der Server .*? ist momentan nicht verf.*"))) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.LF("plugin.rapidshare.error.serverunavailable", "The Server %s is currently unavailable.", error.substring(11, error.indexOf(" ist"))), 3600 * 1000l); }
         if (Regex.matches(error, Pattern.compile("(Ihr Cookie wurde nicht erkannt)"))) {
-            if (account != null) account.setProperty("cookies", null);
+            if (account != null) account.setProperty(COOKIEPROP, null);
             throw new PluginException(LinkStatus.ERROR_RETRY);
         }
         if (Regex.matches(error, Pattern.compile("Passwort ist falsch"))) {
-            if (account != null) account.setProperty("cookies", null);
+            if (account != null) account.setProperty(COOKIEPROP, null);
             throw new PluginException(LinkStatus.ERROR_PREMIUM, dynTranslate(error), PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
         if (Regex.matches(error, Pattern.compile("(Account wurde nicht gefunden|Your Premium Account has not been found)"))) {
-            if (account != null) account.setProperty("cookies", null);
+            if (account != null) account.setProperty(COOKIEPROP, null);
             throw new PluginException(LinkStatus.ERROR_PREMIUM, JDL.L("plugin.rapidshare.error.accountnotfound", "Your Premium Account has not been found."), PluginException.VALUE_ID_PREMIUM_DISABLE);
         } else {
-            if (account != null) account.setProperty("cookies", null);
+            if (account != null) account.setProperty(COOKIEPROP, null);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, dynTranslate(error));
         }
     }
@@ -825,7 +827,7 @@ public class Rapidshare extends PluginForHost {
                 String directurl = br.getRedirectLocation();
                 if (directurl == null) {
                     logger.finest("InDirect-Download: Server-Selection available!");
-                    if (account.getStringProperty("cookies", null) == null) {
+                    if (account.getStringProperty(COOKIEPROP, null) == null) {
                         logger.info("LOGIN ERROR");
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
@@ -1217,7 +1219,7 @@ public class Rapidshare extends PluginForHost {
              */
             HashMap<String, String> cookies = null;
             try {
-                cookies = (HashMap<String, String>) account.getProperty("cookies");
+                cookies = (HashMap<String, String>) account.getProperty(COOKIEPROP);
             } catch (Throwable e) {
                 cookies = null;
             }
@@ -1251,13 +1253,13 @@ public class Rapidshare extends PluginForHost {
                 }
                 return br;
             } else {
-                account.setProperty("cookies", null);
+                account.setProperty(COOKIEPROP, null);
             }
 
             String req = "http://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=getaccountdetails_v1&withcookie=1&type=prem&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass());
             queryAPI(br, req);
             if (br.containsHTML("Login failed")) {
-                account.setProperty("cookies", null);
+                account.setProperty(COOKIEPROP, null);
                 logger.severe("1 " + br.toString());
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
@@ -1271,13 +1273,13 @@ public class Rapidshare extends PluginForHost {
             }
             String cookie = br.getCookie("http://rapidshare.com", "enc");
             if (cookie == null) {
-                account.setProperty("cookies", null);
+                account.setProperty(COOKIEPROP, null);
                 logger.severe("2 " + br.toString());
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             } else {
                 cookies = new HashMap<String, String>();
                 cookies.put("enc", cookie);
-                account.setProperty("cookies", cookies);
+                account.setProperty(COOKIEPROP, cookies);
                 /* update lastUpdate timer */
                 account.setProperty("lastUpdate", new Long(System.currentTimeMillis()));
             }
@@ -1300,7 +1302,7 @@ public class Rapidshare extends PluginForHost {
              * error occured, disable account and show error message in status
              * column
              */
-            account.setProperty("cookies", null);
+            account.setProperty(COOKIEPROP, null);
             AccountInfo ai = new AccountInfo();
             ai.setStatus(JDL.LF("plugins.host.rapidshare.apierror", "Rapidshare reports that %s", error.trim()));
             account.setValid(false);
