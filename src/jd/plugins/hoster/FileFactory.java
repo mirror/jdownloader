@@ -174,7 +174,7 @@ public class FileFactory extends PluginForHost {
         return "http://www.filefactory.com" + url;
     }
 
-    public String getUrl() throws IOException {
+    public String getUrl() throws IOException, PluginException {
         final Context cx = ContextFactory.getGlobal().enter();
         final Scriptable scope = cx.initStandardObjects();
         String[] eval = br.getRegex("var (.*?) = (.*?), (.*?) = (.*?)+\"(.*?)\", (.*?) = (.*?), (.*?) = (.*?), (.*?) = (.*?), (.*?) = (.*?), (.*?) = (.*?);").getRow(0);
@@ -184,6 +184,11 @@ public class FileFactory extends PluginForHost {
             String link = "/file" + result + eval[4];
             br.getPage("http://www.filefactory.com" + link);
 
+        } else {
+            /* try get link from page */
+            String url = br.getRegex("downloadLink.*?style.*?href=\"(http.*?)\"").getMatch(0);
+            if (url != null) return url;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         String[] row = br.getRegex("var (.*?) = '';(.*;) (.*?)=(.*?)\\(\\);").getRow(0);
         Object result = cx.evaluateString(scope, row[1] + row[3] + " ();", "<cmd>", 1, null);
