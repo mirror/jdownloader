@@ -284,7 +284,13 @@ public class HotFileCom extends PluginForHost {
                             dl.setAvailable(false);
                         }
                     } else {
-                        dl.setAvailable(false);
+                        /* fallbackCheck */
+
+                        try {
+                            this.requestFileInformation(dl);
+                        } catch (Exception e) {
+                            dl.setAvailable(false);
+                        }
                     }
                 }
                 if (index == urls.length) break;

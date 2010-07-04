@@ -169,7 +169,7 @@ public class Rapidshare extends PluginForHost {
 
     private static final String PROPERTY_ONLY_HAPPYHOUR = "PROPERTY_ONLY_HAPPYHOUR";
 
-    protected static final String ASK_BEFORE_UPGRADE = "ASK_BEFORE_UPGRADE";
+    protected static final String ASK_BEFORE_UPGRADE = "ASK_BEFORE_UPGRADE_V2";
 
     public static final int UPGRADEPROTECTION_SMALL = 0;
     public static final int UPGRADEPROTECTION_MEDIUM = 1;
@@ -724,7 +724,7 @@ public class Rapidshare extends PluginForHost {
                         }
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                     }
-                    br = login(account);
+                    br = login(account, false);
                     /* we need file size to calculate left traffic */
                     if (downloadLink.getDownloadSize() <= 0) {
                         requestFileInformation(downloadLink);
@@ -755,7 +755,8 @@ public class Rapidshare extends PluginForHost {
                     long trafficLeft = Long.parseLong(account.getStringProperty("tskb")) * 1000;
                     boolean upgradeRequired = countedSize > trafficLeft;
                     int pckg = getCurrentPackage(account);
-                    if (upgradeRequired) {
+                    boolean ask = account.getBooleanProperty(ASK_BEFORE_UPGRADE, false);
+                    if (upgradeRequired && ask) {
                         logger.info("Account: " + account.getUser() + " needs upgrade in order to continue downloading");
                         /*
                          * TODO: we need to know what package currently is set!
@@ -786,14 +787,14 @@ public class Rapidshare extends PluginForHost {
                             next = -1;
                             break;
                         }
-                        boolean ask = account.getBooleanProperty(ASK_BEFORE_UPGRADE, true);
                         boolean allowUpgrade = Integer.parseInt(account.getStringProperty("maxrperday")) >= next;
-                        if (ask && allowUpgrade) {
+                        if (allowUpgrade) {
                             //
 
-                            allowUpgrade = Dialog.isOK(UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN | UserIO.DONT_SHOW_AGAIN, JDL.LF("jd.plugins.hoster.Rapidshare.handlePremium.allowUpgrade.title", "Upgrade RapidShare Account %s?", account.getUser()), JDL.LF("jd.plugins.hoster.Rapidshare.handlePremium.allowUpgrade.message", "If you want continue downloading today, you have to upgrade your RapidShare Account to %s for %s Rapids. \r\n\r\nUpgrade now?", nextName, next - pckg)));
+                            allowUpgrade = Dialog.isOK(UserIO.getInstance().requestConfirmDialog(0, JDL.LF("jd.plugins.hoster.Rapidshare.handlePremium.allowUpgrade.title", "Upgrade RapidShare Account %s?", account.getUser()), JDL.LF("jd.plugins.hoster.Rapidshare.handlePremium.allowUpgrade.message", "If you want continue downloading today, you have to upgrade your RapidShare Account to %s for %s Rapids. \r\n\r\nUpgrade now?", nextName, next - pckg)));
 
                             if (!allowUpgrade) {
+                                logger.info("Package upgrade required but forbidden by user!");
                                 synchronized (RESET_WAITING_ACCOUNTS) {
                                     if (!RESET_WAITING_ACCOUNTS.contains(account)) {
                                         RESET_WAITING_ACCOUNTS.add(account);
@@ -805,50 +806,55 @@ public class Rapidshare extends PluginForHost {
                                  */
                                 account.setTempDisabled(true);
                                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "Package upgrade required but forbidden by user!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                            } else {
+                                logger.info("Package upgrade required and allowed by user!");
                             }
                         }
                     }
                 }
-            }
-            br.setFollowRedirects(false);
-            br.setAcceptLanguage(ACCEPT_LANGUAGE);
-            String link = downloadLink.getDownloadURL();
-            /* use https to workaround isp block in uk (sky) */
-            if (getPluginConfig().getBooleanProperty(HTTPS_WORKAROUND, false)) {
-                link = link.replaceFirst("http:", "https:");
-            }
-            br.getPage(link);
-            checkAPIID();
-            String directurl = br.getRedirectLocation();
-            if (directurl == null) {
-                logger.finest("InDirect-Download: Server-Selection available!");
-                if (account.getStringProperty("cookies", null) == null) {
-                    logger.info("LOGIN ERROR");
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-                handleErrorsPremium(account);
 
-                // posturl für auswahl wird gesucht
-                freeOrPremiumSelectPostURL = br.getRegex(PATTERN_FIND_MIRROR_URL).getMatch(0);
-                // Fehlerbehandlung auf der ersten Seite
-                if (freeOrPremiumSelectPostURL == null) {
-                    handleErrorsPremium(account);
-                    reportUnknownError(br, 1);
-                    logger.warning("could not get newURL");
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                br.setFollowRedirects(false);
+                br.setAcceptLanguage(ACCEPT_LANGUAGE);
+                String link = downloadLink.getDownloadURL();
+                /* use https to workaround isp block in uk (sky) */
+                if (getPluginConfig().getBooleanProperty(HTTPS_WORKAROUND, false)) {
+                    link = link.replaceFirst("http:", "https:");
                 }
-                // Post um Premium auszuwählen
-                Form[] forms = br.getForms();
-                br.submitForm(forms[0]);
-                handleErrorsPremium(account);
-                String postTarget = getDownloadTarget(downloadLink, br.toString());
-                if (postTarget == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                request = br.createGetRequest(postTarget);
-            } else {
-                logger.finest("Direct-Download: Server-Selection not available!");
-                request = br.createGetRequest(directurl);
+                br.getPage(link);
+                checkAPIID();
+                String directurl = br.getRedirectLocation();
+                if (directurl == null) {
+                    logger.finest("InDirect-Download: Server-Selection available!");
+                    if (account.getStringProperty("cookies", null) == null) {
+                        logger.info("LOGIN ERROR");
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                    handleErrorsPremium(account);
+
+                    // posturl für auswahl wird gesucht
+                    freeOrPremiumSelectPostURL = br.getRegex(PATTERN_FIND_MIRROR_URL).getMatch(0);
+                    // Fehlerbehandlung auf der ersten Seite
+                    if (freeOrPremiumSelectPostURL == null) {
+                        handleErrorsPremium(account);
+                        reportUnknownError(br, 1);
+                        logger.warning("could not get newURL");
+                        throw new PluginException(LinkStatus.ERROR_RETRY);
+                    }
+                    // Post um Premium auszuwählen
+                    Form[] forms = br.getForms();
+                    br.submitForm(forms[0]);
+                    handleErrorsPremium(account);
+                    String postTarget = getDownloadTarget(downloadLink, br.toString());
+                    if (postTarget == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    request = br.createGetRequest(postTarget);
+                } else {
+                    logger.finest("Direct-Download: Server-Selection not available!");
+                    request = br.createGetRequest(directurl);
+                }
             }
-            /** TODO: Umbauen auf jd.plugins.BrowserAdapter.openDownload(br,...) **/
+            /**
+             * TODO: Umbauen auf jd.plugins.BrowserAdapter.openDownload(br,...)
+             **/
             // Download
             dl = new RAFDownload(this, downloadLink, request);
             dl.setFilesize(downloadLink.getDownloadSize());
@@ -1198,7 +1204,7 @@ public class Rapidshare extends PluginForHost {
     }
 
     @SuppressWarnings("unchecked")
-    private Browser login(Account account) throws Exception {
+    private Browser login(Account account, boolean forceRefresh) throws Exception {
         synchronized (LOCK) {
             Browser br = new Browser();
             br.setDebug(true);
@@ -1210,26 +1216,43 @@ public class Rapidshare extends PluginForHost {
              * package upgrade. we dont need live traffic stats here
              */
             HashMap<String, String> cookies = null;
-            // try {
-            // cookies = (HashMap<String, String>)
-            // account.getProperty("cookies");
-            // } catch (Throwable e) {
-            // cookies = null;
-            // }
-            // if (!account.getBooleanProperty(ASK_BEFORE_UPGRADE, true) &&
-            // cookies != null) {
-            // if (cookies.get("enc") != null && cookies.get("enc").length() !=
-            // 0) {
-            // logger.finer("Cookie Login");
-            // for (Entry<String, String> cookie : cookies.entrySet()) {
-            // br.setCookie("http://rapidshare.com", cookie.getKey(),
-            // cookie.getValue());
-            // }
-            // return br;
-            // } else {
-            // account.setProperty("cookies", null);
-            // }
-            // }
+            try {
+                cookies = (HashMap<String, String>) account.getProperty("cookies");
+            } catch (Throwable e) {
+                cookies = null;
+            }
+            boolean cookieLogin = false;
+            if (cookies != null && forceRefresh == false) {
+                if (!account.getBooleanProperty(ASK_BEFORE_UPGRADE, false) && !getPluginConfig().getBooleanProperty(PROPERTY_ONLY_HAPPYHOUR, false)) {
+                    /*
+                     * no upgrade warning and no happy hour check, so we can use
+                     * cookie
+                     */
+                    cookieLogin = true;
+                } else if (account.getBooleanProperty(ASK_BEFORE_UPGRADE, false)) {
+                    /* upgrade warning needed, so we have to login */
+                    cookieLogin = false;
+                } else {
+                    /* last updateCheck, wait at least 5 mins for hh check */
+                    Long lastUpdate = account.getGenericProperty("lastUpdate", new Long(0));
+                    Long timeout = 5 * 60 * 1000l;
+                    if ((lastUpdate + timeout) > System.currentTimeMillis()) {
+                        cookieLogin = true;
+                    } else {
+                        cookieLogin = false;
+                    }
+                }
+            }
+            /* cookie login or not? */
+            if (cookieLogin && cookies.get("enc") != null && cookies.get("enc").length() != 0) {
+                logger.finer("Cookie Login");
+                for (Entry<String, String> cookie : cookies.entrySet()) {
+                    br.setCookie("http://rapidshare.com", cookie.getKey(), cookie.getValue());
+                }
+                return br;
+            } else {
+                account.setProperty("cookies", null);
+            }
 
             String req = "http://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=getaccountdetails_v1&withcookie=1&type=prem&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass());
             queryAPI(br, req);
@@ -1255,6 +1278,8 @@ public class Rapidshare extends PluginForHost {
                 cookies = new HashMap<String, String>();
                 cookies.put("enc", cookie);
                 account.setProperty("cookies", cookies);
+                /* update lastUpdate timer */
+                account.setProperty("lastUpdate", new Long(System.currentTimeMillis()));
             }
             // put all accountproperties
             for (String[] m : br.getRegex("(\\w+)=([^\r^\n]+)").getMatches()) {
@@ -1451,7 +1476,7 @@ public class Rapidshare extends PluginForHost {
                     JPanel content = new JPanel(new MigLayout("ins 5, wrap 1", "[grow,fill]", "[][][][][][][]"));
                     // getPremiumAccounts().get(i)
                     final Account account = getPremiumAccounts().get(i);
-                    this.login(account);
+                    this.login(account, true);
                     JLabel lbl;
                     lbl = new JLabel(JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.upgradelimit.title", "RS FlexyPay Upgradecontroller"));
                     lbl.setFont(lbl.getFont().deriveFont(Font.BOLD));
@@ -1494,7 +1519,7 @@ public class Rapidshare extends PluginForHost {
                         combo.setSelectedIndex(5);
                         break;
                     }
-                    ask.setSelected(account.getBooleanProperty(ASK_BEFORE_UPGRADE, true));
+                    ask.setSelected(account.getBooleanProperty(ASK_BEFORE_UPGRADE, false));
 
                     // TODO: ask on first use.
                     switch (Integer.parseInt(account.getStringProperty("minrperday"))) {

@@ -48,7 +48,7 @@ public class RGhostRu extends PluginForHost {
         if (br.containsHTML("Access to the file was restricted") || br.containsHTML("<title>404") || br.containsHTML("File was deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<meta name=\"description\" content=\"(.*?). Download").getMatch(0);
         if (filename == null) filename = br.getRegex("title=\"Comments for the file (.*?)\"").getMatch(0);
-        String filesize = br.getRegex("<small>\\((.*?)\\)</small></h1>").getMatch(0);
+        String filesize = br.getRegex("<small>\\((.*?)\\)</small>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String md5 = br.getRegex("<b>MD5</b></td><td>(.*?)</td></tr>").getMatch(0);
         if (md5 != null) link.setMD5Hash(md5.trim());
@@ -63,12 +63,13 @@ public class RGhostRu extends PluginForHost {
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
         br.setFollowRedirects(false);
-        String dllink = br.getRegex("<h1 class=\"header_link\">.*?<a href=\"(.*?)\" class=\"hea").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("<a href=\"(/download/.*?)\"").getMatch(0);
+        String dllink = br.getRegex("class=\"header_link\">.*?<a href=\"(.*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("<a href=\"([^\"]*?/download/\\d+.*?)\"").getMatch(0);
         String passCode = null;
         if (dllink == null) {
             Form pwform = br.getForm(2);
             if (pwform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+
             if (link.getStringProperty("pass", null) == null) {
                 passCode = Plugin.getUserInput("Password?", link);
             } else {
@@ -77,8 +78,8 @@ public class RGhostRu extends PluginForHost {
             }
             pwform.put("password", passCode);
             br.submitForm(pwform);
-            dllink = br.getRegex("<h1 class=\"header_link\">.*?<a href=\"(.*?)\" class=\"hea").getMatch(0);
-            if (dllink == null) dllink = br.getRegex("<a href=\"(/download/.*?)\"").getMatch(0);
+            dllink = br.getRegex("class=\"header_link\">.*?<a href=\"(.*?)\"").getMatch(0);
+            if (dllink == null) dllink = br.getRegex("<a href=\"([^\"]*?/download/\\d+.*?)\"").getMatch(0);
             if (dllink == null) {
                 link.setProperty("pass", null);
                 logger.info("DownloadPW wrong!");

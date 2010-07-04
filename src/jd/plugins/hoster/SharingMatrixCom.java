@@ -28,12 +28,12 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharingmatrix.com" }, urls = { "http://[\\w\\.]*?sharingmatrix\\.com/file/[0-9]+" }, flags = { 2 })
@@ -84,6 +84,8 @@ public class SharingMatrixCom extends PluginForHost {
             account.setValid(false);
             return ai;
         }
+        br.getPage("http://sharingmatrix.com/personal#page-settings_a");
+        boolean isPremium = !br.containsHTML("class=\"lUpgradePremium");
         br.getPage("http://sharingmatrix.com/ajax_scripts/personal.php?query=homepage");
         String expiredate = br.getRegex("([0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2})").getMatch(0);
         String daysleft = br.getRegex(",.*?([0-9]{1,3}).*?day\\(s\\) left").getMatch(0);
@@ -98,8 +100,12 @@ public class SharingMatrixCom extends PluginForHost {
             account.setValid(true);
             return ai;
         }
-        logger.info("Both expire-date regexes failed, this account seems not to be a premium account...");
-        account.setValid(false);
+        if (isPremium) {
+            account.setValid(true);
+        } else {
+            logger.info("Both expire-date regexes failed, this account seems not to be a premium account...");
+            account.setValid(false);
+        }
         return ai;
     }
 
