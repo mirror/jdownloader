@@ -35,7 +35,6 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
-import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.controlling.DownloadWatchDog;
 import jd.gui.UserIO;
@@ -1195,16 +1194,39 @@ public class Rapidshare extends PluginForHost {
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), PROPERTY_INCREASE_TICKET, JDL.L("plugins.hoster.rapidshare.com.increaseTicketTime", "Increase Ticketwaittime (0%-500%)"), 0, 500).setDefaultValue(0).setStep(1));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), WAIT_HOSTERFULL, JDL.L("plugins.hoster.rapidshare.com.waithosterfull", "Wait if all FreeUser Slots are full")).setDefaultValue(true));
-        ;
 
     }
 
+    @SuppressWarnings("unchecked")
     private Browser login(Account account) throws Exception {
         synchronized (LOCK) {
             Browser br = new Browser();
             br.setDebug(true);
             br.setCookiesExclusive(true);
-            br.clearCookies(this.getHost());
+            br.clearCookies(getHost());
+
+            /*
+             * we can use cookie login if user does not want to get asked before
+             * package upgrade. we dont need live traffic stats here
+             */
+            HashMap<String, String> cookies = null;
+            try {
+                cookies = (HashMap<String, String>) account.getProperty("cookies");
+            } catch (Throwable e) {
+                cookies = null;
+            }
+            if (!account.getBooleanProperty(ASK_BEFORE_UPGRADE, true) && cookies != null) {
+                if (cookies.get("enc") != null && cookies.get("enc").length() != 0) {
+                    logger.finer("Cookie Login");
+                    for (Entry<String, String> cookie : cookies.entrySet()) {
+                        br.setCookie("http://rapidshare.com", cookie.getKey(), cookie.getValue());
+                    }
+                    return br;
+                } else {
+                    account.setProperty("cookies", null);
+                }
+            }
+
             String req = "http://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=getaccountdetails_v1&withcookie=1&type=prem&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass());
             queryAPI(br, req);
             if (br.containsHTML("Login failed")) {
@@ -1213,11 +1235,8 @@ public class Rapidshare extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
             if (br.containsHTML("access flood")) {
-                logger.warning("RS API flooded! will not check again the next 5 minutes!");
-                logger.finer("HTTPS Login");
-                br.setAcceptLanguage("en, en-gb;q=0.8");
-                String req2 = (getPluginConfig().getBooleanProperty(HTTPS_WORKAROUND, false) ? "https" : "http:") + "//ssl.rapidshare.com/cgi-bin/premiumzone.cgi?login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass());
-                br.getPage(req2);
+                logger.warning("RS API flooded! will not check again the next 15 minutes!");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             } else {
                 logger.finer("API Login");
                 String cookie = br.getRegex("cookie=([A-Z0-9]+)").getMatch(0);
@@ -1228,15 +1247,15 @@ public class Rapidshare extends PluginForHost {
                 account.setProperty("cookies", null);
                 logger.severe("2 " + br.toString());
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                cookies = new HashMap<String, String>();
+                cookies.put("enc", cookie);
+                account.setProperty("cookies", cookies);
             }
             // put all accountproperties
             for (String[] m : br.getRegex("(\\w+)=([^\r^\n]+)").getMatches()) {
                 account.setProperty(m[0].trim(), m[1].trim());
-                // System.out.println(m[0].trim() + " = " + m[1].trim());
             }
-            HashMap<String, String> map = new HashMap<String, String>();
-            map.put("enc", cookie);
-            account.setProperty("cookies", map);
             updateAccountInfo(account, br);
             return br;
         }
@@ -1267,11 +1286,11 @@ public class Rapidshare extends PluginForHost {
             ai.setStatus("No PremiumAccount");
             return ai;
         }
-        String lastBillTime = br.getRegex("lastbilltime=(\\d+)").getMatch(0);
+        String billedUntilTime = br.getRegex("billeduntil=(\\d+)").getMatch(0);
         String serverTime = br.getRegex("servertime=(\\d+)").getMatch(0);
-        if (lastBillTime != null && serverTime != null) {
+        if (billedUntilTime != null && serverTime != null) {
             /* next billing in */
-            long iDiff = Long.parseLong(lastBillTime) - Long.parseLong(serverTime) + 86400;
+            long iDiff = Long.parseLong(billedUntilTime) - Long.parseLong(serverTime);
             String left = Formatter.formatSeconds(iDiff, false);
             AccountInfo ai = account.getAccountInfo();
             if (ai == null) {
@@ -1328,9 +1347,9 @@ public class Rapidshare extends PluginForHost {
             ai.setFilesNum(Long.parseLong(data.get("curfiles")));
             ai.setPremiumPoints(Long.parseLong(data.get("rapids")));
             ai.setUsedSpace(Long.parseLong(data.get("curspace")));
-
-            ai.setValidUntil(System.currentTimeMillis() + (long) ((1.0f * ai.getPremiumPoints() / type) * 24 * 60 * 60 * 1000l));
-            if (ai.getValidUntil() < System.currentTimeMillis()) {
+            long serverTime = Long.parseLong(data.get("servertime")) * 1000;
+            ai.setValidUntil(serverTime + (long) ((1.0f * ai.getPremiumPoints() / type) * 24 * 60 * 60 * 1000l));
+            if (ai.getValidUntil() < serverTime) {
                 ai.setExpired(true);
             }
         } catch (Exception e) {
@@ -1411,21 +1430,6 @@ public class Rapidshare extends PluginForHost {
             }
         }
         return ret;
-    }
-
-    /*
-     * returns boolean property if valueORset = true or false/true if the value
-     * is set at all
-     */
-    private boolean isBooleanSet(Property item, String prop, boolean valueORset) {
-        Object ret = item.getProperty(prop, null);
-        /* property is not set! */
-        if (ret == null) return false;
-        if (!(ret instanceof Boolean)) return false;
-        /* only return if property is set */
-        if (valueORset == false) return true;
-        /* return boolean */
-        return (Boolean) ret;
     }
 
     @Override
