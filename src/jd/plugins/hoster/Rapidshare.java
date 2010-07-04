@@ -1224,7 +1224,8 @@ public class Rapidshare extends PluginForHost {
                 cookies = null;
             }
             boolean cookieLogin = false;
-            if (cookies != null && forceRefresh == false) {
+            Long lastUpdate = account.getGenericProperty("lastUpdate", new Long(0));
+            if (cookies != null && forceRefresh == false && lastUpdate != 0) {
                 if (!account.getBooleanProperty(ASK_BEFORE_UPGRADE, false) && !getPluginConfig().getBooleanProperty(PROPERTY_ONLY_HAPPYHOUR, false)) {
                     /*
                      * no upgrade warning and no happy hour check, so we can use
@@ -1236,7 +1237,6 @@ public class Rapidshare extends PluginForHost {
                     cookieLogin = false;
                 } else {
                     /* last updateCheck, wait at least 5 mins for hh check */
-                    Long lastUpdate = account.getGenericProperty("lastUpdate", new Long(0));
                     Long timeout = 5 * 60 * 1000l;
                     if ((lastUpdate + timeout) > System.currentTimeMillis()) {
                         cookieLogin = true;
