@@ -50,11 +50,20 @@ public class BrOnlineDe extends PluginForHost {
         if (br.getRedirectLocation() != null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("class=\"topheadline\">.*?<em>.*?</em>(.*?)</h3>").getMatch(0);
         if (filename == null) filename = br.getRegex("class=\"videoText\"><p><strong>.*?</strong>(.*?)<span>").getMatch(0);
-        dllink = br.getRegex("player\\.(avaible_url|dl_url)\\['microsoftmedia'\\]\\['(1|2)'\\] = \"(http://.*?\\.wmv)\"").getMatch(2);
-        if (dllink == null) dllink = br.getRegex("\"http://gffstream\\.vo\\.llnwd\\.net/o\\d+/br/.*?/[a-zA-Z0-9]+/[a-zA-Z0-9]+/[a-zA-Z0-9]+/[a-zA-Z0-9]+/[a-zA-Z0-9]+/.*?\\.wmv)\"").getMatch(0);
+        dllink = br.getRegex("player\\.avaible_url\\['flashmedia'\\]\\['(1|2)'\\] = \"(http://.*?\\.mp3)\";").getMatch(1);
+        if (dllink == null) {
+            dllink = br.getRegex("\"(http://gffstream\\.vo\\.llnwd\\.net/o\\d+/br/mir-live/[a-zA-Z0-9]+/[a-zA-Z0-9]+/[a-zA-Z0-9]+/iLCpbHJG/[a-zA-Z0-9]+/.*?\\.mp3)\"").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("player\\.(avaible_url|dl_url)\\['microsoftmedia'\\]\\['(1|2)'\\] = \"(http://.*?\\.wmv)\"").getMatch(2);
+                if (dllink == null) dllink = br.getRegex("\"(http://gffstream\\.vo\\.llnwd\\.net/o\\d+/br/.*?/[a-zA-Z0-9]+/[a-zA-Z0-9]+/[a-zA-Z0-9]+/[a-zA-Z0-9]+/[a-zA-Z0-9]+/.*?\\.wmv)\"").getMatch(0);
+            }
+        }
         if (filename == null || dllink == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        filename = filename.trim().replace("?", "");
-        downloadLink.setFinalFileName(filename + ".wmv");
+        filename = filename.trim().replaceAll("(\\?|\\&quot;)", "");
+        if (!dllink.endsWith(".mp3"))
+            downloadLink.setFinalFileName(filename + ".wmv");
+        else
+            downloadLink.setFinalFileName(filename + ".mp3");
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
