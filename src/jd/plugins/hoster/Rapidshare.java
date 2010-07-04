@@ -1173,9 +1173,6 @@ public class Rapidshare extends PluginForHost {
         m4.add(JDL.L("plugins.hoster.rapidshare.com.preferedserver.random", "Random"));
         m5.add(JDL.L("plugins.hoster.rapidshare.com.preferedserver.random", "Random"));
 
-        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PROPERTY_ONLY_HAPPYHOUR, JDL.L("plugins.hoster.rapidshare.com.happyhour", "Only use Premium while Happy Hour?")).setDefaultValue(false));
-
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, JDL.L("plugins.hoster.rapidshare.com.preferedserver", "Prefered server mirror")));
         cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PROPERTY_USE_PRESELECTED, JDL.L("plugins.hoster.rapidshare.com.preselection", "Use preselection")).setDefaultValue(true);
         config.addEntry(cond);
@@ -1212,6 +1209,7 @@ public class Rapidshare extends PluginForHost {
             queryAPI(br, req);
             if (br.containsHTML("Login failed")) {
                 account.setProperty("cookies", null);
+                logger.severe("1 " + br.toString());
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
             if (br.containsHTML("access flood")) {
@@ -1228,6 +1226,7 @@ public class Rapidshare extends PluginForHost {
             String cookie = br.getCookie("http://rapidshare.com", "enc");
             if (cookie == null) {
                 account.setProperty("cookies", null);
+                logger.severe("2 " + br.toString());
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
             // put all accountproperties
