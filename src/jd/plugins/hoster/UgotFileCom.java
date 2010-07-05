@@ -32,6 +32,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ugotfile.com" }, urls = { "http://[\\w\\.]*?ugotfile.com/file/\\d+/.+" }, flags = { 2 })
 public class UgotFileCom extends PluginForHost {
@@ -45,6 +46,8 @@ public class UgotFileCom extends PluginForHost {
     public String getAGBLink() {
         return "http://ugotfile.com/doc/terms/";
     }
+
+    private static final String ONLYPREMIUM = "(Only premium members may download file larger than \\d+MB\\.|You are trying to download file larger than \\d+MB\\.)";
 
     public void login(Account account) throws Exception {
         this.setBrowserExclusive();
@@ -108,6 +111,15 @@ public class UgotFileCom extends PluginForHost {
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
         br.getPage(link.getDownloadURL());
+        // Errorhandling for links that are only downloadable by premium users
+        if (br.containsHTML(ONLYPREMIUM)) {
+            String defaultblock = "400";
+            String regexedBlock = br.getRegex("Only premium members may download file larger than (\\d+)MB\\.").getMatch(0);
+            if (regexedBlock == null) regexedBlock = br.getRegex("You are trying to download file larger than (\\d+)MB\\.").getMatch(0);
+            if (regexedBlock != null) defaultblock = regexedBlock;
+            logger.warning(JDL.L("plugins.hoster.UhotFileCom.errors.only4premium", "Only premium users can download files larger than " + defaultblock + " MB."));
+            throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.UhotFileCom.errors.only4premium", "Only premium users can download files larger than " + defaultblock + " MB."));
+        }
         // IP:Blocked handling
         int sleep = 30;
         if (br.containsHTML("seconds: ")) {

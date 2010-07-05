@@ -202,7 +202,7 @@ public class SharingMatrixCom extends PluginForHost {
     // 1 download starts^^
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return 10;
+        return -1;
     }
 
     @Override
