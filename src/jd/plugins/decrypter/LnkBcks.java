@@ -57,6 +57,9 @@ public class LnkBcks extends PluginForDecrypt {
                 link = br.getRegex(Pattern.compile("\"frame2\" frameborder.*?src=\"(.*?)\"", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
             }
         }
+        if (link == null) {
+            link = br.getRegex(Pattern.compile("id=\"content\" src=\"([^\"]*)", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+        }
         if (link == null) return null;
         decryptedLinks.add(createDownloadlink(link));
 
