@@ -535,6 +535,14 @@ public class Rapidshare extends PluginForHost {
 
             Request request = br.createPostRequest(postTarget, "mirror=on&x=" + Math.random() * 40 + "&y=" + Math.random() * 40);
 
+            try {
+                /* remove next major update */
+                /* workaround for broken timeout in 0.9xx public */
+                request.setConnectTimeout(30000);
+                request.setReadTimeout(60000);
+            } catch (Throwable e) {
+            }
+
             /** TODO: Umbauen auf jd.plugins.BrowserAdapter.openDownload(br,...) **/
             // Download
             dl = new RAFDownload(this, downloadLink, request);
@@ -550,6 +558,13 @@ public class Rapidshare extends PluginForHost {
                 if (con != null && con.getHeaderField("Location") != null) {
                     con.disconnect();
                     request = br.createGetRequest(con.getHeaderField("Location"));
+                    try {
+                        /* remove next major update */
+                        /* workaround for broken timeout in 0.9xx public */
+                        request.setConnectTimeout(30000);
+                        request.setReadTimeout(60000);
+                    } catch (Throwable ee) {
+                    }
                     dl = new RAFDownload(this, downloadLink, request);
                     dl.setFilesize(downloadLink.getDownloadSize());
                     dl.setFileSizeVerified(true);
@@ -854,6 +869,15 @@ public class Rapidshare extends PluginForHost {
                     request = br.createGetRequest(directurl);
                 }
             }
+
+            try {
+                /* remove next major update */
+                /* workaround for broken timeout in 0.9xx public */
+                request.setConnectTimeout(30000);
+                request.setReadTimeout(60000);
+            } catch (Throwable e) {
+            }
+
             /**
              * TODO: Umbauen auf jd.plugins.BrowserAdapter.openDownload(br,...)
              **/
@@ -869,6 +893,13 @@ public class Rapidshare extends PluginForHost {
             } catch (Exception e) {
                 br.setRequest(request);
                 request = br.createGetRequest(null);
+                try {
+                    /* remove next major update */
+                    /* workaround for broken timeout in 0.9xx public */
+                    request.setConnectTimeout(30000);
+                    request.setReadTimeout(60000);
+                } catch (Throwable ee) {
+                }
                 logger.info("Load from " + request.getUrl().toString().substring(0, 35));
                 // Download
                 dl = new RAFDownload(this, downloadLink, request);
@@ -1317,19 +1348,6 @@ public class Rapidshare extends PluginForHost {
             ai.setStatus("No PremiumAccount");
             return ai;
         }
-        String billedUntilTime = br.getRegex("billeduntil=(\\d+)").getMatch(0);
-        String serverTime = br.getRegex("servertime=(\\d+)").getMatch(0);
-        if (billedUntilTime != null && serverTime != null) {
-            /* next billing in */
-            long iDiff = Long.parseLong(billedUntilTime) - Long.parseLong(serverTime);
-            String left = Formatter.formatSeconds(iDiff, false);
-            AccountInfo ai = account.getAccountInfo();
-            if (ai == null) {
-                ai = new AccountInfo();
-                account.setAccountInfo(ai);
-            }
-            ai.setStatus(ai.getStatus() + " (Next billing in " + left + ")");
-        }
         return account.getAccountInfo();
     }
 
@@ -1342,6 +1360,8 @@ public class Rapidshare extends PluginForHost {
         }
         /* let hoster report traffic limit reached! */
         ai.setSpecialTraffic(true);
+        /* reset expired flag */
+        ai.setExpired(false);
         try {
             String[][] matches = br.getRegex("(\\w+)=([^\r^\n]+)").getMatches();
             HashMap<String, String> data = getMap(matches);
@@ -1378,10 +1398,30 @@ public class Rapidshare extends PluginForHost {
             ai.setFilesNum(Long.parseLong(data.get("curfiles")));
             ai.setPremiumPoints(Long.parseLong(data.get("rapids")));
             ai.setUsedSpace(Long.parseLong(data.get("curspace")));
+            String billedUntilTime = data.get("billeduntil");
+            String serverTimeString = data.get("servertime");
+            long nextBill = 0;
+            if (billedUntilTime != null && serverTimeString != null) {
+                /* next billing in */
+                nextBill = Long.parseLong(billedUntilTime) - Long.parseLong(serverTimeString);
+                String left = Formatter.formatSeconds(nextBill, false);
+                ai.setStatus(ai.getStatus() + " (Next billing in " + left + ")");
+            }
             long serverTime = Long.parseLong(data.get("servertime")) * 1000;
-            ai.setValidUntil(serverTime + (long) ((1.0f * ai.getPremiumPoints() / type) * 24 * 60 * 60 * 1000l));
-            if (ai.getValidUntil() < serverTime) {
+            long possibleValid = Math.max(0, (long) ((1.0f * ai.getPremiumPoints() / type) * 24 * 60 * 60 * 1000l));
+            if (possibleValid == 0) {
+                /*
+                 * not enough points for another billing, so lets found out how
+                 * long current billing is valid
+                 */
+                ai.setValidUntil(serverTime + nextBill * 1000);
+            } else {
+                ai.setValidUntil(serverTime + possibleValid);
+            }
+            if (ai.getValidUntil() <= serverTime) {
                 ai.setExpired(true);
+            } else {
+                ai.setExpired(false);
             }
         } catch (Exception e) {
             logger.severe("RS-API change detected, please inform support!");

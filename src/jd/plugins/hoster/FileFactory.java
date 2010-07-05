@@ -93,7 +93,7 @@ public class FileFactory extends PluginForHost {
 
     public void checkErrors() throws PluginException {
         if (br.containsHTML(SLOTEXPIRED)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
-        if (br.containsHTML("there are currently no free download slots")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
+        if (br.containsHTML("there are currently no free download slots") || br.containsHTML("download slots on this server are")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No free slots", 10 * 60 * 1000l);
         if (br.containsHTML(NOT_AVAILABLE)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML(SERVER_DOWN) || br.containsHTML(NO_SLOT)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l);
         if (br.getRegex("Please wait (\\d+) minutes to download more files, or").getMatch(0) != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(br.getRegex("Please wait (\\d+) minutes to download more files, or").getMatch(0)) * 60 * 1001l);
@@ -351,7 +351,7 @@ public class FileFactory extends PluginForHost {
         } else if (br.containsHTML(SERVER_DOWN)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else {
-            if (br.containsHTML("there are currently no free download slots")) {
+            if (br.containsHTML("there are currently no free download slots") || br.containsHTML("download slots on this server are")) {
                 downloadLink.getLinkStatus().setErrorMessage(JDL.L("plugins.hoster.filefactorycom.errors.nofreeslots", "No slots free available"));
                 downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.filefactorycom.errors.nofreeslots", "No slots free available"));
             } else {

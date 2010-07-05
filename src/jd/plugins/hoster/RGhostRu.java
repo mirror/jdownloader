@@ -63,7 +63,7 @@ public class RGhostRu extends PluginForHost {
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
         br.setFollowRedirects(false);
-        String dllink = br.getRegex("class=\"header_link\">.*?<a href=\"(.*?)\"").getMatch(0);
+        String dllink = br.getRegex("class=\"header_link\">.*?<a href=\"([^\"]*?/download/\\d+.*?)\"").getMatch(0);
         if (dllink == null) dllink = br.getRegex("<a href=\"([^\"]*?/download/\\d+.*?)\"").getMatch(0);
         String passCode = null;
         if (dllink == null) {
@@ -78,7 +78,7 @@ public class RGhostRu extends PluginForHost {
             }
             pwform.put("password", passCode);
             br.submitForm(pwform);
-            dllink = br.getRegex("class=\"header_link\">.*?<a href=\"(.*?)\"").getMatch(0);
+            dllink = br.getRegex("class=\"header_link\">.*?<a href=\"([^\"]*?/download/\\d+.*?)\"").getMatch(0);
             if (dllink == null) dllink = br.getRegex("<a href=\"([^\"]*?/download/\\d+.*?)\"").getMatch(0);
             if (dllink == null) {
                 link.setProperty("pass", null);

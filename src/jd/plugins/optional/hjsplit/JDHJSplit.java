@@ -515,7 +515,7 @@ public class JDHJSplit extends PluginOptional {
     private boolean isStartVolume(File file) {
         if (file.getName().matches(".*\\.aa$")) return true;
         if (file.getName().matches(".*\\.001\\.xtm$")) return true;
-        if (file.getName().matches(".*\\.001($|\\.[^\\d]*$)")) return true;
+        if (file.getName().matches(".*\\.001(\\.[^\\d]*)?$")) return true;
         return false;
     }
 
@@ -572,7 +572,7 @@ public class JDHJSplit extends PluginOptional {
                     }
 
                 };
-                File[] files = UserIO.getInstance().requestFileChooser("_JDHJSPLIT_", null, UserIO.DIRECTORIES_ONLY, ff, true);
+                File[] files = UserIO.getInstance().requestFileChooser("_JDHJSPLIT_", null, UserIO.FILES_AND_DIRECTORIES, ff, true);
                 if (files == null) return;
 
                 addFileList(files);

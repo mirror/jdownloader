@@ -287,6 +287,23 @@ public class HTTPLiveHeader extends ReconnectMethod {
                         final int seconds = Formatter.filterInt(item.getNodeValue());
                         Thread.sleep(seconds * 1000);
                     }
+
+                    if (toDo.getNodeName().equalsIgnoreCase("TIMEOUT")) {
+                        final NamedNodeMap attributes = toDo.getAttributes();
+                        final Node item = attributes.getNamedItem("seconds");
+                        if (item == null) {
+                            LOG.severe("A valid timeout must be set: e.g.: <TIMEOUT seconds=\"15\"/>");
+                            return false;
+                        }
+                        int seconds = Formatter.filterInt(item.getNodeValue());
+                        if (seconds < 0) seconds = 0;
+                        LOG.finer("Timeout set to " + seconds + " seconds");
+                        if (br != null) {
+                            br.setReadTimeout(seconds * 1000);
+                            br.setConnectTimeout(seconds * 1000);
+                        }
+                    }
+
                 }
             }
         } catch (Exception e) {

@@ -82,16 +82,14 @@ public class AccountController extends SubConfiguration implements ActionListene
         public int compare(final Account o1, final Account o2) {
             final AccountInfo ai1 = o1.getAccountInfo();
             final AccountInfo ai2 = o2.getAccountInfo();
-            if (ai1 != null && ai2 != null) {
-                if (ai1.getTrafficLeft() == ai2.getTrafficLeft()) return 0;
-                if (ai1.getTrafficLeft() < ai2.getTrafficLeft()) {
-                    return -1;
-                } else {
-                    return 1;
-                }
-            } else {
-                return 0;
-            }
+            long t1 = ai1 == null ? 0 : ai1.getTrafficLeft();
+            long t2 = ai2 == null ? 0 : ai2.getTrafficLeft();
+            if (t1 < 0) t1 = Long.MAX_VALUE;
+            if (t2 < 0) t2 = Long.MAX_VALUE;
+            if (t1 == t2) return 0;
+            /* reverse order, we want biggest on top */
+            if (t1 < t2) return 1;
+            return -1;
         }
     };
 
@@ -144,6 +142,13 @@ public class AccountController extends SubConfiguration implements ActionListene
             account.setUpdateTime(System.currentTimeMillis());
             /* not every plugin sets this info correct */
             account.setValid(true);
+            /* get previous account info and resets info for new update */
+            ai = account.getAccountInfo();
+            if (ai != null) {
+                /* reset expired and setValid */
+                ai.setExpired(false);
+                ai.setValidUntil(-1);
+            }
             ai = plugin.fetchAccountInfo(account);
             if (ai == null) {
                 // System.out.println("plugin no update " + hostname);

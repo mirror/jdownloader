@@ -168,6 +168,7 @@ public class XSevenTo extends PluginForHost {
         requestFileInformation(downloadLink);
         URLConnectionAdapter con = br.openGetConnection(downloadLink.getDownloadURL());
         if (con.getContentType().contains("html")) {
+            br.followConnection();
             String dllink = null;
             if (br.containsHTML("(only premium members will be able to download the file|The requested file is larger than)")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.XSevenTo.errors.only4premium", "Only downloadable for premium users"));
             String fileID = new Regex(downloadLink.getDownloadURL(), "\\.to/([a-zA-Z0-9]+)").getMatch(0);
