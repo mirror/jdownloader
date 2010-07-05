@@ -20,6 +20,7 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -124,21 +125,31 @@ public class XSevenTo extends PluginForHost {
         this.setBrowserExclusive();
         /* have to call this in order so set language */
         br.getPage("http://x7.to/lang/en");
-        br.getPage(downloadLink.getDownloadURL());
-        String filename = br.getRegex("<title>x7\\.to » Download: (.*?)</title>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<b>(Download|Stream)</b>.*?<span.*?>(.*?)<").getMatch(1);
-            if (filename != null) {
-                String extension = br.getRegex("<b>(Download|Stream)</b>.*?<span.*?>.*?<small.*?>(.*?)<").getMatch(1);
-                if (extension == null) extension = "";
-                filename = filename.trim() + extension;
+        br.setFollowRedirects(true);
+        // Check if the link is a normal- or a direct link
+        URLConnectionAdapter con = br.openGetConnection(downloadLink.getDownloadURL());
+        if (con.getContentType().contains("html")) {
+            br.followConnection();
+            String filename = br.getRegex("<title>x7\\.to » Download: (.*?)</title>").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("<b>(Download|Stream)</b>.*?<span.*?>(.*?)<").getMatch(1);
+                if (filename != null) {
+                    String extension = br.getRegex("<b>(Download|Stream)</b>.*?<span.*?>.*?<small.*?>(.*?)<").getMatch(1);
+                    if (extension == null) extension = "";
+                    filename = filename.trim() + extension;
+                }
             }
+            String filesize = br.getRegex("<b>(Download|Stream)</b>.*?\\((.*?)\\)").getMatch(1);
+            if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            downloadLink.setName(filename.trim());
+            downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", ".")));
+            if (br.containsHTML("(only premium members will be able to download the file|The requested file is larger than)")) downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.XSevenTo.errors.only4premium", "Only downloadable for premium users"));
+        } else {
+            downloadLink.getLinkStatus().setStatusText("Direct link");
+            downloadLink.setName(getFileNameFromHeader(con));
+            downloadLink.setDownloadSize(con.getContentLength());
+            con.disconnect();
         }
-        String filesize = br.getRegex("<b>(Download|Stream)</b>.*?\\((.*?)\\)").getMatch(1);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        downloadLink.setName(filename.trim());
-        downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", ".")));
-        if (br.containsHTML("(only premium members will be able to download the file|The requested file is larger than)")) downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.XSevenTo.errors.only4premium", "Only downloadable for premium users"));
         return AvailableStatus.TRUE;
     }
 
@@ -155,40 +166,47 @@ public class XSevenTo extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (br.containsHTML("(only premium members will be able to download the file|The requested file is larger than)")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.XSevenTo.errors.only4premium", "Only downloadable for premium users"));
-        String dllink = null;
-        String fileID = new Regex(downloadLink.getDownloadURL(), "\\.to/([a-zA-Z0-9]+)").getMatch(0);
-        boolean isStream = br.containsHTML("<b>Stream</b>");
-        if (!isStream) {
-            Browser brc = requestXML(br, "http://x7.to/james/ticket/dl/" + fileID, null, false);
-            /* error handling */
-            if (brc.containsHTML("err:")) {
-                String error = brc.getRegex("err:\"(.*?)\"").getMatch(0);
-                if (error == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                if (error.contains("limit-parallel")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
-                if (error.contains("limit-dl")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1000l);
-                if (error.contains("Download denied")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerProblem", 30 * 60 * 1000l);
-                /* unknown error */
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        URLConnectionAdapter con = br.openGetConnection(downloadLink.getDownloadURL());
+        if (con.getContentType().contains("html")) {
+            String dllink = null;
+            if (br.containsHTML("(only premium members will be able to download the file|The requested file is larger than)")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.XSevenTo.errors.only4premium", "Only downloadable for premium users"));
+            String fileID = new Regex(downloadLink.getDownloadURL(), "\\.to/([a-zA-Z0-9]+)").getMatch(0);
+            boolean isStream = br.containsHTML("<b>Stream</b>");
+            if (!isStream) {
+                Browser brc = requestXML(br, "http://x7.to/james/ticket/dl/" + fileID, null, false);
+                /* error handling */
+                if (brc.containsHTML("err:")) {
+                    String error = brc.getRegex("err:\"(.*?)\"").getMatch(0);
+                    if (error == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    if (error.contains("limit-parallel")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
+                    if (error.contains("limit-dl")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1000l);
+                    if (error.contains("Download denied")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerProblem", 30 * 60 * 1000l);
+                    /* unknown error */
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                if (brc.containsHTML("type:'download")) {
+                    int waitsecs = 0;
+                    String waittime = brc.getRegex("wait:(\\d+)").getMatch(0);
+                    if (waittime != null) waitsecs = Integer.parseInt(waittime);
+                    if (waitsecs > 0) sleep(waitsecs * 1000l, downloadLink);
+                    dllink = brc.getRegex("url:'(.*?)'").getMatch(0);
+                }
+            } else {
+                /* free users can only download the 10mins sample */
+                br.getPage("http://x7.to/stream/" + fileID + "/h");
+                dllink = br.getRedirectLocation();
             }
-            if (brc.containsHTML("type:'download")) {
-                int waitsecs = 0;
-                String waittime = brc.getRegex("wait:(\\d+)").getMatch(0);
-                if (waittime != null) waitsecs = Integer.parseInt(waittime);
-                if (waitsecs > 0) sleep(waitsecs * 1000l, downloadLink);
-                dllink = brc.getRegex("url:'(.*?)'").getMatch(0);
-            }
+            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (!dllink.contains("x7.to/")) dllink = "http://x7.to/" + dllink;
+            br.setDebug(true);
+            /* streams are not resumable */
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, !isStream, 1);
         } else {
-            /* free users can only download the 10mins sample */
-            br.getPage("http://x7.to/stream/" + fileID + "/h");
-            dllink = br.getRedirectLocation();
+            // Direct links have no limits
+            con.disconnect();
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, 0);
         }
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        if (!dllink.contains("x7.to/")) dllink = "http://x7.to/" + dllink;
-        br.setDebug(true);
-        /* streams are not resumable */
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, !isStream, 1);
-        if (!dl.getConnection().isContentDisposition()) {
+        if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML("wird ein erneuter Versuch gestartet")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverproblems");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
