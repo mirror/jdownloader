@@ -382,6 +382,7 @@ public class Rapidshare extends PluginForHost {
     private void queryAPI(Browser br, String req) throws Exception {
 
         if (br == null) br = this.br;
+        workAroundTimeOut(br);/* TODO: remove me after 0.9xx public */
         br.forceDebug(true);
         if (getPluginConfig().getBooleanProperty(HTTPS_WORKAROUND, false)) {
             req = req.replaceFirst("http:", "https:");
@@ -433,6 +434,7 @@ public class Rapidshare extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
+        workAroundTimeOut(br);/* TODO: remove me after 0.9xx public */
         try {
             LinkStatus linkStatus = downloadLink.getLinkStatus();
 
@@ -607,6 +609,16 @@ public class Rapidshare extends PluginForHost {
         }
     }
 
+    private void workAroundTimeOut(Browser br) {
+        try {
+            if (br != null) {
+                br.setConnectTimeout(30000);
+                br.setReadTimeout(30000);
+            }
+        } catch (Throwable e) {
+        }
+    }
+
     @Override
     public String getSessionInfo() {
         if (selectedServer != null) return " @ " + selectedServer;
@@ -710,7 +722,7 @@ public class Rapidshare extends PluginForHost {
 
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
-
+        workAroundTimeOut(br);/* TODO: remove me after 0.9xx public */
         try {
             br.forceDebug(true);
             String freeOrPremiumSelectPostURL = null;
@@ -719,6 +731,7 @@ public class Rapidshare extends PluginForHost {
             if (account == dummyAccount) {
                 /* dummyAccount aka Trafficshare DirectLink */
                 br = new Browser();
+                workAroundTimeOut(br);/* TODO: remove me after 0.9xx public */
             } else {
                 /* synchronized check of account, package handling */
                 synchronized (LOCK) {
@@ -1240,6 +1253,7 @@ public class Rapidshare extends PluginForHost {
     private Browser login(Account account, boolean forceRefresh) throws Exception {
         synchronized (LOCK) {
             Browser br = new Browser();
+            workAroundTimeOut(br);/* TODO: remove me after 0.9xx public */
             br.setDebug(true);
             br.setCookiesExclusive(true);
             br.clearCookies(getHost());
